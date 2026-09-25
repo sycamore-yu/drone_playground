@@ -1,14 +1,15 @@
 # 01：第一条可见的完整飞行
 
 Type: task
-Status: claimed
+Status: blocked
 Blocked by: none
-Engineering: in-progress
-Experiment: not-started
+Engineering: passed
+Experiment: completed-server-and-client-implementation
 Quality: not-applicable
+UserAcceptance: pending-windows-ssh-authentication-and-window
 Owner: ChatGPT prime
 Session: Chat On Steroids current conversation; implementation/p1-p2
-Run: none
+Run: p1-native-flight-20260925; p1-ppo-update-20260925
 
 ## 要交付
 
@@ -17,15 +18,19 @@ Run: none
 
 ## 验收
 
-- [ ] 独立 Pixi 解析并锁定兼容版本，保留历史依赖与新环境的差异；实际 CPU/GPU 设备写入清单。
-- [ ] 通过作者任务/控制器完成完整回合，观测、执行状态和事件为真实计算结果。
-- [ ] 一个运行身份绑定代码、配置、命令、预算、日志、模型和完整轨迹。
-- [ ] 最小 train 入口能调用 Brax 完成真实短程更新并产出指标；正式收敛配方在任务 02 交付。
-- [ ] rscope 原生读回、模型重建及末状态一致；Windows/SSH 图形确认单独记录。
-- [ ] TensorBoard 中至少有时间、跟踪误差、执行动作、记录开销；状态可显示阶段和最近更新。
-- [ ] 中断查看器后运行和已有记录可继续访问；启动/恢复/查看命令经过实际执行。
+- [x] 独立 Pixi 解析并锁定兼容版本，保留历史依赖与新环境的差异；实际 CPU/GPU 设备写入清单。
+- [x] 通过作者任务/控制器完成完整回合，观测、执行状态和事件为真实计算结果。
+- [x] 一个运行身份绑定代码、配置、命令、预算、日志、模型和完整轨迹。
+- [x] 最小 train 入口能调用 Brax 完成真实短程更新并产出指标；正式收敛配方在任务 02 交付。
+- [x] rscope 原生读回、模型重建及末状态一致，正式启动器连续播放与图表交互已实测。
+- [ ] 用户 Windows 客户端以已有私钥完成 SSH/SFTP 认证并现场确认窗口。
+- [x] TensorBoard 中有时间、跟踪误差、执行动作、记录开销；状态显示阶段和最近更新。
+- [x] 停止和重开查看器后保存的记录可继续访问，查看对象切换与训练成果隔离。
 
 ## 证据与交接
 
-实施时填入真实命令、退出码、运行位置、窗口确认、相关提交及下一步。
-继承既有 15 项接入证据，验证只补本次新依赖/新记录/新客户端路径。
+原控制器 500 帧/10 秒、RMSE 0.05094382 米；PPO 整链探针实际更新 16384 次交互。
+正式 rscope_client.py 窗口 Step229→237，指标曲线可见；暂停保持148后恢复151，左右试次切换通过。
+TensorBoard 在 127.0.0.1:6006，HTTP 和真实时间序列读取通过；正式查看器源文件前后保持原始哈希。
+记录及截图见 `docs/verification/p1-observation-checks.json/.md`；实际操作见 `docs/runbook.md`。
+当前阻塞只涉及用户 Windows 上的已有 SSH 认证，服务端和依赖工程接口已交付，后续任务可使用。

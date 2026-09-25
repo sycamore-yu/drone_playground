@@ -137,7 +137,7 @@ def train(
     """Train the declared complete budget and record real snapshots and evaluations."""
     from drone_playground.runs.console import capture_console
     from drone_playground.runs.record import RunRecorder
-    from drone_playground.runs.rscope_io import append_rollout, export_rollout, publish_run
+    from drone_playground.runs.rscope_io import export_rollout, publish_snapshot
 
     config = dict(config)
     algorithm = config["algorithm"]
@@ -174,6 +174,7 @@ def train(
     best_score = (-1, -float("inf"))
     best = None
     snapshot_count = 0
+    live_publications = []
     start = time.monotonic()
     initial_params = None
     try:
@@ -221,8 +222,6 @@ def train(
             replay["metrics"]["training_step"] = np.full_like(replay["reward"], step)
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
             export_rollout(evaluation_env.sim, replay_directory, replay)
-            if config.get("publish_live", False):
-                (publish_run if snapshot_count == 0 else append_rollout)(replay_directory)
             rec.log(step, {"record/export_seconds": time.monotonic() - t})
             score = (report["completed"], -report["rmse_all_mean"])
             if score > best_score:
@@ -236,6 +235,26 @@ def train(
                         "selection_split": "dev",
                     },
                 )
+            if config.get("publish_live", False):
+                publication = publish_snapshot(
+                    replay_directory, rec.path, first=snapshot_count == 0
+                )
+                live_publications.append({"step": step, **publication})
+                save_report(rec.path / "live-publications.json", {"snapshots": live_publications})
+                rec.log(
+                    step, {"record/live_publication_error": float(publication["status"] == "error")}
+                )
+                if publication["status"] != "published":
+                    print(
+                        json.dumps(
+                            {
+                                "run_id": run_id,
+                                "step": step,
+                                "optional_live_publication": publication,
+                            }
+                        ),
+                        flush=True,
+                    )
             snapshot_count += 1
             print(
                 json.dumps(
@@ -386,6 +405,7 @@ def train(
             "quality_passed": bool(best and best["quality_passed"]),
             "engineer_passed": True,
             "full_budget_completed": True,
+            "live_publications": live_publications,
         }
         rec.finish("completed", **result)
         return result

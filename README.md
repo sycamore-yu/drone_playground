@@ -1,7 +1,8 @@
 # Drone Playground
 
 基于 Crazyflow 的无人机学习与优化控制研究平台。首版使用 Crazyflie，训练统一使用
-Brax，轨迹查看统一使用 rscope。当前已完成项目设计与目录建立，正式训练入口将在任务 01 交付。
+Brax，轨迹查看统一使用 rscope。P1 服务端运行链已实现；P2 已完成八字与随机样条的 PPO/APG
+训练及成功检查点。Windows 端 SSH 认证与本机窗口确认作为单独的客户端验收项保留。
 
 ## 从这里开始
 
@@ -30,7 +31,10 @@ Brax，轨迹查看统一使用 rscope。当前已完成项目设计与目录建
 
 ## 当前可用的内容
 
-阅读上述规格、阶段任务和验证报告；原有接入实验见
-[历史验证](docs/verification/2026-09-25-brax-integration.md)。
-目录中的模块说明定义后续实现位置；训练、评测和远程查看命令的实际可用状态以
-[运行手册](docs/runbook.md) 为准。
+`pixi run train`、`evaluate`、`demo`、`replay`、`metrics`、`status` 已有真实执行入口。
+操作见 [运行手册](docs/runbook.md)，检查点重载结果见
+[独立评测](docs/verification/p2-independent-evaluation.md)，观察链证据见
+[P1 观察验收](docs/verification/p1-observation-checks.md)。
+
+当前 P2 只评估所记录的名义 Crazyflie 拟合动力学、状态与参考轨迹观测、训练种子 0。
+四模型/多种子、SHAC、竞速及感知导航分别属于后续阶段。

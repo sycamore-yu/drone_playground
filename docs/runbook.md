@@ -1,52 +1,113 @@
 # 运行与远程查看
 
-## 现在可用
-
 项目路径：`/home/tong/tongworkspace/simulation_dev/mujoco/drone_playground`。
-当前交付为规格、架构、任务目录和继承证据。浏览 `docs/status.md` 和 `.scratch/drone-platform/map.md`。
-原 Crazyflow 接入实验仍可按历史报告的原目录命令复验，已有充分证据无需重复运行。
+以下命令使用本项目独立 Pixi；若 shell 找不到 Pixi，使用 `/home/tong/.pixi/bin/pixi`。
+开始时进入项目目录，SSH 地址 `SERVER` 使用你平常能连接的服务器地址。
 
-## 首阶段必须交付的入口
+## 现在查看结果
 
-下列为计划接口，尚未实现，当前不可作为已可执行命令：
-
-| 入口 | 交付时必须完成的行为 |
-|---|---|
-| `pixi run train ...` | 保存配置和运行身份，真实训练，写指标、检查点和轨迹 |
-| `pixi run evaluate ...` | 新进程加载指定策略，冻结统计，执行固定试次清单并输出逐回合结果 |
-| `pixi run replay ...` | 为指定运行准备 rscope 模型与轨迹；沿用原版查看器 |
-| `pixi run metrics ...` | 为指定运行启动 TensorBoard，仅监听回环地址 |
-| `pixi run status` | 汇报任务与实际运行阶段、最近更新、日志及剩余预算 |
-
-首阶段文档要用实际测试过的命令替换此表；每条命令附实测状态及证据。
-
-## 远程使用契约
-
-服务器负责训练、周期评估、文件保存及 TensorBoard。Windows 本地运行 rscope，使用 SSH/SFTP
-获取服务器导出的活动轨迹；图形窗口在本地显示。浏览器通过 SSH 转发查看 TensorBoard 标量。
-轨迹和标量共用运行标识，实际可视化客户端无需承担训练计算。
-
-原版 rscope 使用说明提供如下形式，服务器地址和密钥来自用户自己的 SSH 设置：
-
-```powershell
-py -m rscope --ssh_to tong@SERVER --ssh_key "$env:USERPROFILE\.ssh\rscope_key" --polling_interval 5
+```bash
+cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
+pixi run status
+pixi run status --run-id p2-figure8-ppo-seed0-v2
 ```
 
-这是上游命令形式；当前 Windows 本机执行、路径兼容和密钥连接尚未现场验收。
-任务 01 需核对客户端 `/tmp` 路径行为、模型资源、轨迹切换、指标和远程连接；
-只能在真实本地窗口出现并显示新轨迹后记录“远程查看通过”。客户端所需授权由用户完成。
+状态核验进程 PID、系统启动身份和进程启动时间，显示最近更新与实际步数。
+已完成的训练以 `result.json` 为结果来源，活动进程以 `state.json` 和日志为来源。
 
-TensorBoard 服务就绪后，转发形式为：
+TensorBoard 已在服务器 `127.0.0.1:6006` 提供服务，真实 HTTP 与标量数据已验证。
+Windows PowerShell 使用已有 SSH 连接转发端口：
 
 ```powershell
 ssh -N -L 6006:127.0.0.1:6006 tong@SERVER
 ```
 
-浏览器访问 `http://127.0.0.1:6006`。6006 是计划默认端口，启动前检查占用；
-当前本项目尚未启动该服务。
+随后在浏览器访问 `http://127.0.0.1:6006`。选择以 `p2-` 开头的已完成正式运行；
+`p1-` 是整链探针，`p2-figure8-ppo-seed0-v1` 是为修复初始随机数键而中断的历史运行。
+重点查看 `eval/completion_rate`、`eval/rmse_all_m`、`eval/return` 和 `training/*`。
+APG 的原生 `eval/episode_tracking_error` 为回合误差和；32 回合位置 RMSE 使用本项目独立评测结果。
 
-## 每次验收的查看顺序
+## 选择与重放
 
-从当前任务找到运行标识 → 检查配置/协议/预算 → 看开发评估曲线 →
-查看固定初态与失败轨迹 → 用新进程加载检查点重评 → 对照完整回合表。
-任务单记录实际命令、退出码、结果目录和用户窗口确认。
+在服务器选择已经保存的结果供远程 rscope 拉取：
+
+```bash
+pixi run replay --directory experiments/p2-figure8-ppo-seed0-v2/independent-dev/rollouts
+```
+
+它发布到 `/tmp/rscope/active_run`；原始运行文件保留完整。启动一个新训练运行时可按配置自动选中，
+后续检查点增量发布；查看者切换到其他运行后，训练继续保存自己的记录并跳过当前活动目录。
+
+在服务器已有桌面上重放：
+
+```bash
+pixi run python scripts/rscope_client.py \
+  --directory experiments/p2-figure8-ppo-seed0-v2/independent-dev/rollouts \
+  --show-metrics
+```
+
+这个启动器仍使用 rscope 的原生查看器和交互。它针对固定的 rscope 0.0.8/MuJoCo 3.14，
+在运行内移除包住 UI 方法的重入锁，只在直接写仿真状态时加锁，安装包文件保持原始字节。
+直接运行旧的 `python -m rscope` 在这组版本会停在首帧；使用这里已修正的启动器。
+
+## Windows 原生客户端
+
+复制 `scripts/rscope_client.py` 到本地，仅安装查看器依赖即可。以下是用户端执行命令，
+本轮已验证服务端和客户端逻辑；用户 Windows 私钥认证与实际窗口仍需本机确认。
+
+```powershell
+py -3.13 -m pip install "rscope==0.0.8" "mujoco==3.14.0"
+scp tong@SERVER:/home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/scripts/rscope_client.py .
+py -3.13 .\rscope_client.py --ssh_to tong@SERVER --ssh_key "$env:USERPROFILE\.ssh\rscope_key" --show-metrics
+```
+
+将 `rscope_key` 替换为已授权的现有私钥路径；使用现有 SSH 代理或默认密钥时可省略该参数。
+主机公钥必须已在本地 `known_hosts` 中受信任；新服务器先用正常 SSH 核对主机指纹。
+客户端默认创建独立本地临时缓存，远端始终使用 Linux 路径；开始前先认证，失败会直接退出。
+它读取 Python pickle 记录，限于自己可信的服务器与实验产物。
+
+左右方向键切换试次，上下方向键切换保存的策略轨迹，空格暂停/继续，Shift+M 切换指标。
+PPO 保存初始、中间和最终轨迹；原生 APG 提供周期评估标量，策略轨迹保存初始和最终两个时间点。
+切换到不同模型的记录后重开查看器，使其加载对应模型资源。
+
+## 独立重评保存策略
+
+每次评测使用新的输出目录；已有目录会拒绝覆盖。下面的八字 PPO 检查点由开发集选中：
+
+```bash
+pixi run evaluate \
+  --checkpoint experiments/p2-figure8-ppo-seed0-v2/checkpoints/step-0001310720.pkl \
+  --split heldout --episodes 128 --device cpu \
+  --output experiments/p2-figure8-ppo-seed0-v2/manual-heldout-01
+```
+
+已完成的独立评测位于每个正式运行的 `independent-dev/` 与 `independent-heldout/`，
+包含完整回合表和自包含重放；无需为查看结果重复运行评测。
+固定开发初态从 20000 开始，留出初态从 30000 开始；随机样条的参考轨迹也使用独立种子范围。
+
+## 重复训练
+
+使用新的运行标识，保留既有结果。四份冻结配方均完成过真实训练：
+
+```bash
+pixi run train --config configs/experiments/figure8_ppo.json --run-id my-figure8-ppo --device gpu
+pixi run train --config configs/experiments/figure8_apg.json --run-id my-figure8-apg --device gpu
+pixi run train --config configs/experiments/random_ppo.json --run-id my-random-ppo --device gpu
+pixi run train --config configs/experiments/random_apg.json --run-id my-random-apg --device gpu
+```
+
+按配置各自消耗 2097152、655360、4194304、655360 次任务交互，物理子步另计。
+回放和独立评测冻结策略及归一化；PPO 的 `--warm-start` 沿用 Brax 的参数恢复方式，
+优化器、随机数和回合状态重新初始化。APG 的原生训练入口当前提供推理检查点，精确续训未实现。
+
+## 测试与服务
+
+```bash
+JAX_PLATFORMS=cpu pixi run test
+pixi run ruff check src scripts tests
+pixi run demo --run-id my-native-demo --duration 10 --device cpu
+pixi run metrics --port 6006
+```
+
+现有 TensorBoard 已占用 6006，查看即可；重启服务前核对所属进程。停止查看器只影响显示，
+学习算法、检查点和本次运行记录独立存在。测试覆盖真实任务、导数、回合、参数重载、文件发布和查看器兼容。

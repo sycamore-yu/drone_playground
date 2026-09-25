@@ -1,41 +1,45 @@
 # 当前进度
 
-更新时间：2026-09-25。项目阶段：P1/P2 实施中，功能分支 `implementation/p1-p2`。
+更新时间：2026-09-25。本轮授权：完整实施 P1/P2。功能分支 `implementation/p1-p2`。
 
 ## 当前结论
 
-- 用户已接受的八项推荐与 Crazyflie/Brax/rscope 选择已写入当前规格。
-- 独立 Pixi/Python 3.13.15 已安装并锁定，依赖检查通过。
-- 已实现八字/样条纯函数任务、原生 Brax 训练入口、独立评测、检查点与运行记录。
-- rscope 原生导出/读取与 TensorBoard 事件测试通过，正在执行整套测试及完整飞行。
-- 已继承的 15 项 Brax 短程工程证据、rscope 往返和采样 MPC 探针见验证目录。
-- 正式成功策略、LSY 竞速/MPC 完整运行、导航、Windows 远程查看均待阶段实施。
+P2 已完成。八字与随机样条的 PPO/APG 四组完整训练预算共 7602176 次交互；
+四个开发集选中的检查点，在独立进程开发集均 32/32、留出集均 128/128 完成，累计 640/640。
 
-## 当前工作与下一步
+| 任务 | 方法 | 留出128回合位置 RMSE（米） |
+|---|---|---:|
+| 八字 | PPO | 0.02687929 |
+| 八字 | APG | 0.02574215 |
+| 随机样条 | PPO | 0.00991630 |
+| 随机样条 | APG | 0.00761645 |
 
-当前工作：完成 P1 的整链验证，随后运行冻结预算的 PPO/APG 八字与随机样条训练。
-当前训练进程：正式训练待整链测试完成；测试日志在 `tmp/p1p2/`。
-执行会话：当前 Chat On Steroids 主会话；运行记录模块的同一辅助会话已恢复用于独立只读审查。
-下一项：完整原生控制飞行、真实短程 PPO 更新、TensorBoard 服务及 rscope 窗口验证。
-具体裁决和执行步骤见 `.scratch/drone-platform/p1-p2-execution.md`。
+以上为训练种子0、名义 so_rpy 拟合模型下的轨迹跟踪结果。多种子、四动力学和感知/竞速任务按后续阶段开展。
 
-## 本轮验证
+P1 的独立 Pixi、真实飞行与更新、记录、TensorBoard、rscope 正式客户端实现已验证。
+原生控制器 10 秒飞行 RMSE 0.05094 米；正式查看器逐帧播放、图表、暂停/继续和试次切换通过。
+Windows 本机 SSH/SFTP 需要用户已有认证凭据与现场窗口确认，因此任务01保留这一用户验收项。
 
-37 个 Markdown 文件的编码/空白检查、37 个本地文档链接、11 个任务依赖及 12 个模块/配置目录
-检查通过；依赖图无环，任务状态均保持待开始。65 份历史文件逐一校验，15 个 Brax 短程结果和
-2 项辅助验证保持原数据。此次只检查迁移后的证据完整性，原训练未重复执行。
-原 Crazyflow 的 3 份项目设计文档已归档到这里；依赖变更补丁保存用于还原历史测试环境。
-详细记录见 [项目建立检查](verification/project-setup-checks.json)。
+## 当前运行
 
-## 入口
+四组训练已结束，结果与检查点保存完整；TensorBoard 仍监听 `127.0.0.1:6006`。
+查看运行状态：`pixi run status`；浏览器通过 SSH 转发查看指标，轨迹使用 `scripts/rscope_client.py`。
+测试窗口已关闭，当前发布目录已选择八字 PPO 的 9 个策略时间点，可用上下键比较学习过程。原始模型记录随时可重放。每次新运行使用独立目录和进程身份。
 
-- [阶段表](../.scratch/drone-platform/map.md)
+## 证据与问题处理
+
+21 项测试通过，包含真实任务前向/梯度/回合边界、参数重载、完整回合分母、原生记录、
+增量发布与客户端兼容。安装版 rscope 源文件保持原始字节，锁修正只在启动器进程内发生。
+PPO 初期随机数修正后的重跑为 v2；v1 的中断日志保留。
+随机 APG 的最终显示发布报错在完整预算后发生，已校验并恢复收尾，训练和原权重未重复或改写。
+
+- [P1/P2 完整交付](verification/p1-p2-delivery.md)
+- [机器可读结果与校验](verification/p1-p2-results.json)
+- [独立重评的8次新进程证据](verification/p2-independent-evaluation.md)
+- [实际查看器与标量检查](verification/p1-observation-checks.md)
+- [已验证命令与 Windows 操作](runbook.md)
+- [阶段地图](../.scratch/drone-platform/map.md)
 - [规格](../.scratch/drone-platform/spec.md)
-- [任务 01](../.scratch/drone-platform/issues/01-visible-flight.md)
-- [架构](architecture.md)
-- [评测和策略质量](evaluation.md)
-- [运行手册](runbook.md)
-- [继承的接入报告](verification/2026-09-25-brax-integration.md)
 
-任务状态以 `.scratch/drone-platform/issues/` 为准。每次实质进展、训练开始/结束或交接更新本页。
-本页的文件更新时间代表记录更新时间；运行是否有进展还要核对实际日志、步数和检查点。
+下一步先通过已有 SSH 端口转发查看 TensorBoard，并在 Windows 运行客户端确认实际窗口。
+P3 的 SHAC 与四动力学比较尚未开始，本轮保持 P1/P2 范围。

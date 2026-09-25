@@ -371,3 +371,39 @@ def append_rollout(directory: Path, active_dir: Path = Path("/tmp/rscope/active_
         marker.update(files=sorted(names), latest_source=str(directory))
         _atomic_write_bytes(marker_path, (json.dumps(marker, indent=2) + "\n").encode())
     return active_dir
+
+
+def publish_snapshot(
+    directory: Path,
+    run_directory: Path,
+    *,
+    first: bool = False,
+    active_dir: Path = Path("/tmp/rscope/active_run"),
+) -> dict:
+    """Publish optional live output without changing the outcome of saved training.
+
+    Selecting another run is an ordinary viewer operation. Its directory remains
+    selected until an explicit first publication chooses a new run. Publication
+    failures are returned for logging; checkpoint and evaluation errors stay fatal
+    at their own, mandatory boundaries.
+    """
+    directory, run_directory, active_dir = (
+        Path(directory).resolve(),
+        Path(run_directory).resolve(),
+        Path(active_dir).resolve(),
+    )
+    try:
+        if not directory.is_relative_to(run_directory):
+            raise ValueError("Snapshot directory must belong to its run")
+        if not first:
+            marker_path = active_dir / _PUBLISH_MARKER
+            if not marker_path.is_file():
+                return {"status": "not-selected", "reason": "no active owned selection"}
+            marker = json.loads(marker_path.read_text())
+            selected = Path(marker["source"]).resolve()
+            if not selected.is_relative_to(run_directory):
+                return {"status": "not-selected", "selected_source": str(selected)}
+        (publish_run if first else append_rollout)(directory, active_dir)
+        return {"status": "published", "directory": str(directory), "active_dir": str(active_dir)}
+    except Exception as error:
+        return {"status": "error", "error": repr(error), "directory": str(directory)}

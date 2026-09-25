@@ -1,0 +1,10 @@
+{
+  "checked_at": "2026-09-25T16:38:05.010095+00:00",
+  "markdown_files": 43,
+  "local_links": 42,
+  "p2_trials_verified": 640,
+  "model_and_report_hashes_verified": 12,
+  "tests": 21,
+  "p1_windows_client": "pending-user-authentication",
+  "source_client_sha256": "f155882f9c6be33d6ac5b861b0eea5e43a072bbecaecb3a54846ae0cf21adfc1"
+}

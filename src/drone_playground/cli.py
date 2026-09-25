@@ -35,6 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     replay = commands.add_parser("replay", help="发布指定轨迹供原版 rscope 远程读取")
     replay.add_argument("--directory", type=Path, required=True)
     replay.add_argument("--launch", action="store_true", help="在当前桌面打开原版查看器")
+    replay.add_argument("--show-metrics", action="store_true")
     metrics = commands.add_parser("metrics", help="在回环地址启动 TensorBoard")
     metrics.add_argument("--port", type=int, default=6006)
     metrics.add_argument("--logdir", type=Path, default=ROOT / "experiments")
@@ -101,7 +102,10 @@ def main(argv=None) -> None:
 
         result = {"active_directory": str(publish_run(args.directory))}
         if args.launch:
-            subprocess.run([sys.executable, "-m", "rscope"], check=True)
+            command = [sys.executable, str(ROOT / "scripts/rscope_client.py")]
+            if args.show_metrics:
+                command.append("--show-metrics")
+            subprocess.run(command, check=True)
     elif args.command == "metrics":
         subprocess.run(
             [
