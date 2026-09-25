@@ -1,13 +1,13 @@
 # 01：第一条可见的完整飞行
 
 Type: task
-Status: ready-for-agent
+Status: claimed
 Blocked by: none
-Engineering: planned
+Engineering: in-progress
 Experiment: not-started
 Quality: not-applicable
-Owner: unassigned
-Session: none
+Owner: ChatGPT prime
+Session: Chat On Steroids current conversation; implementation/p1-p2
 Run: none
 
 ## 要交付

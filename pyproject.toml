@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drone-playground"
+version = "0.1.0"
+description = "Crazyflow tasks, Brax learning and reproducible drone evaluation"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "crazyflow==0.3.2",
+    "brax==0.14.2",
+    "jax[cuda12]==0.9.2; sys_platform == 'linux'",
+    "jaxlib==0.9.2",
+    "flax==0.12.6",
+    "optax==0.2.8",
+    "mujoco==3.14.0",
+    "mujoco-mjx==3.14.0",
+    "rscope==0.0.8",
+    "tensorboard>=2.18,<3",
+    "tensorboardX==2.6.5",
+    "numpy>=2.0",
+    "scipy>=1.17",
+    "ml_collections>=1.0",
+]
+
+[project.scripts]
+drone-playground = "drone_playground.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.13.*"
+pip = "*"
+pytest = ">=8.4"
+ruff = "*"
+
+[tool.pixi.pypi-dependencies]
+drone-playground = { path = ".", editable = true }
+crazyflow = { path = "../crazyflow", editable = true }
+
+[tool.pixi.activation.env]
+SCIPY_ARRAY_API = "1"
+XLA_PYTHON_CLIENT_PREALLOCATE = "false"
+OMP_NUM_THREADS = "4"
+
+[tool.pixi.tasks]
+test = "python -m pytest"
+train = "python -m drone_playground.cli train"
+evaluate = "python -m drone_playground.cli evaluate"
+demo = "python -m drone_playground.cli demo"
+replay = "python -m drone_playground.cli replay"
+metrics = "python -m drone_playground.cli metrics"
+status = "python -m drone_playground.cli status"
