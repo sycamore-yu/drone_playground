@@ -1,0 +1,17 @@
+.pixi/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+tmp/*
+!tmp/README.md
+experiments/*
+!experiments/README.md
+.env
+.env.*
+secrets/
+*.pem

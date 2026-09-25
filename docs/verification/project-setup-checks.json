@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-09-25T15:14:38.952429+00:00",
+  "status": "passed",
+  "scope": "Project documentation and folder scaffold only; no platform training was run.",
+  "markdown_files": 37,
+  "local_links_checked": 37,
+  "tickets": 11,
+  "dependency_graph_acyclic": true,
+  "module_and_config_directories": 12,
+  "historical_files_hash_verified": 65,
+  "historical_brax_results": 15,
+  "auxiliary_results": 2,
+  "historical_measurements_rerun": false,
+  "crazyflow_dependency_patch_preserved": true,
+  "full_platform_runtime_implemented": false
+}

@@ -1,0 +1,676 @@
+{
+  "kind": "inherited-integration-evidence",
+  "training_rerun": false,
+  "results": [
+    {
+      "file": "apg_first_principles_cpu.json",
+      "sha256": "8f14c57a23134bfab1f7ee9e645643699cfd76b4bff83a3cf1323cb730af7397",
+      "case": "apg",
+      "dynamics": "first_principles",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "updates": 4,
+        "rollout_horizon": 16,
+        "num_envs": 8,
+        "actor_parameter_delta_l2": 0.12374366198164902,
+        "metrics": {
+          "eval/walltime": 2.795503616333008,
+          "training/sps": 40.5508918762207,
+          "training/walltime": 12.62610912322998,
+          "training/grad_norm": 0.09970852732658386,
+          "training/params_norm": 8.004799842834473,
+          "eval/episode_reward": 12.811529159545898,
+          "eval/episode_tracking_error": 21.984298706054688,
+          "eval/episode_reward_std": 0.04957723617553711,
+          "eval/episode_tracking_error_std": 1.9454889297485352,
+          "eval/avg_episode_length": 35.0,
+          "eval/std_episode_length": 2.0,
+          "eval/epoch_eval_time": 2.795503616333008,
+          "eval/sps": 357.7172979342257
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 27.62543137697503
+    },
+    {
+      "file": "apg_so_rpy_cpu.json",
+      "sha256": "13f4000f2c015376f8ad8fe9b44286e9317c8058a89c0f68697e9fb0ab94c851",
+      "case": "apg",
+      "dynamics": "so_rpy",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "updates": 4,
+        "rollout_horizon": 16,
+        "num_envs": 8,
+        "actor_parameter_delta_l2": 0.11945597023476516,
+        "metrics": {
+          "eval/walltime": 2.7157206535339355,
+          "training/sps": 34.925010681152344,
+          "training/walltime": 14.659981966018677,
+          "training/grad_norm": 0.36014842987060547,
+          "training/params_norm": 8.001524925231934,
+          "eval/episode_reward": 22.64910125732422,
+          "eval/episode_tracking_error": 43.318687438964844,
+          "eval/episode_reward_std": 1.7638750076293945,
+          "eval/episode_tracking_error_std": 3.9290103912353516,
+          "eval/avg_episode_length": 64.5,
+          "eval/std_episode_length": 6.5,
+          "eval/epoch_eval_time": 2.7157206535339355,
+          "eval/sps": 368.22638539744935
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 29.270357484929264
+    },
+    {
+      "file": "apg_so_rpy_rotor_cpu.json",
+      "sha256": "2f88c55bec2ab12d1f0a2585c518c92cd929e348552eeb2cf942503dbdf307d7",
+      "case": "apg",
+      "dynamics": "so_rpy_rotor",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "updates": 4,
+        "rollout_horizon": 16,
+        "num_envs": 8,
+        "actor_parameter_delta_l2": 0.12126924557369204,
+        "metrics": {
+          "eval/walltime": 2.749695301055908,
+          "training/sps": 29.8757381439209,
+          "training/walltime": 17.137651205062866,
+          "training/grad_norm": 0.23746716976165771,
+          "training/params_norm": 8.003033638000488,
+          "eval/episode_reward": 16.339160919189453,
+          "eval/episode_tracking_error": 30.679847717285156,
+          "eval/episode_reward_std": 0.663569450378418,
+          "eval/episode_tracking_error_std": 3.9423952102661133,
+          "eval/avg_episode_length": 46.5,
+          "eval/std_episode_length": 4.5,
+          "eval/epoch_eval_time": 2.749695301055908,
+          "eval/sps": 363.6766588705268
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 32.44354812102392
+    },
+    {
+      "file": "apg_so_rpy_rotor_drag_cpu.json",
+      "sha256": "2a689b986113391985b81cb8bc6b483361df4065617722a32ac06d90824ee646",
+      "case": "apg",
+      "dynamics": "so_rpy_rotor_drag",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "updates": 4,
+        "rollout_horizon": 16,
+        "num_envs": 8,
+        "actor_parameter_delta_l2": 0.12142504149380043,
+        "metrics": {
+          "eval/walltime": 2.8446719646453857,
+          "training/sps": 28.6236629486084,
+          "training/walltime": 17.887298583984375,
+          "training/grad_norm": 0.1953638643026352,
+          "training/params_norm": 8.003416061401367,
+          "eval/episode_reward": 15.756861686706543,
+          "eval/episode_tracking_error": 31.18490982055664,
+          "eval/episode_reward_std": 0.43541431427001953,
+          "eval/episode_tracking_error_std": 3.7549848556518555,
+          "eval/avg_episode_length": 46.0,
+          "eval/std_episode_length": 4.0,
+          "eval/epoch_eval_time": 2.8446719646453857,
+          "eval/sps": 351.53438161881667
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 33.41966563090682
+    },
+    {
+      "file": "parity_first_principles_cpu.json",
+      "sha256": "e2546e4cb32d15c78dba493ac8c03b401f0cd3f3be592af335453e109127900c",
+      "case": "parity",
+      "dynamics": "first_principles",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "max_abs_error": {
+          "obs": 1.519918441772461e-06,
+          "reward": 0.0,
+          "state": 7.450580596923828e-09
+        },
+        "batch_shape": [
+          8,
+          43
+        ],
+        "loss": 0.04199594259262085,
+        "gradient": 0.015013093128800392,
+        "finite_difference": 0.014983117580413818,
+        "gradient_relative_error": 0.0020006215813028346,
+        "timeout_reset": "passed"
+      },
+      "status": "passed",
+      "elapsed_s": 25.11199394473806
+    },
+    {
+      "file": "parity_so_rpy_cpu.json",
+      "sha256": "fb6a37ef997b0bd8326e72590023d9ef69ec8cd02b06c7a561c32650cfe91e96",
+      "case": "parity",
+      "dynamics": "so_rpy",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "max_abs_error": {
+          "obs": 4.172325134277344e-07,
+          "reward": 0.0,
+          "state": 7.450580596923828e-09
+        },
+        "batch_shape": [
+          8,
+          43
+        ],
+        "loss": 0.17091459035873413,
+        "gradient": 0.1548793613910675,
+        "finite_difference": 0.1548801859219869,
+        "gradient_relative_error": 5.323669483567585e-06,
+        "timeout_reset": "passed"
+      },
+      "status": "passed",
+      "elapsed_s": 25.926523213740438
+    },
+    {
+      "file": "parity_so_rpy_rotor_cpu.json",
+      "sha256": "1a11a551fa26c68dd7462781ded23c9d828c90d535bb50e83e3f66fa741697c0",
+      "case": "parity",
+      "dynamics": "so_rpy_rotor",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "max_abs_error": {
+          "obs": 4.172325134277344e-07,
+          "reward": 0.0,
+          "state": 7.450580596923828e-09
+        },
+        "batch_shape": [
+          8,
+          43
+        ],
+        "loss": 0.08354321122169495,
+        "gradient": 0.056524910032749176,
+        "finite_difference": 0.056474159161249794,
+        "gradient_relative_error": 0.0008986565227907796,
+        "timeout_reset": "passed"
+      },
+      "status": "passed",
+      "elapsed_s": 26.48147816909477
+    },
+    {
+      "file": "parity_so_rpy_rotor_drag_cpu.json",
+      "sha256": "ae4a6ebb9a43c3e929c45ee7e3aeedd8ee0ea9a91cf8686e4027779ecc36e165",
+      "case": "parity",
+      "dynamics": "so_rpy_rotor_drag",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "max_abs_error": {
+          "obs": 4.172325134277344e-07,
+          "reward": 0.0,
+          "state": 0.0
+        },
+        "batch_shape": [
+          8,
+          43
+        ],
+        "loss": 0.07098844647407532,
+        "gradient": 0.041774820536375046,
+        "finite_difference": 0.04172449310620626,
+        "gradient_relative_error": 0.0012061843397517375,
+        "timeout_reset": "passed"
+      },
+      "status": "passed",
+      "elapsed_s": 27.59011513320729
+    },
+    {
+      "file": "ppo_first_principles_cpu.json",
+      "sha256": "06704788a3689b3fe83df1a2a0b6be387e78e720f5ce19d882b65386dc887935",
+      "case": "ppo",
+      "dynamics": "first_principles",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "steps": 2048,
+        "actor_parameter_delta_l2": 0.04717141080961266,
+        "metrics": {
+          "training/sps": 372.9046945151466,
+          "training/walltime": 5.492019891738892,
+          "training/entropy_loss": -0.00019625495770014822,
+          "training/kl_mean": 14.58544921875,
+          "training/learning_rate": 9.999999747378752e-05,
+          "training/policy_dist_max_loc": 1.49614417552948,
+          "training/policy_dist_max_std": 1.9830126762390137,
+          "training/policy_dist_mean_loc": -0.03602021187543869,
+          "training/policy_dist_mean_std": 0.7346693277359009,
+          "training/policy_dist_min_loc": -1.449294090270996,
+          "training/policy_dist_min_std": 0.19153514504432678,
+          "training/policy_loss": 0.0516386404633522,
+          "training/total_loss": 0.875446081161499,
+          "training/v_loss": 0.8240036964416504
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 14.38887248467654
+    },
+    {
+      "file": "ppo_so_rpy_cpu.json",
+      "sha256": "5556f9027d12037ab903d95ecb84c5d7ca8286a3f3bab99042bae7c5156511e4",
+      "case": "ppo",
+      "dynamics": "so_rpy",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "steps": 2048,
+        "actor_parameter_delta_l2": 0.05136485318023587,
+        "metrics": {
+          "training/sps": 368.6988275502618,
+          "training/walltime": 5.554669141769409,
+          "training/entropy_loss": -0.00018569928943179548,
+          "training/kl_mean": 0.8347594738006592,
+          "training/learning_rate": 9.999999747378752e-05,
+          "training/policy_dist_max_loc": 1.665175199508667,
+          "training/policy_dist_max_std": 1.8334472179412842,
+          "training/policy_dist_mean_loc": -0.02420017123222351,
+          "training/policy_dist_mean_std": 0.7249587774276733,
+          "training/policy_dist_min_loc": -1.3145778179168701,
+          "training/policy_dist_min_std": 0.16141562163829803,
+          "training/policy_loss": 0.03582793101668358,
+          "training/total_loss": 0.8476194143295288,
+          "training/v_loss": 0.8119771480560303
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 14.393575157038867
+    },
+    {
+      "file": "ppo_so_rpy_rotor_cpu.json",
+      "sha256": "9408db1f450a1babd9a0e1efe647365e717ea8a555dbd9aff98b0ed4f08adeb8",
+      "case": "ppo",
+      "dynamics": "so_rpy_rotor",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "steps": 2048,
+        "actor_parameter_delta_l2": 0.04836277915466646,
+        "metrics": {
+          "training/sps": 372.4013145042789,
+          "training/walltime": 5.499443531036377,
+          "training/entropy_loss": -0.00018704033573158085,
+          "training/kl_mean": 0.9452751874923706,
+          "training/learning_rate": 9.999999747378752e-05,
+          "training/policy_dist_max_loc": 1.6638208627700806,
+          "training/policy_dist_max_std": 1.8840420246124268,
+          "training/policy_dist_mean_loc": -0.03495196998119354,
+          "training/policy_dist_mean_std": 0.7253628373146057,
+          "training/policy_dist_min_loc": -1.4186680316925049,
+          "training/policy_dist_min_std": 0.19175651669502258,
+          "training/policy_loss": 0.033748410642147064,
+          "training/total_loss": 0.8381088972091675,
+          "training/v_loss": 0.8045474290847778
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 14.693117970135063
+    },
+    {
+      "file": "ppo_so_rpy_rotor_drag_cpu.json",
+      "sha256": "c38830cb7cfe459b67d36de2ab2703f4a3d19bd8ef23c86e4fdede3f75f278e6",
+      "case": "ppo",
+      "dynamics": "so_rpy_rotor_drag",
+      "requested_device": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "steps": 2048,
+        "actor_parameter_delta_l2": 0.04827151911501148,
+        "metrics": {
+          "training/sps": 373.6844041082628,
+          "training/walltime": 5.480560541152954,
+          "training/entropy_loss": -0.0001921025395859033,
+          "training/kl_mean": 0.9477869272232056,
+          "training/learning_rate": 9.999999747378752e-05,
+          "training/policy_dist_max_loc": 1.5530803203582764,
+          "training/policy_dist_max_std": 1.7864519357681274,
+          "training/policy_dist_mean_loc": -0.032743901014328,
+          "training/policy_dist_mean_std": 0.7225120663642883,
+          "training/policy_dist_min_loc": -1.3027992248535156,
+          "training/policy_dist_min_std": 0.20335853099822998,
+          "training/policy_loss": 0.030496392399072647,
+          "training/total_loss": 0.8186175227165222,
+          "training/v_loss": 0.7883132100105286
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 14.303705485071987
+    },
+    {
+      "file": "apg_first_principles_gpu.json",
+      "sha256": "9f52c9c3fcd63c4ad2b270e16139eaf8f7f8cd1b429599ea75151f74cadd158b",
+      "case": "apg",
+      "dynamics": "first_principles",
+      "requested_device": "gpu",
+      "devices": [
+        "cuda:0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "updates": 4,
+        "rollout_horizon": 16,
+        "num_envs": 8,
+        "actor_parameter_delta_l2": 0.1237125839740526,
+        "metrics": {
+          "eval/walltime": 7.718278884887695,
+          "training/sps": 17.03692626953125,
+          "training/walltime": 30.05237078666687,
+          "training/grad_norm": 0.09970308095216751,
+          "training/params_norm": 8.004800796508789,
+          "eval/episode_reward": 12.811519622802734,
+          "eval/episode_tracking_error": 21.984329223632812,
+          "eval/episode_reward_std": 0.0495758056640625,
+          "eval/episode_tracking_error_std": 1.945490837097168,
+          "eval/avg_episode_length": 35.0,
+          "eval/std_episode_length": 2.0,
+          "eval/epoch_eval_time": 7.718278884887695,
+          "eval/sps": 129.56256374176746
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 54.726551433093846
+    },
+    {
+      "file": "parity_first_principles_gpu.json",
+      "sha256": "91d54d3e51811823f30af123071df0e424b5595bdd0289244daffa538cae67d9",
+      "case": "parity",
+      "dynamics": "first_principles",
+      "requested_device": "gpu",
+      "devices": [
+        "cuda:0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "max_abs_error": {
+          "obs": 0.0,
+          "reward": 0.0,
+          "state": 0.0
+        },
+        "batch_shape": [
+          8,
+          43
+        ],
+        "loss": 0.04199594259262085,
+        "gradient": 0.015013093128800392,
+        "finite_difference": 0.014983117580413818,
+        "gradient_relative_error": 0.0020006215813028346,
+        "timeout_reset": "passed"
+      },
+      "status": "passed",
+      "elapsed_s": 49.0946403471753
+    },
+    {
+      "file": "ppo_first_principles_gpu.json",
+      "sha256": "227f7bbd110e2d9ddf2fa2733c7fb133f7b870532bbde12fcca7d54eaaf49a47",
+      "case": "ppo",
+      "dynamics": "first_principles",
+      "requested_device": "gpu",
+      "devices": [
+        "cuda:0"
+      ],
+      "versions": {
+        "crazyflow": "0.3.2",
+        "brax": "0.14.2",
+        "jax": "0.9.2",
+        "jaxlib": "0.9.2",
+        "flax": "0.12.6",
+        "optax": "0.2.8",
+        "mujoco": "3.14.0",
+        "rscope": "0.0.8"
+      },
+      "result": {
+        "steps": 8192,
+        "num_envs": 256,
+        "actor_parameter_delta_l2": 0.026131258761394445,
+        "metrics": {
+          "training/sps": 465.2592480966033,
+          "training/walltime": 17.60738778114319,
+          "training/entropy_loss": -0.00017704642959870398,
+          "training/kl_mean": 197.99984741210938,
+          "training/learning_rate": 9.999999747378752e-05,
+          "training/policy_dist_max_loc": 1.9266760349273682,
+          "training/policy_dist_max_std": 2.5154170989990234,
+          "training/policy_dist_mean_loc": -0.05067969486117363,
+          "training/policy_dist_mean_std": 0.7293452024459839,
+          "training/policy_dist_min_loc": -2.999466896057129,
+          "training/policy_dist_min_std": 0.07062184810638428,
+          "training/policy_loss": 0.24641653895378113,
+          "training/total_loss": 1.1005833148956299,
+          "training/v_loss": 0.8543437719345093
+        },
+        "finite_params": true
+      },
+      "status": "passed",
+      "elapsed_s": 28.550525018945336
+    }
+  ],
+  "auxiliary": {
+    "rscope_roundtrip.json": {
+      "status": "passed",
+      "frames": 64,
+      "envs": 1,
+      "control_dt_s": 0.02,
+      "mocap_error": 0.0,
+      "model_assets": 12,
+      "record_path": "/home/tong/tongworkspace/simulation_dev/mujoco/crazyflow/tmp/brax_probe_20260925/rscope_roundtrip/active_run/2026_09_25-11_01_43.mj_unroll",
+      "native_writer_reader": true,
+      "gui_tested": false,
+      "ssh_tested": false
+    },
+    "sampling_probe.json": {
+      "status": "passed",
+      "samples": 32,
+      "decision_steps": 2,
+      "duration_s": 0.04,
+      "finite_positions": true,
+      "positions": [
+        [
+          [
+            [
+              -1.629838379813009e-07,
+              2.8251147199398474e-08,
+              0.9999680519104004
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              -8.107284884317778e-06,
+              1.6021377859942731e-06,
+              0.9997600317001343
+            ]
+          ]
+        ]
+      ],
+      "elapsed_s": 9.083353391848505,
+      "scope": "Original sampling controller execution; reduced sample count for integration only"
+    }
+  },
+  "scope": "Interface, short native PPO/APG updates, local gradient checks, record roundtrip; not converged policies or Windows/SSH verification."
+}
