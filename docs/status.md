@@ -1,45 +1,59 @@
 # 当前进度
 
-更新时间：2026-09-25。本轮授权：完整实施 P1/P2。功能分支 `implementation/p1-p2`。
+更新时间：2026-09-26。P1/P2 已由用户验收；P3/P4 工程与实验交付完成。
+功能分支：`implementation/p3-p4`。47项最终测试通过，29项正式实验全部完成。
 
-## 当前结论
+## 阶段结果
 
-P2 已完成。八字与随机样条的 PPO/APG 四组完整训练预算共 7602176 次交互；
-四个开发集选中的检查点，在独立进程开发集均 32/32、留出集均 128/128 完成，累计 640/640。
+| 阶段 | 实际完成 | 质量结果 |
+|---|---|---|
+| P1/P2 | 已验收；四组跟踪策略与原证据保留 | 四组均128/128 |
+| P3 | 两任务×三算法×四动力学，共24格；复用4组P2 | 21格达标，3格有效低分 |
+| P4a 优化控制复现 | 每步真实优化；每方法128个原生扰动试次 | 采样MPC128/128；AttitudeMPC117/128，11碰撞 |
+| P4b 竞速学习 | PPO/APG/SHAC各完成声明预算及独立32+128回合 | PPO/APG均128/128；SHAC0/128 |
 
-| 任务 | 方法 | 留出128回合位置 RMSE（米） |
-|---|---|---:|
-| 八字 | PPO | 0.02687929 |
-| 八字 | APG | 0.02574215 |
-| 随机样条 | PPO | 0.00991630 |
-| 随机样条 | APG | 0.00761645 |
+总计29项实验完成、25项达到当前门槛。最终事实入口为
+[实际结果表](verification/p3-p4-results.md)与[逐项校验JSON](verification/p3-p4-results.json)。
+正式训练交互累计41,156,608次（含复用P2），独立开发/留出评测累计4,576试次。
+SHAC竞速初始策略被开发集选中，属于训练质量未达标；最终训练权重、曲线和失败轨迹完整保留。
 
-以上为训练种子0、名义 so_rpy 拟合模型下的轨迹跟踪结果。多种子、四动力学和感知/竞速任务按后续阶段开展。
+## 直接查看
 
-P1 的独立 Pixi、真实飞行与更新、记录、TensorBoard、rscope 正式客户端实现已验证。
-原生控制器 10 秒飞行 RMSE 0.05094 米；正式查看器逐帧播放、图表、暂停/继续和试次切换通过。
-Windows 本机 SSH/SFTP 需要用户已有认证凭据与现场窗口确认，因此任务01保留这一用户验收项。
+在VS Code的RScope Viewer中点击以下目录内的 `.mj_unroll`：
 
-## 当前运行
+```text
+experiments/p4-racing-ppo-first_principles-seed0-v1/independent-heldout/rollouts/
+experiments/p4-racing-apg-first_principles-seed0-v1/independent-heldout/rollouts/
+experiments/p4-racing-shac-first_principles-seed0-v1/independent-heldout/rollouts/
+experiments/p4-racing-attitude-mpc-heldout-v2/rollouts/shard-0/
+experiments/p4-racing-sampling-mpc-heldout-v2/rollouts/shard-0/
+```
 
-四组训练已结束，结果与检查点保存完整；TensorBoard 仍监听 `127.0.0.1:6006`。
-查看运行状态：`pixi run status`；浏览器通过 SSH 转发查看指标，轨迹使用 `scripts/rscope_client.py`。
-测试窗口已关闭，当前发布目录已选择八字 PPO 的 9 个策略时间点，可用上下键比较学习过程。原始模型记录随时可重放。每次新运行使用独立目录和进程身份。
+每文件实际保存4–5个固定/最差试次，所有128试次在对应报告中。
+查看训练结束的SHAC策略使用同运行 `rollouts/step-0000655360/`；留出目录显示开发集选中的策略。
+TensorBoard沿用 `127.0.0.1:6006`；三算法的完成率、门进度、损失/梯度标签已实际读取。
 
-## 证据与问题处理
+## 故障与范围
 
-21 项测试通过，包含真实任务前向/梯度/回合边界、参数重载、完整回合分母、原生记录、
-增量发布与客户端兼容。安装版 rscope 源文件保持原始字节，锁修正只在启动器进程内发生。
-PPO 初期随机数修正后的重跑为 v2；v1 的中断日志保留。
-随机 APG 的最终显示发布报错在完整预算后发生，已校验并恢复收尾，训练和原权重未重复或改写。
+P3随机样条PPO拖曳模型v1与降低学习率v2均发生非有限参数。诊断捕获到接近欧拉角奇异区域后
+角速度达到8.119e26，溢出观测二阶矩与价值损失。v3恢复原学习参数，显式启用数值失败边界，
+异常步计失败并重置，普通步保持原行为；最终4194304次交互、留出128/128、误差0.01311788米。
+旧运行及捕获数据保留，协议差异见[数值诊断](verification/p3-numerical-diagnosis.md)。
 
-- [P1/P2 完整交付](verification/p1-p2-delivery.md)
-- [机器可读结果与校验](verification/p1-p2-results.json)
-- [独立重评的8次新进程证据](verification/p2-independent-evaluation.md)
-- [实际查看器与标量检查](verification/p1-observation-checks.md)
-- [已验证命令与 Windows 操作](runbook.md)
-- [阶段地图](../.scratch/drone-platform/map.md)
-- [规格](../.scratch/drone-platform/spec.md)
+竞速优化早期v1误读扰动配置层级，已停止并作为诊断保留。正式v2使用 `env.disturbances`，
+合并时验证30000..30127每个种子恰好出现一次。P4比较作者固定样条上的闭环控制与过门，
+自由最短时间规划、MID-360导航和多训练种子分别进入后续任务。
 
-下一步先通过已有 SSH 端口转发查看 TensorBoard，并在 Windows 运行客户端确认实际窗口。
-P3 的 SHAC 与四动力学比较尚未开始，本轮保持 P1/P2 范围。
+## 验证与交接
+
+- [完整工程检查和来源](verification/p3-p4-engineering.md)
+- [P3/P4交付记录](verification/p3-p4-delivery.md)、[五种方法实际VS Code交互](verification/p4-editor-verification.json)
+- [P3原矩阵回放](verification/p3-replay-verification.json)、[修复单元回放](verification/p3-recovery-replay-verification.json)
+- [P4全部14份回放](verification/p4-replay-verification.json)、[实际竞速画面](verification/p4-visual-check.json)
+- [阶段地图](../.scratch/drone-platform/map.md)、[实施方案](design/p3-p4-implementation.md)、[运行手册](runbook.md)
+
+`p3-matrix.json`保留初次队列23/24的历史；最终结果表包含v3恢复后的24/24。
+47项测试通过；62个回放文件、308条保存轨迹逐帧还原误差为0，原文件摘要保持一致。
+严格独占资源性能排行及峰值显存测量仍为后续待测项；本轮计时保留共享服务器的实际口径。
+原DSH委派因配额失败，独立ChatGPT审查因浏览器启动失败，均未执行代码；实现、测试及收尾由当前主会话完成。
+下一阶段为P5的MID-360与静态/动态导航。SHAC低分作为具名研究问题保留，已有接口上的独立任务可继续。

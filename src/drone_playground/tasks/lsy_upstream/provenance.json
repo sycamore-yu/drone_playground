@@ -1,0 +1,18 @@
+{
+  "repository": "https://github.com/learnsyslab/lsy_drone_racing",
+  "commit": "b1f5b36adb8e08e8e2adea85de790bd0e0a1d118",
+  "files": [
+    {
+      "path": "race_core.py",
+      "upstream_sha256": "e46859969356110719ef07607e819f46b5b7ce37a595626b237d9de94070c02b"
+    },
+    {
+      "path": "randomize.py",
+      "upstream_sha256": "8f0ee3e91212961f4d51eef9341b332a0712d4bea9f90958103e18452db65253"
+    },
+    {
+      "path": "utils.py",
+      "upstream_sha256": "9cd06128794bd21db86c6b368f3a33d2a04340950cb43b51cde72d117cf55880"
+    }
+  ]
+}

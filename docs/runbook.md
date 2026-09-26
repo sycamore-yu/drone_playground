@@ -4,6 +4,68 @@
 以下命令使用本项目独立 Pixi；若 shell 找不到 Pixi，使用 `/home/tong/.pixi/bin/pixi`。
 开始时进入项目目录，SSH 地址 `SERVER` 使用你平常能连接的服务器地址。
 
+## P3/P4：任务、训练、优化控制
+
+当前任务表在 `.scratch/drone-platform/map.md`，阶段状态在 `docs/status.md`。
+学习方法通过同一个训练入口运行，配置决定方法、任务与动力学。
+
+```bash
+env -u PYTHONPATH pixi run train --config configs/experiments/figure8_shac.json --run-id my-shac-tracking
+env -u PYTHONPATH pixi run train --config configs/experiments/racing_ppo.json --run-id my-racing-ppo
+env -u PYTHONPATH pixi run train --config configs/experiments/racing_apg.json --run-id my-racing-apg
+env -u PYTHONPATH pixi run train --config configs/experiments/racing_shac.json --run-id my-racing-shac
+```
+
+每个运行标识对应一个新目录。已有实验优先直接查看，以上命令会启动新训练。
+`scripts/run_p3_matrix.py` 引用原4个P2结果并完成其它20个单元；
+`scripts/run_p4_learning.py` 负责三个竞速策略和新进程独立重评。两者共用单GPU训练队列锁。
+父队列进程的状态JSON指向真实子运行；子运行 `state.json` 含PID/启动标记、阶段、实际步数和心跳。
+
+优化控制先局部构建 acados 再执行真实闭环：
+
+```bash
+bash scripts/setup_acados.sh
+env -u PYTHONPATH SCIPY_ARRAY_API=1 JAX_PLATFORMS=cpu \
+  .pixi/envs/default/bin/python scripts/evaluate_racing_control.py \
+  --controller attitude_mpc --episodes 32 --split dev --run-id my-attitude-mpc
+
+env -u PYTHONPATH SCIPY_ARRAY_API=1 XLA_PYTHON_CLIENT_PREALLOCATE=false \
+  .pixi/envs/default/bin/python scripts/evaluate_racing_control.py \
+  --controller sampling_mpc --prediction-device gpu --samples 2000 \
+  --episodes 32 --split dev --run-id my-sampling-mpc
+```
+
+`scripts/run_p4_optimization.py --version v2 --workers 4` 每方法4份32试次，
+严格核对互斥种子后合并128试次。已有v2结果请读取而非重复运行。
+预测耗时来自实际求解，首决策编译单列；当前同步评测不把墙钟延迟注入动力学。
+
+竞速原生配置为 Level0：固定门序[1,2,3,4,2]，4个实体门，50Hz控制，最多30秒，
+保留 `env.disturbances` 的动作/外力扰动。三个学习方法共用作者18.75秒参考样条，
+43维状态与未来参考观测；学习回报是具名的参考跟踪配方，成功由真实过门事件判定。
+开发集选模为完成数→平均门进度→误差；固定赛道的128试次是独立扰动种子，不是128条新赛道。
+
+## VS Code 查看阶段结果
+
+在已安装 RScope Viewer 的远程工作区，点击各运行 `independent-heldout/rollouts/` 内的 `.mj_unroll`。
+优化控制合并目录的 `rollouts/shard-0/` 至 `shard-3/` 各自保留独立模型与记录，可用文件夹浏览选择。
+文件内显示实际保存的4–5条轨迹（最差试次与前4重合时不重复），全部32/128回合指标保存在独立报告中。
+训练时间点位于 `rollouts/step-*/`；APG 保存初始和最终策略，周期评估指标另外记录。
+SHAC 还保存 `training-state/update-*.pkl` 完整环境/随机数/优化器状态，恢复一致性已有测试。
+
+P3/P4 纹理、参考线、过门/碰撞指标随轨迹保存；各运行不会自动抢占 `/tmp/rscope/active_run`。
+TensorBoard 沿用下方6006端口转发，选择 `p3-`、`p4-` 运行查看。
+历史 `heldout-v1` 优化运行因扰动配置层级错误中止保留，正式优化结果为 `heldout-v2`。
+修复和证据见 `docs/verification/p3-p4-engineering.md`。
+
+读取并重新校验当前29项结果表，不执行训练：
+
+```bash
+env -u PYTHONPATH SCIPY_ARRAY_API=1 JAX_PLATFORMS=cpu pixi run python scripts/summarize_p3_p4.py
+```
+
+当前完整结果是 `docs/verification/p3-p4-results.json`。P3恢复单元使用v3显式数值失败边界与原学习参数。
+SHAC竞速初始策略被开发集选中；训练结束的策略可在同运行 `rollouts/step-0000655360/` 查看。
+
 ## 现在查看结果
 
 ```bash

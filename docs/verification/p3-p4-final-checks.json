@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "tests": {
+    "passed": 47,
+    "failed": 0,
+    "exit_code": 0,
+    "elapsed_seconds": 220.07,
+    "command": "env -u PYTHONPATH JAX_PLATFORMS=cpu /home/tong/.pixi/bin/pixi run test -q"
+  },
+  "formal_experiments": 29,
+  "quality_passed_experiments": 25,
+  "replay_files": 62,
+  "saved_trajectories": 308,
+  "vscode_methods_checked": 5,
+  "document_check": {
+    "documents": 38,
+    "local_links": 54,
+    "broken": 0
+  },
+  "lint": "ruff check src scripts tests: passed",
+  "diff_check": "git diff --check: passed",
+  "evidence_files": {
+    "p3-p4-results.json": "e21cae0a6ca2db4ec1524f9d18e070c1928641799c30bdd47a0d656e01b21f39",
+    "p3-p4-tests.log": "e3789621364bf6cb3a80ac39a7c774153c955fdb23323360bc7b76c2dde293a9",
+    "p3-p4-replay-acceptance.json": "94806d8030bdee6019ce6a09cb98758addc897e800114a182ee2186706acadbf",
+    "p4-editor-verification.json": "99e946ed843dd58e0e384c072dda24437c1411017dbbc078b935dca56bc1566a"
+  }
+}

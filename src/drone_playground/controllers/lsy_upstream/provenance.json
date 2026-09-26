@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/learnsyslab/lsy_drone_racing",
+  "commit": "b1f5b36adb8e08e8e2adea85de790bd0e0a1d118",
+  "upstream_sha256": "7af3a6ba87fbedcb4315119068d82784221ab23af2b71a7aaed9149f84049afa",
+  "preserved": "Q/R, N=25, SQP, HPIPM, 18.75s spline, both original thrust*4 factors"
+}

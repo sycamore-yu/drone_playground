@@ -1,0 +1,10 @@
+{
+  "algorithm": "apg", "task": "racing", "dynamics": "first_principles",
+  "drone": "cf21B_500", "freq": 50, "seed": 0,
+  "policy_updates": 1024, "num_envs": 16, "horizon_length": 40,
+  "learning_rate": 0.005, "max_grad_norm": 1.0,
+  "normalize_observations": false, "hidden_sizes": [32, 32], "layer_norm": true,
+  "use_schedule": true, "schedule_decay": 0.997,
+  "num_evals": 9, "publish_live": false, "max_wall_seconds": 3600,
+  "source": "Native Brax APG; LSY Level0 reference-tracking-v1 reward and native gate/collision rules; same P2 random APG recipe"
+}

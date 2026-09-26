@@ -1,0 +1,159 @@
+{
+  "rows": [
+    {
+      "num_trials": 128,
+      "completed": 117,
+      "failed": 11,
+      "completion_rate": 0.9140625,
+      "collisions": 11,
+      "collision_rate": 0.0859375,
+      "timeouts": 0,
+      "gates_passed_mean": 4.734375,
+      "rmse_all_mean": 0.06275350320558454,
+      "return_mean": 733.4127167765982,
+      "completion_time_mean_s": 17.10923076923077,
+      "quality_passed": true,
+      "actual_steps": 105105,
+      "course_split": "fixed native LSY Level0; unique independent disturbance seeds",
+      "completion_rule": "all directed gate passages [1,2,3,4,2], no failure",
+      "controller": "attitude_mpc",
+      "configuration_frozen": true,
+      "shards": [
+        {
+          "run_id": "p4-racing-attitude-mpc-heldout-v2-shard0",
+          "seed_start": 30000,
+          "episodes": 32,
+          "report_sha256": "f8d1e68e2bba0890cc164f37b85b7408a1e4dc59f2f41b1be3e28b1ad4685fc7"
+        },
+        {
+          "run_id": "p4-racing-attitude-mpc-heldout-v2-shard1",
+          "seed_start": 30032,
+          "episodes": 32,
+          "report_sha256": "01b9e41ba1bb5cad967c6c61e98a1000623da56d07474d23e798c89522d5f787"
+        },
+        {
+          "run_id": "p4-racing-attitude-mpc-heldout-v2-shard2",
+          "seed_start": 30064,
+          "episodes": 32,
+          "report_sha256": "356f82efcf5950a1a9f96552f0f509503d21702eb33bd6913ae519cd1335f43a"
+        },
+        {
+          "run_id": "p4-racing-attitude-mpc-heldout-v2-shard3",
+          "seed_start": 30096,
+          "episodes": 32,
+          "report_sha256": "6e6e15d0275a7ae19d00f67015d2ad5aea54269fdde27cc4ffb90f9da779670f"
+        }
+      ],
+      "actual_environment_devices": [
+        "TFRT_CPU_0"
+      ],
+      "native_disturbances": {
+        "action": {
+          "fn": "normal",
+          "scale": 0.001
+        },
+        "dynamics": {
+          "fn": "uniform",
+          "kwargs": {
+            "maxval": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "minval": [
+              -0.1,
+              -0.1,
+              -0.1
+            ]
+          }
+        }
+      },
+      "nonzero_solve_status_count": 0,
+      "decision_p50_ms": 14.783413149416447,
+      "decision_p95_ms": 25.408877059817314,
+      "deadline_miss_fraction": 0.12814340491527199,
+      "timing_protocol": "four independent processes on shared server; per-step timings exclude first compile; delays not injected",
+      "source_run_sum_seconds": 3125.9336379645392,
+      "run_id": "p4-racing-attitude-mpc-heldout-v2",
+      "status": "completed"
+    },
+    {
+      "num_trials": 128,
+      "completed": 128,
+      "failed": 0,
+      "completion_rate": 1.0,
+      "collisions": 0,
+      "collision_rate": 0.0,
+      "timeouts": 0,
+      "gates_passed_mean": 5.0,
+      "rmse_all_mean": 0.03362714359030885,
+      "return_mean": 798.5603339555673,
+      "completion_time_mean_s": 17.01390625,
+      "quality_passed": true,
+      "actual_steps": 108889,
+      "course_split": "fixed native LSY Level0; unique independent disturbance seeds",
+      "completion_rule": "all directed gate passages [1,2,3,4,2], no failure",
+      "controller": "sampling_mpc",
+      "configuration_frozen": true,
+      "shards": [
+        {
+          "run_id": "p4-racing-sampling-mpc-heldout-v2-shard0",
+          "seed_start": 30000,
+          "episodes": 32,
+          "report_sha256": "f32c1b922f6e59e94088691d8f6d9df9a0adb12891a1d92d68a8c7e7b8b1f19d"
+        },
+        {
+          "run_id": "p4-racing-sampling-mpc-heldout-v2-shard1",
+          "seed_start": 30032,
+          "episodes": 32,
+          "report_sha256": "e823d73d676763d88f20185182957633d5875ce5bd62ada6500d435e40b3d8be"
+        },
+        {
+          "run_id": "p4-racing-sampling-mpc-heldout-v2-shard2",
+          "seed_start": 30064,
+          "episodes": 32,
+          "report_sha256": "566430c6115e6a043f0a47bc97e294e67715c180eb9b37850ef70cd1c1a1d5eb"
+        },
+        {
+          "run_id": "p4-racing-sampling-mpc-heldout-v2-shard3",
+          "seed_start": 30096,
+          "episodes": 32,
+          "report_sha256": "301866fee6d49218c625cc127cb86409332dc647084f16641345098872480e8b"
+        }
+      ],
+      "actual_environment_devices": [
+        "cuda:0"
+      ],
+      "native_disturbances": {
+        "action": {
+          "fn": "normal",
+          "scale": 0.001
+        },
+        "dynamics": {
+          "fn": "uniform",
+          "kwargs": {
+            "maxval": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "minval": [
+              -0.1,
+              -0.1,
+              -0.1
+            ]
+          }
+        }
+      },
+      "nonzero_solve_status_count": 0,
+      "decision_p50_ms": 2.982606180012226,
+      "decision_p95_ms": 5.68004474043846,
+      "deadline_miss_fraction": 3.673600587776094e-05,
+      "timing_protocol": "four independent processes on shared server; per-step timings exclude first compile; delays not injected",
+      "source_run_sum_seconds": 1917.4013356682844,
+      "run_id": "p4-racing-sampling-mpc-heldout-v2",
+      "status": "completed"
+    }
+  ],
+  "completed": true
+}

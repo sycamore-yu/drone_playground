@@ -30,6 +30,10 @@ drone-playground = "drone_playground.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"drone_playground.tasks.lsy_upstream" = ["assets/*", "level0.toml", "LICENSE", "*.json", "*.patch"]
+"drone_playground.controllers.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
@@ -37,6 +41,10 @@ addopts = "-ra"
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+extend-exclude = [
+    "src/drone_playground/tasks/lsy_upstream",
+    "src/drone_playground/controllers/lsy_upstream",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

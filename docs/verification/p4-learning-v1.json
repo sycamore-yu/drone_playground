@@ -1,0 +1,127 @@
+{
+  "rows": [
+    {
+      "task": "racing",
+      "algorithm": "ppo",
+      "dynamics": "first_principles",
+      "run_id": "p4-racing-ppo-first_principles-seed0-v1",
+      "actual_steps": 4194304,
+      "budget_completed": true,
+      "elapsed_seconds": 222.24953361414373,
+      "checkpoint": "experiments/p4-racing-ppo-first_principles-seed0-v1/checkpoints/step-0004194304.pkl",
+      "checkpoint_sha256": "ac8751511adde0797a690145f9c0b0a44f62d6c2c76914fbc768cf0677060509",
+      "dev": {
+        "completed": 32,
+        "num_trials": 32,
+        "completion_rate": 1.0,
+        "gates_passed_mean": 5.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": 17.098750000000003,
+        "rmse_all_mean": 0.01438639560365118,
+        "quality_passed": true,
+        "parameter_sha256": "d4f4d829734f093940e135a421504d0c880cd4eccaf0e8adb4331ac9a60f54b5",
+        "report": "experiments/p4-racing-ppo-first_principles-seed0-v1/independent-dev/report.json"
+      },
+      "heldout": {
+        "completed": 128,
+        "num_trials": 128,
+        "completion_rate": 1.0,
+        "gates_passed_mean": 5.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": 17.09859375,
+        "rmse_all_mean": 0.014388973882887512,
+        "quality_passed": true,
+        "parameter_sha256": "d4f4d829734f093940e135a421504d0c880cd4eccaf0e8adb4331ac9a60f54b5",
+        "report": "experiments/p4-racing-ppo-first_principles-seed0-v1/independent-heldout/report.json"
+      },
+      "status": "completed",
+      "quality_passed": true
+    },
+    {
+      "task": "racing",
+      "algorithm": "apg",
+      "dynamics": "first_principles",
+      "run_id": "p4-racing-apg-first_principles-seed0-v1",
+      "actual_steps": 655360,
+      "budget_completed": true,
+      "elapsed_seconds": 570.1299692410976,
+      "checkpoint": "experiments/p4-racing-apg-first_principles-seed0-v1/checkpoints/step-0000655360.pkl",
+      "checkpoint_sha256": "cf68cfa7b0528a489b13a0d130661a599edc66efe463f22f33205a532e71d00e",
+      "dev": {
+        "completed": 32,
+        "num_trials": 32,
+        "completion_rate": 1.0,
+        "gates_passed_mean": 5.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": 17.055625,
+        "rmse_all_mean": 0.005013252797652967,
+        "quality_passed": true,
+        "parameter_sha256": "ed263b47c7b428c26d1dc3caf07d172f8a2da0911a34901d0762cf38046d0dfb",
+        "report": "experiments/p4-racing-apg-first_principles-seed0-v1/independent-dev/report.json"
+      },
+      "heldout": {
+        "completed": 128,
+        "num_trials": 128,
+        "completion_rate": 1.0,
+        "gates_passed_mean": 5.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": 17.056718749999998,
+        "rmse_all_mean": 0.004991342782886932,
+        "quality_passed": true,
+        "parameter_sha256": "ed263b47c7b428c26d1dc3caf07d172f8a2da0911a34901d0762cf38046d0dfb",
+        "report": "experiments/p4-racing-apg-first_principles-seed0-v1/independent-heldout/report.json"
+      },
+      "status": "completed",
+      "quality_passed": true
+    },
+    {
+      "task": "racing",
+      "algorithm": "shac",
+      "dynamics": "first_principles",
+      "run_id": "p4-racing-shac-first_principles-seed0-v1",
+      "actual_steps": 655360,
+      "budget_completed": true,
+      "elapsed_seconds": 238.766696697101,
+      "checkpoint": "experiments/p4-racing-shac-first_principles-seed0-v1/checkpoints/step-0000000000.pkl",
+      "checkpoint_sha256": "7be3008c98b864602b9a65dab2cb3210f5bc12dc1138d14887fd58d5b6036f2f",
+      "dev": {
+        "completed": 0,
+        "num_trials": 32,
+        "completion_rate": 0.0,
+        "gates_passed_mean": 0.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": null,
+        "rmse_all_mean": 1.7211162205785513,
+        "quality_passed": false,
+        "parameter_sha256": "5ee45add39ec6c859ad85e536bbf25756cddefeb70d33e2ee65e42b2eb37fae1",
+        "report": "experiments/p4-racing-shac-first_principles-seed0-v1/independent-dev/report.json"
+      },
+      "heldout": {
+        "completed": 0,
+        "num_trials": 128,
+        "completion_rate": 0.0,
+        "gates_passed_mean": 0.0,
+        "collisions": 0,
+        "timeouts": 0,
+        "completion_time_mean_s": null,
+        "rmse_all_mean": 1.7614494124427438,
+        "quality_passed": false,
+        "parameter_sha256": "5ee45add39ec6c859ad85e536bbf25756cddefeb70d33e2ee65e42b2eb37fae1",
+        "report": "experiments/p4-racing-shac-first_principles-seed0-v1/independent-heldout/report.json"
+      },
+      "status": "completed",
+      "quality_passed": false
+    }
+  ],
+  "completed": true,
+  "expected_cells": 3,
+  "training_seeds": [
+    0
+  ],
+  "updated_at": "2026-09-26T07:24:21.904417+00:00"
+}

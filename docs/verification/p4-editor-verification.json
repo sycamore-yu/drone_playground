@@ -1,0 +1,114 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "run": "p4-racing-ppo-first_principles-seed0-v1",
+      "custom_editor": true,
+      "frames": 1500,
+      "saved_episodes": 5,
+      "play": true,
+      "seek": true,
+      "episode_switch": true,
+      "metrics": true,
+      "model_hash": "bfe34c63a98d26834a54d8b5618dc19d6ad581d167d4388d15cd5b94d14f4710"
+    },
+    {
+      "run": "p4-racing-apg-first_principles-seed0-v1",
+      "custom_editor": true,
+      "frames": 1500,
+      "saved_episodes": 5,
+      "play": true,
+      "seek": true,
+      "episode_switch": true,
+      "metrics": true,
+      "model_hash": "03cd79b08571be13a355a786449c2f530c69d188788942726619ddf74d54e15a"
+    },
+    {
+      "run": "p4-racing-shac-first_principles-seed0-v1",
+      "custom_editor": true,
+      "frames": 1500,
+      "saved_episodes": 5,
+      "play": true,
+      "seek": true,
+      "episode_switch": true,
+      "metrics": true,
+      "model_hash": "62a48f050a095197840fbce6380b576053e20238002974f8cf732448a9878027"
+    },
+    {
+      "run": "p4-racing-attitude-mpc-heldout-v2",
+      "custom_editor": true,
+      "frames": 1500,
+      "saved_episodes": 5,
+      "play": true,
+      "seek": true,
+      "episode_switch": true,
+      "metrics": true,
+      "model_hash": "12dfff9dc2c0978df7db3ec2d0d96800c5d334cbacc2b38d16063039b509ecda"
+    },
+    {
+      "run": "p4-racing-sampling-mpc-heldout-v2",
+      "custom_editor": true,
+      "frames": 1500,
+      "saved_episodes": 5,
+      "play": true,
+      "seek": true,
+      "episode_switch": true,
+      "metrics": true,
+      "model_hash": "bb880f1b619aa74c9190cb81094d7a2e8c8c5b0cc0e426d2779b53886e77b3ca"
+    }
+  ],
+  "driver": {
+    "token": "1790408417571",
+    "passed": true,
+    "extension_path": "/home/tong/tongworkspace/opensource_projects/rscope-vscode/tmp/vscode-extensions/drone-playground.rscope-viewer-0.1.0",
+    "results": [
+      {
+        "run": "p4-racing-ppo-first_principles-seed0-v1",
+        "default_custom_editor": true,
+        "python_pid": 3496184,
+        "closed_document_released_process": true
+      },
+      {
+        "run": "p4-racing-apg-first_principles-seed0-v1",
+        "default_custom_editor": true,
+        "python_pid": 3496781,
+        "closed_document_released_process": true
+      },
+      {
+        "run": "p4-racing-shac-first_principles-seed0-v1",
+        "default_custom_editor": true,
+        "python_pid": 3497005,
+        "closed_document_released_process": true
+      },
+      {
+        "run": "p4-racing-attitude-mpc-heldout-v2",
+        "default_custom_editor": true,
+        "python_pid": 3497332,
+        "closed_document_released_process": true
+      },
+      {
+        "run": "p4-racing-sampling-mpc-heldout-v2",
+        "default_custom_editor": true,
+        "python_pid": 3497679,
+        "closed_document_released_process": true
+      }
+    ]
+  },
+  "platform": "Linux VS Code 1.136.1 on DISPLAY=:10.0",
+  "extension_version": "RScope Viewer 0.1.0",
+  "source_report_sha256": "5b150f23556aa962ddb71380fbb9cae5a61669ecf067a53e165ce70a27e9c667",
+  "command_log": "tmp/p3p4/vscode-p4-course-check.log",
+  "command_exit_code": 0,
+  "screenshots": [
+    {
+      "path": "docs/verification/images/p4-vscode-apg.png",
+      "sha256": "3287dbef5af89d5466feb77b4d9439551bbd046fff1f81a3b06baf1a071ec739"
+    },
+    {
+      "path": "docs/verification/images/p4-vscode-attitude-mpc.png",
+      "sha256": "c8ff2c888263b346d24c3c3b1abf4aafa123d1e689a9a24cb30a360d5f068c4a"
+    }
+  ],
+  "isolated_profile": "/tmp/rscope-p3p4-vscode-profile",
+  "source_files_modified": false
+}

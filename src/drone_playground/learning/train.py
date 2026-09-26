@@ -1,4 +1,4 @@
-"""Run unmodified Brax PPO/APG on a common Crazyflow task.
+"""Run native Brax PPO/APG and the local SHAC extension on Crazyflow tasks.
 
 PPO has native snapshot callbacks. Brax 0.14.2 APG supplies progress metrics
 but no parameter callback: initial/final snapshots are saved without modifying
@@ -53,7 +53,7 @@ def network_factory(config: dict):
             mean_kernel_init_fn=jax.nn.initializers.orthogonal,
             mean_kernel_init_kwargs={"scale": 0.01},
         )
-    if config["algorithm"] == "apg":
+    if config["algorithm"] in {"apg", "shac"}:
         return functools.partial(
             apg_networks.make_apg_networks,
             hidden_layer_sizes=sizes,
@@ -72,7 +72,7 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
     metadata = {
         "step": int(step),
         "config": config,
-        "observation_size": 43,
+        "observation_size": config.get("observation_size", 43),
         "action_size": 4,
         "checkpoint_kind": "inference-parameters",
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -80,7 +80,11 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
         "continuation": (
             "PPO warm start only; optimizer/RNG are reinitialized"
             if config["algorithm"] == "ppo"
-            else "APG inference only; native trainer has no restore hook"
+            else (
+                "SHAC inference; full continuation is stored in training-state/"
+                if config["algorithm"] == "shac"
+                else "APG inference only; native trainer has no restore hook"
+            )
         ),
     }
     save_report(path.with_suffix(".json"), metadata)
@@ -120,7 +124,14 @@ def make_task(config: dict, device: str, split: str = "train", count: int = 32) 
     seeds = {"train": 10000, "dev": 20000, "heldout": 30000}
     if split not in seeds:
         raise ValueError(f"Unknown dataset split: {split}")
-    return TrackingEnv(
+    task_class = TrackingEnv
+    task_options = {"numerical_guard": config.get("numerical_guard", False)}
+    if config.get("task") == "racing":
+        from drone_playground.tasks.racing import RacingEnv
+
+        task_class = RacingEnv
+        task_options = {}
+    return task_class(
         task=config.get("task", "figure8"),
         dynamics=config.get("dynamics", "so_rpy"),
         drone=config.get("drone"),
@@ -128,7 +139,23 @@ def make_task(config: dict, device: str, split: str = "train", count: int = 32) 
         device=device,
         reference_seed=seeds[split],
         reference_count=config.get("reference_count", 256) if split == "train" else count,
+        **task_options,
     )
+
+
+def development_score(task: str, report: dict) -> tuple:
+    """Select only on development data; race progress breaks incomplete ties."""
+    if task == "racing":
+        return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
+    return (report["completed"], -report["rmse_all_mean"])
+
+
+def make_evaluator(env, make_policy, seeds):
+    if env.task == "racing":
+        from drone_playground.evaluation.racing import RaceEvaluator
+
+        return RaceEvaluator(env, make_policy, seeds)
+    return PolicyEvaluator(env, make_policy, seeds)
 
 
 def train(
@@ -141,18 +168,30 @@ def train(
 
     config = dict(config)
     algorithm = config["algorithm"]
-    if algorithm not in {"ppo", "apg"}:
-        raise ValueError("P1/P2 implements the native PPO and APG trainers")
+    if algorithm not in {"ppo", "apg", "shac"}:
+        raise ValueError("Supported algorithms are PPO, APG and SHAC")
     config.update(
         device=device,
-        snapshot_schedule="per-epoch" if algorithm == "ppo" else "initial-and-final",
-        trainer="brax.training.agents." + algorithm,
+        snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
+        trainer=(
+            "drone_playground.learning.shac"
+            if algorithm == "shac"
+            else "brax.training.agents." + algorithm
+        ),
         reset_contract="fresh-same-step-with-terminal-observation",
-        timeout_contract="native Brax GAE masks truncated transition; time_out bootstrap disabled",
-        task_protocol="crazyflow-figure8-v1"
-        if config.get("task") == "figure8"
-        else "lsy-random-spline-v1",
+        timeout_contract=(
+            "SHAC pre-reset terminal-value bootstrap; true termination masks value"
+            if algorithm == "shac"
+            else "native Brax GAE masks truncated transition; time_out bootstrap disabled"
+        ),
+        task_protocol={
+            "figure8": "crazyflow-figure8-v1",
+            "random": "lsy-random-spline-v1",
+            "racing": "lsy-level0-reference-tracking-v1",
+        }[config["task"]],
     )
+    if config.get("numerical_guard", False):
+        config["task_protocol"] += "+finite-square-v1"
     source_root = Path(crazyflow.__file__).resolve().parents[1]
     revision = subprocess.check_output(
         ["git", "-C", str(source_root), "rev-parse", "HEAD"], text=True
@@ -165,7 +204,8 @@ def train(
         "working_tree_patch_sha256": hashlib.sha256(dependency_patch).hexdigest(),
     }
     config["actual_devices"] = [str(device) for device in jax.devices()]
-    rec = RunRecorder(root, run_id, config, task_id="02" if algorithm == "ppo" else "03")
+    task_id = "07" if config["task"] == "racing" else ("04" if algorithm == "shac" else "05")
+    rec = RunRecorder(root, run_id, config, task_id=task_id)
     (rec.path / "crazyflow.patch").write_bytes(dependency_patch)
     console = capture_console(rec.path / "console.log")
     console.__enter__()
@@ -180,6 +220,8 @@ def train(
     try:
         rec.phase("initializing", step=0)
         env = make_task(config, device)
+        if config["task"] == "racing":
+            save_report(rec.path / "native-task-config.json", env.config.to_dict())
         evaluation_env = make_task(config, device, "dev", 32)
         dev_seeds = list(range(20000, 20032))
         save_report(
@@ -188,7 +230,11 @@ def train(
                 "split": "dev",
                 "reset_seeds": dev_seeds,
                 "reference_seeds": dev_seeds if env.task == "random" else [20000],
-                "quality_rule": "at least29/32 complete, completed mean RMSE <=0.25m",
+                "quality_rule": (
+                    "at least29/32 complete all native gate passes"
+                    if env.task == "racing"
+                    else "at least29/32 complete, completed mean RMSE <=0.25m"
+                ),
             },
         )
 
@@ -202,7 +248,7 @@ def train(
             rec.phase("evaluation", step=step)
             checkpoint = save_policy(rec.path / "checkpoints", params, config, step)
             if evaluator is None:
-                evaluator = PolicyEvaluator(evaluation_env, make_policy, dev_seeds)
+                evaluator = make_evaluator(evaluation_env, make_policy, dev_seeds)
             t = time.monotonic()
             report, trace = evaluator.run(params)
             report.update(step=step, checkpoint=str(checkpoint.relative_to(rec.path)), split="dev")
@@ -217,13 +263,21 @@ def train(
                     "eval/quality_passed": float(report["quality_passed"]),
                 },
             )
+            if env.task == "racing":
+                rec.log(
+                    step,
+                    {
+                        "eval/gates_passed_mean": report.get("gates_passed_mean", 0.0),
+                        "eval/collision_rate": report.get("collision_rate", 0.0),
+                    },
+                )
             t = time.monotonic()
             replay = select_replays(trace, report)
             replay["metrics"]["training_step"] = np.full_like(replay["reward"], step)
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
             export_rollout(evaluation_env.sim, replay_directory, replay)
             rec.log(step, {"record/export_seconds": time.monotonic() - t})
-            score = (report["completed"], -report["rmse_all_mean"])
+            score = development_score(env.task, report)
             if score > best_score:
                 best_score, best = score, report
                 save_report(
@@ -342,7 +396,7 @@ def train(
             actual_steps = max(
                 int(p.stem.split("-")[-1]) for p in (rec.path / "checkpoints").glob("step-*.pkl")
             )
-        else:
+        elif algorithm == "apg":
             epochs = max(config.get("num_evals", 9) - 1, 1)
             if config["policy_updates"] % epochs:
                 raise ValueError("APG policy_updates must be divisible by evaluation epochs")
@@ -385,6 +439,18 @@ def train(
             actual_steps = config["policy_updates"] * config["num_envs"] * config["horizon_length"]
             snapshot(actual_steps, maker, params)
 
+        else:
+            from drone_playground.learning import shac
+
+            maker, params, metrics = shac.train(
+                env,
+                config,
+                policy_params_fn=snapshot,
+                progress_fn=progress,
+                state_directory=rec.path / "training-state",
+            )
+            actual_steps = metrics["actual_steps"]
+
         delta = float(
             np.sqrt(
                 sum(
@@ -406,6 +472,11 @@ def train(
             "engineer_passed": True,
             "full_budget_completed": True,
             "live_publications": live_publications,
+            "trainer_metrics": {
+                k: float(v)
+                for k, v in metrics.items()
+                if np.asarray(v).size == 1 and np.isfinite(float(v))
+            },
         }
         rec.finish("completed", **result)
         return result

@@ -121,6 +121,29 @@ def _validated_trace(trace: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
 def _model_bundle(sim: Any, directory: Path) -> tuple[Path, dict[str, bytes]]:
     """Serialize a replayable XML and copy referenced mesh assets beside it."""
     xml = ET.fromstring(sim.spec.to_xml())
+    # Attached MjSpecs can emit repeated empty root defaults (e.g. main:0 for
+    # the drone and each gate). Only empty, direct-child duplicates are redundant.
+    # Keep all actual default properties; reject ambiguous populated duplicates.
+    defaults = xml.find("default")
+    if defaults is not None:
+        seen = {}
+        for node in list(defaults):
+            name = node.get("class") if node.tag == "default" else None
+            if name is None:
+                continue
+            if name not in seen:
+                seen[name] = node
+                continue
+            previous = seen[name]
+            empty = len(node) == 0 and set(node.attrib) == {"class"}
+            previous_empty = len(previous) == 0 and set(previous.attrib) == {"class"}
+            if empty:
+                defaults.remove(node)
+            elif previous_empty:
+                defaults.remove(previous)
+                seen[name] = node
+            else:
+                raise ValueError(f"Conflicting nonempty attached defaults: {name}")
     dummy = xml.find(".//body[@name='_dummy']")
     if dummy is not None and dummy.find("inertial") is None:
         body = sim.mj_model.body("_dummy")
@@ -156,6 +179,26 @@ def _model_bundle(sim: Any, directory: Path) -> tuple[Path, dict[str, bytes]]:
             payload = source.read_bytes()
         relative = Path("assets") / f"mesh_{index:03d}_{Path(source_name).name}"
         mesh.set("file", relative.as_posix())
+        _atomic_write_bytes(directory / relative, payload)
+        model_assets[relative.as_posix()] = payload
+
+    texturedir_value = getattr(sim.spec.compiler, "texturedir", "")
+    texturedir = Path(str(texturedir_value)) if texturedir_value else Path(".")
+    if compiler is not None:
+        compiler.set("texturedir", "")
+    for index, texture in enumerate(xml.findall("./asset/texture")):
+        source_name = texture.get("file")
+        if not source_name:
+            continue
+        if source_name in raw_assets:
+            payload = raw_assets[source_name]
+        else:
+            source = Path(source_name)
+            if not source.is_absolute():
+                source = texturedir / source
+            payload = source.read_bytes()
+        relative = Path("assets") / f"texture_{index:03d}_{Path(source_name).name}"
+        texture.set("file", relative.as_posix())
         _atomic_write_bytes(directory / relative, payload)
         model_assets[relative.as_posix()] = payload
 

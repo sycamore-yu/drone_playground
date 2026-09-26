@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "reader_sha256": "a63d0508f643d2746b95bb4e730dbe9ebc8c9d6b2ccd89a04fe3aa5ea9009162",
+  "file_count": 2,
+  "saved_cases": 10,
+  "records": [
+    {
+      "file": "experiments/p3-random-ppo-so_rpy_rotor_drag-seed0-v3/independent-dev/rollouts/2026_09_26-07_41_39.mj_unroll",
+      "frames": 750,
+      "saved_cases": 5,
+      "model_bodies": 7,
+      "max_position_error": 0.0,
+      "metadata_sha256": "2869714b88ac3487487baf6083b50cdae691fb8bb38f13c75da6d6d926d381f7",
+      "unchanged_files": {
+        "2026_09_26-07_41_39.mj_unroll": "62740526aaefb51ae09514a840e5c83cb9bf4fa8e2dae20468a6a33eb0605931",
+        "assets/mesh_000_cf21B_pcb.stl": "c0e482f67216a5bbd6c300f67b4f8341c361d6040403f52df38a8adc07b0fbcc",
+        "assets/mesh_001_cf21B_motors.stl": "2ffb768ba07ee8c985d803875f3fc2b5df1b00eefc72598f4d4479163cb8add8",
+        "assets/mesh_002_cf21B_PropL.stl": "2e07cfb793f847ca30954f7359b3dc4e78ebbd6ab72520d0ec82f2873224acd5",
+        "assets/mesh_003_cf21B_PropR.stl": "4436152ce78f23800730331fcf51be122b70389fe4960c64b52f455b226da6b5",
+        "assets/mesh_004_cf21B_prop-guards.stl": "00c326d186bc6f1270cdd2804bcb286905a57e22b28006a3f5fb0a4b160db587",
+        "assets/mesh_005_cf21B_connectors.stl": "083e1566b60f13c551ea1c1a2cb1ebc033cbaf64efbacad12aa64642289db36e",
+        "assets/mesh_006_cf21B_connector-pins.stl": "d6496d3549957a224460fe86d60d92b046f94d223f42774f5d8b9af5cb816ec6",
+        "assets/mesh_007_cf21B_battery.stl": "19d41c3511ebb27e541c704f3aecd15f68562ddabb94630f72259cf290c3eae7",
+        "assets/mesh_008_cf21B_battery-holder.stl": "9c8da9ac3cd8b6dee50b239a2ad7fb5d7e460f1fcd09da6ee9d4a9049a2011f9",
+        "assets/mesh_009_cf_led-diffuser.stl": "714c843b85678d904c5ba9e7aff0f5c87981ced8129ed5beb8d876a9fc2373e1",
+        "assets/mesh_010_cf21B_fused.stl": "1f87245640b6e7430e526e596a37543c4ce79e5fdfabb1d06d6c17b4260514dc",
+        "rscope_meta.pkl": "2869714b88ac3487487baf6083b50cdae691fb8bb38f13c75da6d6d926d381f7",
+        "scene.xml": "70f10b19115f7f06befd3ea840fb6a70496be3942f8dfcc309eb67607545e4ef"
+      }
+    },
+    {
+      "file": "experiments/p3-random-ppo-so_rpy_rotor_drag-seed0-v3/independent-heldout/rollouts/2026_09_26-07_41_52.mj_unroll",
+      "frames": 750,
+      "saved_cases": 5,
+      "model_bodies": 7,
+      "max_position_error": 0.0,
+      "metadata_sha256": "46d29793672b8b8f5410565d4abd390cd862b8aadc73f3de77829f3e73c02c35",
+      "unchanged_files": {
+        "2026_09_26-07_41_52.mj_unroll": "0c516f90043e41821dfea0a7a57841ff99ff775082548804d12c306abea61031",
+        "assets/mesh_000_cf21B_pcb.stl": "c0e482f67216a5bbd6c300f67b4f8341c361d6040403f52df38a8adc07b0fbcc",
+        "assets/mesh_001_cf21B_motors.stl": "2ffb768ba07ee8c985d803875f3fc2b5df1b00eefc72598f4d4479163cb8add8",
+        "assets/mesh_002_cf21B_PropL.stl": "2e07cfb793f847ca30954f7359b3dc4e78ebbd6ab72520d0ec82f2873224acd5",
+        "assets/mesh_003_cf21B_PropR.stl": "4436152ce78f23800730331fcf51be122b70389fe4960c64b52f455b226da6b5",
+        "assets/mesh_004_cf21B_prop-guards.stl": "00c326d186bc6f1270cdd2804bcb286905a57e22b28006a3f5fb0a4b160db587",
+        "assets/mesh_005_cf21B_connectors.stl": "083e1566b60f13c551ea1c1a2cb1ebc033cbaf64efbacad12aa64642289db36e",
+        "assets/mesh_006_cf21B_connector-pins.stl": "d6496d3549957a224460fe86d60d92b046f94d223f42774f5d8b9af5cb816ec6",
+        "assets/mesh_007_cf21B_battery.stl": "19d41c3511ebb27e541c704f3aecd15f68562ddabb94630f72259cf290c3eae7",
+        "assets/mesh_008_cf21B_battery-holder.stl": "9c8da9ac3cd8b6dee50b239a2ad7fb5d7e460f1fcd09da6ee9d4a9049a2011f9",
+        "assets/mesh_009_cf_led-diffuser.stl": "714c843b85678d904c5ba9e7aff0f5c87981ced8129ed5beb8d876a9fc2373e1",
+        "assets/mesh_010_cf21B_fused.stl": "1f87245640b6e7430e526e596a37543c4ce79e5fdfabb1d06d6c17b4260514dc",
+        "rscope_meta.pkl": "46d29793672b8b8f5410565d4abd390cd862b8aadc73f3de77829f3e73c02c35",
+        "scene.xml": "70f10b19115f7f06befd3ea840fb6a70496be3942f8dfcc309eb67607545e4ef"
+      }
+    }
+  ]
+}

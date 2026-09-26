@@ -29,3 +29,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## P3/P4 增补
+
+`tasks/lsy_upstream/` 保存同一 LSY 提交的 `race_core.py`、`randomize.py`、`utils.py`、
+Level 0 配置和门/障碍资产。`controllers/lsy_upstream/` 保存其 `attitude_mpc.py` 与 Controller。
+两个目录均包含原始 LICENSE、来源提交、原文件 SHA256 和最小兼容差异文件。
+兼容修改限于 Crazyflow 参数导入和独立 acados 生成目录，优化矩阵、时域和原始推力系数保留。
+
+`controllers/sampling.py` 基于上述 Crazyflow 提交的 `examples/control/sampling.py`
+精英均值采样控制算法。保留候选噪声、精英均值更新、暖启动和推力估计器；任务参考和杆状障碍
+由 LSY 赛道提供，采样数作为明确运行参数。它的身份是采样 MPC，不标称论文完整 MPPI/iCEM 复现。
+
+`learning/shac.py` 是基于 SHAC 论文目标的独立 JAX 实现，数学依据为
+Xu et al., Accelerated Policy Learning with Parallel Differentiable Simulation (ICLR 2022)，
+官方算法参考 https://github.com/NVlabs/DiffRL 。复用 Brax 网络、动作分布和归一化，
+不复制该仓库的 PyTorch 实现，也不将其作为运行依赖。
+
+acados v0.5.1、HPIPM、BLASFEO、qpOASES 与模板渲染器通过本项目局部构建脚本获取，
+各自许可证保留在下载树中；其二进制和 Python 附加依赖位于忽略的 `tmp/`，未纳入本仓库发布。

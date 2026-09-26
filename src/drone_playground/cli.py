@@ -71,11 +71,10 @@ def main(argv=None) -> None:
         result = run_demo(ROOT, args.run_id, args.duration, args.device)
     elif args.command == "evaluate":
         from drone_playground.evaluation.tracking import (
-            PolicyEvaluator,
             save_report,
             select_replays,
         )
-        from drone_playground.learning.train import load_policy, make_task
+        from drone_playground.learning.train import load_policy, make_evaluator, make_task
         from drone_playground.runs.rscope_io import export_rollout
 
         if args.output.exists():
@@ -85,7 +84,7 @@ def main(argv=None) -> None:
         env = make_task(meta["config"], args.device, args.split, args.episodes)
         try:
             offset = 20000 if args.split == "dev" else 30000
-            evaluator = PolicyEvaluator(env, maker, list(range(offset, offset + args.episodes)))
+            evaluator = make_evaluator(env, maker, list(range(offset, offset + args.episodes)))
             result, trace = evaluator.run(params)
             result.update(
                 split=args.split,

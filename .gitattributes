@@ -1,0 +1,5 @@
+# Preserve unified-diff context markers and byte-identical pinned upstream data.
+src/drone_playground/controllers/lsy_upstream/compatibility.patch -whitespace
+src/drone_playground/tasks/lsy_upstream/compatibility.patch -whitespace
+src/drone_playground/tasks/lsy_upstream/assets/obstacle.xml -whitespace
+src/drone_playground/tasks/lsy_upstream/level0.toml -whitespace

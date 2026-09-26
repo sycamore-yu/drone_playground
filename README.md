@@ -1,8 +1,9 @@
 # Drone Playground
 
 基于 Crazyflow 的无人机学习与优化控制研究平台。首版使用 Crazyflie，训练统一使用
-Brax，轨迹查看统一使用 rscope。P1 服务端运行链已实现；P2 已完成八字与随机样条的 PPO/APG
-训练及成功检查点。Windows 端 SSH 认证与本机窗口确认作为单独的客户端验收项保留。
+Brax，轨迹查看统一使用 rscope。P1/P2 已获用户验收；P3/P4 完成24格跟踪实验、
+三算法竞速训练与两种真实优化控制的独立评测，29项实验中25项达到当前门槛。
+PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
 
 ## 从这里开始
 
@@ -14,6 +15,7 @@ Brax，轨迹查看统一使用 rscope。P1 服务端运行链已实现；P2 已
 - [运行与远程查看](docs/runbook.md)
 - [智能体执行与交接](docs/agents/workflow.md)
 - [来源及复用清单](docs/research/references.md)
+- [P3/P4 完整结果与检查点](docs/verification/p3-p4-results.md)
 
 ## 项目位置
 
@@ -36,5 +38,6 @@ Brax，轨迹查看统一使用 rscope。P1 服务端运行链已实现；P2 已
 [独立评测](docs/verification/p2-independent-evaluation.md)，观察链证据见
 [P1 观察验收](docs/verification/p1-observation-checks.md)。
 
-当前 P2 只评估所记录的名义 Crazyflie 拟合动力学、状态与参考轨迹观测、训练种子 0。
-四模型/多种子、SHAC、竞速及感知导航分别属于后续阶段。
+当前结果覆盖四种动力学、状态与参考轨迹观测、训练种子0，以及原生扰动下的固定赛道。
+三种学习方法和两种优化控制均已接通。感知导航、多训练种子和导航规划器扩展进入P5/P6，
+可复算结果与数值故障修正范围见完整报告。

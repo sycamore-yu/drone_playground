@@ -1,0 +1,40 @@
+--- upstream/race_core.py
++++ local/race_core.py
+@@ -31,7 +31,7 @@
+ import jax.numpy as jp
+ import mujoco
+ import numpy as np
+-from crazyflow.drones import load_params as load_hardware_params
++from .compat import load_hardware_params
+ from crazyflow.sim import Sim
+ from crazyflow.sim.pipeline import append_fn, insert_fn_before
+ from crazyflow.sim.sim import seed_sim, sync_sim2mjx, use_box_collision
+@@ -40,7 +40,7 @@
+ from gymnasium import spaces
+ from scipy.spatial.transform import Rotation as R
+ 
+-from lsy_drone_racing.envs.randomize import (
++from .randomize import (
+     build_full_track_randomization_fn,
+     randomize_drone_inertia_fn,
+     randomize_drone_mass_fn,
+@@ -50,7 +50,7 @@
+     randomize_gate_rpy_fn,
+     randomize_obstacle_pos_fn,
+ )
+-from lsy_drone_racing.envs.utils import gate_passed, load_gate_order, load_track
++from .utils import gate_passed, load_gate_order, load_track
+ 
+ if TYPE_CHECKING:
+     from crazyflow.sim.data import SimData
+--- upstream/randomize.py
++++ local/randomize.py
+@@ -18,7 +18,7 @@
+ if TYPE_CHECKING:
+     from crazyflow.sim.data import SimData
+ 
+-    from lsy_drone_racing.envs.race_core import EnvData
++    from .race_core import EnvData
+ 
+ 
+ def randomize_drone_pos_fn(

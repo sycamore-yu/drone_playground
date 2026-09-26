@@ -1,0 +1,40 @@
+✨ Pixi task (test): python -m pytest -q
+...............................................                          [100%]
+=============================== warnings summary ===============================
+tests/test_checkpoint.py::CheckpointTests::test_normal_policy_uses_configured_state_independent_initial_std
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/tmp/p3p4/optimization/python-deps/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+    prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/tmp/p3p4/optimization/python-deps/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/tmp/p3p4/optimization/python-deps/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+tests/test_optimization.py::OptimizationTests::test_actual_acados_solve_preserves_native_problem
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/tmp/p3p4/optimization/python-deps/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+tests/test_racing.py: 4 warnings
+tests/test_shac.py: 6 warnings
+  /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/optax/_src/linear_algebra.py:44: DeprecationWarning: optax.global_norm is deprecated in favor of optax.tree.norm
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+47 passed, 25 warnings in 220.07s (0:03:40)

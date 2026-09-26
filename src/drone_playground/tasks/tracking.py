@@ -22,6 +22,11 @@ from flax import struct
 from scipy.interpolate import CubicSpline
 
 
+def numerically_valid_observation(observation: jax.Array) -> jax.Array:
+    """Require representable finite second moments, not just finite scalar entries."""
+    return jnp.all(jnp.isfinite(observation)) & jnp.isfinite(jnp.sum(observation**2))
+
+
 def random_trajectory(seed: int, duration: float = 15.0, freq: int = 50) -> np.ndarray:
     """Build the author's ten-knot trajectory using a private NumPy RNG."""
     takeoff = np.array([-1.5, 1.0, 0.07])
@@ -56,6 +61,7 @@ class TrackingEnv(Env):
         device: str = "cpu",
         reference_seed: int = 10000,
         reference_count: int = 256,
+        numerical_guard: bool = False,
     ):
         if task not in {"figure8", "random"}:
             raise ValueError(f"Unknown tracking task: {task}")
@@ -64,6 +70,7 @@ class TrackingEnv(Env):
         if reference_count < 1:
             raise ValueError("reference_count must be positive")
         self.task, self.dynamics, self.freq = task, dynamics, freq
+        self.numerical_guard = numerical_guard
         self.drone = drone or ("cf2x_L250" if task == "figure8" else "cf21B_500")
         self.duration = 10.0 if task == "figure8" else 15.0
         self.episode_length = round(self.duration * freq)
@@ -171,6 +178,8 @@ class TrackingEnv(Env):
                 "failure",
             )
         }
+        if self.numerical_guard:
+            metrics["numerical_failure"] = zero
         return State(
             pipeline_state=data,
             obs=self.observation(data),
@@ -189,6 +198,19 @@ class TrackingEnv(Env):
         sim_data = F.attitude_control(data.sim_data, physical[None, None])
         sim_data = self.step_fn(sim_data, self.substeps)
         data = data.replace(sim_data=sim_data)
+        numerical_failure = jnp.array(False)
+        if self.numerical_guard:
+            numerical_failure = ~numerically_valid_observation(self.observation(data))
+            # A diverged integrator state is a failed trial. Retain the last valid
+            # physical pose for terminal recording, and reset before another action.
+            # Healthy transitions pass through unchanged; no physical limits are relaxed.
+            states = jax.tree.map(
+                lambda new, old: jnp.where(numerical_failure, jax.lax.stop_gradient(old), new),
+                sim_data.states,
+                state.pipeline_state.sim_data.states,
+            )
+            sim_data = sim_data.replace(states=states)
+            data = data.replace(sim_data=sim_data)
         index = jnp.clip(self.index(sim_data), 0, self.episode_length - 1)
         goal = self.trajectories[data.reference_id, index]
         pos = sim_data.states.pos
@@ -201,7 +223,7 @@ class TrackingEnv(Env):
             )
         obs = self.observation(data)
         # Preserve physical termination and explicitly surface numerical invalidity.
-        terminated = terminated | ~jnp.all(jnp.isfinite(obs))
+        terminated = terminated | ~jnp.all(jnp.isfinite(obs)) | numerical_failure
         reward = FigureEightEnv._reward(terminated[None], pos, goal)[0]
         error = jnp.linalg.norm(pos[0, 0] - goal)
         metrics = {
@@ -212,6 +234,8 @@ class TrackingEnv(Env):
             "physical_thrust": physical[3],
             "failure": terminated.astype(jnp.float32),
         }
+        if self.numerical_guard:
+            metrics["numerical_failure"] = numerical_failure.astype(jnp.float32)
         return state.replace(
             pipeline_state=data,
             obs=obs,

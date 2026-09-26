@@ -1,0 +1,65 @@
+--- upstream/attitude_mpc.py
++++ local/attitude_mpc.py
+@@ -11,17 +11,19 @@
+ 
+ from typing import TYPE_CHECKING
+ 
++from pathlib import Path
++
+ import numpy as np
+ import scipy
+ from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+-from crazyflow.drones import load_params as load_hardware_params
+-from crazyflow.dynamics.core import load_params as load_dynamics_params
++from drone_playground.tasks.lsy_upstream.compat import load_hardware_params
++from crazyflow.dynamics.core import load_fn_params as load_dynamics_params
+ from crazyflow.dynamics.so_rpy import dynamics, symbolic_dynamics_euler
+ from crazyflow.dynamics.utils.rotation import ang_vel2rpy_rates
+ from scipy.interpolate import CubicSpline
+ from scipy.spatial.transform import Rotation as R
+ 
+-from lsy_drone_racing.control import Controller
++from .controller import Controller
+ 
+ if TYPE_CHECKING:
+     from numpy.typing import NDArray
+@@ -52,7 +54,7 @@
+ 
+ 
+ def create_ocp_solver(
+-    Tf: float, N: int, parameters: dict, verbose: bool = False
++    Tf: float, N: int, parameters: dict, verbose: bool = False, export_directory: str = "c_generated_code"
+ ) -> tuple[AcadosOcpSolver, AcadosOcp]:
+     """Creates an acados Optimal Control Problem and Solver."""
+     ocp = AcadosOcp()
+@@ -154,9 +156,11 @@
+     # set prediction horizon
+     ocp.solver_options.tf = Tf
+ 
++    ocp.code_export_directory = str(Path(export_directory).resolve())
++    Path(ocp.code_export_directory).mkdir(parents=True, exist_ok=True)
+     acados_ocp_solver = AcadosOcpSolver(
+         ocp,
+-        json_file="c_generated_code/lsy_example_mpc.json",
++        json_file=str(Path(ocp.code_export_directory) / "lsy_example_mpc.json"),
+         verbose=verbose,
+         build=True,
+         generate=True,
+@@ -217,7 +221,7 @@
+         self.drone_params["thrust_min"] = 4 * thrust_params["thrust_min"]
+         self.drone_params["thrust_max"] = 4 * thrust_params["thrust_max"]
+         self._acados_ocp_solver, self._ocp = create_ocp_solver(
+-            self._T_HORIZON, self._N, self.drone_params
++            self._T_HORIZON, self._N, self.drone_params, export_directory=config.acados_directory
+         )
+         self._nx = self._ocp.model.x.rows()
+         self._nu = self._ocp.model.u.rows()
+@@ -279,7 +283,7 @@
+         self._acados_ocp_solver.set(self._N, "y_ref", yref_e)
+ 
+         # Solving problem and getting first input
+-        self._acados_ocp_solver.solve()
++        self.last_status = self._acados_ocp_solver.solve()
+         u0 = self._acados_ocp_solver.get(0, "u")
+ 
+         return u0
