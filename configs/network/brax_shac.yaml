@@ -1,0 +1,6 @@
+name: brax_shac
+normalize_observations: false
+hidden_sizes:
+- 64
+- 64
+layer_norm: true

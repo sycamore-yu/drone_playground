@@ -3,7 +3,7 @@
 Crazyflow 以依赖调用，使用其原生任务函数、控制与动力学。当前提交
 `36f584d114d9d331f0cee0fe4b9066f821c0fbfd`，许可为 MIT。
 
-`tasks/tracking.py` 的随机参考构造及初态来自 learnsyslab/lsy_drone_racing
+`policies/planning.py` 的随机参考构造及 `tasks/tracking.py` 的初态来自 learnsyslab/lsy_drone_racing
 `control/train_rl.py::RandTrajEnv`，提交 `b1f5b36adb8e08e8e2adea85de790bd0e0a1d118`。
 复用其 10 个构造点、前三点、平移尺度、三次样条及起飞导数；随机数改为每次运行私有的种子。
 当前原始源码的全局随机数与旧 reset 签名通过本项目适配，任务时序和物理含义保留。
@@ -48,3 +48,17 @@ Xu et al., Accelerated Policy Learning with Parallel Differentiable Simulation (
 
 acados v0.5.1、HPIPM、BLASFEO、qpOASES 与模板渲染器通过本项目局部构建脚本获取，
 各自许可证保留在下载树中；其二进制和 Python 附加依赖位于忽略的 `tmp/`，未纳入本仓库发布。
+
+## Learning on the Fly
+
+原仓库 https://github.com/uzh-rpg/learning_on_the_fly 固定为
+`cba6e5370773ace8a08107f02810eecabf16c793`，作为Git子模块保存在
+`third_party/learning_on_the_fly`。原始GPLv3许可证、作者、配置、CSV与全部来源文件保留。
+该子模块原始文件保持未修改。
+
+`learning/lotf_bptt.py` 的损失、时间展开、随机数和Adam更新逻辑改编自该源码的
+`lotf/algos/bptt.py`，属于GPLv3来源的集成代码；`dynamics/gradients.py` 按其自定义JVP
+定义实现，并记录现代JAX的PRNG零切向量兼容修改。模型、控制器、MLP、任务和归一化
+直接调用原仓库实现。原子模块及其衍生部分的许可证信息不由其它上游的MIT声明覆盖。
+
+本地研究集成沿用当前权限；外部发布/打包不在本轮授权中。

@@ -1,8 +1,9 @@
 # 当前进度
 
-更新时间：2026-09-26。P1/P2 已由用户验收；P3/P4 工程与实验交付完成。
-当前分支：`implementation/p3-p4`；本轮为架构文档更新。
-历史验收：47项最终测试通过，29项正式实验全部完成；本轮未重跑训练或代码测试。
+更新时间：2026-09-27。原训练时间戳为2026-09-26 UTC。P1/P2已由用户验收；P3/P4及本轮可组合架构/LOTF交付完成。
+当前分支：`implementation/composable-lotf`；基准`bd14468`。
+本轮迁移前47项基线、五模块回归与LOTF上游对照已完成；最终79项测试、2个子测试通过，
+命令、日志和统计见[最终检查](verification/composable-lotf-final-checks.json)。
 
 ## 当前工作
 
@@ -10,8 +11,26 @@
 控制器合并跟踪与飞控内环；策略包含轨迹规划；动力学包含电机；训练配置收敛为四类。
 LOTF范围明确为高保真前向＋简化反向＋原生BPTT，在线残差学习和策略交替更新列后续扩展。
 按 [模块地图](../.scratch/composable-flight/map.md) 协同实现，最终交付悬停与八字的训练结果。
-当前完成的是文档和范围对齐，Hydra集成、生产代码迁移、LOTF适配及新训练均待实施。
+五个模块工作单均已解决。LOTF原始源码作为固定子模块保存在`third_party/learning_on_the_fly`，
+悬停600万、八字2250万次训练交互均完成，各保存9个初始/中间/最终策略；开发和留出评测在独立进程执行。
+实际计划与账本见 [实施计划](../.scratch/composable-flight/implementation.md)。
 参考证据在 [开源编排比较](research/composable-platform-references.md)。
+
+| 当前交付任务 | 开发集完整回合 | 留出集完整回合 | 留出全程位置RMSE | 留出最后一秒RMSE |
+|---|---:|---:|---:|---:|
+| LOTF悬停，3秒 | 32/32 | 128/128 | 0.424420米 | 0.076966米 |
+| LOTF八字，5秒 | 32/32 | 128/128 | 0.184752米 | 0.164008米 |
+
+悬停全程含随机初态的收敛过程。最终复核另跑两组各128留出，参数摘要和逐回合RMSE与原报告完全一致。
+共同交付见[训练结果与模型](verification/composable-lotf-delivery.md)；
+GPU续训的4.59e-6最大参数差及CPU逐元素一致的不同验证范围见[恢复核验](verification/composable-lotf-resume-check.json)。
+
+当前可直接在RScope Viewer打开：
+
+```text
+experiments/lotf-hybrid-hover-seed0-v1/independent-heldout/rollouts/
+experiments/lotf-hybrid-tracking-seed0-v1/independent-heldout/rollouts/
+```
 
 ## 阶段结果
 
@@ -66,5 +85,6 @@ P3随机样条PPO拖曳模型v1与降低学习率v2均发生非有限参数。�
 47项测试通过；62个回放文件、308条保存轨迹逐帧还原误差为0，原文件摘要保持一致。
 严格独占资源性能排行及峰值显存测量仍为后续待测项；本轮计时保留共享服务器的实际口径。
 原DSH委派因配额失败，独立ChatGPT审查因浏览器启动失败，均未执行代码；实现、测试及收尾由当前主会话完成。
-接下来审阅本轮写入的可组合规格并形成具体实施计划；模块实现与LOTF训练之后继续P5感知导航。
+本轮结束后无LOTF正式训练等待完成；已保存结果可直接回放和重评。
+后续按总体P5/P6推进感知导航、多训练种子及统一性能口径；LOTF在线适应属于另立范围。
 SHAC历史低分按用户判断暂时保留为后续研究项，当前不扩大调参任务。

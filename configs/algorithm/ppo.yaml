@@ -1,0 +1,11 @@
+name: ppo
+unroll_length: 16
+batch_size: 64
+num_minibatches: 16
+num_updates_per_batch: 8
+learning_rate: 0.0008
+discounting: 0.92
+gae_lambda: 0.94
+clipping_epsilon: 0.2
+entropy_cost: 0.007
+max_grad_norm: 1.0

@@ -262,6 +262,12 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
 
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
+    identity = getattr(sim, "component_identity", None)
+    if identity is not None:
+        _atomic_write_bytes(
+            directory / "components.json",
+            (json.dumps(identity, ensure_ascii=False, indent=2) + "\n").encode(),
+        )
     xml_path, model_assets = _model_bundle(sim, directory)
     native_trace, obs, reward = _native_rollout(sim, trace)
 
@@ -299,6 +305,9 @@ def _publication_files(directory: Path) -> list[Path]:
     xml = directory / "scene.xml"
     if xml.is_file():
         files.append(xml)
+    identity = directory / "components.json"
+    if identity.is_file():
+        files.append(identity)
     assets = directory / "assets"
     if assets.is_dir():
         files.extend(sorted(path for path in assets.rglob("*") if path.is_file()))

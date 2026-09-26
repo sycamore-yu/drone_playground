@@ -106,8 +106,11 @@ def main():
         h = row["heldout"]
         time = h.get("completion_time_mean_s")
         time_text = f"{time:.4f}" if time is not None else "—"
-        state_text = ("初始策略被开发集选中，训练质量未达标" if row["initial_policy_selected"]
-                      else ("达标" if row["quality_passed"] else "有效低分"))
+        state_text = (
+            "初始策略被开发集选中，训练质量未达标"
+            if row["initial_policy_selected"]
+            else ("达标" if row["quality_passed"] else "有效低分")
+        )
         lines.append(
             f"| {row['algorithm'].upper()} | {row['actual_steps']:,} | {h['completed']}/128 | {time_text} | {h['rmse_all_mean']:.6f} | {state_text} |"
         )
@@ -133,8 +136,10 @@ def main():
                 f"- `{row['run_id']}`：`{row['checkpoint']}`；回放在同运行的 `independent-heldout/rollouts/`。"
             ]
             if row["initial_policy_selected"]:
-                lines += [f"  训练结束策略另见同运行 `checkpoints/step-{row['actual_steps']:010d}.pkl`，"
-                          f"对应回放 `rollouts/step-{row['actual_steps']:010d}/`；保留开发集原选模结果。"]
+                lines += [
+                    f"  训练结束策略另见同运行 `checkpoints/step-{row['actual_steps']:010d}.pkl`，"
+                    f"对应回放 `rollouts/step-{row['actual_steps']:010d}/`；保留开发集原选模结果。"
+                ]
     for row in controllers:
         if row["experiment_completed"]:
             lines += [

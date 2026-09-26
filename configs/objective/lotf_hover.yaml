@@ -1,0 +1,4 @@
+name: lotf_hover
+scale: 1.0
+reward_sharpness: 3.0
+action_penalty_weight: 0.5

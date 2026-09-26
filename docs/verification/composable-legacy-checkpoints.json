@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "run": "p2-figure8-ppo-seed0-v2",
+      "checkpoint": "experiments/p2-figure8-ppo-seed0-v2/checkpoints/step-0001310720.pkl",
+      "completed": 32,
+      "trials": 32,
+      "max_per_trial_rmse_difference_m": 1.930769575470004e-09,
+      "checkpoint_sha256": "1a58835b49c0242ef94e4cebd283b771a09380a6901a1a771a15d6d7fa9665e7",
+      "parameter_sha256": "2eadc9c5e3ddc4d066833a685eb382dc8f2ecd1859d84916dffa8894a884ac56",
+      "process_id": 4168202,
+      "report": "experiments/composable-legacy-p2-figure8-ppo-seed0-v2/report.json"
+    },
+    {
+      "run": "p2-figure8-apg-seed0-v1",
+      "checkpoint": "experiments/p2-figure8-apg-seed0-v1/checkpoints/step-0000655360.pkl",
+      "completed": 32,
+      "trials": 32,
+      "max_per_trial_rmse_difference_m": 2.183502139513349e-09,
+      "checkpoint_sha256": "a4f3382c65a629c01fc788e3c4d8aa7c2d9d7c0f774d9d7a173a754ed933d6db",
+      "parameter_sha256": "93824a48885feb436b66c738ba7db537a418555362cb2c0ea1ab2d033d7a3fe4",
+      "process_id": 4168947,
+      "report": "experiments/composable-legacy-p2-figure8-apg-seed0-v1/report.json"
+    }
+  ]
+}

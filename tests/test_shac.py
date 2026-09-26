@@ -96,7 +96,8 @@ class SHACTests(unittest.TestCase):
         self.module()
         from brax.training.acme import running_statistics, specs
 
-        from drone_playground.learning.train import load_policy, network_factory, save_policy
+        from drone_playground.learning.networks import network_factory
+        from drone_playground.runs.checkpoints import load_policy, save_policy
 
         config = dict(algorithm="shac", hidden_sizes=[16, 16], normalize_observations=False)
         net = network_factory(config)(43, 4)
@@ -109,7 +110,7 @@ class SHACTests(unittest.TestCase):
             maker, loaded, meta = load_policy(path)
             a, _ = maker(loaded, deterministic=True)(jnp.zeros(43), jax.random.PRNGKey(0))
             self.assertTrue(np.isfinite(a).all())
-            self.assertEqual(meta["config"]["algorithm"], "shac")
+            self.assertEqual(meta["config"]["algorithm"]["name"], "shac")
 
     def test_full_state_resume_matches_continuous_updates(self):
         m = self.module()

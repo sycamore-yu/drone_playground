@@ -1,0 +1,6 @@
+name: neural
+output: attitude_thrust
+planning:
+  _target_: drone_playground.policies.planning.TrajectoryPlan
+  name: ${task.reference}
+  amplitude: 1.0

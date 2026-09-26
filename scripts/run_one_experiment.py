@@ -12,7 +12,7 @@ from run_p3_matrix import ROOT, atomic_json, run_command
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True)
+    parser.add_argument("--experiment", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--warm-start")
     args = parser.parse_args()
@@ -20,8 +20,10 @@ def main():
     folder.mkdir(exist_ok=True)
     lock = (ROOT / "experiments/campaign-p3-seed0/queue.lock").open("a")
     fcntl.flock(lock, fcntl.LOCK_EX)
-    config_path = ROOT / args.config
-    config = json.loads(config_path.read_text())
+    from drone_playground.composition import compose_config
+    from drone_playground.runs.legacy import checkpoint_config
+
+    config = compose_config(args.experiment)
     directory = ROOT / "experiments" / args.run_id
     if not (directory / "result.json").exists():
         if directory.exists():
@@ -31,8 +33,8 @@ def main():
             "-m",
             "drone_playground.cli",
             "train",
-            "--config",
-            str(config_path),
+            "--experiment",
+            args.experiment,
             "--run-id",
             args.run_id,
             "--device",
@@ -49,20 +51,24 @@ def main():
     best = json.loads((directory / "checkpoints/best.json").read_text())
     checkpoint = directory / "checkpoints" / best["path"]
     meta = json.loads(checkpoint.with_suffix(".json").read_text())
-    if any(meta["config"].get(k) != v for k, v in config.items()):
+    saved = checkpoint_config(meta["config"])
+    if any(
+        saved.get(k) != config.get(k)
+        for k in ("dynamics", "task", "network", "algorithm", "objective")
+    ):
         raise ValueError("The requested recipe differs from the existing checkpoint config")
     before = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
     row = dict(
         run_id=args.run_id,
-        task=config["task"],
-        algorithm=config["algorithm"],
-        dynamics=config["dynamics"],
+        task=config["task"]["name"],
+        algorithm=config["algorithm"]["name"],
+        dynamics=config["dynamics"]["forward"],
         actual_steps=result["actual_steps"],
         budget_completed=True,
         checkpoint=str(checkpoint.relative_to(ROOT)),
         checkpoint_sha256=before,
         elapsed_seconds=result["elapsed_seconds"],
-        recipe=args.config,
+        recipe=args.experiment,
     )
     for split, count in [("dev", 32), ("heldout", 128)]:
         target = directory / f"independent-{split}"

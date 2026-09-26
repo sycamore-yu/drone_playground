@@ -7,7 +7,6 @@ its optimizer loop. This distinction is recorded in each run configuration.
 
 from __future__ import annotations
 
-import functools
 import hashlib
 import json
 import subprocess
@@ -20,127 +19,21 @@ import crazyflow  # noqa: F401
 import jax
 import jax.numpy as jnp
 import numpy as np
-from brax.io import model
-from brax.training import networks, types
+from brax.training import networks
 from brax.training.acme import running_statistics, specs
 from brax.training.agents.apg import networks as apg_networks
 from brax.training.agents.apg import train as apg_train
-from brax.training.agents.ppo import networks as ppo_networks
 from brax.training.agents.ppo import train as ppo_train
-from flax import linen
 
+from drone_playground.composition import build_environment, native_training_config
+from drone_playground.evaluation.execution import make_evaluator
 from drone_playground.evaluation.tracking import (
-    PolicyEvaluator,
     save_report,
     select_replays,
-    tree_digest,
 )
-from drone_playground.tasks.tracking import TrackingEnv, wrap_for_training
-
-
-def network_factory(config: dict):
-    sizes = tuple(config.get("hidden_sizes", [64, 64]))
-    if config["algorithm"] == "ppo":
-        return functools.partial(
-            ppo_networks.make_ppo_networks,
-            policy_hidden_layer_sizes=sizes,
-            value_hidden_layer_sizes=sizes,
-            activation=linen.elu,
-            init_noise_std=config.get("init_noise_std", 0.367879),
-            distribution_type=config.get("distribution_type", "tanh_normal"),
-            noise_std_type="log",
-            state_dependent_std=False,
-            mean_kernel_init_fn=jax.nn.initializers.orthogonal,
-            mean_kernel_init_kwargs={"scale": 0.01},
-        )
-    if config["algorithm"] in {"apg", "shac"}:
-        return functools.partial(
-            apg_networks.make_apg_networks,
-            hidden_layer_sizes=sizes,
-            activation=linen.elu,
-            layer_norm=config.get("layer_norm", True),
-        )
-    raise ValueError(f"Unsupported algorithm: {config['algorithm']}")
-
-
-def save_policy(directory: Path, params, config: dict, step: int) -> Path:
-    directory.mkdir(parents=True, exist_ok=True)
-    path = directory / f"step-{int(step):010d}.pkl"
-    temp = path.with_suffix(".tmp")
-    model.save_params(str(temp), jax.tree.map(np.asarray, params))
-    temp.replace(path)
-    metadata = {
-        "step": int(step),
-        "config": config,
-        "observation_size": config.get("observation_size", 43),
-        "action_size": 4,
-        "checkpoint_kind": "inference-parameters",
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "parameter_sha256": tree_digest(params),
-        "continuation": (
-            "PPO warm start only; optimizer/RNG are reinitialized"
-            if config["algorithm"] == "ppo"
-            else (
-                "SHAC inference; full continuation is stored in training-state/"
-                if config["algorithm"] == "shac"
-                else "APG inference only; native trainer has no restore hook"
-            )
-        ),
-    }
-    save_report(path.with_suffix(".json"), metadata)
-    return path
-
-
-def load_policy(path: str | Path):
-    """Load a locally trusted Brax checkpoint and verify its sidecar hash."""
-    path = Path(path).resolve()
-    metadata = json.loads(path.with_suffix(".json").read_text())
-    if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["sha256"]:
-        raise ValueError("Checkpoint digest does not match its metadata")
-    config = metadata["config"]
-    preprocess = (
-        running_statistics.normalize
-        if config.get("normalize_observations", False)
-        else types.identity_observation_preprocessor
-    )
-    net = network_factory(config)(
-        metadata["observation_size"], metadata["action_size"], preprocess_observations_fn=preprocess
-    )
-    maker = (
-        ppo_networks.make_inference_fn
-        if config["algorithm"] == "ppo"
-        else apg_networks.make_inference_fn
-    )
-    # Preserve dtype metadata such as Brax's float64 NumPy std_eps scalar.
-    # JAX places the arrays when the policy is compiled; eagerly casting every
-    # leaf would change the checkpoint's content hash under default float32 mode.
-    params = model.load_params(str(path))
-    if tree_digest(params) != metadata["parameter_sha256"]:
-        raise ValueError("Loaded parameter content changed")
-    return maker(net), params, metadata
-
-
-def make_task(config: dict, device: str, split: str = "train", count: int = 32) -> TrackingEnv:
-    seeds = {"train": 10000, "dev": 20000, "heldout": 30000}
-    if split not in seeds:
-        raise ValueError(f"Unknown dataset split: {split}")
-    task_class = TrackingEnv
-    task_options = {"numerical_guard": config.get("numerical_guard", False)}
-    if config.get("task") == "racing":
-        from drone_playground.tasks.racing import RacingEnv
-
-        task_class = RacingEnv
-        task_options = {}
-    return task_class(
-        task=config.get("task", "figure8"),
-        dynamics=config.get("dynamics", "so_rpy"),
-        drone=config.get("drone"),
-        freq=config.get("freq", 50),
-        device=device,
-        reference_seed=seeds[split],
-        reference_count=config.get("reference_count", 256) if split == "train" else count,
-        **task_options,
-    )
+from drone_playground.learning.networks import network_factory
+from drone_playground.runs.checkpoints import load_policy, save_policy
+from drone_playground.tasks.tracking import wrap_for_training
 
 
 def development_score(task: str, report: dict) -> tuple:
@@ -148,14 +41,6 @@ def development_score(task: str, report: dict) -> tuple:
     if task == "racing":
         return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
     return (report["completed"], -report["rmse_all_mean"])
-
-
-def make_evaluator(env, make_policy, seeds):
-    if env.task == "racing":
-        from drone_playground.evaluation.racing import RaceEvaluator
-
-        return RaceEvaluator(env, make_policy, seeds)
-    return PolicyEvaluator(env, make_policy, seeds)
 
 
 def train(
@@ -205,7 +90,13 @@ def train(
     }
     config["actual_devices"] = [str(device) for device in jax.devices()]
     task_id = "07" if config["task"] == "racing" else ("04" if algorithm == "shac" else "05")
-    rec = RunRecorder(root, run_id, config, task_id=task_id)
+    resolved = dict(config["components"])
+    resolved["provenance"] = {
+        "crazyflow_code": config["crazyflow_code"],
+        "trainer": config["trainer"],
+        "actual_devices": config["actual_devices"],
+    }
+    rec = RunRecorder(root, run_id, resolved, task_id=task_id)
     (rec.path / "crazyflow.patch").write_bytes(dependency_patch)
     console = capture_console(rec.path / "console.log")
     console.__enter__()
@@ -219,10 +110,10 @@ def train(
     initial_params = None
     try:
         rec.phase("initializing", step=0)
-        env = make_task(config, device)
+        env = build_environment(config["components"], device)
         if config["task"] == "racing":
             save_report(rec.path / "native-task-config.json", env.config.to_dict())
-        evaluation_env = make_task(config, device, "dev", 32)
+        evaluation_env = build_environment(config["components"], device, "dev", 32)
         dev_seeds = list(range(20000, 20032))
         save_report(
             rec.path / "eval" / "dev-cases.json",
@@ -351,6 +242,7 @@ def train(
             if algorithm != "ppo":
                 raise ValueError("Native APG does not expose a restore hook")
             _, restore, previous = load_policy(warm_start)
+            previous_native = native_training_config(previous["config"])
             for key in (
                 "algorithm",
                 "task",
@@ -359,7 +251,7 @@ def train(
                 "normalize_observations",
                 "distribution_type",
             ):
-                if config.get(key) != previous["config"].get(key):
+                if config.get(key) != previous_native.get(key):
                     raise ValueError(f"Warm-start configuration differs: {key}")
 
         rec.phase("compiling", step=0)
@@ -448,6 +340,7 @@ def train(
                 policy_params_fn=snapshot,
                 progress_fn=progress,
                 state_directory=rec.path / "training-state",
+                restore_state=Path(config["resume"]) if config.get("resume") else None,
             )
             actual_steps = metrics["actual_steps"]
 

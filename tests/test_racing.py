@@ -95,7 +95,9 @@ class RacingTests(unittest.TestCase):
         self.assertFalse(
             passed(after.at[1].set(0.3), before.at[1].set(0.3), origin, quat, False, (0.45, 0.45))
         )
-        self.assertEqual(m.load_config().env.track.gate_order, [1, 2, 3, 4, 2])
+        from drone_playground.tasks.scenes import load_lsy_config
+
+        self.assertEqual(load_lsy_config().env.track.gate_order, [1, 2, 3, 4, 2])
 
     def test_real_scene_batch_step_and_gradient(self):
         env = self.env()

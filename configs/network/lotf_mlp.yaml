@@ -1,0 +1,7 @@
+name: lotf_mlp
+hidden_sizes:
+- 512
+- 512
+initial_scale: 0.01
+normalize_observations: min_max
+activation: relu

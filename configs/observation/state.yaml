@@ -1,0 +1,4 @@
+_target_: drone_playground.tasks.observations.TrackingObservation
+name: state
+n_samples: 0
+interval: 0.1

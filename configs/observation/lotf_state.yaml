@@ -1,0 +1,3 @@
+name: lotf_state
+normalization: ${network.normalize_observations}
+action_history: true

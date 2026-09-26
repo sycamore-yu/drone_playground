@@ -1,12 +1,12 @@
 # 03：前向动力学与反向规则
 
 Type: task
-Status: planned
+Status: resolved
 Blocked by: 01
-Engineering: not-started
-Experiment: not-started
-Quality: not-started
-Owner: unassigned
+Engineering: passed
+Experiment: completed
+Quality: passed
+Owner: current-chat
 
 ## 模块职责
 
@@ -22,3 +22,15 @@ Crazyflow四模型继续原生复用；加入固定版本LOTF高保真模型与�
 ## 共同交付
 
 与BPTT连接并完成悬停/八字训练。新模型的可微性及策略结果分别报告。
+
+## Comments
+
+2026-09-26：用户确认高保真前向＋简化反向、固定经验气动保留、学习残差关闭，沿固定上游实现。
+
+## Answer
+
+Crazyflow四模型已迁移为注入对象；LOTF高保真及简化前向、解析代理及直接导数按配置选择。
+上游固定子模块保持原文件；前向6步状态、原任务动作延迟和完整p/R/v/命令雅可比分别对照。
+现代JAX随机键切向量采用float0；直接导数的零水平速度奇异点保留并明确适用范围。
+LOTF原机型0.192kg、电机时间常数0.0245秒；正式两任务均在此高保真模型完成训练与独立评测。
+来源及验证见[共同交付](../../../docs/verification/composable-lotf-delivery.md)。

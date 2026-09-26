@@ -1,0 +1,49 @@
+{
+  "checked_at": "2026-09-26T16:29:42.347197+00:00",
+  "base_commit": "bd144685f44626847f3d5007e6219c507fca615a",
+  "branch": "implementation/composable-lotf",
+  "tests": {
+    "passed": 79,
+    "subtests_passed": 2,
+    "warnings": 11,
+    "seconds": 377.1,
+    "exit_code": 0,
+    "log": "docs/verification/composable-lotf-tests.log",
+    "sha256": "c04f1fc0b8715b7ac1fa0a5c058f54b88e41cfd2cf51530f2278f1061085b601"
+  },
+  "lint_passed": true,
+  "format_passed": true,
+  "pixi_frozen_install": true,
+  "hydra_config_print": true,
+  "markdown_files_checked": 24,
+  "local_links_checked": 90,
+  "broken_links": [],
+  "resolved_module_issues": [
+    ".scratch/composable-flight/issues/01-composition.md",
+    ".scratch/composable-flight/issues/02-policy-control.md",
+    ".scratch/composable-flight/issues/03-dynamics-gradients.md",
+    ".scratch/composable-flight/issues/04-training.md",
+    ".scratch/composable-flight/issues/05-task-evaluation.md"
+  ],
+  "source_submodule": "cba6e5370773ace8a08107f02810eecabf16c793",
+  "source_submodule_clean": true,
+  "primary_training_interactions": 28500000,
+  "primary_independent_episodes": 320,
+  "original_replays": {
+    "file_count": 22,
+    "saved_cases": 103,
+    "max_position_error": 0.0
+  },
+  "extra_replays": {
+    "file_count": 3,
+    "saved_cases": 14,
+    "max_position_error": 0.0
+  },
+  "post_review_evaluation": "composable-lotf-review-evaluation.json",
+  "gpu_resume": "composable-lotf-resume-check.json",
+  "external_review": {
+    "completed": false,
+    "reason": "Existing worker browser never claimed invocation; preserved conversation and one wake attempt produced no independent review."
+  },
+  "complete": true
+}

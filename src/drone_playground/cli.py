@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import subprocess
@@ -16,12 +17,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Crazyflow 无人机训练、评测与记录")
     commands = parser.add_subparsers(dest="command", required=True)
-    train = commands.add_parser("train", help="调用原生 Brax 完整训练")
-    train.add_argument("--config", type=Path, required=True)
+    train = commands.add_parser("train", help="通过组合配方运行完整训练")
+    train.add_argument("--experiment", required=True)
     train.add_argument("--run-id", required=True)
     train.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
     train.add_argument("--warm-start", type=Path)
-    train.add_argument("--set", action="append", default=[], metavar="KEY=JSON")
+    train.add_argument("--set", action="append", default=[], metavar="GROUP.KEY=VALUE")
     demo = commands.add_parser("demo", help="运行原生控制器完整飞行")
     demo.add_argument("--run-id", required=True)
     demo.add_argument("--duration", type=float, default=10.0)
@@ -56,32 +57,36 @@ def main(argv=None) -> None:
     if hasattr(args, "device"):
         _set_device(args.device)
     if args.command == "train":
-        from drone_playground.learning.train import train
+        from drone_playground.composition import compose_config, run_experiment
 
-        config = json.loads(args.config.read_text())
-        for setting in args.set:
-            key, value = setting.split("=", 1)
-            if key not in config:
-                raise ValueError(f"Unknown configuration key: {key}")
-            config[key] = json.loads(value)
-        result = train(config, ROOT, args.run_id, args.device, args.warm_start)
+        config = compose_config(args.experiment, args.set)
+        config["training"]["device"] = args.device
+        if args.warm_start is not None:
+            config["training"]["warm_start"] = str(args.warm_start)
+        result = run_experiment(config, ROOT, args.run_id)
     elif args.command == "demo":
         from drone_playground.controllers.demo import run_demo
 
         result = run_demo(ROOT, args.run_id, args.duration, args.device)
     elif args.command == "evaluate":
+        from drone_playground.composition import build_environment
+        from drone_playground.evaluation.execution import make_evaluator
         from drone_playground.evaluation.tracking import (
             save_report,
             select_replays,
         )
-        from drone_playground.learning.train import load_policy, make_evaluator, make_task
+        from drone_playground.runs.checkpoints import load_policy
         from drone_playground.runs.rscope_io import export_rollout
 
         if args.output.exists():
             raise FileExistsError(f"Use a new evaluation directory: {args.output}")
         args.output.mkdir(parents=True)
         maker, params, meta = load_policy(args.checkpoint)
-        env = make_task(meta["config"], args.device, args.split, args.episodes)
+        # Frozen evaluation validates the execution contract, independently of
+        # archived training-only fields or a previous experiment's budget schema.
+        execution_config = copy.deepcopy(meta["config"])
+        execution_config["mode"] = "evaluate"
+        env = build_environment(execution_config, args.device, args.split, args.episodes)
         try:
             offset = 20000 if args.split == "dev" else 30000
             evaluator = make_evaluator(env, maker, list(range(offset, offset + args.episodes)))

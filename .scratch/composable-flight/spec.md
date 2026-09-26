@@ -2,7 +2,7 @@
 
 日期：2026-09-26。依据：用户接受 Hydra 和组件组合，要求合并控制器、简化训练配置，
 并将本次 LOTF 范围收敛到高保真前向、简化反向和 BPTT。
-本文是本轮写入的实现规格；当前运行代码仍为 P1–P4 版本。
+用户已确认本规格并要求完成整体模块化及LOTF两任务训练；实施计划见 [implementation.md](implementation.md)。
 
 ## 目标与交付
 
@@ -150,4 +150,4 @@ LOTF 论文III-D与IV-A明确描述：记录近期状态和动作，构造实测
 - 架构：[docs/architecture.md](../../docs/architecture.md)。
 - 模块工作地图：[map.md](map.md)。
 - 原论文与开源参考：[参考证据](../../docs/research/composable-platform-references.md)。
-- 当前状态：规格写入；代码迁移、Hydra安装、LOTF适配和新训练均待实施。
+- 当前状态：2026-09-26批准后完成五模块实现、两项正式训练及独立评测；实际结果见[共同交付](../../docs/verification/composable-lotf-delivery.md)。

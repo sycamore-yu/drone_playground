@@ -15,30 +15,20 @@ import numpy as np
 from brax.envs.base import Env, State, Wrapper
 from brax.envs.wrappers.training import EpisodeWrapper, VmapWrapper
 from crazyflow.envs import FigureEightEnv
-from crazyflow.envs.drone_env import DroneEnv
-from crazyflow.sim import functional as F
 from crazyflow.sim.data import SimData
 from flax import struct
-from scipy.interpolate import CubicSpline
+
+from drone_playground.controllers.crazyflow import AttitudeControl
+from drone_playground.dynamics.crazyflow import CrazyflowModel
+from drone_playground.learning.objectives import TrackingObjective
+from drone_playground.policies.planning import TrajectoryPlan
+from drone_playground.tasks.observations import TrackingObservation
+from drone_playground.tasks.scenes import EmptyScene
 
 
 def numerically_valid_observation(observation: jax.Array) -> jax.Array:
     """Require representable finite second moments, not just finite scalar entries."""
     return jnp.all(jnp.isfinite(observation)) & jnp.isfinite(jnp.sum(observation**2))
-
-
-def random_trajectory(seed: int, duration: float = 15.0, freq: int = 50) -> np.ndarray:
-    """Build the author's ten-knot trajectory using a private NumPy RNG."""
-    takeoff = np.array([-1.5, 1.0, 0.07])
-    waypoints = np.random.RandomState(seed).uniform(-1, 1, (10, 3))
-    waypoints = waypoints * [1.2, 1.2, 0.5] + 0.3 * takeoff + [0, 0, 0.7]
-    waypoints[:3] = [[-1.5, 1.0, 0.07], [-1.0, 0.55, 0.4], [0.3, 0.35, 0.7]]
-    spline = CubicSpline(
-        np.linspace(0, duration, 10),
-        waypoints,
-        bc_type=((1, np.array([0.0, 0.0, 0.4])), "not-a-knot"),
-    )
-    return spline(np.linspace(0, duration, int(np.ceil(duration * freq)))).astype(np.float32)
 
 
 @struct.dataclass
@@ -62,6 +52,13 @@ class TrackingEnv(Env):
         reference_seed: int = 10000,
         reference_count: int = 256,
         numerical_guard: bool = False,
+        model=None,
+        controller=None,
+        planner=None,
+        scene=None,
+        observation=None,
+        objective=None,
+        duration: float | None = None,
     ):
         if task not in {"figure8", "random"}:
             raise ValueError(f"Unknown tracking task: {task}")
@@ -69,65 +66,41 @@ class TrackingEnv(Env):
             raise ValueError("Task frequency must be a positive divisor of 500 Hz")
         if reference_count < 1:
             raise ValueError("reference_count must be positive")
-        self.task, self.dynamics, self.freq = task, dynamics, freq
+        self.model = model or CrazyflowModel(
+            dynamics, drone or ("cf2x_L250" if task == "figure8" else "cf21B_500")
+        )
+        self.controller = controller or AttitudeControl()
+        self.planner = planner or TrajectoryPlan(task)
+        self.scene = scene or EmptyScene()
+        self.observer = observation or TrackingObservation()
+        self.objective = objective or TrackingObjective()
+        self.task, self.dynamics, self.freq = task, self.model.forward, freq
         self.numerical_guard = numerical_guard
-        self.drone = drone or ("cf2x_L250" if task == "figure8" else "cf21B_500")
-        self.duration = 10.0 if task == "figure8" else 15.0
+        self.drone = self.model.drone
+        self.duration = duration if duration is not None else (10.0 if task == "figure8" else 15.0)
         self.episode_length = round(self.duration * freq)
         self.reference_seed = reference_seed
-        if task == "figure8":
-            self.reference = FigureEightEnv(
-                num_envs=1, freq=freq, dynamics=dynamics, drone=self.drone, device=device
-            )
-            trajectories = np.asarray(self.reference.trajectory, dtype=np.float32)[None]
-        else:
-            # The source reset hook predates the current three-argument pipeline.
-            # Adapt only that signature; preserve the author's rotor initialization.
-            def random_reset(data, default, mask):
-                del default
-                from crazyflow.utils import leaf_replace
-
-                speed = 10000.0 if dynamics == "first_principles" else 0.05
-                rotor = jnp.full_like(data.states.rotor_vel, speed)
-                return data.replace(states=leaf_replace(data.states, mask, rotor_vel=rotor))
-
-            self.reference = DroneEnv(
-                num_envs=1,
-                freq=freq,
-                max_episode_time=self.duration,
-                dynamics=dynamics,
-                drone=self.drone,
-                device=device,
-                reset_randomization=random_reset,
-            )
-            sim = self.reference.sim
-            sim.data = sim.data.replace(
-                states=sim.data.states.replace(
-                    pos=sim.data.states.pos.at[0, 0].set(jnp.array([-1.5, 1.0, 0.07]))
-                )
-            )
-            sim.build_default_data()
-            trajectories = np.stack(
-                [
-                    random_trajectory(reference_seed + i, self.duration, freq)
-                    for i in range(reference_count)
-                ]
-            )
+        self.reference = self.model.create_tracking(task, self.duration, freq, device, self.scene)
+        trajectories = self.planner.build(reference_seed, reference_count, self.duration, freq)
+        trajectories = np.asarray(trajectories, dtype=np.float32)
         self.sim = self.reference.sim
         self.sim.reset()
         self.default = self.sim.default_data
-        self.step_fn, self.reset_fn = self.sim.build_step_fn(), self.sim.build_reset_fn()
+        self.reset_fn = self.sim.build_reset_fn()
         self.substeps = self.reference.n_substeps
         self.trajectories = jax.device_put(jnp.asarray(trajectories), self.sim.device)
-        self.offsets = jnp.asarray(np.arange(10) * freq * 0.1, dtype=jnp.int32)
+        self.offsets = jnp.asarray(
+            np.arange(self.observer.n_samples) * freq * self.observer.interval, dtype=jnp.int32
+        )
         self.low = jnp.asarray(self.reference.single_action_space.low)
         self.high = jnp.asarray(self.reference.single_action_space.high)
+        self.controller.bind(self.low, self.high)
         hover = jnp.array([0.0, 0.0, 0.0, float(self.default.params.mass[0]) * 9.81])
         self.hover_action = 2 * (hover - self.low) / (self.high - self.low) - 1
 
     @property
     def observation_size(self) -> int:
-        return 43
+        return self.observer.size
 
     @property
     def action_size(self) -> int:
@@ -146,17 +119,13 @@ class TrackingEnv(Env):
         return data.core.steps[0, 0] // self.substeps - 1
 
     def observation(self, data: TrackingData) -> jax.Array:
-        state = data.sim_data.states
         indices = self.index(data.sim_data) + self.offsets
         if self.task == "figure8":
             indices = indices % self.episode_length
         else:
             indices = jnp.clip(indices, 0, self.episode_length - 1)
         refs = self.trajectories[data.reference_id, indices]
-        local = (refs - state.pos[0, 0]).reshape(-1)
-        return jnp.concatenate(
-            (state.pos[0, 0], state.quat[0, 0], state.vel[0, 0], state.ang_vel[0, 0], local)
-        )
+        return self.observer(data.sim_data.states, refs)
 
     def reset(self, rng: jax.Array, reference_id: jax.Array | None = None) -> State:
         if rng.dtype == jnp.uint32:
@@ -190,13 +159,13 @@ class TrackingEnv(Env):
         )
 
     def physical_action(self, action: jax.Array) -> jax.Array:
-        return self.low + (jnp.clip(action, -1.0, 1.0) + 1) * 0.5 * (self.high - self.low)
+        return self.controller.physical_action(action)
 
     def step(self, state: State, action: jax.Array) -> State:
         data = state.pipeline_state
         physical = self.physical_action(action)
-        sim_data = F.attitude_control(data.sim_data, physical[None, None])
-        sim_data = self.step_fn(sim_data, self.substeps)
+        sim_data = self.controller.apply(data.sim_data, physical)
+        sim_data = self.model.advance(sim_data, self.substeps)
         data = data.replace(sim_data=sim_data)
         numerical_failure = jnp.array(False)
         if self.numerical_guard:
@@ -224,7 +193,7 @@ class TrackingEnv(Env):
         obs = self.observation(data)
         # Preserve physical termination and explicitly surface numerical invalidity.
         terminated = terminated | ~jnp.all(jnp.isfinite(obs)) | numerical_failure
-        reward = FigureEightEnv._reward(terminated[None], pos, goal)[0]
+        reward = self.objective(terminated, pos[0, 0], goal)
         error = jnp.linalg.norm(pos[0, 0] - goal)
         metrics = {
             **state.metrics,
@@ -247,6 +216,17 @@ class TrackingEnv(Env):
 
     def close(self) -> None:
         self.reference.close()
+
+    def step_physical(self, state, physical):
+        normalized = 2 * (physical - self.low) / (self.high - self.low) - 1
+        return self.step(state, normalized)
+
+    def controller_observation(self, state):
+        data = state.pipeline_state.sim_data.states
+        return {
+            name: np.asarray(getattr(data, name)[0, 0])
+            for name in ("pos", "quat", "vel", "ang_vel")
+        }
 
 
 class FreshAutoReset(Wrapper):

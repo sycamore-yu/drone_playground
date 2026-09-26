@@ -1,0 +1,84 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "task": "悬停",
+      "run_id": "lotf-hybrid-hover-seed0-v1",
+      "checkpoint": "experiments/lotf-hybrid-hover-seed0-v1/checkpoints/step-0006000000.pkl",
+      "sha256": "f1cc422b2ec67ec2dec40b28fb3ec13f372150edec5d9f89e3cd09764b26744c",
+      "actual_steps": 6000000,
+      "updates": 200,
+      "elapsed_seconds": 101.43952768202871,
+      "net_update_seconds": 37.60035527031869,
+      "compile_and_first_update_seconds": 17.36924438783899,
+      "actor_parameter_delta_l2": 20.67184829711914,
+      "dev": {
+        "num_trials": 32,
+        "completed": 32,
+        "failed": 0,
+        "quality_passed": true,
+        "rmse_all_mean": 0.4242365216404012,
+        "last_second_rmse_mean_m": 0.07912968099117279,
+        "return_mean": -1.0777430534362793,
+        "process_id": 4129955,
+        "parameter_sha256": "9ac8621b5773b5e059a722694ad0ad5f2ed9da6f1a9184247f11790fced53a21",
+        "report": "experiments/lotf-hybrid-hover-seed0-v1/independent-dev/report.json"
+      },
+      "heldout": {
+        "num_trials": 128,
+        "completed": 128,
+        "failed": 0,
+        "quality_passed": true,
+        "rmse_all_mean": 0.4244201812976527,
+        "last_second_rmse_mean_m": 0.0769658163189888,
+        "return_mean": -1.054427146911621,
+        "process_id": 4130606,
+        "parameter_sha256": "9ac8621b5773b5e059a722694ad0ad5f2ed9da6f1a9184247f11790fced53a21",
+        "report": "experiments/lotf-hybrid-hover-seed0-v1/independent-heldout/report.json"
+      }
+    },
+    {
+      "task": "八字跟踪",
+      "run_id": "lotf-hybrid-tracking-seed0-v1",
+      "checkpoint": "experiments/lotf-hybrid-tracking-seed0-v1/checkpoints/step-0022500000.pkl",
+      "sha256": "d4140e445e7fb47e989058e39f6f17fcf693a0ef33b0ec4cbf45503fc702b995",
+      "actual_steps": 22500000,
+      "updates": 300,
+      "elapsed_seconds": 159.46534405322745,
+      "net_update_seconds": 75.85615269560367,
+      "compile_and_first_update_seconds": 20.23085706681013,
+      "actor_parameter_delta_l2": 9.663947105407715,
+      "dev": {
+        "num_trials": 32,
+        "completed": 32,
+        "failed": 0,
+        "quality_passed": true,
+        "rmse_all_mean": 0.19978697820972063,
+        "last_second_rmse_mean_m": 0.1817934513092041,
+        "return_mean": -0.5635613203048706,
+        "process_id": 4134815,
+        "parameter_sha256": "870773f6c621625e6d249a876eca5fb38b9d984d8b0e79042f28cac4cab34c2f",
+        "report": "experiments/lotf-hybrid-tracking-seed0-v1/independent-dev/report.json"
+      },
+      "heldout": {
+        "num_trials": 128,
+        "completed": 128,
+        "failed": 0,
+        "quality_passed": true,
+        "rmse_all_mean": 0.18475163684806983,
+        "last_second_rmse_mean_m": 0.1640075445175171,
+        "return_mean": -0.487282395362854,
+        "process_id": 4135282,
+        "parameter_sha256": "870773f6c621625e6d249a876eca5fb38b9d984d8b0e79042f28cac4cab34c2f",
+        "report": "experiments/lotf-hybrid-tracking-seed0-v1/independent-heldout/report.json"
+      }
+    }
+  ],
+  "total_training_interactions": 28500000,
+  "independent_episodes": 320,
+  "training_seeds": [
+    0
+  ],
+  "source": "cba6e5370773ace8a08107f02810eecabf16c793",
+  "scope": "LOTF hybrid-gradient offline training subsystem; online adaptation excluded"
+}

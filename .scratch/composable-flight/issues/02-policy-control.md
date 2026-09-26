@@ -1,12 +1,12 @@
 # 02：策略、轨迹规划与统一控制器
 
 Type: task
-Status: planned
+Status: resolved
 Blocked by: 01
-Engineering: not-started
-Experiment: not-started
-Quality: not-started
-Owner: unassigned
+Engineering: passed
+Experiment: completed
+Quality: passed
+Owner: current-chat
 
 ## 模块职责
 
@@ -21,3 +21,15 @@ Owner: unassigned
 ## 共同交付
 
 LOTF策略和控制链与03–05共享接口，训练后能在同一前向组合中重评。
+
+## Comments
+
+2026-09-26：用户确认统一控制器、策略含轨迹规划和动作契约；与其余模块共同完成并交付训练结果。
+
+## Answer
+
+固定八字、随机样条、LSY赛道和作者CSV各有轨迹规划实现；冻结神经策略由共同入口加载。
+统一controller预设接入Crazyflow姿态链、真实acados和采样MPC，以及LOTF原生飞控。
+组合入口后的两MPC分别完成857/850步真实执行和5次原生过门；LOTF每子步仅调用一次控制器。
+12格旧任务固定输入输出回归、原生控制输出及动作契约验证见
+[工程记录](../../../docs/verification/composable-lotf-engineering.md)。

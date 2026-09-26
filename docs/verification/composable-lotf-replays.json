@@ -1,0 +1,294 @@
+{
+  "passed": true,
+  "reader_sha256": "a63d0508f643d2746b95bb4e730dbe9ebc8c9d6b2ccd89a04fe3aa5ea9009162",
+  "file_count": 22,
+  "saved_cases": 103,
+  "records": [
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0005250000/2026_09_26-15_17_26.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "391d5d620c9744708a6d4393ed8ee1d287ef9fec429cea8247c2d9df16c8567c",
+      "unchanged_files": {
+        "2026_09_26-15_17_26.mj_unroll": "e0a7d652376c1c42ebc4c63f439008ee8ffdbd698b2938db15abb5e292197a46",
+        "rscope_meta.pkl": "391d5d620c9744708a6d4393ed8ee1d287ef9fec429cea8247c2d9df16c8567c",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0006000000/2026_09_26-15_17_32.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "9e94350e487f95019b4eb507bb4bba72f891d5eea26e0cc1e2147c624e19c9ef",
+      "unchanged_files": {
+        "2026_09_26-15_17_32.mj_unroll": "8548045c5781612b3c8787d9e126d0c02d5d43fffbfee180bb785ac294e8dd01",
+        "rscope_meta.pkl": "9e94350e487f95019b4eb507bb4bba72f891d5eea26e0cc1e2147c624e19c9ef",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0004500000/2026_09_26-15_17_19.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "898e361e00604eb94fe527bf50a2205b3a0dc05c31f2ed81158fd3041aedc467",
+      "unchanged_files": {
+        "2026_09_26-15_17_19.mj_unroll": "290ec1ac3b69361cc810c7fcbc19a95e45a5e1a3b034a55c2322518804b05581",
+        "rscope_meta.pkl": "898e361e00604eb94fe527bf50a2205b3a0dc05c31f2ed81158fd3041aedc467",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0000750000/2026_09_26-15_16_47.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "cdcdce428691c1652686b5d67147078392555e9342785e407c680ee25801dd6c",
+      "unchanged_files": {
+        "2026_09_26-15_16_47.mj_unroll": "1ef8b6ab94028c54c31401303dd8b7973332e4534cf410322c504a371cc4cb27",
+        "rscope_meta.pkl": "cdcdce428691c1652686b5d67147078392555e9342785e407c680ee25801dd6c",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0002250000/2026_09_26-15_17_00.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "fec14043690af41d084bdd8a73ea7e2fec17328b19083ec60ec91e2bdc35d1f8",
+      "unchanged_files": {
+        "2026_09_26-15_17_00.mj_unroll": "fe71f0f8fb971a76abab0c6476c0fd11e7c7fbc3f020826df224cab92e4eb54f",
+        "rscope_meta.pkl": "fec14043690af41d084bdd8a73ea7e2fec17328b19083ec60ec91e2bdc35d1f8",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0000000000/2026_09_26-15_16_08.mj_unroll",
+      "frames": 150,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "71b88fc6cf880fc117697085dada3ee74cc5b2e06a61a94c55c9995153d89fe0",
+      "unchanged_files": {
+        "2026_09_26-15_16_08.mj_unroll": "2f2c719dcb4587b907f54313f4440a2e77bbb195dc20df36f8da7f1c90bfd7c6",
+        "rscope_meta.pkl": "71b88fc6cf880fc117697085dada3ee74cc5b2e06a61a94c55c9995153d89fe0",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0001500000/2026_09_26-15_16_53.mj_unroll",
+      "frames": 150,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "a49cf52fed3ab54afd9f7fb60ae469af434e9a3db57248e393df534c242f4461",
+      "unchanged_files": {
+        "2026_09_26-15_16_53.mj_unroll": "a9c4a0eab2fda14f2699a89c546685fe970633198d8607d592fa5bc0bb92ff84",
+        "rscope_meta.pkl": "a49cf52fed3ab54afd9f7fb60ae469af434e9a3db57248e393df534c242f4461",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0003750000/2026_09_26-15_17_13.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "54559f819e6857a42cb5c2f4fe4d42b799e2c35309d8fe62193d220bfb174b50",
+      "unchanged_files": {
+        "2026_09_26-15_17_13.mj_unroll": "391054b027b5498e904e2ebfaf515f7a69dbd381f34aebc7dff5de612cb7e540",
+        "rscope_meta.pkl": "54559f819e6857a42cb5c2f4fe4d42b799e2c35309d8fe62193d220bfb174b50",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/rollouts/step-0003000000/2026_09_26-15_17_06.mj_unroll",
+      "frames": 150,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "7049ea50cf3c7a89732313a2c97fc49d3dddd4862b5262bb60158b4712a08961",
+      "unchanged_files": {
+        "2026_09_26-15_17_06.mj_unroll": "d967ab91f8e71218fd6e12a930a4efff435b5cd6c255eca5112b688b185ebdd1",
+        "rscope_meta.pkl": "7049ea50cf3c7a89732313a2c97fc49d3dddd4862b5262bb60158b4712a08961",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/independent-heldout/rollouts/2026_09_26-15_19_54.mj_unroll",
+      "frames": 150,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "4fb25183a11ff873129699aa9484f43bc66f12a7acb78636f1d6aab7cbbcb6dc",
+      "unchanged_files": {
+        "2026_09_26-15_19_54.mj_unroll": "b70fc64cfb9e71f3c9193ca8f164c7dbefaf7e056322d6d50e9b8fec5debcef7",
+        "rscope_meta.pkl": "4fb25183a11ff873129699aa9484f43bc66f12a7acb78636f1d6aab7cbbcb6dc",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-hover-seed0-v1/independent-dev/rollouts/2026_09_26-15_19_44.mj_unroll",
+      "frames": 150,
+      "saved_cases": 4,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "032332540af03597f98e08c2ecbf2ee03d9e93a7e6a0919646c852a0acf79bc3",
+      "unchanged_files": {
+        "2026_09_26-15_19_44.mj_unroll": "c7cabd42477da5222f6e8bd698b3cd8e207ea8eed3a8909025c7d6f1e95bbe10",
+        "rscope_meta.pkl": "032332540af03597f98e08c2ecbf2ee03d9e93a7e6a0919646c852a0acf79bc3",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0011250000/2026_09_26-15_20_59.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "530f070cefb0e3a17d9eb528153c58f687ad4e931010ac52f12cbc7c125fd4fc",
+      "unchanged_files": {
+        "2026_09_26-15_20_59.mj_unroll": "c7ea1b84d33dbb0e7ef4d9419b8337a020ff7779f681f8c922680ae015fce857",
+        "rscope_meta.pkl": "530f070cefb0e3a17d9eb528153c58f687ad4e931010ac52f12cbc7c125fd4fc",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0022500000/2026_09_26-15_21_50.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "8cd09d3f8db1f6d1e74321e5ceaf8313bfc72c47cc58d99fac1cdde774518095",
+      "unchanged_files": {
+        "2026_09_26-15_21_50.mj_unroll": "ff31185b4fe5397c05482b6ff01d74558330861ee2a65c9c1fe71682cb2eaffd",
+        "rscope_meta.pkl": "8cd09d3f8db1f6d1e74321e5ceaf8313bfc72c47cc58d99fac1cdde774518095",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0016875000/2026_09_26-15_21_25.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "813df5dd2f70a7563e8bc34f2e18a2fc2b84a78beb21f60317bb3b76e9d34968",
+      "unchanged_files": {
+        "2026_09_26-15_21_25.mj_unroll": "aee89325c105763ac828586499f688d39bdb308d2f927660ba47a44008fc5e3e",
+        "rscope_meta.pkl": "813df5dd2f70a7563e8bc34f2e18a2fc2b84a78beb21f60317bb3b76e9d34968",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0014025000/2026_09_26-15_21_12.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "1efc8025f1fc610968ca4b3ed41db102781b6545ec98b08f4c97b489c595da52",
+      "unchanged_files": {
+        "2026_09_26-15_21_12.mj_unroll": "fc27e92bde632de2960f2b736c8dd462243bf588991d344ae312785fdf0c0ff3",
+        "rscope_meta.pkl": "1efc8025f1fc610968ca4b3ed41db102781b6545ec98b08f4c97b489c595da52",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0019650000/2026_09_26-15_21_38.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "3336d867970eeece704906d16c7c4bf3c41620d223e5f2da586b43206d6d84da",
+      "unchanged_files": {
+        "2026_09_26-15_21_38.mj_unroll": "87dd40551934aa1d58ede5961559d8701e5c0793a6beac89f2cffa5337c0d8a4",
+        "rscope_meta.pkl": "3336d867970eeece704906d16c7c4bf3c41620d223e5f2da586b43206d6d84da",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0000000000/2026_09_26-15_19_32.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "cb72120bb1b6078cb5a99f051f9e7d3cc7cc843abd65e9f2241e7b97bfa42b90",
+      "unchanged_files": {
+        "2026_09_26-15_19_32.mj_unroll": "6d7491e9f96a7a79a102fe421922b911183c5617cd139cde335836bab21c8ce0",
+        "rscope_meta.pkl": "cb72120bb1b6078cb5a99f051f9e7d3cc7cc843abd65e9f2241e7b97bfa42b90",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0008400000/2026_09_26-15_20_45.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "b0def3d28a30649b9645ad11c69370e829a0a769af8cc1e911e9c7191f281ba1",
+      "unchanged_files": {
+        "2026_09_26-15_20_45.mj_unroll": "208ae66b96edb70f0cda9e16b2f3dddeb31ceb86446d88cc125a6d0b65be8a82",
+        "rscope_meta.pkl": "b0def3d28a30649b9645ad11c69370e829a0a769af8cc1e911e9c7191f281ba1",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0002775000/2026_09_26-15_20_20.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "0219969dd0a52b9452482f426cd0282d34c9d68a742e4e0b6abd75c63896967c",
+      "unchanged_files": {
+        "2026_09_26-15_20_20.mj_unroll": "ff5a946e008644775ae68717aad2d52b0bbbe694bc60aea32cbb4c5fbda1415e",
+        "rscope_meta.pkl": "0219969dd0a52b9452482f426cd0282d34c9d68a742e4e0b6abd75c63896967c",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/rollouts/step-0005625000/2026_09_26-15_20_33.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "40c916f039983555725ea61b4123834eb3e5b8176c73cabfabb578c51fc093c6",
+      "unchanged_files": {
+        "2026_09_26-15_20_33.mj_unroll": "80014fd9d49227b1d4941c572bda2493603726dbfe8f1b757a0f742aa57b0b91",
+        "rscope_meta.pkl": "40c916f039983555725ea61b4123834eb3e5b8176c73cabfabb578c51fc093c6",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/independent-heldout/rollouts/2026_09_26-15_22_53.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "cbb64de29cbf5c5d6ddea1bf463d9f0eadf23329c3f2e8a9c0ee19bcbd2b41f8",
+      "unchanged_files": {
+        "2026_09_26-15_22_53.mj_unroll": "a8afd1cd1a49d1d8d03b9782447c7c761cc07fc8ed728d88d86f45d732e1b834",
+        "rscope_meta.pkl": "cbb64de29cbf5c5d6ddea1bf463d9f0eadf23329c3f2e8a9c0ee19bcbd2b41f8",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    },
+    {
+      "file": "experiments/lotf-hybrid-tracking-seed0-v1/independent-dev/rollouts/2026_09_26-15_22_42.mj_unroll",
+      "frames": 250,
+      "saved_cases": 5,
+      "model_bodies": 2,
+      "max_position_error": 0.0,
+      "metadata_sha256": "5a63404114a03bcb3b433d2f306e1ba9feb394976c013cd9483df6923754cf9b",
+      "unchanged_files": {
+        "2026_09_26-15_22_42.mj_unroll": "77927a4c44bd69fc5ab92ec879a6eb855b82cb3645008df6aabdacea7c13ad80",
+        "rscope_meta.pkl": "5a63404114a03bcb3b433d2f306e1ba9feb394976c013cd9483df6923754cf9b",
+        "scene.xml": "0689790bfeb0bcf313151bdc107dc3d9549420c5f4890a9c98d21cfb68ad1bb8"
+      }
+    }
+  ]
+}

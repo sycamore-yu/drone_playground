@@ -1,0 +1,32 @@
+# @package _global_
+defaults:
+- override /algorithm: apg
+- override /network: brax_apg
+- override /task: racing
+- override /scene: lsy_level0
+dynamics:
+  forward: first_principles
+  drone: cf21B_500
+algorithm:
+  horizon_length: 40
+  learning_rate: 0.005
+  max_grad_norm: 1.0
+  use_schedule: true
+  schedule_decay: 0.997
+network:
+  normalize_observations: false
+  hidden_sizes:
+  - 32
+  - 32
+  layer_norm: true
+training:
+  seed: 0
+  policy_updates: 1024
+  num_envs: 16
+  num_evals: 9
+  publish_live: false
+  max_wall_seconds: 3600
+task:
+  freq: 50
+source: Native Brax APG; LSY Level0 reference-tracking-v1 reward and native gate/collision
+  rules; same P2 random APG recipe

@@ -1,0 +1,3 @@
+_target_: drone_playground.tasks.scenes.LSYScene
+name: lsy_level0
+disturbances: true

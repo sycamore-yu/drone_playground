@@ -1,0 +1,6 @@
+name: figure8
+freq: 50
+duration: 10.0
+reference: figure8
+reference_count: 256
+numerical_guard: false

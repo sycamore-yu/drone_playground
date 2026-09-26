@@ -2,48 +2,21 @@
 
 from __future__ import annotations
 
-import tomllib
-from pathlib import Path
-
 import crazyflow  # noqa: F401
 import jax
 import jax.numpy as jnp
 import numpy as np
 from brax.envs.base import Env, State
-from ml_collections import ConfigDict
-from scipy.interpolate import CubicSpline
+
+from drone_playground.controllers.crazyflow import AttitudeControl
+from drone_playground.dynamics.crazyflow import CrazyflowModel
+from drone_playground.learning.objectives import TrackingObjective
+from drone_playground.policies.planning import TrajectoryPlan
+from drone_playground.tasks.observations import TrackingObservation
+from drone_playground.tasks.scenes import LSYScene
 
 from .lsy_upstream import race_core
 from .lsy_upstream.utils import gate_passed as gate_passed
-
-
-def load_config():
-    return ConfigDict(
-        tomllib.loads((Path(__file__).parent / "lsy_upstream/level0.toml").read_text())
-    )
-
-
-def race_reference(start, freq=50, duration=18.75):
-    """The exact waypoints, spline and sampling convention of LSY AttitudeMPC/RL."""
-    knots = np.array(
-        [
-            start,
-            [-1, 0.75, 0.4],
-            [0.3, 0.35, 0.7],
-            [1.3, -0.15, 0.9],
-            [0.85, 0.85, 1.2],
-            [-0.5, -0.05, 0.7],
-            [-1.2, -0.2, 0.8],
-            [-1.2, -0.2, 1.2],
-            [0, -0.7, 1.2],
-            [1.2, -0.15, 1.2],
-            [1.05, 0.75, 1.2],
-            [0.25, 1.25, 1.2],
-        ]
-    )
-    spline = CubicSpline(np.linspace(0, duration, len(knots)), knots)
-    stamps = np.linspace(0, duration, int(freq * duration))
-    return spline(stamps).astype(np.float32), spline.derivative()(stamps).astype(np.float32)
 
 
 class RacingEnv(Env):
@@ -64,17 +37,28 @@ class RacingEnv(Env):
         device="cpu",
         reference_seed=10000,
         reference_count=256,
+        model=None,
+        controller=None,
+        planner=None,
+        scene=None,
+        observation=None,
+        objective=None,
     ):
         if task != "racing" or freq != 50:
             raise ValueError("LSY Level0 protocol fixes task=racing and 50 Hz control")
-        cfg = load_config()
+        self.model = model or CrazyflowModel(dynamics, drone or "cf21B_500")
+        self.controller = controller or AttitudeControl()
+        self.planner = planner or TrajectoryPlan("lsy_course")
+        self.scene = scene or LSYScene()
+        self.observer = observation or TrackingObservation()
+        self.objective = objective or TrackingObjective()
+        cfg = self.scene.config(self.model)
         self.task, self.dynamics, self.drone, self.freq = (
             "racing",
-            dynamics,
-            drone or "cf21B_500",
+            self.model.forward,
+            self.model.drone,
             freq,
         )
-        cfg.sim.dynamics, cfg.sim.drone = dynamics, self.drone
         self.config = cfg
         self.reference_seed = reference_seed
         self.duration, self.episode_length = 30.0, 1500
@@ -93,6 +77,7 @@ class RacingEnv(Env):
             device=device,
         )
         self.sim = self.core.sim
+        self.model.bind(self.sim)
         # MjSpec attachment retains source resources at compile time, but to_xml()
         # emits their basenames. Preserve the known source directory for export.
         self.sim.spec.compiler.texturedir = str(self.core.gate_spec_path.parent)
@@ -100,20 +85,18 @@ class RacingEnv(Env):
         self.default = self.core.data.replace(sim_data=self.sim.default_data)
         self.reset_fn = self.core.build_reset_fn()
         self.apply_action_fn = self.core.build_apply_action_fn()
-        self.step_fn = self.sim.build_step_fn()
         self.contact_fn = self.core.build_contact_check_fn()
         self.substeps = self.sim.freq // freq
         start = np.asarray(self.sim.default_data.states.pos[0, 0])
-        positions, velocities = race_reference(start, freq)
-        padding = self.episode_length - len(positions)
-        padded = np.pad(positions, ((0, padding), (0, 0)), mode="edge")
-        self.trajectories = jnp.asarray(padded[None])
-        self.reference_velocity = jnp.asarray(
-            np.pad(velocities, ((0, padding), (0, 0)), mode="constant")
+        self.trajectories = jnp.asarray(
+            self.planner.build(reference_seed, reference_count, self.duration, freq, start)
         )
-        self.offsets = jnp.arange(10, dtype=jnp.int32) * int(freq * 0.1)
+        self.offsets = jnp.arange(self.observer.n_samples, dtype=jnp.int32) * int(
+            freq * self.observer.interval
+        )
         action_space = race_core.build_action_space("attitude", self.drone)
         self.low, self.high = jnp.asarray(action_space.low), jnp.asarray(action_space.high)
+        self.controller.bind(self.low, self.high)
         hover = jnp.array(
             [
                 0.0,
@@ -132,7 +115,7 @@ class RacingEnv(Env):
 
     @property
     def observation_size(self):
-        return 43
+        return self.observer.size
 
     @property
     def action_size(self):
@@ -150,19 +133,10 @@ class RacingEnv(Env):
         return jnp.clip(data.steps[0] - 1, 0, self.episode_length - 1)
 
     def observation(self, data):
-        x = data.sim_data.states
         refs = self.trajectories[
             0, jnp.clip(data.steps[0] + self.offsets, 0, self.episode_length - 1)
         ]
-        return jnp.concatenate(
-            [
-                x.pos[0, 0],
-                x.quat[0, 0],
-                x.vel[0, 0],
-                x.ang_vel[0, 0],
-                (refs - x.pos[0, 0]).reshape(-1),
-            ]
-        )
+        return self.observer(data.sim_data.states, refs)
 
     def reset(self, rng, reference_id=None):
         if rng.dtype == jnp.uint32:
@@ -201,11 +175,11 @@ class RacingEnv(Env):
         )
 
     def physical_action(self, action):
-        return self.low + (jnp.clip(action, -1, 1) + 1) * 0.5 * (self.high - self.low)
+        return self.controller.physical_action(action)
 
     def step_physical(self, state, physical):
         data = self.apply_action_fn(physical[None, None], state.pipeline_state)
-        data = data.replace(sim_data=self.step_fn(data.sim_data, self.substeps))
+        data = data.replace(sim_data=self.model.advance(data.sim_data, self.substeps))
         contacts = self.contact_fn(jax.tree.map(jax.lax.stop_gradient, data))
         data = race_core._update_disabled_drones(data, contacts)
         # Original core warps dead drones to -1 to avoid multi-drone interference.
@@ -219,7 +193,7 @@ class RacingEnv(Env):
         success = (data.n_gates_passed[0, 0] >= self.required_gates) & ~failed
         goal = self.trajectories[0, self.index(data)]
         error = jnp.linalg.norm(data.sim_data.states.pos[0, 0] - goal)
-        reward = jnp.where(failed, -1.0, jnp.exp(-2 * error))
+        reward = self.objective(failed, data.sim_data.states.pos[0, 0], goal)
         normalized = (physical - self.low) / (self.high - self.low) * 2 - 1
         metrics = {
             **state.metrics,

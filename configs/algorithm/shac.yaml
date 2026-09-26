@@ -1,0 +1,12 @@
+name: shac
+horizon_length: 32
+learning_rate: 0.003
+critic_learning_rate: 0.002
+critic_updates: 8
+discounting: 0.99
+td_lambda: 0.95
+target_critic_alpha: 0.4
+max_grad_norm: 1.0
+critic_max_grad_norm: 10.0
+use_schedule: true
+schedule_decay: 0.997

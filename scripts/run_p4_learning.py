@@ -49,7 +49,7 @@ def main():
                 updated_at=datetime.now(timezone.utc).isoformat(),
             ),
         )
-        config = ROOT / f"configs/experiments/racing_{algorithm}{args.config_suffix}.json"
+        experiment = f"racing_{algorithm}{args.config_suffix}"
         if not (directory / "result.json").exists():
             if directory.exists():
                 row.update(status="incomplete-existing-run")
@@ -61,8 +61,8 @@ def main():
                     "-m",
                     "drone_playground.cli",
                     "train",
-                    "--config",
-                    str(config),
+                    "--experiment",
+                    experiment,
                     "--run-id",
                     run_id,
                     "--device",

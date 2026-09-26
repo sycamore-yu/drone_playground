@@ -1,0 +1,6 @@
+name: random
+freq: 50
+duration: 15.0
+reference: random
+reference_count: 256
+numerical_guard: false

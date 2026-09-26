@@ -1,0 +1,7 @@
+name: brax_ppo
+distribution_type: normal
+normalize_observations: false
+hidden_sizes:
+- 64
+- 64
+init_noise_std: 0.367879

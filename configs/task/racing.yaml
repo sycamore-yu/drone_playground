@@ -1,0 +1,6 @@
+name: racing
+freq: 50
+duration: 30.0
+reference: lsy_course
+reference_count: 256
+numerical_guard: false

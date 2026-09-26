@@ -98,12 +98,12 @@ def main():
                         updated_at=datetime.now(timezone.utc).isoformat(),
                     ),
                 )
-                config = json.loads(
-                    (ROOT / f"configs/experiments/{task}_{algorithm}.json").read_text()
-                )
-                config.update(dynamics=dynamics, publish_live=False)
+                from drone_playground.composition import compose_config
+
+                config = compose_config(f"{task}_{algorithm}", [f"dynamics.forward={dynamics}"])
                 config_path = folder / f"{run_id}.json"
-                atomic_json(config_path, config)
+                if not config_path.exists():
+                    atomic_json(config_path, config)
                 if not (directory / "result.json").exists():
                     if directory.exists():
                         row.update(
@@ -118,8 +118,10 @@ def main():
                             "-m",
                             "drone_playground.cli",
                             "train",
-                            "--config",
-                            str(config_path),
+                            "--experiment",
+                            f"{task}_{algorithm}",
+                            "--set",
+                            f"dynamics.forward={dynamics}",
                             "--run-id",
                             run_id,
                             "--device",

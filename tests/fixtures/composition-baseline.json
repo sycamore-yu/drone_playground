@@ -1,0 +1,91 @@
+{
+  "source_commit": "bd14468",
+  "cases": [
+    {
+      "task": "figure8",
+      "dynamics": "so_rpy",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "figure8",
+      "dynamics": "so_rpy_rotor",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "figure8",
+      "dynamics": "so_rpy_rotor_drag",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "figure8",
+      "dynamics": "first_principles",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "random",
+      "dynamics": "so_rpy",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "random",
+      "dynamics": "so_rpy_rotor",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "random",
+      "dynamics": "so_rpy_rotor_drag",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "random",
+      "dynamics": "first_principles",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "racing",
+      "dynamics": "so_rpy",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "racing",
+      "dynamics": "so_rpy_rotor",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "racing",
+      "dynamics": "so_rpy_rotor_drag",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    },
+    {
+      "task": "racing",
+      "dynamics": "first_principles",
+      "key": 31,
+      "reference_seed": 20000,
+      "reference_count": 2
+    }
+  ],
+  "sha256": "6ac5b88ae15256d72b3bc1c483921d64c049d19bdbcd0c32ce55ae0265c3db09",
+  "generated_command": "python tmp/composable-flight/capture_baseline.py"
+}

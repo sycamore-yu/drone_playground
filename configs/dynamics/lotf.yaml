@@ -1,0 +1,4 @@
+forward: lotf_high_fidelity
+backward: lotf_analytical
+drone: example_quad
+learned_residual: false

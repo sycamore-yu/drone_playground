@@ -90,7 +90,7 @@ class TrackingContractTests(unittest.TestCase):
     def test_random_reference_matches_lsy_scipy_construction(self):
         from scipy.interpolate import CubicSpline
 
-        from drone_playground.tasks.tracking import random_trajectory
+        from drone_playground.policies.planning import random_trajectory
 
         seed, duration, freq = 21, 15.0, 50
         takeoff = np.array([-1.5, 1.0, 0.07])

@@ -18,7 +18,7 @@ class OptimizationTests(unittest.TestCase):
 
     def test_actual_acados_solve_preserves_native_problem(self):
         m = self.module("lsy_mpc")
-        from drone_playground.tasks.racing import load_config
+        from drone_playground.tasks.scenes import load_lsy_config
 
         obs = dict(
             pos=np.array([-1.5, 0.75, 0.01]),
@@ -27,7 +27,7 @@ class OptimizationTests(unittest.TestCase):
             ang_vel=np.zeros(3),
         )
         with tempfile.TemporaryDirectory() as directory:
-            controller = m.LSYAttitudeMPC(obs, {}, load_config(), workdir=Path(directory))
+            controller = m.LSYAttitudeMPC(obs, {}, load_lsy_config(), workdir=Path(directory))
             action = controller.compute_control(dict(obs), {})
             self.assertEqual(action.shape, (4,))
             self.assertTrue(np.isfinite(action).all())
@@ -40,7 +40,7 @@ class OptimizationTests(unittest.TestCase):
         m = self.module("sampling")
         import jax
 
-        from drone_playground.tasks.racing import race_reference
+        from drone_playground.policies.planning import race_reference
         from drone_playground.tasks.tracking import TrackingEnv
 
         env = TrackingEnv(

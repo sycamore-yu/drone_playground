@@ -1,0 +1,12 @@
+name: lotf_tracking
+freq: 50
+duration: 5.0
+reference: fig8
+reference_count: 1
+delay: 0.04
+yaw_scale: 0.1
+pitch_roll_scale: 0.1
+position_std: 0.1
+velocity_std: 0.1
+omega_std: 0.1
+skip_start: true
