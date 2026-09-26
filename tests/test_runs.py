@@ -135,8 +135,11 @@ def test_run_recorder_heartbeat_and_exception_result(tmp_path: Path, monkeypatch
     monkeypatch.setattr(record_module, "_HEARTBEAT_INTERVAL_SECONDS", 0.02)
     recorder = RunRecorder(tmp_path, "heartbeat", {"seed": 1})
     initial = json.loads((recorder.path / "state.json").read_text())
-    time.sleep(0.08)
-    later = json.loads((recorder.path / "state.json").read_text())
+    deadline = time.monotonic() + 1.0
+    later = initial
+    while later["heartbeat_count"] <= initial["heartbeat_count"] and time.monotonic() < deadline:
+        time.sleep(0.01)
+        later = json.loads((recorder.path / "state.json").read_text())
     assert later["heartbeat_count"] > initial["heartbeat_count"]
     recorder.finish("cancelled", reason="test")
 

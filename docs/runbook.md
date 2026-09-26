@@ -52,22 +52,23 @@ pixi run python scripts/rscope_client.py \
 
 ## Windows 原生客户端
 
-复制 `scripts/rscope_client.py` 到本地，仅安装查看器依赖即可。以下是用户端执行命令，
-本轮已验证服务端和客户端逻辑；用户 Windows 私钥认证与实际窗口仍需本机确认。
+复制 `scripts/rscope_client.py` 到本地，仅安装查看器依赖即可。脚本会调用系统 `ssh -G`，
+因此可以直接复用 Windows `~/.ssh/config` 中已经能工作的 Host 别名和加密私钥。
 
 ```powershell
-py -3.13 -m pip install "rscope==0.0.8" "mujoco==3.14.0"
-scp tong@SERVER:/home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/scripts/rscope_client.py .
-py -3.13 .\rscope_client.py --ssh_to tong@SERVER --ssh_key "$env:USERPROFILE\.ssh\rscope_key" --show-metrics
+python -m pip install "rscope==0.0.8" "mujoco==3.14.0" paramiko
+python F:\code\rscope_client.py --ssh_to lab-gpu --show-metrics
 ```
 
-将 `rscope_key` 替换为已授权的现有私钥路径；使用现有 SSH 代理或默认密钥时可省略该参数。
-主机公钥必须已在本地 `known_hosts` 中受信任；新服务器先用正常 SSH 核对主机指纹。
+`lab-gpu` 可以替换为任意已有 OpenSSH Host 别名，也仍支持 `username@host[:port]`。
+主机公钥必须已在本地 `known_hosts` 中受信任；加密私钥会提示输入一次 passphrase。
 客户端默认创建独立本地临时缓存，远端始终使用 Linux 路径；开始前先认证，失败会直接退出。
 它读取 Python pickle 记录，限于自己可信的服务器与实验产物。
 
 左右方向键切换试次，上下方向键切换保存的策略轨迹，空格暂停/继续，Shift+M 切换指标。
 PPO 保存初始、中间和最终轨迹；原生 APG 提供周期评估标量，策略轨迹保存初始和最终两个时间点。
+tracking rollout 默认把完整参考轨迹画成红色 3D 线；早期策略提前失败时，会从其它 checkpoint 的
+同一 case 选择参考点最完整的一条，因此仍能看到完整八字/样条。`--hide-reference` 可关闭该叠加。
 切换到不同模型的记录后重开查看器，使其加载对应模型资源。
 
 ## 独立重评保存策略
