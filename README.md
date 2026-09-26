@@ -11,6 +11,8 @@ PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
 - [已接受的范围与规格](.scratch/drone-platform/spec.md)
 - [阶段进度表](.scratch/drone-platform/map.md)
 - [模块设计](docs/architecture.md)
+- [可组合架构与LOTF训练规格](.scratch/composable-flight/spec.md)
+- [组合架构的模块工作地图](.scratch/composable-flight/map.md)
 - [评测与交付标准](docs/evaluation.md)
 - [运行与远程查看](docs/runbook.md)
 - [智能体执行与交接](docs/agents/workflow.md)
@@ -41,3 +43,6 @@ PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
 当前结果覆盖四种动力学、状态与参考轨迹观测、训练种子0，以及原生扰动下的固定赛道。
 三种学习方法和两种优化控制均已接通。感知导航、多训练种子和导航规划器扩展进入P5/P6，
 可复算结果与数值故障修正范围见完整报告。
+
+当前新增设计为Hydra可组合模块与LOTF混合梯度训练。规格已经写入，生产代码和训练入口的
+迁移尚待实施；未来配置示意与上面的已验证命令分别标识。

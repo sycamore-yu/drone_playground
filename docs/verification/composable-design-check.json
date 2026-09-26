@@ -1,0 +1,50 @@
+{
+  "checked_at": "2026-09-26T14:41:52.474701+00:00",
+  "base_commit": "15df1446628db570fa3bec78e1b7112c559be3e2",
+  "markdown_files": 17,
+  "local_links_checked": 63,
+  "broken_links": [],
+  "module_tickets": 5,
+  "dependency_graph": {
+    "01": [],
+    "02": [
+      "01"
+    ],
+    "03": [
+      "01"
+    ],
+    "05": [
+      "01",
+      "02",
+      "03",
+      "04"
+    ],
+    "04": [
+      "01",
+      "03"
+    ]
+  },
+  "production_code_changed": false,
+  "training_launched": false,
+  "passed": true,
+  "scope": "documentation only; modules and LOTF training remain planned",
+  "file_sha256": {
+    ".scratch/drone-platform/map.md": "5b9e40f16563609da522bcbf4688fea8dc0ba110e4c1b5c5a1ef39cc8baebb62",
+    ".scratch/drone-platform/spec.md": "4d5ba3e08165df678972fa493c2cce1d104f87a2c0b35515339563a19b0e99f2",
+    "AGENTS.md": "a4b8ec5be422a29967d1a95f872ba54cd147841dcfb25bd7b77d1bbacec23f60",
+    "CONTEXT.md": "feabc403a1d25e06bf7eacc680e9d670cb542f991a20b789971bf0eb09d723c1",
+    "README.md": "9d6cd50efae03581cd7d41a488176dd17df9411d2f4bbd431edb43916dd3ca6c",
+    "docs/architecture.md": "06087b1bc406cd66e4ab2f7970c88e7b775d42c913cf92ddc73bba5617e2f2dc",
+    "docs/status.md": "7ee7dae2d498aa26e6cf78e3946ad68643856e88654c5b194c15f0161727d856",
+    ".scratch/composable-flight/issues/01-composition.md": "53d187e2ff461bd32bb1ec15ed5fccf1aa505b84397d7c70a64b367217cc1701",
+    ".scratch/composable-flight/issues/02-policy-control.md": "a9ad7808430700be21af305c90ec6a35df0888649ac928db25924db23c22389f",
+    ".scratch/composable-flight/issues/03-dynamics-gradients.md": "7806696f8b9b00d93366443878d618a82274060ed1a22636748124ac1f43e88e",
+    ".scratch/composable-flight/issues/04-training.md": "ed747fe4fcb64e23f1a3274dbb05a438471e7c54666a9c7e6fd8b47ecf51b8e8",
+    ".scratch/composable-flight/issues/05-task-evaluation.md": "35ea2e25fabc9e549ada1f297c31a9ee9cbcb10367698b9a1dadc874283ac2b7",
+    ".scratch/composable-flight/map.md": "b8e0a99e33eede6510a3c79b07048cffd5c1ccf624745c688efadf3930355459",
+    ".scratch/composable-flight/spec.md": "6715d2768e8ea3d2f754dd857d79ac56c96f4f99a10b173a3f7919c11dd2d1f7",
+    "docs/adr/0004-composable-flight.md": "ae540ff412d36409f0c9098ab6e4a0c589663e54f5ec5dd976c28b671f44f989",
+    "docs/adr/0005-lotf-training-scope.md": "6b6e40662188cdba9d0d358d1b73acf19da8a4ffba7c2c984999da22adfc6364",
+    "docs/research/composable-platform-references.md": "da8f038f4b0026ba37a9ef44b6bd877cb048765358b5649c5ab9d4e721f0d550"
+  }
+}

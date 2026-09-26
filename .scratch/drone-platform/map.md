@@ -20,6 +20,7 @@ Crazyflie、Brax、rscope 已确定；原生轨迹/竞速任务、作者完整�
 | P3 可微方法与四模型 | [04](issues/04-shac-tracking.md)、[05](issues/05-four-dynamics.md) | PPO/APG/SHAC × 八字/随机 × 四模型共24格，复用4组 P2 | 完整预算、独立评测、数值失效v3修复及全部有效低分 | 首轮24/24完成，21/24达标 |
 | P4a 优化控制复现 | [06](issues/06-native-racing-mpc.md) | 运行真实采样 MPC、LSY AttitudeMPC/acados，保留作者求解链 | 每方法128试次；采样128/128、AttitudeMPC117/128；模型/轨迹已读回 | 实验完成 |
 | P4b 三方法竞速训练 | [07](issues/07-racing-policy.md) | 在 LSY Level0 训练 PPO/APG/SHAC，并与优化控制比较 | PPO/APG均128/128；SHAC完整预算后0/128，低分及最终权重保留 | 实验完成；2个达标策略 |
+| 可组合架构与LOTF训练 | [模块地图](../composable-flight/map.md) | 更换策略、控制器、前向/反向模型与算法，运行LOTF混合梯度配方 | 按模块共同交付两任务训练曲线、保存策略、独立评测和回放 | 规格已写，代码待实施 |
 | P5 MID-360 静态/动态导航 | [08](issues/08-mid360-static.md)、[09](issues/09-static-navigation-policy.md)、[10](issues/10-dynamic-navigation.md) | 查看真实点云/障碍关系，运行可到达目标的静态/动态策略 | 测量几何核对、训练曲线、成功/失败轨迹和独立评测 | 待开始 |
 | P6 完整可复现实验包 | [11](issues/11-heldout-release.md) | 从固定清单重建结果表，并从任一结果回到模型和轨迹 | 多种子/留出结果、代表成功模型、原始清单、重放与验收报告 | 待开始 |
 
@@ -30,7 +31,7 @@ Crazyflie、Brax、rscope 已确定；原生轨迹/竞速任务、作者完整�
 完整交付见 [P3/P4交付记录](../../docs/verification/p3-p4-delivery.md)。
 独占资源计时、峰值显存、多训练种子及高难度竞速单列在后续验证范围。
 
-先完成 P1 可观察基础，再按实际接口依赖推进 P2/P3/P4/P5。
+P1–P4已有证据；当前插入可组合架构与LOTF训练，按模块分工共同完成，之后继续P5/P6。
 P4 的作者竞速/优化控制、P5 的传感器适配可与学习配方调试独立推进。
 GPU 正式训练按资源预算排队；CPU 适配和文档工作可并行。
 任务单的依赖指工程接口已交付，策略分数属于独立质量轴。
