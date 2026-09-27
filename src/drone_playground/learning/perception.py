@@ -1,11 +1,12 @@
 """Shared perception encoder and the actor/critic built on top of it.
 
-P5-04 requires the depth and LiDAR units to share one encoder, one actor input,
-one action contract, one task and reward. This module is the single owner of
-that contract: the environment assembles the flat observation, ``SensorLayout``
-splits it back into proprioception and a ``(history, points, channels)`` sensor
-block, and the encoder turns the sensor block into a fixed-size embedding that
-both sensors and both algorithms (PPO now, D.V.A in P5-05) consume unchanged.
+Depth and LiDAR share an observation interface, an embedding width, an action
+contract, a task and a reward. Their encoders differ: depth uses convolution,
+while LiDAR uses point-wise pooling. For each sensor, PPO and D.VA use the same
+encoder and actor definition. The environment assembles the flat observation;
+``SensorLayout`` splits it into proprioception and a ``(history, points,
+channels)`` sensor block. Equal flattened input size does not imply equal
+sensor information or equal encoder parameter counts.
 
 Information boundary (spec 8.1)
     The actor sees only: body pose/velocity, the goal direction, the previous
@@ -238,7 +239,7 @@ class PointFrameEncoder(linen.Module):
 
 
 class SharedEncoder(linen.Module):
-    """The one encoder both sensors and both algorithms use."""
+    """Sensor-specific encoder dispatch shared by PPO and D.VA."""
 
     layout: SensorLayout = None  # type: ignore[assignment]
     activation: object = linen.elu
