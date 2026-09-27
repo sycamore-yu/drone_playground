@@ -274,6 +274,13 @@ class PerceptionActor(linen.Module):
     so the head shape is chosen by the distribution rather than assumed.
     """
     init_noise_std: float = 0.367879
+    """Legacy scale seed, preserved for frozen experiment/checkpoint compatibility.
+
+    ``mean_std`` exposes this value directly. In ``concat_log_std`` the stored
+    log(seed) is an unconstrained Brax scale parameter: NormalTanhDistribution
+    uses softplus(log(seed)) + 0.001, about 0.31426135 for the P5 default.
+    It is not the post-tanh action standard deviation.
+    """
 
     @linen.compact
     def __call__(self, observations: jax.Array) -> jax.Array:

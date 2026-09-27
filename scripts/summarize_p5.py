@@ -95,6 +95,14 @@ def main():
                 budget["learning_rate"] = algorithm_config.get("learning_rate")
                 budget["rollout_horizon"] = algorithm_config.get(
                     "horizon_length", algorithm_config.get("unroll_length"))
+                network_config = training_config.get("network", {})
+                noise_seed = network_config.get("init_noise_std")
+                budget["distribution_type"] = network_config.get("distribution_type")
+                budget["configured_init_noise_std"] = noise_seed
+                budget["initial_pre_tanh_gaussian_scale"] = (
+                    math.log1p(noise_seed) + 0.001
+                    if noise_seed is not None and budget["distribution_type"] == "tanh_normal"
+                    else noise_seed)
                 budgets.append(budget)
                 if not complete:
                     issues.append(f"{base}: training budget incomplete")
@@ -314,6 +322,7 @@ def main():
               "- 两模态策略观测均为 2420 维，但编码器、视场和采样率不同；四帧覆盖的历史时长也不同，不宣称网络或信息带宽相同。",
               "- 同传感器 PPO/D.VA 共享输入及执行链；EGO/SUPER 是完整方法比较，不能将差值归因于单独的规划算法。",
               "- 算法各自采用冻结的折扣和更新配方，实际值见 training.csv 和运行 manifest；这不是只替换损失函数的受控消融。",
+              "- 噪声头保留既有参数化：init_noise_std=0.367879 先取 log，再由 Brax softplus+0.001 转换，初始高斯尺度约 0.31426135（tanh 前），不是字面 0.367879；八单元一致，不改变本轮已冻结训练。",
               "- 全部执行 Crazyflow first_principles/cf2x_L250；MuJoCo 用于几何核验与回放，ROS 仅存在于原生规划器外部工作进程。",
               "- 未加动态预测器；动态任务评测原生重规划表现。质量合格与工程完成分列。",
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
