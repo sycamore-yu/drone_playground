@@ -275,7 +275,27 @@ def test_clearance_ignores_inactive_slots():
     bank = synthetic_bank([obstacle])
     bank = bank.replace(active=jnp.zeros_like(bank.active))
     clearance, hit = clearance_and_collision(bank, jnp.int32(0), 0.0, jnp.array([5.0, 0.0, 2.5]))
-    assert not hit and math.isinf(float(clearance))
+    assert not hit and float(clearance) == pytest.approx(2.5 - BODY_RADIUS_M)
+
+
+def test_ground_contact_terminates_before_reference_point_leaves_bounds():
+    env = synthetic_env([], duration=1.0)
+    state = env.reset(jax.random.PRNGKey(0), jnp.int32(0))
+    # Body sphere bottom is below the ground while its reference stays above it.
+    near = place(state, env, (5.0, 0.0, 0.05))
+    result = env.step(near, env.hover_action)
+    assert int(result.info["outcome"]) == OUTCOME_COLLISION
+    assert float(result.metrics["out_of_bounds"]) == 0.0
+    assert float(result.metrics["clearance"]) < 0.0
+    safe = env.step(place(state, env, (5.0, 0.0, 0.1)), env.hover_action)
+    assert float(safe.metrics["collision"]) == 0.0
+    assert float(safe.metrics["clearance"]) > 0.0
+    # Below-ground crossings are also collisions, with the separate bounds
+    # diagnostic retained; the outcome applies the existing collision priority.
+    below = env.step(place(state, env, (5.0, 0.0, -0.5)), env.hover_action)
+    assert int(below.info["outcome"]) == OUTCOME_COLLISION
+    assert float(below.metrics["out_of_bounds"]) == 1.0
+    env.close()
 
 
 # --------------------------------------------------------------------------------------
@@ -325,8 +345,8 @@ def test_collision_wins_over_arrival_in_the_same_step():
 def test_out_of_bounds_and_numerical_outcomes_are_distinct():
     env = synthetic_env([], duration=1.0)
     state = env.reset(jax.random.PRNGKey(0), jnp.int32(0))
-    below = place(state, env, (5.0, 0.0, -0.5))
-    result = env.step(below, env.hover_action)
+    outside = place(state, env, (5.0, 5.5, 2.0))
+    result = env.step(outside, env.hover_action)
     assert int(result.info["outcome"]) == OUTCOME_OUT_OF_BOUNDS
     diverged = place(state, env, (5.0, 0.0, 2.0))
     data = diverged.pipeline_state

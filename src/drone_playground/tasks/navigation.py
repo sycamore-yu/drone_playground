@@ -7,10 +7,10 @@ in the same step. Static and dynamic navigation share this implementation; the
 difference is which scene families the scene bank contains, and the composition
 refuses a mismatch.
 
-Collision is evaluated at every control/physics substep against the analytic
-obstacle description, so no sample interval can pass a thin bar or a moving
-obstacle. Body geometry is the 0.07 m collision sphere of the pinned Crazyflow
-model, offsets included.
+Collision is evaluated at every 500 Hz physics substep against the analytic
+obstacles and ground. This catches the tested 40 m/s thin-bar crossing; it is
+discrete detection, not a continuous-collision guarantee at arbitrary speeds.
+Body geometry is the 0.07 m sphere of the pinned Crazyflow model, offsets included.
 """
 
 from __future__ import annotations

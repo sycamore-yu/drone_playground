@@ -2,13 +2,13 @@
 
 Type: task
 Status: in-progress
-Blocked by: final source freeze
-Engineering: queue-ready
-Experiment: not-started
+Blocked by: none
+Engineering: running
+Experiment: running
 Quality: not-evaluated
 Owner: main
 Session: p5-main
-Run: none
+Run: experiments/p5-matrix-v1/queue-state.json
 
 ## 权威设计
 

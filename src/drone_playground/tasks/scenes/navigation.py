@@ -301,7 +301,7 @@ def clearance_and_collision(
     body_centre: jax.Array,
     body_radius: float = BODY_RADIUS_M,
 ):
-    """Signed clearance to the nearest obstacle and the strict contact flag.
+    """Signed clearance to the nearest obstacle/ground and strict contact flag.
 
     Clearance is negative inside an obstacle, so a body centre inside geometry
     never clamps to a false positive. Contact is ``< radius`` for every
@@ -312,7 +312,10 @@ def clearance_and_collision(
     centre = obstacle_positions(bank, scenario_id, time)
     distance = signed_distance(bank.kind[scenario_id], bank.size[scenario_id], centre, body_centre)
     distance = jnp.where(bank.active[scenario_id], distance, jnp.inf)
-    clearance = jnp.min(distance)
+    # The same ground plane is rendered and ray-cast at world_low[2]. Walls
+    # and the upper limit are flight-volume boundaries, not physical planes.
+    ground_distance = body_centre[2] - bank.world_low[2]
+    clearance = jnp.minimum(jnp.min(distance), ground_distance)
     return clearance - body_radius, clearance < body_radius
 
 

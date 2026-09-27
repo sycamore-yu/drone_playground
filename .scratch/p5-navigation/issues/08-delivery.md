@@ -1,14 +1,14 @@
 # P5-08：完整矩阵与交付
 
 Type: task
-Status: blocked
+Status: in-progress
 Blocked by: P5-06,P5-07
-Engineering: planned
-Experiment: not-started
+Engineering: report-in-progress
+Experiment: running
 Quality: not-evaluated
-Owner: unassigned
-Session: none
-Run: none
+Owner: main
+Session: p5-main
+Run: experiments/p5-native-matrix-v1/queue-state.json
 
 ## 权威设计
 

@@ -8,13 +8,20 @@
 ## 当前工作
 
 P5 按 [感知导航规格与执行计划](../.scratch/p5-navigation/spec.md) 进入实现。
-2026-09-27 16:29 UTC 主会话直接续做 P5-05—08（用户要求不启动 dsh）。
-P5-05 接续已有未提交 D.VA 代码，已修正超时前状态 bootstrap、critic 学习率、完整恢复配置校验。
-10 项 D.VA CPU 测试通过（`tmp/p5/dva-tests-clean.log`）；GPU 工程 v1 在第 5 更新出现 NaN，
-已复现盒体内部距离梯度为 NaN，补零点次梯度保持前向几何不变；v2 复跑中。
-P5-06 锁定 EGO 与 SUPER 均已在 flightbench 容器独立 `/tmp/p5-native` 构建运行目标。
-独立 ROS master、JSON 进程桥、深度/世界点云、轨迹控制器及四实验配方已接入，工程闭环验证中。
-EGO v2 实测原生轨迹输出，但发现手动目标硬编码 z=1，后续改原生三维预设接口；旧结果完整保留。
+2026-09-27 16:47 UTC 主会话直接续做 P5-05—08（用户要求不启动 dsh）。
+实现提交：`4456dd2`。两种 D.VA 各 262144 工程交互 exit 0；CPU 完整状态恢复和 GPU 跨进程恢复已运行，
+GPU 策略参数最大差 1.695e-4，环境轨迹可分歧，仅标为近似恢复，见 `verification/p5-dva-gpu-resume.json`。
+静态 EGO/SUPER 各 3/3，动态 EGO 2/3（hard 碰撞保留），动态 SUPER 6 回合完成；并发隔离工程运行通过。
+16:55 UTC 自审发现 P5-01 的地面已渲染/感知，但碰撞只检查障碍物，参考点越界前的机体触地未判失败。
+两条 v1 正式队列已中止（原 session 53875 / 52924），保留三份已启动运行及 `interruption.json`；
+它们不进入正式统计，也不续训。新增地面净空/碰撞回归通过后，从头执行统一协议 v2。
+v2 队列命令为 `scripts/run_p5_{learning,native}_matrix.py --revision v2`；
+日志与队列状态进入 `experiments/p5-matrix-v2/`、`experiments/p5-native-matrix-v2/`。
+先查原进程/状态，禁止重复启动或覆盖失败目录。
+全量 CPU suite session 58854 / `tmp/p5/full-suite.log` 在运行。质量数值门槛未冻结，保留 null，不阻塞预算执行。
+P5-05 已修正超时前状态 bootstrap、critic 学习率、完整恢复配置校验及盒体内部距离零点次梯度。
+P5-06 锁定 EGO 与 SUPER 已在 flightbench 容器独立 `/tmp/p5-native` 构建运行目标；
+独立 ROS master、JSON 进程桥、真实传感器、轨迹控制器及四实验配方工程闭环已通过。
 当前会话 `p5-main`；正式八训练和 36 格留出评测尚未完成，质量门槛仍待用户明确。
 用户确认八个训练单元各8388608次交互、推力与姿态动作、动态场景评测原生EGO/SUPER；
 场景复用SANDO/MIGHTY几何与运动，导航统一40秒、0.5米到达、机体碰撞判失败。
