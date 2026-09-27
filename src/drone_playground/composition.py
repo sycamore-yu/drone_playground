@@ -62,7 +62,29 @@ def validate_config(config: dict) -> None:
         raise ValueError("The LOTF preset uses the native 1000Hz low-level controller")
     native_lotf = forward in ("lotf_high_fidelity", "lotf_simplified")
     policy_output = config["policy"]["output"]
-    if native_lotf:
+    if config["task"]["name"] == "navigation":
+        if forward not in ("so_rpy", "so_rpy_rotor", "so_rpy_rotor_drag", "first_principles"):
+            raise ValueError(f"Unknown navigation forward dynamics: {forward}")
+        if backward != "direct":
+            raise ValueError("Navigation uses the direct Crazyflow derivative")
+        if control != "crazyflow_attitude" or policy_output != "attitude_thrust":
+            raise ValueError(
+                "Navigation uses the shared attitude_thrust controller contract"
+            )
+        scene = config["scene"]
+        if "families" not in scene or "dynamic" not in scene:
+            raise ValueError("The navigation task requires a navigation scene preset")
+        if bool(scene["dynamic"]) != bool(config["task"]["dynamic"]):
+            raise ValueError("Navigation task and scene disagree on static versus dynamic")
+        if frequency != 50:
+            raise ValueError("The frozen navigation protocol runs the policy at 50 Hz")
+        if config["task"]["duration"] != 40.0:
+            raise ValueError("The frozen navigation protocol caps an episode at 40 s")
+        if config["task"]["goal_radius"] != 0.5:
+            raise ValueError("The frozen navigation protocol uses a 0.5 m goal radius")
+        if config["objective"]["name"] != "navigation":
+            raise ValueError("Every navigation unit shares the one navigation reward")
+    elif native_lotf:
         if (
             config["scene"]["name"] != "lotf_world"
             or config["scene"]["randomization"] != "upstream_initial_state"
@@ -177,7 +199,31 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
     if split not in SPLIT_SEEDS:
         raise ValueError(f"Unknown split: {split}")
     cfg = copy.deepcopy(config)
-    if cfg["dynamics"]["forward"].startswith("lotf_"):
+    if cfg["task"]["name"] == "navigation":
+        from drone_playground.controllers.crazyflow import AttitudeControl
+        from drone_playground.tasks.navigation import NavigationEnv
+        from drone_playground.tasks.scenes.navigation import make_bank
+
+        model = instantiate(cfg["dynamics"])
+        scene = instantiate(cfg["scene"])
+        observer = instantiate(cfg["observation"])
+        objective = instantiate(cfg["objective"])
+        per_difficulty = cfg["task"]["reference_count"] if split == "train" else count
+        bank, manifest = make_bank(scene, SPLIT_SEEDS[split], per_difficulty)
+        env = NavigationEnv(
+            scene_bank=bank,
+            task=cfg["task"]["name"],
+            model=model,
+            controller=AttitudeControl(),
+            observation=observer,
+            objective=objective,
+            freq=cfg["task"]["freq"],
+            duration=cfg["task"]["duration"],
+            goal_radius=cfg["task"]["goal_radius"],
+            device=device,
+        )
+        env.scene_manifest = manifest
+    elif cfg["dynamics"]["forward"].startswith("lotf_"):
         from drone_playground.tasks.lotf import LOTFTask
 
         env = LOTFTask(cfg, device=device, split=split)
@@ -237,7 +283,7 @@ def native_training_config(config: dict) -> dict:
         freq=config["task"]["freq"],
         reference_count=config["task"]["reference_count"],
         numerical_guard=config["task"].get("numerical_guard", False),
-        observation_size=(13 + 3 * config["observation"].get("n_samples", 0)),
+        observation_size=instantiate(config["observation"]).size,
         components=config,
         config_version=2,
     )

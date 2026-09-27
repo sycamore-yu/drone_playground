@@ -20,6 +20,10 @@ def make_evaluator(env, make_policy, seeds):
         from .lotf import LOTFEvaluator
 
         return LOTFEvaluator(env, make_policy, seeds)
+    if env.task == "navigation":
+        from .navigation import NavigationEvaluator
+
+        return NavigationEvaluator(env, make_policy, seeds)
     if env.task == "racing":
         from .racing import RaceEvaluator
 
@@ -48,6 +52,10 @@ def resolve_evaluation_config(config, metadata):
 
 
 def evaluate_experiment(config, root, run_id):
+    if config["task"]["name"] == "navigation":
+        from .navigation import evaluate_navigation
+
+        return evaluate_navigation(config, root, run_id)
     if config["controller"]["name"] in ("attitude_mpc", "sampling_mpc") and not config.get(
         "checkpoint"
     ):

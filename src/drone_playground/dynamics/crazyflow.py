@@ -23,6 +23,38 @@ class CrazyflowModel:
                 "Crazyflow currently supports its direct derivative; select LOTF for the named surrogate"
             )
 
+    def _drone_reference(self, duration, freq, device, start):
+        """Single-drone Crazyflow reference whose initial pose the caller owns."""
+
+        def reset(data, default, mask):
+            del default
+            speed = 10000.0 if self.forward == "first_principles" else 0.05
+            rotor = jnp.full_like(data.states.rotor_vel, speed)
+            return data.replace(states=leaf_replace(data.states, mask, rotor_vel=rotor))
+
+        reference = DroneEnv(
+            num_envs=1,
+            freq=freq,
+            max_episode_time=duration,
+            dynamics=self.forward,
+            drone=self.drone,
+            device=device,
+            reset_randomization=reset,
+        )
+        reference.sim.data = reference.sim.data.replace(
+            states=reference.sim.data.states.replace(
+                pos=reference.sim.data.states.pos.at[0, 0].set(jnp.asarray(start))
+            )
+        )
+        reference.sim.build_default_data()
+        return reference
+
+    def create_navigation(self, duration, freq, device, start):
+        """Reference simulation for the navigation task; the scene owns the pose."""
+        reference = self._drone_reference(duration, freq, device, start)
+        self.bind(reference.sim)
+        return reference
+
     def create_tracking(self, task, duration, freq, device, scene):
         if task == "figure8":
             reference = FigureEightEnv(
@@ -35,28 +67,7 @@ class CrazyflowModel:
                 max_episode_time=duration,
             )
         else:
-
-            def reset(data, default, mask):
-                del default
-                speed = 10000.0 if self.forward == "first_principles" else 0.05
-                rotor = jnp.full_like(data.states.rotor_vel, speed)
-                return data.replace(states=leaf_replace(data.states, mask, rotor_vel=rotor))
-
-            reference = DroneEnv(
-                num_envs=1,
-                freq=freq,
-                max_episode_time=duration,
-                dynamics=self.forward,
-                drone=self.drone,
-                device=device,
-                reset_randomization=reset,
-            )
-            reference.sim.data = reference.sim.data.replace(
-                states=reference.sim.data.states.replace(
-                    pos=reference.sim.data.states.pos.at[0, 0].set(jnp.asarray(scene.takeoff))
-                )
-            )
-            reference.sim.build_default_data()
+            reference = self._drone_reference(duration, freq, device, scene.takeoff)
         self.bind(reference.sim)
         return reference
 

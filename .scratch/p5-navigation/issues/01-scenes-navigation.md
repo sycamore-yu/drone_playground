@@ -1,14 +1,14 @@
 # P5-01：几何场景与导航任务
 
 Type: task
-Status: blocked
+Status: resolved
 Blocked by: P5-00
-Engineering: planned
-Experiment: not-started
-Quality: not-evaluated
-Owner: unassigned
-Session: none
-Run: none
+Engineering: passed
+Experiment: engineering-run
+Quality: separate (P5-07)
+Owner: main-session
+Session: p5-main
+Run: p5-nav-smoke-static-v3
 
 ## 权威设计
 
@@ -28,4 +28,26 @@ Run: none
 
 ## 证据
 
-待执行后填写；当前状态为计划。
+实现：
+`src/drone_playground/tasks/scenes/navigation.py`（SANDO 风格解析几何与运动、密度驱动生成、
+起终点连通占据搜索）、`src/drone_playground/tasks/navigation.py`（统一导航任务、
+逐物理子步碰撞、到达/碰撞/越界/数值失效事件）、
+`src/drone_playground/evaluation/navigation.py`、`src/drone_playground/runs/navigation_scene.py`
+（逐实例 MuJoCo 回放模型）、`configs/scene|task|observation|objective|policy|experiment/p5_navigation_*.yaml`。
+
+真实闭环运行 `experiments/p5-nav-smoke-static-v3`：PPO 实际更新 32768 交互，
+开发集 96 回合（三档难度各 32）逐回合记录，每档导出 4 份 rscope 回放；退出码 0。
+随机初始策略 96/96 越界，作为真实低分保留。命令见运行目录 `command.txt`。
+
+验收检查 `tests/test_navigation.py` 共 17 项全部通过，覆盖任务书要求的每一项：
+同源几何与时钟（设备端运动函数对照宿主解析式、场景时间 == 物理步计数 × dt）、
+固定种子复现与 train/dev/heldout 几何隔离、三档难度密度落在 SANDO 目标 ±0.03、
+机体碰撞（圆柱侧面/顶面、盒体边界、非激活槽位）、0.5 m 到达、碰撞同一步优先、
+越界与数值失效区分、40 秒/2000 步超时（阻尼高度保持真实飞满全程并判超时）、
+快速穿越（40 m/s 在一个控制步内穿过 0.2 m 薄杆仍被捕获）与重置清空。
+
+冻结的工程参数与来源偏差见
+[P5来源清单](../../../docs/verification/p5-source-inventory.json)
+的 `frozen_engineering_parameters` 与 `p5_01_measurements`；其中记录了两个实测事实：
+Crazyflow 四元数为 xyzw（默认姿态 [0,0,0,1]），以及 first_principles/cf2x_L250 的
+配平推力约在归一化 0.40（0.3514 N = 1.12·m·g），此前记录的 m·g 配平会掉高。

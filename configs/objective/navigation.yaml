@@ -1,0 +1,9 @@
+_target_: drone_playground.learning.objectives.NavigationObjective
+name: navigation
+progress_scale: 5.0
+time_cost: 0.01
+clearance_scale: 0.1
+clearance_radius: 0.5
+smoothness_scale: 0.01
+arrival_bonus: 20.0
+failure_penalty: -20.0

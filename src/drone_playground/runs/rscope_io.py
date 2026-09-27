@@ -231,6 +231,24 @@ def _native_rollout(
     mocap_pos[:, :, mocap_id, :] = values["pos"]
     mocap_quat[:, :, mocap_id, :] = np.roll(values["quat"], 1, axis=-1)
 
+    # Analytic scene obstacles are animated through their own mocap bodies, so a
+    # replay shows the geometry that was actually sensed, not a static snapshot.
+    obstacle_ids = getattr(sim.data.core, "obstacle_mocap_ids", None)
+    if obstacle_ids is not None:
+        if "obstacle_pos" not in trace:
+            raise KeyError("the replay model declares obstacles but the trace has no obstacle_pos")
+        obstacle_pos = np.asarray(trace["obstacle_pos"])
+        obstacle_ids = np.asarray(obstacle_ids).reshape(-1)
+        if obstacle_pos.shape[:2] != (steps, batch) or obstacle_pos.shape[2] != len(obstacle_ids):
+            raise ValueError(
+                f"obstacle_pos must have shape {(steps, batch, len(obstacle_ids), 3)}, "
+                f"got {obstacle_pos.shape}"
+            )
+        mocap_pos[:, :, obstacle_ids, :] = obstacle_pos
+        mocap_quat[:, :, obstacle_ids, :] = np.broadcast_to(
+            np.array([1.0, 0.0, 0.0, 0.0]), (steps, batch, len(obstacle_ids), 4)
+        )
+
     metrics = dict(values["metrics"])
     actions = values.get("actions")
     if actions is not None:

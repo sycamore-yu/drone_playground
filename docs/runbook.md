@@ -46,6 +46,28 @@ pixi run experiment --multirun experiment=figure8_apg,figure8_shac   training.nu
 
 低预算只用于执行链检查，正式训练使用冻结配方。每个试验独立保存配置、曲线、参数和结果，避免共享活动显示目录干扰训练。
 
+## P5 导航任务
+
+```bash
+cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
+# 只解析配置，不启动训练
+/home/tong/.pixi/bin/pixi run experiment --cfg job experiment=p5_navigation_static
+# 真实闭环训练（静态/动态各一个工程配方）
+/home/tong/.pixi/bin/pixi run train experiment=p5_navigation_static  run_id=p5-nav-static
+/home/tong/.pixi/bin/pixi run train experiment=p5_navigation_dynamic run_id=p5-nav-dynamic
+```
+
+导航协议固定：50 Hz 策略频率、40 秒上限、0.5 米到达半径、机体碰撞判失败，
+碰撞与到达同一步时碰撞优先。组合入口会拒绝修改这些数值或让静态/动态任务与场景不一致。
+
+回放按难度分档，每档若干实例，每个实例一份自带障碍动画的 `.mj_unroll`：
+
+```text
+experiments/<run_id>/rollouts/step-<step>/{easy,medium,hard}/case-000/
+```
+
+开发集选模顺序为宏平均成功率 → 碰撞率 → 受限完成时间；评价阈值待协议冻结确认。
+
 ## 独立评测
 
 默认从检查点恢复环境身份，网络参数及归一化冻结：

@@ -37,10 +37,54 @@ from drone_playground.tasks.tracking import wrap_for_training
 
 
 def development_score(task: str, report: dict) -> tuple:
-    """Select only on development data; race progress breaks incomplete ties."""
+    """Select only on development data; ties break on the declared secondary terms."""
     if task == "racing":
         return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
+    if task == "navigation":
+        # Declared order: macro success rate, collision rate, constrained time.
+        return (
+            report["success_rate"],
+            -report["collision_rate"],
+            -report["constrained_time_mean_s"],
+        )
     return (report["completed"], -report["rmse_all_mean"])
+
+
+def evaluation_scalars(task: str, report: dict) -> dict:
+    """Map a task report onto the scalar TensorBoard surface."""
+    if task == "navigation":
+        return {
+            "eval/success_rate": report["success_rate"],
+            "eval/collision_rate": report["collision_rate"],
+            "eval/constrained_time_s": report["constrained_time_mean_s"],
+            "eval/timeout_rate": report["timeout_rate"],
+            "eval/return": report["return_mean"],
+        }
+    return {
+        "eval/completion_rate": report["completion_rate"],
+        "eval/rmse_all_m": report["rmse_all_mean"],
+        "eval/return": report["return_mean"],
+    }
+
+
+def export_run_replays(env, trace, report, directory):
+    """Export replays through the contract the selected task actually owns."""
+    if env.task == "navigation":
+        from drone_playground.evaluation.navigation import (
+            export_navigation_replays,
+            select_episodes,
+        )
+
+        selected = {
+            difficulty: jax.tree.map(
+                lambda value: np.asarray(value)[:, cases], trace[difficulty]
+            )
+            for difficulty, cases in select_episodes(report).items()
+        }
+        return export_navigation_replays(env, selected, directory, count=4)
+    from drone_playground.runs.rscope_io import export_rollout as write_rollout
+
+    return write_rollout(env.sim, directory, select_replays(trace, report))
 
 
 def train(
@@ -49,7 +93,7 @@ def train(
     """Train the declared complete budget and record real snapshots and evaluations."""
     from drone_playground.runs.console import capture_console
     from drone_playground.runs.record import RunRecorder
-    from drone_playground.runs.rscope_io import export_rollout, publish_snapshot
+    from drone_playground.runs.rscope_io import publish_snapshot
 
     config = dict(config)
     algorithm = config["algorithm"]
@@ -73,6 +117,7 @@ def train(
             "figure8": "crazyflow-figure8-v1",
             "random": "lsy-random-spline-v1",
             "racing": "lsy-level0-reference-tracking-v1",
+            "navigation": "sando-style-navigation-40s-0.5m-body-collision-v1",
         }[config["task"]],
     )
     if config.get("numerical_guard", False):
@@ -115,19 +160,39 @@ def train(
             save_report(rec.path / "native-task-config.json", env.config.to_dict())
         evaluation_env = build_environment(config["components"], device, "dev", 32)
         dev_seeds = list(range(20000, 20032))
-        save_report(
-            rec.path / "eval" / "dev-cases.json",
-            {
+        if env.task == "navigation":
+            dev_case = {
                 "split": "dev",
                 "reset_seeds": dev_seeds,
-                "reference_seeds": dev_seeds if env.task == "random" else [20000],
+                "episodes_per_difficulty": evaluation_env.bank.num_instances // 3,
+                "scenario_groups": {
+                    difficulty: list(
+                        range(index * (evaluation_env.bank.num_instances // 3),
+                              (index + 1) * (evaluation_env.bank.num_instances // 3))
+                    )
+                    for index, difficulty in enumerate(("easy", "medium", "hard"))
+                },
+                "bank_digest": evaluation_env.bank.digest(),
                 "quality_rule": (
-                    "at least29/32 complete all native gate passes"
-                    if env.task == "racing"
-                    else "at least29/32 complete, completed mean RMSE <=0.25m"
+                    "selection order: macro success rate, collision rate, constrained time; "
+                    "the acceptance threshold is pending the P5 protocol freeze"
                 ),
-            },
-        )
+            }
+            save_report(rec.path / "eval" / "dev-cases.json", dev_case)
+        else:
+            save_report(
+                rec.path / "eval" / "dev-cases.json",
+                {
+                    "split": "dev",
+                    "reset_seeds": dev_seeds,
+                    "reference_seeds": dev_seeds if env.task == "random" else [20000],
+                    "quality_rule": (
+                        "at least29/32 complete all native gate passes"
+                        if env.task == "racing"
+                        else "at least29/32 complete, completed mean RMSE <=0.25m"
+                    ),
+                },
+            )
 
         def snapshot(step, make_policy, params):
             nonlocal evaluator, best_score, best, snapshot_count, initial_params
@@ -144,16 +209,11 @@ def train(
             report, trace = evaluator.run(params)
             report.update(step=step, checkpoint=str(checkpoint.relative_to(rec.path)), split="dev")
             save_report(rec.path / "eval" / f"step-{step:010d}.json", report)
-            rec.log(
-                step,
-                {
-                    "eval/completion_rate": report["completion_rate"],
-                    "eval/rmse_all_m": report["rmse_all_mean"],
-                    "eval/return": report["return_mean"],
-                    "eval/seconds": time.monotonic() - t,
-                    "eval/quality_passed": float(report["quality_passed"]),
-                },
-            )
+            scalars = evaluation_scalars(env.task, report)
+            scalars["eval/seconds"] = time.monotonic() - t
+            if report.get("quality_passed") is not None:
+                scalars["eval/quality_passed"] = float(report["quality_passed"])
+            rec.log(step, scalars)
             if env.task == "racing":
                 rec.log(
                     step,
@@ -163,10 +223,8 @@ def train(
                     },
                 )
             t = time.monotonic()
-            replay = select_replays(trace, report)
-            replay["metrics"]["training_step"] = np.full_like(replay["reward"], step)
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
-            export_rollout(evaluation_env.sim, replay_directory, replay)
+            export_run_replays(evaluation_env, trace, report, replay_directory)
             rec.log(step, {"record/export_seconds": time.monotonic() - t})
             score = development_score(env.task, report)
             if score > best_score:
@@ -206,9 +264,8 @@ def train(
                     {
                         "run_id": run_id,
                         "step": step,
-                        "completed": report["completed"],
-                        "rmse": report["rmse_all_mean"],
-                        "quality_passed": report["quality_passed"],
+                        **scalars,
+                        "quality_passed": report.get("quality_passed"),
                     }
                 ),
                 flush=True,
@@ -361,7 +418,7 @@ def train(
             "snapshots": snapshot_count,
             "best_development_result": best,
             "elapsed_seconds": time.monotonic() - start,
-            "quality_passed": bool(best and best["quality_passed"]),
+            "quality_passed": bool(best and best.get("quality_passed")),
             "engineer_passed": True,
             "full_budget_completed": True,
             "live_publications": live_publications,
