@@ -26,5 +26,18 @@
   "source_logs": [
     "/tmp/p5-native/ego-build.log",
     "/tmp/p5-native/super-fsm-build.log"
-  ]
+  ],
+  "development_packages": [
+    {
+      "package": "libdw-dev",
+      "version": "0.176-1.1ubuntu0.1",
+      "architecture": "amd64"
+    },
+    {
+      "package": "libelf-dev",
+      "version": "0.176-1.1ubuntu0.1",
+      "architecture": "amd64"
+    }
+  ],
+  "setup_script_validation": "manual equivalent build commands succeeded; bash -n succeeded; no end-to-end rebuild during formal evaluation"
 }

@@ -80,6 +80,12 @@ python3 scripts/summarize_p5.py --revision v2
 
 原生依赖构建脚本为 `scripts/setup_p5_native.sh`。它使用已有 flightbench 容器，
 仅构建外部目录中的锁定 EGO 和 SUPER 运行目标，不替换主机 ROS 或系统库。
+它要求当前容器已有 ROS Noetic、catkin 与 FlightBench 的 C++/ROS 依赖；
+不是从空容器安装全部依赖的脚本。实测构建是逐条执行等价命令，脚本另通过 bash 语法检查。
+EGO 源码默认 `tmp/p5-refsrc/ego-planner`（`https://github.com/ZJU-FAST-Lab/ego-planner.git`），
+SUPER 默认 `/home/tong/tongworkspace/reference_repos/SUPER`（`https://github.com/hku-mars/SUPER.git`）；
+在新环境先准备这些 Git 仓库，或通过 `P5_EGO_SOURCE/P5_SUPER_SOURCE` 指定路径。
+实际使用固定 commit 的 `git archive`，不会使用未提交修改或随分支最新版本变化。
 不要在矩阵运行期间重建这些二进制。
 SUPER 的离线 read_replan_log 工具不属于运行依赖；运行只需要已构建的 fsm_node。
 桥工作进程默认 4 回合并行，每个独立 master；两组规划器并行时端口范围互不重叠。

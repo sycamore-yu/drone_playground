@@ -34,6 +34,14 @@
       "passed": 1,
       "subtests": 0,
       "sha256": "3770ad5647dd7aa6feac4721754eb253f37cee6cb51648f844a4badfbde01960"
+    },
+    {
+      "name": "replay_terminal_time",
+      "log": "tmp/p5/replay-terminal-tests.log",
+      "exit_code": 0,
+      "passed": 9,
+      "subtests": 0,
+      "sha256": "28557a6177c6eef64821954962aa2840a5acc19ccf0a317f37cfa56583dc6299"
     }
   ]
 }
