@@ -209,6 +209,9 @@ def main():
     for row in budgets:
         lines.append(f"| {row['task']} | {row['sensor']} | {row['method']} | {row['actual_steps'] or '—'} | "
                      f"{row['best_step'] if row['best_step'] is not None else '—'} | {row['status']} |")
+    if finished:
+        lines += ["", "## 图表", "", "![开发集训练曲线](development-curves.png)",
+                  "", "![正式留出成功率](heldout-matrix.png)"]
     for split in COUNTS:
         lines += ["", f"## {'正式留出' if split == 'heldout' else '最终独立开发'} 36 格", "",
                   "| Task | Sensor | Method | Difficulty | N | 成功率 | 碰撞率 | 受限时间/s |",
