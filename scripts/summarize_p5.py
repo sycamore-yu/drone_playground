@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import hashlib
 import json
@@ -116,9 +117,23 @@ def main():
                 replacement = ROOT / "experiments" / (run_id + "-archive-v1")
                 repair = read(replacement / "archive-repair.json")
                 if not (path / "traces/index.json").exists() and repair:
+                    original_config = copy.deepcopy((read(path / "manifest.json") or {}).get("config", {}))
+                    replacement_config = copy.deepcopy((read(replacement / "manifest.json") or {}).get("config", {}))
+                    for config in (original_config, replacement_config):
+                        config.pop("run_id", None)
+                        if not learned:
+                            config.get("policy", {}).pop("port", None)
+                    repair["configuration_identity_verified"] = original_config == replacement_config
+                    worker_equal = True
+                    if not learned:
+                        old_worker, new_worker = path / "ros_bridge.py", replacement / "ros_bridge.py"
+                        worker_equal = (old_worker.exists() and new_worker.exists()
+                                        and digest(old_worker) == digest(new_worker))
+                        repair["native_worker_identity_verified"] = worker_equal
                     if (repair.get("source_run") != run_id
                             or not repair.get("same_scene_bank")
-                            or not repair.get("same_parameter_digest")):
+                            or not repair.get("same_parameter_digest")
+                            or not repair["configuration_identity_verified"] or not worker_equal):
                         issues.append(f"{run_id}: archive repair identity mismatch")
                     else:
                         path, run_id = replacement, replacement.name
