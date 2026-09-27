@@ -259,6 +259,26 @@ def main():
     write_csv(target / "training.csv", budgets)
     write_csv(target / "cells.csv", cells)
     write_csv(target / "episodes.csv", episodes)
+    # The protocol also calls for geometry subtype strata, without expanding
+    # the twelve method units or changing their evaluation denominator.
+    subtype_groups = {}
+    subtype_keys = ("task", "sensor", "method", "split", "difficulty", "subtype")
+    for episode in episodes:
+        key = tuple(episode[name] for name in subtype_keys)
+        subtype_groups.setdefault(key, []).append(episode)
+    subtype_rows = []
+    for key, group in sorted(subtype_groups.items()):
+        row = dict(zip(subtype_keys, key, strict=True))
+        row.update(num_trials=len(group), **{
+            name: sum(episode["outcome"] == name for episode in group) for name in OUTCOMES})
+        row["success_rate"] = row["arrived"] / len(group)
+        row["success_ci95_low"], row["success_ci95_high"] = wilson(row["arrived"], len(group))
+        row["constrained_time_mean_s"] = sum(
+            episode["arrival_time_s"] if episode["arrived"] else 40.0 for episode in group) / len(group)
+        successful = [episode["arrival_time_s"] for episode in group if episode["arrived"]]
+        row["success_time_mean_s"] = sum(successful) / len(successful) if successful else None
+        subtype_rows.append(row)
+    write_csv(target / "subtypes.csv", subtype_rows)
     units = []
     for task in ("static", "dynamic"):
         for sensor, method in METHODS:
@@ -331,6 +351,7 @@ def main():
               "- 早期 v2 评测仅导出代表轨迹；缺少全回合逐帧归档的单元按固定规则重评，使用后缀 archive-v1 的完整证据。选择规则只看归档缺失，不看得分；原结果及前后差异保留在 archive-repair.json，新增训练交互为零。",
               "", "## 证据", "",
               "training.csv：预算与选模；units.csv：各方法汇总（成功条件时间按全部成功回合加权）；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
+              "subtypes.csv 按难度内的场景子类型另作分层，保留各自分母和全部失败；这些行不增加训练单元或正式评测总回合数。",
               "", "图表通过 scripts/plot_p5.py 重建；RScope 读取校验通过 scripts/verify_p5_replays.py 重建。",
               "规划器 rpc_case_p95_max_s 是各回合 RPC 延迟第 95 百分位的最大值，包含通信和等待，不等于纯求解耗时。"]
     if issues:
