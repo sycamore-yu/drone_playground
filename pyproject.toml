@@ -16,6 +16,7 @@ dependencies = [
     "optax==0.2.8",
     "mujoco==3.14.0",
     "mujoco-mjx==3.14.0",
+    "mujoco-lidar==0.3.5",
     "rscope==0.0.8",
     "tensorboard>=2.18,<3",
     "tensorboardX==2.6.5",
