@@ -78,6 +78,19 @@ python3 scripts/summarize_p5.py --revision v2
 结果表：`docs/verification/p5-results-v2/report.md` 及同目录 JSON/CSV。
 统计工具核验开发选模、检查点 SHA、冻结参数、每格分母及场景身份；缺失格明确标记未完成。
 
+全部训练清单存在且补采完成后，按以下顺序验收；任一步非零均不能声明完整交付：
+
+```bash
+env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run python scripts/verify_p5_scene_splits.py --revision v2
+python3 scripts/summarize_p5.py --revision v2 --require-complete
+env -u PYTHONPATH pixi run python scripts/plot_p5.py --revision v2
+env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run python scripts/verify_p5_replays.py --revision v2
+```
+
+场景审计检查每实例几何/运动参数指纹与接受种子，不只比较整库摘要。
+训练清单按冻结配置事后确定性重建在 `experiments/p5-scene-audit-v2/`；
+不会宣称这些重建文件是训练前已经物化保存的清单。审计摘要在结果目录的 `scene-splits.json`。
+
 原生依赖构建脚本为 `scripts/setup_p5_native.sh`。它使用已有 flightbench 容器，
 仅构建外部目录中的锁定 EGO 和 SUPER 运行目标，不替换主机 ROS 或系统库。
 它要求当前容器已有 ROS Noetic、catkin 与 FlightBench 的 C++/ROS 依赖；
