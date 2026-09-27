@@ -26,7 +26,8 @@ CPU 数值恢复对照通过；GPU 跨进程的策略最大绝对差 0.000169534
 原始量化见 [p5-dva-gpu-resume.json](p5-dva-gpu-resume.json)。
 
 37 项导航/D.VA/原生接口测试通过，额外完整固定观测代理目标有限差分通过；
-增加回放场景索引检查后的原生契约 9 项通过。全量 suite 另记录最终退出码。
+增加回放场景索引检查后的原生契约 9 项通过。全量 suite 148 项和 2 子测试通过，exit 0。
+完整命令/日志身份见 [p5-tests.json](p5-tests.json)。
 
 ## 原生规划器
 
@@ -54,7 +55,9 @@ libdw/libelf 开发包提取在私有 sysroot，没有覆盖容器系统库。
 |p5-static-ego-v3-eng|3|3|easy/medium/hard，28 条原生轨迹|
 |p5-dynamic-ego-v2-eng|3|2|hard 碰撞保留，40 条原生轨迹|
 |p5-static-super-v3-eng|3|3|463 次原生轨迹发布|
-|p5-dynamic-super-v1-eng|6|见原始 report|两种动态几何子类|
+|p5-dynamic-super-v1-eng|6|6|两种动态几何子类，729 次发布|
+|p5-static-ego-parallel-eng|6|6|独立双 master，67 条原生轨迹|
+|p5-static-super-parallel-eng|6|6|独立双 master，807 次发布|
 
 EGO v1 的场景 JSON 序列化错误、v2 的硬编码目标高度、SUPER v1 的早期目标订阅竞态均保留。
 SUPER v1 还跨过一次 worker 更新，只作为诊断，不进入任何正式矩阵。
@@ -69,3 +72,7 @@ SUPER v1 还跨过一次 worker 更新，只作为诊断，不进入任何正式
 预算与正式 dev/heldout 完成度由队列和矩阵汇总脚本核验，尚未完成的结果不填成零或通过。
 用户没有冻结成功率数值门槛，quality_passed 保持 null；工程通过、预算完成、策略质量分别呈现。
 
+随后发现 P5-01 地面只参与感知而未进入碰撞；已将地面并入统一最近净空/球碰撞，
+修复后 19 项导航回归通过。全量 suite 早于该改动加载代码，因此两份证据分列。
+刚启动的 v1 队列中止，首个 PPO 最后已记录 2097152 交互，两个原生 dev 运行未完成；
+这些目录的 `interruption.json` 明确排除正式统计。v2 从零开始统一使用修复后协议。

@@ -84,6 +84,10 @@ def main():
                               best_step=best.get("step"), best_selection_split=best.get("selection_split"),
                               elapsed_seconds=result.get("elapsed_seconds", result.get("elapsed_s")),
                               actor_parameter_delta_l2=result.get("actor_parameter_delta_l2"))
+                metrics = result.get("trainer_metrics", {})
+                budget["net_update_seconds"] = metrics.get("net_update_seconds")
+                budget["compile_and_first_update_seconds"] = metrics.get("compile_and_first_update_seconds")
+                budget["trainer_reported_sps"] = metrics.get("training/sps")
                 budgets.append(budget)
                 if not complete:
                     issues.append(f"{base}: training budget incomplete")
@@ -148,6 +152,14 @@ def main():
                             "constrained_time_mean_s", "success_time_mean_s", "min_clearance_m",
                             "return_mean")})
                         row["success_ci95_low"], row["success_ci95_high"] = wilson(cell["arrived"], count)
+                        diagnostics = [x for x in report.get("diagnostics", [])
+                                       if x["difficulty"] == difficulty]
+                        if diagnostics:
+                            row["native_trajectories"] = sum(x["trajectories"] for x in diagnostics)
+                            row["missing_command_steps"] = sum(x["missing_command_steps"] for x in diagnostics)
+                            row["rejected_commands"] = sum(x["rejected_commands"] for x in diagnostics)
+                            row["rpc_case_p95_max_s"] = max(x["rpc_p95_s"] for x in diagnostics)
+                            row["episode_wall_sum_s"] = sum(x["wall_seconds"] for x in diagnostics)
                         for episode in cases:
                             episodes.append(dict(task=task, sensor=sensor, method=method,
                                                  split=split, run_id=run_id, **episode))
@@ -211,7 +223,9 @@ def main():
               "- 未加动态预测器；动态任务评测原生重规划表现。质量合格与工程完成分列。",
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
               "", "## 证据", "",
-              "training.csv：预算与选模；cells.csv：逐格指标和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。"]
+              "training.csv：预算与选模；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
+              "", "图表通过 scripts/plot_p5.py 重建；RScope 读取校验通过 scripts/verify_p5_replays.py 重建。",
+              "规划器 rpc_case_p95_max_s 是各回合 RPC 延迟第 95 百分位的最大值，包含通信和等待，不等于纯求解耗时。"]
     if issues:
         lines += ["", "## 尚缺证据", ""] + ["- " + x for x in issues]
     (target / "report.md").write_text("\n".join(lines) + "\n")
@@ -223,4 +237,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

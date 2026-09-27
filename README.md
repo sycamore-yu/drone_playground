@@ -20,6 +20,9 @@ PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
 - [来源及复用清单](docs/research/references.md)
 - [P3/P4 完整结果与检查点](docs/verification/p3-p4-results.md)
 - [LOTF悬停、八字及模块化交付](docs/verification/composable-lotf-delivery.md)
+- [P5 感知导航规格](.scratch/p5-navigation/spec.md)
+- [P5 模块工程验收](docs/verification/p5-implementation-review.md)
+- [P5 正式矩阵与完成状态](docs/verification/p5-results-v2/report.md)
 
 ## 项目位置
 
@@ -43,8 +46,9 @@ PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
 [P1 观察验收](docs/verification/p1-observation-checks.md)。
 
 当前结果覆盖四种动力学、状态与参考轨迹观测、训练种子0，以及原生扰动下的固定赛道。
-三种学习方法和两种优化控制均已接通。感知导航、多训练种子和导航规划器扩展进入P5/P6，
-可复算结果与数值故障修正范围见完整报告。
+三种学习方法和两种优化控制均已接通。P5 已接入静态/动态导航、虚拟 D435/MID360、
+PPO/D.VA 和外部 ROS 原生 EGO-Planner/SUPER；完整预算与评测完成度以 P5 矩阵报告为准。
+多训练种子仍属后续研究范围。
 
 可组合架构已经迁移现有任务、控制器、网络、动力学和评测。LOTF高保真前向＋解析反向＋BPTT
 已完成悬停600万、八字2250万交互，独立留出均128/128完整回合；悬停最后一秒误差0.07697米，
@@ -56,4 +60,5 @@ pixi run train experiment=lotf_hybrid_hover run_id=my-new-hover
 pixi run train experiment=lotf_hybrid_tracking run_id=my-new-tracking
 ```
 
-LOTF模块直接复用固定GPLv3子模块，源码和来源见`THIRD_PARTY_NOTICES.md`。在线适应、视觉和实机部署另列后续范围。
+LOTF模块直接复用固定GPLv3子模块，源码和来源见`THIRD_PARTY_NOTICES.md`。
+P5 使用独立规划器工作进程；在线适应和实机部署另列后续范围。
