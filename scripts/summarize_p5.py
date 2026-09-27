@@ -74,6 +74,7 @@ def main():
                 result = read(train_path / "result.json") or {}
                 state = read(train_path / "state.json") or {}
                 best = read(train_path / "checkpoints" / "best.json") or {}
+                training_config = (read(train_path / "manifest.json") or {}).get("config", {})
                 actual = result.get("actual_steps")
                 complete = (result.get("status") == "completed" and actual == BUDGET
                             and result.get("full_budget_completed") is True)
@@ -88,6 +89,11 @@ def main():
                 budget["net_update_seconds"] = metrics.get("net_update_seconds")
                 budget["compile_and_first_update_seconds"] = metrics.get("compile_and_first_update_seconds")
                 budget["trainer_reported_sps"] = metrics.get("training/sps")
+                algorithm_config = training_config.get("algorithm", {})
+                budget["discounting"] = algorithm_config.get("discounting")
+                budget["learning_rate"] = algorithm_config.get("learning_rate")
+                budget["rollout_horizon"] = algorithm_config.get(
+                    "horizon_length", algorithm_config.get("unroll_length"))
                 budgets.append(budget)
                 if not complete:
                     issues.append(f"{base}: training budget incomplete")
@@ -219,6 +225,7 @@ def main():
     lines += ["", "## 比较边界", "",
               "- 学习组四帧压缩观测：D435 每帧 300 点；MID360 每帧 120 点。原生规划器读取完整 120×90 深度或每帧 24000 条 MID360 射线的有效点。",
               "- 同传感器 PPO/D.VA 共享输入及执行链；EGO/SUPER 是完整方法比较，不能将差值归因于单独的规划算法。",
+              "- 算法各自采用冻结的折扣和更新配方，实际值见 training.csv 和运行 manifest；这不是只替换损失函数的受控消融。",
               "- 全部执行 Crazyflow first_principles/cf2x_L250；MuJoCo 用于几何核验与回放，ROS 仅存在于原生规划器外部工作进程。",
               "- 未加动态预测器；动态任务评测原生重规划表现。质量合格与工程完成分列。",
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
