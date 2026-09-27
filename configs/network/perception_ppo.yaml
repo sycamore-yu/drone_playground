@@ -1,0 +1,10 @@
+name: perception_ppo
+distribution_type: normal
+normalize_observations: true
+hidden_sizes:
+- 128
+- 128
+init_noise_std: 0.367879
+mean_kernel_scale: 0.01
+encoder: shared_p5_perception
+embedding_size: 128

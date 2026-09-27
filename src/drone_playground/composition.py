@@ -323,6 +323,22 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
     return env
 
 
+def sensor_layout(config: dict) -> dict | None:
+    """Perception layout implied by the observation and its sensor calibration."""
+    if not config["observation"].get("sensor"):
+        return None
+    from drone_playground.learning.perception import SensorLayout
+
+    sensor = instantiate(config["observation"]["sensor"])
+    observer = build_observer(config, sensor)
+    grid = None
+    if observer.name == "navigation_depth":
+        # DepthCamera.pixel_grid uses meshgrid(columns, rows, indexing="ij"),
+        # so the flattened policy grid is width-major: (W/stride, H/stride).
+        grid = (sensor.width // sensor.stride, sensor.height // sensor.stride)
+    return SensorLayout.from_observation(observer, grid=grid).as_dict()
+
+
 def native_training_config(config: dict) -> dict:
     """Translate resolved component groups into the native learner's arguments."""
     out = {**config["algorithm"], **config["network"], **config["training"]}
@@ -336,6 +352,7 @@ def native_training_config(config: dict) -> dict:
         reference_count=config["task"]["reference_count"],
         numerical_guard=config["task"].get("numerical_guard", False),
         observation_size=instantiate(observation_spec(config)).size,
+        sensor_layout=sensor_layout(config),
         components=config,
         config_version=2,
     )

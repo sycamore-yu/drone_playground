@@ -4,7 +4,7 @@
 # declares the frozen formal budget of 8,388,608 interactions.
 defaults:
 - override /algorithm: ppo
-- override /network: brax_ppo
+- override /network: perception_ppo
 - override /task: navigation_static
 - override /scene: navigation_static
 - override /observation: navigation_depth

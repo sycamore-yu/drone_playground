@@ -1,12 +1,10 @@
 # @package _global_
-# P5 formal unit 3: static navigation, MID360 LiDAR, PPO.
-# Engineering runs override training.num_timesteps down; the recipe itself
-# declares the frozen formal budget of 8,388,608 interactions.
+# P5 formal unit 7: dynamic navigation, MID360 LiDAR, PPO.
 defaults:
 - override /algorithm: ppo
 - override /network: perception_ppo
-- override /task: navigation_static
-- override /scene: navigation_static
+- override /task: navigation_dynamic
+- override /scene: navigation_dynamic
 - override /observation: navigation_lidar
 - override /objective: navigation
 - override /policy: neural_navigation
@@ -25,13 +23,6 @@ algorithm:
   clipping_epsilon: 0.2
   entropy_cost: 0.005
   max_grad_norm: 1.0
-network:
-  distribution_type: normal
-  normalize_observations: true
-  hidden_sizes:
-  - 128
-  - 128
-  init_noise_std: 0.367879
 training:
   seed: 0
   num_timesteps: 8388608
@@ -39,4 +30,4 @@ training:
   num_evals: 9
   publish_live: false
   max_wall_seconds: 7200
-source: P5 formal matrix unit 3; MID360 non-repetitive lidar, shared navigation reward
+source: P5 formal matrix unit 7; MID360 non-repetitive lidar, shared navigation reward

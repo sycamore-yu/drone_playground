@@ -9,6 +9,13 @@ from flax import linen
 
 
 def network_factory(config: dict):
+    if config.get("sensor_layout"):
+        from drone_playground.learning.perception import (
+            SensorLayout,
+            perception_network_factory,
+        )
+
+        return perception_network_factory(SensorLayout.from_dict(config["sensor_layout"]), config)
     sizes = tuple(config.get("hidden_sizes", [64, 64]))
     if config["algorithm"] == "ppo":
         return functools.partial(

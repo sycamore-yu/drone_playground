@@ -143,9 +143,13 @@ class Mid360Lidar:
             return int(policy_freq // self.source_rate_hz)
         return max(1, int(round(policy_freq / self.source_rate_hz)))
 
-    @lru_cache(maxsize=4)
     def angle_table(self) -> jax.Array:
-        """``(W, P, 2)`` device-side window table, so the phase can be traced."""
+        """``(W, P, 2)`` window table as a JAX constant.
+
+        The host table is cached as NumPy data; converting inside the function
+        keeps a traced value from ever being cached, which would let a tracer
+        escape the transform that created it.
+        """
         return jnp.asarray(scan_windows(self.pattern, self.downsample))
 
     def directions(self, window) -> jax.Array:

@@ -53,7 +53,13 @@ P5-02 与 P5-03 已交付：D435 理想深度链与 MID360 点云链，共享同
 依赖变更：新增 `mujoco-lidar==0.3.5`（MIT）并写入 `pyproject.toml` 与 `pixi.lock`。
 许可发现：`reference_repos/SUPER` 没有 LICENSE 文件，只能作为未修改的外部进程运行。
 
-下一步按 P5-04 实现共享深度/点云编码器与两传感器 PPO 真实更新。
+P5-04 已交付：共享 encoder 与 actor/critic 契约（`learning/perception.py`）。
+两种传感器给出相同的 actor/critic 头形状；actor 与 critic 输入完全相同，无特权字段；
+checkpoint 保存/重载逐元素复现动作。`tests/test_perception_ppo.py` 7 项通过。
+工程预算真实运行：深度 `p5-static-depth-ppo-seed0-v2-eng`（262144 交互，sps 3328）、
+点云 `p5-static-lidar-ppo-seed0-v1-eng`，均退出码 0 并写出检查点与逐难度评测。
+
+下一步按 P5-05 移植 D.VA，复用同一 encoder 契约。
 
 已按用户本轮意见写入 [可组合架构规格](../.scratch/composable-flight/spec.md)：
 控制器合并跟踪与飞控内环；策略包含轨迹规划；动力学包含电机；训练配置收敛为四类。
