@@ -11,7 +11,10 @@ Information boundary (spec 8.1)
     The actor sees only: body pose/velocity, the goal direction, the previous
     normalised action, and range measurements. It never sees the scene manifest,
     obstacle identity, or future obstacle motion.
-    The critic consumes exactly the same tensor: no privileged field is added.
+    The critic consumes only the proprioceptive subset already available to the
+    actor.  It receives no additional privileged obstacle or scene field.  This
+    preserves a differentiable terminal-state value for D.VA while keeping PPO
+    and D.VA on the same information permission boundary.
     :func:`privileged_critic_fields` states that explicitly so a run record can
     be checked rather than trusted.
 """
@@ -53,10 +56,20 @@ SENSOR_FIELDS = {
 
 
 def privileged_critic_fields() -> dict:
-    """Every field the value network sees beyond the actor's input."""
+    """Value-function visibility for the matched PPO/D.VA comparison.
+
+    The actor sees proprioception plus the selected sensor.  The critic is kept
+    deliberately smaller: it consumes the differentiable proprioceptive block
+    only.  This mirrors D.VA's state-value bootstrap without leaking obstacle
+    truth, and it lets the D.VA terminal value keep a state derivative even
+    though the actor observation is detached from the physical state.
+    """
     return {
         "privileged_fields": [],
-        "actor_and_critic_share_observation": True,
+        "actor_fields": list(PROPRIOCEPTION_FIELDS) + ["selected range sensor history"],
+        "critic_fields": list(PROPRIOCEPTION_FIELDS),
+        "actor_and_critic_share_observation_container": True,
+        "critic_uses_sensor": False,
         "scene_manifest_visible_to_policy": False,
         "future_obstacle_motion_visible_to_policy": False,
         "rejected_privileged_candidates": [
@@ -289,7 +302,12 @@ class PerceptionActor(linen.Module):
 
 
 class PerceptionCritic(linen.Module):
-    """Shared encoder followed by the value head."""
+    """Proprioceptive value function used by both matched algorithms.
+
+    It intentionally ignores the appended sensor block.  For PPO this avoids a
+    second expensive perception encoder; for D.VA it preserves a useful
+    derivative from the frozen target value to the terminal physical state.
+    """
 
     layout: SensorLayout = None  # type: ignore[assignment]
     hidden_sizes: tuple[int, ...] = (128, 128)
@@ -297,9 +315,8 @@ class PerceptionCritic(linen.Module):
 
     @linen.compact
     def __call__(self, observations: jax.Array) -> jax.Array:
-        proprio, frames = self.layout.split(observations)
-        embedded = SharedEncoder(layout=self.layout)(frames)
-        hidden = jnp.concatenate([proprio, embedded], axis=-1)
+        proprio, _ = self.layout.split(observations)
+        hidden = proprio
         for index, size in enumerate(self.hidden_sizes):
             hidden = self.activation(linen.Dense(size, name=f"hidden_{index}")(hidden))
         return linen.Dense(1, name="value_head")(hidden)

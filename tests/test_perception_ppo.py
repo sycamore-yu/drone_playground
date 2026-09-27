@@ -36,7 +36,8 @@ def test_depth_and_lidar_share_policy_width_but_keep_sensor_identity():
 def test_actor_and_critic_information_boundary_is_explicit():
     contract = privileged_critic_fields()
     assert contract["privileged_fields"] == []
-    assert contract["actor_and_critic_share_observation"] is True
+    assert contract["actor_and_critic_share_observation_container"] is True
+    assert contract["critic_uses_sensor"] is False
     assert contract["scene_manifest_visible_to_policy"] is False
     assert contract["future_obstacle_motion_visible_to_policy"] is False
 
