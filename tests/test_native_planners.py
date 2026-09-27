@@ -38,7 +38,7 @@ def test_stale_future_and_nonfinite_native_reference_is_rejected(stamp):
     assert planner.step({"time": 1.0})["reference"] is None
 
 
-def test_selected_replay_retains_case_geometry_identity(monkeypatch, tmp_path):
+def test_selected_replay_retains_case_geometry_and_terminal_time(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
     from drone_playground.evaluation.navigation import export_navigation_replays
@@ -51,13 +51,18 @@ def test_selected_replay_retains_case_geometry_identity(monkeypatch, tmp_path):
     monkeypatch.setattr(navigation_scene, "create_replay_model", lambda env, scenario: scenario)
 
     def record(model, target, trace):
-        captured.append((model, trace["pos"][0, 0, 0], target.name))
+        captured.append((model, trace["pos"][0, 0, 0], target.name,
+                         len(trace["time"]), trace["time"][-1, 0]))
         return target / "rollout.mj_unroll"
 
     monkeypatch.setattr(rscope_io, "export_rollout", record)
     env = SimpleNamespace(bank=SimpleNamespace(num_instances=18))
-    trace = {"pos": np.broadcast_to(np.arange(6)[None, :, None], (1, 6, 3)),
-             "time": np.zeros((1, 6))}
+    active = np.ones((4, 6), bool)
+    active[1:, 0] = False
+    active[2:, 5] = False
+    trace = {"pos": np.broadcast_to(np.arange(6)[None, :, None], (4, 6, 3)),
+             "time": np.broadcast_to(np.array([.02, .04, .06, .08])[:, None], (4, 6)),
+             "active": active}
     export_navigation_replays(env, {"medium": trace}, tmp_path,
                               case_indices={"medium": [0, 5]})
-    assert captured == [(6, 0, "case-000"), (11, 5, "case-005")]
+    assert captured == [(6, 0, "case-000", 1, .02), (11, 5, "case-005", 2, .04)]

@@ -260,7 +260,15 @@ def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4
                  else list(range(min(count, trace["pos"].shape[1]))))
         for case in cases:
             scenario_id = index * per_difficulty + case
-            single = jax.tree.map(lambda value: np.asarray(value)[:, case : case + 1], trace)
+            stop = trace["pos"].shape[0]
+            if "active" in trace:
+                live = np.flatnonzero(np.asarray(trace["active"])[:, case])
+                if not len(live):
+                    raise ValueError(f"Replay case {case} has no active transition")
+                # Include the terminal transition; omit the batch rollout's
+                # padding so dynamic geometry cannot move after the episode.
+                stop = int(live[-1]) + 1
+            single = jax.tree.map(lambda value: np.asarray(value)[:stop, case : case + 1], trace)
             times = np.asarray(single["time"])[:, 0]
             active = active_indices(env.bank, scenario_id)
             single["obstacle_pos"] = obstacle_track(env.bank, scenario_id, times)[:, active][
@@ -279,6 +287,7 @@ def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4
                     "difficulty": difficulty,
                     "case": case,
                     "scenario_id": scenario_id,
+                    "frames": stop,
                     "replay": str(path.relative_to(directory)),
                 }
             )
