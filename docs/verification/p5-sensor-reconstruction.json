@@ -40,6 +40,46 @@
       "source_sha256": "fdae1f23d52bbbd8022a7d8749054aec91109a99195450b64a8c2bb755672b5c",
       "reconstruction": "experiments/p5-formal-static-super-v2-dev-archive-v1/sensor-reconstruction/easy/case-000/tick-0150.npz",
       "reconstruction_sha256": "a28170a1b6be88144f4c9191081b84f7c0d320f2351d49ee2c6cf78dcfdb7e9f"
+    },
+    {
+      "run_id": "p5-formal-dynamic-ego-v2-dev",
+      "tick": 150,
+      "time_s": 3.0,
+      "original_shape": [
+        90,
+        120
+      ],
+      "reconstructed_shape": [
+        90,
+        120
+      ],
+      "max_absolute_error_m": 0.0,
+      "tolerance_m": 2e-05,
+      "passed": true,
+      "source": "experiments/p5-formal-dynamic-ego-v2-dev/native/easy/0/sensor-packet-0150.json",
+      "source_sha256": "c2ebe689ad16c8c6344f248234dcfbfddf42c38b695865eec8d649dac72b9066",
+      "reconstruction": "experiments/p5-formal-dynamic-ego-v2-dev/sensor-reconstruction/easy/case-000/tick-0150.npz",
+      "reconstruction_sha256": "fa8fd40d7199360ec25c34790f35f4d3b436ec8fc91b66c740059cdf26fb2ec4"
+    },
+    {
+      "run_id": "p5-formal-dynamic-super-v2-dev",
+      "tick": 150,
+      "time_s": 3.0,
+      "original_shape": [
+        5984,
+        3
+      ],
+      "reconstructed_shape": [
+        5984,
+        3
+      ],
+      "max_absolute_error_m": 0.0,
+      "tolerance_m": 2e-05,
+      "passed": true,
+      "source": "experiments/p5-formal-dynamic-super-v2-dev/native/easy/0/sensor-packet-0150.json",
+      "source_sha256": "e3e31ecf1da13ad655162e02c5a580dea27da4d75ba6a014aa9658e6eca6a4dc",
+      "reconstruction": "experiments/p5-formal-dynamic-super-v2-dev/sensor-reconstruction/easy/case-000/tick-0150.npz",
+      "reconstruction_sha256": "6cfe84e80ddbb4023a52f9e92496e4009a66a37431d5745a6f7868e4f9d1e8bb"
     }
   ]
 }
