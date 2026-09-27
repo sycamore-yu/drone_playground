@@ -1,5 +1,7 @@
 # 10：动态感知导航完整链路
 
+本条目保留早期范围记录。当前执行由 [P5设计](../../p5-navigation/spec.md) 的 P5-01、P5-06、P5-07 承接，任务状态以新任务单为准。
+
 Type: task
 Status: ready-for-agent
 Blocked by: 02,08

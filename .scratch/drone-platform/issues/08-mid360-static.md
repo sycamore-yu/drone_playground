@@ -1,5 +1,7 @@
 # 08：可观察的 MID-360 静态导航任务
 
+本条目保留早期范围记录。当前执行由 [P5设计](../../p5-navigation/spec.md) 的 P5-01、P5-03 承接，任务状态以新任务单为准。
+
 Type: task
 Status: ready-for-agent
 Blocked by: 01

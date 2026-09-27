@@ -21,7 +21,7 @@ Crazyflie、Brax、rscope 已确定；原生轨迹/竞速任务、作者完整�
 | P4a 优化控制复现 | [06](issues/06-native-racing-mpc.md) | 运行真实采样 MPC、LSY AttitudeMPC/acados，保留作者求解链 | 每方法128试次；采样128/128、AttitudeMPC117/128；模型/轨迹已读回 | 实验完成 |
 | P4b 三方法竞速训练 | [07](issues/07-racing-policy.md) | 在 LSY Level0 训练 PPO/APG/SHAC，并与优化控制比较 | PPO/APG均128/128；SHAC完整预算后0/128，低分及最终权重保留 | 实验完成；2个达标策略 |
 | 可组合架构与LOTF训练 | [模块地图](../composable-flight/map.md) | 更换兼容的策略、控制器、前向/反向模型与算法，运行LOTF混合梯度配方 | 五模块、2850万次交互、两任务各128/128留出及9个训练时间点 | 已完成；结果见共同交付 |
-| P5 MID-360 静态/动态导航 | [08](issues/08-mid360-static.md)、[09](issues/09-static-navigation-policy.md)、[10](issues/10-dynamic-navigation.md) | 查看真实点云/障碍关系，运行可到达目标的静态/动态策略 | 测量几何核对、训练曲线、成功/失败轨迹和独立评测 | 待开始 |
+| P5 感知导航 | [设计与九项任务](../p5-navigation/spec.md) | D435/MID360 × PPO/D.VA，EGO/SUPER，静态/动态几何场景 | 八个训练单元、四个规划器单元、36格难度结果与回放 | 设计完成；实现待开始 |
 | P6 完整可复现实验包 | [11](issues/11-heldout-release.md) | 从固定清单重建结果表，并从任一结果回到模型和轨迹 | 多种子/留出结果、代表成功模型、原始清单、重放与验收报告 | 待开始 |
 
 ## 排期和依赖
