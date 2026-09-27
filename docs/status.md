@@ -18,7 +18,10 @@ GPU 策略参数最大差 1.695e-4，环境轨迹可分歧，仅标为近似恢�
 v2 队列命令为 `scripts/run_p5_{learning,native}_matrix.py --revision v2`；
 日志与队列状态进入 `experiments/p5-matrix-v2/`、`experiments/p5-native-matrix-v2/`。
 先查原进程/状态，禁止重复启动或覆盖失败目录。
-全量 CPU suite session 58854 / `tmp/p5/full-suite.log` 在运行。质量数值门槛未冻结，保留 null，不阻塞预算执行。
+v2 已启动：学习 session 96099、规划器 session 27701（16:58 UTC，代码 `caf4c49`）。
+全量 CPU suite exit 0：148 项、2 子测试通过（`tmp/p5/full-suite.log`）；
+该进程早于地面改动加载源码，补充修复后导航 19 项及原生接口/回放身份 9 项通过。
+质量数值门槛未冻结，保留 null，不阻塞预算执行。
 P5-05 已修正超时前状态 bootstrap、critic 学习率、完整恢复配置校验及盒体内部距离零点次梯度。
 P5-06 锁定 EGO 与 SUPER 已在 flightbench 容器独立 `/tmp/p5-native` 构建运行目标；
 独立 ROS master、JSON 进程桥、真实传感器、轨迹控制器及四实验配方工程闭环已通过。

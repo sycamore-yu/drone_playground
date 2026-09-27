@@ -8,7 +8,7 @@ Experiment: running
 Quality: not-evaluated
 Owner: main
 Session: p5-main
-Run: experiments/p5-native-matrix-v1/queue-state.json
+Run: experiments/p5-native-matrix-v2/queue-state.json
 
 ## 权威设计
 
@@ -28,4 +28,7 @@ Run: experiments/p5-native-matrix-v1/queue-state.json
 
 ## 证据
 
-待执行后填写；当前状态为计划。
+v2 正式矩阵正在执行。主会话直接完成，不启动 dsh。
+离线汇总 `scripts/summarize_p5.py --revision v2 --require-complete` 核验
+8 个完整预算、36 个 dev/heldout 格、分母与场景/参数身份；未完成时退出非零。
+报告在 `docs/verification/p5-results-v2/`，当前表保留缺失格，尚不能验收为完成。

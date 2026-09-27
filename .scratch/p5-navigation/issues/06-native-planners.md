@@ -1,14 +1,14 @@
 # P5-06：原生规划器闭环
 
 Type: task
-Status: in-progress
+Status: resolved
 Blocked by: none
-Engineering: verifying
-Experiment: engineering-runs
+Engineering: passed
+Experiment: engineering-runs-completed
 Quality: not-evaluated
 Owner: main
 Session: p5-main
-Run: p5-static-ego-v2-eng, p5-static-super-v1-eng
+Run: p5-static-ego-v3-eng, p5-static-super-v3-eng, p5-dynamic-ego-v2-eng, p5-dynamic-super-v1-eng
 
 ## 权威设计
 
@@ -29,5 +29,11 @@ Run: p5-static-ego-v2-eng, p5-static-super-v1-eng
 ## 证据
 
 EGO 与 SUPER 原生运行目标编译通过。适配器保留上游建图/轨迹模块，不导入 ROS 到 Pixi。
-EGO v2 已产出轨迹并驱动物理模型；发现上游手动目标接口硬编码高度，改用原生三维预设接口验证中。
+EGO 使用原生三维预设接口解决手动目标硬编码高度问题。静态 3/3 到达，28 次轨迹发布；
+动态 2/3 到达，40 次发布，hard 的 1 次碰撞保留。
+SUPER 静态 3/3 到达、463 次轨迹发布；动态 6/6 到达、729 次发布。
+双工作进程隔离工程运行两种规划器均 6/6 到达，分别 67/807 次真实轨迹发布。
+失效时间戳/非有限轨迹与控制契约测试通过，桥按 SHA 固定，实际输入样本、启动参数和日志随回合保存。
+9 项原生接口/回放身份测试通过；构建身份见 `docs/verification/p5-native-build.json`。
+这些是工程检查，不作为完整留出统计；四单元正式矩阵归 P5-08。
 SUPER 源文件有 LGPLv3-or-later 头部声明（仓库根目录没有 LICENSE）；继续采用外部进程集成并记录来源。

@@ -1,9 +1,9 @@
 # P5-05：D.VA移植与点云扩展
 
 Type: task
-Status: in-progress
+Status: resolved
 Blocked by: none
-Engineering: passed; full-run selection resume verifying
+Engineering: passed
 Experiment: engineering-runs-completed
 Quality: not-evaluated
 Owner: main
@@ -32,5 +32,8 @@ Run: p5-static-depth-dva-seed0-v2-eng, p5-static-lidar-dva-seed0-v1-eng
 
 两个 GPU 工程运行各完成 262144 次交互，exit 0，actor/critic/encoder 实际更新。
 37 项导航/D.VA/规划器接口测试通过；额外固定观测、完整动作—动力学—奖励—末端价值代理目标有限差分通过。
-CPU 连续/恢复完整状态比较通过；GPU 跨进程续训及开发选模继承另行验证中。
+CPU 连续/恢复完整状态比较通过；GPU 跨进程续训与开发选模继承已通过运行检查。
+GPU 策略最大参数差 1.695e-4；随机键一致，但环境轨迹可分歧，只声明近似恢复。
+证据：`docs/verification/p5-dva-gpu-resume.json`、`p5-static-depth-dva-seed0-resume-eng`。
+正式 8388608 预算与最终质量归 P5-07；本项不以短工程运行替代正式预算。
 早期深度 v1 梯度 NaN 的失败保留：盒体内部范数零点选择有限次梯度后 v2 通过，前向距离和碰撞规则未变。

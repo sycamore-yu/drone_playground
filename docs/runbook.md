@@ -48,6 +48,51 @@ pixi run experiment --multirun experiment=figure8_apg,figure8_shac   training.nu
 
 ## P5 导航任务
 
+P5-05—08 正式批次使用 v2。已有队列运行时不要再次启动。
+主会话：学习队列 session 96099，原生规划器队列 session 27701；
+会话失效时以运行目录心跳和 PID/start marker 为准，禁止只根据旧 `status=running` 推断仍在运行。
+v1 已因地面碰撞遗漏中止，三份目录有 `interruption.json`，仅供诊断。
+
+```bash
+cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
+# 查看命令，不运行矩阵
+env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_learning_matrix.py --revision v2 --dry-run
+env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_native_matrix.py --revision v2 --dry-run
+# 运行（只在确认没有原队列时使用）
+env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_learning_matrix.py --revision v2
+env -u PYTHONPATH JAX_PLATFORMS=cpu /home/tong/.pixi/bin/pixi run python scripts/run_p5_native_matrix.py --revision v2
+# 随时重建当前证据表；验收时增加 --require-complete
+python3 scripts/summarize_p5.py --revision v2
+```
+
+8 个训练单元各 8388608 交互，单种子 0。训练期间只使用开发集选模；
+每个最佳检查点单独启动最终 dev/heldout 评测，每档 32/128 回合。
+四个原生规划器单元采用同样清单和预算；合计 dev 1152、heldout 4608 回合。
+队列不会覆盖未完成目录或自动暖启动；成功完成的目录须通过预算/回合数核验才复用。
+一个单元失败后其余独立单元继续，最终队列退出非零，保留全部错误。
+全矩阵修复重跑必须使用新的 revision，不能把不同任务协议混在同一张表。
+
+学习队列日志：`experiments/p5-matrix-v2/`；规划器队列：
+`experiments/p5-native-matrix-v2/`。单元完成时写 `queue-state.json`，
+过程查看各运行的 `state.json`、`metrics/metrics.jsonl` 和 `native-progress.json`。
+结果表：`docs/verification/p5-results-v2/report.md` 及同目录 JSON/CSV。
+统计工具核验开发选模、检查点 SHA、冻结参数、每格分母及场景身份；缺失格明确标记未完成。
+
+原生依赖构建脚本为 `scripts/setup_p5_native.sh`。它使用已有 flightbench 容器，
+仅构建外部目录中的锁定 EGO 和 SUPER 运行目标，不替换主机 ROS 或系统库。
+不要在矩阵运行期间重建这些二进制。
+SUPER 的离线 read_replan_log 工具不属于运行依赖；运行只需要已构建的 fsm_node。
+桥工作进程默认 4 回合并行，每个独立 master；两组规划器并行时端口范围互不重叠。
+
+独立评测回放在
+`experiments/<run_id>-{dev,heldout}/rollouts/{easy,medium,hard}/case-*/`，
+每档固定前四个案例，另外保留首个失败案例（若它不在前四个中）。
+RScope 显示同一次运行的机体与障碍运动。学习回放含策略压缩观测；
+原生回放含本体状态，完整传感器示例见 `native/<difficulty>/0/` 的第 0/150 步采样包。
+这两类输入表示不能当作等像素、等点数的算法比较。
+
+### 单个配方与工程检查
+
 ```bash
 cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
 # 只解析配置，不启动训练

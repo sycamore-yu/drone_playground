@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-09-27T17:04:24.381638+00:00",
+  "passed": true,
+  "scope_note": "Full suite loaded code before ground fix; targeted navigation tests cover the subsequent ground change. Native replay identity test was added after full-suite collection and passed separately.",
+  "checks": [
+    {
+      "name": "full_suite",
+      "log": "tmp/p5/full-suite.log",
+      "exit_code": 0,
+      "passed": 148,
+      "subtests": 2,
+      "sha256": "748868e48b979d06b0e042ead3d07d30e11f60c80810a0ba78c9c596c7917bed"
+    },
+    {
+      "name": "ground_navigation",
+      "log": "tmp/p5/ground-navigation-tests.log",
+      "exit_code": 0,
+      "passed": 19,
+      "subtests": 0,
+      "sha256": "7085a90f4f3548b9ffe3d69d10cd453e70d3cc3f620cd1c7a140c4327b072e3d"
+    },
+    {
+      "name": "native_contract_replay",
+      "log": "tmp/p5/native-contract-tests.log",
+      "exit_code": 0,
+      "passed": 9,
+      "subtests": 0,
+      "sha256": "4ed8391f95aa7a68daf1a3c0ed34d45e1198ae0cc061c6501dce08dac13632ed"
+    },
+    {
+      "name": "dva_surrogate_fd",
+      "log": "tmp/p5/dva-surrogate-test.log",
+      "exit_code": 0,
+      "passed": 1,
+      "subtests": 0,
+      "sha256": "3770ad5647dd7aa6feac4721754eb253f37cee6cb51648f844a4badfbde01960"
+    }
+  ]
+}

@@ -8,7 +8,7 @@ Experiment: running
 Quality: not-evaluated
 Owner: main
 Session: p5-main
-Run: experiments/p5-matrix-v1/queue-state.json
+Run: experiments/p5-matrix-v2/queue-state.json
 
 ## 权威设计
 
