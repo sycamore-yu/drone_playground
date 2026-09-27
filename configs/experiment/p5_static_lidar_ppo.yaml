@@ -1,10 +1,13 @@
 # @package _global_
+# P5 formal unit 1: static navigation, D435 depth, PPO.
+# Engineering runs override training.num_timesteps down; the recipe itself
+# declares the frozen formal budget of 8,388,608 interactions.
 defaults:
 - override /algorithm: ppo
 - override /network: brax_ppo
 - override /task: navigation_static
 - override /scene: navigation_static
-- override /observation: navigation_state
+- override /observation: navigation_lidar
 - override /objective: navigation
 - override /policy: neural_navigation
 dynamics:
@@ -13,9 +16,9 @@ dynamics:
   drone: cf2x_L250
 algorithm:
   unroll_length: 16
-  batch_size: 32
-  num_minibatches: 8
-  num_updates_per_batch: 4
+  batch_size: 64
+  num_minibatches: 16
+  num_updates_per_batch: 8
   learning_rate: 0.0008
   discounting: 0.97
   gae_lambda: 0.95
@@ -26,15 +29,14 @@ network:
   distribution_type: normal
   normalize_observations: true
   hidden_sizes:
-  - 64
-  - 64
+  - 128
+  - 128
   init_noise_std: 0.367879
 training:
   seed: 0
-  num_timesteps: 262144
+  num_timesteps: 8388608
   num_envs: 128
-  num_evals: 3
+  num_evals: 9
   publish_live: false
-  max_wall_seconds: 1800
-source: P5 navigation engineering closed loop; state observation, shared navigation reward
-# Kept as the state-only counterpart of p5_static_depth_ppo for P5-01 evidence runs.
+  max_wall_seconds: 7200
+source: P5 formal matrix unit 3; MID360 non-repetitive lidar, shared navigation reward

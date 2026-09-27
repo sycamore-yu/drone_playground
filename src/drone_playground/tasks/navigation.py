@@ -32,6 +32,8 @@ from drone_playground.tasks.scenes.navigation import (
     body_centre_from_state,
     clearance_and_collision,
 )
+from drone_playground.tasks.sensors.depth import DepthCamera, cast_depth
+from drone_playground.tasks.sensors.lidar import Mid360Lidar, cast_lidar
 from drone_playground.tasks.tracking import numerically_valid_observation
 
 
@@ -44,6 +46,9 @@ class NavigationData:
     step_index: jax.Array
     previous_distance: jax.Array
     previous_action: jax.Array
+    sensor_values: jax.Array
+    sensor_time: jax.Array
+    sensor_sequence: jax.Array
 
 
 class NavigationEnv(Env):
@@ -64,6 +69,8 @@ class NavigationEnv(Env):
         controller=None,
         observation=None,
         objective=None,
+        sensor: DepthCamera | Mid360Lidar | None = None,
+        stride: int | None = None,
     ):
         if freq <= 0 or 500 % freq:
             raise ValueError("Task frequency must be a positive divisor of 500 Hz")
@@ -103,6 +110,24 @@ class NavigationEnv(Env):
         self.bounds_low = jnp.asarray(scene_bank.world_low, jnp.float32)
         self.bounds_high = jnp.asarray(scene_bank.world_high, jnp.float32)
 
+        self.sensor = sensor
+        if sensor is None:
+            self.points_per_frame = 0
+            self.sensor_period = 1
+            self.depth_stride = 1
+        else:
+            self.depth_stride = stride
+            self.points_per_frame = sensor.points_per_frame
+            self.sensor_period = sensor.period_steps(freq)
+            expected = sensor.history * sensor.points_per_frame * sensor.channels
+            if self.observer.sensor_size != expected:
+                raise ValueError(
+                    "the observation sensor block does not match the sensor frame size; "
+                    f"observation expects {self.observer.sensor_size}, sensor produces "
+                    f"{expected}"
+                )
+        self.sensor_calibration = None if sensor is None else sensor.calibration()
+
     # -- Brax Env interface ------------------------------------------------------------
 
     @property
@@ -135,7 +160,59 @@ class NavigationEnv(Env):
     def observation(self, data: NavigationData) -> jax.Array:
         states = data.sim_data.states
         goal = self.bank.goal[data.scenario_id]
-        return self.observer(states, goal, data.previous_action)
+        if self.sensor is None:
+            return self.observer(states, goal, data.previous_action)
+        return self.observer(
+            states, goal, data.previous_action, {"values": data.sensor_values}
+        )
+
+    def _sample_sensor(self, data: NavigationData) -> NavigationData:
+        """Generate the due measurement and refresh the history at its own rate.
+
+        The scene is advanced and the body pose synchronised before the
+        measurement is generated, so a sample always describes the pose at its
+        recorded capture time. Frames are refreshed on a fixed control-step
+        divisor, which makes the realised availability exact and recordable
+        instead of an aliased 50/30 ratio.
+        """
+        if self.sensor is None:
+            return data
+        states = data.sim_data.states
+        time = data.step_index.astype(jnp.float32) * self.dt
+        position = states.pos[0, 0]
+        quat = states.quat[0, 0]
+        if isinstance(self.sensor, Mid360Lidar):
+            # The scan phase is episode state, so a reset restarts the horizon
+            # instead of continuing a cursor owned by the generator.
+            frame = cast_lidar(
+                self.sensor,
+                self.bank,
+                data.scenario_id,
+                position,
+                quat,
+                time,
+                data.sensor_sequence,
+            )
+        else:
+            frame = cast_depth(
+                self.sensor,
+                self.bank,
+                data.scenario_id,
+                position,
+                quat,
+                time,
+                self.depth_stride,
+            )
+        values = self.sensor.frame_values(frame)
+        due = (data.step_index % self.sensor_period) == 0
+        history = jnp.where(
+            due, jnp.concatenate([data.sensor_values[1:], values[None]]), data.sensor_values
+        )
+        times = jnp.where(
+            due, jnp.concatenate([data.sensor_time[1:], frame.time[None]]), data.sensor_time
+        )
+        sequence = data.sensor_sequence + due.astype(jnp.int32)
+        return data.replace(sensor_values=history, sensor_time=times, sensor_sequence=sequence)
 
     def reset(self, rng: jax.Array, scenario_id: jax.Array | None = None) -> State:
         if rng.dtype == jnp.uint32:
@@ -159,13 +236,19 @@ class NavigationEnv(Env):
             ang_vel=jnp.zeros_like(sim_data.states.ang_vel),
         )
         sim_data = sim_data.replace(states=states)
+        history = 1 if self.sensor is None else self.sensor.history
+        channels = 1 if self.sensor is None else self.sensor.channels
         data = NavigationData(
             sim_data=sim_data,
             scenario_id=scenario_id,
             step_index=jnp.int32(0),
             previous_distance=jnp.linalg.norm(start - goal),
             previous_action=self.hover_action,
+            sensor_values=jnp.zeros((history, self.points_per_frame, channels), jnp.float32),
+            sensor_time=jnp.zeros((history,), jnp.float32),
+            sensor_sequence=jnp.int32(0),
         )
+        data = self._sample_sensor(data)
         zero = jnp.float32(0)
         metrics = {
             name: zero
@@ -179,8 +262,10 @@ class NavigationEnv(Env):
                 "out_of_bounds",
                 "numerical_failure",
                 "failure",
+                "sensor_sequence",
             )
         }
+        metrics["sensor_sequence"] = zero
         return State(
             pipeline_state=data,
             obs=self.observation(data),
@@ -253,6 +338,7 @@ class NavigationEnv(Env):
             action=action,
             previous_action=state.pipeline_state.previous_action,
         )
+        data = self._sample_sensor(data)
         outcome = _outcome(collided, arrived, out_of_bounds, numerical_failure)
         metrics = {
             **state.metrics,
@@ -278,6 +364,11 @@ class NavigationEnv(Env):
                 "outcome": outcome,
             },
         )
+
+    @property
+    def realised_sensor_rate_hz(self) -> float:
+        """Actual frame availability after snapping to the control-step divisor."""
+        return self.freq / self.sensor_period
 
     def close(self) -> None:
         self.reference.close()

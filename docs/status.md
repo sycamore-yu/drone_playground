@@ -28,15 +28,32 @@ trefoil 垂直幅度按走廊缩小，这两项偏差与其余来源差异逐条
 32768 交互，开发集每档难度 32 回合逐回合记录，每档导出 4 份 rscope 回放，退出码均为 0。
 随机初始策略成功率 0，作为真实低分保留：本阶段交付的是工程链与事件协议，策略质量属 P5-07。
 
-P5-02 后端探测已完成：本机无 GL 上下文，原生 MuJoCo 渲染不可用；MJX 批量渲染需要
-未安装的 warp-lang，且 `mjx.create_render_context` 对全部 world 共用一个 model，
-无法表达逐实例几何。因此深度训练后端冻结为本项目对场景图元的解析批量针孔射线，
-并以 `mujoco.mj_ray` 与 MuJoCo-LiDAR 作为独立参照。
+P5-02 与 P5-03 已交付：D435 理想深度链与 MID360 点云链，共享同一套解析图元射线。
+
+| 任务 | 交付 | 证据 |
+|---|---|---|
+| P5-02 D435 深度链 | 相机模型、内外参、四帧历史、逆深度观测、25 Hz 节拍 | `tests/test_depth_sensor.py` 15项；与 `mujoco.mj_ray` 命中集合零分歧 |
+| P5-03 MID360 与吞吐 | 复用 MuJoCo-LiDAR MID360 图案与窗口相位、120 点策略帧、世界系点云 | `tests/test_lidar_sensor.py` 12项；`docs/verification/p5-throughput.json` |
+
+**后端探测结论**：本机无 GL 上下文，原生 MuJoCo 渲染不可用；MJX 3.14 批量深度渲染需要
+未安装的 `warp-lang`，且 `mjx.create_render_context` 对全部 world 共用一个 model，
+无法表达逐实例几何。因此按规格第 6 节第 4 步，深度与点云的训练后端统一冻结为
+本项目对场景图元的解析批量射线，并以 `mujoco.mj_ray`、MuJoCo-LiDAR 自带
+`MjLidarJax` 两条独立路径做几何 parity。
+
+两种传感器暴露**完全相同数量**的策略输入（20 维本体 + 2400 维传感 = 2420），
+网络形状因此一致，PPO 与 D.VA 的跨传感器比较不会被输入维度混淆。
+
+真实深度闭环运行 `p5-static-depth-ppo-seed0-v1-eng`：1048576 交互、
+`training/sps=21795.7`、退出码 0。该运行暴露了一个奖励缺陷并已修正：
+原失败代价 -20 小于最大进度收益 75，撞毁回报高于安全悬停；现冻结为
+失败代价 = 2×最大进度收益（-150），并新增顺序断言（成功 > 安全超时 > 任何失败）。
+深度与动态导航的低分结果按实际保留。
 
 依赖变更：新增 `mujoco-lidar==0.3.5`（MIT）并写入 `pyproject.toml` 与 `pixi.lock`。
 许可发现：`reference_repos/SUPER` 没有 LICENSE 文件，只能作为未修改的外部进程运行。
 
-下一步按 P5-02 实现 D435 深度观测链，再进入 P5-03 的 MID360 与吞吐冻结。
+下一步按 P5-04 实现共享深度/点云编码器与两传感器 PPO 真实更新。
 
 已按用户本轮意见写入 [可组合架构规格](../.scratch/composable-flight/spec.md)：
 控制器合并跟踪与飞控内环；策略包含轨迹规划；动力学包含电机；训练配置收敛为四类。

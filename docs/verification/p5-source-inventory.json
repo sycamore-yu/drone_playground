@@ -622,9 +622,41 @@
       "why": "the scene bank already describes every instance as analytic primitives, so one batched, vmappable, exact ray caster serves depth, MID360, reward clearance and collision with no geometry duplication; this is also the only path that works headless here",
       "reference_chain": [
         "native MuJoCo mj_ray (headless-safe) for per-pixel ground truth",
-        "MuJoCo-LiDAR MjLidarJax on an MJX model built from one scene instance as a third-party cross-check"
+        "MuJoCo-LiDAR MjLidarJax on an MJX model built from one scene instance as a third-party cross-check",
+        "MuJoCo-LiDAR MjLidarJax on an MJX model per instance (implemented in tests/test_lidar_sensor.py)"
       ],
       "spec_step_4_applies": "spec section 6 step 4: when the render backend is limited, freeze an existing batch ray backend for ideal pinhole depth"
     }
+  },
+  "p5_03_backend_and_pattern": {
+    "lidar_backend": "project-side analytic batched ray caster over the scene bank primitives",
+    "pattern_reused": {
+      "source": "mujoco-lidar==0.3.5 scan_mode/mid360.npy (MIT)",
+      "total_rays": 800000,
+      "samples_per_scan": 24000,
+      "usable_windows": 33,
+      "azimuth_deg": [
+        0.0,
+        360.0
+      ],
+      "elevation_deg": [
+        -7.212297,
+        52.164
+      ],
+      "policy_stride": 200,
+      "policy_points_per_frame": 120,
+      "sampled_indices": "window*24000 + arange(0, 24000, 200)",
+      "measured_policy_window_coverage": {
+        "azimuth_span_deg": 359.1,
+        "elevation_deg": [
+          -6.895,
+          52.162
+        ],
+        "occupied_azimuth_bins_of_36": 35
+      }
+    },
+    "why_not_mujoco_lidar_batch_rays_as_the_training_backend": "MjLidarJax binds one mjx.Model at construction and MJX renders one model across all worlds, so heterogeneous per-instance obstacle sets cannot share a batched context. The analytic caster uses the same scene bank that collision and reward already use.",
+    "third_party_cross_check": "MjLidarJax on an MJX model built from one scene instance agrees with the analytic caster on the same rays; mujoco.mj_ray agrees to float32 precision",
+    "mujoco_plane_semantics": "MuJoCo bounds plane ray casting by geom size even though dynamic collision treats a plane as infinite; the analytic floor matches the same 100 m margin so parity is exact"
   }
 }

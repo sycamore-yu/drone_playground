@@ -7,6 +7,7 @@ the selected task; consumers use its reset/step and physical observation surface
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
 from pathlib import Path
 
 from hydra import compose, initialize_config_dir
@@ -23,6 +24,42 @@ def compose_config(experiment: str, overrides: list[str] | None = None) -> dict:
             config_name="config", overrides=[f"experiment={experiment}", *(overrides or [])]
         )
         return OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+
+
+def observation_spec(config: dict) -> dict:
+    """Observation fields without the environment-owned sensor sub-group."""
+    return {key: value for key, value in config["observation"].items() if key != "sensor"}
+
+
+def build_observer(config: dict, sensor=None):
+    """Instantiate the observation encoder, taking its frame shape from the sensor.
+
+    The sensor is the authority for frame size and range, so the encoder cannot
+    disagree with the calibration that produced the frames.
+    """
+    spec = observation_spec(config)
+    if sensor is None:
+        return instantiate(spec)
+    name = spec["name"]
+    if name == "navigation_depth":
+        return replace(
+            instantiate(spec),
+            history=sensor.history,
+            points_per_frame=sensor.points_per_frame,
+            channels=sensor.channels,
+            near_m=sensor.near_m,
+            far_m=sensor.far_m,
+        )
+    if name == "navigation_lidar":
+        return replace(
+            instantiate(spec),
+            history=sensor.history,
+            points_per_frame=sensor.points_per_frame,
+            channels=sensor.channels,
+            near_m=sensor.range_m[0],
+            far_m=sensor.normalise_far_m,
+        )
+    raise ValueError(f"Unknown perception observation: {name}")
 
 
 def validate_config(config: dict) -> None:
@@ -84,6 +121,15 @@ def validate_config(config: dict) -> None:
             raise ValueError("The frozen navigation protocol uses a 0.5 m goal radius")
         if config["objective"]["name"] != "navigation":
             raise ValueError("Every navigation unit shares the one navigation reward")
+        observation = config["observation"]
+        perception = observation["name"] != "navigation_state"
+        has_sensor = bool(observation.get("sensor"))
+        if perception and not has_sensor:
+            raise ValueError("A perception observation requires an observation.sensor preset")
+        if not perception and has_sensor:
+            raise ValueError("A state-only observation must not declare a sensor")
+        if perception and observation["name"] not in ("navigation_depth", "navigation_lidar"):
+            raise ValueError(f"Unknown navigation perception observation: {observation['name']}")
     elif native_lotf:
         if (
             config["scene"]["name"] != "lotf_world"
@@ -206,8 +252,13 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
 
         model = instantiate(cfg["dynamics"])
         scene = instantiate(cfg["scene"])
-        observer = instantiate(cfg["observation"])
         objective = instantiate(cfg["objective"])
+        # The optional sensor sub-group belongs to the environment, not to the
+        # observation encoder, so it is split out before instantiation.
+        sensor = None
+        if cfg["observation"].get("sensor"):
+            sensor = instantiate(cfg["observation"]["sensor"])
+        observer_fields = build_observer(cfg, sensor)
         per_difficulty = cfg["task"]["reference_count"] if split == "train" else count
         bank, manifest = make_bank(scene, SPLIT_SEEDS[split], per_difficulty)
         env = NavigationEnv(
@@ -215,12 +266,13 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
             task=cfg["task"]["name"],
             model=model,
             controller=AttitudeControl(),
-            observation=observer,
+            observation=observer_fields,
             objective=objective,
             freq=cfg["task"]["freq"],
             duration=cfg["task"]["duration"],
             goal_radius=cfg["task"]["goal_radius"],
             device=device,
+            sensor=sensor,
         )
         env.scene_manifest = manifest
     elif cfg["dynamics"]["forward"].startswith("lotf_"):
@@ -283,7 +335,7 @@ def native_training_config(config: dict) -> dict:
         freq=config["task"]["freq"],
         reference_count=config["task"]["reference_count"],
         numerical_guard=config["task"].get("numerical_guard", False),
-        observation_size=instantiate(config["observation"]).size,
+        observation_size=instantiate(observation_spec(config)).size,
         components=config,
         config_version=2,
     )

@@ -316,7 +316,8 @@ def test_collision_wins_over_arrival_in_the_same_step():
     safe_result = safe.step(safe_state, safe.hover_action)
     assert int(safe_result.info["outcome"]) == OUTCOME_ARRIVED
     gap = float(safe_result.reward) - float(result.reward)
-    assert gap == pytest.approx(20.0 + 20.0, abs=0.2), gap
+    expected = env.objective.arrival_bonus - env.objective.failure_penalty
+    assert gap == pytest.approx(expected, abs=0.2), gap
     env.close()
     safe.close()
 
@@ -461,3 +462,48 @@ def test_observation_and_action_contract_sizes():
     assert env.hover_action.shape == (4,)
     assert bool(jnp.all(env.hover_action >= -1.0)) and bool(jnp.all(env.hover_action <= 1.0))
     env.close()
+
+
+def test_failure_cost_dominates_progress_so_crashing_is_never_the_best_outcome():
+    """The frozen reward ordering: success > safe timeout > any failure."""
+    from drone_playground.learning.objectives import NavigationObjective
+
+    objective = NavigationObjective()
+    common = dict(
+        out_of_bounds=False,
+        numerical_failure=False,
+        clearance=1.0,
+        action=jnp.zeros(4),
+        previous_action=jnp.zeros(4),
+    )
+    start = 15.0
+    success = objective(
+        arrived=True, collided=False, previous_distance=0.5, distance=0.0, **common
+    )
+    timeout = float(
+        objective(
+            arrived=False, collided=False, previous_distance=start, distance=start, **common
+        )
+    )
+    worst_crash = float(
+        objective(
+            arrived=False, collided=True, previous_distance=start, distance=0.0, **common
+        )
+    )
+    near_crash = float(
+        objective(
+            arrived=False, collided=True, previous_distance=5.0, distance=1.1, **common
+        )
+    )
+    shallow_crash = float(
+        objective(
+            arrived=False, collided=True, previous_distance=start, distance=14.0, **common
+        )
+    )
+    assert float(success) > timeout, (float(success), timeout)
+    assert timeout > worst_crash, (timeout, worst_crash)
+    assert worst_crash > shallow_crash
+    assert near_crash < timeout
+    # The bound is analytic: a failure can never be worth more than the whole
+    # progress term less the frozen failure cost.
+    assert objective.failure_penalty <= -objective.progress_scale * start

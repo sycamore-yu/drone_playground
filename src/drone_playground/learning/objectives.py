@@ -34,7 +34,16 @@ class NavigationObjective:
     clearance_radius: float = 0.5
     smoothness_scale: float = 0.01
     arrival_bonus: float = 20.0
-    failure_penalty: float = -20.0
+    failure_penalty: float = -150.0
+    """Deliberately twice the maximum attainable progress reward.
+
+    Progress reward is ``progress_scale * navigation_distance`` = 75 for the
+    frozen 15 m corridor. A failure cost smaller than that makes flying most of
+    the way and crashing worth more than hovering, which is exactly the shortcut
+    the protocol forbids. At -150 a collided episode is worse than every safe
+    outcome, including a full timeout, while a successful arrival (+95) stays the
+    best outcome by a wide margin.
+    """
 
     def __call__(
         self,
@@ -53,7 +62,7 @@ class NavigationObjective:
         near = jnp.clip(self.clearance_radius - clearance, 0.0, self.clearance_radius)
         reward = reward - self.clearance_scale * near / self.clearance_radius
         reward = reward - self.smoothness_scale * jnp.sum((action - previous_action) ** 2)
-        success = arrived & ~collided
+        success = arrived & jnp.logical_not(collided)
         reward = reward + jnp.where(success, self.arrival_bonus, 0.0)
         failed = collided | out_of_bounds | numerical_failure
         reward = reward + jnp.where(failed, self.failure_penalty, 0.0)

@@ -68,6 +68,17 @@ experiments/<run_id>/rollouts/step-<step>/{easy,medium,hard}/case-000/
 
 开发集选模顺序为宏平均成功率 → 碰撞率 → 受限完成时间；评价阈值待协议冻结确认。
 
+传感器预设：`observation=navigation_depth`（D435 理想深度，120×90、水平视场 85.2°、
+量程 0.1–10 米、策略网格 20×15、四帧历史）与 `observation=navigation_lidar`
+（MID360，复用 MuJoCo-LiDAR 图案，每次扫描取 120 点、四帧历史）。两者都给策略 2420 维输入。
+环境会在构造时校验观测块与传感器标定一致，不一致直接拒绝。
+
+吞吐实测（不要靠猜）：
+
+```bash
+pixi run python scripts/p5_throughput_probe.py --output docs/verification/p5-throughput.json
+```
+
 ## 独立评测
 
 默认从检查点恢复环境身份，网络参数及归一化冻结：
