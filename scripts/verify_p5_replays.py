@@ -31,14 +31,22 @@ def main():
         case = next((x for x in episodes if not x["arrived"]), episodes[0])
         directory = run / "rollouts" / cell["difficulty"] / f"case-{case['case']:03d}"
         command += ["--directory", str(directory)]
-        selected.append(dict(run_id=cell["run_id"], split=cell["split"],
+        selected.append(dict(run_id=cell["run_id"], task=cell["task"], split=cell["split"],
                              difficulty=cell["difficulty"], case=case["case"],
                              scenario_id=case["scenario_id"], outcome=case["outcome"],
+                             episode_steps=case["steps"],
                              directory=str(directory.relative_to(ROOT))))
     if not selected:
         raise SystemExit("No completed cell replays yet")
     subprocess.run(command, check=True)
     result = json.loads((target / "replays.json").read_text())
+    for cell in selected:
+        records = [x for x in result["records"] if str(Path(x["file"]).parent) == cell["directory"]]
+        if len(records) != 1:
+            raise RuntimeError(f"Expected exactly one replay for {cell['directory']}")
+        cell["padding_frames"] = records[0]["frames"] - cell["episode_steps"]
+        if cell["padding_frames"] < 0 or (cell["task"] == "dynamic" and cell["padding_frames"]):
+            raise RuntimeError(f"Replay terminal time mismatch: {cell}")
     result.update(matrix_complete=summary["matrix_complete"], selected_cells=selected,
                   coverage="First failure in each cell, or first successful episode if all arrived")
     (target / "replays.json").write_text(json.dumps(result, indent=2) + "\n")
@@ -47,4 +55,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
