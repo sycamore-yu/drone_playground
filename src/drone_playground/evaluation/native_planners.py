@@ -184,6 +184,9 @@ def evaluate_native(config, root: Path, run_id: str):
                     rec.phase("evaluating", difficulty=difficulty, completed_cases=finished)
                 trace = jax.tree.map(lambda *values: np.stack(values, axis=1), *traces)
                 cells[difficulty] = summarize_cell(trace, labels, env.dt, env.duration)
+                from drone_playground.evaluation.trace_archive import save_navigation_traces
+
+                save_navigation_traces(env, {difficulty: trace}, rec.path / "traces")
                 from drone_playground.evaluation.navigation import select_episodes
                 selection = select_episodes({"cells": {difficulty: cells[difficulty]}})
                 export_navigation_replays(env, {difficulty: trace}, rec.path / "rollouts",

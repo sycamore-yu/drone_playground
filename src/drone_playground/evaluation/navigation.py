@@ -341,6 +341,9 @@ def evaluate_navigation(config: dict, root: Path, run_id: str):
                 elapsed_seconds=time.monotonic() - tic,
             )
             save_report(rec.path / "eval/report.json", report)
+            from drone_playground.evaluation.trace_archive import save_navigation_traces
+
+            save_navigation_traces(env, traces, rec.path / "traces")
             published = export_navigation_replays(
                 env, traces, rec.path / "rollouts", case_indices=select_episodes(report)
             )

@@ -112,6 +112,16 @@ def main():
             for split, count in COUNTS.items():
                 run_id = base + "-" + split
                 path = ROOT / "experiments" / run_id
+                original_run_id = run_id
+                replacement = ROOT / "experiments" / (run_id + "-archive-v1")
+                repair = read(replacement / "archive-repair.json")
+                if not (path / "traces/index.json").exists() and repair:
+                    if (repair.get("source_run") != run_id
+                            or not repair.get("same_scene_bank")
+                            or not repair.get("same_parameter_digest")):
+                        issues.append(f"{run_id}: archive repair identity mismatch")
+                    else:
+                        path, run_id = replacement, replacement.name
                 report_path = path / "eval" / "report.json"
                 report = read(report_path) or {}
                 result = read(path / "result.json") or {}
@@ -123,6 +133,7 @@ def main():
                             and report.get("split") == split)
                 if not complete:
                     issues.append(f"{run_id}: independent evaluation incomplete")
+                archive = read(path / "traces/index.json") or {}
                 if report:
                     banks.setdefault((task, split), set()).add(report.get("scene_bank_sha256"))
                     if learned and (not expected_parameter or report.get("parameter_sha256") != expected_parameter):
@@ -132,6 +143,7 @@ def main():
                     if not learned and report.get("native_trajectories", 0) <= 0:
                         issues.append(f"{run_id}: no native trajectory evidence")
                     artifacts.append(dict(run_id=run_id, report=str(report_path.relative_to(ROOT)),
+                                          original_run_id=original_run_id, archive_repair=repair,
                                           sha256=digest(report_path), code=manifest.get("code"),
                                           scene_bank_sha256=report.get("scene_bank_sha256"),
                                           parameters_frozen=report.get("parameters_frozen"),
@@ -174,6 +186,17 @@ def main():
                         row["example_replay"] = str(replay_files[0].relative_to(ROOT)) if replay_files else None
                         if not replay_files:
                             issues.append(f"{run_id}/{difficulty}: missing replay")
+                        archive_cell = archive.get("cells", {}).get(difficulty, {})
+                        archive_path = path / "traces" / archive_cell.get("path", "missing.npz")
+                        archive_valid = (
+                            archive_cell.get("episodes") == count
+                            and archive_cell.get("episode_steps") == [x["steps"] for x in cases]
+                            and archive_path.is_file()
+                            and digest(archive_path) == archive_cell.get("sha256"))
+                        row["all_case_archive_verified"] = archive_valid
+                        row["archive"] = str(archive_path.relative_to(ROOT)) if archive_valid else None
+                        if not archive_valid:
+                            issues.append(f"{run_id}/{difficulty}: all-case trajectory archive incomplete")
                     cells.append(row)
     for (task, split), hashes in banks.items():
         if None in hashes or len(hashes) != 1:
@@ -233,6 +256,7 @@ def main():
               "- 全部执行 Crazyflow first_principles/cf2x_L250；MuJoCo 用于几何核验与回放，ROS 仅存在于原生规划器外部工作进程。",
               "- 未加动态预测器；动态任务评测原生重规划表现。质量合格与工程完成分列。",
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
+              "- 早期 v2 评测仅导出代表轨迹；缺少全回合逐帧归档的单元按固定规则重评，使用后缀 archive-v1 的完整证据。选择规则只看归档缺失，不看得分；原结果及前后差异保留在 archive-repair.json，新增训练交互为零。",
               "", "## 证据", "",
               "training.csv：预算与选模；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
               "", "图表通过 scripts/plot_p5.py 重建；RScope 读取校验通过 scripts/verify_p5_replays.py 重建。",
