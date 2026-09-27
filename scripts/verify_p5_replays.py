@@ -34,7 +34,10 @@ def main():
         report = json.loads((run / "eval/report.json").read_text())
         episodes = report["cells"][cell["difficulty"]]["episodes"]
         if cell.get("all_case_archive_verified"):
-            with np.load(ROOT / cell["archive"], allow_pickle=False) as archive:
+            with np.load(ROOT / cell["archive"], allow_pickle=False) as storage:
+                archive = {key: storage[key] for key in
+                           ("offsets", "case_ids", "scenario_ids", "outcome",
+                            "metric_goal_distance", "metric_clearance")}
                 offsets = archive["offsets"]
                 if offsets[0] != 0 or len(offsets) != len(episodes) + 1:
                     raise RuntimeError(f"Archive offset/count mismatch: {cell['archive']}")

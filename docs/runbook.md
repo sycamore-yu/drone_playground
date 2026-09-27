@@ -124,9 +124,15 @@ experiments/<run_id>/rollouts/step-<step>/{easy,medium,hard}/case-000/
 
 ```bash
 env -u PYTHONPATH pixi run python scripts/export_p5_archived_case.py <run_id> hard 127
+env -u PYTHONPATH pixi run python scripts/reconstruct_p5_sensor.py <run_id> easy 0 --tick 150
 ```
 
 输出在该运行的 `rollouts-from-archive/`。代表回放继续位于 `rollouts/`。
+传感器重建输出在 `sensor-reconstruction/`，沿用实际原生采样函数；tick 必须是终止前的发布时刻。
+输出为完整理想深度图或 MID360 全射线窗口及有效掩码，不会重新飞行或更新策略。
+`scripts/verify_p5_sensor_reconstruction.py --run-id <run_id> --output <json>` 可与原生输入抽样包核对。
+已实际验证静态第 150 tick（3 秒）深度与有效点云最大误差均为 0，见
+`docs/verification/p5-sensor-reconstruction.json`；任意案例回放验证见 `p5-archive-export.json`。
 早期 v2 评测缺少全回合归档，补采使用 `scripts/run_p5_archive_repairs.py --kind native`
 或 `--kind learning`，固定沿用原清单与检查点；学习补采等待八次训练结束。
 只按归档缺失决定补采，不按得分决定，原目录不改写。后缀 `-archive-v1` 的
