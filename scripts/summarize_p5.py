@@ -157,7 +157,8 @@ def main():
                         issues.append(f"{run_id}: not the development-selected checkpoint")
                     if not learned and report.get("native_trajectories", 0) <= 0:
                         issues.append(f"{run_id}: no native trajectory evidence")
-                    artifacts.append(dict(run_id=run_id, report=str(report_path.relative_to(ROOT)),
+                    artifacts.append(dict(run_id=run_id, task=task, split=split,
+                                          report=str(report_path.relative_to(ROOT)),
                                           original_run_id=original_run_id, archive_repair=repair,
                                           sha256=digest(report_path), code=manifest.get("code"),
                                           scene_bank_sha256=report.get("scene_bank_sha256"),
@@ -219,6 +220,19 @@ def main():
     for task in ("static", "dynamic"):
         if banks.get((task, "dev"), set()) & banks.get((task, "heldout"), set()):
             issues.append(f"{task}: development and heldout scene banks overlap by full digest")
+    scene_audit = read(target / "scene-splits.json") or {}
+    if scene_audit.get("passed") is not True:
+        issues.append("Per-instance train/dev/heldout geometry-motion audit incomplete")
+    else:
+        expected_banks = {(x["task"], x["split"]): x["bank_digest"] for x in scene_audit["banks"]}
+        for artifact in artifacts:
+            if artifact["scene_bank_sha256"] != expected_banks.get((artifact["task"], artifact["split"])):
+                issues.append(artifact["run_id"] + ": actual scene bank differs from audited bank")
+        for source in scene_audit["training_sources"]:
+            if digest(ROOT / "experiments" / source["run_id"] / "manifest.json") != source["manifest_sha256"]:
+                issues.append(source["run_id"] + ": training manifest changed since scene audit")
+        if digest(ROOT / "src/drone_playground/tasks/scenes/navigation.py") != scene_audit["generator_sha256"]:
+            issues.append("Scene generator changed since split audit")
     totals = {split: sum(x.get("num_trials", 0) for x in cells
                          if x["split"] == split and x["status"] == "completed") for split in COUNTS}
     finished = not issues and totals == {"dev": 1152, "heldout": 4608}
@@ -304,6 +318,7 @@ def main():
               "- 未加动态预测器；动态任务评测原生重规划表现。质量合格与工程完成分列。",
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
               "- 67,108,864 仅为 v2 正式训练交互；工程运行与已中止 v1 另计。v1 PPO 最后记录至少 2,097,152 交互，不能把该额外开销抹去。",
+              "- 场景生成器、种子和参数预先固定；完整清单在运行初始化时落盘。scene-splits.json 按不含种子/编号的几何与运动参数指纹检查三个集合交集，并核对实际评测库摘要。训练清单为事后确定性重建，不宣称所有清单都在训练前物化保存。",
               "- 早期 v2 评测仅导出代表轨迹；缺少全回合逐帧归档的单元按固定规则重评，使用后缀 archive-v1 的完整证据。选择规则只看归档缺失，不看得分；原结果及前后差异保留在 archive-repair.json，新增训练交互为零。",
               "", "## 证据", "",
               "training.csv：预算与选模；units.csv：各方法汇总（成功条件时间按全部成功回合加权）；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
