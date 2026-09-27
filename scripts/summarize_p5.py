@@ -222,6 +222,25 @@ def main():
     write_csv(target / "training.csv", budgets)
     write_csv(target / "cells.csv", cells)
     write_csv(target / "episodes.csv", episodes)
+    units = []
+    for task in ("static", "dynamic"):
+        for sensor, method in METHODS:
+            for split, per_cell in COUNTS.items():
+                matching = [x for x in cells if (x["task"], x["sensor"], x["method"], x["split"])
+                            == (task, sensor, method, split)]
+                valid = len(matching) == 3 and all(x["status"] == "completed" for x in matching)
+                unit = dict(task=task, sensor=sensor, method=method, split=split,
+                            status="completed" if valid else "incomplete", expected_trials=3*per_cell)
+                if valid:
+                    unit.update({key: sum(x[key] for x in matching) for key in ("num_trials", *OUTCOMES)})
+                    unit["success_rate"] = unit["arrived"] / unit["num_trials"]
+                    unit["constrained_time_mean_s"] = sum(x["constrained_time_mean_s"] for x in matching) / 3
+                    successful = [x["arrival_time_s"] for x in episodes
+                                  if (x["task"], x["sensor"], x["method"], x["split"])
+                                  == (task, sensor, method, split) and x["arrived"]]
+                    unit["success_time_mean_s"] = sum(successful) / len(successful) if successful else None
+                units.append(unit)
+    write_csv(target / "units.csv", units)
     lines = [f"# P5 正式矩阵（{args.revision}）", "",
              f"状态：{'完整' if finished else '尚未完整'}。8 个训练单元已完成 {summary['training_units_complete']} 个；"
              f"独立开发 {totals['dev']}/1152 回合，留出 {totals['heldout']}/4608 回合。",
@@ -232,6 +251,18 @@ def main():
     for row in budgets:
         lines.append(f"| {row['task']} | {row['sensor']} | {row['method']} | {row['actual_steps'] or '—'} | "
                      f"{row['best_step'] if row['best_step'] is not None else '—'} | {row['status']} |")
+    lines += ["", "## 留出结果总览", "", "每行包含三个难度各 128 回合。成功条件时间仅统计到达回合，完整分母仍为 384。", "",
+              "| Task | Sensor | Method | 到达/N | 碰撞 | 越界 | 数值失败 | 超时 |",
+              "|---|---|---|---:|---:|---:|---:|---:|"]
+    for row in units:
+        if row["split"] != "heldout":
+            continue
+        prefix = f"| {row['task']} | {row['sensor']} | {row['method']} |"
+        if row["status"] == "completed":
+            lines.append(prefix + f" {row['arrived']}/{row['num_trials']} | {row['collision']} | "
+                         f"{row['out_of_bounds']} | {row['numerical_failure']} | {row['timeout']} |")
+        else:
+            lines.append(prefix + " 未完成 | — | — | — | — |")
     if finished:
         lines += ["", "## 图表", "", "![开发集训练曲线](development-curves.png)",
                   "", "![开发集失败类型与回报](development-diagnostics.png)",
@@ -259,7 +290,7 @@ def main():
               "- v1 在地面碰撞遗漏被发现后中止并保留，未并入 v2。",
               "- 早期 v2 评测仅导出代表轨迹；缺少全回合逐帧归档的单元按固定规则重评，使用后缀 archive-v1 的完整证据。选择规则只看归档缺失，不看得分；原结果及前后差异保留在 archive-repair.json，新增训练交互为零。",
               "", "## 证据", "",
-              "training.csv：预算与选模；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
+              "training.csv：预算与选模；units.csv：各方法汇总（成功条件时间按全部成功回合加权）；cells.csv：逐格指标、原生 RPC 延迟和回放位置；episodes.csv：全分母逐回合；summary.json：报告 SHA256、代码身份、场景身份与完整性问题。",
               "", "图表通过 scripts/plot_p5.py 重建；RScope 读取校验通过 scripts/verify_p5_replays.py 重建。",
               "规划器 rpc_case_p95_max_s 是各回合 RPC 延迟第 95 百分位的最大值，包含通信和等待，不等于纯求解耗时。"]
     if issues:
