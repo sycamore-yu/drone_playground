@@ -134,7 +134,7 @@ env -u PYTHONPATH pixi run python scripts/reconstruct_p5_sensor.py <run_id> easy
 已实际验证静态第 150 tick（3 秒）深度与有效点云最大误差均为 0，见
 `docs/verification/p5-sensor-reconstruction.json`；任意案例回放验证见 `p5-archive-export.json`。
 早期 v2 评测缺少全回合归档，补采使用 `scripts/run_p5_archive_repairs.py --kind native`
-或 `--kind learning`，固定沿用原清单与检查点；学习补采等待八次训练结束。
+或 `--kind learning`，固定沿用原清单与检查点；学习补采等待原八单元训练及独立评测队列结束。
 只按归档缺失决定补采，不按得分决定，原目录不改写。后缀 `-archive-v1` 的
 `archive-repair.json` 记录前后结果和身份；汇总表使用补采结果，原始额外回合不重复加入分母。
 

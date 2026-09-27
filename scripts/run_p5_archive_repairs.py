@@ -41,6 +41,18 @@ def run_one(source_id):
     config["mode"] = "evaluate"
     if config["policy"]["name"] in ("native_ego", "native_super"):
         config["policy"]["port"] += 1000
+    else:
+        # The last original train can finish before its two GPU evaluations.
+        # Wait for the complete learning queue, not just its training states.
+        revision = source_id.split("-seed0-", 1)[1].rsplit("-", 1)[0]
+        queue = ROOT / "experiments" / ("p5-matrix-" + revision) / "queue-state.json"
+        while True:
+            rows = read(queue) or []
+            if any(row.get("status") == "failed" for row in rows):
+                raise RuntimeError("Original learning queue has a failed unit")
+            if len(rows) == 8 and all(row.get("status") == "completed" for row in rows):
+                break
+            time.sleep(55)
     os.environ.pop("PYTHONPATH", None)
     os.environ["JAX_PLATFORMS"] = "cpu" if config["training"]["device"] == "cpu" else "cuda"
     os.environ.setdefault("SCIPY_ARRAY_API", "1")
