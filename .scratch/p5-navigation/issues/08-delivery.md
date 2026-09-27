@@ -30,5 +30,8 @@ Run: experiments/p5-native-matrix-v2/queue-state.json
 
 v2 正式矩阵正在执行。主会话直接完成，不启动 dsh。
 离线汇总 `scripts/summarize_p5.py --revision v2 --require-complete` 核验
-8 个完整预算、36 个 dev/heldout 格、分母与场景/参数身份；未完成时退出非零。
+8 个完整预算、dev 与 heldout 各 36 格、分母与场景/参数身份；未完成时退出非零。
 报告在 `docs/verification/p5-results-v2/`，当前表保留缺失格，尚不能验收为完成。
+全回合轨迹归档由 `evaluation/trace_archive.py` 保存；2 项读回/身份/终止/损坏检查通过。
+早期缺归档运行以 `-archive-v1` 固定规则重评，保留原结果，不新增训练交互。
+收尾必须验证全部 5760 个归档案例，代表回放另用 RScope 读取器验收。

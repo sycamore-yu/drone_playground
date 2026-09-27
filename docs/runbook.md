@@ -117,6 +117,21 @@ cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
 experiments/<run_id>/rollouts/step-<step>/{easy,medium,hard}/case-000/
 ```
 
+独立评测的全部回合保存在 `experiments/<run_id>/traces/{easy,medium,hard}.npz`，
+按 offsets 分隔案例，包含终止帧，无批量填充；index.json 保存摘要、场景身份与步数。
+记录本体、动作、事件和指标，理想测量由记录位姿、初始重置种子、场景和校准重建。
+任意案例均可导出到原 RScope 格式，无需重新飞行：
+
+```bash
+env -u PYTHONPATH pixi run python scripts/export_p5_archived_case.py <run_id> hard 127
+```
+
+输出在该运行的 `rollouts-from-archive/`。代表回放继续位于 `rollouts/`。
+早期 v2 评测缺少全回合归档，补采使用 `scripts/run_p5_archive_repairs.py --kind native`
+或 `--kind learning`，固定沿用原清单与检查点；学习补采等待八次训练结束。
+只按归档缺失决定补采，不按得分决定，原目录不改写。后缀 `-archive-v1` 的
+`archive-repair.json` 记录前后结果和身份；汇总表使用补采结果，原始额外回合不重复加入分母。
+
 开发集选模顺序为宏平均成功率 → 碰撞率 → 受限完成时间；评价阈值待协议冻结确认。
 
 传感器预设：`observation=navigation_depth`（D435 理想深度，120×90、水平视场 85.2°、

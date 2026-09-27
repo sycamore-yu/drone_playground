@@ -35,6 +35,9 @@ def main():
                 row = dict(task=task, sensor=budget["sensor"], method=budget["method"],
                            step=report["step"], success_rate=report["success_rate"],
                            collision_rate=report["collision_rate"],
+                           out_of_bounds_rate=report["out_of_bounds"] / report["num_trials"],
+                           timeout_rate=report["timeout"] / report["num_trials"],
+                           return_mean=report["return_mean"],
                            constrained_time_s=report["constrained_time_mean_s"],
                            source=str(path.relative_to(ROOT)))
                 curves.append(row)
@@ -59,6 +62,37 @@ def main():
             writer = csv.DictWriter(handle, curves[0].keys())
             writer.writeheader()
             writer.writerows(curves)
+
+    fig, axes = plt.subplots(3, 2, figsize=(11, 9), sharex=True)
+    metrics = (("collision_rate", "Collision rate"),
+               ("out_of_bounds_rate", "Out-of-bounds rate"),
+               ("return_mean", "Mean undiscounted return"))
+    for column, task in enumerate(("static", "dynamic")):
+        for row, (metric, label) in enumerate(metrics):
+            axis = axes[row, column]
+            for sensor, method in (("depth", "ppo"), ("depth", "dva"),
+                                   ("lidar", "ppo"), ("lidar", "dva")):
+                points = [x for x in curves if (x["task"], x["sensor"], x["method"])
+                          == (task, sensor, method)]
+                if points:
+                    axis.plot([x["step"] / 1e6 for x in points], [x[metric] for x in points],
+                              marker="o", markersize=3, label=sensor + "-" + method.upper())
+            axis.set_ylabel(label)
+            axis.set_xlim(0, 8.388608)
+            if metric.endswith("rate"):
+                axis.set_ylim(-.025, 1.025)
+            axis.grid(alpha=.25)
+            if row == 0:
+                axis.set_title(task.capitalize())
+                if axis.lines:
+                    axis.legend(fontsize=8)
+            if row == 2:
+                axis.set_xlabel("Training interactions (million)")
+    fig.suptitle("Development outcomes and return — fixed checkpoint schedule")
+    fig.tight_layout()
+    fig.savefig(target / "development-diagnostics.png", dpi=180)
+    fig.savefig(target / "development-diagnostics.pdf")
+    plt.close(fig)
 
     heldout = [x for x in summary["cells"] if x["split"] == "heldout"]
     keys = list(dict.fromkeys((x["task"], x["sensor"], x["method"]) for x in heldout))

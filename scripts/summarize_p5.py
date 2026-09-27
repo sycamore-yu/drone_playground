@@ -234,6 +234,7 @@ def main():
                      f"{row['best_step'] if row['best_step'] is not None else '—'} | {row['status']} |")
     if finished:
         lines += ["", "## 图表", "", "![开发集训练曲线](development-curves.png)",
+                  "", "![开发集失败类型与回报](development-diagnostics.png)",
                   "", "![正式留出成功率](heldout-matrix.png)"]
     for split in COUNTS:
         lines += ["", f"## {'正式留出' if split == 'heldout' else '最终独立开发'} 36 格", "",

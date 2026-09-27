@@ -1,7 +1,7 @@
 {
   "observed_at": "2026-09-27T17:04:24.381638+00:00",
   "passed": true,
-  "scope_note": "Full suite loaded code before ground fix; targeted navigation tests cover the subsequent ground change. Native replay identity test was added after full-suite collection and passed separately.",
+  "scope_note": "Full suite loaded code before ground fix; targeted navigation tests cover the subsequent ground change. Native replay identity test was added after full-suite collection and passed separately. All-episode archive round-trip/identity/terminal-frame and corruption checks added after the full suite passed separately.",
   "checks": [
     {
       "name": "full_suite",
@@ -42,6 +42,14 @@
       "passed": 9,
       "subtests": 0,
       "sha256": "28557a6177c6eef64821954962aa2840a5acc19ccf0a317f37cfa56583dc6299"
+    },
+    {
+      "name": "all_episode_archive",
+      "log": "tmp/p5/archive-tests.log",
+      "exit_code": 0,
+      "passed": 2,
+      "subtests": 0,
+      "sha256": "d811125217871faeb1b80deb663e62da7f833aa41edc35681bca37427cac777e"
     }
   ]
 }
