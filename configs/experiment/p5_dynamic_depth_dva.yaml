@@ -1,0 +1,24 @@
+# @package _global_
+# P5 formal unit 6: dynamic navigation, D435 depth, D.VA-JAX.
+defaults:
+- override /algorithm: dva
+- override /network: perception_ppo
+- override /task: navigation_dynamic
+- override /scene: navigation_dynamic
+- override /observation: navigation_depth
+- override /objective: navigation
+- override /policy: neural_navigation
+dynamics:
+  forward: first_principles
+  backward: direct
+  drone: cf2x_L250
+training:
+  seed: 0
+  policy_updates: 2048
+  num_timesteps: 8388608
+  num_envs: 128
+  num_evals: 9
+  publish_live: false
+  max_wall_seconds: 7200
+source: P5 formal matrix unit 6; JAX D.VA port, detached D435 observation
+

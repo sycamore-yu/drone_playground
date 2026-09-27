@@ -1,13 +1,13 @@
 # P5-07：八单元正式训练
 
 Type: task
-Status: blocked
-Blocked by: P5-04,P5-05；协议与墙钟预算冻结；用户执行授权
-Engineering: planned
+Status: in-progress
+Blocked by: final source freeze
+Engineering: queue-ready
 Experiment: not-started
 Quality: not-evaluated
-Owner: unassigned
-Session: none
+Owner: main
+Session: p5-main
 Run: none
 
 ## 权威设计
@@ -28,4 +28,6 @@ Run: none
 
 ## 证据
 
-待执行后填写；当前状态为计划。
+用户已授权直接执行。八配方各 8388608、seed 0、7200 秒墙钟上限；冻结 PPO/D.VA 的共享传感器与网络。
+`scripts/run_p5_learning_matrix.py` 串行调用同一组合入口，预算精确核验，开发选模后独立 dev32/heldout128 每难度。
+旧失败目录保留，队列拒绝覆盖或自动暖启动；单元失败后继续其它独立单元并汇总失败。

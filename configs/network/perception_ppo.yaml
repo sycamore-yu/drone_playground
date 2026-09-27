@@ -1,6 +1,11 @@
 name: perception_ppo
-distribution_type: normal
-normalize_observations: true
+distribution_type: tanh_normal
+# Sensor channels are already physically normalised and the 20-D proprioceptive
+# block is bounded by the P5 corridor/action contract.  A global running
+# normalizer over sparse masks/ranges saturates the tanh policy after only a
+# short D.VA window, so matched PPO/D.VA consume these declared features
+# directly.
+normalize_observations: false
 hidden_sizes:
 - 128
 - 128

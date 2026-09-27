@@ -1,0 +1,13 @@
+name: dva
+horizon_length: 32
+learning_rate: 0.002
+critic_learning_rate: 0.0002
+critic_updates: 16
+discounting: 0.99
+td_lambda: 0.95
+target_critic_alpha: 0.2
+max_grad_norm: 1.0
+critic_max_grad_norm: 10.0
+betas:
+- 0.7
+- 0.95

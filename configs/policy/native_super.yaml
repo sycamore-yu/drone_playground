@@ -1,0 +1,6 @@
+name: native_super
+method: super
+output: trajectory
+container: flightbench
+port: 11325
+workers: 4

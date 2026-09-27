@@ -8,7 +8,6 @@ episode keeps its scenario identity so a result can be traced back to geometry.
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 
 import jax
@@ -226,7 +225,7 @@ class NavigationEvaluator:
 
 
 def _bank_digest(env) -> str:
-    return hashlib.sha256(env.bank.digest().encode()).hexdigest()
+    return env.bank.digest()
 
 
 def select_episodes(report: dict, count: int = 4) -> dict[str, list[int]]:
@@ -241,7 +240,8 @@ def select_episodes(report: dict, count: int = 4) -> dict[str, list[int]]:
     return selection
 
 
-def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4) -> list[dict]:
+def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4,
+                              case_indices: dict | None = None) -> list[dict]:
     """Write one self-contained rscope replay per difficulty cell."""
     from drone_playground.runs.navigation_scene import (
         active_indices,
@@ -253,10 +253,13 @@ def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4
     per_difficulty = env.bank.num_instances // len(DIFFICULTIES)
     published = []
     for index, difficulty in enumerate(DIFFICULTIES):
+        if difficulty not in traces:
+            continue
         trace = traces[difficulty]
-        scenarios = list(range(index * per_difficulty, (index + 1) * per_difficulty))
-        for case in range(min(count, trace["pos"].shape[1])):
-            scenario_id = scenarios[case]
+        cases = (case_indices[difficulty] if case_indices is not None
+                 else list(range(min(count, trace["pos"].shape[1]))))
+        for case in cases:
+            scenario_id = index * per_difficulty + case
             single = jax.tree.map(lambda value: np.asarray(value)[:, case : case + 1], trace)
             times = np.asarray(single["time"])[:, 0]
             active = active_indices(env.bank, scenario_id)
@@ -329,7 +332,9 @@ def evaluate_navigation(config: dict, root: Path, run_id: str):
                 elapsed_seconds=time.monotonic() - tic,
             )
             save_report(rec.path / "eval/report.json", report)
-            published = export_navigation_replays(env, traces, rec.path / "rollouts", 4)
+            published = export_navigation_replays(
+                env, traces, rec.path / "rollouts", case_indices=select_episodes(report)
+            )
             save_report(rec.path / "rollouts/index.json", {"replays": published})
             rec.log(
                 0,

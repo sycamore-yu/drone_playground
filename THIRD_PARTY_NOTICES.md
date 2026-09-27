@@ -62,3 +62,16 @@ acados v0.5.1、HPIPM、BLASFEO、qpOASES 与模板渲染器通过本项目局�
 直接调用原仓库实现。原子模块及其衍生部分的许可证信息不由其它上游的MIT声明覆盖。
 
 本地研究集成沿用当前权限；外部发布/打包不在本轮授权中。
+
+## P5 感知导航
+
+`learning/dva.py` 对照 HaoxiangYou/D.VA 的提交
+`01b2be4986a0851a952aa860afb4a5958e6676e2` 实现 JAX/Brax 适配；保留观测 detach、
+可微动作—动力学—奖励、末端价值与 target critic 的算法语义，传感器编码器复用本项目实现。
+原始仓库 MIT 文本保存在 `docs/licenses/dva-LICENSE.md`。点云是本项目扩展，不宣称原论文的 LiDAR 复现。
+
+EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5`（GPLv3）与 SUPER
+`2ad3419c127a617c6d7df6925e81a14175a9c096` 由外部 ROS1 进程执行，源码未复制入包。
+SUPER 根目录没有 LICENSE 文件，但所用规划源码头部声明 LGPLv3-or-later；原头部保留在外部构建树。
+构建脚本仅选择上游 ROS1 模板和运行目标，未改规划算法；本项目保存自己的进程桥和消息适配。
+MuJoCo-LiDAR 0.3.5 的 MID360 扫描图案通过已锁定依赖调用。场景来源与几何偏差见 P5 来源清单。

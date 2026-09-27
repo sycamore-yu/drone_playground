@@ -52,6 +52,10 @@ def resolve_evaluation_config(config, metadata):
 
 
 def evaluate_experiment(config, root, run_id):
+    if config["policy"]["name"] in ("native_ego", "native_super"):
+        from .native_planners import evaluate_native
+
+        return evaluate_native(config, root, run_id)
     if config["task"]["name"] == "navigation":
         from .navigation import evaluate_navigation
 

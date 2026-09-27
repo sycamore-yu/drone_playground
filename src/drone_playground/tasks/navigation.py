@@ -31,6 +31,7 @@ from drone_playground.tasks.scenes.navigation import (
     SceneBank,
     body_centre_from_state,
     clearance_and_collision,
+    euclidean_norm,
 )
 from drone_playground.tasks.sensors.depth import DepthCamera, cast_depth
 from drone_playground.tasks.sensors.lidar import Mid360Lidar, cast_lidar
@@ -214,6 +215,15 @@ class NavigationEnv(Env):
         sequence = data.sensor_sequence + due.astype(jnp.int32)
         return data.replace(sensor_values=history, sensor_time=times, sensor_sequence=sequence)
 
+    def proprioception(self, data: NavigationData) -> jax.Array:
+        """Value input before auto-reset, independent of the ray-casting graph."""
+        observer = NavigationObservation(
+            include_goal=self.observer.include_goal,
+            include_previous_action=self.observer.include_previous_action,
+            action_size=self.observer.action_size,
+        )
+        return observer(data.sim_data.states, self.bank.goal[data.scenario_id], data.previous_action)
+
     def reset(self, rng: jax.Array, scenario_id: jax.Array | None = None) -> State:
         if rng.dtype == jnp.uint32:
             rng = jax.random.wrap_key_data(rng)
@@ -242,7 +252,7 @@ class NavigationEnv(Env):
             sim_data=sim_data,
             scenario_id=scenario_id,
             step_index=jnp.int32(0),
-            previous_distance=jnp.linalg.norm(start - goal),
+            previous_distance=euclidean_norm(start - goal),
             previous_action=self.hover_action,
             sensor_values=jnp.zeros((history, self.points_per_frame, channels), jnp.float32),
             sensor_time=jnp.zeros((history,), jnp.float32),
@@ -272,7 +282,11 @@ class NavigationEnv(Env):
             reward=zero,
             done=zero,
             metrics=metrics,
-            info={"terminated": zero, "outcome": jnp.int32(OUTCOME_RUNNING)},
+            info={
+                "terminated": zero,
+                "outcome": jnp.int32(OUTCOME_RUNNING),
+                "terminal_proprioception": self.proprioception(data),
+            },
         )
 
     def physical_action(self, action: jax.Array) -> jax.Array:
@@ -305,7 +319,7 @@ class NavigationEnv(Env):
         states = sim_data.states
         position = states.pos[0, 0]
         goal = self.bank.goal[scenario_id]
-        distance = jnp.linalg.norm(position - goal)
+        distance = euclidean_norm(position - goal)
         arrived = distance <= self.goal_radius
         out_of_bounds = jnp.any(position < self.bounds_low) | jnp.any(
             position > self.bounds_high
@@ -362,6 +376,7 @@ class NavigationEnv(Env):
                 **state.info,
                 "terminated": terminated.astype(jnp.float32),
                 "outcome": outcome,
+                "terminal_proprioception": self.proprioception(data),
             },
         )
 

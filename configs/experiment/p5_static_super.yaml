@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+- override /policy: native_super
+- override /controller: trajectory_tracking
+- override /task: navigation_static
+- override /scene: navigation_static
+- override /observation: navigation_lidar
+- override /objective: navigation
+mode: evaluate
+dynamics:
+  forward: first_principles
+  backward: direct
+  drone: cf2x_L250
+evaluation:
+  environment: experiment
+  split: heldout
+  episodes: 128
+training:
+  device: cpu
+source: Native super through ROS1; shared P5 geometry and dynamics
+

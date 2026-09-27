@@ -40,6 +40,7 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
             "ppo": "warm start only; optimizer/RNG reinitialized",
             "apg": "inference only; native APG has no restore hook",
             "shac": "full continuation is stored in training-state/",
+            "dva": "full continuation is stored in training-state/",
         }[config["algorithm"]],
     )
     save_report(path.with_suffix(".json"), metadata)
@@ -69,7 +70,7 @@ def load_policy(path):
     )
     maker = (
         ppo_networks.make_inference_fn
-        if native["algorithm"] == "ppo"
+        if native["algorithm"] in ("ppo", "dva")
         else apg_networks.make_inference_fn
     )
     params = model.load_params(str(path))

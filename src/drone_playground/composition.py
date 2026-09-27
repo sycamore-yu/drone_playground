@@ -104,10 +104,19 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unknown navigation forward dynamics: {forward}")
         if backward != "direct":
             raise ValueError("Navigation uses the direct Crazyflow derivative")
-        if control != "crazyflow_attitude" or policy_output != "attitude_thrust":
+        native_planner = config["policy"]["name"] in ("native_ego", "native_super")
+        compatible = (
+            control == "trajectory_tracking" and policy_output == "trajectory"
+            if native_planner else control == "crazyflow_attitude" and policy_output == "attitude_thrust"
+        )
+        if not compatible:
             raise ValueError(
                 "Navigation uses the shared attitude_thrust controller contract"
             )
+        if native_planner:
+            expected_sensor = "navigation_depth" if config["policy"]["method"] == "ego" else "navigation_lidar"
+            if mode == "train" or config["observation"]["name"] != expected_sensor:
+                raise ValueError("Native planner requires its sensor preset and evaluate/simulate mode")
         scene = config["scene"]
         if "families" not in scene or "dynamic" not in scene:
             raise ValueError("The navigation task requires a navigation scene preset")
@@ -204,7 +213,7 @@ def validate_config(config: dict) -> None:
         if algorithm == "ppo":
             if settings.get("num_timesteps") is None or settings["num_timesteps"] < 1:
                 raise ValueError("PPO requires a positive training.num_timesteps budget")
-        elif algorithm in ("lotf_bptt", "apg", "shac"):
+        elif algorithm in ("lotf_bptt", "apg", "shac", "dva"):
             if settings["policy_updates"] < 1:
                 raise ValueError("Derivative training requires positive policy_updates")
             horizon = (
@@ -232,8 +241,12 @@ def validate_config(config: dict) -> None:
             raise ValueError(
                 "Warm-start inference parameters are supported by the native PPO trainer"
             )
-        if config["training"].get("resume") and algorithm not in ("lotf_bptt", "shac"):
-            raise ValueError("Exact continuation requires a LOTF or SHAC full-state checkpoint")
+        if algorithm == "dva" and (
+            config["task"]["name"] != "navigation" or not perception
+        ):
+            raise ValueError("D.VA is a P5 perception algorithm and requires depth or LiDAR")
+        if config["training"].get("resume") and algorithm not in ("lotf_bptt", "shac", "dva"):
+            raise ValueError("Exact continuation requires a LOTF, SHAC or D.VA full-state checkpoint")
     if config["training"]["seed"] < 0:
         raise ValueError("Training seed must be nonnegative")
     if config["training"]["num_envs"] < 1:
@@ -251,13 +264,13 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
         from drone_playground.tasks.scenes.navigation import make_bank
 
         model = instantiate(cfg["dynamics"])
-        scene = instantiate(cfg["scene"])
+        scene = instantiate(cfg["scene"], _convert_="all")
         objective = instantiate(cfg["objective"])
         # The optional sensor sub-group belongs to the environment, not to the
         # observation encoder, so it is split out before instantiation.
         sensor = None
         if cfg["observation"].get("sensor"):
-            sensor = instantiate(cfg["observation"]["sensor"])
+            sensor = instantiate(cfg["observation"]["sensor"], _convert_="all")
         observer_fields = build_observer(cfg, sensor)
         per_difficulty = cfg["task"]["reference_count"] if split == "train" else count
         bank, manifest = make_bank(scene, SPLIT_SEEDS[split], per_difficulty)

@@ -262,6 +262,20 @@ def obstacle_positions(bank: SceneBank, scenario_id: jax.Array, time: jax.Array)
     return jnp.where((motion == MOTION_STATIC)[:, None], origin, moving)
 
 
+@jax.custom_jvp
+def euclidean_norm(value):
+    """Exact last-axis norm with the zero subgradient at the origin."""
+    return jnp.linalg.norm(value, axis=-1)
+
+
+@euclidean_norm.defjvp
+def _euclidean_norm_jvp(primals, tangents):
+    (value,), (tangent,) = primals, tangents
+    norm = euclidean_norm(value)
+    derivative = jnp.sum(value * tangent, axis=-1) / jnp.where(norm > 0, norm, 1.0)
+    return norm, derivative
+
+
 def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: jax.Array):
     """Exact signed distance from a point to an analytic primitive.
 
@@ -269,14 +283,14 @@ def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: 
     and ``signed_distance_point_box``. Negative inside, zero on the surface.
     """
     delta = point - centre
-    radial = jnp.hypot(delta[..., 0], delta[..., 1]) - size[..., 0]
+    radial = euclidean_norm(delta[..., :2]) - size[..., 0]
     vertical = jnp.abs(delta[..., 2]) - size[..., 1] / 2.0
-    cylinder = jnp.hypot(jnp.maximum(radial, 0.0), jnp.maximum(vertical, 0.0)) + jnp.minimum(
+    cylinder = euclidean_norm(jnp.stack([jnp.maximum(radial, 0.0), jnp.maximum(vertical, 0.0)], axis=-1)) + jnp.minimum(
         jnp.maximum(radial, vertical), 0.0
     )
 
     q = jnp.abs(delta) - size
-    box = jnp.linalg.norm(jnp.maximum(q, 0.0), axis=-1) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
+    box = euclidean_norm(jnp.maximum(q, 0.0)) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
     return jnp.where(kind == KIND_CYLINDER, cylinder, box)
 
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -67,6 +68,39 @@ def evaluation_scalars(task: str, report: dict) -> dict:
     }
 
 
+def inherit_dva_selection(state_path: Path, destination: Path, task: str):
+    """Continue development selection without importing evaluations after the saved state."""
+    meta = json.loads(state_path.with_suffix(".json").read_text())
+    saved = meta["config"]
+    cutoff = int(meta["updates"]) * int(saved["num_envs"]) * int(saved["horizon_length"])
+    source = state_path.resolve().parent.parent
+    candidates = []
+    for path in sorted((source / "eval").glob("step-*.json")):
+        report = json.loads(path.read_text())
+        if report.get("split") == "dev" and report["step"] <= cutoff:
+            candidates.append(report)
+    if not candidates:
+        raise ValueError("D.VA experiment resume requires its earlier development reports")
+    best = max(candidates, key=lambda report: development_score(task, report))
+    policy = (source / best["checkpoint"]).resolve()
+    if not policy.is_relative_to(source):
+        raise ValueError("Inherited policy must belong to the source run")
+    _, _, identity = load_policy(policy)
+    if identity["step"] != best["step"]:
+        raise ValueError("Inherited report and checkpoint step disagree")
+    for path in (policy, policy.with_suffix(".json")):
+        shutil.copyfile(path, destination / "checkpoints" / path.name)
+    score = development_score(task, best)
+    save_report(destination / "checkpoints" / "best.json",
+                dict(path=policy.name, step=best["step"], score=list(score), selection_split="dev"))
+    save_report(destination / "resume-selection.json",
+                dict(source_state=str(state_path), source_state_sha256=meta["sha256"],
+                     eligible_steps=[r["step"] for r in candidates], cutoff_step=cutoff,
+                     selected_step=best["step"], future_evaluations_excluded=True))
+    save_report(destination / "eval" / f"step-{best['step']:010d}.json", best)
+    return score, best
+
+
 def export_run_replays(env, trace, report, directory):
     """Export replays through the contract the selected task actually owns."""
     if env.task == "navigation":
@@ -75,13 +109,9 @@ def export_run_replays(env, trace, report, directory):
             select_episodes,
         )
 
-        selected = {
-            difficulty: jax.tree.map(
-                lambda value: np.asarray(value)[:, cases], trace[difficulty]
-            )
-            for difficulty, cases in select_episodes(report).items()
-        }
-        return export_navigation_replays(env, selected, directory, count=4)
+        return export_navigation_replays(
+            env, trace, directory, case_indices=select_episodes(report)
+        )
     from drone_playground.runs.rscope_io import export_rollout as write_rollout
 
     return write_rollout(env.sim, directory, select_replays(trace, report))
@@ -97,20 +127,20 @@ def train(
 
     config = dict(config)
     algorithm = config["algorithm"]
-    if algorithm not in {"ppo", "apg", "shac"}:
-        raise ValueError("Supported algorithms are PPO, APG and SHAC")
+    if algorithm not in {"ppo", "apg", "shac", "dva"}:
+        raise ValueError("Supported algorithms are PPO, APG, SHAC and D.VA")
     config.update(
         device=device,
         snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
         trainer=(
-            "drone_playground.learning.shac"
-            if algorithm == "shac"
+            f"drone_playground.learning.{algorithm}"
+            if algorithm in {"shac", "dva"}
             else "brax.training.agents." + algorithm
         ),
         reset_contract="fresh-same-step-with-terminal-observation",
         timeout_contract=(
-            "SHAC pre-reset terminal-value bootstrap; true termination masks value"
-            if algorithm == "shac"
+            "pre-reset terminal-value bootstrap; true termination masks value"
+            if algorithm in {"shac", "dva"}
             else "native Brax GAE masks truncated transition; time_out bootstrap disabled"
         ),
         task_protocol={
@@ -155,6 +185,8 @@ def train(
     initial_params = None
     try:
         rec.phase("initializing", step=0)
+        if algorithm == "dva" and config.get("resume"):
+            best_score, best = inherit_dva_selection(Path(config["resume"]), rec.path, config["task"])
         env = build_environment(config["components"], device)
         if config["task"] == "racing":
             save_report(rec.path / "native-task-config.json", env.config.to_dict())
@@ -389,9 +421,10 @@ def train(
             snapshot(actual_steps, maker, params)
 
         else:
-            from drone_playground.learning import shac
-
-            maker, params, metrics = shac.train(
+            trainer = __import__(
+                f"drone_playground.learning.{algorithm}", fromlist=["train"]
+            )
+            maker, params, metrics = trainer.train(
                 env,
                 config,
                 policy_params_fn=snapshot,
@@ -418,14 +451,16 @@ def train(
             "snapshots": snapshot_count,
             "best_development_result": best,
             "elapsed_seconds": time.monotonic() - start,
-            "quality_passed": bool(best and best.get("quality_passed")),
+            "quality_passed": best.get("quality_passed") if best else None,
             "engineer_passed": True,
             "full_budget_completed": True,
             "live_publications": live_publications,
             "trainer_metrics": {
-                k: float(v)
+                k: float(np.asarray(v))
                 for k, v in metrics.items()
-                if np.asarray(v).size == 1 and np.isfinite(float(v))
+                if np.asarray(v).size == 1
+                and np.issubdtype(np.asarray(v).dtype, np.number)
+                and np.isfinite(np.asarray(v)).all()
             },
         }
         rec.finish("completed", **result)

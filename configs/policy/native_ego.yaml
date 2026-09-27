@@ -1,0 +1,6 @@
+name: native_ego
+method: ego
+output: trajectory
+container: flightbench
+port: 11325
+workers: 4

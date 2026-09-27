@@ -1,14 +1,14 @@
 # P5-06：原生规划器闭环
 
 Type: task
-Status: blocked
-Blocked by: P5-01,P5-02,P5-03
-Engineering: planned
-Experiment: not-started
+Status: in-progress
+Blocked by: none
+Engineering: verifying
+Experiment: engineering-runs
 Quality: not-evaluated
-Owner: unassigned
-Session: none
-Run: none
+Owner: main
+Session: p5-main
+Run: p5-static-ego-v2-eng, p5-static-super-v1-eng
 
 ## 权威设计
 
@@ -28,4 +28,6 @@ Run: none
 
 ## 证据
 
-待执行后填写；当前状态为计划。
+EGO 与 SUPER 原生运行目标编译通过。适配器保留上游建图/轨迹模块，不导入 ROS 到 Pixi。
+EGO v2 已产出轨迹并驱动物理模型；发现上游手动目标接口硬编码高度，改用原生三维预设接口验证中。
+SUPER 源文件有 LGPLv3-or-later 头部声明（仓库根目录没有 LICENSE）；继续采用外部进程集成并记录来源。
