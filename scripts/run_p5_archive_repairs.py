@@ -57,6 +57,7 @@ def run_one(source_id):
     os.environ["JAX_PLATFORMS"] = "cpu" if config["training"]["device"] == "cpu" else "cuda"
     os.environ.setdefault("SCIPY_ARRAY_API", "1")
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+    os.environ.setdefault("JAX_COMPILATION_CACHE_DIR", str(ROOT / "tmp/p5-jax-cache"))
     from drone_playground.composition import run_experiment
 
     run_experiment(config, ROOT, target_id)
