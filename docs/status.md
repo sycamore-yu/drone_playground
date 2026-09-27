@@ -19,6 +19,13 @@ v2 队列命令为 `scripts/run_p5_{learning,native}_matrix.py --revision v2`；
 日志与队列状态进入 `experiments/p5-matrix-v2/`、`experiments/p5-native-matrix-v2/`。
 先查原进程/状态，禁止重复启动或覆盖失败目录。
 v2 已启动：学习 session 96099、规划器 session 27701（16:58 UTC，代码 `caf4c49`）。
+17:47 UTC：静态 depth PPO/D.VA 均完成 8388608 交互及各 96 dev、384 heldout；
+两个学习单元 heldout 到达均为 0。静态 EGO dev 86/96、SUPER dev 95/96，heldout 在运行。
+当前学习单元为 static/lidar/PPO。最终表随运行完成自动重建：
+`docs/verification/p5-results-v2/`；观察会话 21195，收尾会话 94038，
+收尾日志 `tmp/p5/finalize-v2.log`，仅全部预算/评测通过完整性检查后生成最终图表与回放核验。
+回放终止帧修复已提交 `7e4767f`，仅改变导出，实际 D.VA 六个独立评测格无填充帧；
+早期静态 PPO/规划器旧回放保留，不改写原始文件。
 全量 CPU suite exit 0：148 项、2 子测试通过（`tmp/p5/full-suite.log`）；
 该进程早于地面改动加载源码，补充修复后导航 19 项及原生接口/回放身份 9 项通过。
 质量数值门槛未冻结，保留 null，不阻塞预算执行。
