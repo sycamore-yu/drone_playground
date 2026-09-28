@@ -76,6 +76,10 @@ BOUNDARY = [
 
 SANDO_GLOBAL_TIME_SCALE = 7.9442501919
 SANDO_DYNAMIC_FRACTION = 0.65
+PROJECT_STATIC_BOX_FRACTION = 0.5
+SANDO_STATIC_VERTICAL_FRACTION = 0.35
+SANDO_VERTICAL_BOX_HALF = (0.2, 0.2, 2.0)
+SANDO_HORIZONTAL_BOX_HALF = (0.2, 2.0, 0.2)
 SANDO_COUNTS = {"easy": 50, "medium": 100, "hard": 200}
 SANDO_STATIC_DENSITY = {"easy": 0.05, "medium": 0.10, "hard": 0.20}
 SANDO_STATIC_WORLD = {
@@ -143,10 +147,23 @@ def _endpoint_safe_cylinder(x: float, y: float, radius: float) -> bool:
 
 
 def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], dict]:
-    """Generate one bounded fixed realization using SANDO's dynamic benchmark laws."""
+    """Generate one bounded realization using SANDO's dynamic-scene semantics.
+
+    The moving fraction remains SANDO's 0.8 m trefoil cubes.  To preserve some
+    cylindrical clutter while adding the elongated geometry visible in SANDO's
+    current dynamic launcher, half of the nominal static-cylinder share is
+    replaced by SANDO-sized boxes.  Those replacement boxes are static, matching
+    ``launch/dyn_obstacles.launch.py``: 35% vertical pillars and 65% horizontal
+    walls within the replacement subset.
+    """
 
     total = SANDO_COUNTS[difficulty]
     dynamic_count = int(total * SANDO_DYNAMIC_FRACTION)
+    static_count = total - dynamic_count
+    static_box_count = (static_count + 1) // 2
+    static_cylinder_count = static_count - static_box_count
+    vertical_box_count = int(static_box_count * SANDO_STATIC_VERTICAL_FRACTION)
+    horizontal_box_count = static_box_count - vertical_box_count
     rng = random.Random(seed)
     obstacles = []
     rejected = 0
@@ -184,26 +201,57 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
                     }
                 )
             else:
-                radius = rng.uniform(1.0, 1.5)
-                bounded = (
-                    x - radius >= 0.5
-                    and x + radius <= 99.5
-                    and y - radius >= -19.5
-                    and y + radius <= 19.5
-                )
-                if not bounded or not _endpoint_safe_cylinder(x, y, radius):
-                    rejected += 1
-                    continue
-                obstacles.append(
-                    {
-                        "shape": "cylinder",
-                        "origin": [x, y, 3.0],
-                        "size": [radius, 6.0, 0.0],
-                        "motion": "static",
-                        "role": "sando_dynamic_static_cylinder",
-                        "source_index": index,
-                    }
-                )
+                static_index = index - dynamic_count
+                if static_index < static_box_count:
+                    is_vertical = static_index < vertical_box_count
+                    half = SANDO_VERTICAL_BOX_HALF if is_vertical else SANDO_HORIZONTAL_BOX_HALF
+                    z = 2.0 if is_vertical else rng.uniform(0.7, 4.3)
+                    bounded = (
+                        x - half[0] >= 0.5
+                        and x + half[0] <= 99.5
+                        and y - half[1] >= -19.5
+                        and y + half[1] <= 19.5
+                        and z - half[2] >= 0.0
+                        and z + half[2] <= WORLD["z_max_m"]
+                    )
+                    if not bounded or not _endpoint_safe_box(x, y, z, *half):
+                        rejected += 1
+                        continue
+                    obstacles.append(
+                        {
+                            "shape": "box",
+                            "origin": [x, y, z],
+                            "size": list(half),
+                            "motion": "static",
+                            "role": (
+                                "sando_static_vertical_box"
+                                if is_vertical
+                                else "sando_static_horizontal_box"
+                            ),
+                            "source_index": index,
+                        }
+                    )
+                else:
+                    radius = rng.uniform(1.0, 1.5)
+                    bounded = (
+                        x - radius >= 0.5
+                        and x + radius <= 99.5
+                        and y - radius >= -19.5
+                        and y + radius <= 19.5
+                    )
+                    if not bounded or not _endpoint_safe_cylinder(x, y, radius):
+                        rejected += 1
+                        continue
+                    obstacles.append(
+                        {
+                            "shape": "cylinder",
+                            "origin": [x, y, 3.0],
+                            "size": [radius, 6.0, 0.0],
+                            "motion": "static",
+                            "role": "sando_dynamic_static_cylinder",
+                            "source_index": index,
+                        }
+                    )
             break
         else:
             raise RuntimeError(f"unable to place dynamic obstacle {index} for {difficulty}")
@@ -211,10 +259,19 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
         "seed": seed,
         "total_obstacles": total,
         "dynamic_obstacles": dynamic_count,
-        "static_obstacles": total - dynamic_count,
+        "static_obstacles": static_count,
+        "static_cylinders": static_cylinder_count,
+        "static_boxes": static_box_count,
+        "static_vertical_boxes": vertical_box_count,
+        "static_horizontal_boxes": horizontal_box_count,
         "dynamic_fraction": SANDO_DYNAMIC_FRACTION,
+        "static_box_fraction_of_static_share": PROJECT_STATIC_BOX_FRACTION,
+        "static_box_vertical_fraction": SANDO_STATIC_VERTICAL_FRACTION,
         "bounded_sampling_rejections": rejected,
-        "sampling_note": "SANDO laws conditioned on P5 physical bounds and endpoint safety",
+        "sampling_note": (
+            "SANDO dynamic laws conditioned on P5 physical bounds and endpoint safety; "
+            "half of the static-cylinder share replaced by SANDO-sized static boxes"
+        ),
     }
 
 
@@ -316,7 +373,9 @@ def main() -> None:
             "Primary benchmark is exactly six scenes: static/dynamic x easy/medium/hard.",
             "Static difficulty follows SANDO 5/10/20 percent forest density using pinned world geometry.",
             "Dynamic difficulty follows SANDO 50/100/200 total obstacles with 65 percent dynamic cubes.",
-            "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; static cylinders use radius 1.0-1.5 m and height 6 m.",
+            "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; they are the moving population.",
+            "Half of the remaining static-cylinder share is replaced by static SANDO-style rectangular obstacles: 0.4x0.4x4.0 m vertical pillars and 0.4x4.0x0.4 m horizontal walls, with a 35/65 vertical/horizontal split inside the replacement subset.",
+            "The other half of the static share remains 1.0-1.5 m radius, 6 m high cylinders to retain cylindrical clutter requested for this benchmark.",
             "Dynamic randomization is conditioned only on finite P5 world bounds and endpoint safety, then frozen at seed 0.",
             "No reference, oracle, inspection or demonstration trajectory is stored or reserved.",
             "Four physical boundary walls are visible to depth/LiDAR and participate in collision.",
@@ -329,7 +388,12 @@ def main() -> None:
                 "repository": "research_dev/sando/docker/dev-workspace/upstream-93b2eed",
                 "snapshot": "93b2eed",
                 "static_worlds": SANDO_STATIC_WORLD,
-                "dynamic_protocol": "50/100/200 obstacles; 0.65 dynamic; 0.8 m cubes; trefoil motion",
+                "dynamic_protocol": (
+                    "50/100/200 obstacles; 0.65 moving 0.8 m trefoil cubes; "
+                    "SANDO current launcher uses static 0.4x0.4x4 vertical pillars and "
+                    "0.4x4x0.4 horizontal walls for the non-moving population"
+                ),
+                "github_main_dynamic_launcher_blob": "21bb832ca2d63406d1e99e552decdea4676a3ef0",
             },
         },
         "boundary_obstacles": BOUNDARY,

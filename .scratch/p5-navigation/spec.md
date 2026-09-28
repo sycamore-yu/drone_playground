@@ -38,6 +38,10 @@
 > 额外 3-D extension 保留，D06 四根长横杆改为竖直往复运动。主六场景只做边界、起终点安全和
 > 可达性筛选，不增加人工 anti-straight blocker。默认目录为 `configs/scene/p5_fixed_catalog_v5.json`，
 > 审阅集为 `experiments/p5-fixed-scenes-review-v5/`。
+> 随后按 SANDO 当前 GitHub 动态场景实现补齐长方体：D01-D03 的静态圆柱份额中一半改为静态
+> 长方体；长方体内部沿用 SANDO 的 35% 竖直柱 / 65% 横向墙比例，尺寸分别为
+> 0.4×0.4×4.0 m 与 0.4×4.0×0.4 m。SANDO 这两类长方体本身不移动；运动仍由 65% 的
+> 0.8 m 小立方体承担。S01-S03 保持原始 SANDO 固定圆柱森林，不引入混合形状。
 
 ## 1. 目标、已确认选择与交付范围
 

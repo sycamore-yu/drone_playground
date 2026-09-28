@@ -22,7 +22,9 @@
     "Primary benchmark is exactly six scenes: static/dynamic x easy/medium/hard.",
     "Static difficulty follows SANDO 5/10/20 percent forest density using pinned world geometry.",
     "Dynamic difficulty follows SANDO 50/100/200 total obstacles with 65 percent dynamic cubes.",
-    "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; static cylinders use radius 1.0-1.5 m and height 6 m.",
+    "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; they are the moving population.",
+    "Half of the remaining static-cylinder share is replaced by static SANDO-style rectangular obstacles: 0.4x0.4x4.0 m vertical pillars and 0.4x4.0x0.4 m horizontal walls, with a 35/65 vertical/horizontal split inside the replacement subset.",
+    "The other half of the static share remains 1.0-1.5 m radius, 6 m high cylinders to retain cylindrical clutter requested for this benchmark.",
     "Dynamic randomization is conditioned only on finite P5 world bounds and endpoint safety, then frozen at seed 0.",
     "No reference, oracle, inspection or demonstration trajectory is stored or reserved.",
     "Four physical boundary walls are visible to depth/LiDAR and participate in collision.",
@@ -64,7 +66,8 @@
         "medium": "medium_forest.world",
         "hard": "hard_forest.world"
       },
-      "dynamic_protocol": "50/100/200 obstacles; 0.65 dynamic; 0.8 m cubes; trefoil motion"
+      "dynamic_protocol": "50/100/200 obstacles; 0.65 moving 0.8 m trefoil cubes; SANDO current launcher uses static 0.4x0.4x4 vertical pillars and 0.4x4x0.4 horizontal walls for the non-moving population",
+      "github_main_dynamic_launcher_blob": "21bb832ca2d63406d1e99e552decdea4676a3ef0"
     }
   },
   "boundary_obstacles": [
@@ -5498,132 +5501,148 @@
           "source_index": 31
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
             80.6846018820692,
             -4.418543359701893,
-            3.0
+            2.0
           ],
           "size": [
-            1.1100797608330228,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 32
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            19.619466691666865,
-            17.601385773500418,
-            3.0
+            22.01595216660458,
+            -12.152213323333253,
+            2.0
           ],
           "size": [
-            1.29326512929051,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 33
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            4.979326505826487,
-            -4.466096152878034,
-            3.0
+            94.00346443375103,
+            3.4612103432408006,
+            2.0
           ],
           "size": [
-            1.1170146302624635,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 34
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            8.465706460929933,
-            -12.529765259143662,
-            3.0
+            4.979326505826487,
+            -4.466096152878034,
+            1.542505337889737
           ],
           "size": [
-            1.0284952399997518,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 35
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            63.80736282281026,
-            -13.065045406501245,
-            3.0
+            8.465706460929933,
+            -12.529765259143662,
+            0.9051657279982124
           ],
           "size": [
-            1.3053899381217628,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 36
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            61.250674789122975,
-            8.19694842959747,
-            3.0
+            63.80736282281026,
+            -13.065045406501245,
+            2.898807554476692
           ],
           "size": [
-            1.2560593253057157,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 37
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            28.442399033479827,
-            15.098298157141116,
-            3.0
+            61.250674789122975,
+            8.19694842959747,
+            2.543627142201152
           ],
           "size": [
-            1.1765355408617568,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 38
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
+          "origin": [
+            28.442399033479827,
+            15.098298157141116,
+            1.971055894204649
+          ],
+          "size": [
+            0.2,
+            2.0,
+            0.2
+          ],
+          "motion": "static",
+          "role": "sando_static_horizontal_box",
+          "source_index": 39
+        },
+        {
+          "shape": "box",
           "origin": [
             45.82943249787391,
             5.275177269221857,
-            3.0
+            2.558047473402818
           ],
           "size": [
-            1.2580621490837247,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
-          "source_index": 39
+          "role": "sando_static_horizontal_box",
+          "source_index": 40
         },
         {
           "shape": "cylinder",
@@ -5639,7 +5658,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 40
+          "source_index": 41
         },
         {
           "shape": "cylinder",
@@ -5655,7 +5674,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 41
+          "source_index": 42
         },
         {
           "shape": "cylinder",
@@ -5671,7 +5690,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 42
+          "source_index": 43
         },
         {
           "shape": "cylinder",
@@ -5687,7 +5706,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 43
+          "source_index": 44
         },
         {
           "shape": "cylinder",
@@ -5703,7 +5722,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 44
+          "source_index": 45
         },
         {
           "shape": "cylinder",
@@ -5719,7 +5738,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 45
+          "source_index": 46
         },
         {
           "shape": "cylinder",
@@ -5735,7 +5754,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 46
+          "source_index": 47
         },
         {
           "shape": "cylinder",
@@ -5751,7 +5770,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 47
+          "source_index": 48
         },
         {
           "shape": "cylinder",
@@ -5767,22 +5786,6 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 48
-        },
-        {
-          "shape": "cylinder",
-          "origin": [
-            20.16215864664097,
-            6.906715252705212,
-            3.0
-          ],
-          "size": [
-            1.3678013283808579,
-            6.0,
-            0.0
-          ],
-          "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
           "source_index": 49
         }
       ],
@@ -5793,9 +5796,15 @@
         "total_obstacles": 50,
         "dynamic_obstacles": 32,
         "static_obstacles": 18,
+        "static_cylinders": 9,
+        "static_boxes": 9,
+        "static_vertical_boxes": 3,
+        "static_horizontal_boxes": 6,
         "dynamic_fraction": 0.65,
+        "static_box_fraction_of_static_share": 0.5,
+        "static_box_vertical_fraction": 0.35,
         "bounded_sampling_rejections": 56,
-        "sampling_note": "SANDO laws conditioned on P5 physical bounds and endpoint safety"
+        "sampling_note": "SANDO dynamic laws conditioned on P5 physical bounds and endpoint safety; half of the static-cylinder share replaced by SANDO-sized static boxes"
       },
       "topology_acceptance": {
         "require_direct_route_blocked": true,
@@ -7308,244 +7317,292 @@
           "source_index": 64
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            57.53826630962362,
-            -18.38256078764712,
-            3.0
+            22.737815097545244,
+            18.703295120999577,
+            2.0
           ],
           "size": [
-            1.0467390986660967,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 65
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            20.030163768999245,
-            -6.927537268825894,
-            3.0
+            98.41697219657127,
+            3.0153065238494463,
+            2.0
           ],
           "size": [
-            1.0565541058064372,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 66
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            79.72107730705183,
-            -5.433817199390374,
-            3.0
+            4.043598030882201,
+            -16.260872106712267,
+            2.0
           ],
           "size": [
-            1.1168668491873361,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 67
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            4.3693870366308225,
-            -4.6931256250807785,
-            3.0
+            20.030163768999245,
+            -6.927537268825894,
+            2.0
           ],
           "size": [
-            1.002253365254611,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 68
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            11.649145052958731,
-            4.185820402466902,
-            3.0
+            11.310821161287443,
+            11.888430922820735,
+            2.0
           ],
           "size": [
-            1.4674727056640553,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 69
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            19.936592192623294,
-            9.642448266175517,
-            3.0
+            36.41545700152407,
+            -10.650652065013109,
+            2.0
           ],
           "size": [
-            1.098852760522686,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 70
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            6.677871597507446,
-            -12.914588473445221,
-            3.0
+            4.3693870366308225,
+            -4.6931256250807785,
+            0.7162242298332004
           ],
           "size": [
-            1.1171504640093062,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 71
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            92.83213646369055,
-            -4.722836174164744,
-            3.0
+            11.649145052958731,
+            4.185820402466902,
+            4.065803480781198
           ],
           "size": [
-            1.4036908783032367,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 72
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            43.58135328449577,
-            -4.7502133321566085,
-            3.0
+            19.936592192623294,
+            9.642448266175517,
+            1.4117398757633406
           ],
           "size": [
-            1.3826740273877807,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 73
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            61.57609965990255,
-            -9.2272922311566,
-            3.0
+            6.677871597507446,
+            -12.914588473445221,
+            1.5434833408670048
           ],
           "size": [
-            1.2914052991087315,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 74
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            70.38528499563493,
-            13.08312366525098,
-            3.0
+            92.83213646369055,
+            -4.722836174164744,
+            3.6065743237833034
           ],
           "size": [
-            1.3385895395797203,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 75
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            64.07470713136978,
-            3.8360936990472148,
-            3.0
+            43.58135328449577,
+            -4.7502133321566085,
+            3.455252997192021
           ],
           "size": [
-            1.0460254745621915,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 76
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            94.51890595499945,
-            8.593676419105329,
-            3.0
+            61.57609965990255,
+            -9.2272922311566,
+            2.798118153582867
           ],
           "size": [
-            1.1364355646972795,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 77
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            69.23506941042633,
-            4.832697442803223,
-            3.0
+            70.38528499563493,
+            13.08312366525098,
+            3.1378446849739854
           ],
           "size": [
-            1.329425722866894,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 78
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
+          "origin": [
+            64.07470713136978,
+            3.8360936990472148,
+            1.0313834168477785
+          ],
+          "size": [
+            0.2,
+            2.0,
+            0.2
+          ],
+          "motion": "static",
+          "role": "sando_static_horizontal_box",
+          "source_index": 79
+        },
+        {
+          "shape": "box",
+          "origin": [
+            94.51890595499945,
+            8.593676419105329,
+            1.6823360658204125
+          ],
+          "size": [
+            0.2,
+            2.0,
+            0.2
+          ],
+          "motion": "static",
+          "role": "sando_static_horizontal_box",
+          "source_index": 80
+        },
+        {
+          "shape": "box",
+          "origin": [
+            69.23506941042633,
+            4.832697442803223,
+            3.071865204641636
+          ],
+          "size": [
+            0.2,
+            2.0,
+            0.2
+          ],
+          "motion": "static",
+          "role": "sando_static_horizontal_box",
+          "source_index": 81
+        },
+        {
+          "shape": "box",
           "origin": [
             37.890897100484956,
             2.9270341920468965,
-            3.0
+            3.0760980304355385
           ],
           "size": [
-            1.3300136153382693,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
-          "source_index": 79
+          "role": "sando_static_horizontal_box",
+          "source_index": 82
         },
         {
           "shape": "cylinder",
@@ -7561,7 +7618,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 80
+          "source_index": 83
         },
         {
           "shape": "cylinder",
@@ -7577,7 +7634,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 81
+          "source_index": 84
         },
         {
           "shape": "cylinder",
@@ -7593,7 +7650,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 82
+          "source_index": 85
         },
         {
           "shape": "cylinder",
@@ -7609,7 +7666,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 83
+          "source_index": 86
         },
         {
           "shape": "cylinder",
@@ -7625,7 +7682,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 84
+          "source_index": 87
         },
         {
           "shape": "cylinder",
@@ -7641,7 +7698,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 85
+          "source_index": 88
         },
         {
           "shape": "cylinder",
@@ -7657,7 +7714,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 86
+          "source_index": 89
         },
         {
           "shape": "cylinder",
@@ -7673,7 +7730,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 87
+          "source_index": 90
         },
         {
           "shape": "cylinder",
@@ -7689,7 +7746,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 88
+          "source_index": 91
         },
         {
           "shape": "cylinder",
@@ -7705,7 +7762,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 89
+          "source_index": 92
         },
         {
           "shape": "cylinder",
@@ -7721,7 +7778,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 90
+          "source_index": 93
         },
         {
           "shape": "cylinder",
@@ -7737,7 +7794,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 91
+          "source_index": 94
         },
         {
           "shape": "cylinder",
@@ -7753,7 +7810,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 92
+          "source_index": 95
         },
         {
           "shape": "cylinder",
@@ -7769,7 +7826,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 93
+          "source_index": 96
         },
         {
           "shape": "cylinder",
@@ -7785,7 +7842,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 94
+          "source_index": 97
         },
         {
           "shape": "cylinder",
@@ -7801,7 +7858,7 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 95
+          "source_index": 98
         },
         {
           "shape": "cylinder",
@@ -7817,54 +7874,6 @@
           ],
           "motion": "static",
           "role": "sando_dynamic_static_cylinder",
-          "source_index": 96
-        },
-        {
-          "shape": "cylinder",
-          "origin": [
-            61.76787279057826,
-            15.95416506028269,
-            3.0
-          ],
-          "size": [
-            1.2853681554228307,
-            6.0,
-            0.0
-          ],
-          "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
-          "source_index": 97
-        },
-        {
-          "shape": "cylinder",
-          "origin": [
-            21.33771523689014,
-            -2.344825556007933,
-            3.0
-          ],
-          "size": [
-            1.1214842553725763,
-            6.0,
-            0.0
-          ],
-          "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
-          "source_index": 98
-        },
-        {
-          "shape": "cylinder",
-          "origin": [
-            90.4950168758396,
-            13.741032575871785,
-            3.0
-          ],
-          "size": [
-            1.2779095572646724,
-            6.0,
-            0.0
-          ],
-          "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
           "source_index": 99
         }
       ],
@@ -7875,9 +7884,15 @@
         "total_obstacles": 100,
         "dynamic_obstacles": 65,
         "static_obstacles": 35,
+        "static_cylinders": 17,
+        "static_boxes": 18,
+        "static_vertical_boxes": 6,
+        "static_horizontal_boxes": 12,
         "dynamic_fraction": 0.65,
-        "bounded_sampling_rejections": 132,
-        "sampling_note": "SANDO laws conditioned on P5 physical bounds and endpoint safety"
+        "static_box_fraction_of_static_share": 0.5,
+        "static_box_vertical_fraction": 0.35,
+        "bounded_sampling_rejections": 131,
+        "sampling_note": "SANDO dynamic laws conditioned on P5 physical bounds and endpoint safety; half of the static-cylinder share replaced by SANDO-sized static boxes"
       },
       "topology_acceptance": {
         "require_direct_route_blocked": true,
@@ -10885,574 +10900,574 @@
           "source_index": 129
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
             73.10058374414709,
             10.452185096346067,
-            3.0
+            2.0
           ],
           "size": [
-            1.361184913800102,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 130
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            96.53965236362662,
-            -3.420123888389739,
-            3.0
+            72.23698276002037,
+            18.61586094545065,
+            2.0
           ],
           "size": [
-            1.0428216790859346,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 131
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            79.83360236752954,
-            8.498912993498386,
-            3.0
+            41.44969027902565,
+            -16.57426567312523,
+            2.0
           ],
           "size": [
-            1.0127251410086329,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 132
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            49.282026796583835,
-            12.390968915824601,
-            3.0
+            79.83360236752954,
+            8.498912993498386,
+            2.0
           ],
           "size": [
-            1.4741346967724236,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 133
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            34.96808078087652,
-            -1.1300049650891992,
-            3.0
+            80.9774222895615,
+            17.930775741793887,
+            2.0
           ],
           "size": [
-            1.2224522253717645,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 134
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            74.40909201878887,
-            8.138169318393956,
-            3.0
+            34.96808078087652,
+            -1.1300049650891992,
+            2.0
           ],
           "size": [
-            1.2374512462994605,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 135
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            18.50183293684364,
-            3.485638128150896,
-            3.0
+            44.490445074352905,
+            9.763636807515546,
+            2.0
           ],
           "size": [
-            1.0124949984519391,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 136
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            35.574689664131384,
-            -7.685527673234818,
-            3.0
+            70.34542329598489,
+            -1.0039002960431702,
+            2.0
           ],
           "size": [
-            1.0333424814760863,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 137
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            9.739355866097632,
-            11.532649280530482,
-            3.0
+            18.50183293684364,
+            3.485638128150896,
+            2.0
           ],
           "size": [
-            1.2265781969907776,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 138
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            12.871539580118629,
-            17.35962644133177,
-            3.0
+            2.4989996903878042,
+            -5.770124134347444,
+            2.0
           ],
           "size": [
-            1.1578237110600735,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 139
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            44.022693380797364,
-            7.792574161930613,
-            3.0
+            30.786180816912957,
+            -17.332601481913095,
+            2.0
           ],
           "size": [
-            1.07726552146949,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 140
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            78.24975174342028,
-            13.812806979526798,
-            3.0
+            9.739355866097632,
+            11.532649280530482,
+            2.0
           ],
           "size": [
-            1.2456259926451039,
-            6.0,
-            0.0
+            0.2,
+            0.2,
+            2.0
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_vertical_box",
           "source_index": 141
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            70.94561720263421,
-            8.935163557677793,
-            3.0
+            45.315639398155525,
+            -14.85138416795255,
+            4.062366379719859
           ],
           "size": [
-            1.4959346921148668,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 142
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            77.52477604517475,
-            -5.569197260627083,
-            3.0
+            31.564742212014718,
+            -2.3909226476810552,
+            3.201331674573755
           ],
           "size": [
-            1.255345557867746,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 143
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            39.38390673186545,
-            1.4042179733956175,
-            3.0
+            15.45310429389799,
+            11.299900697368113,
+            3.743152628157411
           ],
           "size": [
-            1.4478825613676183,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 144
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            9.619489540694403,
-            15.768519976656599,
-            3.0
+            49.12519852902075,
+            8.37824688105368,
+            3.304164720191001
           ],
           "size": [
-            1.251953937633556,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 145
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            14.540112066157429,
-            17.355643612136035,
-            3.0
+            99.1869384229734,
+            11.0099104180699,
+            1.9987722465435622
           ],
           "size": [
-            1.0972820894579272,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 146
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            5.054094001118514,
-            5.15493645264322,
-            3.0
+            51.069111573549165,
+            -4.246437307253821,
+            2.6263796176056053
           ],
           "size": [
-            1.281560346988518,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 147
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            56.31497372559444,
-            -16.761973708132885,
-            3.0
+            89.57651227352366,
+            -16.15220418372224,
+            3.919166797899093
           ],
           "size": [
-            1.1783737350999148,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 148
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            13.057866604435242,
-            -1.283337499846084,
-            3.0
+            50.390787526711215,
+            -14.18395517353703,
+            4.062007925092243
           ],
           "size": [
-            1.1853104645116586,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 149
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            32.98344694320144,
-            15.271939367258149,
-            3.0
+            56.3120693977036,
+            2.5259894902377766,
+            0.9914223662680401
           ],
           "size": [
-            1.3121224406255625,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 150
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            11.005618651538773,
-            6.2947330797758205,
-            3.0
+            35.674747019982945,
+            -14.776853358225903,
+            2.384499625013852
           ],
           "size": [
-            1.4981231450293928,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 151
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            36.52919693327929,
-            10.82092613193695,
-            3.0
+            37.0620929023317,
+            -6.806621222719421,
+            3.874474543053233
           ],
           "size": [
-            1.3285741871388288,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 152
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            47.50520691644966,
-            -3.815940131882158,
-            3.0
+            62.42448812511249,
+            -15.59775253938449,
+            3.0665259771798237
           ],
           "size": [
-            1.106974546206477,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 153
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            41.77612204461568,
-            -9.32748736630272,
-            3.0
+            65.71483742776576,
+            -0.9979172334201358,
+            2.1565653881306055
           ],
           "size": [
-            1.2431529701945905,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 154
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            66.93754903435739,
-            15.47467868827885,
-            3.0
+            21.3949092412954,
+            -3.289551182153726,
+            1.660526137032755
           ],
           "size": [
-            1.0727126390830197,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 155
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            80.97781852311407,
-            10.478443629765678,
-            3.0
+            48.6305940389181,
+            6.7750196137429555,
+            3.892721081945096
           ],
           "size": [
-            1.3140347367934264,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 156
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            19.207459142533136,
-            -17.1317154737252,
-            3.0
+            14.542527816603945,
+            12.391127409245627,
+            3.4430599266789104
           ],
           "size": [
-            1.0684258061087992,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 157
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            32.18503993964167,
-            -8.345090210467824,
-            3.0
+            62.806947358685285,
+            -12.317016342986747,
+            0.9581456073647318
           ],
           "size": [
-            1.4051985422144577,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 158
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            34.3591319367598,
-            -13.50922213161995,
-            3.0
+            13.685161221759866,
+            -7.125984024143332,
+            1.7489418810578958
           ],
           "size": [
-            1.4878604491336356,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 159
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            70.48934127379857,
-            12.13234103295023,
-            3.0
+            81.03970844289155,
+            -6.256347225296079,
+            1.2841700081542045
           ],
           "size": [
-            1.2486103592602489,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 160
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            9.689896208558292,
-            3.4503715051838455,
-            3.0
+            97.57208982672712,
+            8.195736509519431,
+            3.59191069296552
           ],
           "size": [
-            1.2223715287788641,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 161
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            31.804972271765365,
-            -16.5007318076678,
-            3.0
+            49.72207185204978,
+            -16.124041516576682,
+            2.810533435466546
           ],
           "size": [
-            1.1580560101686994,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 162
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            27.23104054859511,
-            -5.749512415398588,
-            3.0
+            44.47430575577284,
+            -7.278011091293855,
+            1.014934137309898
           ],
           "size": [
-            1.3566670343239922,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 163
         },
         {
-          "shape": "cylinder",
+          "shape": "box",
           "origin": [
-            11.663343096115842,
-            -4.846357011181057,
-            3.0
+            31.611202033739882,
+            -9.107583780561956,
+            1.9825438826141268
           ],
           "size": [
-            1.379432902961006,
-            6.0,
-            0.0
+            0.2,
+            2.0,
+            0.2
           ],
           "motion": "static",
-          "role": "sando_dynamic_static_cylinder",
+          "role": "sando_static_horizontal_box",
           "source_index": 164
         },
         {
           "shape": "cylinder",
           "origin": [
-            30.96883619821068,
-            14.23889600100297,
+            71.33340686479843,
+            -15.334662761553663,
             3.0
           ],
           "size": [
-            1.4320300370510797,
+            1.189420537360237,
             6.0,
             0.0
           ],
@@ -11463,12 +11478,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            18.92224152263584,
-            5.983511895664101,
+            75.88658059220117,
+            -7.612465520715727,
             3.0
           ],
           "size": [
-            1.3197082288062298,
+            1.4279862000125372,
             6.0,
             0.0
           ],
@@ -11479,12 +11494,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            16.975521182933107,
-            2.3110682246189924,
+            86.40600741021592,
+            -12.431103390945664,
             3.0
           ],
           "size": [
-            1.2376210054702543,
+            1.3247938986958012,
             6.0,
             0.0
           ],
@@ -11495,12 +11510,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            24.073819130181683,
-            8.519931293629917,
+            63.94164576124598,
+            -13.209791526826757,
             3.0
           ],
           "size": [
-            1.4476897875204897,
+            1.2788883528077375,
             6.0,
             0.0
           ],
@@ -11511,12 +11526,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            89.6484424957277,
-            -15.769262298647341,
+            47.524201094050866,
+            -10.370472347927326,
             3.0
           ],
           "size": [
-            1.189426093340729,
+            1.356499141170374,
             6.0,
             0.0
           ],
@@ -11527,12 +11542,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            8.925055258773062,
-            -1.445516203451838,
+            89.53795750409793,
+            15.859376998291083,
             3.0
           ],
           "size": [
-            1.3315902916372289,
+            1.0528842212669083,
             6.0,
             0.0
           ],
@@ -11543,12 +11558,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            70.68858231652979,
-            -17.69178810079101,
+            37.88521866814578,
+            -16.429977896490776,
             3.0
           ],
           "size": [
-            1.0565211927562714,
+            1.2319310474568521,
             6.0,
             0.0
           ],
@@ -11559,12 +11574,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            63.21635031680476,
-            13.39725536228989,
+            66.31805832744575,
+            8.275432926611916,
             3.0
           ],
           "size": [
-            1.3037563185843726,
+            1.0288526487401124,
             6.0,
             0.0
           ],
@@ -11575,12 +11590,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            9.391250670933537,
-            -16.72647578218223,
+            11.304238551254308,
+            5.286540126721903,
             3.0
           ],
           "size": [
-            1.2903053838747374,
+            1.4174656920286237,
             6.0,
             0.0
           ],
@@ -11591,12 +11606,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            21.690465400657256,
-            9.905261665476509,
+            60.75126371687452,
+            -16.243499731626585,
             3.0
           ],
           "size": [
-            1.151065077055888,
+            1.0409190527227221,
             6.0,
             0.0
           ],
@@ -11607,12 +11622,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            82.59390548092182,
-            16.083976677685747,
+            58.06107677494749,
+            -11.323813839737099,
             3.0
           ],
           "size": [
-            1.2655308896772852,
+            1.3738157708184564,
             6.0,
             0.0
           ],
@@ -11623,12 +11638,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            70.26649733396602,
-            10.562655728374835,
+            30.21301541117757,
+            13.037562192368732,
             3.0
           ],
           "size": [
-            1.3133356056160537,
+            1.4510497084710718,
             6.0,
             0.0
           ],
@@ -11639,12 +11654,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            64.67955321707956,
-            -3.852731209727139,
+            53.10617793545707,
+            8.106598933586405,
             3.0
           ],
           "size": [
-            1.4464061740615946,
+            1.3820331966046855,
             6.0,
             0.0
           ],
@@ -11655,12 +11670,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            17.72023135132764,
-            -13.526325576003249,
+            62.667121123210755,
+            5.871821286831821,
             3.0
           ],
           "size": [
-            1.3621927987250404,
+            1.2018408598784107,
             6.0,
             0.0
           ],
@@ -11671,12 +11686,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            21.142167327770125,
-            0.804844444009504,
+            89.28123481231893,
+            -12.911907459468942,
             3.0
           ],
           "size": [
-            1.4507318651911474,
+            1.0809209302999594,
             6.0,
             0.0
           ],
@@ -11687,12 +11702,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            35.75815087239111,
-            9.424490766478065,
+            72.43855974500809,
+            -11.543133068891951,
             3.0
           ],
           "size": [
-            1.434533487636892,
+            1.2600605555501188,
             6.0,
             0.0
           ],
@@ -11703,12 +11718,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            65.86534443107426,
-            -16.368197699781135,
+            90.14637303822947,
+            -5.696739651043554,
             3.0
           ],
           "size": [
-            1.258175743461899,
+            1.3678061345809758,
             6.0,
             0.0
           ],
@@ -11719,12 +11734,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            5.626156285424799,
-            -6.034307427598012,
+            86.90669752737841,
+            6.346137772429707,
             3.0
           ],
           "size": [
-            1.249749247827308,
+            1.0453975287527357,
             6.0,
             0.0
           ],
@@ -11735,12 +11750,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            92.94026436742938,
-            -17.392784617647155,
+            51.63514869237979,
+            11.881700095151444,
             3.0
           ],
           "size": [
-            1.4579046955877952,
+            1.4988844480450623,
             6.0,
             0.0
           ],
@@ -11751,12 +11766,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            43.997463907456066,
-            -16.018715989375394,
+            45.86596772735972,
+            -17.749537485830082,
             3.0
           ],
           "size": [
-            1.3758083739306437,
+            1.1745711571550248,
             6.0,
             0.0
           ],
@@ -11767,12 +11782,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            12.107946963876802,
-            -14.640794336995086,
+            49.94984956546158,
+            17.17610574697175,
             3.0
           ],
           "size": [
-            1.1184318312143406,
+            1.0325901922794105,
             6.0,
             0.0
           ],
@@ -11783,12 +11798,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            54.72401329462283,
-            6.412735133344082,
+            91.58093911755904,
+            -2.4010144370175723,
             3.0
           ],
           "size": [
-            1.4301849318425026,
+            1.0497660501328077,
             6.0,
             0.0
           ],
@@ -11799,12 +11814,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            58.973701278997424,
-            5.499577777544914,
+            75.16167478612876,
+            -15.156821214449279,
             3.0
           ],
           "size": [
-            1.2405969124339506,
+            1.0669900707875615,
             6.0,
             0.0
           ],
@@ -11815,12 +11830,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            50.43045579342629,
-            6.51863183913553,
+            23.686366242868118,
+            1.8896053178491314,
             3.0
           ],
           "size": [
-            1.1349724709007392,
+            1.330159189166801,
             6.0,
             0.0
           ],
@@ -11831,12 +11846,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            29.599189026822025,
-            4.919152761810164,
+            86.03698636850054,
+            3.589480511598971,
             3.0
           ],
           "size": [
-            1.3108699430407544,
+            1.3187447222193114,
             6.0,
             0.0
           ],
@@ -11847,12 +11862,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            18.019599669864927,
-            -12.17158988103797,
+            48.11938248679013,
+            0.17218231737051326,
             3.0
           ],
           "size": [
-            1.2742169339549931,
+            1.3314828979891942,
             6.0,
             0.0
           ],
@@ -11863,12 +11878,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            83.32419776182441,
-            -7.528692054833982,
+            26.99449418014782,
+            -8.160324389271189,
             3.0
           ],
           "size": [
-            1.0869974535319273,
+            1.311489409522627,
             6.0,
             0.0
           ],
@@ -11879,12 +11894,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            4.854701053589183,
-            1.206609899604917,
+            62.173988608150886,
+            -12.792160132054029,
             3.0
           ],
           "size": [
-            1.2642273886556614,
+            1.0978551264870253,
             6.0,
             0.0
           ],
@@ -11895,12 +11910,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            61.26639735907471,
-            1.8626364282718164,
+            54.84338679099863,
+            13.329679104729763,
             3.0
           ],
           "size": [
-            1.3294767378858763,
+            1.1558913493145753,
             6.0,
             0.0
           ],
@@ -11911,12 +11926,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            87.01314733909842,
-            -7.300024149355227,
+            17.39949070638549,
+            -18.058119578564327,
             3.0
           ],
           "size": [
-            1.39802099517692,
+            1.2650826237450614,
             6.0,
             0.0
           ],
@@ -11927,12 +11942,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            22.673913835366065,
-            -6.76516086107743,
+            52.84547773113226,
+            4.506558943629884,
             3.0
           ],
           "size": [
-            1.247191820833208,
+            1.2732829553533977,
             6.0,
             0.0
           ],
@@ -11943,12 +11958,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            51.963347734458,
-            9.507343722788487,
+            65.89534757717524,
+            14.805258935639372,
             3.0
           ],
           "size": [
-            1.0130260772082988,
+            1.1587496981330596,
             6.0,
             0.0
           ],
@@ -11959,12 +11974,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            73.84138217705221,
-            12.245154422463557,
+            79.604199035384,
+            -10.930434465853573,
             3.0
           ],
           "size": [
-            1.000699188873349,
+            1.1654354892365322,
             6.0,
             0.0
           ],
@@ -11975,12 +11990,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            87.11893939181407,
-            -17.80153384174818,
+            49.438364166641605,
+            0.7853390937832003,
             3.0
           ],
           "size": [
-            1.4537000928514887,
+            1.368841796534856,
             6.0,
             0.0
           ],
@@ -11991,12 +12006,12 @@
         {
           "shape": "cylinder",
           "origin": [
-            66.74904465212968,
-            10.637037474724874,
+            2.6052154416597695,
+            9.536552870820888,
             3.0
           ],
           "size": [
-            1.3376130090948861,
+            1.4030644302807944,
             6.0,
             0.0
           ],
@@ -12012,9 +12027,15 @@
         "total_obstacles": 200,
         "dynamic_obstacles": 130,
         "static_obstacles": 70,
+        "static_cylinders": 35,
+        "static_boxes": 35,
+        "static_vertical_boxes": 12,
+        "static_horizontal_boxes": 23,
         "dynamic_fraction": 0.65,
-        "bounded_sampling_rejections": 245,
-        "sampling_note": "SANDO laws conditioned on P5 physical bounds and endpoint safety"
+        "static_box_fraction_of_static_share": 0.5,
+        "static_box_vertical_fraction": 0.35,
+        "bounded_sampling_rejections": 246,
+        "sampling_note": "SANDO dynamic laws conditioned on P5 physical bounds and endpoint safety; half of the static-cylinder share replaced by SANDO-sized static boxes"
       },
       "topology_acceptance": {
         "require_direct_route_blocked": true,

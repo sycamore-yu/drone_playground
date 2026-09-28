@@ -104,6 +104,24 @@ def test_v5_primary_scenes_match_sando_difficulty_protocol():
         sum(obstacle.get("motion", "static") != "static" for obstacle in by_id[scene_id]["obstacles"])
         for scene_id in ("D01", "D02", "D03")
     ] == [32, 65, 130]
+    expected_static_geometry = {
+        "D01": (9, 3, 6),
+        "D02": (17, 6, 12),
+        "D03": (35, 12, 23),
+    }
+    for scene_id, (cylinders, vertical_boxes, horizontal_boxes) in expected_static_geometry.items():
+        obstacles = by_id[scene_id]["obstacles"]
+        assert sum(o.get("role") == "sando_dynamic_static_cylinder" for o in obstacles) == cylinders
+        assert sum(o.get("role") == "sando_static_vertical_box" for o in obstacles) == vertical_boxes
+        assert sum(o.get("role") == "sando_static_horizontal_box" for o in obstacles) == horizontal_boxes
+        rectangular = [
+            o
+            for o in obstacles
+            if o.get("role") in {"sando_static_vertical_box", "sando_static_horizontal_box"}
+        ]
+        assert all(o["motion"] == "static" for o in rectangular)
+        assert all(o["size"] == [0.2, 0.2, 2.0] for o in rectangular if o["role"] == "sando_static_vertical_box")
+        assert all(o["size"] == [0.2, 2.0, 0.2] for o in rectangular if o["role"] == "sando_static_horizontal_box")
 
 
 def test_v5_retains_3d_extensions_and_moves_d06_crossbars():

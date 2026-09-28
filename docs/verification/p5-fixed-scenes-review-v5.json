@@ -32,8 +32,31 @@
     65,
     130
   ],
+  "dynamic_static_geometry": {
+    "D01": {
+      "moving_cubes": 32,
+      "static_cylinders": 9,
+      "static_vertical_boxes": 3,
+      "static_horizontal_boxes": 6,
+      "all_long_boxes_static": true
+    },
+    "D02": {
+      "moving_cubes": 65,
+      "static_cylinders": 17,
+      "static_vertical_boxes": 6,
+      "static_horizontal_boxes": 12,
+      "all_long_boxes_static": true
+    },
+    "D03": {
+      "moving_cubes": 130,
+      "static_cylinders": 35,
+      "static_vertical_boxes": 12,
+      "static_horizontal_boxes": 23,
+      "all_long_boxes_static": true
+    }
+  },
   "d06_moving_crossbars": 4,
-  "catalog_sha256": "5c4c52fb1a20b3fcb3b4e754ede8b7a376317e66980fdf3a30c723168530b908",
+  "catalog_sha256": "df0c0363a26ee3577a2ab6b1b206e10659811aed71303af435f7f5cd98f32925",
   "scenes": [
     {
       "scene_id": "S01",
@@ -67,9 +90,9 @@
       },
       "title": "SANDO easy static forest",
       "source": "SANDO",
-      "replay": "S01/2026_09_28-07_53_48.mj_unroll",
+      "replay": "S01/2026_09_28-08_24_52.mj_unroll",
       "files": {
-        "2026_09_28-07_53_48.mj_unroll": "5e335d0dfc5c8c1a212e69cf3f7ee04d32fe39d5d45659f48550dbccfd869bf2",
+        "2026_09_28-08_24_52.mj_unroll": "5e335d0dfc5c8c1a212e69cf3f7ee04d32fe39d5d45659f48550dbccfd869bf2",
         "components.json": "2cfa7161961160b34c49081ac1e5d9d174d7afd196a69c35cc654a18e359c6c3",
         "rscope_meta.pkl": "70c81054b201c45e1161face7d23db148337894a1d30afd3b337bb0e2e107b52",
         "scene-definition.json": "e9ebc91815588cad79bb005ab7f6f1aeeed12c0a07ad02b7719fc91951a9bb30",
@@ -110,9 +133,9 @@
       },
       "title": "SANDO medium static forest",
       "source": "SANDO",
-      "replay": "S02/2026_09_28-07_53_56.mj_unroll",
+      "replay": "S02/2026_09_28-08_25_00.mj_unroll",
       "files": {
-        "2026_09_28-07_53_56.mj_unroll": "1db3d49fb8e34411bd8f9483b461d8dd73b2d638ddea83970c4db92f9ffae789",
+        "2026_09_28-08_25_00.mj_unroll": "1db3d49fb8e34411bd8f9483b461d8dd73b2d638ddea83970c4db92f9ffae789",
         "components.json": "518b6e6a9770d63157e1b30dda3cbd0c9ccf0526af96d69af4f02b6fb6516e68",
         "rscope_meta.pkl": "f222b31b70e1e39de1a41d2981c10e7f1ca6604fec3e2ef7d05c7cfda29659da",
         "scene-definition.json": "4b44a32cd46b62dcd7fba7f31ff3ff29e30f2c7d10ccfdf3ce29a0fbc7189c10",
@@ -153,9 +176,9 @@
       },
       "title": "SANDO hard static forest",
       "source": "SANDO",
-      "replay": "S03/2026_09_28-07_54_05.mj_unroll",
+      "replay": "S03/2026_09_28-08_25_08.mj_unroll",
       "files": {
-        "2026_09_28-07_54_05.mj_unroll": "07f815dd3a4762b5df8b0fadeb72269e53c70898acf1acc5a9180474d065b6bb",
+        "2026_09_28-08_25_08.mj_unroll": "07f815dd3a4762b5df8b0fadeb72269e53c70898acf1acc5a9180474d065b6bb",
         "components.json": "84c839d2565864ad99f3e9ef174f0976b99880d6c829b9c35f02f56fca5b1e99",
         "rscope_meta.pkl": "06d754dcbbad6162ea88a05eb8d3c919a706102ce894d4298655453f96f2e722",
         "scene-definition.json": "4b5644899cfdaa87bb7b164eba9c087a13aeb598b25f3cb78aebdce61a854dba",
@@ -186,7 +209,7 @@
             "astar_path_length_m": 97.2360679774998,
             "detour_ratio": 1.0128757080989563,
             "astar_expanded": 1368,
-            "full_length_straight_lanes": 54,
+            "full_length_straight_lanes": 90,
             "longest_clear_straight_run_m": 96.5
           },
           {
@@ -195,7 +218,7 @@
             "astar_path_length_m": 96.82842712474618,
             "detour_ratio": 1.008629449216106,
             "astar_expanded": 534,
-            "full_length_straight_lanes": 54,
+            "full_length_straight_lanes": 95,
             "longest_clear_straight_run_m": 96.5
           },
           {
@@ -204,7 +227,7 @@
             "astar_path_length_m": 96.82842712474618,
             "detour_ratio": 1.008629449216106,
             "astar_expanded": 533,
-            "full_length_straight_lanes": 49,
+            "full_length_straight_lanes": 96,
             "longest_clear_straight_run_m": 96.5
           },
           {
@@ -213,7 +236,7 @@
             "astar_path_length_m": 96.82842712474618,
             "detour_ratio": 1.008629449216106,
             "astar_expanded": 538,
-            "full_length_straight_lanes": 50,
+            "full_length_straight_lanes": 100,
             "longest_clear_straight_run_m": 96.5
           },
           {
@@ -222,23 +245,23 @@
             "astar_path_length_m": 96.82842712474618,
             "detour_ratio": 1.008629449216106,
             "astar_expanded": 540,
-            "full_length_straight_lanes": 55,
+            "full_length_straight_lanes": 106,
             "longest_clear_straight_run_m": 96.5
           }
         ],
         "all_snapshots_reachable": true,
-        "max_full_length_straight_lanes": 55,
+        "max_full_length_straight_lanes": 106,
         "max_clear_straight_run_m": 96.5
       },
       "title": "SANDO easy dynamic benchmark",
       "source": "SANDO",
-      "replay": "D01/2026_09_28-07_54_57.mj_unroll",
+      "replay": "D01/2026_09_28-08_25_58.mj_unroll",
       "files": {
-        "2026_09_28-07_54_57.mj_unroll": "1ba4e83e829dd0bab12ca99a62f4588dbf46085a99744386a0c897b35aadf20c",
+        "2026_09_28-08_25_58.mj_unroll": "550f7485c3bbf8e4338fbdbba9e7b04eaff5d02b7baa15a08f30e71f01896dfe",
         "components.json": "47a55a118a95a85f4e104035302ff8247bd10205d29f274ec7a8c60840004595",
-        "rscope_meta.pkl": "cafcb0eeeb9f332ba9bd6acbc8f4e4b00bfb970c0a5bfd62b969abba3116e765",
-        "scene-definition.json": "12c61ebb872e872e1b23908351a980064c536654c1f667fc2dc1ba777a07da3b",
-        "scene.xml": "69c6cb43c6d6d4f187034cb795446d45f1824c141f5beb33782b8354167929f9"
+        "rscope_meta.pkl": "d118de9f80611b569af12a4bd15aebae3b639d12b8cde093617432aa353645c3",
+        "scene-definition.json": "e963d3d0e6581a50631d4b279a39895d5c7b0244f1a8d24c262ee96f098b7ddc",
+        "scene.xml": "7380b4c05f39893d5ed8d0197317987717527bba453e81768126806ce277fc69"
       },
       "reference_route": "none",
       "review_drone_motion": "drone held at start; no reference or oracle route"
@@ -262,62 +285,62 @@
           {
             "time_s": 0.0,
             "reachable": true,
-            "astar_path_length_m": 100.14213562373094,
-            "detour_ratio": 1.0431472460805307,
-            "astar_expanded": 8522,
-            "full_length_straight_lanes": 12,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 9873,
+            "full_length_straight_lanes": 29,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 10.0,
             "reachable": true,
-            "astar_path_length_m": 100.14213562373094,
-            "detour_ratio": 1.0431472460805307,
-            "astar_expanded": 8533,
-            "full_length_straight_lanes": 11,
+            "astar_path_length_m": 99.31370849898474,
+            "detour_ratio": 1.0345177968644244,
+            "astar_expanded": 8535,
+            "full_length_straight_lanes": 33,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 20.0,
             "reachable": true,
-            "astar_path_length_m": 100.14213562373094,
-            "detour_ratio": 1.0431472460805307,
-            "astar_expanded": 8546,
-            "full_length_straight_lanes": 13,
+            "astar_path_length_m": 99.48528137423857,
+            "detour_ratio": 1.036305014314985,
+            "astar_expanded": 9091,
+            "full_length_straight_lanes": 27,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 30.0,
             "reachable": true,
-            "astar_path_length_m": 100.14213562373094,
-            "detour_ratio": 1.0431472460805307,
-            "astar_expanded": 8519,
-            "full_length_straight_lanes": 12,
+            "astar_path_length_m": 99.48528137423857,
+            "detour_ratio": 1.036305014314985,
+            "astar_expanded": 9161,
+            "full_length_straight_lanes": 20,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 40.0,
             "reachable": true,
-            "astar_path_length_m": 100.14213562373094,
-            "detour_ratio": 1.0431472460805307,
-            "astar_expanded": 8511,
-            "full_length_straight_lanes": 16,
+            "astar_path_length_m": 99.48528137423855,
+            "detour_ratio": 1.036305014314985,
+            "astar_expanded": 9154,
+            "full_length_straight_lanes": 22,
             "longest_clear_straight_run_m": 96.5
           }
         ],
         "all_snapshots_reachable": true,
-        "max_full_length_straight_lanes": 16,
+        "max_full_length_straight_lanes": 33,
         "max_clear_straight_run_m": 96.5
       },
       "title": "SANDO medium dynamic benchmark",
       "source": "SANDO",
-      "replay": "D02/2026_09_28-07_55_47.mj_unroll",
+      "replay": "D02/2026_09_28-08_26_49.mj_unroll",
       "files": {
-        "2026_09_28-07_55_47.mj_unroll": "ae36fb35f634fc4562915ca50f47decaab72eddd990aeff8d2002c5ba00310fa",
+        "2026_09_28-08_26_49.mj_unroll": "3fca25f88e62733cd4bd03acc4b71de43bd2fb196612d2ba850972ca67699fde",
         "components.json": "a7b9e0ac2ab6fc91c7cbfeca836eb15ab8f0657ae27d3107f726ffeae926f714",
-        "rscope_meta.pkl": "7987453b93c1a03faca14db56060b59ba6709f16742395affe2d3ee066c7fff7",
-        "scene-definition.json": "3af124a9efa2fd2d81c93b3ed292eb38eb340e51e4279f94dc174929cf3798ad",
-        "scene.xml": "665871ff978ec54b6e7b5374c2ad8687c67c8619dfe5a54039d39553a55a83e1"
+        "rscope_meta.pkl": "2ae8a50fb5ee30e7bd48240134ef4e6761b70bba26fde7b3cb0b7651db2228cc",
+        "scene-definition.json": "794304b2db83deca446bf867e42397886a889b07ab3d1841fda8bc9d4360737d",
+        "scene.xml": "ca3a781b93a43186996eb4fa678c1bc13cdd0038e26d3eb6bb819f35fb2c7b37"
       },
       "reference_route": "none",
       "review_drone_motion": "drone held at start; no reference or oracle route"
@@ -329,7 +352,7 @@
       "obstacles": 204,
       "field_obstacles": 200,
       "boundary_obstacles": 4,
-      "direct_clearance_m": -0.7138122923524313,
+      "direct_clearance_m": -1.2248541045243262,
       "straight_line_blocked": true,
       "review_duration_s": 45.0,
       "topology": {
@@ -341,62 +364,62 @@
           {
             "time_s": 0.0,
             "reachable": true,
-            "astar_path_length_m": 99.65685424949238,
-            "detour_ratio": 1.0380922317655457,
-            "astar_expanded": 4457,
-            "full_length_straight_lanes": 10,
+            "astar_path_length_m": 98.0,
+            "detour_ratio": 1.0208333333333333,
+            "astar_expanded": 4609,
+            "full_length_straight_lanes": 3,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 10.0,
             "reachable": true,
-            "astar_path_length_m": 99.31370849898475,
-            "detour_ratio": 1.0345177968644246,
-            "astar_expanded": 3301,
-            "full_length_straight_lanes": 10,
+            "astar_path_length_m": 98.0,
+            "detour_ratio": 1.0208333333333333,
+            "astar_expanded": 4678,
+            "full_length_straight_lanes": 3,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 20.0,
             "reachable": true,
-            "astar_path_length_m": 99.48528137423857,
-            "detour_ratio": 1.036305014314985,
-            "astar_expanded": 3830,
-            "full_length_straight_lanes": 10,
+            "astar_path_length_m": 98.0,
+            "detour_ratio": 1.0208333333333333,
+            "astar_expanded": 4710,
+            "full_length_straight_lanes": 3,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 30.0,
             "reachable": true,
-            "astar_path_length_m": 99.48528137423857,
-            "detour_ratio": 1.036305014314985,
-            "astar_expanded": 3810,
-            "full_length_straight_lanes": 10,
+            "astar_path_length_m": 97.82842712474618,
+            "detour_ratio": 1.0190461158827728,
+            "astar_expanded": 3931,
+            "full_length_straight_lanes": 3,
             "longest_clear_straight_run_m": 96.5
           },
           {
             "time_s": 40.0,
             "reachable": true,
-            "astar_path_length_m": 99.31370849898475,
-            "detour_ratio": 1.0345177968644246,
-            "astar_expanded": 3270,
-            "full_length_straight_lanes": 10,
+            "astar_path_length_m": 97.82842712474618,
+            "detour_ratio": 1.0190461158827728,
+            "astar_expanded": 4003,
+            "full_length_straight_lanes": 3,
             "longest_clear_straight_run_m": 96.5
           }
         ],
         "all_snapshots_reachable": true,
-        "max_full_length_straight_lanes": 10,
+        "max_full_length_straight_lanes": 3,
         "max_clear_straight_run_m": 96.5
       },
       "title": "SANDO hard dynamic benchmark",
       "source": "SANDO",
-      "replay": "D03/2026_09_28-07_56_36.mj_unroll",
+      "replay": "D03/2026_09_28-08_27_39.mj_unroll",
       "files": {
-        "2026_09_28-07_56_36.mj_unroll": "ecd6cfb4e3d45b27e5eeb437a1d55ba6ff175ddf121d2ae84315990aff3ce160",
+        "2026_09_28-08_27_39.mj_unroll": "b128389f9a81fa01b12037a1c915e51e92ade7a9aadb0c559e0e0cc390a47f5b",
         "components.json": "f96fa84e1e4a925198cbbbf5c0f36a3f88d1eb6041873212d47691d4bd8760dc",
-        "rscope_meta.pkl": "7ac10aac57f86defbb930922f719acfac51f7504f371d311c132228b20282135",
-        "scene-definition.json": "66b23eb3f2697b9268533f18a916d487588389f2733362ed647b50219d66c83c",
-        "scene.xml": "babab4719d216d4c0a0baf7c097b351d2a87d2efbdbd294c14d66b944447c114"
+        "rscope_meta.pkl": "4b4dc80c89c0d0890feaa2527efc476ec44ea3bfd587a7ac7efa0eb8e445aaa0",
+        "scene-definition.json": "7faa621927aad77d53c2d622773e2875c2a583d7c2f34fa44e4bf05ae6912a76",
+        "scene.xml": "893bf5571b06566089bc65efd55a7249a9418e17aa87c64562943bf36c254fa2"
       },
       "reference_route": "none",
       "review_drone_motion": "drone held at start; no reference or oracle route"
@@ -433,9 +456,9 @@
       },
       "title": "Long 3D over-under corridor",
       "source": "manual",
-      "replay": "S06/2026_09_28-07_56_45.mj_unroll",
+      "replay": "S06/2026_09_28-08_27_47.mj_unroll",
       "files": {
-        "2026_09_28-07_56_45.mj_unroll": "bcf665ad61fba19a4d9a6cac8750861e8acdd77ae3cd2196f1c0e0c8a9fc6ce9",
+        "2026_09_28-08_27_47.mj_unroll": "bcf665ad61fba19a4d9a6cac8750861e8acdd77ae3cd2196f1c0e0c8a9fc6ce9",
         "components.json": "989bc1b4a48bf7807b19a3db0ead305702a85e54bf8cd2c917cb6aa1d87f5538",
         "rscope_meta.pkl": "d94e3427ecd220c757e75b6fb285f3294f55d173bef29c66153aaf20ad9e4e79",
         "scene-definition.json": "8456a5f6e9ca2d3139638594c1b0b7a6370dd3ca9cc6f4f934cd753c5e52f1ca",
@@ -512,9 +535,9 @@
       },
       "title": "Hybrid long 3D moving gates with moving crossbars",
       "source": "NavRL+P2M",
-      "replay": "D06/2026_09_28-07_57_32.mj_unroll",
+      "replay": "D06/2026_09_28-08_28_35.mj_unroll",
       "files": {
-        "2026_09_28-07_57_32.mj_unroll": "b2d7085b439eba27b1c92851c4de2180775fea75afaf95c9444387ec6e716253",
+        "2026_09_28-08_28_35.mj_unroll": "b2d7085b439eba27b1c92851c4de2180775fea75afaf95c9444387ec6e716253",
         "components.json": "42b66abbd187dfced198d8c9adfa92f0645a549582de80bdb2bd49463faf0b23",
         "rscope_meta.pkl": "13e9374fc4046d8b3d81d382397b468e64193246695b10432e264cb8931d9bfe",
         "scene-definition.json": "9a1dddb46fc3b0c6c74fa75f850f60798eea878bdfb14ed911c728b4504bf67d",
