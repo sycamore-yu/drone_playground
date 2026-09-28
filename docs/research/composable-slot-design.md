@@ -3,6 +3,51 @@
 核对日期：2026-09-28。当前代码依据：本地 `31129a8` 及工作树读取快照。
 本次范围是文档与 Archify 图示；下列实施建议独立于当前运行代码。
 
+## 三流水线讨论的确认与澄清
+
+2026-09-28 追加，当前配置复核于 `55a3f4b`。用户采纳后续临时三流水线评审中的
+候选 1（决策方法）、2（执行状态转移）、4（协议与能力）；本文件后面的原始三个候选
+保留原编号和来源。已确认的下一版设计以 [ADR-0007](../adr/0007-method-execution-protocol.md) 为准。
+
+决策方法描述执行时如何从输入产生轨迹或命令，容纳学习、在线优化及其混合。
+PPO 等训练算法负责更新策略参数；MPC 在平台中归在线决策，其控制理论名称保留。
+本轮只修改设计文件，配置迁移由用户要求在讨论清楚后执行。
+
+训练奖励与训练损失可统一在“训练目标”概念下组织。奖励是环境转移或任务表现的信号，
+损失是直接用于参数更新的函数。直接可微训练可以最小化负累计奖励；PPO 根据采样奖励
+估计优势并优化剪裁代理目标，还可以同时包含价值和熵相关项。因此共享奖励的不同算法
+可以使用各自的损失构造。建议保留一个使用入口，并分别记录任务信号和算法损失的来源。
+[PPO 原论文](https://arxiv.org/abs/1707.06347)
+
+“在线优化目标”指 MPC、轨迹规划等方法每次求解的代价，连同约束和预测模型归决策方法。
+它可复用任务误差项，具体权重、时域、硬约束与训练损失分别记载。
+
+导数选择按用户建议放入算法子配置，推荐入口为 `algorithm.gradient`。例如 LOTF 训练
+选择高保真前向与解析代理反向，D.VA 选择停止观测的状态导数并保留后续动作路径导数。
+算法配置选择规则，各模块提供并校验规则；已有 `dynamics.backward` 仍是实际入口。
+PPO 的网络参数梯度由更新算法计算。额外环境/求解器导数配置按方法实际需要提供。
+[JAX 自定义导数](https://docs.jax.dev/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html)
+
+当前十组组件配置是 `policy/controller/dynamics/task/scene/observation/algorithm/network/objective/training`。
+`experiment` 组合这些组；`evaluation/replay` 是根配置里的运行设置。两个当前工作树的
+`configs/config.yaml` 一致采用这一组织。传感器是 `observation.sensor` 子槽位；
+一级传感器只曾作为方案讨论，当前 D435/MID-360 的独立模块可从该子槽位替换。
+
+建议场景保存几何与运动、任务保存目标和完成规则；在使用端通过一个环境预设组合两者。
+例如同一 Navigation8 森林几何可以用于点到点避障、航点巡检或给定参考的跟踪，后两者
+在这里是设计示例。相同点到点目标可研究状态、深度、点云等输入，观测差异进入实验协议。
+观测还可按接收者分组，例如部署策略使用传感器数据、训练价值网络使用声明的特权信息。
+这些复用关系支持职责分离，具体配置层级继续由用户讨论确定。
+
+Isaac Lab 的管理器式环境用 `InteractiveSceneCfg` 管理机器人、物体和传感器实体，
+在 `ManagerBasedRLEnvCfg` 中组合场景、观测、动作、奖励、终止、命令和课程等配置。
+`ObservationManager` 按用途管理多个组，组内由观测项配置来源、噪声、缩放和历史。
+这提供“同一物理世界、不同任务规则、不同接收者观测”的组织参考；Drone Playground
+可采用这些职责关系，并保留适合 JAX 可微展开的执行实现。
+[场景定义](https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.scene.html)
+· [任务环境教程](https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_manager_rl_env.html)
+· [观测管理器](https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.managers.html#observation-manager)
+
 ## 采用的参考
 
 Isaac Lab 官方工作流将观测、动作、奖励、事件/随机化等职责按配置协调，支持管理器式与
