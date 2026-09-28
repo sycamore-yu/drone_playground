@@ -10,6 +10,17 @@ from pathlib import Path
 
 import numpy as np
 
+DEFAULT_CONTAINER = "drone-playground-ros1"
+RUNTIME_ROOT = "/opt/drone_playground"
+
+
+def runtime_setup(method):
+    ego = RUNTIME_ROOT + "/planners/ego/devel/setup.bash"
+    if method == "ego":
+        return "source " + ego
+    super_setup = RUNTIME_ROOT + "/planners/super/devel/setup.bash"
+    return "source " + super_setup
+
 
 class NativePlanner:
     output_kind = "trajectory"
@@ -21,13 +32,13 @@ class NativePlanner:
         digest = hashlib.sha256(payload).hexdigest()
         target = Path(directory) / "ros_bridge.py"
         target.write_bytes(payload)
-        remote = "/tmp/p5-native/bridge-" + digest + ".py"
+        remote = RUNTIME_ROOT + "/bridge/bridge-" + digest + ".py"
         subprocess.run(["docker", "cp", str(target), container + ":" + remote], check=True)
         (Path(directory) / "ros_bridge.sha256").write_text(digest + "\n")
         return remote
 
-    def __init__(self, method, directory, container="flightbench", port=11325,
-                 worker_path="/tmp/p5-native/ros_bridge.py"):
+    def __init__(self, method, directory, container=DEFAULT_CONTAINER, port=11325,
+                 worker_path=RUNTIME_ROOT + "/bridge/ros_bridge.py"):
         if method not in ("ego", "super"):
             raise ValueError("Native planner must be ego or super")
         self.directory = Path(directory)
@@ -35,7 +46,7 @@ class NativePlanner:
         self.log = (self.directory / "bridge.log").open("w")
         self.process = subprocess.Popen(
             ["docker", "exec", "-i", container, "bash", "-c",
-             'source /tmp/p5-native/' + method + '/devel/setup.bash && exec python3 '
+             runtime_setup(method) + ' && exec python3 '
              + worker_path + ' --method ' + method + ' --port ' + str(int(port))],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log,
             text=True, bufsize=1,

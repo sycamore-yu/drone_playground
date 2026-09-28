@@ -106,14 +106,14 @@ env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run python scripts/verify_p5_replays.py
 训练清单按冻结配置事后确定性重建在 `experiments/p5-scene-audit-v2/`；
 不会宣称这些重建文件是训练前已经物化保存的清单。审计摘要在结果目录的 `scene-splits.json`。
 
-原生依赖构建脚本为 `scripts/setup_p5_native.sh`。它使用已有 flightbench 容器，
-仅构建外部目录中的锁定 EGO 和 SUPER 运行目标，不替换主机 ROS 或系统库。
-它要求当前容器已有 ROS Noetic、catkin 与 FlightBench 的 C++/ROS 依赖；
-不是从空容器安装全部依赖的脚本。实测构建是逐条执行等价命令，脚本另通过 bash 语法检查。
-EGO 源码默认 `tmp/p5-refsrc/ego-planner`（`https://github.com/ZJU-FAST-Lab/ego-planner.git`），
-SUPER 默认 `/home/tong/tongworkspace/reference_repos/SUPER`（`https://github.com/hku-mars/SUPER.git`）；
-在新环境先准备这些 Git 仓库，或通过 `P5_EGO_SOURCE/P5_SUPER_SOURCE` 指定路径。
-实际使用固定 commit 的 `git archive`，不会使用未提交修改或随分支最新版本变化。
+原生依赖由 `native_planners/setup.sh` 构建。脚本从项目自有
+`ros:noetic-ros-base-focal` 基础镜像生成 `drone-playground-ros1:noetic`，并启动
+`drone-playground-ros1` 容器；`scripts/setup_p5_native.sh` 仅保留为兼容入口。
+EGO 和 SUPER 的仓库地址、固定提交及运行时路径统一记录在
+`native_planners/versions.env`。源码缓存位于忽略提交的 `native_planners/sources/`，
+实际构建继续使用固定提交的 `git archive`，不会使用工作树未提交修改或随分支漂移。
+主机 Python/JAX 环境不导入 ROS；ROS Noetic、PCL、OpenCV、Eigen 和 yaml-cpp 等依赖
+全部由项目 Dockerfile 管理，运行时不依赖 FlightBench 容器或其文件系统。
 不要在矩阵运行期间重建这些二进制。
 SUPER 的离线 read_replan_log 工具不属于运行依赖；运行只需要已构建的 fsm_node。
 桥工作进程默认 4 回合并行，每个独立 master；两组规划器并行时端口范围互不重叠。

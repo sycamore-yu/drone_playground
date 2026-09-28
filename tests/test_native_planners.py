@@ -4,7 +4,13 @@ import pytest
 
 from drone_playground.composition import compose_config, validate_config
 from drone_playground.controllers.trajectory import TrajectoryTracking
-from drone_playground.policies.native_planner import NativePlanner
+from drone_playground.policies.native_planner import DEFAULT_CONTAINER, NativePlanner, runtime_setup
+
+
+def test_super_runtime_uses_its_own_ros_workspace():
+    command = runtime_setup("super")
+    assert "/planners/super/devel/setup.bash" in command
+    assert "/planners/ego/devel/setup.bash" not in command
 
 
 @pytest.mark.parametrize("task", ["static", "dynamic"])
@@ -12,6 +18,7 @@ from drone_playground.policies.native_planner import NativePlanner
 def test_native_recipe_composes_and_rejects_training(task, method):
     cfg = compose_config(f"p5_{task}_{method}")
     validate_config(cfg)
+    assert cfg["policy"]["container"] == DEFAULT_CONTAINER
     cfg["mode"] = "train"
     with pytest.raises(ValueError, match="evaluate/simulate"):
         validate_config(cfg)

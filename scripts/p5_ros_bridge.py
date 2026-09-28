@@ -33,7 +33,7 @@ def stop(process):
 def launch_file(method, calibration, goal, folder):
     root = ET.Element("launch")
     if method == "ego":
-        source = "/tmp/p5-native/ego/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml"
+        source = "/opt/drone_playground/planners/ego/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml"
         node = ET.parse(source).getroot().find("node")
         k = calibration["intrinsics"]
         args = dict(map_size_x_=40, map_size_y_=20, map_size_z_=6,
@@ -62,7 +62,7 @@ def launch_file(method, calibration, goal, folder):
         ET.SubElement(server, "param", name="traj_server/time_forward", value="1.0")
     else:
         import yaml
-        source = "/tmp/p5-native/super/src/SUPER/super_planner/config/click_smooth_ros1.yaml"
+        source = "/opt/drone_playground/planners/super/src/SUPER/super_planner/config/click_smooth_ros1.yaml"
         with open(source) as handle:
             cfg = yaml.safe_load(handle)
         cfg["fsm"].update(click_goal_topic="/p5/goal", click_height=float(goal[2]),

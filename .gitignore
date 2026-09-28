@@ -15,3 +15,6 @@ experiments/*
 .env.*
 secrets/
 *.pem
+native_planners/sources/
+native_planners/workspaces/
+native_planners/.build/

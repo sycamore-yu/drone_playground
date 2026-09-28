@@ -1,6 +1,6 @@
 name: native_ego
 method: ego
 output: trajectory
-container: flightbench
+container: drone-playground-ros1
 port: 11325
 workers: 4
