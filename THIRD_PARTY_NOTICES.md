@@ -2,7 +2,7 @@
 
 This document records third-party source code, algorithm adaptations, runtime dependencies, and external planner integrations used by Drone Playground. Each upstream component retains its original copyright and license terms. A project-level root license does not replace the licenses attached to third-party files or submodules.
 
-The public-release license for original Drone Playground code is being finalized before the first GitHub release. The main licensing constraint is the LOTF integration: `third_party/learning_on_the_fly` is GPLv3, and `src/drone_playground/learning/lotf_bptt.py` is explicitly adapted from its `lotf/algos/bptt.py`. The current package also imports LOTF modules directly. This boundary must remain visible in any public distribution.
+Drone Playground is distributed under **GPL-3.0-only** at the project level. The LOTF integration is a key reason for this choice: `third_party/learning_on_the_fly` is GPLv3, and `src/drone_playground/learning/lotf_bptt.py` is explicitly adapted from its `lotf/algos/bptt.py`. The current package also imports LOTF modules directly. Third-party components listed below continue to retain their own copyright and license terms.
 
 | Component | How it is used here | Pinned identity | Upstream license |
 |---|---|---|---|

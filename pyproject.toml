@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "drone-playground"
 version = "0.1.0"
 description = "Crazyflow tasks, Brax learning and reproducible drone evaluation"
+license = {file = "LICENSE"}
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "crazyflow==0.3.2",

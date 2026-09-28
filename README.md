@@ -141,4 +141,4 @@ Every formal run records the resolved configuration, code/dependency identity, p
 
 ## License
 
-Public-release licensing is being finalized before the first GitHub release because the repository contains both original code and GPLv3-derived LOTF integration code. Third-party components retain their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). A root project license will be added before publication.
+Drone Playground is released under **GPL-3.0-only**. This choice keeps the current LOTF-derived integration and the rest of the distributed platform under one clear project license. Third-party components retain their original copyright and license terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for exact provenance and boundaries.
