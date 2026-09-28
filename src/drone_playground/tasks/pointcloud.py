@@ -123,6 +123,12 @@ def validate_paper_config(config):
     frequency = config["task"]["freq"]
     if frequency <= 0 or config["task"]["physics_freq"] % frequency:
         raise ValueError("Evaluation physics frequency must be divisible by the policy frequency")
+    sensor_frequency = config["observation"]["sensor"]["source_rate_hz"]
+    if sensor_frequency != frequency:
+        raise ValueError(
+            "The synchronous paper sensor frequency must equal the policy frequency; "
+            "asynchronous cached observations require a separately qualified preset"
+        )
     if config["task"]["body_radius"] <= 0 or config["task"]["duration"] <= 0:
         raise ValueError("Body radius and duration must be positive")
     settings = config["training"]
@@ -136,3 +142,32 @@ def validate_paper_config(config):
         raise ValueError("Declared budget differs from updates × environments × horizon")
     if config.get("mode", "train") == "train" and config["scene"]["name"] == "navigation8":
         raise ValueError("Navigation8 is held out for frozen-policy transfer evaluation")
+    if config["scene"]["name"] == "navigation8":
+        validate_navigation8_protocol(config)
+
+
+def validate_navigation8_protocol(config):
+    """Bind the nominal Navigation8 result label to its preregistered transfer protocol."""
+    expected = {
+        "task": {
+            "freq": 10,
+            "physics_freq": 500,
+            "body_radius": 0.07,
+            "goal_radius": 0.5,
+            "duration": 40.0,
+        },
+        "evaluation": {
+            "duration": 40.0,
+            "episodes": 1,
+            "speeds": [4.0, 6.0, 8.0],
+            "scene_ids": ["S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06"],
+        },
+    }
+    for group, fields in expected.items():
+        for field, required in fields.items():
+            actual = config[group].get(field)
+            if actual != required:
+                raise ValueError(
+                    f"Navigation8 nominal protocol requires {group}.{field}={required!r}; "
+                    f"received {actual!r}. Register protocol changes as a separate ablation."
+                )
