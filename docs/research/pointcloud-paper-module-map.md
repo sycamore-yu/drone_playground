@@ -94,3 +94,28 @@ PYTHON=/home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/.pixi/env
 管线`paper-pointcloud-seed0-pipeline-v1`已接管原训练进程，并在完整预算完成后调用同一冻结评测协议。
 恢复来源保存在其`source_history`与`recovery-20260928T103424Z/receipt.json`中。
 训练数据、优化配方和开发选模标准保持预注册设置，Navigation8阶段结果单独归档。
+
+## 最终交付的独立验收
+
+原文公式、训练设置与当前实现重新逐项核对的结果见
+[公开信息复核](pointcloud-paper-source-audit-20260928.md)。
+最终验收程序为`scripts/summarize_pointcloud.py`，仅读取已生成的训练与评测证据。
+默认要求完整50000次更新，检查开发选模对应关系、原始轨迹终止事件、完整24格、
+Navigation8目录摘要、24份回放的唯一路径/原评测读回证明，以及模型和元数据伴随文件。
+报告中的射线数量、时序网络和导数规则从来源训练的实际槽位生成。
+
+```bash
+# 完整训练及最终评测结束后执行；没有完整产物时给出非零退出码。
+"$PYTHON" scripts/summarize_pointcloud.py \
+  --output docs/verification/pointcloud-paper-final-v1
+
+# 对已有首阶段执行同样的证据核验，并明确使用阶段身份。
+"$PYTHON" scripts/summarize_pointcloud.py \
+  --training-run experiments/paper-pointcloud-seed0-stage1-v1 \
+  --evaluation-run experiments/paper-pointcloud-navigation8-stage1-v1 \
+  --allow-stage
+```
+
+程序要求输出目录为新目录，保护已存在的训练、评测和报告。生成的`module-slots.json`
+保存来源训练真正采用的十个槽位参数，`reconstruction-assumptions.json`保存其重建假设，
+`report.md`和`episodes.csv`保留逐场景、逐速度结果。

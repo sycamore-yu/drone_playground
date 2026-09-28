@@ -1,0 +1,17 @@
+{
+  "assumptions": [
+    "The paper specifies point mass and lag; lag constant and trapezoidal integration follow the predecessor.",
+    "Eq9 whole-state exponential Jacobian is distinct from the predecessor partial-diagonal CUDA rule.",
+    "Sensor state gradients are detached; the paper does not specify a differentiable ray-casting implementation.",
+    "Ten proprioceptive fields, elevation offset, range limits, activation slope, and invalid-ray masking are explicit reconstruction choices.",
+    "Undisclosed loss weights, jerk averaging, optimizer defaults, primitive distribution, and speed distribution are explicitly configured.",
+    "50000 updates follows the training figure extent and predecessor default, not a text-specified update budget.",
+    "Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the policy is trained only on independent static primitives."
+  ],
+  "assumptions_document": ".scratch/pointcloud-paper/spec.md",
+  "author_code_status": "no confirmed repository found in exact-title searches on 2026-09-28",
+  "identity": "paper-public-information-reconstruction-v1",
+  "paper": "Learning to Fly from Point Clouds via Differentiable Simulation",
+  "paper_source": "https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf",
+  "predecessor": "HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf"
+}

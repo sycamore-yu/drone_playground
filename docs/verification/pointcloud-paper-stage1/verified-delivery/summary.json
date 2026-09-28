@@ -1,0 +1,810 @@
+{
+  "checked_at": "2026-09-28T10:50:53.868574+00:00",
+  "experiment_completed": false,
+  "scope": "intermediate_stage",
+  "method_identity": "paper-public-information-reconstruction-v1",
+  "training_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-seed0-stage1-v1",
+  "evaluation_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1",
+  "training": {
+    "actual_updates": 1000,
+    "target_updates": 50000,
+    "actual_steps": 5120000,
+    "target_steps": 256000000,
+    "full_budget_completed": false
+  },
+  "selection": {
+    "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-seed0-stage1-v1/training-state/update-0001000.pkl",
+    "development_loss": 2.322941303253174,
+    "parameter_sha256": "2fafd2c04579afc5bc6cab0026820496b64708a39d38dabe3551127d3ff3ad7b",
+    "updates": 1000
+  },
+  "outcomes": {
+    "num_trials": 24,
+    "arrived": 0,
+    "collision": 0,
+    "out_of_bounds": 24,
+    "numerical_failure": 0,
+    "timeout": 0
+  },
+  "success_rate": 0.0,
+  "protocol": {
+    "policy_hz": 10,
+    "dynamics_transition_hz": 10,
+    "collision_sampling_hz": 500,
+    "duration_s": 40,
+    "body_radius_m": 0.07,
+    "goal_radius_m": 0.5,
+    "dynamics": "point_mass_lag",
+    "scene_ids": [
+      "S01",
+      "S02",
+      "S03",
+      "S06",
+      "D01",
+      "D02",
+      "D03",
+      "D06"
+    ]
+  },
+  "catalog_sha256": "18866d707f000dac638e5b5afe8ff6efe45121f8ae4a302daedec7fe677f87a2",
+  "verified_trace_count": 3,
+  "verified_replay_count": 24,
+  "replay_verification_scope": "file digests and evaluator-generated readback proofs",
+  "slots": {
+    "policy": {
+      "command_units": "m/s^2",
+      "name": "pointcloud_recurrent",
+      "network_output_frame": "body",
+      "output": "world_acceleration"
+    },
+    "controller": {
+      "_target_": "drone_playground.controllers.acceleration.AccelerationControl",
+      "name": "acceleration_passthrough"
+    },
+    "dynamics": {
+      "_target_": "drone_playground.dynamics.point_mass.PointMassLag",
+      "backward": "exponential",
+      "decay_rate": 0.916290731874155,
+      "drone": "paper_point_mass",
+      "forward": "point_mass_lag",
+      "gravity": 9.80665,
+      "time_constant": 0.08333333333333333
+    },
+    "scene": {
+      "_target_": "drone_playground.tasks.scenes.pointcloud.PaperPrimitiveScene",
+      "box_half_m": [
+        0.2,
+        0.7
+      ],
+      "cylinder_radius_m": [
+        0.05,
+        0.4
+      ],
+      "height_m": 6.0,
+      "length_m": 48.0,
+      "name": "paper_static_primitives_reconstruction",
+      "obstacles_per_kind": 30,
+      "sphere_radius_m": [
+        0.2,
+        0.6
+      ],
+      "width_m": 18.0
+    },
+    "observation": {
+      "_target_": "drone_playground.tasks.pointcloud.PaperObservation",
+      "name": "paper_pointcloud_state",
+      "proprioception_size": 10,
+      "sensor": {
+        "_target_": "drone_playground.tasks.sensors.pointcloud.UniformMid360Lidar",
+        "azimuth_count": 180,
+        "elevation_count": 30,
+        "elevation_span_deg": 60.0,
+        "elevation_start_deg": -7.2,
+        "include_ground": true,
+        "name": "paper_mid360_uniform",
+        "range_m": [
+          0.1,
+          100.0
+        ],
+        "source_rate_hz": 10.0,
+        "state_gradient": "detached"
+      }
+    },
+    "task": {
+      "body_radius": 0.07,
+      "command_speed_range": [
+        2.0,
+        6.0
+      ],
+      "duration": 16.0,
+      "freq": 10,
+      "goal_radius": 0.5,
+      "name": "pointcloud_avoidance",
+      "physics_freq": 500
+    },
+    "algorithm": {
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "horizon_length": 160,
+      "learning_rate": 0.0001,
+      "name": "pointcloud_bptt",
+      "weight_decay": 0.01
+    },
+    "network": {
+      "_target_": "drone_playground.learning.pointcloud_network.PointCloudPolicy",
+      "hidden_size": 192,
+      "negative_slope": 0.01,
+      "point_channels": [
+        64,
+        128,
+        1024
+      ]
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.pointcloud_objective.PaperObjective",
+      "acceleration_weight": 0.01,
+      "collision_beta1": 1.3333333333333333,
+      "collision_beta2": 32.0,
+      "collision_weight": 1.5,
+      "huber_delta": 1.0,
+      "jerk_mean_weight": 1.0,
+      "jerk_variance_weight": 0.1,
+      "jerk_weight": 0.001,
+      "name": "paper_pointcloud_loss",
+      "velocity_component_weight": 0.6,
+      "velocity_norm_weight": 0.8,
+      "velocity_weight": 1.0,
+      "velocity_window": 30
+    },
+    "training": {
+      "development_envs": 32,
+      "device": "gpu",
+      "max_wall_seconds": 172800,
+      "num_envs": 32,
+      "num_evals": 11,
+      "num_timesteps": null,
+      "policy_updates": 50000,
+      "publish_live": false,
+      "resume": null,
+      "seed": 0,
+      "stop_after_updates": 1000,
+      "warm_start": null
+    }
+  },
+  "reproduction": {
+    "assumptions": [
+      "The paper specifies point mass and lag; lag constant and trapezoidal integration follow the predecessor.",
+      "Eq9 whole-state exponential Jacobian is distinct from the predecessor partial-diagonal CUDA rule.",
+      "Sensor state gradients are detached; the paper does not specify a differentiable ray-casting implementation.",
+      "Ten proprioceptive fields, elevation offset, range limits, activation slope, and invalid-ray masking are explicit reconstruction choices.",
+      "Undisclosed loss weights, jerk averaging, optimizer defaults, primitive distribution, and speed distribution are explicitly configured.",
+      "50000 updates follows the training figure extent and predecessor default, not a text-specified update budget.",
+      "Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the policy is trained only on independent static primitives."
+    ],
+    "assumptions_document": ".scratch/pointcloud-paper/spec.md",
+    "author_code_status": "no confirmed repository found in exact-title searches on 2026-09-28",
+    "identity": "paper-public-information-reconstruction-v1",
+    "paper": "Learning to Fly from Point Clouds via Differentiable Simulation",
+    "paper_source": "https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf",
+    "predecessor": "HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf"
+  },
+  "episodes": [
+    {
+      "scene_id": "S01",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 28,
+      "elapsed_s": 2.7139999866485596,
+      "arrival_time_s": null,
+      "path_length_m": 3.0244836807250977,
+      "peak_speed_m_s": 2.2080225944519043,
+      "mean_speed_m_s": 1.1877670288085938,
+      "min_clearance_m": 1.4300037622451782,
+      "final_goal_distance_m": 95.74195098876953
+    },
+    {
+      "scene_id": "S02",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 26,
+      "elapsed_s": 2.5880000591278076,
+      "arrival_time_s": null,
+      "path_length_m": 3.2629528045654297,
+      "peak_speed_m_s": 2.608466148376465,
+      "mean_speed_m_s": 1.3177874088287354,
+      "min_clearance_m": 1.430005431175232,
+      "final_goal_distance_m": 94.77228546142578
+    },
+    {
+      "scene_id": "S03",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 23,
+      "elapsed_s": 2.2360000610351562,
+      "arrival_time_s": null,
+      "path_length_m": 3.5506153106689453,
+      "peak_speed_m_s": 3.1270852088928223,
+      "mean_speed_m_s": 1.6993074417114258,
+      "min_clearance_m": 1.430007815361023,
+      "final_goal_distance_m": 94.16663360595703
+    },
+    {
+      "scene_id": "S06",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 29,
+      "elapsed_s": 2.8459999561309814,
+      "arrival_time_s": null,
+      "path_length_m": 3.834381103515625,
+      "peak_speed_m_s": 2.690532922744751,
+      "mean_speed_m_s": 1.4190090894699097,
+      "min_clearance_m": 1.430008053779602,
+      "final_goal_distance_m": 93.66959381103516
+    },
+    {
+      "scene_id": "D01",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.614000082015991,
+      "arrival_time_s": null,
+      "path_length_m": 3.040095090866089,
+      "peak_speed_m_s": 2.4139254093170166,
+      "mean_speed_m_s": 1.2481558322906494,
+      "min_clearance_m": 1.4300040006637573,
+      "final_goal_distance_m": 95.5867919921875
+    },
+    {
+      "scene_id": "D02",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 28,
+      "elapsed_s": 2.7160000801086426,
+      "arrival_time_s": null,
+      "path_length_m": 3.0383946895599365,
+      "peak_speed_m_s": 2.2308597564697266,
+      "mean_speed_m_s": 1.1922727823257446,
+      "min_clearance_m": 1.4300047159194946,
+      "final_goal_distance_m": 95.59596252441406
+    },
+    {
+      "scene_id": "D03",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 29,
+      "elapsed_s": 2.8399999141693115,
+      "arrival_time_s": null,
+      "path_length_m": 3.0555481910705566,
+      "peak_speed_m_s": 2.23901104927063,
+      "mean_speed_m_s": 1.1387087106704712,
+      "min_clearance_m": 1.4300018548965454,
+      "final_goal_distance_m": 95.57693481445312
+    },
+    {
+      "scene_id": "D06",
+      "command_speed_m_s": 4.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.692000150680542,
+      "arrival_time_s": null,
+      "path_length_m": 3.28922176361084,
+      "peak_speed_m_s": 2.480722427368164,
+      "mean_speed_m_s": 1.2721034288406372,
+      "min_clearance_m": 1.4300028085708618,
+      "final_goal_distance_m": 94.71648406982422
+    },
+    {
+      "scene_id": "S01",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.6500000953674316,
+      "arrival_time_s": null,
+      "path_length_m": 3.0642635822296143,
+      "peak_speed_m_s": 2.3510193824768066,
+      "mean_speed_m_s": 1.2223283052444458,
+      "min_clearance_m": 1.4300047159194946,
+      "final_goal_distance_m": 95.43729400634766
+    },
+    {
+      "scene_id": "S02",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 25,
+      "elapsed_s": 2.4800000190734863,
+      "arrival_time_s": null,
+      "path_length_m": 3.381798505783081,
+      "peak_speed_m_s": 2.746509075164795,
+      "mean_speed_m_s": 1.4302760362625122,
+      "min_clearance_m": 1.4300073385238647,
+      "final_goal_distance_m": 94.4936752319336
+    },
+    {
+      "scene_id": "S03",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 21,
+      "elapsed_s": 2.058000087738037,
+      "arrival_time_s": null,
+      "path_length_m": 3.2835755348205566,
+      "peak_speed_m_s": 3.2313480377197266,
+      "mean_speed_m_s": 1.7059420347213745,
+      "min_clearance_m": 1.4300066232681274,
+      "final_goal_distance_m": 94.72146606445312
+    },
+    {
+      "scene_id": "S06",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 26,
+      "elapsed_s": 2.5299999713897705,
+      "arrival_time_s": null,
+      "path_length_m": 3.7338802814483643,
+      "peak_speed_m_s": 2.9114670753479004,
+      "mean_speed_m_s": 1.571064829826355,
+      "min_clearance_m": 1.4300085306167603,
+      "final_goal_distance_m": 93.82830047607422
+    },
+    {
+      "scene_id": "D01",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.640000104904175,
+      "arrival_time_s": null,
+      "path_length_m": 3.065500497817993,
+      "peak_speed_m_s": 2.398939847946167,
+      "mean_speed_m_s": 1.2334928512573242,
+      "min_clearance_m": 1.4300049543380737,
+      "final_goal_distance_m": 95.43931579589844
+    },
+    {
+      "scene_id": "D02",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.6740002632141113,
+      "arrival_time_s": null,
+      "path_length_m": 3.0881080627441406,
+      "peak_speed_m_s": 2.3555054664611816,
+      "mean_speed_m_s": 1.2104406356811523,
+      "min_clearance_m": 1.4300044775009155,
+      "final_goal_distance_m": 95.34772491455078
+    },
+    {
+      "scene_id": "D03",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.6740002632141113,
+      "arrival_time_s": null,
+      "path_length_m": 3.093526601791382,
+      "peak_speed_m_s": 2.342919111251831,
+      "mean_speed_m_s": 1.2120755910873413,
+      "min_clearance_m": 1.43000328540802,
+      "final_goal_distance_m": 95.31195068359375
+    },
+    {
+      "scene_id": "D06",
+      "command_speed_m_s": 6.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 28,
+      "elapsed_s": 2.7160000801086426,
+      "arrival_time_s": null,
+      "path_length_m": 3.374688148498535,
+      "peak_speed_m_s": 2.499861717224121,
+      "mean_speed_m_s": 1.325344204902649,
+      "min_clearance_m": 1.4300040006637573,
+      "final_goal_distance_m": 94.51397705078125
+    },
+    {
+      "scene_id": "S01",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.630000114440918,
+      "arrival_time_s": null,
+      "path_length_m": 3.1098427772521973,
+      "peak_speed_m_s": 2.3935904502868652,
+      "mean_speed_m_s": 1.2585668563842773,
+      "min_clearance_m": 1.4300051927566528,
+      "final_goal_distance_m": 95.24612426757812
+    },
+    {
+      "scene_id": "S02",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 25,
+      "elapsed_s": 2.4100000858306885,
+      "arrival_time_s": null,
+      "path_length_m": 3.394747257232666,
+      "peak_speed_m_s": 2.795956611633301,
+      "mean_speed_m_s": 1.515256643295288,
+      "min_clearance_m": 1.430007815361023,
+      "final_goal_distance_m": 94.46585845947266
+    },
+    {
+      "scene_id": "S03",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 22,
+      "elapsed_s": 2.132000207901001,
+      "arrival_time_s": null,
+      "path_length_m": 3.1998376846313477,
+      "peak_speed_m_s": 3.025690793991089,
+      "mean_speed_m_s": 1.6174947023391724,
+      "min_clearance_m": 1.4300066232681274,
+      "final_goal_distance_m": 94.96268463134766
+    },
+    {
+      "scene_id": "S06",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 24,
+      "elapsed_s": 2.361999988555908,
+      "arrival_time_s": null,
+      "path_length_m": 3.5301787853240967,
+      "peak_speed_m_s": 3.035890579223633,
+      "mean_speed_m_s": 1.5828399658203125,
+      "min_clearance_m": 1.430008053779602,
+      "final_goal_distance_m": 94.19357299804688
+    },
+    {
+      "scene_id": "D01",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 28,
+      "elapsed_s": 2.7300000190734863,
+      "arrival_time_s": null,
+      "path_length_m": 3.1339166164398193,
+      "peak_speed_m_s": 2.3596107959747314,
+      "mean_speed_m_s": 1.220790982246399,
+      "min_clearance_m": 1.430005669593811,
+      "final_goal_distance_m": 95.16239929199219
+    },
+    {
+      "scene_id": "D02",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 29,
+      "elapsed_s": 2.871999979019165,
+      "arrival_time_s": null,
+      "path_length_m": 3.0931520462036133,
+      "peak_speed_m_s": 2.2054591178894043,
+      "mean_speed_m_s": 1.1261509656906128,
+      "min_clearance_m": 1.4300042390823364,
+      "final_goal_distance_m": 95.37142181396484
+    },
+    {
+      "scene_id": "D03",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 28,
+      "elapsed_s": 2.742000102996826,
+      "arrival_time_s": null,
+      "path_length_m": 3.1352317333221436,
+      "peak_speed_m_s": 2.3929603099823,
+      "mean_speed_m_s": 1.2123626470565796,
+      "min_clearance_m": 1.4300047159194946,
+      "final_goal_distance_m": 95.16050720214844
+    },
+    {
+      "scene_id": "D06",
+      "command_speed_m_s": 8.0,
+      "outcome": "out_of_bounds",
+      "arrived": false,
+      "collision": false,
+      "out_of_bounds": true,
+      "numerical_failure": false,
+      "timeout": false,
+      "steps": 27,
+      "elapsed_s": 2.642000198364258,
+      "arrival_time_s": null,
+      "path_length_m": 3.455672264099121,
+      "peak_speed_m_s": 2.6273162364959717,
+      "mean_speed_m_s": 1.3853710889816284,
+      "min_clearance_m": 1.4300044775009155,
+      "final_goal_distance_m": 94.3396987915039
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "trajectory",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-4.npz",
+      "sha256": "1c0dc664a93771f4c7dce46459bcd166f5ac9048cf4c33de13b5936e79c1f2e6",
+      "bytes": 42356
+    },
+    {
+      "kind": "trajectory",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-6.npz",
+      "sha256": "51623b16587568c50e479cf16cd10e3ac704dce1a6aa01eeb2b44cc4339a2748",
+      "bytes": 40843
+    },
+    {
+      "kind": "trajectory",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-8.npz",
+      "sha256": "5c836cfce01a620b3779ed4460f5264f23674d66a123af90a3ca3b666767955e",
+      "bytes": 41310
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/S01/2026_09_28-10_18_33.mj_unroll",
+      "sha256": "974464a16771e7bfa71bf31b2f6fe43c22d979b47ca17fa6ad0cadce596a4328",
+      "bytes": 74852
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/S02/2026_09_28-10_18_35.mj_unroll",
+      "sha256": "713eeee80ba0ab6dcef872d0cc9c21769e2a578997933b23d498a6c2fc83b89a",
+      "bytes": 127796
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/S03/2026_09_28-10_18_37.mj_unroll",
+      "sha256": "f4775d3f5228cfc5df4220833b558c147dfc75a0f3a0b4805e8d95c4b4d420b4",
+      "bytes": 217469
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/S06/2026_09_28-10_18_40.mj_unroll",
+      "sha256": "d61e25860f26c2070709f60356802b2ad6cf52ea03343505667a225adf28f3c9",
+      "bytes": 254525
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/D01/2026_09_28-10_18_43.mj_unroll",
+      "sha256": "53828bd8a26a021e8fefa2290ddf4720ef819b3d145148fc52ea998fc0cbf73e",
+      "bytes": 85812
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/D02/2026_09_28-10_18_43.mj_unroll",
+      "sha256": "0a8c636d9420152203062fad387ebcff412c9c95003d63f60f725abc739e0de4",
+      "bytes": 167373
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/D03/2026_09_28-10_18_44.mj_unroll",
+      "sha256": "3d6c28eeae0dbc4ee23c27b75e06df14eeb1fd1f5e1412a878e62854fa8d049f",
+      "bytes": 335725
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-4/D06/2026_09_28-10_18_45.mj_unroll",
+      "sha256": "7a644cf2783f403dbf68f3c69ed5eec795e827d8f342548a3e2270c54e27f411",
+      "bytes": 237021
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/S01/2026_09_28-10_18_47.mj_unroll",
+      "sha256": "3d2e3e02185f337f5a19c8ee2d3452f16d29a1ac77986764cf452890a8601ca9",
+      "bytes": 72204
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/S02/2026_09_28-10_18_49.mj_unroll",
+      "sha256": "d8baa109110c2552635253acc242b4aa606c9b8f94742193385f9e51026b5e01",
+      "bytes": 122908
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/S03/2026_09_28-10_18_52.mj_unroll",
+      "sha256": "d715b7cd6a0d56fcfd48925fa960666157bf7889791a1f6b9d709fc01bd0e535",
+      "bytes": 198621
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/S06/2026_09_28-10_18_53.mj_unroll",
+      "sha256": "50a390edac99233786203deff01eed9af6410e73ef06c2a9a34d9e2b1d227586",
+      "bytes": 228269
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/D01/2026_09_28-10_18_53.mj_unroll",
+      "sha256": "634d72e852254cca5d031b4bcb29a4695e84b1b335b85b93ad0a9328768f4554",
+      "bytes": 85812
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/D02/2026_09_28-10_18_53.mj_unroll",
+      "sha256": "b55fddf451ccaacc21fd4f5078b713e0b1ebd9c6baaec7118f64d1e17e71a079",
+      "bytes": 161421
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/D03/2026_09_28-10_18_54.mj_unroll",
+      "sha256": "e8ebac57cc24588ad8de55606cb514de40a4e3e579f83e9c8bd2551f43220285",
+      "bytes": 312621
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-6/D06/2026_09_28-10_18_55.mj_unroll",
+      "sha256": "4132da4fc9e38e61fdcd8bdaccc6567fa8c97d7f9f9cb7c5dcf6626d72557eb2",
+      "bytes": 245773
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/S01/2026_09_28-10_18_57.mj_unroll",
+      "sha256": "8fb977d3b86dfbb3ccde91a937c35b70235e7787e710579a1d07c5b8bdf604de",
+      "bytes": 72204
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/S02/2026_09_28-10_18_57.mj_unroll",
+      "sha256": "6f191656ae8be8621e4edc1f8ee5b15ace949e04a1d5c734b02c6beee712d4a0",
+      "bytes": 122908
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/S03/2026_09_28-10_19_00.mj_unroll",
+      "sha256": "a409166c0c41fcc3f51ec03ade40212eec7612b15dfb4edcd7cc2f9573e2e680",
+      "bytes": 208045
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/S06/2026_09_28-10_19_02.mj_unroll",
+      "sha256": "9829d1551ed9054ff9d23c7df519c0480b36e33f167924fa60073cd27460c2f8",
+      "bytes": 210765
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/D01/2026_09_28-10_19_02.mj_unroll",
+      "sha256": "5b1dfecb72ab774318d1b4760495af157ec88a4d28da49c7a2ef5dcae9dad5cd",
+      "bytes": 88964
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/D02/2026_09_28-10_19_03.mj_unroll",
+      "sha256": "a9fbf874b9c5bc630802ff846773485532b3c6fc25ac8ca56c4b71de481bba90",
+      "bytes": 173325
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/D03/2026_09_28-10_19_04.mj_unroll",
+      "sha256": "7158ee3b658bc40458d755099b9364d9df9295dc4eb1dbe2254a8f5723ffba4e",
+      "bytes": 324173
+    },
+    {
+      "kind": "replay",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/rollouts/speed-8/D06/2026_09_28-10_19_05.mj_unroll",
+      "sha256": "726b93637d6de052e82efa3a51a59563fd3481d9011e79bb6701ce1e912234d5",
+      "bytes": 237021
+    },
+    {
+      "kind": "training_result",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-seed0-stage1-v1/result.json",
+      "sha256": "8b310cef736271d27fbae51319fd57ef8791e14d275e3631079893013234d793",
+      "bytes": 1191
+    },
+    {
+      "kind": "evaluation_report",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1/eval/report.json",
+      "sha256": "5e4de0f60bb2bc8c5e406b49257c2f7d254e346c0bf81e8a6623912f201da5d9",
+      "bytes": 31049
+    },
+    {
+      "kind": "selected_checkpoint",
+      "path": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-seed0-stage1-v1/training-state/update-0001000.pkl",
+      "sha256": "2397c90306fd96cdd4e5e964edbfc59f12058286f0177a8f405848aa4517572c",
+      "bytes": 6748828
+    }
+  ]
+}

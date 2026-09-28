@@ -26,6 +26,13 @@
 参数更新持续推进；恢复证据见`experiments/paper-pointcloud-seed0-pipeline-v1/recovery-20260928T103424Z/`。
 阶段报告入口：[首阶段训练与Navigation8结果](verification/pointcloud-paper-stage1/README.md)。
 
+本轮继续执行已补上[论文公开信息逐项复核](research/pointcloud-paper-source-audit-20260928.md)
+与`scripts/summarize_pointcloud.py`独立最终验收入口，新增13项汇总证据测试通过。
+默认完整验收需要50000更新和24格最终测试；阶段产物通过`--allow-stage`明确登记。
+整库CPU回归按定型后的汇总测试重新执行，结果写入`tmp/pointcloud/full-suite-20260928.log`及同名XML。
+原收集版本会话42352在52项通过后主动结束，保留到`full-suite-superseded-20260928.*`，用于区分两次验证。
+已设置每小时完成条件检查，完整训练/冻结评测结束后依据实际产物生成和交付最终结果。
+
 2026-09-28 Navigation8 已由用户完成视觉验收并冻结。当前安全导航唯一现役场景目录为
 `configs/scene/navigation8.json`，固定包含 S01/S02/S03/S06 与 D01/D02/D03/D06 八张场景。
 S01-S03 为 SANDO 静态 Easy/Medium/Hard；D01-D03 为 SANDO 对齐动态三档；S06/D06 为

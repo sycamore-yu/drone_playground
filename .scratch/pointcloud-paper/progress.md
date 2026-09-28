@@ -79,3 +79,21 @@ AST核对advance_checked/make_rollout/summarize_trace/build_commands保持一致
 10:38 UTC交付核验完成：3份轨迹归档摘要、24份回放及读回证明均匹配，全部终止高度超过6米；
 55项最终方法测试证据匹配，完整训练同一进程继续至1600更新/8192000交互。
 证据docs/verification/pointcloud-paper-stage1/delivery-verification.json；当前DP-005仍为进行中。
+
+2026-09-28 用户再次要求继续完成。本轮恢复原full-v1训练和pipeline-v1协调器；
+重新下载并逐页核对8页论文，文件摘要e2f72a7be6653889dbd0cd88c78a8579660a95ff93d344fd00a1c83e67246dd4，
+来源复核见docs/research/pointcloud-paper-source-audit-20260928.md。
+本轮新增独立汇总scripts/summarize_pointcloud.py，不进入冻结的训练/评测执行链；
+测试先7失败→7通过，追加检查点年龄/目录绑定后2失败→9通过，日志summary-{red,green,binding-red,final}.log。
+真实阶段调用重新确认1000/50000更新、512万交互、24次越界，三份轨迹和24份回放证明均匹配。
+汇总产物在docs/verification/pointcloud-paper-stage1/verified-delivery/；默认完整验收拒绝未满50000更新的阶段结果。
+整库CPU回归已通过会话42352启动，日志tmp/pointcloud/full-suite-20260928.log；实际结束状态待读取。
+已设置每小时完成条件检查，正常运行保持静默；完整训练和冻结24格评测完成后执行汇总并交付最终结果，故障单独报告。
+10:55 UTC左右核对训练已达2130更新/10905600交互；原3956802进程与执行源码摘要保持一致。
+
+独立只读审查提出汇总器三个完整性边界：模型/元数据伴随文件、回放路径去重/格子绑定、文案与实际配置一致。
+新增四个负例先失败，再修复为检查scene.xml/rscope_meta.pkl存在可读非空并登记摘要、每格唯一回放路径、
+从实际槽位生成点数和导数规则说明。最终汇总专项13项通过，真实首阶段证据再次通过。
+日志summary-review-{red,green}.log；生产训练/评测和协调器源码摘要持续保持原值。
+首轮全库CPU测试在新增汇总用例定型前已收集测试，因收集版本落后主动以SIGINT结束，52项通过、退出码2；
+保留原日志/XML与full-suite-restart-reason.json，随后使用冻结后的测试文件重新执行全库回归。
