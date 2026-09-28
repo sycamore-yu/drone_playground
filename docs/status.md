@@ -1,13 +1,30 @@
 # 当前进度
 
 更新时间：2026-09-28。P1/P2已由用户验收；P3/P4及本轮可组合架构/LOTF交付完成。
-当前工作树分支：`refactor/native-planner-runtime`；当前导航场景协议：`navigation8-v1`。
+当前工作树分支：`research/pointcloud-paper-navigation8`；当前导航场景协议：`navigation8-v1`。
 本轮迁移前47项基线、五模块回归与LOTF上游对照已完成；最终79项测试、2个子测试通过，
 命令、日志和统计见[最终检查](verification/composable-lotf-final-checks.json)。
 
 持续维护的未完成想法、遗留收尾和下一开发计划统一记录在[未完成想法与开发清单](backlog.md)。
 
 ## 当前工作
+
+2026-09-28 点云论文方法重建正在执行，身份为 `paper-public-information-reconstruction-v1`。
+已接入5400点规则角度测量、PointNet/GRU、三维加速度、质点滞后与指数缩放状态导数、160步时间反传。
+模块和来源对照见[论文配方](research/pointcloud-paper-module-map.md)；完整补充假设见
+[复现规格](../.scratch/pointcloud-paper/spec.md)。LOTF 与本项作为独立方法记录。
+
+首阶段 `paper-pointcloud-seed0-stage1-v1` 已完成1000/50000次更新、512万次交互，开发损失2.3229413。
+冻结该权重的 `paper-pointcloud-navigation8-stage1-v1` 完成8场景×3速度共24格：到达0、越界24；
+原始轨迹核对全部触发高度上界，属于当前阶段迁移性能失败，详见
+[阶段证据](verification/pointcloud-paper-stage1/evidence.json)。完整训练运行
+`paper-pointcloud-seed0-full-v1` 已从原1000次更新的完整状态恢复；实际进度读取其 `state.json`。
+训练预算目标保持50000更新、2.56亿交互。最终冻结评测由同一任务编排管理，完整预算与阶段结果分别验收。
+
+10:34 UTC完成报告/回放和协调器的审查修复与明确对账，提交2cd0d40；55项方法测试通过，
+共享模块92项回归通过，两组分别报告。恢复后的协调器会话55888接管同一训练进程3956802，
+参数更新持续推进；恢复证据见`experiments/paper-pointcloud-seed0-pipeline-v1/recovery-20260928T103424Z/`。
+阶段报告入口：[首阶段训练与Navigation8结果](verification/pointcloud-paper-stage1/README.md)。
 
 2026-09-28 Navigation8 已由用户完成视觉验收并冻结。当前安全导航唯一现役场景目录为
 `configs/scene/navigation8.json`，固定包含 S01/S02/S03/S06 与 D01/D02/D03/D06 八张场景。

@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-09-28T10:31:12.051649+00:00",
+  "original_source_commit": "72f8ffb32e288a88e33a2c971bc52206d718d89f",
+  "original_source_digest": "813dc83c01e60413da19c3b3db6a193423cbab5b2ad53fce9c45a75fa4e054a0",
+  "current_source_digest": "760bd99f05ab6f84c059edfd5b3dbde6cb2921f7f3b2051ee094aa28f0339c24",
+  "changed_executable_paths": [
+    "scripts/run_pointcloud_pipeline.py",
+    "src/drone_playground/evaluation/pointcloud.py"
+  ],
+  "untracked_executable_paths": [],
+  "training_runtime_source_unchanged": true,
+  "training_process": {
+    "pid": 3956802,
+    "start_marker": "028528e0-c832-4b72-bfdf-a10d7c3e539a:3956802:240655356"
+  },
+  "preserve_training_process": true,
+  "reconciliation_scope": "evaluation/export and coordinator only; no policy optimization changes"
+}

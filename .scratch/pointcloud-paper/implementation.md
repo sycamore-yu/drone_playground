@@ -24,10 +24,10 @@
 文件：dynamics/point_mass.py、controllers/acceleration.py、tasks/sensors/pointcloud.py；
 扩展共享场景的球体距离与射线；tests/test_pointcloud_physics.py。
 接口：PointMassState(pos,vel,acc,rotation)，PointMassLag.step(state,command,dt)；
-UniformMid360Lidar遵循已有cast_lidar鸭子类型；共享sphere距离/交点。
-- [ ] 写解析前向、雅可比、掩码与图元测试并看到失败。
-- [ ] 实现最小模块，运行本测试及既有传感器回归。
-- [ ] 提交模块与证据。
+UniformMid360Lidar复用已有cast_rays和最近有效交点契约；共享sphere距离/交点。
+- [x] 写解析前向、雅可比、掩码与图元测试并看到失败。
+- [x] 实现最小模块，运行本测试及既有传感器回归。
+- [x] 提交模块与证据。
 
 ## 任务二：网络、观测、目标和训练环境
 
@@ -35,30 +35,32 @@ UniformMid360Lidar遵循已有cast_lidar鸭子类型；共享sphere距离/交点
 tasks/scenes/pointcloud.py；tests/test_pointcloud_method.py。
 接口：PointCloudPolicy.encode(points,valid)、act(embedding,proprio,hidden)；
 PaperObjective(trajectory,dt)返回总损失及分量；PointCloudTask持有场景/物理/传感组件。
-- [ ] 先测试置换不变、可变点数、GRU重置/记忆、空点集和loss数值。
-- [ ] 实现32批量静态图元采样，公开来源范围。
-- [ ] 测试固定输入前向与梯度并提交。
+- [x] 先测试置换不变、可变点数、GRU重置/记忆、空点集和loss数值。
+- [x] 实现32批量静态图元采样，公开来源范围。
+- [x] 测试固定输入前向与梯度并提交。
 
 ## 任务三：训练、配置与恢复
 
 文件：learning/pointcloud_bptt.py、runs/pointcloud.py、configs各槽位、composition.py；
 tests/test_pointcloud_training.py。
-接口：initialize(config)、make_update(task,config)、save/load训练状态；
+接口：initialize(task,config)、make_update(task,network,optimizer,config)、save/load训练状态；
 共享run_experiment分派新算法，训练/评测消费相同配置。
-- [ ] 先测试配置构造、参数更新与连续/保存恢复对照。
-- [ ] 实现scan/remat、AdamW、开发选模、真实预算和停止/恢复记录。
-- [ ] 真实GPU短训练测显存/吞吐，锁定可复现正式命令。
+- [x] 先测试配置构造、参数更新与连续/保存恢复对照。
+- [x] 实现scan/remat、AdamW、开发选模、真实预算和停止/恢复记录。
+- [x] 真实GPU短训练测显存/吞吐，锁定可复现正式命令。
 
 ## 任务四：独立评测与回放
 
 文件：evaluation/pointcloud.py、必要的共享回放模型参数；tests/test_pointcloud_evaluation.py。
 接口：evaluate_pointcloud(config,root,run_id)按八场景/固定速度调用。
-- [ ] 先测事件/分母、固定场景身份与参数冻结。
-- [ ] 完成轨迹归档、RScope输出和读回验证，工程权重只作工程检查。
+- [x] 先测事件/分母、固定场景身份与参数冻结。
+- [x] 完成轨迹归档、RScope输出和读回验证，工程权重只作工程检查。
 
 ## 任务五：实际训练与交付
 
-- [ ] 提交全部运行代码，执行正式训练；逐个里程碑保存完整状态及独立开发评测。
-- [ ] 在独立进程载入已选定冻结权重，执行24格Navigation8评测，保留失败。
-- [ ] 汇总真实预算、结果、每个槽位配置、命令、来源偏差、训练曲线及可观察回放。
-- [ ] 更新DP-005状态和恢复账本，分别记录工程实现、训练预算和方法质量。
+- [x] 提交全部运行代码；首阶段1000更新/512万交互完成，独立开发评测选模。
+- [x] 在独立进程评测首阶段权重：24格全部完成并读回，0到达/24高度越界。
+- [ ] 完整训练从原1000更新继续至50000更新，逐个里程碑保存完整状态及独立开发评测。
+- [ ] 完整预算结束后，在独立进程评测开发集所选冻结权重并完成24格最终报告。
+- [x] 汇总首阶段真实预算、结果、槽位配置、命令、来源偏差和回放；完整预算最终统计仍待运行完成。
+- [x] DP-005保留进行中，记录已实现模块、阶段负结果及完整训练的恢复状态。

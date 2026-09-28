@@ -1,0 +1,385 @@
+{
+  "training_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-seed0-stage1-v1",
+  "evaluation_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/pointcloud-paper/experiments/paper-pointcloud-navigation8-stage1-v1",
+  "actual_updates": 1000,
+  "target_updates": 50000,
+  "actual_interactions": 5120000,
+  "full_budget_completed": false,
+  "development_start": {
+    "acceleration": 0.9033945202827454,
+    "collision": 14883.8232421875,
+    "jerk": 1.8779083490371704,
+    "jerk_mean": 1.6278355121612549,
+    "jerk_variance": 2.5007286071777344,
+    "loss": 22337.3359375,
+    "mean_speed": 5.463525295257568,
+    "min_clearance": -87.36809539794922,
+    "step_collision_fraction": 0.794140636920929,
+    "velocity": 11.586952209472656
+  },
+  "development_end": {
+    "acceleration": 0.2809877097606659,
+    "collision": 0.18794287741184235,
+    "jerk": 3.4561917781829834,
+    "jerk_mean": 3.0060360431671143,
+    "jerk_variance": 4.501558303833008,
+    "loss": 2.322941303253174,
+    "mean_speed": 2.2936618328094482,
+    "min_clearance": -0.46619337797164917,
+    "step_collision_fraction": 0.02480468712747097,
+    "velocity": 2.0347611904144287
+  },
+  "parameter_sha256": "2fafd2c04579afc5bc6cab0026820496b64708a39d38dabe3551127d3ff3ad7b",
+  "navigation8": {
+    "num_trials": 24,
+    "arrived": 0,
+    "collision": 0,
+    "out_of_bounds": 24,
+    "timeout": 0,
+    "numerical_failure": 0
+  },
+  "trace_sha256": {
+    "experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-4.npz": "1c0dc664a93771f4c7dce46459bcd166f5ac9048cf4c33de13b5936e79c1f2e6",
+    "experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-6.npz": "51623b16587568c50e479cf16cd10e3ac704dce1a6aa01eeb2b44cc4339a2748",
+    "experiments/paper-pointcloud-navigation8-stage1-v1/traces/speed-8.npz": "5c836cfce01a620b3779ed4460f5264f23674d66a123af90a3ca3b666767955e"
+  },
+  "terminal_checks": [
+    {
+      "scene": "S01",
+      "speed_m_s": 4,
+      "transitions": 28,
+      "terminal_position_m": [
+        2.3051979541778564,
+        0.030694931745529175,
+        6.004203796386719
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.7139999866485596
+    },
+    {
+      "scene": "S02",
+      "speed_m_s": 4,
+      "transitions": 26,
+      "terminal_position_m": [
+        3.2752459049224854,
+        0.012036082334816456,
+        6.001125812530518
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.5880000591278076
+    },
+    {
+      "scene": "S03",
+      "speed_m_s": 4,
+      "transitions": 23,
+      "terminal_position_m": [
+        3.8814821243286133,
+        -0.194818913936615,
+        6.003589153289795
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.2360000610351562
+    },
+    {
+      "scene": "S06",
+      "speed_m_s": 4,
+      "transitions": 29,
+      "terminal_position_m": [
+        4.378571510314941,
+        -0.11044976115226746,
+        6.001657485961914
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.8459999561309814
+    },
+    {
+      "scene": "D01",
+      "speed_m_s": 4,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.4603769779205322,
+        0.025336194783449173,
+        6.002382755279541
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.614000082015991
+    },
+    {
+      "scene": "D02",
+      "speed_m_s": 4,
+      "transitions": 28,
+      "terminal_position_m": [
+        2.451178550720215,
+        0.038209620863199234,
+        6.001796722412109
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.7160000801086426
+    },
+    {
+      "scene": "D03",
+      "speed_m_s": 4,
+      "transitions": 29,
+      "terminal_position_m": [
+        2.470278024673462,
+        0.06488450616598129,
+        6.003301620483398
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.8399999141693115
+    },
+    {
+      "scene": "D06",
+      "speed_m_s": 4,
+      "transitions": 27,
+      "terminal_position_m": [
+        3.331202745437622,
+        -0.07203931361436844,
+        6.004431247711182
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.692000150680542
+    },
+    {
+      "scene": "S01",
+      "speed_m_s": 6,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.6099181175231934,
+        0.04276527464389801,
+        6.001408100128174
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.6500000953674316
+    },
+    {
+      "scene": "S02",
+      "speed_m_s": 6,
+      "transitions": 25,
+      "terminal_position_m": [
+        3.5540504455566406,
+        0.0005241191247478127,
+        6.002747535705566
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.4800000190734863
+    },
+    {
+      "scene": "S03",
+      "speed_m_s": 6,
+      "transitions": 21,
+      "terminal_position_m": [
+        3.3261706829071045,
+        0.08726992458105087,
+        6.002435684204102
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.058000087738037
+    },
+    {
+      "scene": "S06",
+      "speed_m_s": 6,
+      "transitions": 26,
+      "terminal_position_m": [
+        4.219728469848633,
+        -0.05872721970081329,
+        6.001110553741455
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.5299999713897705
+    },
+    {
+      "scene": "D01",
+      "speed_m_s": 6,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.6079139709472656,
+        0.03455512225627899,
+        6.002058506011963
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.640000104904175
+    },
+    {
+      "scene": "D02",
+      "speed_m_s": 6,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.699601173400879,
+        0.0843653529882431,
+        6.002814292907715
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.6740002632141113
+    },
+    {
+      "scene": "D03",
+      "speed_m_s": 6,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.7354044914245605,
+        0.08580716699361801,
+        6.002713680267334
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.6740002632141113
+    },
+    {
+      "scene": "D06",
+      "speed_m_s": 6,
+      "transitions": 28,
+      "terminal_position_m": [
+        3.533756971359253,
+        -0.03141030669212341,
+        6.003551483154297
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.7160000801086426
+    },
+    {
+      "scene": "S01",
+      "speed_m_s": 8,
+      "transitions": 27,
+      "terminal_position_m": [
+        2.801225185394287,
+        0.04163149744272232,
+        6.002638339996338
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.630000114440918
+    },
+    {
+      "scene": "S02",
+      "speed_m_s": 8,
+      "transitions": 25,
+      "terminal_position_m": [
+        3.5818841457366943,
+        0.00815246906131506,
+        6.003123760223389
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.4100000858306885
+    },
+    {
+      "scene": "S03",
+      "speed_m_s": 8,
+      "transitions": 22,
+      "terminal_position_m": [
+        3.084975004196167,
+        0.16065141558647156,
+        6.004129409790039
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.132000207901001
+    },
+    {
+      "scene": "S06",
+      "speed_m_s": 8,
+      "transitions": 24,
+      "terminal_position_m": [
+        3.854327440261841,
+        0.05008777230978012,
+        6.00294828414917
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.361999988555908
+    },
+    {
+      "scene": "D01",
+      "speed_m_s": 8,
+      "transitions": 28,
+      "terminal_position_m": [
+        2.8850200176239014,
+        0.04865191504359245,
+        6.003194808959961
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.7300000190734863
+    },
+    {
+      "scene": "D02",
+      "speed_m_s": 8,
+      "transitions": 29,
+      "terminal_position_m": [
+        2.6759233474731445,
+        0.07203641533851624,
+        6.003993034362793
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.871999979019165
+    },
+    {
+      "scene": "D03",
+      "speed_m_s": 8,
+      "transitions": 28,
+      "terminal_position_m": [
+        2.8869717121124268,
+        0.08953719586133957,
+        6.00445032119751
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.742000102996826
+    },
+    {
+      "scene": "D06",
+      "speed_m_s": 8,
+      "transitions": 27,
+      "terminal_position_m": [
+        3.708101749420166,
+        -0.02509400062263012,
+        6.002446174621582
+      ],
+      "boundary_breaches": [
+        "z_upper"
+      ],
+      "terminal_time_s": 2.642000198364258
+    }
+  ],
+  "training_config_changed_after_evaluation": false
+}

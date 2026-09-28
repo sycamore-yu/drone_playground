@@ -74,3 +74,23 @@ PYTHON=/home/tong/tongworkspace/simulation_dev/mujoco/drone_playground/.pixi/env
 目前作者完整源码未取得。本文明确实现了论文公开结构，同时把传感器梯度、随机场景分布、
 未披露损失权重、姿态表示与动力学参数作为公开补充假设；精确数值复现仍需这些作者细节。
 规格、解析配置、代码身份、训练曲线和独立测试记录共同构成本轮可复查的方法重建证据。
+
+## 已有训练与测试结果
+
+首阶段真实训练完成1000/50000次更新，即512万/2.56亿次交互；耗时1890.31秒，
+稳定更新约1.837秒。固定静态开发集损失由22337.33594降至2.3229413，选择update-0001000。
+该损失值属于重建配方的目标函数，Navigation8的到达表现单独统计。
+
+首阶段冻结模型在4、6、8米/秒下各测试八张场景，共24格：到达0、碰撞0、越界24、超时0、
+数值失败0。原始状态核对表明24格均向上超过6米高度边界，结束时间2.058–2.872秒。
+该阶段体现出高度方向的迁移失败，完整训练结果仍待固定预算运行结束。
+
+证据入口为[阶段汇总](../verification/pointcloud-paper-stage1/README.md)和
+[逐帧核验摘要](../verification/pointcloud-paper-stage1/evidence.json)。全部阶段回合保存在
+`experiments/paper-pointcloud-navigation8-stage1-v1/`，其`eval/`包含报告与逐格表，
+`traces/`包含完整数值轨迹，`rollouts/`包含24份RScope回放与读回证据。
+
+`paper-pointcloud-seed0-full-v1`从相同参数、优化器和随机状态继续训练至50000更新。
+管线`paper-pointcloud-seed0-pipeline-v1`已接管原训练进程，并在完整预算完成后调用同一冻结评测协议。
+恢复来源保存在其`source_history`与`recovery-20260928T103424Z/receipt.json`中。
+训练数据、优化配方和开发选模标准保持预注册设置，Navigation8阶段结果单独归档。

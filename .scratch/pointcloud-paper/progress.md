@@ -47,3 +47,35 @@ Navigation8 nominal标签现绑定0.07米机体、0.5米到达、40秒、10Hz策
 tests/test_pointcloud_protocol_guards.py先10项失败，再连同两项真实配置构造共12项通过；
 证据tmp/pointcloud/protocol-guards-{red,green}.log。该修复只加强配置校验，当前已启动训练的数值更新不变。
 完整运行编排器的源码摘要应在本轮审查修复提交后冻结。
+
+审查中的动作坐标/单位问题现已补丁处理：network_output_frame固定body、command_units固定m/s^2；
+新增2项回归先失败，再连同前述协议检查共12项通过，证据command-contract-{red,green}.log。
+独立模块配方文档已加入docs/research/pointcloud-paper-module-map.md。
+首步终止回放和已有评测与训练身份绑定两个问题仍需当前评测/编排实现完成，冻结运行前再次核对。
+
+上述两项现已补齐：首步数值失败回放增加真实t=0初态，帧数与转移数分开登记；
+评测复用绑定所选检查点、参数摘要、来源训练目录和result.json摘要，恢复账本绑定阶段运行名。
+single-step-replay-red.log两项失败→single-step-replay-green.log十二项通过；
+evaluation-binding-red.log四项失败→review-binding-green.log二十项通过。
+共享几何/任务/原模块独立回归已完成92项，耗时823.03秒，证据independent-regression.xml/log。
+
+并发运行事实：72f8ffb冻结编排已于10:18 UTC启动，阶段Navigation8结果已完成0/24，24越界；
+完整训练进程3956802于10:19 UTC从1000更新恢复，父编排3955029。
+10:23 UTC核对冻结后的源码差异仅为scripts/run_pointcloud_pipeline.py及evaluation/pointcloud.py；
+训练器、模型、网络、目标、传感器和配置字节保持72f8ffb版本。
+当前需显式对账并接管原编排父进程，保持3956802训练不中断；旧编排内存中的源码摘要将在最终评测前触发拒绝。
+保存原编排账本后采用同一完整训练的真实进程与状态恢复，记录评测/编排修复的来源边界。
+
+2026-09-28 10:34 UTC 已完成明确对账和原训练接管。报告/回放与协调器修复提交2cd0d40；
+55项最终方法测试通过，日志tmp/pointcloud/final-review-verified.log，XML在docs/verification。
+旧协调器3955029定向退出，训练3956802的start_marker保持一致，交互数继续由7475200增至7577600。
+恢复后的协调器使用原pipeline-v1账本和全部原运行身份；工具会话55888。
+恢复凭据：experiments/paper-pointcloud-seed0-pipeline-v1/recovery-20260928T103424Z/receipt.json。
+AST核对advance_checked/make_rollout/summarize_trace/build_commands保持一致；训练数值源码和配置字节保持72f8ffb。
+新源码摘要760bd99f05ab6f84c059edfd5b3dbde6cb2921f7f3b2051ee094aa28f0339c24。
+原首阶段24份回放有效，采用当时记录格式；后续新回放包含真实t=0初态和单独的转移数。
+完整训练继续进行；最终结果需读取full-v1/result.json和navigation8-full-v1/eval/report.json实际产物。
+
+10:38 UTC交付核验完成：3份轨迹归档摘要、24份回放及读回证明均匹配，全部终止高度超过6米；
+55项最终方法测试证据匹配，完整训练同一进程继续至1600更新/8192000交互。
+证据docs/verification/pointcloud-paper-stage1/delivery-verification.json；当前DP-005仍为进行中。
