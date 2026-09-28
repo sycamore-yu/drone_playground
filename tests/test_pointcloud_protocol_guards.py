@@ -14,6 +14,16 @@ def test_synchronous_sensor_rate_must_match_the_executed_policy_tick(sensor_hz):
 
 
 @pytest.mark.parametrize(
+    ("field", "value"), [("network_output_frame", "world"), ("command_units", "normalized")]
+)
+def test_policy_coordinate_and_unit_labels_match_the_command_transform(field, value):
+    config = compose_config("paper_pointcloud")
+    config["policy"][field] = value
+    with pytest.raises(ValueError, match="Paper policy.*(frame|units)"):
+        validate_config(config)
+
+
+@pytest.mark.parametrize(
     ("group", "field", "value"),
     [
         ("task", "body_radius", 0.035),

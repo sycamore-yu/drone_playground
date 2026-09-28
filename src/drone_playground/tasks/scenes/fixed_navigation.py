@@ -37,6 +37,34 @@ from .navigation import (
 
 DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/navigation8.json"
 
+
+@dataclass(frozen=True)
+class Navigation8CatalogScene:
+    """Unique fixed cases, backed by the existing accepted catalog's verified digest."""
+
+    name: str = "navigation8"
+    scene_ids: tuple[str, ...] = ("S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06")
+    catalog_path: str | None = None
+    verification_path: str | None = None
+
+    def build(self):
+        import hashlib
+
+        path = Path(self.catalog_path or DEFAULT_CATALOG)
+        evidence = Path(self.verification_path or DEFAULT_CATALOG.parents[2] / "docs/verification/navigation8.json")
+        verified = json.loads(evidence.read_text())
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != verified.get("catalog_sha256"):
+            raise ValueError("Navigation8 catalog differs from its accepted verification record")
+        if len(self.scene_ids) != len(set(self.scene_ids)):
+            raise ValueError("Nominal Navigation8 cases must be unique")
+        catalog = load_fixed_catalog(path)
+        reports = {row["scene_id"]:row for row in verified["scenes"]}
+        bank, manifest = build_fixed_bank(catalog,self.scene_ids,validated_reports=reports)
+        manifest.update(catalog_sha256=digest,verification=str(evidence),
+                        geometry_seed_role="none; unique accepted nominal cases")
+        return bank, manifest
+
 MOTION_BY_NAME = {
     "static": MOTION_STATIC,
     "trefoil": MOTION_TREFOIL,

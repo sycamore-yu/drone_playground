@@ -27,6 +27,7 @@ reproduction:
   - 50000 updates follows the training figure extent and predecessor default, not a text-specified update budget.
   - Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the policy is trained only on independent static primitives.
 evaluation:
+  training_run: null
   environment: experiment
   split: heldout
   episodes: 1

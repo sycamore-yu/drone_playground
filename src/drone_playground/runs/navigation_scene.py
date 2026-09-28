@@ -17,6 +17,7 @@ import numpy as np
 
 from drone_playground.tasks.scenes.navigation import (
     KIND_CYLINDER,
+    KIND_SPHERE,
     MOTION_NAMES,
     MOTION_STATIC,
     SceneBank,
@@ -70,6 +71,9 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
         if obstacle["kind"] == KIND_CYLINDER:
             radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
             geometry = f'<geom name="obstacle_geom_{index}" type="cylinder" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
+        elif obstacle["kind"] == KIND_SPHERE:
+            radius = float(obstacle["size"][0])
+            geometry = f'<geom name="obstacle_geom_{index}" type="sphere" size="{radius}" rgba="{rgba}"/>'
         else:
             hx, hy, hz = (float(value) for value in obstacle["size"])
             geometry = f'<geom name="obstacle_geom_{index}" type="box" size="{hx} {hy} {hz}" rgba="{rgba}"/>'
@@ -146,7 +150,7 @@ def create_replay_model(env, scenario_id: int):
         component_identity={
             **getattr(env, "component_identity", {}),
             "visual_geometry": "analytic scene primitives plus a schematic quadrotor",
-            "physics_engine": "Crazyflow JAX; MuJoCo is used only for replay",
+            "physics_engine": getattr(env, "physics_engine", "Crazyflow JAX; MuJoCo is used only for replay"),
             "scenario": env.scenario(scenario_id),
         },
     )

@@ -112,6 +112,10 @@ def validate_paper_config(config):
         raise ValueError(
             "Paper policy requires the three-dimensional acceleration command contract"
         )
+    if config["policy"].get("network_output_frame") != "body":
+        raise ValueError("Paper policy network output frame must be body before R @ action")
+    if config["policy"].get("command_units") != "m/s^2":
+        raise ValueError("Paper policy command units must be m/s^2")
     if config["controller"]["name"] != "acceleration_passthrough":
         raise ValueError("Select the point-mass acceleration execution preset")
     if config["dynamics"]["forward"] != "point_mass_lag":

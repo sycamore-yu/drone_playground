@@ -111,10 +111,12 @@ def _validated_trace(trace: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
     for name, value in converted["metrics"].items():
         if value.shape != (steps, batch):
             raise ValueError(f"metric {name!r} must have shape {(steps, batch)}, got {value.shape}")
-    if "actions" in converted and converted["actions"].shape != (steps, batch, 4):
-        raise ValueError(
-            f"actions must have shape {(steps, batch, 4)}, got {converted['actions'].shape}"
-        )
+    if "actions" in converted:
+        actions = converted["actions"]
+        if actions.ndim != 3 or actions.shape[:2] != (steps, batch) or actions.shape[-1] < 1:
+            raise ValueError(
+                f"actions must have shape [T={steps}, B={batch}, A>0], got {actions.shape}"
+            )
     return steps, batch, converted
 
 
