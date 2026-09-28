@@ -274,7 +274,8 @@ def test_batch_environments_are_isolated_and_reset_clears_the_phase():
     assert env.observation_size == 20 + 4 * 120 * 5
 
     keys = jnp.asarray([jax.random.PRNGKey(0), jax.random.PRNGKey(1)])
-    ids = jnp.asarray([0, 3])
+    # Navigation8 repeats fixed IDs within a difficulty block; compare two distinct blocks.
+    ids = jnp.asarray([0, env.bank.num_instances // 3])
     states = jax.vmap(env.reset)(keys, ids)
     clouds = jnp.asarray(states.pipeline_state.sensor_values[:, -1, :, :3])
     assert clouds.shape == (2, 120, 3)

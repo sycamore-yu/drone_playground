@@ -41,13 +41,14 @@ from flax import struct
 KIND_EMPTY = 0
 KIND_CYLINDER = 1
 KIND_BOX = 2
+KIND_SPHERE = 3
 
 MOTION_STATIC = 0
 MOTION_TREFOIL = 1
 MOTION_BOUNCE = 2
 
 MOTION_NAMES = {MOTION_STATIC: "static", MOTION_TREFOIL: "trefoil", MOTION_BOUNCE: "linear_bounce"}
-KIND_NAMES = {KIND_EMPTY: "empty", KIND_CYLINDER: "cylinder", KIND_BOX: "box"}
+KIND_NAMES = {KIND_EMPTY: "empty", KIND_CYLINDER: "cylinder", KIND_BOX: "box", KIND_SPHERE: "sphere"}
 
 # Instances are padded to this capacity so JAX shapes stay static.
 MAX_OBSTACLES = 64
@@ -243,7 +244,8 @@ def obstacle_positions(bank: SceneBank, scenario_id: jax.Array, time: jax.Array)
     params = bank.params[scenario_id]
     sx, sy, sz, offset, slower = (params[:, index] for index in range(MOTION_PARAMS))
 
-    tt = 2.0 * time / slower + offset
+    safe_slower = jnp.where(motion == MOTION_TREFOIL, slower, 1.)
+    tt = 2.0 * time / safe_slower + offset
     trefoil = jnp.stack(
         [
             sx / 6.0 * (jnp.sin(tt) + 2.0 * jnp.sin(2.0 * tt)) + origin[:, 0],
@@ -254,7 +256,8 @@ def obstacle_positions(bank: SceneBank, scenario_id: jax.Array, time: jax.Array)
     )
 
     ax, ay, az, period, phase = (params[:, index] for index in range(MOTION_PARAMS))
-    u = time / period + phase
+    safe_period = jnp.where(motion == MOTION_BOUNCE, period, 1.)
+    u = time / safe_period + phase
     tri = 2.0 * jnp.abs(2.0 * (u - jnp.floor(u + 0.5))) - 1.0
     bounce = origin + jnp.stack([ax, ay, az], axis=-1) * tri[:, None]
 
@@ -291,7 +294,8 @@ def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: 
 
     q = jnp.abs(delta) - size
     box = euclidean_norm(jnp.maximum(q, 0.0)) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
-    return jnp.where(kind == KIND_CYLINDER, cylinder, box)
+    sphere = euclidean_norm(delta) - size[..., 0]
+    return jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box))
 
 
 def clearance_and_collision(

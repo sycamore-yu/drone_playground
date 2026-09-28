@@ -1,0 +1,5 @@
+_target_: drone_playground.tasks.scenes.fixed_navigation.Navigation8CatalogScene
+name: navigation8
+scene_ids: [S01, S02, S03, S06, D01, D02, D03, D06]
+catalog_path: null
+verification_path: null

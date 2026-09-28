@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-09-28T10:38:46.370867+00:00",
+  "method_tests_passed": 55,
+  "stage1_updates": 1000,
+  "stage1_interactions": 5120000,
+  "navigation8_trials": 24,
+  "arrived": 0,
+  "out_of_bounds": 24,
+  "all_terminal_breaches": "z_upper",
+  "trace_archives_authenticated": 3,
+  "replay_files_authenticated": 24,
+  "replay_readback_proofs": 24,
+  "training_process": {
+    "pid": 3956802,
+    "start_marker": "028528e0-c832-4b72-bfdf-a10d7c3e539a:3956802:240655356"
+  },
+  "full_training_updates": 1600,
+  "full_training_interactions": 8192000,
+  "target_updates": 50000,
+  "full_budget_completed": false,
+  "final_navigation8_evaluation_completed": false,
+  "coordinator_source_digest": "760bd99f05ab6f84c059edfd5b3dbde6cb2921f7f3b2051ee094aa28f0339c24",
+  "training_preserved_during_coordinator_recovery": true,
+  "ok": true
+}

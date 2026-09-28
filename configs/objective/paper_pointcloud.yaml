@@ -1,0 +1,14 @@
+_target_: drone_playground.learning.pointcloud_objective.PaperObjective
+name: paper_pointcloud_loss
+velocity_weight: 1.0
+collision_weight: 1.5
+acceleration_weight: 0.01
+jerk_weight: 0.001
+velocity_norm_weight: 0.8
+velocity_component_weight: 0.6
+velocity_window: 30
+huber_delta: 1.0
+collision_beta1: 1.3333333333333333
+collision_beta2: 32.0
+jerk_mean_weight: 1.0
+jerk_variance_weight: 0.1

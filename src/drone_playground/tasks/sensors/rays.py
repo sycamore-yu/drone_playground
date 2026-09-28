@@ -19,7 +19,7 @@ from __future__ import annotations
 import jax
 import jax.numpy as jnp
 
-from drone_playground.tasks.scenes.navigation import KIND_CYLINDER
+from drone_playground.tasks.scenes.navigation import KIND_CYLINDER, KIND_SPHERE
 
 EPS = 1e-6
 NO_HIT = jnp.inf
@@ -75,9 +75,8 @@ def _box_hit(origin, direction, half):
     t_near = jnp.max(jnp.minimum(t_low, t_high), axis=-1)
     t_far = jnp.min(jnp.maximum(t_low, t_high), axis=-1)
     # A zero direction component is a hit only when the origin is inside the slab.
-    inside = jnp.all(jnp.abs(origin) <= half, axis=-1)
-    parallel = jnp.any(jnp.abs(direction) <= EPS, axis=-1)
-    hit = (t_far >= jnp.maximum(t_near, EPS)) & (~parallel | inside)
+    parallel_outside = jnp.any((jnp.abs(direction) <= EPS) & (jnp.abs(origin) > half), axis=-1)
+    hit = (t_far >= jnp.maximum(t_near, EPS)) & ~parallel_outside
     distance = jnp.where(t_near > EPS, t_near, t_far)
     return jnp.where(hit, distance, NO_HIT)
 
@@ -98,6 +97,18 @@ def _plane_hit(origin, direction, height, x_range, y_range):
     return jnp.where((jnp.abs(dz) > EPS) & (distance > EPS) & inside, distance, NO_HIT)
 
 
+def _sphere_hit(origin, direction, radius):
+    a = jnp.sum(direction * direction, axis=-1)
+    b = jnp.sum(origin * direction, axis=-1)
+    c = jnp.sum(origin * origin, axis=-1) - radius * radius
+    disc = b*b - a*c
+    root = jnp.sqrt(jnp.maximum(disc, 0.))
+    near = (-b - root) / jnp.maximum(a, EPS)
+    far = (-b + root) / jnp.maximum(a, EPS)
+    distance = jnp.where(near > EPS, near, far)
+    return jnp.where((disc >= 0.) & (a > EPS) & (distance > EPS), distance, NO_HIT)
+
+
 def primitive_hit(kind, size, centre, origin, direction, world):
     """Nearest positive hit distance for one scene slot against a ray bundle.
 
@@ -115,7 +126,8 @@ def primitive_hit(kind, size, centre, origin, direction, world):
     offset = origin - centre
     cylinder = _cylinder_hit(offset, direction, size[0], size[1] / 2.0)
     box = _box_hit(offset, direction, size)
-    return jnp.where(kind == KIND_CYLINDER, cylinder, box)
+    sphere = _sphere_hit(offset, direction, size[0])
+    return jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box))
 
 
 def cast_rays(
