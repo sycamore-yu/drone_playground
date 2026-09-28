@@ -78,11 +78,17 @@ def main():
     index = []
     for scene in catalog["scenes"]:
         scene_id = scene["id"]
-        bank, manifest = build_fixed_bank(catalog, [scene_id])
-        duration = float(scene["inspection_duration_s"])
+        bank, manifest = build_fixed_bank(catalog, [scene_id], validated_reports=review)
+        duration = float(scene.get("review_duration_s", scene.get("inspection_duration_s", 40.0)))
         frames = max(2, int(round(duration * args.fps)) + 1)
         times = np.linspace(0.0, duration, frames, dtype=np.float32)
-        positions = interpolate_path(scene["inspection_path"], frames)
+        if "inspection_path" in scene:
+            positions = interpolate_path(scene["inspection_path"], frames)
+            replay_motion = "legacy inspection route"
+        else:
+            start = np.asarray(catalog["world"]["start"], np.float32)
+            positions = np.repeat(start[None, :], frames, axis=0)
+            replay_motion = "drone held at start; no reference or oracle route"
         quaternions = np.zeros((frames, 1, 4), np.float32)
         quaternions[..., 3] = 1.0
         positions_batched = positions[:, None, :]
@@ -96,6 +102,7 @@ def main():
             )
             clearance.append(float(value))
             collision.append(float(hit))
+        metric_prefix = "inspection" if "inspection_path" in scene else "review/start"
         trace = {
             "pos": positions_batched,
             "quat": quaternions,
@@ -104,12 +111,16 @@ def main():
             "reward": np.zeros((frames, 1), np.float32),
             "actions": np.zeros((frames, 1, 4), np.float32),
             "metrics": {
-                "inspection/clearance_m": np.asarray(clearance, np.float32)[:, None],
-                "inspection/collision": np.asarray(collision, np.float32)[:, None],
+                f"{metric_prefix}/clearance_m": np.asarray(clearance, np.float32)[:, None],
+                f"{metric_prefix}/collision": np.asarray(collision, np.float32)[:, None],
             },
             "obstacle_pos": obstacle_positions,
         }
         env = review_env(bank, scene_id, 1.0 / args.fps, manifest)
+        env.component_identity["review_drone_motion"] = replay_motion
+        env.component_identity["reference_route"] = (
+            "none" if "inspection_path" not in scene else "legacy-inspection-only"
+        )
         target = args.output / scene_id
         replay = export_rollout(create_replay_model(env, 0), target, trace)
         (target / "scene-definition.json").write_text(
@@ -140,19 +151,23 @@ def main():
     lines = [
         "# P5 fixed scene review",
         "",
-        "These are candidate fixed scenes. The animated drone follows the catalog's",
-        "inspection-only feasible route; that route is not visible to any navigation method.",
+        "These are candidate fixed scenes. New route-free catalogs hold the drone at the",
+        "start pose and animate only scene dynamics: no reference/oracle trajectory is exported.",
         "",
-        "| ID | type | difficulty | field | boundary | total | direct blocked | route clearance | reference |",
-        "|---|---|---|---:|---:|---:|---|---:|---|",
+        "| ID | type | difficulty | field | boundary | total | direct blocked | A* reachable | max straight run | reference |",
+        "|---|---|---|---:|---:|---:|---|---|---:|---|",
     ]
     for row in index:
+        topology = row.get("topology", {})
+        reachable = topology.get("all_snapshots_reachable")
+        longest = topology.get("max_clear_straight_run_m")
         lines.append(
             f"| {row['scene_id']} | {'dynamic' if row['dynamic'] else 'static'} | "
             f"{row['difficulty']} | {row['field_obstacles']} | {row['boundary_obstacles']} | "
             f"{row['obstacles']} | "
             f"{'yes' if row['straight_line_blocked'] else 'no'} | "
-            f"{row['inspection_route_min_clearance_m']:.3f} m | {row['source']} |"
+            f"{('yes' if reachable else 'no') if reachable is not None else 'legacy'} | "
+            f"{(f'{longest:.1f} m' if longest is not None else 'legacy')} | {row['source']} |"
         )
     (args.output / "README.md").write_text("\n".join(lines) + "\n")
     print(json.dumps({"output": str(args.output), "scenes": index}, indent=2))

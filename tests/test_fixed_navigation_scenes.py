@@ -118,3 +118,21 @@ def test_v3_catalog_scales_density_and_has_visible_physical_boundaries():
     assert by_name["wall_y_max"]["origin"] == [50.0, 19.75, 3.25]
     assert by_name["wall_x_min"]["size"] == [0.25, 19.5, 2.75]
     assert by_name["wall_x_max"]["size"] == [0.25, 19.5, 2.75]
+
+
+def test_v4_catalog_has_no_reference_route_and_requires_topological_connectivity():
+    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v4.json")
+    assert all("inspection_path" not in scene for scene in catalog["scenes"])
+    assert all("inspection_duration_s" not in scene for scene in catalog["scenes"])
+    reports = validate_fixed_catalog(
+        catalog,
+        minimum_route_clearance_m=0.5,
+        maximum_clear_straight_run_m=35.0,
+    )
+    assert len(reports) == 12
+    for report in reports:
+        topology = report["topology"]
+        assert topology["all_snapshots_reachable"]
+        assert topology["max_full_length_straight_lanes"] == 0
+        assert topology["max_clear_straight_run_m"] <= 35.0
+        assert topology["validation"].endswith("path coordinates are discarded")

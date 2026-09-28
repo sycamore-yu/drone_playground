@@ -23,6 +23,15 @@
 0.646 m，12/12 直接起终点线均被障碍阻断，所有 scene XML 均重新编译通过。外部场景来源与
 SUPER PCD 语义见 `docs/research/p5-scene-reference-comparison.md`。仍等待用户视觉确认后再冻结新 benchmark。
 
+第三轮人工检查发现 v3 的 `inspection_path` 虽未泄漏给算法，但它同时参与了离线场景编排：
+障碍填充会主动避开该路径周围的 route tube，RScope 又沿它移动审阅无人机，因此人为制造了
+一条容易识别的长期清空通道。当前 v4 已删除全部 scene-level `inspection_path` 和该排障规则；
+审阅回放中无人机保持在起点，没有 reference/oracle trajectory。可行性使用 1 m × 1 m ×
+0.5 m 的 3-D occupancy A* 快照验证，路径坐标丢弃；动态场景在 0/10/20/30/40 s 五个快照
+均需可达。12/12 v4 场景 `full_length_straight_lanes=0`，固定 y/z 方向最大连续无障碍段
+为 21.5–33.5 m（阈值 35 m），同时保留 50/100/150 场内障碍与四面可感知边界墙。
+当前审阅目录：`experiments/p5-fixed-scenes-review-v4/`。
+
 2026-09-28 阶段性收尾：用户要求整理交接并协助处理问题。本轮按此要求完成状态核验与证据整理。
 代码基线为 `4c91ed7486f6050d5cef6a3dfb6522822f440e57`，原会话标识 `p5-main`。
 01:44 UTC 进程核验：P5 训练、补采和 ROS 规划进程均已退出；RTX 4090 利用率 0%、显存 146 MiB。

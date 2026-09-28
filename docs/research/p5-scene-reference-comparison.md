@@ -121,5 +121,13 @@ are historical review artifacts. Candidate v3 is 100 x 40 m with `z=0.5..6 m`,
 for Easy/Medium/Hard, and four shared physical boundary walls. The wall geometry
 is part of the same scene bank used by depth/LiDAR, collision and RScope.
 
-The catalog still includes an offline `inspection_path` only to prove that a
-candidate is traversable. That path is never part of a policy or planner input.
+The historical v1-v3 review catalogs included an offline `inspection_path`.
+Although it was never part of a policy/planner input, v3 also reserved a route
+tube around that path while placing filler obstacles; this made the review
+geometry itself easier and visibly exposed a long clear corridor.
+
+Route-free v4 removes both the path and the route-tube rule. Feasibility is
+validated by 3-D occupancy A* only; route coordinates are discarded. The review
+replays keep the drone at its start pose and animate scene dynamics only.
+Additional straight-lane diagnostics reject any full-length fixed-y/z shortcut
+and cap the longest continuous clear fixed-y/z segment at 35 m.

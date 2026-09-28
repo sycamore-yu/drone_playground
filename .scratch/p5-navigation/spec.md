@@ -21,6 +21,17 @@
 > v3 位于 `configs/scene/p5_fixed_catalog_v3.json`，审阅回放位于
 > `experiments/p5-fixed-scenes-review-v3/`。用户确认前仍不替换历史正式 v2 结果或启动重训练。
 
+> **2026-09-28 第三次场景审阅修订。** 用户指出 v3 虽然不把 `inspection_path` 提供给算法，
+> 但场景编排本身曾围绕该 path 保留 route tube，RScope 又让审阅无人机沿该 path 运动，因此
+> 视觉上出现了一条近似“参考轨迹”，并且该预留通道本身降低了 benchmark 难度。v4 完全取消
+> `inspection_path`、oracle/reference/demonstration trajectory 和 route-tube 预留。
+> 场景可行性改成离线 3-D occupancy A*：只保存“是否可达、最短路长度等统计”，A* 路径坐标
+> 立即丢弃，不进入 catalog、RScope、policy/planner 或训练数据。RScope v4 审阅中无人机固定
+> 在起点，仅动态障碍运动。为避免另一条固定横向 lane 贯穿全图，v4 在不同 x 位置布置三组
+> 非实墙式 staggered blocker，并验收 `full_length_straight_lanes == 0`、任一固定 y/z 直线的
+> 最大连续无障碍段不超过 35 m。当前候选为 `configs/scene/p5_fixed_catalog_v4.json`，审阅集为
+> `experiments/p5-fixed-scenes-review-v4/`。
+
 ## 1. 目标、已确认选择与交付范围
 
 把现有状态/参考轨迹平台扩展到感知导航，继续使用现有可组合模块：

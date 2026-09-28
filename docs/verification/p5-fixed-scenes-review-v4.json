@@ -1,0 +1,744 @@
+{
+  "catalog_version": "p5-fixed-candidate-v4-route-free",
+  "scene_count": 12,
+  "all_scene_xml_recompiled": true,
+  "all_reference_routes_absent": true,
+  "all_direct_routes_blocked": true,
+  "all_topology_snapshots_reachable": true,
+  "max_full_length_straight_lanes": 0,
+  "max_clear_straight_run_m": 33.5,
+  "scenes": [
+    {
+      "scene_id": "S01",
+      "difficulty": "easy",
+      "dynamic": false,
+      "obstacles": 54,
+      "field_obstacles": 50,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1799999999999937,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 100.14213562373094,
+            "detour_ratio": 1.0431472460805307,
+            "astar_expanded": 9168,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "Long sparse slalom",
+      "source": "manual",
+      "replay": "S01/2026_09_28-05_21_39.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_39.mj_unroll": "01465008784c50c846063e4c5677f29140924d03bc804bddc1fe7979f7f2bb18",
+        "scene.xml": "c0f41a7a85657c8f301124f55e72203528fdc0fb1f9d59bcbc3f53af2169bc1e",
+        "rscope_meta.pkl": "fc209df1f669a879dc27223c598debc49d417503f5f33aed9b94fbe62fefae98",
+        "scene-definition.json": "099a5e31d9e0d14bf04d2bf603d99819365b8d6f904a56055c43b472369bf37e",
+        "components.json": "5a3853a67166884ff405bdf17df822659a7ea98c22e43d9fe0983b21d3c51351"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "S02",
+      "difficulty": "medium",
+      "dynamic": false,
+      "obstacles": 104,
+      "field_obstacles": 100,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1799999999999937,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 100.97056274847712,
+            "detour_ratio": 1.0517766952966368,
+            "astar_expanded": 10636,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "Long column weave",
+      "source": "manual",
+      "replay": "S02/2026_09_28-05_21_44.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_44.mj_unroll": "85fe7e990dd98937e204b8d468b73add46128cab6b70ea76770df1dfef1a2cd4",
+        "scene.xml": "478bb617e917505fc3522afe5df7a4d69ed6dd270adc65f7191b398bf7552f6b",
+        "rscope_meta.pkl": "b7fff3fda33caf6143f86aa0b3751146a90e36f14a046e54483017124c791874",
+        "scene-definition.json": "07cb0bfce01d2088a8dd176b768e07f297b99b975e61e7d708a35f80a1724793",
+        "components.json": "9e4d23237cde8e47d05b90b02fc12abecd45c752296878c1993025ad7621728a"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "S03",
+      "difficulty": "medium",
+      "dynamic": false,
+      "obstacles": 104,
+      "field_obstacles": 100,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1800000000000008,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5086,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "NavRL-inspired long mixed heights",
+      "source": "NavRL",
+      "replay": "S03/2026_09_28-05_21_45.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_45.mj_unroll": "4c4426907fb31a44e65395bdc66c190cfc2dca7c395be1053428fea71685555b",
+        "scene.xml": "2b748ccb31fad316ac847c6cb3c17a3764c5e0f15b9f0fc2c74ddbaba8387228",
+        "rscope_meta.pkl": "d2c3cced5e416b117e3778f54f6f0d4465dad096fb569d5a18093e7a15487c0a",
+        "scene-definition.json": "aa4940d8e29762a8a47dd210f516e2971730bf253c98d326bfebab312a09acfd",
+        "components.json": "5b0f4c74470144ede39cd21bcf2a0d697cf16993e7cbf039484cff3d553779ef"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "S04",
+      "difficulty": "hard",
+      "dynamic": false,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1999999999999968,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5488,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 31.5
+      },
+      "title": "P2M-inspired long fixed clutter",
+      "source": "P2M",
+      "replay": "S04/2026_09_28-05_21_51.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_51.mj_unroll": "975db26f560e07eb917d0e077559a05b08144692e570ecdfc72345ecb7c17822",
+        "scene.xml": "eea90830396188fec28b7156999b8f3a3c181ca75cee320309ca72e4aa9e3e58",
+        "rscope_meta.pkl": "1f33e24434c23132d8120aad54691ac2208de0950f08ba81d3b66e3119306f15",
+        "scene-definition.json": "0931707d3d6299124a089a77f1930c26eeaa0afd65a971c41af6ca18540d22c3",
+        "components.json": "0d1fc9853d50e8b4eeddfc21f11a818f2dcc89793502ad644a893c3e672ade39"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "S05",
+      "difficulty": "hard",
+      "dynamic": false,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.22,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 127.68124086713178,
+            "detour_ratio": 1.3300129256992894,
+            "astar_expanded": 20773,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 21.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 21.5
+      },
+      "title": "Five alternating gates",
+      "source": "manual",
+      "replay": "S05/2026_09_28-05_21_52.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_52.mj_unroll": "bc068622a2919bcb398c6764e5fe0a7d5c034b92131d03b10834fe79ce1dfbbf",
+        "scene.xml": "2bcef559c307e6b06fafd5665b7f6bab6c6a2f8ae536dcf77d68fbde44c25b98",
+        "rscope_meta.pkl": "8f876ea1dca9631f96ee53e8e38cd07e6148825d2a947581fbf67385bdd61b72",
+        "scene-definition.json": "84965cdd28ee83d74d1e16052af67e710d1a58591f4058c905c65b29e0ae3899",
+        "components.json": "4e5e73857edc61ad2c37a6920a3448037d45fcd5de5d633ed9b7e4444ff689e8"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "S06",
+      "difficulty": "hard",
+      "dynamic": false,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.200000000000004,
+      "straight_line_blocked": true,
+      "review_duration_s": 3.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 101.54977647648454,
+            "detour_ratio": 1.0578101716300472,
+            "astar_expanded": 9684,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "Long 3D over-under corridor",
+      "source": "manual",
+      "replay": "S06/2026_09_28-05_21_53.mj_unroll",
+      "files": {
+        "2026_09_28-05_21_53.mj_unroll": "3636d62393bb75ccb420148a33be2a6bbc7d623271699fe713bf5924cd7558a5",
+        "scene.xml": "2684cc8d5899163d5c892fcd76b265015e8974637116dda27ea1c427e19a81ab",
+        "rscope_meta.pkl": "45f98afb2fb8165b8ba40be886f317fc3f0c13effca939c55e1b468c4d78d4c0",
+        "scene-definition.json": "c49751a7e4ba8bd81f3c6d11e7e8799b231f71980d8ea7917503ecbf6dbb77ec",
+        "components.json": "cd96a2f3647815b8c9420cbe752ab33c299583663f7473b75346edb368504c58"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D01",
+      "difficulty": "easy",
+      "dynamic": true,
+      "obstacles": 54,
+      "field_obstacles": 50,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1599999999999977,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 4335,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 4341,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 4337,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 98.82842712474618,
+            "detour_ratio": 1.0294627825494393,
+            "astar_expanded": 5631,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 98.82842712474618,
+            "detour_ratio": 1.0294627825494393,
+            "astar_expanded": 5697,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "Long sparse crossers",
+      "source": "manual",
+      "replay": "D01/2026_09_28-05_22_07.mj_unroll",
+      "files": {
+        "2026_09_28-05_22_07.mj_unroll": "c9e2d370cb6a986fcd3a5bc67099e4d7880f24c5614d45f076918d13a5832241",
+        "scene.xml": "86d9386dc6262500cf36679ba0d62db5b085ea445ad52d61f1b1e789e360c3d6",
+        "rscope_meta.pkl": "d4206fc8dc8c58ad17a0529acb26d51a5804c351e150c85e871ff2a7a4d705b0",
+        "scene-definition.json": "7d1e58f6b7933e86b9d84855347a21685bdbb19efd155e61ec0e051a6ec07ba8",
+        "components.json": "86724d7716f2bcbb2fd705bcb6e09c8bf4075fe818e8535a0daf0e9dc4c1a823"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D02",
+      "difficulty": "medium",
+      "dynamic": true,
+      "obstacles": 104,
+      "field_obstacles": 100,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1800000000000008,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 8482,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 8492,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 8498,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 8498,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949237,
+            "detour_ratio": 1.0380922317655454,
+            "astar_expanded": 8492,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 31.5
+      },
+      "title": "Five opposed crossing zones",
+      "source": "manual",
+      "replay": "D02/2026_09_28-05_22_21.mj_unroll",
+      "files": {
+        "2026_09_28-05_22_21.mj_unroll": "53e1ce793ef58292860268231e967e7c5e6266921fa5224b1a1ebb8649275b81",
+        "scene.xml": "5330034718084dca2098315a208683ed0e6051de5dff2526db9c1908dba64bf9",
+        "rscope_meta.pkl": "2b827c683d534f766256ac0871da5c8e7015e98463f6fd62f0476e2a6f8a669f",
+        "scene-definition.json": "54627482ed2ee65846028bbc897f63f403f6c0d0193121baf94c6ceb06c07d51",
+        "components.json": "6db0995bdb93313e13e3ac92063a7f93993e67d50d715a00b59ca6a5de1c563c"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D03",
+      "difficulty": "medium",
+      "dynamic": true,
+      "obstacles": 104,
+      "field_obstacles": 100,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1999999999999968,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5456,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 32.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5488,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 32.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5484,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 32.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 98.48528137423857,
+            "detour_ratio": 1.0258883476483185,
+            "astar_expanded": 5550,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 32.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 98.82842712474618,
+            "detour_ratio": 1.0294627825494393,
+            "astar_expanded": 6695,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 32.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 32.5
+      },
+      "title": "NavRL-inspired long dynamic mix",
+      "source": "NavRL",
+      "replay": "D03/2026_09_28-05_22_34.mj_unroll",
+      "files": {
+        "2026_09_28-05_22_34.mj_unroll": "442490a487565cf6a4c98b5b45cf025fe33b73fff0e7bb681eef59a0b11fa39b",
+        "scene.xml": "d3e3e0f60158ef784598f06d05557aca133525872e7538c06d2bb4552a5a6dab",
+        "rscope_meta.pkl": "9acb0d53b4e698caeaafda5cb626c22cd1aa9998fa6458a0a96caba3e446c5f9",
+        "scene-definition.json": "b8da3c745e95f88e6b8ab65b5ddefbea4050a332e9bde48a845fa6342defe1f9",
+        "components.json": "6d8a7527eec5a0ca10d4741185e8735922a133b88d6d1dc7c5ef3612bbba0c51"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D04",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.180000000000008,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 99.31370849898475,
+            "detour_ratio": 1.0345177968644246,
+            "astar_expanded": 6885,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 99.31370849898475,
+            "detour_ratio": 1.0345177968644246,
+            "astar_expanded": 6874,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 99.65685424949238,
+            "detour_ratio": 1.0380922317655457,
+            "astar_expanded": 8080,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 99.31370849898475,
+            "detour_ratio": 1.0345177968644246,
+            "astar_expanded": 6834,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 99.31370849898475,
+            "detour_ratio": 1.0345177968644246,
+            "astar_expanded": 6891,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 33.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 33.5
+      },
+      "title": "P2M-inspired long dynamic clutter",
+      "source": "P2M",
+      "replay": "D04/2026_09_28-05_22_50.mj_unroll",
+      "files": {
+        "2026_09_28-05_22_50.mj_unroll": "c17c3a81cca2139fdebfa5eb011443fb352a61fd0fa4e96788110003d0613d5d",
+        "scene.xml": "b59e2957e366f26ff5ad0d4cd920771b764d222659406f3c33e8c41267be1c58",
+        "rscope_meta.pkl": "9e5fb2a89a8b711e5e9fb5f9cb89f1afe8e4a1069f3bb49b08b758c0dc5d397c",
+        "scene-definition.json": "8ff58fa8f74d796d85d4c5d5b855a024eb73b91ab8f53965b793eaf47845a893",
+        "components.json": "c84f9426ea99f3bcd24d6a3b4b7a5a0599570e02b18f4babbc7bc4f62b132729"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D05",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.2000000000000004,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 101.97056274847712,
+            "detour_ratio": 1.0621933619633033,
+            "astar_expanded": 10200,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 30.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 101.97056274847712,
+            "detour_ratio": 1.0621933619633033,
+            "astar_expanded": 10176,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 30.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 101.79898987322332,
+            "detour_ratio": 1.0604061445127428,
+            "astar_expanded": 9681,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 30.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 101.79898987322332,
+            "detour_ratio": 1.0604061445127428,
+            "astar_expanded": 9685,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 30.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 101.79898987322332,
+            "detour_ratio": 1.0604061445127428,
+            "astar_expanded": 9643,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 30.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 30.5
+      },
+      "title": "MIGHTY-style long trefoil forest",
+      "source": "MIGHTY+SANDO",
+      "replay": "D05/2026_09_28-05_23_03.mj_unroll",
+      "files": {
+        "2026_09_28-05_23_03.mj_unroll": "c1e2e56281aab20949bb951c7dc58db2e4afc314a29ceb82531fdf318ffaf288",
+        "scene.xml": "c876886d5e693245258d608aac02580302586b816313a154c02138e1045a3379",
+        "rscope_meta.pkl": "0102766007e09d87860ee0c6998f67b31697a494b4fa14de6d6a1bb1662b8953",
+        "scene-definition.json": "7fb4e052b83d37eb97cb3afd8d15ff1635966ceca64d93fdb7b3c504e83bbbe0",
+        "components.json": "f5212292704b4854c691782b2ce7c52aeb6b9b812d7e0af94023c8b22630d86e"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    },
+    {
+      "scene_id": "D06",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 154,
+      "field_obstacles": 150,
+      "boundary_obstacles": 4,
+      "direct_clearance_m": -1.1799999999999937,
+      "straight_line_blocked": true,
+      "review_duration_s": 45.0,
+      "topology": {
+        "validation": "3D occupancy A* metrics only; path coordinates are discarded",
+        "xy_resolution_m": 1.0,
+        "z_resolution_m": 0.5,
+        "clearance_m": 0.35,
+        "snapshots": [
+          {
+            "time_s": 0.0,
+            "reachable": true,
+            "astar_path_length_m": 99.0,
+            "detour_ratio": 1.03125,
+            "astar_expanded": 6000,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 10.0,
+            "reachable": true,
+            "astar_path_length_m": 99.06449510224598,
+            "detour_ratio": 1.031921823981729,
+            "astar_expanded": 6215,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 20.0,
+            "reachable": true,
+            "astar_path_length_m": 99.0,
+            "detour_ratio": 1.03125,
+            "astar_expanded": 6006,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 30.0,
+            "reachable": true,
+            "astar_path_length_m": 99.0,
+            "detour_ratio": 1.03125,
+            "astar_expanded": 6023,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          },
+          {
+            "time_s": 40.0,
+            "reachable": true,
+            "astar_path_length_m": 99.03224755112299,
+            "detour_ratio": 1.0315859119908646,
+            "astar_expanded": 6119,
+            "full_length_straight_lanes": 0,
+            "longest_clear_straight_run_m": 31.5
+          }
+        ],
+        "all_snapshots_reachable": true,
+        "max_full_length_straight_lanes": 0,
+        "max_clear_straight_run_m": 31.5
+      },
+      "title": "Hybrid long 3D moving gates",
+      "source": "NavRL+P2M",
+      "replay": "D06/2026_09_28-05_23_16.mj_unroll",
+      "files": {
+        "2026_09_28-05_23_16.mj_unroll": "7a714a9217210d8e88d5e533e79b85a17b979042e4f3688090327fc691ddac43",
+        "scene.xml": "9038ff53c178c59f6c4f63a4502c72a0f1c73d65c868ab466c0de0330f204460",
+        "rscope_meta.pkl": "d0f62d72a13b3c475254ea39c23d0808175f4e7e3ddb19620339ad9d56ea2419",
+        "scene-definition.json": "842cd10d6af3c0467ee5180849f55c876646005136bb3553785c6fb4a51063f4",
+        "components.json": "14443fa6f35d0d7ee76a27cc30ba2165612cbf9a44e553c53959ea52d9cb1aea"
+      },
+      "reference_route": "none",
+      "review_drone_motion": "drone held at start; no reference or oracle route"
+    }
+  ]
+}
