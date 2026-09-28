@@ -30,6 +30,7 @@
 与`scripts/summarize_pointcloud.py`独立最终验收入口，新增13项汇总证据测试通过。
 默认完整验收需要50000更新和24格最终测试；阶段产物通过`--allow-stage`明确登记。
 整库CPU回归按定型后的汇总测试重新执行，结果写入`tmp/pointcloud/full-suite-20260928.log`及同名XML。
+当前回归会话62596，源码3077ce8，运行状态/最终退出码见`tmp/pointcloud/full-suite-run.json`。
 原收集版本会话42352在52项通过后主动结束，保留到`full-suite-superseded-20260928.*`，用于区分两次验证。
 已设置每小时完成条件检查，完整训练/冻结评测结束后依据实际产物生成和交付最终结果。
 

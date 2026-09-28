@@ -97,3 +97,8 @@ AST核对advance_checked/make_rollout/summarize_trace/build_commands保持一致
 日志summary-review-{red,green}.log；生产训练/评测和协调器源码摘要持续保持原值。
 首轮全库CPU测试在新增汇总用例定型前已收集测试，因收集版本落后主动以SIGINT结束，52项通过、退出码2；
 保留原日志/XML与full-suite-restart-reason.json，随后使用冻结后的测试文件重新执行全库回归。
+
+11:09 UTC独立汇总与来源复核提交3077ce8，13项测试通过；CSV输出规范化为LF，原始实验产物保持字节不变。
+全库CPU回归重新启动，会话62596，依据3077ce8源码；状态与退出码记录tmp/pointcloud/full-suite-run.json。
+11:10 UTC原训练进程继续至2620/50000更新、13414400交互；剩余计算时间估计24.13小时。
+本轮交付资料为当前模块配置与首阶段负结果；完整训练及最终24格评测仍由原协调器按既定协议接续执行。
