@@ -1,64 +1,144 @@
 # Drone Playground
 
-基于 Crazyflow 的无人机学习与优化控制研究平台。Hydra组合策略、控制器、动力学、
-场景、观测及任务，训练使用Brax/JAX和同一体系的LOTF原生BPTT适配，轨迹查看使用rscope。
-Crazyflow配方使用Crazyflie，LOTF配方保留作者原机型。P1/P2 已获用户验收；P3/P4 完成24格跟踪实验、
-三算法竞速训练与两种真实优化控制的独立评测，29项实验中25项达到当前门槛。
-PPO/APG竞速成功；SHAC竞速的低分及全部训练证据保留。
+**A LEGO-like, composable UAV research platform for differentiable learning, planning, and control.**
 
-## 从这里开始
+Drone Playground is built on top of [Crazyflow](https://github.com/learnsyslab/crazyflow) and turns a UAV experiment into interchangeable research modules. A policy or planner, controller, forward dynamics model, backward/gradient model, scene, sensor, task, objective, and evaluation protocol can be selected independently and composed through one experiment configuration.
 
-- [当前进度与下一步](docs/status.md)
-- [已接受的范围与规格](.scratch/drone-platform/spec.md)
-- [阶段进度表](.scratch/drone-platform/map.md)
-- [模块设计](docs/architecture.md)
-- [可组合架构与LOTF训练规格](.scratch/composable-flight/spec.md)
-- [组合架构的模块工作地图](.scratch/composable-flight/map.md)
-- [评测与交付标准](docs/evaluation.md)
-- [运行与远程查看](docs/runbook.md)
-- [智能体执行与交接](docs/agents/workflow.md)
-- [来源及复用清单](docs/research/references.md)
-- [P3/P4 完整结果与检查点](docs/verification/p3-p4-results.md)
-- [LOTF悬停、八字及模块化交付](docs/verification/composable-lotf-delivery.md)
-- [P5 感知导航规格](.scratch/p5-navigation/spec.md)
-- [P5 模块工程验收](docs/verification/p5-implementation-review.md)
-- [P5 正式矩阵与完成状态](docs/verification/p5-results-v2/report.md)
+The main research goal is to make **learning-based** and **optimization-based** methods comparable without forcing every method into the same implementation. Experiments can deliberately share the same controller, dynamics, scene, observations, and evaluator for controlled comparisons, or preserve a method's native controller/planner stack when that is part of the method being studied.
 
-## 项目位置
+> Research preview. The platform is under active development; completed experiments, negative results, protocol changes, and known limitations are retained as reproducible evidence rather than hidden behind a polished benchmark score.
 
-本项目与 `../crazyflow/` 并列，各有独立 Git 历史。Crazyflow 提供仿真、动力学和控制器；
-这里保存任务适配、训练扩展、优化控制接入、评测及记录。
+## Build experiments like LEGO
 
-## 首版交付
+```mermaid
+flowchart LR
+    S[Scene] --> P[Sensor / Observation]
+    T[Task / Goal] --> P
 
-轨迹任务采用 Crazyflow 八字和 LSY 随机样条；竞速采用 LSY 原生门序与判定。
-静态、动态导航均在首版范围内，状态和虚拟 MID-360 优先。PPO、APG/BPTT、SHAC 使用
-同一 JAX 学习体系；优化方法先接已有采样 MPC 与 LSY AttitudeMPC。
+    P --> M{Policy / Planner}
+    M --> L[Learning-based\nPPO · APG/BPTT · SHAC · D.VA]
+    M --> O[Optimization-based\nSampling MPC · Attitude MPC · EGO · SUPER]
 
-算法是否接通、完整实验是否跑完、策略是否达标分别记录。已继承的 Brax 短程测试只证明接入能力。
-项目交付还包含可加载的成功策略、独立评测结果和可远程重放的完整轨迹。
+    L --> C{Controller}
+    O --> C
+    C --> D{Forward Dynamics}
+    D --> X[UAV State]
+    X --> P
 
-## 当前可用的内容
-
-`pixi run experiment`、`train`、`evaluate`、`simulate`、`demo`、`replay`、`metrics`、`status` 已有真实执行入口。
-操作见 [运行手册](docs/runbook.md)，检查点重载结果见
-[独立评测](docs/verification/p2-independent-evaluation.md)，观察链证据见
-[P1 观察验收](docs/verification/p1-observation-checks.md)。
-
-当前结果覆盖四种动力学、状态与参考轨迹观测、训练种子0，以及原生扰动下的固定赛道。
-三种学习方法和两种优化控制均已接通。P5 已接入静态/动态导航、虚拟 D435/MID360、
-PPO/D.VA 和外部 ROS 原生 EGO-Planner/SUPER；完整预算与评测完成度以 P5 矩阵报告为准。
-多训练种子仍属后续研究范围。
-
-可组合架构已经迁移现有任务、控制器、网络、动力学和评测。LOTF高保真前向＋解析反向＋BPTT
-已完成悬停600万、八字2250万交互，独立留出均128/128完整回合；悬停最后一秒误差0.07697米，
-八字全程误差0.18475米。查看原记录即可复核，使用新运行名才会启动新的训练。
-
-```bash
-pixi run experiment --cfg job experiment=lotf_hybrid_hover
-pixi run train experiment=lotf_hybrid_hover run_id=my-new-hover
-pixi run train experiment=lotf_hybrid_tracking run_id=my-new-tracking
+    B[Backward / Gradient Model] -. training gradient .-> L
+    E[Task Events / Evaluator] --> R[Metrics · Checkpoints · Replay]
+    X --> E
+    S --> E
 ```
 
-LOTF模块直接复用固定GPLv3子模块，源码和来源见`THIRD_PARTY_NOTICES.md`。
-P5 使用独立规划器工作进程；在线适应和实机部署另列后续范围。
+The same method can therefore be studied under different physical models or controllers, while different methods can be evaluated under the same external task protocol. The platform also supports a second mode in which a complete native method stack is kept intact and only the external task, scene, and evaluation rules are shared.
+
+| Module slot | Current examples |
+| --- | --- |
+| Policy / planner | PPO, APG/BPTT, SHAC, D.VA, sampling MPC, LSY AttitudeMPC, EGO-Planner, SUPER |
+| Controller | Crazyflow attitude/control chain, trajectory tracking, LSY native controller, LOTF native controller |
+| Forward dynamics | Four Crazyflow dynamics models, LOTF high-fidelity/native dynamics |
+| Backward model | Direct JAX gradients, LOTF analytical surrogate gradients |
+| Perception | State/reference observations, D435-style depth, MID-360 LiDAR |
+| Scene / task | Figure-eight tracking, random splines, racing, static navigation, dynamic navigation |
+| Evaluation | Frozen checkpoints, independent development/held-out trials, full-denominator failure accounting, RScope replay |
+
+## What this project adds
+
+### 1. Composable research architecture
+
+Hydra configurations select real implementation modules rather than only changing scalar hyperparameters. Policies/planners, controllers, dynamics, observations, scenes, tasks, learning algorithms, networks, objectives, and training/evaluation settings are assembled through a common composition layer with explicit command, state, unit, and coordinate-frame contracts.
+
+This makes questions such as the following directly testable:
+
+- Does a learning policy still work when only the forward dynamics model changes?
+- What changes when two methods share the same low-level controller?
+- How does a differentiable training model transfer to a higher-fidelity evaluation model?
+- How do a learned policy and an optimization planner behave under the same scene, collision rules, timing, and held-out trials?
+
+### 2. Differentiable learning with explicit forward/backward choices
+
+The JAX/Brax training path supports direct differentiable dynamics and short-/full-horizon policy optimization. The LOTF integration additionally separates the **forward model used to generate states** from the **backward model used to propagate gradients**, enabling high-fidelity forward simulation with analytical surrogate gradients. D.VA is integrated as a perception-policy training path while keeping the current depth/LiDAR sampling operation outside the gradient path.
+
+The platform records which forward, backward, prediction, and evaluation models are actually used in each run so that a differentiable experiment is defined by its executed model chain rather than by an algorithm label alone.
+
+### 3. One evaluation layer for learning and optimization
+
+Learning policies and optimization-based planners use the same task events, collision semantics, timing, run recorder, independent evaluation, and replay format whenever the comparison is intended to be controlled. Native planners can also run through isolated ROS workers while consuming the same simulated sensors and odometry, which keeps their original mapping/planning logic outside the training process.
+
+The project distinguishes three claims: an implementation can be connected correctly, an experimental budget can be completed reproducibly, and a policy can achieve useful task performance. Failed or low-performing policies remain in the result set.
+
+## Representative results
+
+The platform already has complete closed-loop results for tracking, racing, differentiable training, and optimization control. The current perception-navigation study is still active.
+
+| Experiment | Held-out result |
+| --- | ---: |
+| LOTF hybrid-gradient hovering | 128/128 complete; last-second position RMSE 0.077 m |
+| LOTF hybrid-gradient figure-eight tracking | 128/128 complete; full-trajectory position RMSE 0.185 m |
+| Racing PPO / APG | 128/128 complete for each trained policy |
+| Racing sampling MPC | 128/128 complete |
+| Racing LSY AttitudeMPC | 117/128 complete; 11 collisions retained |
+| Static navigation with SUPER | 377/384 reached the goal |
+| Dynamic navigation with SUPER | 379/384 reached the goal |
+
+<p align="center">
+  <img src="docs/verification/composable-lotf-figures/lotf-hybrid-tracking-seed0-v1-trajectory.png" width="48%" alt="LOTF hybrid-gradient trajectory tracking" />
+  <img src="docs/verification/p5-results-v2/heldout-matrix.png" width="48%" alt="Perception navigation held-out matrix" />
+</p>
+
+Full evidence is kept in [P3/P4 results](docs/verification/p3-p4-results.md), [LOTF delivery](docs/verification/composable-lotf-delivery.md), and the current [P5 perception-navigation matrix](docs/verification/p5-results-v2/report.md).
+
+## 30-second smoke test
+
+After the environment is installed, this CPU-only command runs one second of real Crazyflow flight, records 50 simulation frames, and writes an RScope replay:
+
+```bash
+env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run demo \
+  --run-id quick-demo --duration 1 --device cpu
+```
+
+On the current development machine the command completes successfully in about 5 seconds after startup/compilation and reports finite states plus a trajectory RMSE. To inspect a full experiment composition without training:
+
+```bash
+pixi run experiment --cfg job experiment=p5_static_lidar_ppo
+```
+
+### Environment setup
+
+The current development layout keeps Crazyflow as a sibling repository and pins LOTF as a Git submodule:
+
+```bash
+git clone https://github.com/learnsyslab/crazyflow.git ../crazyflow
+git -C ../crazyflow checkout 36f584d114d9d331f0cee0fe4b9066f821c0fbfd
+git submodule update --init --recursive
+pixi install
+```
+
+The public release will keep this dependency relationship explicit rather than presenting Crazyflow as code authored in this repository.
+
+## Current research scope
+
+Current implemented paths include four Crazyflow dynamics models; PPO, APG/BPTT, SHAC, D.VA; sampling MPC and LSY AttitudeMPC; LOTF high-fidelity-forward/surrogate-backward training; idealized D435 depth and MID-360 LiDAR; and isolated native EGO-Planner/SUPER workers for static and dynamic navigation.
+
+The perception-navigation learning baselines are an active research problem. In the current single-seed P5 matrix, PPO/D.VA navigation performance is substantially below the native planning baselines. These runs are retained because the platform is intended to expose failure modes and model/training differences as well as successful policies. Multi-seed navigation results, real-sensor noise/state estimation, online adaptation, and real-UAV deployment remain future work.
+
+## Relationship to Crazyflow and other upstream projects
+
+Drone Playground has its own Git history. It **uses and extends Crazyflow as a dependency** for UAV simulation, dynamics, and control rather than claiming Crazyflow as original work. Additional task/controller components are adapted from LSY Drone Racing, LOTF is pinned as a GPLv3 submodule, D.VA is independently adapted to the JAX/Brax stack, and EGO-Planner/SUPER are executed as external native planner processes.
+
+Exact upstream commits, reused files, modifications, and license notices are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Reproducibility and documentation
+
+- [Architecture](docs/architecture.md) — module contracts, composition, forward/backward models, P5 perception-navigation execution chain.
+- [Evaluation protocol](docs/evaluation.md) — engineering validation, experiment completion, policy quality, held-out evaluation, and failure accounting.
+- [Runbook](docs/runbook.md) — train, evaluate, simulate, replay, inspect metrics, and reproduce verification steps.
+- [Current development status](docs/status.md) — active work, completed stages, blockers, and exact evidence locations.
+- [Research/source inventory](docs/research/references.md) — external projects and what is reused from each one.
+
+Every formal run records the resolved configuration, code/dependency identity, process identity, budget, scalar metrics, checkpoints, per-episode outcomes, and replay data required by its evaluation stage.
+
+## License
+
+Public-release licensing is being finalized before the first GitHub release because the repository contains both original code and GPLv3-derived LOTF integration code. Third-party components retain their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). A root project license will be added before publication.

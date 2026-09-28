@@ -1,12 +1,32 @@
-# 外部实现来源
+# Third-Party Notices
 
-Crazyflow 以依赖调用，使用其原生任务函数、控制与动力学。当前提交
-`36f584d114d9d331f0cee0fe4b9066f821c0fbfd`，许可为 MIT。
+This document records third-party source code, algorithm adaptations, runtime dependencies, and external planner integrations used by Drone Playground. Each upstream component retains its original copyright and license terms. A project-level root license does not replace the licenses attached to third-party files or submodules.
 
-`policies/planning.py` 的随机参考构造及 `tasks/tracking.py` 的初态来自 learnsyslab/lsy_drone_racing
-`control/train_rl.py::RandTrajEnv`，提交 `b1f5b36adb8e08e8e2adea85de790bd0e0a1d118`。
-复用其 10 个构造点、前三点、平移尺度、三次样条及起飞导数；随机数改为每次运行私有的种子。
-当前原始源码的全局随机数与旧 reset 签名通过本项目适配，任务时序和物理含义保留。
+The public-release license for original Drone Playground code is being finalized before the first GitHub release. The main licensing constraint is the LOTF integration: `third_party/learning_on_the_fly` is GPLv3, and `src/drone_playground/learning/lotf_bptt.py` is explicitly adapted from its `lotf/algos/bptt.py`. The current package also imports LOTF modules directly. This boundary must remain visible in any public distribution.
+
+| Component | How it is used here | Pinned identity | Upstream license |
+|---|---|---|---|
+| Crazyflow | Runtime/development dependency for UAV simulation, dynamics and control | `36f584d114d9d331f0cee0fe4b9066f821c0fbfd` | MIT |
+| LSY Drone Racing | Selected task/controller source preserved with provenance | `b1f5b36adb8e08e8e2adea85de790bd0e0a1d118` | MIT |
+| Learning on the Fly (LOTF) | Pinned Git submodule plus derived BPTT/gradient integration | `cba6e5370773ace8a08107f02810eecabf16c793` | GPLv3 |
+| D.VA | Algorithm semantics adapted into the JAX/Brax stack; upstream source is not copied as a runtime package | `01b2be4986a0851a952aa860afb4a5958e6676e2` | MIT |
+| EGO-Planner | External ROS1 native planner process | `bfda51284c8c1b476043255a8145ef925a3778a5` | GPLv3 |
+| SUPER | External ROS1 native planner process | `2ad3419c127a617c6d7df6925e81a14175a9c096` | LGPLv3-or-later headers in the planner sources used here |
+| MuJoCo-LiDAR | Installed dependency for the MID-360 scan pattern | `0.3.5` | MIT |
+
+The detailed provenance below is retained because several integrations preserve or adapt upstream implementation details rather than merely citing a paper.
+
+## Crazyflow and LSY Drone Racing
+
+Crazyflow is used as a dependency for its native task functions, controllers, and dynamics. The
+pinned development identity is `36f584d114d9d331f0cee0fe4b9066f821c0fbfd`, under the MIT License.
+
+The random-reference construction in `policies/planning.py` and the initial-state logic in
+`tasks/tracking.py` originate from `learnsyslab/lsy_drone_racing`, specifically
+`control/train_rl.py::RandTrajEnv` at commit `b1f5b36adb8e08e8e2adea85de790bd0e0a1d118`.
+The integration preserves its ten construction points, first-three-point use, translation scale,
+cubic spline, and takeoff derivatives. Global randomness and the historical reset signature are
+adapted to per-run seeded execution while preserving the task timing and physical meaning.
 
 MIT License
 
@@ -30,48 +50,63 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## P3/P4 增补
+## P3/P4 additions
 
-`tasks/lsy_upstream/` 保存同一 LSY 提交的 `race_core.py`、`randomize.py`、`utils.py`、
-Level 0 配置和门/障碍资产。`controllers/lsy_upstream/` 保存其 `attitude_mpc.py` 与 Controller。
-两个目录均包含原始 LICENSE、来源提交、原文件 SHA256 和最小兼容差异文件。
-兼容修改限于 Crazyflow 参数导入和独立 acados 生成目录，优化矩阵、时域和原始推力系数保留。
+`tasks/lsy_upstream/` preserves `race_core.py`, `randomize.py`, `utils.py`, the Level 0
+configuration, and gate/obstacle assets from the same LSY commit. `controllers/lsy_upstream/`
+preserves its `attitude_mpc.py` and Controller implementation. Both directories keep the original
+LICENSE, source commit, source-file SHA256 records, and minimal compatibility patches. Compatibility
+changes are limited to Crazyflow parameter imports and an isolated acados generation directory;
+the optimization matrices, horizon, and original thrust coefficients are preserved.
 
-`controllers/sampling.py` 基于上述 Crazyflow 提交的 `examples/control/sampling.py`
-精英均值采样控制算法。保留候选噪声、精英均值更新、暖启动和推力估计器；任务参考和杆状障碍
-由 LSY 赛道提供，采样数作为明确运行参数。它的身份是采样 MPC，不标称论文完整 MPPI/iCEM 复现。
+`controllers/sampling.py` is based on the elite-mean sampling controller in Crazyflow
+`examples/control/sampling.py` at the pinned Crazyflow identity above. It retains candidate noise,
+elite-mean updates, warm starts, and the thrust estimator. Task references and pole obstacles come
+from the LSY race task, and the sample count is an explicit run parameter. This integration is
+identified as sampling MPC and is not presented as a complete reproduction of MPPI or iCEM.
 
-`learning/shac.py` 是基于 SHAC 论文目标的独立 JAX 实现，数学依据为
-Xu et al., Accelerated Policy Learning with Parallel Differentiable Simulation (ICLR 2022)，
-官方算法参考 https://github.com/NVlabs/DiffRL 。复用 Brax 网络、动作分布和归一化，
-不复制该仓库的 PyTorch 实现，也不将其作为运行依赖。
+`learning/shac.py` is an independent JAX implementation of the SHAC objective described by
+Xu et al., *Accelerated Policy Learning with Parallel Differentiable Simulation* (ICLR 2022), with
+the official algorithm repository at https://github.com/NVlabs/DiffRL used as a reference. The
+implementation reuses Brax networks, action distributions, and normalization; it does not copy the
+repository's PyTorch implementation or use it as a runtime dependency.
 
-acados v0.5.1、HPIPM、BLASFEO、qpOASES 与模板渲染器通过本项目局部构建脚本获取，
-各自许可证保留在下载树中；其二进制和 Python 附加依赖位于忽略的 `tmp/`，未纳入本仓库发布。
+acados v0.5.1, HPIPM, BLASFEO, qpOASES, and template-generation dependencies are obtained by the
+project's local build scripts. Their licenses remain in the downloaded build trees. The binaries
+and auxiliary Python dependencies are stored under ignored `tmp/` paths and are not distributed by
+this repository.
 
 ## Learning on the Fly
 
-原仓库 https://github.com/uzh-rpg/learning_on_the_fly 固定为
-`cba6e5370773ace8a08107f02810eecabf16c793`，作为Git子模块保存在
-`third_party/learning_on_the_fly`。原始GPLv3许可证、作者、配置、CSV与全部来源文件保留。
-该子模块原始文件保持未修改。
+The upstream repository https://github.com/uzh-rpg/learning_on_the_fly is pinned at
+`cba6e5370773ace8a08107f02810eecabf16c793` and stored as the Git submodule
+`third_party/learning_on_the_fly`. Its original GPLv3 license, authorship, configurations, CSV data,
+and source files are retained. The submodule source itself is not modified by this repository.
 
-`learning/lotf_bptt.py` 的损失、时间展开、随机数和Adam更新逻辑改编自该源码的
-`lotf/algos/bptt.py`，属于GPLv3来源的集成代码；`dynamics/gradients.py` 按其自定义JVP
-定义实现，并记录现代JAX的PRNG零切向量兼容修改。模型、控制器、MLP、任务和归一化
-直接调用原仓库实现。原子模块及其衍生部分的许可证信息不由其它上游的MIT声明覆盖。
+`learning/lotf_bptt.py` adapts the loss, time scan, random-key handling, and Adam update logic from
+upstream `lotf/algos/bptt.py`; it is therefore treated as GPLv3-derived integration code.
+`dynamics/gradients.py` implements the upstream custom-JVP definition and records compatibility
+changes required by modern JAX PRNG tangent handling. Models, controllers, the MLP, tasks, and
+normalization are imported directly from the upstream package. Permissive licenses used elsewhere
+in Drone Playground do not replace the GPLv3 terms that apply to the LOTF submodule and derived
+integration code.
 
-本地研究集成沿用当前权限；外部发布/打包不在本轮授权中。
+## P5 perception and navigation
 
-## P5 感知导航
+`learning/dva.py` implements the JAX/Brax adaptation against HaoxiangYou/D.VA commit
+`01b2be4986a0851a952aa860afb4a5958e6676e2`. It preserves the algorithmic semantics of detached
+observations, differentiable action-dynamics-reward propagation, terminal value estimation, and a
+target critic while using Drone Playground's sensor encoders. The upstream MIT text is stored in
+`docs/licenses/dva-LICENSE.md`. The point-cloud path is a project extension and is not presented as
+a reproduction of a LiDAR method from the original D.VA paper.
 
-`learning/dva.py` 对照 HaoxiangYou/D.VA 的提交
-`01b2be4986a0851a952aa860afb4a5958e6676e2` 实现 JAX/Brax 适配；保留观测 detach、
-可微动作—动力学—奖励、末端价值与 target critic 的算法语义，传感器编码器复用本项目实现。
-原始仓库 MIT 文本保存在 `docs/licenses/dva-LICENSE.md`。点云是本项目扩展，不宣称原论文的 LiDAR 复现。
+EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5` (GPLv3) and SUPER
+`2ad3419c127a617c6d7df6925e81a14175a9c096` execute as external ROS1 processes; their planner
+source code is not copied into this package. The SUPER repository root does not contain a LICENSE
+file at the pinned identity, while the planner source headers used by this project state
+LGPLv3-or-later; those original headers remain in the external build tree. Build scripts select
+upstream ROS1 templates and run targets without modifying the planner algorithms. Drone Playground
+stores only its own process bridge and message adaptation.
 
-EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5`（GPLv3）与 SUPER
-`2ad3419c127a617c6d7df6925e81a14175a9c096` 由外部 ROS1 进程执行，源码未复制入包。
-SUPER 根目录没有 LICENSE 文件，但所用规划源码头部声明 LGPLv3-or-later；原头部保留在外部构建树。
-构建脚本仅选择上游 ROS1 模板和运行目标，未改规划算法；本项目保存自己的进程桥和消息适配。
-MuJoCo-LiDAR 0.3.5 的 MID360 扫描图案通过已锁定依赖调用。场景来源与几何偏差见 P5 来源清单。
+MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. Scene provenance
+and documented geometry deviations are recorded in the P5 source inventory.
