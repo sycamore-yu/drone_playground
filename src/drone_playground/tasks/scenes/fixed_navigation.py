@@ -34,7 +34,7 @@ from .navigation import (
     _stack_instances,
 )
 
-DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/p5_fixed_catalog_v4.json"
+DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/p5_fixed_catalog_v5.json"
 
 MOTION_BY_NAME = {
     "static": MOTION_STATIC,
@@ -435,14 +435,22 @@ def validate_fixed_catalog(
 
     Legacy catalogs are still accepted through their historical
     ``inspection_path`` evidence so old review artifacts remain reconstructable.
-    New route-free catalogs must instead pass A* connectivity and straight-lane
-    shortcut checks without storing an oracle path.
+    New route-free catalogs instead pass A* connectivity without storing an
+    oracle path. A scene may explicitly relax straight-lane limits when source
+    fidelity requires preserving the original benchmark geometry.
     """
 
     reports = []
     for scene in catalog["scenes"]:
         report = inspect_fixed_scene(catalog, scene)
-        if not report["straight_line_blocked"]:
+        acceptance = scene.get("topology_acceptance", {})
+        require_direct_blocked = acceptance.get("require_direct_route_blocked", True)
+        require_reachable = acceptance.get("require_reachable", True)
+        max_full_lanes = acceptance.get("max_full_length_straight_lanes", 0)
+        max_straight_run = acceptance.get(
+            "max_clear_straight_run_m", maximum_clear_straight_run_m
+        )
+        if require_direct_blocked and not report["straight_line_blocked"]:
             raise ValueError(f"fixed scene does not block the direct route: {scene['id']}")
         if "inspection_route_min_clearance_m" in report:
             if report["inspection_route_min_clearance_m"] < minimum_route_clearance_m:
@@ -452,15 +460,21 @@ def validate_fixed_catalog(
                 )
         else:
             topology = report["topology"]
-            if not topology["all_snapshots_reachable"]:
+            if require_reachable and not topology["all_snapshots_reachable"]:
                 raise ValueError(
                     f"fixed scene is disconnected in a validation snapshot: {scene['id']}"
                 )
-            if topology["max_full_length_straight_lanes"]:
+            if (
+                max_full_lanes is not None
+                and topology["max_full_length_straight_lanes"] > max_full_lanes
+            ):
                 raise ValueError(
                     f"fixed scene contains a full-length straight shortcut: {scene['id']}"
                 )
-            if topology["max_clear_straight_run_m"] > maximum_clear_straight_run_m:
+            if (
+                max_straight_run is not None
+                and topology["max_clear_straight_run_m"] > max_straight_run
+            ):
                 raise ValueError(
                     f"fixed scene contains an overlong straight shortcut: {scene['id']} "
                     f"({topology['max_clear_straight_run_m']:.1f} m)"

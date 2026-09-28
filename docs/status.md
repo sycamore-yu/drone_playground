@@ -33,6 +33,17 @@ SUPER PCD 语义见 `docs/research/p5-scene-reference-comparison.md`。仍等待
 当前审阅目录：`experiments/p5-fixed-scenes-review-v4/`。
 当前固定场景默认入口已经切换到 `configs/scene/p5_fixed_catalog_v4.json`；V1/V2/V3 仅保留用于历史重建。
 
+第四轮场景修订建立 `p5-fixed-candidate-v5-sando-aligned`。正式主基准压缩为六张：
+静态/动态 × Easy/Medium/Hard。静态三张直接转换固定 SANDO `easy_forest`、`medium_forest`、
+`hard_forest`，分别为 41/81/162 根圆柱；动态三张采用 SANDO 50/100/200 总障碍和 65% 动态比例，
+对应 32/65/130 个 0.8 m 三叶结动态立方体，其余为 1.0–1.5 m 半径静态圆柱。S06/D06 作为额外
+三维扩展继续保留；D06 的四根长横杆现改为独立竖直往复运动，因此 D06 移动障碍由 24 增至 28。
+八张场景的起终点直线均被阻断，所有静态/动态拓扑快照均可达。SANDO 动态原始分布仍存在其他
+横向固定直线通道，V5 对主六场景不插入人工 blocker，以保持来源难度定义。默认固定场景入口与
+默认审阅导出已切到 `configs/scene/p5_fixed_catalog_v5.json` 和 `experiments/p5-fixed-scenes-review-v5/`。
+机器可读验收证据位于 `docs/verification/p5-fixed-scenes-review-v5.json`；八张回放 XML 均重新编译通过，
+且目录生成脚本两次运行得到相同的 catalog SHA256 `5c4c52fb1a20b3fcb3b4e754ede8b7a376317e66980fdf3a30c723168530b908`。
+
 2026-09-28 阶段性收尾：用户要求整理交接并协助处理问题。本轮按此要求完成状态核验与证据整理。
 代码基线为 `4c91ed7486f6050d5cef6a3dfb6522822f440e57`，原会话标识 `p5-main`。
 01:44 UTC 进程核验：P5 训练、补采和 ROS 规划进程均已退出；RTX 4090 利用率 0%、显存 146 MiB。

@@ -32,6 +32,13 @@
 > 最大连续无障碍段不超过 35 m。当前候选为 `configs/scene/p5_fixed_catalog_v4.json`，审阅集为
 > `experiments/p5-fixed-scenes-review-v4/`。固定场景默认加载与默认审阅导出入口均指向 v4。
 
+> **2026-09-28 第四次场景审阅修订。** v5 将正式基准收敛为 SANDO 对齐的六张场景：
+> static/dynamic × easy/medium/hard。静态直接转换 SANDO 固定森林 41/81/162 根圆柱；动态采用
+> 50/100/200 总障碍、65% 动态比例，因此有 32/65/130 个动态立方体。S06 与 D06 继续作为
+> 额外 3-D extension 保留，D06 四根长横杆改为竖直往复运动。主六场景只做边界、起终点安全和
+> 可达性筛选，不增加人工 anti-straight blocker。默认目录为 `configs/scene/p5_fixed_catalog_v5.json`，
+> 审阅集为 `experiments/p5-fixed-scenes-review-v5/`。
+
 ## 1. 目标、已确认选择与交付范围
 
 把现有状态/参考轨迹平台扩展到感知导航，继续使用现有可组合模块：

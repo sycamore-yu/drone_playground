@@ -6,6 +6,7 @@ import numpy as np
 
 from drone_playground.tasks.scenes.fixed_navigation import (
     build_fixed_bank,
+    catalog_obstacle,
     load_fixed_catalog,
     validate_fixed_catalog,
 )
@@ -14,46 +15,46 @@ from drone_playground.tasks.scenes.navigation import MOTION_STATIC
 
 def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
     catalog = load_fixed_catalog()
-    assert catalog["version"] == "p5-fixed-candidate-v4-route-free"
+    assert catalog["version"] == "p5-fixed-candidate-v5-sando-aligned"
     ids = [scene["id"] for scene in catalog["scenes"]]
     assert ids == [
         "S01",
         "S02",
         "S03",
-        "S04",
-        "S05",
-        "S06",
         "D01",
         "D02",
         "D03",
-        "D04",
-        "D05",
+        "S06",
         "D06",
     ]
-    assert {scene["source"] for scene in catalog["scenes"]} >= {
-        "NavRL",
-        "P2M",
-        "MIGHTY+SANDO",
-        "manual",
-    }
+    primary = [scene for scene in catalog["scenes"] if scene["benchmark_role"] == "primary"]
+    assert len(primary) == 6
+    assert all(scene["source"] == "SANDO" for scene in primary)
     assert catalog["references"]["NavRL"]["license"] == "MIT"
     assert catalog["references"]["P2M"]["license"] == "MIT"
 
 
 def test_every_candidate_blocks_direct_flight_and_has_route_free_connectivity():
-    reports = validate_fixed_catalog(load_fixed_catalog(), maximum_clear_straight_run_m=35.0)
-    assert len(reports) == 12
+    catalog = load_fixed_catalog()
+    reports = validate_fixed_catalog(catalog, maximum_clear_straight_run_m=35.0)
+    assert len(reports) == 8
     assert all(report["straight_line_blocked"] for report in reports)
     for report in reports:
         topology = report["topology"]
         assert topology["all_snapshots_reachable"]
-        assert topology["max_full_length_straight_lanes"] == 0
-        assert topology["max_clear_straight_run_m"] <= 35.0
+        scene = next(scene for scene in catalog["scenes"] if scene["id"] == report["scene_id"])
+        acceptance = scene["topology_acceptance"]
+        max_lanes = acceptance["max_full_length_straight_lanes"]
+        max_run = acceptance["max_clear_straight_run_m"]
+        if max_lanes is not None:
+            assert topology["max_full_length_straight_lanes"] <= max_lanes
+        if max_run is not None:
+            assert topology["max_clear_straight_run_m"] <= max_run
 
 
 def test_fixed_bank_is_exact_and_does_not_generate_extra_obstacles():
     catalog = load_fixed_catalog()
-    ids = ["S01", "S04", "D01", "D04"]
+    ids = ["S01", "S03", "D01", "D03"]
     bank, manifest = build_fixed_bank(catalog, ids)
     assert bank.num_instances == len(ids)
     assert tuple(bank.subtype_names) == tuple(ids)
@@ -79,11 +80,46 @@ def test_static_and_dynamic_motion_identity_is_explicit():
 
 
 def test_default_catalog_is_a_committed_route_free_human_readable_file():
-    path = Path("configs/scene/p5_fixed_catalog_v4.json")
+    path = Path("configs/scene/p5_fixed_catalog_v5.json")
     assert path.is_file()
     text = path.read_text()
     assert '"inspection_path"' not in text
     assert '"P2M"' in text and '"NavRL"' in text
+
+
+def test_v5_primary_scenes_match_sando_difficulty_protocol():
+    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v5.json")
+    by_id = {scene["id"]: scene for scene in catalog["scenes"]}
+    assert [len(by_id[scene_id]["obstacles"]) for scene_id in ("S01", "S02", "S03")] == [
+        41,
+        81,
+        162,
+    ]
+    assert [len(by_id[scene_id]["obstacles"]) for scene_id in ("D01", "D02", "D03")] == [
+        50,
+        100,
+        200,
+    ]
+    assert [
+        sum(obstacle.get("motion", "static") != "static" for obstacle in by_id[scene_id]["obstacles"])
+        for scene_id in ("D01", "D02", "D03")
+    ] == [32, 65, 130]
+
+
+def test_v5_retains_3d_extensions_and_moves_d06_crossbars():
+    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v5.json")
+    by_id = {scene["id"]: scene for scene in catalog["scenes"]}
+    assert by_id["S06"]["benchmark_role"] == "3d-extension"
+    assert by_id["D06"]["benchmark_role"] == "3d-extension"
+    bars = [
+        obstacle for obstacle in by_id["D06"]["obstacles"] if obstacle.get("role") == "moving_crossbar"
+    ]
+    assert len(bars) == 4
+    assert all(obstacle["motion"] == "linear_bounce" for obstacle in bars)
+    for payload in bars:
+        obstacle = catalog_obstacle(payload)
+        positions = np.asarray([obstacle.position(time) for time in (0.0, 2.0, 4.0)])
+        assert np.ptp(positions[:, 2]) > 0.1
 
 
 def test_v2_catalog_is_100_by_40_and_uses_half_to_six_meter_flight_bounds():
