@@ -1,11 +1,11 @@
-"""Fixed, numbered P5 navigation scenes for manual review and later freezing.
+"""Navigation8: the accepted fixed P5 navigation scene catalog.
 
 The random density generator remains readable for historical experiment
-reconstruction, but current benchmark candidates are explicit committed scene
-catalogs. Legacy v1-v3 catalogs contain an ``inspection_path`` used only for
-review. Route-free v4 deliberately stores no oracle/reference trajectory:
-connectivity is checked with offline 3-D occupancy A* and the resulting path
-coordinates are discarded.
+reconstruction. Navigation8 is the current eight-scene authority: six
+SANDO-aligned primary scenes plus S06/D06 3-D extensions. Legacy v1-v3
+catalogs contain an ``inspection_path`` used only for review. Route-free v4 and
+Navigation8 store no oracle/reference trajectory; connectivity is checked with
+offline 3-D occupancy A* and the resulting path coordinates are discarded.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import heapq
 import itertools
 import json
 import math
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,7 @@ from .navigation import (
     _stack_instances,
 )
 
-DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/p5_fixed_catalog_v5.json"
+DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/navigation8.json"
 
 MOTION_BY_NAME = {
     "static": MOTION_STATIC,
@@ -539,3 +540,56 @@ def build_fixed_bank(
         "scenes": [{**scene, "review": reports[scene["id"]]} for scene in selected],
     }
     return bank, manifest
+
+
+@dataclass(frozen=True)
+class Navigation8Scene:
+    """Hydra scene adapter for the accepted Navigation8 fixed catalog.
+
+    The catalog has four static and four dynamic scenes. Existing P5 training
+    and evaluation code expects an equal number of instances per difficulty,
+    so each view expands its fixed IDs deterministically: Easy and Medium repeat
+    their one scene, while Hard alternates the primary hard scene and S06/D06.
+    Geometry never depends on the split seed.
+    """
+
+    dynamic: bool
+    scene_ids: tuple[str, ...]
+    name: str = "navigation8"
+    families: tuple[str, ...] = ("navigation8",)
+    catalog_path: str | None = None
+
+    def build(self, seed: int, per_difficulty: int) -> tuple[SceneBank, dict[str, Any]]:
+        if per_difficulty < 1:
+            raise ValueError("Navigation8 requires at least one instance per difficulty")
+        catalog = load_fixed_catalog(self.catalog_path or DEFAULT_CATALOG)
+        selected = [scene_by_id(catalog, scene_id) for scene_id in self.scene_ids]
+        if any(bool(scene["dynamic"]) != self.dynamic for scene in selected):
+            raise ValueError("Navigation8 view mixes static and dynamic scene IDs")
+
+        grouped: dict[str, list[str]] = {difficulty: [] for difficulty in DIFFICULTIES}
+        for scene in selected:
+            grouped[scene["difficulty"]].append(scene["id"])
+        missing = [difficulty for difficulty, ids in grouped.items() if not ids]
+        if missing:
+            raise ValueError(f"Navigation8 view has no scenes for difficulties: {missing}")
+
+        expanded: list[str] = []
+        for difficulty in DIFFICULTIES:
+            ids = grouped[difficulty]
+            expanded.extend(ids[index % len(ids)] for index in range(per_difficulty))
+
+        reports = {report["scene_id"]: report for report in validate_fixed_catalog(catalog)}
+        bank, manifest = build_fixed_bank(catalog, expanded, validated_reports=reports)
+        manifest.update(
+            name=self.name,
+            catalog="navigation8",
+            view="dynamic" if self.dynamic else "static",
+            accepted_scene_ids=list(self.scene_ids),
+            instance_expansion=(
+                "repeat fixed IDs within each difficulty; hard alternates primary and 3-D extension"
+            ),
+            requested_seed=int(seed),
+            geometry_seed_role="none; Navigation8 geometry is fixed across splits",
+        )
+        return bank, manifest

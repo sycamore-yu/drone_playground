@@ -42,7 +42,7 @@ The same method can therefore be studied under different physical models or cont
 | Forward dynamics | Four Crazyflow dynamics models, LOTF high-fidelity/native dynamics |
 | Backward model | Direct JAX gradients, LOTF analytical surrogate gradients |
 | Perception | State/reference observations, D435-style depth, MID-360 LiDAR |
-| Scene / task | Figure-eight tracking, random splines, racing, static navigation, dynamic navigation |
+| Scene / task | Figure-eight tracking, random splines, racing, Navigation8 fixed static/dynamic navigation |
 | Evaluation | Frozen checkpoints, independent development/held-out trials, full-denominator failure accounting, RScope replay |
 
 ## What this project adds

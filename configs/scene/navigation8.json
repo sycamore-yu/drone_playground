@@ -1,6 +1,7 @@
 {
-  "version": "p5-fixed-candidate-v5-sando-aligned",
-  "status": "candidate-for-user-rscope-review",
+  "name": "navigation8",
+  "version": "navigation8-v1",
+  "status": "accepted",
   "world": {
     "length_m": 100.0,
     "width_m": 40.0,
@@ -58,7 +59,7 @@
       "commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
       "used_as_reference_for": "long 15x110x6m static/high-speed planner-map configuration"
     },
-    "SANDO_v5_alignment": {
+    "SANDO_navigation8_alignment": {
       "repository": "research_dev/sando/docker/dev-workspace/upstream-93b2eed",
       "snapshot": "93b2eed",
       "static_worlds": {

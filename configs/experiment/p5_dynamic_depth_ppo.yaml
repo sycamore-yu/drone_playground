@@ -4,7 +4,7 @@ defaults:
 - override /algorithm: ppo
 - override /network: perception_ppo
 - override /task: navigation_dynamic
-- override /scene: navigation_dynamic
+- override /scene: navigation8_dynamic
 - override /observation: navigation_depth
 - override /objective: navigation
 - override /policy: neural_navigation

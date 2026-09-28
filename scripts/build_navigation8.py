@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the SANDO-aligned P5 fixed-scene catalog (v5).
+"""Build the accepted Navigation8 fixed-scene catalog.
 
 The six primary scenes are static/dynamic × easy/medium/hard. Static geometry is
 copied from SANDO's pinned easy/medium/hard forest worlds. Dynamic scenes follow
@@ -27,7 +27,7 @@ WORKSPACE = REPO.parents[2]
 SANDO_SNAPSHOT = WORKSPACE / "research_dev/sando/docker/dev-workspace/upstream-93b2eed"
 SANDO_WORLDS = SANDO_SNAPSHOT / "worlds"
 V4_PATH = REPO / "configs/scene/p5_fixed_catalog_v4.json"
-OUTPUT = REPO / "configs/scene/p5_fixed_catalog_v5.json"
+OUTPUT = REPO / "configs/scene/navigation8.json"
 
 WORLD = {
     "length_m": 100.0,
@@ -366,8 +366,9 @@ def main() -> None:
     scenes.extend(retained_extensions(v4))
 
     output = {
-        "version": "p5-fixed-candidate-v5-sando-aligned",
-        "status": "candidate-for-user-rscope-review",
+        "name": "navigation8",
+        "version": "navigation8-v1",
+        "status": "accepted",
         "world": WORLD,
         "design_rules": [
             "Primary benchmark is exactly six scenes: static/dynamic x easy/medium/hard.",
@@ -384,7 +385,7 @@ def main() -> None:
         ],
         "references": {
             **v4["references"],
-            "SANDO_v5_alignment": {
+            "SANDO_navigation8_alignment": {
                 "repository": "research_dev/sando/docker/dev-workspace/upstream-93b2eed",
                 "snapshot": "93b2eed",
                 "static_worlds": SANDO_STATIC_WORLD,

@@ -962,9 +962,9 @@ def _stack_instances(instances: list[dict[str, np.ndarray]]) -> SceneBank:
 
 
 def make_bank(
-    scene: NavigationScene, seed: int, per_difficulty: int
+    scene: Any, seed: int, per_difficulty: int
 ) -> tuple[SceneBank, dict[str, Any]]:
-    """Build a scene bank plus its manifest, ``per_difficulty`` instances each."""
+    """Build a scene bank through the selected scene implementation's contract."""
     return scene.build(seed, per_difficulty)
 
 

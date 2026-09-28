@@ -3,7 +3,9 @@
 from pathlib import Path
 
 import numpy as np
+from hydra.utils import instantiate
 
+from drone_playground.composition import compose_config
 from drone_playground.tasks.scenes.fixed_navigation import (
     build_fixed_bank,
     catalog_obstacle,
@@ -15,7 +17,9 @@ from drone_playground.tasks.scenes.navigation import MOTION_STATIC
 
 def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
     catalog = load_fixed_catalog()
-    assert catalog["version"] == "p5-fixed-candidate-v5-sando-aligned"
+    assert catalog["name"] == "navigation8"
+    assert catalog["version"] == "navigation8-v1"
+    assert catalog["status"] == "accepted"
     ids = [scene["id"] for scene in catalog["scenes"]]
     assert ids == [
         "S01",
@@ -80,15 +84,15 @@ def test_static_and_dynamic_motion_identity_is_explicit():
 
 
 def test_default_catalog_is_a_committed_route_free_human_readable_file():
-    path = Path("configs/scene/p5_fixed_catalog_v5.json")
+    path = Path("configs/scene/navigation8.json")
     assert path.is_file()
     text = path.read_text()
     assert '"inspection_path"' not in text
     assert '"P2M"' in text and '"NavRL"' in text
 
 
-def test_v5_primary_scenes_match_sando_difficulty_protocol():
-    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v5.json")
+def test_navigation8_primary_scenes_match_sando_difficulty_protocol():
+    catalog = load_fixed_catalog("configs/scene/navigation8.json")
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert [len(by_id[scene_id]["obstacles"]) for scene_id in ("S01", "S02", "S03")] == [
         41,
@@ -124,8 +128,8 @@ def test_v5_primary_scenes_match_sando_difficulty_protocol():
         assert all(o["size"] == [0.2, 2.0, 0.2] for o in rectangular if o["role"] == "sando_static_horizontal_box")
 
 
-def test_v5_retains_3d_extensions_and_moves_d06_crossbars():
-    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v5.json")
+def test_navigation8_retains_3d_extensions_and_moves_d06_crossbars():
+    catalog = load_fixed_catalog("configs/scene/navigation8.json")
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert by_id["S06"]["benchmark_role"] == "3d-extension"
     assert by_id["D06"]["benchmark_role"] == "3d-extension"
@@ -138,6 +142,45 @@ def test_v5_retains_3d_extensions_and_moves_d06_crossbars():
         obstacle = catalog_obstacle(payload)
         positions = np.asarray([obstacle.position(time) for time in (0.0, 2.0, 4.0)])
         assert np.ptp(positions[:, 2]) > 0.1
+
+
+def test_navigation8_hydra_entries_expand_the_accepted_eight_scenes():
+    expected = {
+        "p5_navigation_static": (
+            False,
+            ["S01"] * 4 + ["S02"] * 4 + ["S03", "S06", "S03", "S06"],
+        ),
+        "p5_navigation_dynamic": (
+            True,
+            ["D01"] * 4 + ["D02"] * 4 + ["D03", "D06", "D03", "D06"],
+        ),
+    }
+    for experiment, (dynamic, scene_ids) in expected.items():
+        config = compose_config(experiment)
+        assert config["scene"]["name"] == "navigation8"
+        assert config["scene"]["dynamic"] is dynamic
+        assert config["scene"]["_target_"].endswith("fixed_navigation.Navigation8Scene")
+        scene = instantiate(config["scene"], _convert_="all")
+        bank, manifest = scene.build(seed=12345, per_difficulty=4)
+        assert bank.num_instances == 12
+        assert list(bank.subtype_names) == scene_ids
+        assert manifest["catalog"] == "navigation8"
+        assert manifest["accepted_scene_ids"] == list(config["scene"]["scene_ids"])
+
+
+def test_all_p5_navigation_experiments_use_navigation8():
+    experiments = sorted(Path("configs/experiment").glob("p5_*.yaml"))
+    assert experiments
+    checked = []
+    for path in experiments:
+        config = compose_config(path.stem)
+        if config["task"]["name"] != "navigation":
+            continue
+        checked.append(path.stem)
+        assert config["scene"]["name"] == "navigation8"
+        assert config["scene"]["_target_"].endswith("fixed_navigation.Navigation8Scene")
+        assert config["scene"]["dynamic"] is config["task"]["dynamic"]
+    assert checked
 
 
 def test_v2_catalog_is_100_by_40_and_uses_half_to_six_meter_flight_bounds():

@@ -1,50 +1,24 @@
 # 当前进度
 
-更新时间：2026-09-28 09:46（北京时间）。P1/P2已由用户验收；P3/P4及本轮可组合架构/LOTF交付完成。
-当前分支：`implementation/composable-lotf`；基准`bd14468`。
+更新时间：2026-09-28。P1/P2已由用户验收；P3/P4及本轮可组合架构/LOTF交付完成。
+当前工作树分支：`refactor/native-planner-runtime`；当前导航场景协议：`navigation8-v1`。
 本轮迁移前47项基线、五模块回归与LOTF上游对照已完成；最终79项测试、2个子测试通过，
 命令、日志和统计见[最终检查](verification/composable-lotf-final-checks.json)。
 
+持续维护的未完成想法、遗留收尾和下一开发计划统一记录在[未完成想法与开发清单](backlog.md)。
+
 ## 当前工作
 
-2026-09-28 场景复核新增决策：用户取消后续正式 benchmark 的随机密度生成场景。
-原因是已观察到两类退化：Easy 圆柱森林可只有两根且不遮挡起终点直线；高密度实例又可能
-缺少合理飞行通道。现已建立待人工确认的固定编号候选集 S01-S06、D01-D06，
-历史第一版目录为 configs/scene/p5_fixed_catalog_v1.json。所有候选均要求直接起终点航线被阻挡，同时有一条
-最小机体净空不低于 0.35 m 的离线检查路径；该路径只用于可行性验收和 RScope 回放，不暴露给方法。
-12 个独立检查回放位于 experiments/p5-fixed-scenes-review-v1/，动态障碍在回放中使用橙色，
-静态障碍为灰色。NavRL/P2M 只作为障碍尺寸、形态和动态 clutter 设计参考，不复制其随机生成器。
-用户确认场景前不启动基于新场景的训练；原 v2 结果保持历史证据，不覆盖。
-
-第二轮人工检查后又增加 `p5-fixed-candidate-v3-density-boundary`：原 100 x 40 m 候选在
-放大地图后障碍密度不足，而且两侧可沿空白带绕过。v3 固定每个 Easy/Medium/Hard 场景为
-50/100/150 个场内障碍，另加四面共享物理边界墙；墙同时进入传感、碰撞和回放，不是隐藏终止条件。
-12 个 v3 RScope 审阅文件位于 `experiments/p5-fixed-scenes-review-v3/`，最小已知检查通道净空
-0.646 m，12/12 直接起终点线均被障碍阻断，所有 scene XML 均重新编译通过。外部场景来源与
-SUPER PCD 语义见 `docs/research/p5-scene-reference-comparison.md`。仍等待用户视觉确认后再冻结新 benchmark。
-
-第三轮人工检查发现 v3 的 `inspection_path` 虽未泄漏给算法，但它同时参与了离线场景编排：
-障碍填充会主动避开该路径周围的 route tube，RScope 又沿它移动审阅无人机，因此人为制造了
-一条容易识别的长期清空通道。当前 v4 已删除全部 scene-level `inspection_path` 和该排障规则；
-审阅回放中无人机保持在起点，没有 reference/oracle trajectory。可行性使用 1 m × 1 m ×
-0.5 m 的 3-D occupancy A* 快照验证，路径坐标丢弃；动态场景在 0/10/20/30/40 s 五个快照
-均需可达。12/12 v4 场景 `full_length_straight_lanes=0`，固定 y/z 方向最大连续无障碍段
-为 21.5–33.5 m（阈值 35 m），同时保留 50/100/150 场内障碍与四面可感知边界墙。
-当前审阅目录：`experiments/p5-fixed-scenes-review-v4/`。
-当前固定场景默认入口已经切换到 `configs/scene/p5_fixed_catalog_v4.json`；V1/V2/V3 仅保留用于历史重建。
-
-第四轮场景修订建立 `p5-fixed-candidate-v5-sando-aligned`。正式主基准压缩为六张：
-静态/动态 × Easy/Medium/Hard。静态三张直接转换固定 SANDO `easy_forest`、`medium_forest`、
-`hard_forest`，分别为 41/81/162 根圆柱；动态三张采用 SANDO 50/100/200 总障碍和 65% 动态比例，
-对应 32/65/130 个 0.8 m 三叶结动态立方体。根据 SANDO 当前 GitHub `dyn_obstacles.launch.py`，
-非动态障碍中的一半圆柱现替换成长方体：长方体内部 35% 为 0.4×0.4×4.0 m 竖柱、65% 为
-0.4×4.0×0.4 m 横杆，全部保持静止；另一半继续保留 1.0–1.5 m 半径静态圆柱。S06/D06 作为额外
-三维扩展继续保留；D06 的四根长横杆现改为独立竖直往复运动，因此 D06 移动障碍由 24 增至 28。
-八张场景的起终点直线均被阻断，所有静态/动态拓扑快照均可达。SANDO 动态原始分布仍存在其他
-横向固定直线通道，V5 对主六场景不插入人工 blocker，以保持来源难度定义。默认固定场景入口与
-默认审阅导出已切到 `configs/scene/p5_fixed_catalog_v5.json` 和 `experiments/p5-fixed-scenes-review-v5/`。
-机器可读验收证据位于 `docs/verification/p5-fixed-scenes-review-v5.json`；八张回放 XML 均重新编译通过。
-当前目录 SHA256 为 `df0c0363a26ee3577a2ab6b1b206e10659811aed71303af435f7f5cd98f32925`。
+2026-09-28 Navigation8 已由用户完成视觉验收并冻结。当前安全导航唯一现役场景目录为
+`configs/scene/navigation8.json`，固定包含 S01/S02/S03/S06 与 D01/D02/D03/D06 八张场景。
+S01-S03 为 SANDO 静态 Easy/Medium/Hard；D01-D03 为 SANDO 对齐动态三档；S06/D06 为
+额外 3-D extension。D01-D03 保持 32/65/130 个三叶结动态小立方体，其静态份额同时包含
+圆柱、0.4×0.4×4.0 m 竖柱和 0.4×4.0×0.4 m 横杆；SANDO 长方体保持静止。D06 的四根
+长横杆按本项目扩展协议竖直往复。八张场景起终点直线均被阻断，全部拓扑快照可达。
+Hydra 现役入口为 `scene=navigation8_static` 与 `scene=navigation8_dynamic`，所有 P5 学习与原生
+规划器实验预设均已切换到这两个入口。旧 `p5_fixed_catalog_v1`–`v4` 只用于历史重建；历史
+`v1/v2` 矩阵 revision 禁止用于新运行。构建入口为 `scripts/build_navigation8.py`，审阅导出入口为
+`scripts/export_navigation8.py`，验收证据为 `docs/verification/navigation8.json`。
 
 2026-09-28 阶段性收尾：用户要求整理交接并协助处理问题。本轮按此要求完成状态核验与证据整理。
 代码基线为 `4c91ed7486f6050d5cef6a3dfb6522822f440e57`，原会话标识 `p5-main`。

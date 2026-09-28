@@ -15,6 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BUDGET = 8_388_608
+CURRENT_REVISION = "navigation8-v1"
+HISTORICAL_REVISIONS = {"v1", "v2"}
 UNITS = [(task, sensor, algorithm) for task in ("static", "dynamic")
          for sensor in ("depth", "lidar") for algorithm in ("ppo", "dva")]
 
@@ -43,9 +45,14 @@ def run_command(command, run_id, logs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--revision", default="v1")
+    parser.add_argument("--revision", default=CURRENT_REVISION)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.revision in HISTORICAL_REVISIONS:
+        raise SystemExit(
+            f"revision {args.revision} is a preserved historical protocol; "
+            f"new runs use {CURRENT_REVISION} with Navigation8"
+        )
     logs = ROOT / "experiments" / ("p5-matrix-" + args.revision)
     logs.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -101,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

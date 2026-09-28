@@ -32,16 +32,15 @@
 > 最大连续无障碍段不超过 35 m。当前候选为 `configs/scene/p5_fixed_catalog_v4.json`，审阅集为
 > `experiments/p5-fixed-scenes-review-v4/`。固定场景默认加载与默认审阅导出入口均指向 v4。
 
-> **2026-09-28 第四次场景审阅修订。** v5 将正式基准收敛为 SANDO 对齐的六张场景：
-> static/dynamic × easy/medium/hard。静态直接转换 SANDO 固定森林 41/81/162 根圆柱；动态采用
-> 50/100/200 总障碍、65% 动态比例，因此有 32/65/130 个动态立方体。S06 与 D06 继续作为
-> 额外 3-D extension 保留，D06 四根长横杆改为竖直往复运动。主六场景只做边界、起终点安全和
-> 可达性筛选，不增加人工 anti-straight blocker。默认目录为 `configs/scene/p5_fixed_catalog_v5.json`，
-> 审阅集为 `experiments/p5-fixed-scenes-review-v5/`。
-> 随后按 SANDO 当前 GitHub 动态场景实现补齐长方体：D01-D03 的静态圆柱份额中一半改为静态
-> 长方体；长方体内部沿用 SANDO 的 35% 竖直柱 / 65% 横向墙比例，尺寸分别为
-> 0.4×0.4×4.0 m 与 0.4×4.0×0.4 m。SANDO 这两类长方体本身不移动；运动仍由 65% 的
-> 0.8 m 小立方体承担。S01-S03 保持原始 SANDO 固定圆柱森林，不引入混合形状。
+> **2026-09-28 Navigation8 冻结。** 用户完成视觉验收后，当前固定场景正式命名为
+> **Navigation8**，权威目录为 `configs/scene/navigation8.json`。八张场景为
+> S01/S02/S03/S06 与 D01/D02/D03/D06；其中六张 SANDO 对齐场景覆盖
+> static/dynamic × easy/medium/hard，S06/D06 保留为 3-D extension。
+> 静态三档直接转换 SANDO 固定森林 41/81/162 根圆柱；动态三档为 50/100/200 总障碍、
+> 65% 三叶结动态立方体，剩余静态份额一半保留圆柱、一半使用 SANDO 尺寸长方体；长方体内部
+> 为 35% 竖柱 / 65% 横杆并保持静止。D06 的四根长横杆按用户确认作为扩展场景独立竖直往复。
+> Hydra 入口固定为 `scene=navigation8_static` 与 `scene=navigation8_dynamic`；两者读取同一
+> Navigation8 目录。旧 v1-v4 目录只保留历史重建用途，新运行不得复用历史 `v1/v2` revision。
 
 ## 1. 目标、已确认选择与交付范围
 

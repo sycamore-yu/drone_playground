@@ -3,7 +3,7 @@ defaults:
 - override /policy: native_super
 - override /controller: trajectory_tracking
 - override /task: navigation_dynamic
-- override /scene: navigation_dynamic
+- override /scene: navigation8_dynamic
 - override /observation: navigation_lidar
 - override /objective: navigation
 mode: evaluate

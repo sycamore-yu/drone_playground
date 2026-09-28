@@ -13,4 +13,9 @@ PPO预设声明`training.num_timesteps`；APG/SHAC/LOTF由更新次数×环境�
 其`num_timesteps`默认null。显式填写时必须与实际展开预算相等，矛盾配置在启动前拒绝。
 LOTF原生CSV跟踪固定50Hz；保持原采样语义后，才能比较同一参考上的训练结果。
 
+当前 P5 导航场景的唯一现役入口为 `scene=navigation8_static` 与
+`scene=navigation8_dynamic`，二者共享固定目录 `scene/navigation8.json`。
+该目录包含 S01/S02/S03/S06 与 D01/D02/D03/D06 八张已验收场景；
+旧 `p5_fixed_catalog_v1`–`v4` 仅用于历史重建。
+
 原P1–P4 JSON已迁移，历史运行内的JSON和检查点保留。依赖由Pixi固定；新机器先`git submodule update --init --recursive`再`pixi install`。

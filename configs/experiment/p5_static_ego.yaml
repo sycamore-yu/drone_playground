@@ -3,7 +3,7 @@ defaults:
 - override /policy: native_ego
 - override /controller: trajectory_tracking
 - override /task: navigation_static
-- override /scene: navigation_static
+- override /scene: navigation8_static
 - override /observation: navigation_depth
 - override /objective: navigation
 mode: evaluate

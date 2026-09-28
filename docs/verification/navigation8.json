@@ -1,6 +1,20 @@
 {
-  "catalog_version": "p5-fixed-candidate-v5-sando-aligned",
+  "catalog": "navigation8",
+  "catalog_version": "navigation8-v1",
+  "status": "accepted",
   "scene_count": 8,
+  "static_scene_ids": [
+    "S01",
+    "S02",
+    "S03",
+    "S06"
+  ],
+  "dynamic_scene_ids": [
+    "D01",
+    "D02",
+    "D03",
+    "D06"
+  ],
   "primary_scene_ids": [
     "S01",
     "S02",
@@ -56,7 +70,8 @@
     }
   },
   "d06_moving_crossbars": 4,
-  "catalog_sha256": "df0c0363a26ee3577a2ab6b1b206e10659811aed71303af435f7f5cd98f32925",
+  "catalog_sha256": "18866d707f000dac638e5b5afe8ff6efe45121f8ae4a302daedec7fe677f87a2",
+  "review_directory": "experiments/navigation8-review",
   "scenes": [
     {
       "scene_id": "S01",
@@ -90,12 +105,12 @@
       },
       "title": "SANDO easy static forest",
       "source": "SANDO",
-      "replay": "S01/2026_09_28-08_24_52.mj_unroll",
+      "replay": "S01/2026_09_28-08_59_22.mj_unroll",
       "files": {
-        "2026_09_28-08_24_52.mj_unroll": "5e335d0dfc5c8c1a212e69cf3f7ee04d32fe39d5d45659f48550dbccfd869bf2",
-        "components.json": "2cfa7161961160b34c49081ac1e5d9d174d7afd196a69c35cc654a18e359c6c3",
-        "rscope_meta.pkl": "70c81054b201c45e1161face7d23db148337894a1d30afd3b337bb0e2e107b52",
-        "scene-definition.json": "e9ebc91815588cad79bb005ab7f6f1aeeed12c0a07ad02b7719fc91951a9bb30",
+        "2026_09_28-08_59_22.mj_unroll": "5e335d0dfc5c8c1a212e69cf3f7ee04d32fe39d5d45659f48550dbccfd869bf2",
+        "components.json": "d575a1c204f8a8b4c2c1cd4990ba2af4738799475647577fbe3759acc11a48dd",
+        "rscope_meta.pkl": "2f40eea2b0621749e674df2be01d242263f019d4a64a5d36f486218385b8510a",
+        "scene-definition.json": "e891caae7de80006074e42a29f25ab8e5541231dabe4630ca5d32bc302ef7b73",
         "scene.xml": "8768d36c2662e95e9f18f02546b711cd3e9db2fdc0136752550e643392fb8dad"
       },
       "reference_route": "none",
@@ -133,12 +148,12 @@
       },
       "title": "SANDO medium static forest",
       "source": "SANDO",
-      "replay": "S02/2026_09_28-08_25_00.mj_unroll",
+      "replay": "S02/2026_09_28-08_59_31.mj_unroll",
       "files": {
-        "2026_09_28-08_25_00.mj_unroll": "1db3d49fb8e34411bd8f9483b461d8dd73b2d638ddea83970c4db92f9ffae789",
-        "components.json": "518b6e6a9770d63157e1b30dda3cbd0c9ccf0526af96d69af4f02b6fb6516e68",
-        "rscope_meta.pkl": "f222b31b70e1e39de1a41d2981c10e7f1ca6604fec3e2ef7d05c7cfda29659da",
-        "scene-definition.json": "4b44a32cd46b62dcd7fba7f31ff3ff29e30f2c7d10ccfdf3ce29a0fbc7189c10",
+        "2026_09_28-08_59_31.mj_unroll": "1db3d49fb8e34411bd8f9483b461d8dd73b2d638ddea83970c4db92f9ffae789",
+        "components.json": "456230613fd815ab84ec57ae9337af6b5f3f0229ca9a5eb65f3c89ddbaccd766",
+        "rscope_meta.pkl": "031a379983fc806ebba1b2d0589449e2ed82cab830eedec21762d8482c0f1ab5",
+        "scene-definition.json": "67739751813e60cac30b39830d3d7902f26860c51fc3e9aa8161eaa9f3b2670d",
         "scene.xml": "e01c850b457327991a70cf35cc050ba4bc06cb6a5e88f36fbe2b7f89626c7472"
       },
       "reference_route": "none",
@@ -176,12 +191,12 @@
       },
       "title": "SANDO hard static forest",
       "source": "SANDO",
-      "replay": "S03/2026_09_28-08_25_08.mj_unroll",
+      "replay": "S03/2026_09_28-08_59_39.mj_unroll",
       "files": {
-        "2026_09_28-08_25_08.mj_unroll": "07f815dd3a4762b5df8b0fadeb72269e53c70898acf1acc5a9180474d065b6bb",
-        "components.json": "84c839d2565864ad99f3e9ef174f0976b99880d6c829b9c35f02f56fca5b1e99",
-        "rscope_meta.pkl": "06d754dcbbad6162ea88a05eb8d3c919a706102ce894d4298655453f96f2e722",
-        "scene-definition.json": "4b5644899cfdaa87bb7b164eba9c087a13aeb598b25f3cb78aebdce61a854dba",
+        "2026_09_28-08_59_39.mj_unroll": "07f815dd3a4762b5df8b0fadeb72269e53c70898acf1acc5a9180474d065b6bb",
+        "components.json": "5ca706cd1f8be960b0088db988a7ea61fe3c8054db0991fc15bb2d872216d495",
+        "rscope_meta.pkl": "a1dfd45a4259efe9723e6067e341d2e5befb517aa476736f0e5e8f170ab57c14",
+        "scene-definition.json": "1cce0b8e3d87635e90d3bb4a3d6fa942ed7f13bc4f343333f859292a1fd5f8ea",
         "scene.xml": "38a82ee31bb583ea6f4c9b359210cf6be451404d4f5f9f005751667f3b115316"
       },
       "reference_route": "none",
@@ -255,12 +270,12 @@
       },
       "title": "SANDO easy dynamic benchmark",
       "source": "SANDO",
-      "replay": "D01/2026_09_28-08_25_58.mj_unroll",
+      "replay": "D01/2026_09_28-09_00_31.mj_unroll",
       "files": {
-        "2026_09_28-08_25_58.mj_unroll": "550f7485c3bbf8e4338fbdbba9e7b04eaff5d02b7baa15a08f30e71f01896dfe",
-        "components.json": "47a55a118a95a85f4e104035302ff8247bd10205d29f274ec7a8c60840004595",
-        "rscope_meta.pkl": "d118de9f80611b569af12a4bd15aebae3b639d12b8cde093617432aa353645c3",
-        "scene-definition.json": "e963d3d0e6581a50631d4b279a39895d5c7b0244f1a8d24c262ee96f098b7ddc",
+        "2026_09_28-09_00_31.mj_unroll": "550f7485c3bbf8e4338fbdbba9e7b04eaff5d02b7baa15a08f30e71f01896dfe",
+        "components.json": "d3da5616ba4a5045bf864130392c320a7085e1b56314fe3b80634d15c9e9f64f",
+        "rscope_meta.pkl": "fb2b029e4ef883874c65cdb9caf5d979d4e61308e82bdf1f5172f14031615130",
+        "scene-definition.json": "2001aa60280fca4090e59f2736fe3fc2eda04571233f78538fb1b37e353ee33b",
         "scene.xml": "7380b4c05f39893d5ed8d0197317987717527bba453e81768126806ce277fc69"
       },
       "reference_route": "none",
@@ -334,12 +349,12 @@
       },
       "title": "SANDO medium dynamic benchmark",
       "source": "SANDO",
-      "replay": "D02/2026_09_28-08_26_49.mj_unroll",
+      "replay": "D02/2026_09_28-09_01_23.mj_unroll",
       "files": {
-        "2026_09_28-08_26_49.mj_unroll": "3fca25f88e62733cd4bd03acc4b71de43bd2fb196612d2ba850972ca67699fde",
-        "components.json": "a7b9e0ac2ab6fc91c7cbfeca836eb15ab8f0657ae27d3107f726ffeae926f714",
-        "rscope_meta.pkl": "2ae8a50fb5ee30e7bd48240134ef4e6761b70bba26fde7b3cb0b7651db2228cc",
-        "scene-definition.json": "794304b2db83deca446bf867e42397886a889b07ab3d1841fda8bc9d4360737d",
+        "2026_09_28-09_01_23.mj_unroll": "3fca25f88e62733cd4bd03acc4b71de43bd2fb196612d2ba850972ca67699fde",
+        "components.json": "3370221deb283608155115b77d3ad3ba30869517bd1b59e7ba73dcb93a088608",
+        "rscope_meta.pkl": "197e3a4cdbd64365cbf47832f7caa4cf42af057559b102f6a324b631e5b7918f",
+        "scene-definition.json": "6d8be89798cb98790e45bf9a381181ef3f6af7c5c35f1b225696d85268f80b4f",
         "scene.xml": "ca3a781b93a43186996eb4fa678c1bc13cdd0038e26d3eb6bb819f35fb2c7b37"
       },
       "reference_route": "none",
@@ -413,12 +428,12 @@
       },
       "title": "SANDO hard dynamic benchmark",
       "source": "SANDO",
-      "replay": "D03/2026_09_28-08_27_39.mj_unroll",
+      "replay": "D03/2026_09_28-09_02_16.mj_unroll",
       "files": {
-        "2026_09_28-08_27_39.mj_unroll": "b128389f9a81fa01b12037a1c915e51e92ade7a9aadb0c559e0e0cc390a47f5b",
-        "components.json": "f96fa84e1e4a925198cbbbf5c0f36a3f88d1eb6041873212d47691d4bd8760dc",
-        "rscope_meta.pkl": "4b4dc80c89c0d0890feaa2527efc476ec44ea3bfd587a7ac7efa0eb8e445aaa0",
-        "scene-definition.json": "7faa621927aad77d53c2d622773e2875c2a583d7c2f34fa44e4bf05ae6912a76",
+        "2026_09_28-09_02_16.mj_unroll": "b128389f9a81fa01b12037a1c915e51e92ade7a9aadb0c559e0e0cc390a47f5b",
+        "components.json": "31c0a7a1daa9f0f461114bfb71bfc8e59c970b1bbb6ed56f95238e84946f448b",
+        "rscope_meta.pkl": "4bf72cb0cb395ade3d6543cf4fd4301386aa9bbc3dc6faa73d341a16cf9f7d05",
+        "scene-definition.json": "85673dc403ad5b7b84c506a0202656ba407b355e8e9ffba00d3d8df7f838765c",
         "scene.xml": "893bf5571b06566089bc65efd55a7249a9418e17aa87c64562943bf36c254fa2"
       },
       "reference_route": "none",
@@ -456,12 +471,12 @@
       },
       "title": "Long 3D over-under corridor",
       "source": "manual",
-      "replay": "S06/2026_09_28-08_27_47.mj_unroll",
+      "replay": "S06/2026_09_28-09_02_25.mj_unroll",
       "files": {
-        "2026_09_28-08_27_47.mj_unroll": "bcf665ad61fba19a4d9a6cac8750861e8acdd77ae3cd2196f1c0e0c8a9fc6ce9",
-        "components.json": "989bc1b4a48bf7807b19a3db0ead305702a85e54bf8cd2c917cb6aa1d87f5538",
-        "rscope_meta.pkl": "d94e3427ecd220c757e75b6fb285f3294f55d173bef29c66153aaf20ad9e4e79",
-        "scene-definition.json": "8456a5f6e9ca2d3139638594c1b0b7a6370dd3ca9cc6f4f934cd753c5e52f1ca",
+        "2026_09_28-09_02_25.mj_unroll": "bcf665ad61fba19a4d9a6cac8750861e8acdd77ae3cd2196f1c0e0c8a9fc6ce9",
+        "components.json": "fab90aa20c7f434975695596c6970c3ae3f8fec831d4dd469ae688039267e4aa",
+        "rscope_meta.pkl": "16b9d1a3c7c8c095f699eca50298a1bbf353df9fe182aeb2565e56088201b362",
+        "scene-definition.json": "3f5a6090e93690dfe89e84da8f19649865cfb977c3e760132733375ef5f2cfad",
         "scene.xml": "21a39130c70594bccee9399bd30b6485ceb43a193fd2e0bc3400e0980f122115"
       },
       "reference_route": "none",
@@ -535,12 +550,12 @@
       },
       "title": "Hybrid long 3D moving gates with moving crossbars",
       "source": "NavRL+P2M",
-      "replay": "D06/2026_09_28-08_28_35.mj_unroll",
+      "replay": "D06/2026_09_28-09_03_13.mj_unroll",
       "files": {
-        "2026_09_28-08_28_35.mj_unroll": "b2d7085b439eba27b1c92851c4de2180775fea75afaf95c9444387ec6e716253",
-        "components.json": "42b66abbd187dfced198d8c9adfa92f0645a549582de80bdb2bd49463faf0b23",
-        "rscope_meta.pkl": "13e9374fc4046d8b3d81d382397b468e64193246695b10432e264cb8931d9bfe",
-        "scene-definition.json": "9a1dddb46fc3b0c6c74fa75f850f60798eea878bdfb14ed911c728b4504bf67d",
+        "2026_09_28-09_03_13.mj_unroll": "b2d7085b439eba27b1c92851c4de2180775fea75afaf95c9444387ec6e716253",
+        "components.json": "09cb02ed867d75b4f9dda15a34bd050285ede6e93316da879a5f239f9b0854c0",
+        "rscope_meta.pkl": "f80cf58b290ca06882c0a0e3e8a7eb7f0a73cfb71ca0b8904eaf4c65fa551c36",
+        "scene-definition.json": "ed4b79d1a7c577a478f19bda679e1361f2d04ab8d4eaa120557f339c5ead59d1",
         "scene.xml": "63e6eb474baf2d364be568e8220330afc8ac27eb9d0fde9fc3039417c7a3d5f1"
       },
       "reference_route": "none",

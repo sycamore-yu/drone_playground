@@ -11,13 +11,20 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+CURRENT_REVISION = "navigation8-v1"
+HISTORICAL_REVISIONS = {"v1", "v2"}
 UNITS = [(task, method) for task in ("static", "dynamic") for method in ("ego", "super")]
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--revision", default="v1")
+    parser.add_argument("--revision", default=CURRENT_REVISION)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.revision in HISTORICAL_REVISIONS:
+        raise SystemExit(
+            f"revision {args.revision} is a preserved historical protocol; "
+            f"new runs use {CURRENT_REVISION} with Navigation8"
+        )
     logs = ROOT / "experiments" / ("p5-native-matrix-" + args.revision)
     logs.mkdir(parents=True, exist_ok=True)
 
@@ -72,4 +79,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

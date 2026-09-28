@@ -48,8 +48,25 @@ pixi run experiment --multirun experiment=figure8_apg,figure8_shac   training.nu
 
 ## P5 导航任务
 
-P5-05—08 正式批次使用 v2。已有队列运行时不要再次启动。
-2026-09-28 阶段核验：原八训练及四规划器矩阵已经全部完成。
+当前新运行统一使用 **Navigation8**：权威场景目录为 `configs/scene/navigation8.json`，
+Hydra 场景入口为 `navigation8_static` / `navigation8_dynamic`。八张固定场景分别是
+S01/S02/S03/S06 与 D01/D02/D03/D06；构建与审阅入口为：
+
+```bash
+env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/build_navigation8.py
+env -u PYTHONPATH JAX_PLATFORMS=cpu /home/tong/.pixi/bin/pixi run python scripts/export_navigation8.py
+```
+
+学习和原生规划器矩阵的新默认 revision 为 `navigation8-v1`。历史 `v1/v2` 已锁定为只读协议，
+运行脚本会拒绝用当前配置向这些 revision 新增结果：
+
+```bash
+# 查看当前 Navigation8 矩阵命令
+env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_learning_matrix.py --dry-run
+env -u PYTHONPATH JAX_PLATFORMS=cpu /home/tong/.pixi/bin/pixi run python scripts/run_p5_native_matrix.py --dry-run
+```
+
+此前 P5-05—08 正式批次使用历史 v2。2026-09-28 阶段核验：原八训练及四规划器矩阵已经全部完成。
 当前接续入口为学习归档补采的空 checkpoint 修复，具体原因与证据见 docs/status.md。
 以下矩阵启动命令保留作历史复现；本轮恢复应先修复并完成缺失归档，再执行完整验收命令。
 主会话：学习队列 session 96099，原生规划器队列 session 27701；
@@ -58,13 +75,7 @@ v1 已因地面碰撞遗漏中止，三份目录有 `interruption.json`，仅供
 
 ```bash
 cd /home/tong/tongworkspace/simulation_dev/mujoco/drone_playground
-# 查看命令，不运行矩阵
-env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_learning_matrix.py --revision v2 --dry-run
-env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_native_matrix.py --revision v2 --dry-run
-# 运行（只在确认没有原队列时使用）
-env -u PYTHONPATH /home/tong/.pixi/bin/pixi run python scripts/run_p5_learning_matrix.py --revision v2
-env -u PYTHONPATH JAX_PLATFORMS=cpu /home/tong/.pixi/bin/pixi run python scripts/run_p5_native_matrix.py --revision v2
-# 随时重建当前证据表；验收时增加 --require-complete
+# 历史 v2 结果只做读取、归档修复和汇总，不再从当前实验配置启动新 v2 运行
 python3 scripts/summarize_p5.py --revision v2
 ```
 
@@ -90,6 +101,7 @@ env -u PYTHONPATH pixi run python scripts/plot_p5.py --revision v2
 env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run python scripts/verify_p5_replays.py --revision v2
 ```
 
+以下场景隔离审计仅描述历史 v2 随机场景；Navigation8 是固定几何协议，跨 split 重复是设计行为。
 场景审计检查每实例几何/运动参数指纹与接受种子，不只比较整库摘要。
 训练清单按冻结配置事后确定性重建在 `experiments/p5-scene-audit-v2/`；
 不会宣称这些重建文件是训练前已经物化保存的清单。审计摘要在结果目录的 `scene-splits.json`。

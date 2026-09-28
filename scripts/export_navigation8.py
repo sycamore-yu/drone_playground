@@ -1,4 +1,4 @@
-"""Export every numbered fixed P5 candidate as an inspectable RScope replay."""
+"""Export the accepted Navigation8 catalog as inspectable RScope replays."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def review_env(bank, scene_id, dt, manifest):
         bank=bank,
         dt=dt,
         component_identity={
-            "purpose": "P5 fixed-scene visual review only",
+            "purpose": "Navigation8 visual verification",
             "scene_id": scene_id,
             "inspection_path_is_policy_input": False,
             "catalog_version": manifest["version"],
@@ -51,7 +51,7 @@ def review_env(bank, scene_id, dt, manifest):
         scenario=lambda scenario_id: {
             "scene_id": scene_id,
             "difficulty": bank.labels(int(scenario_id))["difficulty"],
-            "purpose": "candidate fixed benchmark scene",
+            "purpose": "accepted Navigation8 benchmark scene",
         },
     )
 
@@ -61,12 +61,12 @@ def main():
     parser.add_argument(
         "--catalog",
         type=Path,
-        default=Path("configs/scene/p5_fixed_catalog_v5.json"),
+        default=Path("configs/scene/navigation8.json"),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("experiments/p5-fixed-scenes-review-v5"),
+        default=Path("experiments/navigation8-review"),
     )
     parser.add_argument("--fps", type=int, default=20)
     args = parser.parse_args()
@@ -146,12 +146,21 @@ def main():
         )
 
     (args.output / "index.json").write_text(
-        json.dumps({"catalog_version": catalog["version"], "scenes": index}, indent=2) + "\n"
+        json.dumps(
+            {
+                "catalog": catalog.get("name", "navigation8"),
+                "catalog_version": catalog["version"],
+                "status": catalog["status"],
+                "scenes": index,
+            },
+            indent=2,
+        )
+        + "\n"
     )
     lines = [
-        "# P5 fixed scene review",
+        "# Navigation8 scene review",
         "",
-        "These are candidate fixed scenes. New route-free catalogs hold the drone at the",
+        "These are the accepted Navigation8 fixed scenes. Route-free catalogs hold the drone at the",
         "start pose and animate only scene dynamics: no reference/oracle trajectory is exported.",
         "",
         "| ID | type | difficulty | field | boundary | total | direct blocked | A* reachable | max straight run | reference |",
