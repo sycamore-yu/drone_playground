@@ -49,9 +49,9 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
-      - pypi: ../crazyflow
       - pypi: ./
-      - pypi: ./third_party/learning_on_the_fly
+      - pypi: ./tmp/sources/crazyflow
+      - pypi: ./tmp/sources/lotf
       - pypi: https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl
@@ -663,29 +663,6 @@ packages:
   run_exports: {}
   size: 118849
   timestamp: 1784250406640
-- pypi: ../crazyflow
-  name: crazyflow
-  requires_dist:
-  - numpy>=2.0.0
-  - scipy>=1.17.0
-  - jax>=0.7.0,!=0.10.2
-  - mujoco>=3.14.0,<3.15
-  - mujoco-mjx>=3.14.0,<3.15
-  - gymnasium[mujoco]>=1.2.0
-  - imageio
-  - einops
-  - flax
-  - ml-collections
-  - casadi
-  - array-api-compat
-  - array-api-extra
-  - jax[cuda12] ; extra == 'gpu'
-  - fire ; extra == 'benchmark'
-  - matplotlib ; extra == 'benchmark'
-  - pandas ; extra == 'benchmark'
-  - pyinstrument ; extra == 'benchmark'
-  - splax[viewer]>=0.2.0 ; extra == 'splats'
-  requires_python: '>=3.11'
 - pypi: ./
   name: drone-playground
   requires_dist:
@@ -712,8 +689,32 @@ packages:
   - seaborn==0.13.2
   - tqdm>=4.67,<5
   requires_python: '>=3.13,<3.14'
-- pypi: ./third_party/learning_on_the_fly
+- pypi: ./tmp/sources/crazyflow
+  name: crazyflow
+  requires_dist:
+  - numpy>=2.0.0
+  - scipy>=1.17.0
+  - jax>=0.7.0,!=0.10.2
+  - mujoco>=3.14.0,<3.15
+  - mujoco-mjx>=3.14.0,<3.15
+  - gymnasium[mujoco]>=1.2.0
+  - imageio
+  - einops
+  - flax
+  - ml-collections
+  - casadi
+  - array-api-compat
+  - array-api-extra
+  - jax[cuda12] ; extra == 'gpu'
+  - fire ; extra == 'benchmark'
+  - matplotlib ; extra == 'benchmark'
+  - pandas ; extra == 'benchmark'
+  - pyinstrument ; extra == 'benchmark'
+  - splax[viewer]>=0.2.0 ; extra == 'splats'
+  requires_python: '>=3.11'
+- pypi: ./tmp/sources/lotf
   name: lotf
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl
   name: itsdangerous
   version: 2.2.0

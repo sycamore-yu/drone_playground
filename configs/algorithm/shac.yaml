@@ -10,3 +10,5 @@ max_grad_norm: 1.0
 critic_max_grad_norm: 10.0
 use_schedule: true
 schedule_decay: 0.997
+gradient:
+  transition: direct

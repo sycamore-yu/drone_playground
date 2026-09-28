@@ -1,4 +1,4 @@
-_target_: drone_playground.tasks.observations.NavigationObservation
+_target_: drone_playground.environments.observations.NavigationObservation
 name: navigation_state
 include_goal: true
 include_previous_action: true

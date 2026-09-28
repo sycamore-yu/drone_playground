@@ -1,4 +1,3 @@
-_target_: drone_playground.dynamics.crazyflow.CrazyflowModel
+_target_: drone_playground.models.crazyflow.CrazyflowModel
 forward: so_rpy
-backward: direct
 drone: cf2x_L250

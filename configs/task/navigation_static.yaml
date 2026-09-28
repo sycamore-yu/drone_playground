@@ -1,8 +1,0 @@
-name: navigation
-dynamic: false
-freq: 50
-duration: 40.0
-goal_radius: 0.5
-# Instances generated per difficulty; the bank holds three difficulty blocks.
-reference_count: 32
-numerical_guard: true

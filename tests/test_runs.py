@@ -13,7 +13,8 @@ import numpy as np
 import pytest
 from tensorboardX.proto import event_pb2
 
-from drone_playground.runs import RunRecorder, export_rollout, publish_run
+from drone_playground.runs import RunRecorder
+from drone_playground.visualization.rscope_io import export_rollout, publish_run
 
 
 def _git(root: Path, *args: str) -> str:

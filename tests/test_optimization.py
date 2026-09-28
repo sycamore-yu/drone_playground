@@ -12,13 +12,13 @@ import numpy as np
 
 class OptimizationTests(unittest.TestCase):
     def module(self, name):
-        name = "drone_playground.controllers." + name
+        name = "drone_playground.methods.optimal_control." + name
         self.assertIsNotNone(importlib.util.find_spec(name), "Optimizer adapter must exist")
         return importlib.import_module(name)
 
     def test_actual_acados_solve_preserves_native_problem(self):
         m = self.module("lsy_mpc")
-        from drone_playground.tasks.scenes import load_lsy_config
+        from drone_playground.environments.scenes import load_lsy_config
 
         obs = dict(
             pos=np.array([-1.5, 0.75, 0.01]),
@@ -40,8 +40,8 @@ class OptimizationTests(unittest.TestCase):
         m = self.module("sampling")
         import jax
 
-        from drone_playground.policies.planning import race_reference
-        from drone_playground.tasks.tracking import TrackingEnv
+        from drone_playground.environments.tasks.tracking import TrackingEnv
+        from drone_playground.methods.planners.reference import race_reference
 
         env = TrackingEnv(
             task="random", dynamics="first_principles", device="cpu", reference_count=2

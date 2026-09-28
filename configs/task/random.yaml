@@ -4,3 +4,7 @@ duration: 15.0
 reference: random
 reference_count: 256
 numerical_guard: false
+reference_generator:
+  _target_: drone_playground.methods.planners.reference.TrajectoryPlan
+  name: random
+  amplitude: 1.0

@@ -1,0 +1,4 @@
+device: gpu
+backend: jax
+timing: synchronous
+action_delay_steps: 0

@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+- /env: racing
+- /algorithm: none
+- /network: none
+- /training: default
+- /runtime: host
+- /evaluation: default
+- /visualization: rscope
+- /optimal_control@method.decision: attitude_mpc
+- _self_
+method:
+  name: attitude_mpc
+  output: attitude_thrust
+  implementation: attitude_mpc
+  trainable: false
+source: Frozen P4 native optimization controller
+mode: eval
+evaluation:
+  environment: config

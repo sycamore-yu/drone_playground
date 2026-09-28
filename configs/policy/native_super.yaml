@@ -1,6 +1,0 @@
-name: native_super
-method: super
-output: trajectory
-container: drone-playground-ros1
-port: 11325
-workers: 4

@@ -10,7 +10,7 @@ import numpy as np
 
 class TrackingContractTests(unittest.TestCase):
     def make_env(self, **kwargs):
-        from drone_playground.tasks.tracking import TrackingEnv
+        from drone_playground.environments.tasks.tracking import TrackingEnv
 
         env = TrackingEnv(device="cpu", **kwargs)
         self.addCleanup(env.close)
@@ -43,7 +43,7 @@ class TrackingContractTests(unittest.TestCase):
         self.assertFalse(np.array_equal(a.obs, c.obs))
 
     def test_timeout_keeps_terminal_observation_and_draws_fresh_reset(self):
-        from drone_playground.tasks.tracking import wrap_for_training
+        from drone_playground.learning.env_adapter import wrap_for_training
 
         env = self.make_env()
         wrapper = wrap_for_training(env, episode_length=2, action_repeat=1)
@@ -61,7 +61,7 @@ class TrackingContractTests(unittest.TestCase):
         self.assertTrue(np.all(np.asarray(s.info["steps"]) == 1))
 
     def test_reset_reserves_an_unconsumed_key_for_later_episodes(self):
-        from drone_playground.tasks.tracking import wrap_for_training
+        from drone_playground.learning.env_adapter import wrap_for_training
 
         env = self.make_env()
         keys = jax.random.split(jax.random.PRNGKey(18), 2)
@@ -90,7 +90,7 @@ class TrackingContractTests(unittest.TestCase):
     def test_random_reference_matches_lsy_scipy_construction(self):
         from scipy.interpolate import CubicSpline
 
-        from drone_playground.policies.planning import random_trajectory
+        from drone_playground.methods.planners.reference import random_trajectory
 
         seed, duration, freq = 21, 15.0, 50
         takeoff = np.array([-1.5, 1.0, 0.07])

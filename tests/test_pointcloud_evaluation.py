@@ -8,7 +8,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.composition import build_environment, compose_config
+from drone_playground.composition import build_environment
+from tests.reference_configs import compose_reference as compose_config
 
 
 def evaluator():
@@ -79,7 +80,7 @@ def test_numerical_and_out_of_bounds_are_explicit_failures():
 def test_frozen_rollout_and_all_outcome_denominators():
     ev = evaluator()
     from drone_playground.evaluation.tracking import tree_digest
-    from drone_playground.learning.pointcloud_bptt import initialize
+    from drone_playground.learning.algorithms.pointcloud_bptt import initialize
 
     cfg, task, bank = task_and_bank()
     state, network, _ = initialize(task, cfg)
@@ -104,7 +105,7 @@ def test_replay_preserves_point_mass_identity_and_positions(tmp_path):
     ev = evaluator()
     from rscope import rollout
 
-    from drone_playground.learning.pointcloud_bptt import initialize
+    from drone_playground.learning.algorithms.pointcloud_bptt import initialize
 
     cfg, task, bank = task_and_bank()
     state, network, _ = initialize(task, cfg)
@@ -132,7 +133,7 @@ def test_replay_preserves_point_mass_identity_and_positions(tmp_path):
 def test_navigation8_recipe_uses_eight_unique_verified_catalog_cases():
     evaluator()
     cfg = compose_config("paper_pointcloud_navigation8", ["training.device=cpu"])
-    assert cfg["mode"] == "evaluate" and cfg["task"]["duration"] == 40.0
+    assert cfg["mode"] == "eval" and cfg["env"]["task"]["duration"] == 40.0
     task = build_environment(cfg, "cpu", "heldout")
     bank, manifest = task.scene.build()
     assert bank.num_instances == 8

@@ -15,15 +15,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_config, validate_config
-from drone_playground.tasks.navigation import (
-    OUTCOME_ARRIVED,
-    OUTCOME_COLLISION,
-    OUTCOME_NUMERICAL,
-    OUTCOME_OUT_OF_BOUNDS,
-    NavigationEnv,
-)
-from drone_playground.tasks.scenes.navigation import (
+from drone_playground.composition import validate_config
+from drone_playground.environments.scenes.navigation import (
     BODY_RADIUS_M,
     DIFFICULTIES,
     DYNAMIC_FAMILIES,
@@ -41,6 +34,14 @@ from drone_playground.tasks.scenes.navigation import (
     make_bank,
     obstacle_positions,
 )
+from drone_playground.environments.tasks.navigation import (
+    OUTCOME_ARRIVED,
+    OUTCOME_COLLISION,
+    OUTCOME_NUMERICAL,
+    OUTCOME_OUT_OF_BOUNDS,
+    NavigationEnv,
+)
+from tests.reference_configs import compose_reference as compose_config
 
 CORRIDOR_LOW = np.array([0.0, -5.0, 0.0], np.float32)
 CORRIDOR_HIGH = np.array([20.0, 5.0, 5.0], np.float32)
@@ -119,7 +120,7 @@ def test_scene_positions_match_the_host_reference():
     """The device motion functions must reproduce the source analytic curves."""
     scene = NavigationScene(families=DYNAMIC_FAMILIES, dynamic=True)
     bank, manifest = make_bank(scene, seed=0, per_difficulty=2)
-    from drone_playground.tasks.scenes.navigation import Obstacle
+    from drone_playground.environments.scenes.navigation import Obstacle
 
     checked = {MOTION_STATIC: 0, MOTION_TREFOIL: 0, MOTION_BOUNCE: 0}
     for index, row in enumerate(manifest["instances"]):
@@ -133,9 +134,9 @@ def test_scene_positions_match_the_host_reference():
                 tuple(table["params"]),
             )
             for time in (0.0, 1.0, 7.5, 33.25):
-                device = np.asarray(
-                    obstacle_positions(bank, jnp.int32(index), jnp.float32(time))
-                )[slot]
+                device = np.asarray(obstacle_positions(bank, jnp.int32(index), jnp.float32(time)))[
+                    slot
+                ]
                 assert np.allclose(device, obstacle.position(time), atol=1e-4), (
                     f"instance {index} slot {slot} at t={time}"
                 )
@@ -350,9 +351,7 @@ def test_out_of_bounds_and_numerical_outcomes_are_distinct():
     assert int(result.info["outcome"]) == OUTCOME_OUT_OF_BOUNDS
     diverged = place(state, env, (5.0, 0.0, 2.0))
     data = diverged.pipeline_state
-    states = data.sim_data.states.replace(
-        pos=jnp.full_like(data.sim_data.states.pos, jnp.inf)
-    )
+    states = data.sim_data.states.replace(pos=jnp.full_like(data.sim_data.states.pos, jnp.inf))
     diverged = diverged.replace(
         pipeline_state=data.replace(sim_data=data.sim_data.replace(states=states))
     )
@@ -404,9 +403,7 @@ def test_altitude_hold_reaches_the_forty_second_limit_as_a_timeout():
     assert float(jnp.max(arrived)) == 0.0
     height = np.asarray(positions[:, 2])
     assert height.min() > 1.0 and height.max() < 2.5, (height.min(), height.max())
-    final_distance = float(
-        np.linalg.norm(np.asarray(positions[-1]) - np.asarray([15.5, 0.0, 2.0]))
-    )
+    final_distance = float(np.linalg.norm(np.asarray(positions[-1]) - np.asarray([15.5, 0.0, 2.0])))
     assert final_distance > 0.5
     env.close()
 
@@ -497,28 +494,18 @@ def test_failure_cost_dominates_progress_so_crashing_is_never_the_best_outcome()
         previous_action=jnp.zeros(4),
     )
     start = 15.0
-    success = objective(
-        arrived=True, collided=False, previous_distance=0.5, distance=0.0, **common
-    )
+    success = objective(arrived=True, collided=False, previous_distance=0.5, distance=0.0, **common)
     timeout = float(
-        objective(
-            arrived=False, collided=False, previous_distance=start, distance=start, **common
-        )
+        objective(arrived=False, collided=False, previous_distance=start, distance=start, **common)
     )
     worst_crash = float(
-        objective(
-            arrived=False, collided=True, previous_distance=start, distance=0.0, **common
-        )
+        objective(arrived=False, collided=True, previous_distance=start, distance=0.0, **common)
     )
     near_crash = float(
-        objective(
-            arrived=False, collided=True, previous_distance=5.0, distance=1.1, **common
-        )
+        objective(arrived=False, collided=True, previous_distance=5.0, distance=1.1, **common)
     )
     shallow_crash = float(
-        objective(
-            arrived=False, collided=True, previous_distance=start, distance=14.0, **common
-        )
+        objective(arrived=False, collided=True, previous_distance=start, distance=14.0, **common)
     )
     assert float(success) > timeout, (float(success), timeout)
     assert timeout > worst_crash, (timeout, worst_crash)

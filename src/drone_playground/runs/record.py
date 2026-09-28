@@ -159,6 +159,12 @@ class RunRecorder:
 
         if self.path.exists():
             raise FileExistsError(f"run already exists: {self.path}")
+        protocol = None
+        canonical = config.get("components", config)
+        if canonical.get("evaluation", {}).get("protocol"):
+            from drone_playground.evaluation.protocols import protocol_identity
+
+            protocol = protocol_identity(canonical)
         self.root.mkdir(parents=True, exist_ok=True)
         git = _git_snapshot(self.root)
         self.path.mkdir(parents=True, exist_ok=False)
@@ -197,6 +203,7 @@ class RunRecorder:
             },
             "dependencies": dependencies,
             "dependencies_path": "dependencies.json",
+            "benchmark_protocol": protocol,
             "environment": {
                 "python": sys.version,
                 "executable": sys.executable,

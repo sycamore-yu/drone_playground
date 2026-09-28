@@ -1,24 +1,10 @@
-_target_: drone_playground.tasks.observations.NavigationSensorObservation
+_target_: drone_playground.environments.observations.NavigationSensorObservation
 name: navigation_depth
 include_goal: true
 include_previous_action: true
 action_size: 4
-# The sensor block is owned by the environment; the frame shape below is
-# overwritten from the instantiated sensor calibration so both cannot drift.
 history: 4
 points_per_frame: 300
 channels: 2
 near_m: 0.1
 far_m: 10.0
-sensor:
-  _target_: drone_playground.tasks.sensors.depth.DepthCamera
-  name: d435_depth
-  width: 120
-  height: 90
-  horizontal_fov_deg: 85.2
-  near_m: 0.1
-  far_m: 10.0
-  source_rate_hz: 30.0
-  stride: 6
-  history: 4
-  include_ground: true

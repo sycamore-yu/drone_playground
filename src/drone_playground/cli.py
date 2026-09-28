@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import os
 import subprocess
@@ -17,22 +16,13 @@ ROOT = Path(__file__).resolve().parents[2]
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Crazyflow 无人机训练、评测与记录")
     commands = parser.add_subparsers(dest="command", required=True)
-    train = commands.add_parser("train", help="通过组合配方运行完整训练")
-    train.add_argument("--experiment", required=True)
-    train.add_argument("--run-id", required=True)
-    train.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
-    train.add_argument("--warm-start", type=Path)
-    train.add_argument("--set", action="append", default=[], metavar="GROUP.KEY=VALUE")
+    for mode in ("train", "eval", "play"):
+        entry = commands.add_parser(mode, help="使用 method=... env=... 和配置覆盖")
+        entry.add_argument("overrides", nargs=argparse.REMAINDER)
     demo = commands.add_parser("demo", help="运行原生控制器完整飞行")
     demo.add_argument("--run-id", required=True)
     demo.add_argument("--duration", type=float, default=10.0)
     demo.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
-    evaluate = commands.add_parser("evaluate", help="独立进程重载与评测冻结策略")
-    evaluate.add_argument("--checkpoint", type=Path, required=True)
-    evaluate.add_argument("--split", choices=["dev", "heldout"], default="dev")
-    evaluate.add_argument("--episodes", type=int, default=32)
-    evaluate.add_argument("--output", type=Path, required=True)
-    evaluate.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
     replay = commands.add_parser("replay", help="发布指定轨迹供原版 rscope 远程读取")
     replay.add_argument("--directory", type=Path, required=True)
     replay.add_argument("--launch", action="store_true", help="在当前桌面打开原版查看器")
@@ -53,60 +43,25 @@ def _set_device(device: str) -> None:
 
 
 def main(argv=None) -> None:
+    actual = list(sys.argv[1:] if argv is None else argv)
+    if actual and actual[0] in ("train", "eval", "play"):
+        from drone_playground.app import script_main
+
+        sys.argv = [sys.argv[0], *actual[1:]]
+        return script_main(actual[0])
     args = build_parser().parse_args(argv)
     if hasattr(args, "device"):
         _set_device(args.device)
-    if args.command == "train":
-        from drone_playground.composition import compose_config, run_experiment
-
-        config = compose_config(args.experiment, args.set)
-        config["training"]["device"] = args.device
-        if args.warm_start is not None:
-            config["training"]["warm_start"] = str(args.warm_start)
-        result = run_experiment(config, ROOT, args.run_id)
-    elif args.command == "demo":
-        from drone_playground.controllers.demo import run_demo
+    if args.command == "demo":
+        from drone_playground.execution.controllers.demo import run_demo
 
         result = run_demo(ROOT, args.run_id, args.duration, args.device)
-    elif args.command == "evaluate":
-        from drone_playground.composition import build_environment
-        from drone_playground.evaluation.execution import make_evaluator
-        from drone_playground.evaluation.tracking import (
-            save_report,
-            select_replays,
-        )
-        from drone_playground.runs.checkpoints import load_policy
-        from drone_playground.runs.rscope_io import export_rollout
-
-        if args.output.exists():
-            raise FileExistsError(f"Use a new evaluation directory: {args.output}")
-        args.output.mkdir(parents=True)
-        maker, params, meta = load_policy(args.checkpoint)
-        # Frozen evaluation validates the execution contract, independently of
-        # archived training-only fields or a previous experiment's budget schema.
-        execution_config = copy.deepcopy(meta["config"])
-        execution_config["mode"] = "evaluate"
-        env = build_environment(execution_config, args.device, args.split, args.episodes)
-        try:
-            offset = 20000 if args.split == "dev" else 30000
-            evaluator = make_evaluator(env, maker, list(range(offset, offset + args.episodes)))
-            result, trace = evaluator.run(params)
-            result.update(
-                split=args.split,
-                checkpoint=str(args.checkpoint.resolve()),
-                command=sys.argv,
-                process_id=os.getpid(),
-            )
-            save_report(args.output / "report.json", result)
-            export_rollout(env.sim, args.output / "rollouts", select_replays(trace, result))
-        finally:
-            env.close()
     elif args.command == "replay":
-        from drone_playground.runs.rscope_io import publish_run
+        from drone_playground.visualization.rscope_io import publish_run
 
         result = {"active_directory": str(publish_run(args.directory))}
         if args.launch:
-            command = [sys.executable, str(ROOT / "scripts/rscope_client.py")]
+            command = [sys.executable, str(ROOT / "scripts/tools/rscope_client.py")]
             if args.show_metrics:
                 command.append("--show-metrics")
             subprocess.run(command, check=True)

@@ -1,0 +1,19 @@
+diff --git a/pyproject.toml b/pyproject.toml
+new file mode 100644
+index 0000000..304a6d0
+--- /dev/null
++++ b/pyproject.toml
+@@ -0,0 +1,13 @@
++[build-system]
++requires = ["setuptools>=68"]
++build-backend = "setuptools.build_meta"
++
++[project]
++name = "lotf"
++version = "0.1.0"
++description = "A Python package to learn agile flight using differentiable simulation."
++requires-python = ">=3.10"
++dependencies = []
++
++[tool.setuptools.packages.find]
++include = ["lotf*"]

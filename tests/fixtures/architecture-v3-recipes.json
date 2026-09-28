@@ -1,0 +1,4372 @@
+{
+  "racing_sampling_mpc": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Frozen P4 native optimization controller",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "sampling_mpc",
+      "output": "attitude_thrust",
+      "decision": {
+        "name": "sampling_mpc",
+        "prediction": "so_rpy_rotor_drag",
+        "horizon": 25,
+        "prediction_seconds": 1.0,
+        "samples": 2000,
+        "prediction_device": "gpu"
+      },
+      "implementation": "sampling_mpc",
+      "trainable": false
+    },
+    "env": {
+      "name": "racing",
+      "task": {
+        "name": "racing",
+        "freq": 50,
+        "duration": 30.0,
+        "reference": "lsy_course",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "lsy_course",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.LSYScene",
+        "name": "lsy_level0",
+        "disturbances": true
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "b4cba8e5be6ec47e631420306dfb0a39da29ddd52f6bb01739a42c969fd5e251"
+    }
+  },
+  "figure8_shac": {
+    "algorithm": {
+      "name": "shac",
+      "horizon_length": 32,
+      "learning_rate": 0.003,
+      "critic_learning_rate": 0.002,
+      "critic_updates": 8,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.4,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_shac",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 64,
+      "policy_updates": 320,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "shac",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking",
+      "task": {
+        "name": "figure8",
+        "freq": 50,
+        "duration": 10.0,
+        "reference": "figure8",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "figure8",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "17cd96f7534e72273c6ee3ce3bf516f132adb7190d724bfbdf6b9c70eaf1c5d5"
+    }
+  },
+  "random_shac": {
+    "algorithm": {
+      "name": "shac",
+      "horizon_length": 32,
+      "learning_rate": 0.003,
+      "critic_learning_rate": 0.002,
+      "critic_updates": 8,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.4,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_shac",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 64,
+      "policy_updates": 320,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "shac",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking/random",
+      "task": {
+        "name": "random",
+        "freq": 50,
+        "duration": 15.0,
+        "reference": "random",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "random",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "8263c3cbb153496c3b2369ccfde662d4d090767bc7a3d0900a67bdda36b2e8bb"
+    }
+  },
+  "racing_apg": {
+    "algorithm": {
+      "name": "apg",
+      "horizon_length": 40,
+      "learning_rate": 0.005,
+      "max_grad_norm": 1.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_apg",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        32,
+        32
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native Brax APG; LSY Level0 reference-tracking-v1 reward and native gate/collision rules; same P2 random APG recipe",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "apg",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "racing",
+      "task": {
+        "name": "racing",
+        "freq": 50,
+        "duration": 30.0,
+        "reference": "lsy_course",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "lsy_course",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.LSYScene",
+        "name": "lsy_level0",
+        "disturbances": true
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "098e88319e7005d1bdb950d616b0c29a46ce8fbf6b7979b8397d43356a6b7a1f"
+    }
+  },
+  "p5_dynamic_lidar_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 7; MID360 non-repetitive lidar, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "b9f16ec18c110023a4d2076c6b23fe3f1f5e38e3feb3371f1d8615f0851ba9ac"
+    }
+  },
+  "p5_dynamic_super": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native super through ROS1; shared P5 geometry and dynamics",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "super",
+      "method": "super",
+      "output": "trajectory",
+      "container": "drone-playground-ros1",
+      "port": 11325,
+      "workers": 4,
+      "implementation": "native_super",
+      "trainable": false
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": {
+          "name": "trajectory_tracking",
+          "kp": 4.0,
+          "kv": 3.0,
+          "max_acceleration": 5.0
+        },
+        "command": "trajectory"
+      }
+    },
+    "runtime": {
+      "device": "cpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "f96b58ed517bee6f8449f5008883dc566b9b4f56732291daf263556d5ed092a9"
+    }
+  },
+  "p5_dynamic_depth_dva": {
+    "algorithm": {
+      "name": "dva",
+      "horizon_length": 32,
+      "learning_rate": 0.002,
+      "critic_learning_rate": 0.0002,
+      "critic_updates": 16,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.2,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "betas": [
+        0.7,
+        0.95
+      ],
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 2048,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 6; JAX D.VA port, detached D435 observation",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "dva",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "6eba5d000d6722025fc05a8467e22f92a4293a47fd95f8a9a553744b8460c724"
+    }
+  },
+  "random_ppo_drag_v2": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0003,
+      "discounting": 0.94,
+      "gae_lambda": 0.97,
+      "clipping_epsilon": 0.26,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.5,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 1024,
+      "policy_updates": 1024,
+      "num_timesteps": 4194304,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P3 recovery recipe v2: lower only learning rate from 0.0008 to 0.0003 after v1 non-finite parameters; preserve v1 failure, task and full interaction budget",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking/random",
+      "task": {
+        "name": "random",
+        "freq": 50,
+        "duration": 15.0,
+        "reference": "random",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "random",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy_rotor_drag",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "9a7d3d2a8cc757c1b346094254fdd214a6f07808743bbaa61965a8b5f3cf48d1"
+    }
+  },
+  "random_apg": {
+    "algorithm": {
+      "name": "apg",
+      "horizon_length": 40,
+      "learning_rate": 0.005,
+      "max_grad_norm": 1.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_apg",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        32,
+        32
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "LSY random spline base task; native Brax APG, same task protocol and datasets as PPO",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "apg",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking/random",
+      "task": {
+        "name": "random",
+        "freq": 50,
+        "duration": 15.0,
+        "reference": "random",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "random",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "df76ce420165d6b649f3996b949edd6dd62ef8dddd0169cbade85834cc771822"
+    }
+  },
+  "paper_pointcloud_navigation8": {
+    "algorithm": {
+      "name": "pointcloud_bptt",
+      "horizon_length": 160,
+      "learning_rate": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "weight_decay": 0.01,
+      "gradient": {
+        "transition": "exponential",
+        "decay_rate": 0.916290731874155
+      }
+    },
+    "network": {
+      "_target_": "drone_playground.networks.pointcloud.PointCloudPolicy",
+      "hidden_size": 192,
+      "point_channels": [
+        64,
+        128,
+        1024
+      ],
+      "negative_slope": 0.01
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.pointcloud.PaperObjective",
+      "name": "paper_pointcloud_loss",
+      "velocity_weight": 1.0,
+      "collision_weight": 1.5,
+      "acceleration_weight": 0.01,
+      "jerk_weight": 0.001,
+      "velocity_norm_weight": 0.8,
+      "velocity_component_weight": 0.6,
+      "velocity_window": 30,
+      "huber_delta": 1.0,
+      "collision_beta1": 1.3333333333333333,
+      "collision_beta2": 32.0,
+      "jerk_mean_weight": 1.0,
+      "jerk_variance_weight": 0.1
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 32,
+      "policy_updates": 50000,
+      "num_timesteps": null,
+      "num_evals": 11,
+      "development_envs": 32,
+      "publish_live": false,
+      "max_wall_seconds": 172800,
+      "resume": null,
+      "warm_start": null,
+      "stop_after_updates": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Learning to Fly from Point Clouds via Differentiable Simulation; public-paper reconstruction",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 1,
+      "seed_start": null,
+      "output": null,
+      "training_run": null,
+      "speeds": [
+        4.0,
+        6.0,
+        8.0
+      ],
+      "scene_ids": [
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "D01",
+        "D02",
+        "D03",
+        "D06"
+      ],
+      "duration": 40.0
+    },
+    "replay": {
+      "directory": null
+    },
+    "reproduction": {
+      "identity": "paper-public-information-reconstruction-v1",
+      "paper": "Learning to Fly from Point Clouds via Differentiable Simulation",
+      "paper_source": "https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf",
+      "predecessor": "HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf",
+      "author_code_status": "no confirmed repository found in exact-title searches on 2026-09-28",
+      "assumptions_document": ".scratch/pointcloud-paper/spec.md",
+      "assumptions": [
+        "The paper specifies point mass and lag; lag constant and trapezoidal integration follow the predecessor.",
+        "Eq9 whole-state exponential Jacobian is distinct from the predecessor partial-diagonal CUDA rule.",
+        "Sensor state gradients are detached; the paper does not specify a differentiable ray-casting implementation.",
+        "Ten proprioceptive fields, elevation offset, range limits, activation slope, and invalid-ray masking are explicit reconstruction choices.",
+        "Undisclosed loss weights, jerk averaging, optimizer defaults, primitive distribution, and speed distribution are explicitly configured.",
+        "50000 updates follows the training figure extent and predecessor default, not a text-specified update budget.",
+        "Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the policy is trained only on independent static primitives."
+      ]
+    },
+    "method": {
+      "name": "pointcloud_flight",
+      "output": "world_acceleration",
+      "network_output_frame": "body",
+      "command_units": "m/s^2",
+      "implementation": "pointcloud_recurrent",
+      "trainable": true
+    },
+    "env": {
+      "name": "paper/pointcloud_navigation",
+      "task": {
+        "name": "pointcloud_avoidance",
+        "freq": 10,
+        "physics_freq": 500,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "body_radius": 0.07,
+        "command_speed_range": [
+          2.0,
+          6.0
+        ]
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationCatalogScene",
+        "name": "navigation",
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06",
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ],
+        "catalog_path": null,
+        "verification_path": null
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.pointcloud.UniformMid360Lidar",
+        "name": "paper_mid360_uniform",
+        "azimuth_count": 180,
+        "elevation_count": 30,
+        "elevation_start_deg": -7.2,
+        "elevation_span_deg": 60.0,
+        "range_m": [
+          0.1,
+          100.0
+        ],
+        "source_rate_hz": 10.0,
+        "include_ground": true,
+        "state_gradient": "detached"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.tasks.pointcloud.PaperObservation",
+        "name": "paper_pointcloud_state",
+        "proprioception_size": 10
+      },
+      "execution": {
+        "controller": {
+          "_target_": "drone_playground.execution.controllers.acceleration.AccelerationControl",
+          "name": "acceleration_passthrough"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.point_mass.PointMassLag",
+          "forward": "point_mass_lag",
+          "drone": "paper_point_mass",
+          "time_constant": 0.08333333333333333,
+          "gravity": 9.80665
+        },
+        "tracker": null,
+        "command": "world_acceleration"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "727fffd9c5630a70a15f7c338622c2dca4acc0e19e545bce3ebd28f71e7a8fb2"
+    }
+  },
+  "racing_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.94,
+      "gae_lambda": 0.97,
+      "clipping_epsilon": 0.26,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.5,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 1024,
+      "policy_updates": 1024,
+      "num_timesteps": 4194304,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native Brax PPO; LSY Level0 reference-tracking-v1 reward and native gate/collision rules; same P2 random PPO recipe",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "racing",
+      "task": {
+        "name": "racing",
+        "freq": 50,
+        "duration": 30.0,
+        "reference": "lsy_course",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "lsy_course",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.LSYScene",
+        "name": "lsy_level0",
+        "disturbances": true
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "1f636e34e4472b2604939030d8af306a308312910bedcbeb72f3ecb5fda0b8c2"
+    }
+  },
+  "p5_dynamic_depth_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 5; D435 ideal metric depth, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "9f4491332257499cb227656d708acb9721a156a251752f9cb09b395d7f261076"
+    }
+  },
+  "random_ppo_drag_v3": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.94,
+      "gae_lambda": 0.97,
+      "clipping_epsilon": 0.26,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.5,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 1024,
+      "policy_updates": 1024,
+      "num_timesteps": 4194304,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P3 v3 restores original PPO recipe; explicit finite-square-v1 numerical failure boundary after captured angular rate 8.119e26 overflowed normalizer and critic. Ordinary physical transitions unchanged; invalid integration ends and counts as a failure. v1/v2 preserved.",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking/random",
+      "task": {
+        "name": "random",
+        "freq": 50,
+        "duration": 15.0,
+        "reference": "random",
+        "reference_count": 256,
+        "numerical_guard": true,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "random",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy_rotor_drag",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "6123120b81b19d867907a436281f05e4367a6c8f42c3041151223ac675a2eeed"
+    }
+  },
+  "random_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.94,
+      "gae_lambda": 0.97,
+      "clipping_epsilon": 0.26,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.5,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 1024,
+      "policy_updates": 1024,
+      "num_timesteps": 4194304,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "LSY RandTrajEnv base task with deterministic private reference bank; native Brax PPO, no optional source reward wrappers",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking/random",
+      "task": {
+        "name": "random",
+        "freq": 50,
+        "duration": 15.0,
+        "reference": "random",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "random",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "22a3bc50c009b02457b91486d6543bc1e4db7969dd0742453f823701313af8eb"
+    }
+  },
+  "p5_dynamic_lidar_dva": {
+    "algorithm": {
+      "name": "dva",
+      "horizon_length": 32,
+      "learning_rate": 0.002,
+      "critic_learning_rate": 0.0002,
+      "critic_updates": 16,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.2,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "betas": [
+        0.7,
+        0.95
+      ],
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 2048,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 8; JAX D.VA LiDAR extension, detached MID360 observation",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "dva",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "8f605e307ea0de4b564b996a8cfa3e25fbb3df980bf5f015412fd6d28d852e71"
+    }
+  },
+  "lotf_hybrid_tracking": {
+    "algorithm": {
+      "name": "lotf_bptt",
+      "learning_rate": 0.001,
+      "schedule": "cosine",
+      "rollout": "full_episode",
+      "source": "upstream_bptt",
+      "gradient": {
+        "transition": "lotf_analytical"
+      }
+    },
+    "network": {
+      "name": "lotf_mlp",
+      "hidden_sizes": [
+        512,
+        512
+      ],
+      "initial_scale": 0.01,
+      "normalize_observations": "min_max",
+      "activation": "relu"
+    },
+    "objective": {
+      "name": "lotf_tracking",
+      "scale": 1.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 300,
+      "policy_updates": 300,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "LOTF cba6e537 notebook, explicit high-fidelity forward enabled; residual disabled",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "lotf",
+      "output": "thrust_bodyrates",
+      "implementation": "lotf_mlp",
+      "trainable": true
+    },
+    "env": {
+      "name": "paper/lotf_tracking",
+      "task": {
+        "name": "lotf_tracking",
+        "freq": 50,
+        "duration": 5.0,
+        "reference": "fig8",
+        "reference_count": 1,
+        "delay": 0.04,
+        "yaw_scale": 0.1,
+        "pitch_roll_scale": 0.1,
+        "position_std": 0.1,
+        "velocity_std": 0.1,
+        "omega_std": 0.1,
+        "skip_start": true,
+        "reference_generator": {
+          "name": "fig8",
+          "kind": "upstream_csv"
+        }
+      },
+      "scene": {
+        "name": "lotf_world",
+        "randomization": "upstream_initial_state"
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "name": "lotf_state",
+        "normalization": "min_max",
+        "action_history": true
+      },
+      "execution": {
+        "controller": {
+          "name": "lotf_betaflight",
+          "frequency": 1000,
+          "embedded": true
+        },
+        "dynamics": {
+          "forward": "lotf_high_fidelity",
+          "drone": "example_quad",
+          "learned_residual": false,
+          "_target_": "drone_playground.models.lotf.LOTFModel"
+        },
+        "tracker": null,
+        "command": "thrust_bodyrates"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "fb7606b0bd61cd0046da7e365af06139f8aabfe1161ff16c954b7291096194d3"
+    }
+  },
+  "p5_static_lidar_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 3; MID360 non-repetitive lidar, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "f7429b7c1928811a988a4e15ce7526a6bfdcfe93bc78450cac24d0a29affe600"
+    }
+  },
+  "p5_static_lidar_dva": {
+    "algorithm": {
+      "name": "dva",
+      "horizon_length": 32,
+      "learning_rate": 0.002,
+      "critic_learning_rate": 0.0002,
+      "critic_updates": 16,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.2,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "betas": [
+        0.7,
+        0.95
+      ],
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 2048,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 4; JAX D.VA LiDAR extension, detached MID360 observation",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "dva",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "e1b5389c80d3b63e068d897cb4e0d39e45d6f95c0c586c35fba07f68209f5e47"
+    }
+  },
+  "p5_navigation_dynamic": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 32,
+      "num_minibatches": 8,
+      "num_updates_per_batch": 4,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": true,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 262144,
+      "num_evals": 3,
+      "publish_live": false,
+      "max_wall_seconds": 1800,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 navigation engineering closed loop; state observation, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationObservation",
+        "name": "navigation_state",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "b2c2a74255d8d3886ffa826b1eaaf3cfca2b0448166f44cd5c9f23e22182c8ab"
+    }
+  },
+  "racing_shac": {
+    "algorithm": {
+      "name": "shac",
+      "horizon_length": 32,
+      "learning_rate": 0.003,
+      "critic_learning_rate": 0.002,
+      "critic_updates": 8,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.4,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_shac",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 64,
+      "policy_updates": 320,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Independent SHAC JAX/Brax extension; LSY Level0 reference-tracking-v1 reward and native gate/collision rules; same P3 recipe",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "shac",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "racing",
+      "task": {
+        "name": "racing",
+        "freq": 50,
+        "duration": 30.0,
+        "reference": "lsy_course",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "lsy_course",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.LSYScene",
+        "name": "lsy_level0",
+        "disturbances": true
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "d5355cbfa1f81552bfd51afba0b6fd8d2cff133893b44cd908ccc6229d459001"
+    }
+  },
+  "p5_dynamic_ego": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native ego through ROS1; shared P5 geometry and dynamics",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ego_planner",
+      "method": "ego",
+      "output": "trajectory",
+      "container": "drone-playground-ros1",
+      "port": 11325,
+      "workers": 4,
+      "implementation": "native_ego",
+      "trainable": false
+    },
+    "env": {
+      "name": "navigation/dynamic",
+      "task": {
+        "name": "navigation",
+        "dynamic": true,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": true,
+        "scene_ids": [
+          "D01",
+          "D02",
+          "D03",
+          "D06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": {
+          "name": "trajectory_tracking",
+          "kp": 4.0,
+          "kv": 3.0,
+          "max_acceleration": 5.0
+        },
+        "command": "trajectory"
+      }
+    },
+    "runtime": {
+      "device": "cpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "5d73fcc4ddacdcac966d9d48965e34eb9b8d01be36f01110a878d07d2e94ba33"
+    }
+  },
+  "p5_static_ego": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native ego through ROS1; shared P5 geometry and dynamics",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ego_planner",
+      "method": "ego",
+      "output": "trajectory",
+      "container": "drone-playground-ros1",
+      "port": 11325,
+      "workers": 4,
+      "implementation": "native_ego",
+      "trainable": false
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": {
+          "name": "trajectory_tracking",
+          "kp": 4.0,
+          "kv": 3.0,
+          "max_acceleration": 5.0
+        },
+        "command": "trajectory"
+      }
+    },
+    "runtime": {
+      "device": "cpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "09adb3a3db76019b14ec7a3edbfacf405e48bc74d8829ea9c76c3e25a00ddeb6"
+    }
+  },
+  "figure8_apg": {
+    "algorithm": {
+      "name": "apg",
+      "horizon_length": 40,
+      "learning_rate": 0.005,
+      "max_grad_norm": 1.0,
+      "use_schedule": true,
+      "schedule_decay": 0.997,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_apg",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        32,
+        32
+      ],
+      "layer_norm": true
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Brax native APG with Crazyflow paper-style 16 worlds/40 step rollout; custom frozen development recipe",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "apg",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking",
+      "task": {
+        "name": "figure8",
+        "freq": 50,
+        "duration": 10.0,
+        "reference": "figure8",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "figure8",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "f334f8b4f29e5c786fbc918d11945618e5b15c16f2b090661465eb8439052f3d"
+    }
+  },
+  "p5_navigation_static": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 32,
+      "num_minibatches": 8,
+      "num_updates_per_batch": 4,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": true,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 262144,
+      "num_evals": 3,
+      "publish_live": false,
+      "max_wall_seconds": 1800,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 navigation engineering closed loop; state observation, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationObservation",
+        "name": "navigation_state",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "1771a02da5b245afd858cc00bd2e7e3ec2c5418b8e825e1181c2c68db1f8de3c"
+    }
+  },
+  "p5_static_depth_dva": {
+    "algorithm": {
+      "name": "dva",
+      "horizon_length": 32,
+      "learning_rate": 0.002,
+      "critic_learning_rate": 0.0002,
+      "critic_updates": 16,
+      "discounting": 0.99,
+      "td_lambda": 0.95,
+      "target_critic_alpha": 0.2,
+      "max_grad_norm": 1.0,
+      "critic_max_grad_norm": 10.0,
+      "betas": [
+        0.7,
+        0.95
+      ],
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 2048,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 2; JAX D.VA port, detached D435 observation",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "dva",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "70d12b66153742d83f3de7f28bba5907e053f91b35c3d1b6c64a4595dfeb3058"
+    }
+  },
+  "racing_attitude_mpc": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Frozen P4 native optimization controller",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "attitude_mpc",
+      "output": "attitude_thrust",
+      "decision": {
+        "name": "attitude_mpc",
+        "prediction": "so_rpy",
+        "horizon": 25,
+        "prediction_seconds": 0.5
+      },
+      "implementation": "attitude_mpc",
+      "trainable": false
+    },
+    "env": {
+      "name": "racing",
+      "task": {
+        "name": "racing",
+        "freq": 50,
+        "duration": 30.0,
+        "reference": "lsy_course",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "lsy_course",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.LSYScene",
+        "name": "lsy_level0",
+        "disturbances": true
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "cpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "2ddf4d9dee16f5a2b80c20ba775fa52315b5015ffe4e3f1b2fa76cdcbc8e7b20"
+    }
+  },
+  "paper_pointcloud": {
+    "algorithm": {
+      "name": "pointcloud_bptt",
+      "horizon_length": 160,
+      "learning_rate": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "weight_decay": 0.01,
+      "gradient": {
+        "transition": "exponential",
+        "decay_rate": 0.916290731874155
+      }
+    },
+    "network": {
+      "_target_": "drone_playground.networks.pointcloud.PointCloudPolicy",
+      "hidden_size": 192,
+      "point_channels": [
+        64,
+        128,
+        1024
+      ],
+      "negative_slope": 0.01
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.pointcloud.PaperObjective",
+      "name": "paper_pointcloud_loss",
+      "velocity_weight": 1.0,
+      "collision_weight": 1.5,
+      "acceleration_weight": 0.01,
+      "jerk_weight": 0.001,
+      "velocity_norm_weight": 0.8,
+      "velocity_component_weight": 0.6,
+      "velocity_window": 30,
+      "huber_delta": 1.0,
+      "collision_beta1": 1.3333333333333333,
+      "collision_beta2": 32.0,
+      "jerk_mean_weight": 1.0,
+      "jerk_variance_weight": 0.1
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 32,
+      "policy_updates": 50000,
+      "num_timesteps": null,
+      "num_evals": 11,
+      "development_envs": 32,
+      "publish_live": false,
+      "max_wall_seconds": 172800,
+      "resume": null,
+      "warm_start": null,
+      "stop_after_updates": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Learning to Fly from Point Clouds via Differentiable Simulation; public-paper reconstruction",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 1,
+      "seed_start": null,
+      "output": null,
+      "training_run": null,
+      "speeds": [
+        4.0,
+        6.0,
+        8.0
+      ],
+      "scene_ids": [
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "D01",
+        "D02",
+        "D03",
+        "D06"
+      ],
+      "duration": 40.0
+    },
+    "replay": {
+      "directory": null
+    },
+    "reproduction": {
+      "identity": "paper-public-information-reconstruction-v1",
+      "paper": "Learning to Fly from Point Clouds via Differentiable Simulation",
+      "paper_source": "https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf",
+      "predecessor": "HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf",
+      "author_code_status": "no confirmed repository found in exact-title searches on 2026-09-28",
+      "assumptions_document": ".scratch/pointcloud-paper/spec.md",
+      "assumptions": [
+        "The paper specifies point mass and lag; lag constant and trapezoidal integration follow the predecessor.",
+        "Eq9 whole-state exponential Jacobian is distinct from the predecessor partial-diagonal CUDA rule.",
+        "Sensor state gradients are detached; the paper does not specify a differentiable ray-casting implementation.",
+        "Ten proprioceptive fields, elevation offset, range limits, activation slope, and invalid-ray masking are explicit reconstruction choices.",
+        "Undisclosed loss weights, jerk averaging, optimizer defaults, primitive distribution, and speed distribution are explicitly configured.",
+        "50000 updates follows the training figure extent and predecessor default, not a text-specified update budget.",
+        "Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the policy is trained only on independent static primitives."
+      ]
+    },
+    "method": {
+      "name": "pointcloud_flight",
+      "output": "world_acceleration",
+      "network_output_frame": "body",
+      "command_units": "m/s^2",
+      "implementation": "pointcloud_recurrent",
+      "trainable": true
+    },
+    "env": {
+      "name": "paper/pointcloud_flight",
+      "task": {
+        "name": "pointcloud_avoidance",
+        "freq": 10,
+        "physics_freq": 500,
+        "duration": 16.0,
+        "goal_radius": 0.5,
+        "body_radius": 0.07,
+        "command_speed_range": [
+          2.0,
+          6.0
+        ]
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.pointcloud.PaperPrimitiveScene",
+        "name": "paper_static_primitives_reconstruction",
+        "obstacles_per_kind": 30,
+        "length_m": 48.0,
+        "width_m": 18.0,
+        "height_m": 6.0,
+        "cylinder_radius_m": [
+          0.05,
+          0.4
+        ],
+        "box_half_m": [
+          0.2,
+          0.7
+        ],
+        "sphere_radius_m": [
+          0.2,
+          0.6
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.pointcloud.UniformMid360Lidar",
+        "name": "paper_mid360_uniform",
+        "azimuth_count": 180,
+        "elevation_count": 30,
+        "elevation_start_deg": -7.2,
+        "elevation_span_deg": 60.0,
+        "range_m": [
+          0.1,
+          100.0
+        ],
+        "source_rate_hz": 10.0,
+        "include_ground": true,
+        "state_gradient": "detached"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.tasks.pointcloud.PaperObservation",
+        "name": "paper_pointcloud_state",
+        "proprioception_size": 10
+      },
+      "execution": {
+        "controller": {
+          "_target_": "drone_playground.execution.controllers.acceleration.AccelerationControl",
+          "name": "acceleration_passthrough"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.point_mass.PointMassLag",
+          "forward": "point_mass_lag",
+          "drone": "paper_point_mass",
+          "time_constant": 0.08333333333333333,
+          "gravity": 9.80665
+        },
+        "tracker": null,
+        "command": "world_acceleration"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "566347cfefc1459ec276e3cdacdd2fa48c965aed108716d588b95866543cc4e1"
+    }
+  },
+  "lotf_hybrid_hover": {
+    "algorithm": {
+      "name": "lotf_bptt",
+      "learning_rate": 0.005,
+      "schedule": "cosine",
+      "rollout": "full_episode",
+      "source": "upstream_bptt",
+      "gradient": {
+        "transition": "lotf_analytical"
+      }
+    },
+    "network": {
+      "name": "lotf_mlp",
+      "hidden_sizes": [
+        512,
+        512
+      ],
+      "initial_scale": 0.01,
+      "normalize_observations": "min_max",
+      "activation": "relu"
+    },
+    "objective": {
+      "name": "lotf_hover",
+      "scale": 1.0,
+      "reward_sharpness": 3.0,
+      "action_penalty_weight": 0.5
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 200,
+      "policy_updates": 200,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "LOTF cba6e537 notebook, explicit high-fidelity forward enabled; residual disabled",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "lotf",
+      "output": "thrust_bodyrates",
+      "implementation": "lotf_mlp",
+      "trainable": true
+    },
+    "env": {
+      "name": "paper/lotf_hover",
+      "task": {
+        "name": "lotf_hover",
+        "freq": 50,
+        "duration": 3.0,
+        "reference": "hover",
+        "reference_count": 1,
+        "delay": 0.04,
+        "yaw_scale": 1.0,
+        "pitch_roll_scale": 0.1,
+        "velocity_std": 0.1,
+        "omega_std": 0.1,
+        "margin": 0.5,
+        "hover_target": [
+          1.5,
+          0.0,
+          1.5
+        ],
+        "reference_generator": {
+          "name": "hover",
+          "kind": "upstream_csv"
+        }
+      },
+      "scene": {
+        "name": "lotf_world",
+        "randomization": "upstream_initial_state"
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "name": "lotf_state",
+        "normalization": "min_max",
+        "action_history": true
+      },
+      "execution": {
+        "controller": {
+          "name": "lotf_betaflight",
+          "frequency": 1000,
+          "embedded": true
+        },
+        "dynamics": {
+          "forward": "lotf_high_fidelity",
+          "drone": "example_quad",
+          "learned_residual": false,
+          "_target_": "drone_playground.models.lotf.LOTFModel"
+        },
+        "tracker": null,
+        "command": "thrust_bodyrates"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "035be54c1355dd373cd32617a2bd9b641726196f5369fa1050d1d0821dca4cba"
+    }
+  },
+  "figure8_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.TrackingObjective",
+      "name": "tracking_exp",
+      "scale": 1.0,
+      "distance_scale": 2.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 1024,
+      "policy_updates": 1024,
+      "num_timesteps": 2097152,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 3600,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "tracking",
+      "task": {
+        "name": "figure8",
+        "freq": 50,
+        "duration": 10.0,
+        "reference": "figure8",
+        "reference_count": 256,
+        "numerical_guard": false,
+        "reference_generator": {
+          "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+          "name": "figure8",
+          "amplitude": 1.0
+        }
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.EmptyScene",
+        "name": "empty",
+        "takeoff": [
+          -1.5,
+          1.0,
+          0.07
+        ]
+      },
+      "sensor": {
+        "name": "none"
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.TrackingObservation",
+        "name": "state_reference",
+        "n_samples": 10,
+        "interval": 0.1
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "1a9c9bb984793ba77a1e91f285cf00d7d817d682e514e31c5137ac4bba6e8c4e"
+    }
+  },
+  "p5_static_super": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.92,
+      "gae_lambda": 0.94,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.007,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "brax_ppo",
+      "distribution_type": "normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "init_noise_std": 0.367879
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 16,
+      "policy_updates": 1024,
+      "num_timesteps": null,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "eval",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "Native super through ROS1; shared P5 geometry and dynamics",
+    "evaluation": {
+      "environment": "config",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "super",
+      "method": "super",
+      "output": "trajectory",
+      "container": "drone-playground-ros1",
+      "port": 11325,
+      "workers": 4,
+      "implementation": "native_super",
+      "trainable": false
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+        "name": "mid360",
+        "pattern": "mid360",
+        "downsample": 200,
+        "source_rate_hz": 10.0,
+        "history": 4,
+        "range_m": [
+          0.1,
+          200.0
+        ],
+        "normalise_far_m": 40.0,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_lidar",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 120,
+        "channels": 5,
+        "near_m": 0.1,
+        "far_m": 40.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": {
+          "name": "trajectory_tracking",
+          "kp": 4.0,
+          "kv": 3.0,
+          "max_acceleration": 5.0
+        },
+        "command": "trajectory"
+      }
+    },
+    "runtime": {
+      "device": "cpu",
+      "backend": "host",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "3738fd72f670a48a9c23ef0e3cef3a69314c476d12a765c654399f32d435318a"
+    }
+  },
+  "p5_static_depth_ppo": {
+    "algorithm": {
+      "name": "ppo",
+      "unroll_length": 16,
+      "batch_size": 64,
+      "num_minibatches": 16,
+      "num_updates_per_batch": 8,
+      "learning_rate": 0.0008,
+      "discounting": 0.97,
+      "gae_lambda": 0.95,
+      "clipping_epsilon": 0.2,
+      "entropy_cost": 0.005,
+      "max_grad_norm": 1.0,
+      "gradient": {
+        "transition": "direct"
+      }
+    },
+    "network": {
+      "name": "perception_ppo",
+      "distribution_type": "tanh_normal",
+      "normalize_observations": false,
+      "hidden_sizes": [
+        128,
+        128
+      ],
+      "init_noise_std": 0.367879,
+      "mean_kernel_scale": 0.01,
+      "encoder": "shared_p5_perception",
+      "embedding_size": 128
+    },
+    "objective": {
+      "_target_": "drone_playground.learning.objectives.NavigationObjective",
+      "name": "navigation",
+      "progress_scale": 5.0,
+      "time_cost": 0.01,
+      "clearance_scale": 0.1,
+      "clearance_radius": 0.5,
+      "smoothness_scale": 0.01,
+      "arrival_bonus": 20.0,
+      "failure_penalty": -150.0
+    },
+    "training": {
+      "seed": 0,
+      "num_envs": 128,
+      "policy_updates": 1024,
+      "num_timesteps": 8388608,
+      "num_evals": 9,
+      "publish_live": false,
+      "max_wall_seconds": 7200,
+      "resume": null,
+      "warm_start": null,
+      "development_episodes": 32
+    },
+    "config_version": 3,
+    "mode": "train",
+    "run_id": null,
+    "checkpoint": null,
+    "source": "P5 formal matrix unit 1; D435 ideal metric depth, shared navigation reward",
+    "evaluation": {
+      "environment": "checkpoint",
+      "split": "heldout",
+      "episodes": 128,
+      "seed_start": null,
+      "output": null
+    },
+    "replay": {
+      "directory": null
+    },
+    "method": {
+      "name": "ppo",
+      "output": "attitude_thrust",
+      "implementation": "neural",
+      "trainable": true
+    },
+    "env": {
+      "name": "navigation/static",
+      "task": {
+        "name": "navigation",
+        "dynamic": false,
+        "freq": 50,
+        "duration": 40.0,
+        "goal_radius": 0.5,
+        "reference_count": 32,
+        "numerical_guard": true
+      },
+      "scene": {
+        "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+        "name": "navigation",
+        "families": [
+          "navigation8"
+        ],
+        "dynamic": false,
+        "scene_ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S06"
+        ]
+      },
+      "sensor": {
+        "_target_": "drone_playground.environments.sensors.depth.DepthCamera",
+        "name": "d435_depth",
+        "width": 120,
+        "height": 90,
+        "horizontal_fov_deg": 85.2,
+        "near_m": 0.1,
+        "far_m": 10.0,
+        "source_rate_hz": 30.0,
+        "stride": 6,
+        "history": 4,
+        "include_ground": true
+      },
+      "observation": {
+        "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+        "name": "navigation_depth",
+        "include_goal": true,
+        "include_previous_action": true,
+        "action_size": 4,
+        "history": 4,
+        "points_per_frame": 300,
+        "channels": 2,
+        "near_m": 0.1,
+        "far_m": 10.0
+      },
+      "execution": {
+        "controller": {
+          "name": "crazyflow_attitude"
+        },
+        "dynamics": {
+          "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+          "forward": "first_principles",
+          "drone": "cf2x_L250"
+        },
+        "tracker": null,
+        "command": "attitude_thrust"
+      }
+    },
+    "runtime": {
+      "device": "gpu",
+      "backend": "jax",
+      "timing": "synchronous",
+      "action_delay_steps": 0
+    },
+    "visualization": {
+      "mode": "rscope"
+    },
+    "migration": {
+      "source_schema": 2,
+      "source_config_sha256": "eacdd0ba3c634e36d74d4b69de3646f251bcf71d2047e90a283679fc7e92ca3d"
+    }
+  }
+}

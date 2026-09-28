@@ -1,4 +1,5 @@
 """Compact, unpadded trajectories for every independent navigation episode."""
+
 from __future__ import annotations
 
 import hashlib
@@ -7,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from drone_playground.tasks.scenes.navigation import DIFFICULTIES
+from drone_playground.environments.scenes.navigation import DIFFICULTIES
 
 
 def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
@@ -19,11 +20,16 @@ def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
     """
     directory.mkdir(parents=True, exist_ok=True)
     index_path = directory / "index.json"
-    index = json.loads(index_path.read_text()) if index_path.exists() else {
-        "schema_version": 1, "timing": "post-transition; includes terminal transition",
-        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
-        "cells": {},
-    }
+    index = (
+        json.loads(index_path.read_text())
+        if index_path.exists()
+        else {
+            "schema_version": 1,
+            "timing": "post-transition; includes terminal transition",
+            "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+            "cells": {},
+        }
+    )
     per_difficulty = env.bank.num_instances // len(DIFFICULTIES)
     for difficulty, trace in traces.items():
         active = np.asarray(trace["active"], dtype=bool)
@@ -34,13 +40,18 @@ def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
         ):
             raise ValueError("Navigation archive requires contiguous active frames per episode")
         offsets = np.r_[0, np.cumsum(lengths)]
-        fields = {key: np.asarray(trace[key]) for key in
-                  ("pos", "quat", "time", "actions", "reward", "done", "outcome")}
+        fields = {
+            key: np.asarray(trace[key])
+            for key in ("pos", "quat", "time", "actions", "reward", "done", "outcome")
+        }
         fields["proprioception"] = np.asarray(trace["obs"])[..., :20]
-        fields.update({"metric_" + key: np.asarray(value)
-                       for key, value in trace["metrics"].items()})
-        arrays = {key: np.concatenate([value[:lengths[case], case] for case in range(count)])
-                  for key, value in fields.items()}
+        fields.update(
+            {"metric_" + key: np.asarray(value) for key, value in trace["metrics"].items()}
+        )
+        arrays = {
+            key: np.concatenate([value[: lengths[case], case] for case in range(count)])
+            for key, value in fields.items()
+        }
         scenarios = DIFFICULTIES.index(difficulty) * per_difficulty + np.arange(count)
         arrays.update(offsets=offsets, case_ids=np.arange(count), scenario_ids=scenarios)
         target = directory / (difficulty + ".npz")
@@ -49,8 +60,11 @@ def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
             np.savez_compressed(handle, **arrays)
         temporary.replace(target)
         index["cells"][difficulty] = {
-            "path": target.name, "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
-            "episodes": count, "frames": int(offsets[-1]), "episode_steps": lengths.tolist(),
+            "path": target.name,
+            "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+            "episodes": count,
+            "frames": int(offsets[-1]),
+            "episode_steps": lengths.tolist(),
             "fields": sorted(arrays),
         }
     temporary_index = index_path.with_suffix(".json.tmp")
@@ -70,11 +84,16 @@ def load_navigation_case(directory: Path, difficulty: str, case: int) -> tuple[d
     with np.load(path, allow_pickle=False) as archive:
         if not 0 <= case < len(archive["case_ids"]) or archive["case_ids"][case] != case:
             raise IndexError("Navigation archive case does not exist")
-        start, stop = archive["offsets"][case:case + 2]
-        trace = {key: archive[key][start:stop, None] for key in
-                 ("pos", "quat", "time", "actions", "reward", "done", "outcome")}
+        start, stop = archive["offsets"][case : case + 2]
+        trace = {
+            key: archive[key][start:stop, None]
+            for key in ("pos", "quat", "time", "actions", "reward", "done", "outcome")
+        }
         trace["obs"] = archive["proprioception"][start:stop, None]
-        trace["metrics"] = {key.removeprefix("metric_"): archive[key][start:stop, None]
-                            for key in archive.files if key.startswith("metric_")}
+        trace["metrics"] = {
+            key.removeprefix("metric_"): archive[key][start:stop, None]
+            for key in archive.files
+            if key.startswith("metric_")
+        }
         scenario = int(archive["scenario_ids"][case])
     return trace, scenario

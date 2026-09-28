@@ -11,7 +11,8 @@ import crazyflow  # noqa: F401
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.composition import build_environment, compose_config, validate_config
+from drone_playground.composition import build_environment, validate_config
+from tests.reference_configs import compose_reference as compose_config
 
 
 class LOTFReviewTests(unittest.TestCase):
@@ -86,7 +87,7 @@ class LOTFReviewTests(unittest.TestCase):
                 self.assertEqual(json.loads(path.read_text())["failed"], 2)
 
     def test_resume_inherits_best_before_snapshot_and_excludes_future(self):
-        from drone_playground.learning import lotf_bptt as module
+        from drone_playground.learning.algorithms import lotf_bptt as module
 
         self.assertTrue(hasattr(module, "inherit_development_best"))
         config = self.small_config()
@@ -148,8 +149,9 @@ class LOTFReviewTests(unittest.TestCase):
             )
 
     def test_evaluation_ignores_archived_training_only_budget(self):
-        from drone_playground.cli import main
-        from drone_playground.learning import lotf_bptt as module
+        from drone_playground.app import resolve_checkpoint_execution
+        from drone_playground.composition import run_experiment
+        from drone_playground.learning.algorithms import lotf_bptt as module
 
         config = self.small_config()
         task = build_environment(config, "cpu")
@@ -161,21 +163,12 @@ class LOTFReviewTests(unittest.TestCase):
             folder = Path(folder)
             checkpoint = folder / "initial.pkl"
             module.save_policy(checkpoint, (None, runner.train_state.params), task, archived, 0)
-            output = folder / "evaluation"
-            main(
-                [
-                    "evaluate",
-                    "--checkpoint",
-                    str(checkpoint),
-                    "--device",
-                    "cpu",
-                    "--episodes",
-                    "1",
-                    "--output",
-                    str(output),
-                ]
-            )
-            report = json.loads((output / "report.json").read_text())
+            requested = copy.deepcopy(config)
+            requested.update(mode="eval", checkpoint=str(checkpoint))
+            requested["evaluation"]["episodes"] = 1
+            resolved = resolve_checkpoint_execution(requested, [])
+            run_experiment(resolved, folder, "evaluation")
+            report = json.loads((folder / "experiments/evaluation/eval/report.json").read_text())
             self.assertTrue(report["parameters_frozen"])
             self.assertEqual(report["num_trials"], 1)
 

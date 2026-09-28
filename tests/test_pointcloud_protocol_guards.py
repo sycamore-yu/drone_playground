@@ -2,13 +2,14 @@
 
 import pytest
 
-from drone_playground.composition import compose_config, validate_config
+from drone_playground.composition import validate_config
+from tests.reference_configs import compose_reference as compose_config
 
 
 @pytest.mark.parametrize("sensor_hz", [5.0, 20.0])
 def test_synchronous_sensor_rate_must_match_the_executed_policy_tick(sensor_hz):
     config = compose_config("paper_pointcloud")
-    config["observation"]["sensor"]["source_rate_hz"] = sensor_hz
+    config["env"]["sensor"]["source_rate_hz"] = sensor_hz
     with pytest.raises(ValueError, match="sensor.*frequency"):
         validate_config(config)
 
@@ -18,7 +19,7 @@ def test_synchronous_sensor_rate_must_match_the_executed_policy_tick(sensor_hz):
 )
 def test_policy_coordinate_and_unit_labels_match_the_command_transform(field, value):
     config = compose_config("paper_pointcloud")
-    config["policy"][field] = value
+    config["method"][field] = value
     with pytest.raises(ValueError, match="Paper policy.*(frame|units)"):
         validate_config(config)
 
@@ -39,6 +40,6 @@ def test_policy_coordinate_and_unit_labels_match_the_command_transform(field, va
 def test_navigation8_nominal_label_requires_the_frozen_protocol(group, field, value):
     config = compose_config("paper_pointcloud_navigation8")
     validate_config(config)
-    config[group][field] = value
+    (config["env"]["task"] if group == "task" else config[group])[field] = value
     with pytest.raises(ValueError, match="Navigation8 nominal"):
         validate_config(config)

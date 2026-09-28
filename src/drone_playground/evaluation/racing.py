@@ -110,39 +110,10 @@ class RaceEvaluator:
         self._run = jax.jit(self._rollout)
 
     def _rollout(self, params):
-        env = self.env
+        from drone_playground.runtime.jax_runner import policy_rollout
+
         keys = jax.vmap(jax.random.PRNGKey)(jnp.array(self.seeds, dtype=jnp.uint32))
-        states = jax.vmap(env.reset)(keys)
-        policy = self.make_policy(params, deterministic=True)
-
-        def one(carry, i):
-            states, alive = carry
-            action, _ = policy(states.obs, jax.random.PRNGKey(0))
-            candidate = jax.vmap(env.step)(states, action)
-
-            def select(a, b):
-                mask = alive.reshape(alive.shape + (1,) * (a.ndim - alive.ndim))
-                return jnp.where(mask, a, b)
-
-            nxt = jax.tree.map(select, candidate, states)
-            x = nxt.pipeline_state.sim_data.states
-            row = dict(
-                pos=x.pos[:, 0, 0],
-                quat=x.quat[:, 0, 0],
-                obs=states.obs,
-                actions=action,
-                reward=jnp.where(alive, nxt.reward, 0.0),
-                time=jnp.full(alive.shape, (i + 1) * env.dt),
-                metrics=nxt.metrics,
-                active=alive,
-                failed=nxt.metrics["failure"] > 0,
-            )
-            return (nxt, alive & ~nxt.done.astype(bool)), row
-
-        _, trace = jax.lax.scan(
-            one, (states, jnp.ones(len(self.seeds), bool)), jnp.arange(env.episode_length)
-        )
-        return trace
+        return policy_rollout(self.env, self.make_policy, params, keys, kind="racing")
 
     def run(self, params):
         before = tree_digest(params)

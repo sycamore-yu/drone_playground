@@ -12,7 +12,7 @@ import numpy as np
 
 class LOTFModelTests(unittest.TestCase):
     def module(self):
-        name = "drone_playground.dynamics.lotf"
+        name = "drone_playground.models.lotf"
         self.assertIsNotNone(importlib.util.find_spec(name), "LOTF model adapter must exist")
         return importlib.import_module(name)
 
@@ -71,14 +71,15 @@ class LOTFModelTests(unittest.TestCase):
         from lotf.envs import HoveringStateEnv
         from lotf.envs.wrappers import MinMaxObservationWrapper
 
-        from drone_playground.composition import build_environment, compose_config
+        from drone_playground.composition import build_environment
+        from tests.reference_configs import compose_reference as compose_config
 
         cfg = compose_config("lotf_hybrid_hover")
         env = build_environment(cfg, device="cpu")
         self.addCleanup(env.close)
         params = {
             k: v
-            for k, v in cfg["task"].items()
+            for k, v in cfg["env"]["task"].items()
             if k
             in (
                 "delay",
@@ -132,7 +133,8 @@ class LOTFModelTests(unittest.TestCase):
         from lotf.envs import TrajTrackingStateEnv
         from lotf.envs.wrappers import MinMaxObservationWrapper
 
-        from drone_playground.composition import build_environment, compose_config
+        from drone_playground.composition import build_environment
+        from tests.reference_configs import compose_reference as compose_config
 
         cfg = compose_config("lotf_hybrid_tracking")
         env = build_environment(cfg, device="cpu")

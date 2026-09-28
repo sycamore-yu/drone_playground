@@ -1,5 +1,0 @@
-name: lotf_mlp
-output: thrust_bodyrates
-planning:
-  name: ${task.reference}
-  kind: upstream_csv

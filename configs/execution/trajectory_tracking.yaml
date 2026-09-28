@@ -1,0 +1,6 @@
+defaults:
+- /controller@controller: crazyflow_attitude
+- /dynamics@dynamics: crazyflow
+- /controller@tracker: trajectory_tracking
+- _self_
+command: trajectory

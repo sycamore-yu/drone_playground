@@ -7,11 +7,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.composition import compose_config, validate_config
+from drone_playground.composition import validate_config
+from tests.reference_configs import compose_reference as compose_config
 
 
 def module():
-    name = "drone_playground.learning.pointcloud_bptt"
+    name = "drone_playground.learning.algorithms.pointcloud_bptt"
     assert importlib.util.find_spec(name), "Paper BPTT trainer must be implemented"
     return importlib.import_module(name)
 

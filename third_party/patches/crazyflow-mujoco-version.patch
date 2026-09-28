@@ -1,0 +1,24 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index ffce46c..ae9f3a9 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "crazyflow"
+-dynamic = ["version"]
++version = "0.3.2"
+ description = "Fast, parallelizable simulations of drones with JAX and MuJoCo."
+ authors = [{ name = "Martin Schuck" }, { name = "Marcel Rath" }]
+ readme = "README.md"
+@@ -22,8 +22,8 @@ dependencies = [
+     "numpy>=2.0.0",
+     "scipy>=1.17.0",
+     "jax>=0.7.0,!=0.10.2", # 0.10.2 XLA:GPU miscompiles for larger swarms. See https://github.com/jax-ml/jax/issues/39157
+-    "mujoco>=3.3.0,<3.11",  # 3.11 breaks the viewer. Undo when gymnasium 1.4 lands: https://github.com/Farama-Foundation/Gymnasium/pull/1678
+-    "mujoco-mjx>=3.3.0",
++    "mujoco>=3.14.0,<3.15",  # 3.14 ships the experimental Studio Web Viewer.
++    "mujoco-mjx>=3.14.0,<3.15",
+     "gymnasium[mujoco]>=1.2.0",
+     "imageio",
+     "einops",

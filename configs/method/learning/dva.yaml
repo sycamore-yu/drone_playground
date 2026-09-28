@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+- /env: navigation/static
+- /algorithm: dva
+- /network: perception_ppo
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- override /sensor@env.sensor: d435
+- override /observation@env.observation: navigation_depth
+- _self_
+method:
+  name: dva
+  output: attitude_thrust
+  implementation: neural
+  trainable: true
+source: P5 formal matrix unit 2; JAX D.VA port, detached D435 observation
+mode: train
+training:
+  num_envs: 128
+  policy_updates: 2048
+  num_timesteps: 8388608
+  max_wall_seconds: 7200

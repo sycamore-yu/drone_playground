@@ -1,6 +1,7 @@
 """Numerical failure must be reported before a divergent state enters PPO statistics."""
 
 import unittest
+from dataclasses import replace
 
 import crazyflow  # noqa: F401
 import jax
@@ -10,7 +11,7 @@ import numpy as np
 
 class NumericalBoundaryTests(unittest.TestCase):
     def make_env(self):
-        from drone_playground.tasks.tracking import TrackingEnv
+        from drone_playground.environments.tasks.tracking import TrackingEnv
 
         env = TrackingEnv(
             task="random",
@@ -34,8 +35,9 @@ class NumericalBoundaryTests(unittest.TestCase):
                 states=data.states.replace(ang_vel=jnp.full_like(data.states.ang_vel, 8.119e26))
             )
 
-        # Failure injection now crosses the injected dynamics interface.
-        env.model.advance = divergent_step
+        # Execution owns the captured callable after assembly; inject the same
+        # physical failure at that public transition boundary.
+        env.execution = replace(env.execution, advance=divergent_step)
         out = jax.jit(env.step)(state, env.hover_action)
         self.assertTrue(np.isfinite(out.obs).all())
         self.assertTrue(bool(out.done))
@@ -43,11 +45,14 @@ class NumericalBoundaryTests(unittest.TestCase):
         self.assertEqual(float(out.reward), -1.0)
 
     def test_same_step_reset_keeps_learner_observations_and_second_moments_finite(self):
-        from drone_playground.tasks.tracking import wrap_for_training
+        from drone_playground.learning.env_adapter import wrap_for_training
 
         env = self.make_env()
-        env.model.advance = lambda data, steps: data.replace(
-            states=data.states.replace(ang_vel=jnp.full_like(data.states.ang_vel, 8.119e26))
+        env.execution = replace(
+            env.execution,
+            advance=lambda data, steps: data.replace(
+                states=data.states.replace(ang_vel=jnp.full_like(data.states.ang_vel, 8.119e26))
+            ),
         )
         wrapped = wrap_for_training(env, env.episode_length)
         state = wrapped.reset(jax.random.split(jax.random.PRNGKey(0), 2))

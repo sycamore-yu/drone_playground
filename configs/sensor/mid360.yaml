@@ -1,0 +1,11 @@
+_target_: drone_playground.environments.sensors.lidar.Mid360Lidar
+name: mid360
+pattern: mid360
+downsample: 200
+source_rate_hz: 10.0
+history: 4
+range_m:
+- 0.1
+- 200.0
+normalise_far_m: 40.0
+include_ground: true

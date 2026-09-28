@@ -1,6 +1,0 @@
-name: fixed_trajectory
-output: trajectory
-planning:
-  _target_: drone_playground.policies.planning.TrajectoryPlan
-  name: ${task.reference}
-  amplitude: 1.0

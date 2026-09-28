@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+- /scene@env.scene: empty
+- /task@env.task: hovering
+- /sensor@env.sensor: none
+- /observation@env.observation: state_reference
+- /execution@env.execution: attitude_thrust
+- /objective: tracking_exp
+- _self_
+env:
+  name: hovering
+  scene:
+    takeoff:
+    - 0.0
+    - 0.0
+    - 1.0

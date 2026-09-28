@@ -6,13 +6,10 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Callable
 
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-from drone_playground.tasks.tracking import TrackingEnv
 
 
 def summarize_trials(trace: dict, seeds: list[int], dt: float) -> dict:
@@ -71,51 +68,17 @@ def tree_digest(tree) -> str:
 class PolicyEvaluator:
     """Reuse one compiled evaluator for all snapshots of a given policy architecture."""
 
-    def __init__(self, env: TrackingEnv, make_policy: Callable, seeds: list[int]):
-        self.env, self.seeds = env, list(seeds)
-        if not seeds:
-            raise ValueError("At least one evaluation seed is required")
+    def __init__(self, env, make_policy, seeds):
+        from drone_playground.runtime.jax_runner import policy_rollout
+
+        self.env, self.seeds = env, seeds
         keys = jnp.asarray([jax.random.PRNGKey(seed) for seed in seeds])
-        ref_ids = jnp.arange(len(seeds)) % env.trajectories.shape[0]
-        initial = jax.vmap(env.reset)(keys, ref_ids)
-
-        def run(params):
-            policy = make_policy(params, deterministic=True)
-
-            def one_step(carry, index):
-                state, alive = carry
-                action = policy(state.obs, jax.random.PRNGKey(0))[0]
-                next_state = jax.vmap(env.step)(state, action)
-
-                def freeze(current, proposed):
-                    mask = alive.reshape(alive.shape + (1,) * (proposed.ndim - alive.ndim))
-                    return jnp.where(mask, proposed, current)
-
-                next_state = jax.tree.map(freeze, state, next_state)
-                failed = (~alive) | next_state.done.astype(bool)
-                pos = next_state.pipeline_state.sim_data.states.pos[:, 0, 0]
-                quat = next_state.pipeline_state.sim_data.states.quat[:, 0, 0]
-                trace = {
-                    "pos": pos,
-                    "quat": quat,
-                    "obs": next_state.obs,
-                    "time": jnp.full((len(seeds),), (index + 1) * env.dt),
-                    "actions": action,
-                    "reward": next_state.reward,
-                    "metrics": next_state.metrics,
-                    "active": alive,
-                    "failed": failed,
-                }
-                return (next_state, ~failed), trace
-
-            _, trace = jax.lax.scan(
-                one_step,
-                (initial, jnp.ones(len(seeds), dtype=bool)),
-                jnp.arange(env.episode_length),
+        reference_ids = jnp.arange(len(seeds), dtype=jnp.int32) % env.trajectories.shape[0]
+        self._run = jax.jit(
+            lambda params: policy_rollout(
+                env, make_policy, params, keys, reference_ids=reference_ids, kind="tracking"
             )
-            return trace
-
-        self._run = jax.jit(run)
+        )
 
     def run(self, params) -> tuple[dict, dict]:
         before = tree_digest(params)

@@ -9,7 +9,7 @@ import pytest
 
 
 def pipeline_module():
-    path = Path(__file__).resolve().parents[1] / "scripts/run_pointcloud_pipeline.py"
+    path = Path(__file__).resolve().parents[1] / "scripts/tools/run_pointcloud_pipeline.py"
     assert path.exists(), "The full-budget training/evaluation pipeline must exist"
     spec = importlib.util.spec_from_file_location("paper_pipeline", path)
     module = importlib.util.module_from_spec(spec)
@@ -77,7 +77,8 @@ def test_phase_commands_resume_final_state_and_evaluate_selected_policy(tmp_path
     assert f"training.resume={result['checkpoint']}" in commands["training"]
     assert f"checkpoint={result['selected']['checkpoint']}" in commands["early_evaluation"]
     assert "training.stop_after_updates=null" in commands["training"]
-    assert "experiment=paper_pointcloud_navigation8" in commands["early_evaluation"]
+    assert "env=paper/pointcloud_navigation" in commands["early_evaluation"]
+    assert "mode=eval" in commands["early_evaluation"]
     assert commands["final_evaluation_prefix"][-1] == "run_id=full-eval"
 
 
@@ -147,10 +148,15 @@ def test_source_reconciliation_is_limited_to_evaluation_and_coordinator():
     module = pipeline_module()
     assert hasattr(module, "validate_source_reconciliation")
     module.validate_source_reconciliation(
-        ["src/drone_playground/evaluation/pointcloud.py", "scripts/run_pointcloud_pipeline.py"]
+        [
+            "src/drone_playground/evaluation/pointcloud.py",
+            "scripts/tools/run_pointcloud_pipeline.py",
+        ]
     )
     with pytest.raises(ValueError, match="training"):
-        module.validate_source_reconciliation(["src/drone_playground/learning/pointcloud_bptt.py"])
+        module.validate_source_reconciliation(
+            ["src/drone_playground/learning/algorithms/pointcloud_bptt.py"]
+        )
 
 
 def test_live_training_adoption_checks_saved_process_identity(tmp_path):

@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+- /env: tracking
+- /algorithm: ppo
+- /network: brax_ppo
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- _self_
+method:
+  name: ppo
+  output: attitude_thrust
+  implementation: neural
+  trainable: true
+source: Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight,
+  not the paper Lissajous task
+mode: train

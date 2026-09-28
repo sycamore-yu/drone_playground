@@ -13,12 +13,12 @@ import numpy as np
 from hydra.utils import instantiate
 from scipy.spatial.transform import Rotation
 
+from drone_playground.environments.scenes.navigation import clearance_and_collision, euclidean_norm
+from drone_playground.environments.tasks.navigation import OUTCOME_NAMES
 from drone_playground.evaluation.tracking import save_report, tree_digest
 from drone_playground.runs.console import capture_console
 from drone_playground.runs.pointcloud import load_training_state
 from drone_playground.runs.record import RunRecorder
-from drone_playground.tasks.navigation import OUTCOME_NAMES
-from drone_playground.tasks.scenes.navigation import clearance_and_collision, euclidean_norm
 
 
 def _select(mask, new, old):
@@ -182,12 +182,12 @@ def summarize_trace(trace, scene_ids, speed, duration, start):
 
 
 def export_case(task, trace, case, directory):
-    from drone_playground.runs.navigation_scene import (
+    from drone_playground.visualization.navigation_scene import (
         active_indices,
         create_replay_model,
         obstacle_track,
     )
-    from drone_playground.runs.rscope_io import export_rollout
+    from drone_playground.visualization.rscope_io import export_rollout
 
     length = int(np.asarray(trace["active"])[:, case].sum())
     single = {
@@ -360,21 +360,26 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
 
     state, metadata = load_training_state(config["checkpoint"])
     trained = metadata["config"]
-    for slot in ("policy", "network", "observation", "controller", "dynamics"):
+    for slot in ("method", "network"):
         if config[slot] != trained[slot]:
             raise ValueError(
                 f"Frozen-policy evaluation changed the {slot} slot; declare a separate ablation"
             )
-    if config["task"]["freq"] != trained["task"]["freq"]:
+    for slot in ("sensor", "observation", "execution"):
+        if config["env"][slot] != trained["env"][slot]:
+            raise ValueError(f"Frozen-policy evaluation changed env.{slot}")
+    if config["algorithm"]["gradient"] != trained["algorithm"]["gradient"]:
+        raise ValueError("Frozen-policy evaluation changed its derivative identity")
+    if config["env"]["task"]["freq"] != trained["env"]["task"]["freq"]:
         raise ValueError("The recurrent policy tick must match its training time semantics")
-    if config["scene"]["name"] != "navigation8":
-        raise ValueError("Choose scene=paper_navigation8 for the requested transfer benchmark")
+    if config["env"]["scene"]["name"] != "navigation":
+        raise ValueError("Choose env=paper/pointcloud_navigation for the transfer benchmark")
     if config["evaluation"]["episodes"] != 1:
         raise ValueError("The nominal fixed-scene protocol has one deterministic trial per cell")
     cfg = copy.deepcopy(config)
-    cfg["task"]["duration"] = float(cfg["evaluation"]["duration"])
-    cfg["mode"] = "evaluate"
-    task = build_environment(cfg, cfg["training"]["device"], "heldout", 1)
+    cfg["env"]["task"]["duration"] = float(cfg["evaluation"]["duration"])
+    cfg["mode"] = "eval"
+    task = build_environment(cfg, cfg["runtime"]["device"], "heldout", 1)
     network = instantiate(cfg["network"], _convert_="all")
     bank, manifest = task.scene.build()
     task.bank = bank

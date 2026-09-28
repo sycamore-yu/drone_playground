@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drone-playground"
-version = "0.1.0"
-description = "Crazyflow tasks, Brax learning and reproducible drone evaluation"
+version = "0.3.0"
+description = "Composable JAX drone learning, planning, control and task evaluation"
 license = {file = "LICENSE"}
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -41,8 +41,8 @@ drone-experiment = "drone_playground.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"drone_playground.tasks.lsy_upstream" = ["assets/*", "level0.toml", "LICENSE", "*.json", "*.patch"]
-"drone_playground.controllers.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
+"drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "level0.toml", "LICENSE", "*.json", "*.patch"]
+"drone_playground.methods.optimal_control.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -52,8 +52,8 @@ addopts = "-ra"
 line-length = 100
 target-version = "py313"
 extend-exclude = [
-    "src/drone_playground/tasks/lsy_upstream",
-    "src/drone_playground/controllers/lsy_upstream",
+    "src/drone_playground/environments/tasks/lsy_upstream",
+    "src/drone_playground/methods/optimal_control/lsy_upstream",
 ]
 
 [tool.ruff.lint]
@@ -72,8 +72,8 @@ ruff = "*"
 
 [tool.pixi.pypi-dependencies]
 drone-playground = { path = ".", editable = true }
-crazyflow = { path = "../crazyflow", editable = true }
-lotf = { path = "third_party/learning_on_the_fly", editable = true }
+crazyflow = { path = "tmp/sources/crazyflow", editable = true }
+lotf = { path = "tmp/sources/lotf", editable = true }
 
 [tool.pixi.activation.env]
 SCIPY_ARRAY_API = "1"
@@ -81,10 +81,10 @@ XLA_PYTHON_CLIENT_PREALLOCATE = "false"
 OMP_NUM_THREADS = "4"
 
 [tool.pixi.tasks]
-test = "python -m pytest"
-train = "python -m drone_playground.app mode=train"
-evaluate = "python -m drone_playground.app mode=evaluate"
-simulate = "python -m drone_playground.app mode=simulate"
+test = "env PYTHONPATH=src PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest"
+train = "python scripts/train.py"
+eval = "python scripts/eval.py"
+play = "python scripts/play.py"
 experiment = "python -m drone_playground.app"
 demo = "python -m drone_playground.cli demo"
 replay = "python -m drone_playground.cli replay"

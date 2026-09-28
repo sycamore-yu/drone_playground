@@ -14,7 +14,7 @@ import numpy as np
 
 class RacingTests(unittest.TestCase):
     def module(self):
-        name = "drone_playground.tasks.racing"
+        name = "drone_playground.environments.tasks.racing"
         self.assertIsNotNone(importlib.util.find_spec(name), "Native racing adapter must exist")
         return importlib.import_module(name)
 
@@ -64,7 +64,7 @@ class RacingTests(unittest.TestCase):
         other = simulate(jax.random.PRNGKey(5))
         np.testing.assert_array_equal(first, repeated)
         self.assertGreater(float(jnp.max(jnp.abs(first - other))), 1e-8)
-        from drone_playground.learning import shac
+        from drone_playground.learning.algorithms import shac
 
         _, _, result = shac.train(
             env,
@@ -95,7 +95,7 @@ class RacingTests(unittest.TestCase):
         self.assertFalse(
             passed(after.at[1].set(0.3), before.at[1].set(0.3), origin, quat, False, (0.45, 0.45))
         )
-        from drone_playground.tasks.scenes import load_lsy_config
+        from drone_playground.environments.scenes import load_lsy_config
 
         self.assertEqual(load_lsy_config().env.track.gate_order, [1, 2, 3, 4, 2])
 
@@ -185,7 +185,7 @@ class RacingTests(unittest.TestCase):
 
         import mujoco
 
-        from drone_playground.runs.rscope_io import _model_bundle
+        from drone_playground.visualization.rscope_io import _model_bundle
 
         with tempfile.TemporaryDirectory() as directory:
             xml, assets = _model_bundle(env.sim, Path(directory))

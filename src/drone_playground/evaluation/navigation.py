@@ -14,12 +14,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.tasks.navigation import (
+from drone_playground.environments.scenes.navigation import DIFFICULTIES
+from drone_playground.environments.tasks.navigation import (
     OUTCOME_COLLISION,
     OUTCOME_NAMES,
     OUTCOME_TIMEOUT,
 )
-from drone_playground.tasks.scenes.navigation import DIFFICULTIES
 
 
 def summarize_cell(trace: dict, labels: list[dict], dt: float, duration: float) -> dict:
@@ -90,9 +90,7 @@ def combine_cells(cells: dict[str, dict]) -> dict:
     totals = sum(cell["num_trials"] for cell in cells.values())
     macro_success = float(np.mean([cell["success_rate"] for cell in cells.values()]))
     macro_collision = float(np.mean([cell["collision_rate"] for cell in cells.values()]))
-    macro_constrained = float(
-        np.mean([cell["constrained_time_mean_s"] for cell in cells.values()])
-    )
+    macro_constrained = float(np.mean([cell["constrained_time_mean_s"] for cell in cells.values()]))
     valid = [cell["success_time_mean_s"] for cell in cells.values() if cell["success_time_mean_s"]]
     return {
         "num_trials": totals,
@@ -129,51 +127,19 @@ class NavigationEvaluator:
                 np.arange(index * per_difficulty, (index + 1) * per_difficulty), jnp.int32
             )
             self.groups[difficulty] = [int(value) for value in scenario_ids]
-            keys = seeds[: per_difficulty] if len(seeds) >= per_difficulty else jnp.tile(
-                seeds, (per_difficulty // len(seeds) + 1, 1)
-            )[:per_difficulty]
+            keys = (
+                seeds[:per_difficulty]
+                if len(seeds) >= per_difficulty
+                else jnp.tile(seeds, (per_difficulty // len(seeds) + 1, 1))[:per_difficulty]
+            )
             self._run[difficulty] = jax.jit(self._make_rollout(make_policy, keys, scenario_ids))
 
     def _make_rollout(self, make_policy, keys, scenario_ids):
-        env = self.env
-        length = env.episode_length
+        from drone_playground.runtime.jax_runner import policy_rollout
 
-        def run(params):
-            policy = make_policy(params, deterministic=True)
-            state = jax.vmap(env.reset)(keys, scenario_ids)
-
-            def one_step(carry, index):
-                current, alive = carry
-                action = policy(current.obs, jax.random.PRNGKey(0))[0]
-                proposed = jax.vmap(env.step)(current, action)
-
-                def freeze(old, new):
-                    mask = alive.reshape(alive.shape + (1,) * (new.ndim - alive.ndim))
-                    return jnp.where(mask, new, old)
-
-                proposed = jax.tree.map(freeze, current, proposed)
-                failed = (~alive) | proposed.done.astype(bool)
-                trace = {
-                    "pos": proposed.pipeline_state.sim_data.states.pos[:, 0, 0],
-                    "quat": proposed.pipeline_state.sim_data.states.quat[:, 0, 0],
-                    "obs": proposed.obs,
-                    "time": jnp.full((keys.shape[0],), (index + 1) * env.dt),
-                    "actions": action,
-                    "reward": proposed.reward,
-                    "metrics": proposed.metrics,
-                    "active": alive,
-                    "failed": failed,
-                    "done": proposed.done,
-                    "outcome": proposed.info["outcome"],
-                }
-                return (proposed, ~failed), trace
-
-            _, trace = jax.lax.scan(
-                one_step, (state, jnp.ones(keys.shape[0], dtype=bool)), jnp.arange(length)
-            )
-            return trace
-
-        return run
+        return lambda params: policy_rollout(
+            self.env, make_policy, params, keys, reference_ids=scenario_ids, kind="navigation"
+        )
 
     def labels(self) -> dict[str, list[dict]]:
         labels = {}
@@ -240,15 +206,16 @@ def select_episodes(report: dict, count: int = 4) -> dict[str, list[int]]:
     return selection
 
 
-def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4,
-                              case_indices: dict | None = None) -> list[dict]:
+def export_navigation_replays(
+    env, traces: dict, directory: Path, count: int = 4, case_indices: dict | None = None
+) -> list[dict]:
     """Write one self-contained rscope replay per difficulty cell."""
-    from drone_playground.runs.navigation_scene import (
+    from drone_playground.visualization.navigation_scene import (
         active_indices,
         create_replay_model,
         obstacle_track,
     )
-    from drone_playground.runs.rscope_io import export_rollout
+    from drone_playground.visualization.rscope_io import export_rollout
 
     per_difficulty = env.bank.num_instances // len(DIFFICULTIES)
     published = []
@@ -256,8 +223,11 @@ def export_navigation_replays(env, traces: dict, directory: Path, count: int = 4
         if difficulty not in traces:
             continue
         trace = traces[difficulty]
-        cases = (case_indices[difficulty] if case_indices is not None
-                 else list(range(min(count, trace["pos"].shape[1]))))
+        cases = (
+            case_indices[difficulty]
+            if case_indices is not None
+            else list(range(min(count, trace["pos"].shape[1])))
+        )
         for case in cases:
             scenario_id = index * per_difficulty + case
             stop = trace["pos"].shape[0]
@@ -299,11 +269,11 @@ def evaluate_navigation(config: dict, root: Path, run_id: str):
     import time
 
     from drone_playground.composition import build_environment
-    from drone_playground.policies.neural import NeuralPolicy
+    from drone_playground.methods.neural import NeuralPolicy
     from drone_playground.runs.console import capture_console
     from drone_playground.runs.record import RunRecorder
 
-    from .execution import resolve_evaluation_config
+    from .evaluator import resolve_evaluation_config
     from .tracking import save_report
 
     policy = NeuralPolicy.load(config["checkpoint"])
@@ -318,9 +288,7 @@ def evaluate_navigation(config: dict, root: Path, run_id: str):
             rec.phase("initializing")
             start = resolved["evaluation"].get("seed_start")
             start = start if start is not None else (20000 if split == "dev" else 30000)
-            env = build_environment(
-                resolved, resolved["training"]["device"], split, per_difficulty
-            )
+            env = build_environment(resolved, resolved["runtime"]["device"], split, per_difficulty)
             if (
                 env.observation_size != metadata["observation_size"]
                 or env.action_size != metadata["action_size"]

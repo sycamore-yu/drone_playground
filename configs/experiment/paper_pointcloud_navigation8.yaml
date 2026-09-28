@@ -1,8 +1,0 @@
-# @package _global_
-defaults:
-- paper_pointcloud
-- override /scene: paper_navigation8
-- _self_
-mode: evaluate
-task:
-  duration: 40.0

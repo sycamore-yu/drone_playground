@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+- /env: tracking
+- /algorithm: apg
+- /network: brax_apg
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- _self_
+method:
+  name: apg
+  output: attitude_thrust
+  implementation: neural
+  trainable: true
+source: Brax native APG with Crazyflow paper-style 16 worlds/40 step rollout; custom
+  frozen development recipe
+mode: train
+training:
+  num_envs: 16
+  num_timesteps: null

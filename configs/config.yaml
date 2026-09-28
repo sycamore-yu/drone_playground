@@ -1,27 +1,12 @@
 defaults:
-- policy: neural_attitude
-- controller: crazyflow_attitude
-- dynamics: crazyflow
-- task: figure8
-- scene: empty
-- observation: state_reference
-- algorithm: ppo
-- network: brax_ppo
-- objective: tracking_exp
-- training: default
 - _self_
-- experiment: figure8_ppo
-config_version: 2
+- method: learning/ppo
+config_version: 3
 mode: train
 run_id: null
 checkpoint: null
 source: ''
-evaluation:
-  environment: checkpoint
-  split: heldout
-  episodes: 128
-  seed_start: null
-  output: null
+migration: null
 replay:
   directory: null
 hydra:

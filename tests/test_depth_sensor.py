@@ -15,23 +15,28 @@ import mujoco
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_config, validate_config
-from drone_playground.tasks.observations import NavigationSensorObservation
-from drone_playground.tasks.scenes.navigation import KIND_BOX, KIND_CYLINDER, obstacle_positions
-from drone_playground.tasks.sensors.depth import (
+from drone_playground.composition import validate_config
+from drone_playground.environments.observations import NavigationSensorObservation
+from drone_playground.environments.scenes.navigation import (
+    KIND_BOX,
+    KIND_CYLINDER,
+    obstacle_positions,
+)
+from drone_playground.environments.sensors.depth import (
     BODY_FROM_OPTICAL,
     DepthCamera,
     cast_depth,
     sensor_pose,
 )
-from drone_playground.tasks.sensors.rays import cast_rays
+from drone_playground.environments.sensors.rays import cast_rays
+from tests.reference_configs import compose_reference as compose_config
 
 LOW = np.array([0.0, -5.0, 0.0], np.float32)
 HIGH = np.array([20.0, 5.0, 5.0], np.float32)
 
 
 def synthetic_bank(obstacles, capacity=4, start=(0.5, 0.0, 2.0), goal=(15.5, 0.0, 2.0)):
-    from drone_playground.tasks.scenes.navigation import MOTION_STATIC, SceneBank
+    from drone_playground.environments.scenes.navigation import MOTION_STATIC, SceneBank
 
     kind = np.zeros((1, capacity), np.int32)
     size = np.zeros((1, capacity, 3), np.float32)
@@ -85,9 +90,7 @@ def mujoco_scene(obstacles):
         # massless placeholder carries the free joint and is excluded from rays.
         '<body name="mjx_dummy" pos="500 500 500"><freejoint/>'
         '<geom name="mjx_dummy_geom" type="sphere" size="0.01" mass="0.001"/>'
-        "</body>"
-        + "".join(bodies)
-        + "</worldbody></mujoco>"
+        "</body>" + "".join(bodies) + "</worldbody></mujoco>"
     )
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
@@ -157,7 +160,9 @@ def test_sensor_pose_mounts_the_optical_frame_on_the_body_forward_axis():
     yawed, yawed_rotation = sensor_pose(
         camera, jnp.zeros(3), jnp.array([0.0, 0.0, math.sqrt(0.5), math.sqrt(0.5)])
     )
-    assert np.allclose(np.asarray(yawed_rotation) @ np.array([0.0, 0.0, 1.0]), [0.0, 1.0, 0.0], atol=1e-6)
+    assert np.allclose(
+        np.asarray(yawed_rotation) @ np.array([0.0, 0.0, 1.0]), [0.0, 1.0, 0.0], atol=1e-6
+    )
     assert not np.allclose(np.asarray(yawed), np.asarray(origin))
 
 
@@ -267,7 +272,7 @@ def test_range_clipping_marks_far_and_missing_pixels_invalid():
 
 
 def test_moving_obstacle_is_rendered_where_it_actually_is():
-    from drone_playground.tasks.scenes.navigation import (
+    from drone_playground.environments.scenes.navigation import (
         MOTION_BOUNCE,
         obstacle_positions,
     )
@@ -365,9 +370,7 @@ def test_depth_environment_closed_loop_and_frame_timestamps():
         nxt = env.step(carry, env.hover_action)
         return nxt, (nxt.pipeline_state.sensor_time, nxt.pipeline_state.sensor_sequence)
 
-    final, (times, sequences) = jax.jit(
-        lambda s: jax.lax.scan(body, s, None, length=8)
-    )(state)
+    final, (times, sequences) = jax.jit(lambda s: jax.lax.scan(body, s, None, length=8))(state)
     sequences = np.asarray(sequences).reshape(-1)
     # One new frame every two control steps, so the counter rises by one each pair.
     # Reset already produced frame one at control step zero, so the first
@@ -381,9 +384,7 @@ def test_depth_environment_closed_loop_and_frame_timestamps():
     # A fresh reset must clear the history rather than leak the previous episode.
     fresh = env.reset(jax.random.PRNGKey(1), jnp.int32(0))
     assert int(fresh.pipeline_state.sensor_sequence) == 1
-    assert not np.array_equal(
-        np.asarray(fresh.pipeline_state.sensor_time), np.asarray(times[-1])
-    )
+    assert not np.array_equal(np.asarray(fresh.pipeline_state.sensor_time), np.asarray(times[-1]))
     env.close()
 
 
@@ -393,12 +394,12 @@ def test_composition_requires_a_sensor_for_a_perception_observation():
     config = compose_config("p5_static_depth_ppo")
     validate_config(config)
     stripped = copy.deepcopy(config)
-    del stripped["observation"]["sensor"]
-    with pytest.raises(ValueError, match="requires an observation.sensor"):
+    del stripped["env"]["sensor"]
+    with pytest.raises(ValueError, match="Missing environment component: sensor"):
         validate_config(stripped)
 
     # A state-only observation must not smuggle in a sensor group.
     state_only = compose_config("p5_navigation_static")
-    state_only["observation"]["sensor"] = {"_target_": "x.Y", "name": "z"}
-    with pytest.raises(ValueError, match="must not declare a sensor"):
+    state_only["env"]["sensor"] = {"_target_": "x.Y", "name": "z"}
+    with pytest.raises(ValueError, match="Observation and env.sensor contract differ"):
         validate_config(state_only)

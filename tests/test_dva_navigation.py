@@ -12,20 +12,17 @@ import numpy as np
 import pytest
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.composition import (
-    build_environment,
-    compose_config,
-    native_training_config,
-)
-from drone_playground.learning.dva import (
+from drone_playground.composition import build_environment, native_training_config
+from drone_playground.learning.algorithms.dva import (
     critic_observation_from_pipeline,
     detached_policy_action,
     load_training_state,
     terminal_critic_observation,
     train,
 )
-from drone_playground.learning.networks import network_factory
-from drone_playground.learning.shac import lambda_returns
+from drone_playground.learning.algorithms.shac import lambda_returns
+from drone_playground.networks.policies import network_factory
+from tests.reference_configs import compose_reference as compose_config
 
 
 def small_config(experiment: str) -> tuple[dict, dict]:
@@ -136,8 +133,8 @@ def test_terminal_critic_input_bypasses_sensor_but_keeps_state_derivative():
     resolved, config = small_config("p5_static_depth_dva")
     env = build_environment(resolved, "cpu", "train", 2)
     try:
-        from drone_playground.learning.perception import SensorLayout
-        from drone_playground.tasks.tracking import wrap_for_training
+        from drone_playground.learning.env_adapter import wrap_for_training
+        from drone_playground.networks.encoders import SensorLayout
 
         layout = SensorLayout.from_dict(config["sensor_layout"])
         wrapped = wrap_for_training(env, env.episode_length)
@@ -192,8 +189,11 @@ def test_real_dva_update_is_finite_moves_encoder_and_saves_full_state(experiment
             before, after = snapshots[0][1][1], snapshots[1][1][1]
             differences = [
                 np.square(np.asarray(b) - np.asarray(a)).sum()
-                for (path, a), b in zip(jax.tree_util.tree_flatten_with_path(before)[0],
-                                       jax.tree.leaves(after), strict=True)
+                for (path, a), b in zip(
+                    jax.tree_util.tree_flatten_with_path(before)[0],
+                    jax.tree.leaves(after),
+                    strict=True,
+                )
                 if "Encoder" in jax.tree_util.keystr(path)
             ]
             assert differences and sum(differences) > 0, "The sensor encoder must actually update"
@@ -228,8 +228,8 @@ def test_restore_rejects_different_sensor_contract():
 
 
 def test_timeout_retains_pre_reset_proprioception_and_derivative():
-    from drone_playground.learning.perception import SensorLayout
-    from drone_playground.tasks.tracking import wrap_for_training
+    from drone_playground.learning.env_adapter import wrap_for_training
+    from drone_playground.networks.encoders import SensorLayout
 
     resolved, config = small_config("p5_static_depth_dva")
     env = build_environment(resolved, "cpu", "train", 1)
@@ -276,55 +276,86 @@ def test_resume_matches_uninterrupted_training_and_rejects_schedule_change(tmp_p
 
 
 def test_collision_distance_has_finite_interior_and_surface_subgradients():
-    from drone_playground.tasks.scenes.navigation import KIND_BOX, KIND_CYLINDER, signed_distance
+    from drone_playground.environments.scenes.navigation import (
+        KIND_BOX,
+        KIND_CYLINDER,
+        signed_distance,
+    )
 
     for kind in (KIND_BOX, KIND_CYLINDER):
+
         def distance(p):
             return signed_distance(jnp.int32(kind), jnp.ones(3), jnp.zeros(3), p)
-        for point in ([0., 0., 0.], [0.2, 0.1, 0.1], [1., 0., 0.], [2., 0.1, 0.1]):
+
+        for point in ([0.0, 0.0, 0.0], [0.2, 0.1, 0.1], [1.0, 0.0, 0.0], [2.0, 0.1, 0.1]):
             assert np.isfinite(jax.grad(distance)(jnp.array(point))).all()
+
     def distance(p):
         return signed_distance(jnp.int32(KIND_BOX), jnp.ones(3), jnp.zeros(3), p)
-    np.testing.assert_allclose(jax.grad(distance)(jnp.array([0.2, 0.1, 0.1])), [1., 0., 0.])
+
+    np.testing.assert_allclose(jax.grad(distance)(jnp.array([0.2, 0.1, 0.1])), [1.0, 0.0, 0.0])
 
 
 def test_fixed_observation_surrogate_matches_end_to_end_finite_difference():
-    from drone_playground.learning.perception import SensorLayout
-    from drone_playground.learning.shac import bootstrap_value, segment_objective
+    from drone_playground.learning.algorithms.shac import bootstrap_value, segment_objective
+    from drone_playground.networks.encoders import SensorLayout
 
     resolved, config = small_config("p5_static_depth_dva")
     env = build_environment(resolved, "cpu", "train", 1)
     try:
         layout = SensorLayout.from_dict(config["sensor_layout"])
         networks = network_factory(config)((env.observation_size,), 4)
-        normalizer = running_statistics.init_state(specs.Array((env.observation_size,), jnp.float32))
+        normalizer = running_statistics.init_state(
+            specs.Array((env.observation_size,), jnp.float32)
+        )
         policy = networks.policy_network.init(jax.random.PRNGKey(80))
         critic = networks.value_network.init(jax.random.PRNGKey(81))
         initial = env.reset(jax.random.PRNGKey(82), jnp.int32(0))
         current, observations = initial, []
         for tick in range(2):
             observations.append(current.obs)
-            action = detached_policy_action(networks, normalizer, policy, current.obs,
-                                            jax.random.PRNGKey(tick), deterministic=True)
+            action = detached_policy_action(
+                networks,
+                normalizer,
+                policy,
+                current.obs,
+                jax.random.PRNGKey(tick),
+                deterministic=True,
+            )
             current = env.step(current, action)
 
         def surrogate(offset):
             params = copy.deepcopy(policy)
-            params["params"]["mean_head"]["bias"] = params["params"]["mean_head"]["bias"].at[3].add(offset)
+            params["params"]["mean_head"]["bias"] = (
+                params["params"]["mean_head"]["bias"].at[3].add(offset)
+            )
             current = initial
             rewards, values, dones = [], [], []
             for tick, frozen in enumerate(observations):
-                action = detached_policy_action(networks, normalizer, params, frozen,
-                                                jax.random.PRNGKey(tick), deterministic=True)
+                action = detached_policy_action(
+                    networks,
+                    normalizer,
+                    params,
+                    frozen,
+                    jax.random.PRNGKey(tick),
+                    deterministic=True,
+                )
                 current = env.step(current, action)
                 value = bootstrap_value(
                     lambda weights, obs: networks.value_network.apply(normalizer, weights, obs),
-                    critic, terminal_critic_observation(current, layout), current.done.astype(bool))
+                    critic,
+                    terminal_critic_observation(current, layout),
+                    current.done.astype(bool),
+                )
                 rewards.append(current.reward)
                 values.append(value)
                 dones.append(current.done.astype(bool))
-            return segment_objective(jnp.array(rewards)[:, None], jnp.array(values)[:, None],
-                                     jnp.array(dones)[:, None], 0.99)
+            return segment_objective(
+                jnp.array(rewards)[:, None],
+                jnp.array(values)[:, None],
+                jnp.array(dones)[:, None],
+                0.99,
+            )
 
         derivative = jax.jit(jax.grad(surrogate))(jnp.float32(0))
         forward = jax.jit(surrogate)

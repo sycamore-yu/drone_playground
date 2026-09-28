@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+- /env: paper/lotf_hover
+- /algorithm: lotf_bptt
+- /network: lotf_mlp
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- _self_
+method:
+  name: lotf
+  output: thrust_bodyrates
+  implementation: lotf_mlp
+  trainable: true
+source: LOTF cba6e537 notebook, explicit high-fidelity forward enabled; residual disabled
+mode: train
+training:
+  num_envs: 200
+  policy_updates: 200
+  num_timesteps: null
+  max_wall_seconds: 7200

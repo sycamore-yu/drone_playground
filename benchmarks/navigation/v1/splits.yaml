@@ -1,0 +1,5 @@
+train_seed: 10000
+development_seed: 20000
+heldout_seed: 30000
+geometry_split: fixed catalog shared across splits; no unseen-scene generalization
+  claim

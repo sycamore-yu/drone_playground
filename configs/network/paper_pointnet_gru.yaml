@@ -1,4 +1,7 @@
-_target_: drone_playground.learning.pointcloud_network.PointCloudPolicy
+_target_: drone_playground.networks.pointcloud.PointCloudPolicy
 hidden_size: 192
-point_channels: [64, 128, 1024]
+point_channels:
+- 64
+- 128
+- 1024
 negative_slope: 0.01

@@ -10,7 +10,7 @@ import pytest
 
 
 def physics():
-    name = "drone_playground.dynamics.point_mass"
+    name = "drone_playground.models.point_mass"
     assert importlib.util.find_spec(name), "paper point-mass module is required"
     return importlib.import_module(name)
 
@@ -66,7 +66,7 @@ def test_point_mass_attitude_is_finite_at_zero_speed_and_vertical_thrust():
 
 
 def test_uniform_mid360_has_paper_ray_count_and_body_frame():
-    name = "drone_playground.tasks.sensors.pointcloud"
+    name = "drone_playground.environments.sensors.pointcloud"
     assert importlib.util.find_spec(name), "paper MID-360 module is required"
     sensor = importlib.import_module(name).UniformMid360Lidar()
     rays = np.asarray(sensor.directions(0))
@@ -79,8 +79,8 @@ def test_uniform_mid360_has_paper_ray_count_and_body_frame():
 
 
 def test_shared_geometry_supports_sphere_distance_and_ray_hit():
-    from drone_playground.tasks.scenes import navigation as n
-    from drone_playground.tasks.sensors import rays
+    from drone_playground.environments.scenes import navigation as n
+    from drone_playground.environments.sensors import rays
 
     assert hasattr(n, "KIND_SPHERE"), "shared geometry needs the paper sphere primitive"
     kind = jnp.int32(n.KIND_SPHERE)
@@ -96,7 +96,7 @@ def test_shared_geometry_supports_sphere_distance_and_ray_hit():
 
 
 def test_acceleration_controller_preserves_units_and_rejects_wrong_shape():
-    name = "drone_playground.controllers.acceleration"
+    name = "drone_playground.execution.controllers.acceleration"
     assert importlib.util.find_spec(name), "acceleration controller is required"
     controller = importlib.import_module(name).AccelerationControl()
     u = jnp.array([1.0, 2.0, 3.0])
@@ -106,7 +106,7 @@ def test_acceleration_controller_preserves_units_and_rejects_wrong_shape():
 
 
 def test_parallel_box_ray_hits_when_parallel_slabs_contain_origin():
-    from drone_playground.tasks.sensors.rays import primitive_hit
+    from drone_playground.environments.sensors.rays import primitive_hit
 
     hit = primitive_hit(
         jnp.int32(2),
@@ -120,7 +120,7 @@ def test_parallel_box_ray_hits_when_parallel_slabs_contain_origin():
 
 
 def test_static_obstacle_motion_has_finite_zero_time_derivative():
-    from drone_playground.tasks.scenes.navigation import SceneBank, obstacle_positions
+    from drone_playground.environments.scenes.navigation import SceneBank, obstacle_positions
 
     bank = SceneBank(
         kind=jnp.ones((1, 1), jnp.int32),

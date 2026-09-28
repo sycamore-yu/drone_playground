@@ -13,7 +13,7 @@ from brax.training.acme import running_statistics, specs
 
 class CheckpointTests(unittest.TestCase):
     def test_normal_policy_uses_configured_state_independent_initial_std(self):
-        from drone_playground.learning.networks import network_factory
+        from drone_playground.networks.policies import network_factory
 
         net = network_factory(
             {
@@ -30,7 +30,7 @@ class CheckpointTests(unittest.TestCase):
         np.testing.assert_allclose(dist.loc, 0.0, atol=1e-6)
 
     def test_saved_brax_policy_reproduces_actions_and_normalization(self):
-        from drone_playground.learning.networks import network_factory
+        from drone_playground.networks.policies import network_factory
         from drone_playground.runs.checkpoints import load_policy, save_policy
 
         cfg = {
@@ -41,6 +41,16 @@ class CheckpointTests(unittest.TestCase):
             "hidden_sizes": [32, 32],
             "init_noise_std": 0.37,
         }
+        from drone_playground.composition import compose_method, native_training_config
+
+        composed = compose_method("learning/ppo", "tracking")
+        composed["network"].update(
+            normalize_observations=False,
+            hidden_sizes=[32, 32],
+            distribution_type="tanh_normal",
+            init_noise_std=0.37,
+        )
+        cfg = native_training_config(composed)
         factory = network_factory(cfg)
         net = factory(43, 4)
         params = (

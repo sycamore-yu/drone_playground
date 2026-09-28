@@ -13,12 +13,12 @@ import numpy as np
 
 class LOTFTrainingTests(unittest.TestCase):
     def module(self):
-        name = "drone_playground.learning.lotf_bptt"
+        name = "drone_playground.learning.algorithms.lotf_bptt"
         self.assertIsNotNone(importlib.util.find_spec(name), "LOTF BPTT implementation must exist")
         return importlib.import_module(name)
 
     def small_config(self):
-        from drone_playground.composition import compose_config
+        from tests.reference_configs import compose_reference as compose_config
 
         cfg = compose_config(
             "lotf_hybrid_hover",
@@ -30,7 +30,7 @@ class LOTFTrainingTests(unittest.TestCase):
                 "task.duration=0.08",
             ],
         )
-        cfg["training"]["device"] = "cpu"
+        cfg["runtime"]["device"] = "cpu"
         return cfg
 
     def test_single_update_matches_upstream_bptt(self):
@@ -100,7 +100,7 @@ class LOTFTrainingTests(unittest.TestCase):
         initial, _ = m.initialize(task, cfg)
         archived = copy.deepcopy(cfg)
         archived["algorithm"].pop("rollout")
-        archived["algorithm"]["horizon_length"] = cfg["task"]["duration"]
+        archived["algorithm"]["horizon_length"] = cfg["env"]["task"]["duration"]
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.pkl"
             m.save_training_state(path, initial, archived)
@@ -108,11 +108,11 @@ class LOTFTrainingTests(unittest.TestCase):
             self.assertEqual(int(restored.epoch_idx), 0)
             for group, key, value in [
                 ("algorithm", "learning_rate", 0.02),
-                ("policy", "output", "attitude_thrust"),
+                ("method", "output", "attitude_thrust"),
                 ("scene", "randomization", "different"),
             ]:
                 changed = copy.deepcopy(cfg)
-                changed[group][key] = value
+                (changed["env"]["scene"] if group == "scene" else changed[group])[key] = value
                 with self.assertRaisesRegex(ValueError, "configuration"):
                     m.load_training_state(path, initial, changed)
 

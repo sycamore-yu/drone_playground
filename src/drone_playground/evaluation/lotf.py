@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.dynamics.gradients import physical_view
+from drone_playground.models.gradients import physical_view
 
 from .tracking import summarize_trials, tree_digest
 

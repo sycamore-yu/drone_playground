@@ -7,11 +7,10 @@ import jax.numpy as jnp
 import mujoco
 import numpy as np
 import pytest
-from test_depth_sensor import mujoco_scene, synthetic_bank
 
-from drone_playground.composition import build_environment, compose_config, validate_config
-from drone_playground.tasks.scenes.navigation import KIND_BOX, obstacle_positions
-from drone_playground.tasks.sensors.lidar import (
+from drone_playground.composition import build_environment, validate_config
+from drone_playground.environments.scenes.navigation import KIND_BOX, obstacle_positions
+from drone_playground.environments.sensors.lidar import (
     MID360_ELEVATION_DEG,
     MID360_SAMPLES_PER_SCAN,
     Mid360Lidar,
@@ -22,7 +21,9 @@ from drone_playground.tasks.sensors.lidar import (
     point_cloud_message,
     scan_windows,
 )
-from drone_playground.tasks.sensors.rays import cast_rays
+from drone_playground.environments.sensors.rays import cast_rays
+from tests.reference_configs import compose_reference as compose_config
+from tests.test_depth_sensor import mujoco_scene, synthetic_bank
 
 CYLINDER = {"kind": 1, "size": (1.2, 5.0, 0.0), "origin": (6.0, 0.6, 2.5)}
 BOX = {"kind": KIND_BOX, "size": (0.5, 0.4, 0.6), "origin": (9.0, -1.0, 2.2)}

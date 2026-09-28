@@ -8,7 +8,7 @@ import numpy as np
 
 
 def client_module():
-    path = Path(__file__).parents[1] / "scripts/rscope_client.py"
+    path = Path(__file__).parents[1] / "scripts/tools/rscope_client.py"
     spec = importlib.util.spec_from_file_location("rscope_client_test", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

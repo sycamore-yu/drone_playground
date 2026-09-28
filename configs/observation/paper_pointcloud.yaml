@@ -1,14 +1,3 @@
-_target_: drone_playground.tasks.pointcloud.PaperObservation
+_target_: drone_playground.environments.tasks.pointcloud.PaperObservation
 name: paper_pointcloud_state
 proprioception_size: 10
-sensor:
-  _target_: drone_playground.tasks.sensors.pointcloud.UniformMid360Lidar
-  name: paper_mid360_uniform
-  azimuth_count: 180
-  elevation_count: 30
-  elevation_start_deg: -7.2
-  elevation_span_deg: 60.0
-  range_m: [0.1, 100.0]
-  source_rate_hz: 10.0
-  include_ground: true
-  state_gradient: detached

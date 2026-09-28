@@ -1,4 +1,4 @@
-_target_: drone_playground.tasks.scenes.EmptyScene
+_target_: drone_playground.environments.scenes.EmptyScene
 name: empty
 takeoff:
 - -1.5

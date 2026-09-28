@@ -1,0 +1,10 @@
+_target_: drone_playground.environments.scenes.catalog.NavigationScene
+name: navigation
+families:
+- navigation8
+dynamic: false
+scene_ids:
+- S01
+- S02
+- S03
+- S06

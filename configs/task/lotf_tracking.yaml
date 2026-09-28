@@ -10,3 +10,6 @@ position_std: 0.1
 velocity_std: 0.1
 omega_std: 0.1
 skip_start: true
+reference_generator:
+  name: fig8
+  kind: upstream_csv

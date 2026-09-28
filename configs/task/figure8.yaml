@@ -4,3 +4,7 @@ duration: 10.0
 reference: figure8
 reference_count: 256
 numerical_guard: false
+reference_generator:
+  _target_: drone_playground.methods.planners.reference.TrajectoryPlan
+  name: figure8
+  amplitude: 1.0

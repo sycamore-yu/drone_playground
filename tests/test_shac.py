@@ -14,7 +14,7 @@ import numpy as np
 
 class SHACTests(unittest.TestCase):
     def module(self):
-        name = "drone_playground.learning.shac"
+        name = "drone_playground.learning.algorithms.shac"
         self.assertIsNotNone(importlib.util.find_spec(name), "SHAC implementation must exist")
         return importlib.import_module(name)
 
@@ -61,7 +61,7 @@ class SHACTests(unittest.TestCase):
 
     def test_real_actor_critic_updates_and_snapshot_budget(self):
         m = self.module()
-        from drone_playground.tasks.tracking import TrackingEnv
+        from drone_playground.environments.tasks.tracking import TrackingEnv
 
         env = TrackingEnv(device="cpu")
         self.addCleanup(env.close)
@@ -96,10 +96,13 @@ class SHACTests(unittest.TestCase):
         self.module()
         from brax.training.acme import running_statistics, specs
 
-        from drone_playground.learning.networks import network_factory
+        from drone_playground.composition import compose_method, native_training_config
+        from drone_playground.networks.policies import network_factory
         from drone_playground.runs.checkpoints import load_policy, save_policy
 
-        config = dict(algorithm="shac", hidden_sizes=[16, 16], normalize_observations=False)
+        resolved = compose_method("learning/shac", "tracking")
+        resolved["network"].update(hidden_sizes=[16, 16], normalize_observations=False)
+        config = native_training_config(resolved)
         net = network_factory(config)(43, 4)
         p = (
             running_statistics.init_state(specs.Array((43,), jnp.float32)),
@@ -114,7 +117,7 @@ class SHACTests(unittest.TestCase):
 
     def test_full_state_resume_matches_continuous_updates(self):
         m = self.module()
-        from drone_playground.tasks.tracking import TrackingEnv
+        from drone_playground.environments.tasks.tracking import TrackingEnv
 
         env = TrackingEnv(device="cpu")
         self.addCleanup(env.close)

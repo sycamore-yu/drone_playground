@@ -1,2 +1,2 @@
-_target_: drone_playground.controllers.acceleration.AccelerationControl
+_target_: drone_playground.execution.controllers.acceleration.AccelerationControl
 name: acceleration_passthrough

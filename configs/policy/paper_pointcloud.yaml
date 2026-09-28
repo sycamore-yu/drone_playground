@@ -1,4 +1,0 @@
-name: pointcloud_recurrent
-output: world_acceleration
-network_output_frame: body
-command_units: m/s^2

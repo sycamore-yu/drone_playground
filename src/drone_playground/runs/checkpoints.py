@@ -15,9 +15,9 @@ from brax.training.agents.apg import networks as apg_networks
 from brax.training.agents.ppo import networks as ppo_networks
 
 from drone_playground.evaluation.tracking import save_report, tree_digest
-from drone_playground.learning.networks import network_factory
+from drone_playground.networks.policies import network_factory
 
-from .legacy import checkpoint_config
+from .migration import require_current
 
 
 def save_policy(directory: Path, params, config: dict, step: int) -> Path:
@@ -27,9 +27,9 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
     model.save_params(str(temp), jax.tree.map(np.asarray, params))
     temp.replace(path)
     metadata = dict(
-        config_version=2,
+        config_version=3,
         step=int(step),
-        config=checkpoint_config(config),
+        config=require_current(config),
         observation_size=config.get("observation_size", 43),
         action_size=4,
         policy_family="brax",
@@ -51,12 +51,12 @@ def load_policy(path):
     path = Path(path).resolve()
     meta = json.loads(path.with_suffix(".json").read_text())
     if meta.get("policy_family") == "lotf_mlp":
-        from drone_playground.learning.lotf_bptt import load_policy as load_lotf
+        from drone_playground.learning.algorithms.lotf_bptt import load_policy as load_lotf
 
         return load_lotf(path)
     if hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]:
         raise ValueError("Checkpoint digest does not match its metadata")
-    config = checkpoint_config(meta["config"])
+    config = require_current(meta["config"])
     from drone_playground.composition import native_training_config
 
     native = native_training_config(config)

@@ -10,7 +10,7 @@ import pytest
 
 
 def summary_module():
-    path = Path(__file__).resolve().parents[1] / "scripts/summarize_pointcloud.py"
+    path = Path(__file__).resolve().parents[1] / "scripts/tools/summarize_pointcloud.py"
     assert path.exists(), "A reusable final point-cloud delivery verifier is required"
     spec = importlib.util.spec_from_file_location("pointcloud_summary", path)
     module = importlib.util.module_from_spec(spec)
@@ -33,19 +33,9 @@ def evidence_fixture(tmp_path, updates=50000):
     train = tmp_path / "experiments/training"
     evaluation = tmp_path / "experiments/evaluation"
     train.mkdir(parents=True)
-    config = {
-        "policy": {"name": "pointcloud_recurrent"},
-        "controller": {"name": "acceleration_passthrough"},
-        "dynamics": {"forward": "point_mass_lag", "backward": "exponential"},
-        "scene": {"name": "paper_static_primitives_reconstruction"},
-        "observation": {"sensor": {"azimuth_count": 180, "elevation_count": 30}},
-        "task": {"freq": 10, "body_radius": 0.07, "goal_radius": 0.5},
-        "algorithm": {"name": "pointcloud_bptt", "horizon_length": 160},
-        "network": {"hidden_size": 192},
-        "objective": {"name": "paper_pointcloud_loss"},
-        "training": {"num_envs": 32, "policy_updates": 50000, "seed": 0},
-        "reproduction": {"identity": "paper-public-information-reconstruction-v1"},
-    }
+    from drone_playground.composition import compose_method
+
+    config = compose_method("paper/pointcloud_flight")
     save(train / "resolved-config.json", config)
     checkpoint = train / "selected.pkl"
     checkpoint.write_bytes(b"selected state: only checksum validation")
@@ -171,7 +161,7 @@ def evidence_fixture(tmp_path, updates=50000):
         "goal_radius_m": 0.5,
         "dynamics": "point_mass_lag",
         "catalog_sha256": digest(
-            Path(__file__).resolve().parents[1] / "configs/scene/navigation8.json"
+            Path(__file__).resolve().parents[1] / "assets/scenes/navigation/catalog.json"
         ),
         "episodes": episodes,
         "cells": cells,
@@ -235,7 +225,7 @@ def test_summary_output_contains_actual_slots_and_refuses_source_overwrite(tmp_p
     assert "50000" in content and "1000" in content and "碰撞" in content
     slots = json.loads((destination / "module-slots.json").read_text())
     assert slots["algorithm"]["name"] == "pointcloud_bptt"
-    assert slots["observation"]["sensor"]["azimuth_count"] == 180
+    assert slots["env"]["sensor"]["azimuth_count"] == 180
     with pytest.raises(FileExistsError):
         module.write_delivery(result, train)
 
@@ -288,9 +278,9 @@ def test_report_method_description_uses_actual_module_settings(tmp_path):
     train, evaluation = evidence_fixture(tmp_path)
     path = train / "resolved-config.json"
     config = json.loads(path.read_text())
-    config["dynamics"]["backward"] = "direct"
-    config["observation"]["sensor"]["azimuth_count"] = 90
-    config["observation"]["sensor"]["state_gradient"] = "detached"
+    config["algorithm"]["gradient"]["transition"] = "direct"
+    config["env"]["sensor"]["azimuth_count"] = 90
+    config["env"]["sensor"]["state_gradient"] = "detached"
     save(path, config)
     summary = module.verify_delivery(train, evaluation, require_complete=True)
     destination = tmp_path / "direct-summary"

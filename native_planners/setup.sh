@@ -45,7 +45,7 @@ git -C "$NATIVE_ROOT/sources/SUPER" archive \
 
 docker cp "$NATIVE_ROOT/.build/ego.tar" "$ROS_CONTAINER:$RUNTIME_ROOT/ego.tar"
 docker cp "$NATIVE_ROOT/.build/super.tar" "$ROS_CONTAINER:$RUNTIME_ROOT/super.tar"
-docker cp "$ROOT/scripts/p5_ros_bridge.py" "$ROS_CONTAINER:$RUNTIME_ROOT/bridge/ros_bridge.py"
+docker cp "$ROOT/native_planners/bridge/worker.py" "$ROS_CONTAINER:$RUNTIME_ROOT/bridge/ros_bridge.py"
 
 docker exec "$ROS_CONTAINER" bash -lc "
 set -eo pipefail

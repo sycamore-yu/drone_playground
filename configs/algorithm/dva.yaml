@@ -11,3 +11,5 @@ critic_max_grad_norm: 10.0
 betas:
 - 0.7
 - 0.95
+gradient:
+  transition: direct

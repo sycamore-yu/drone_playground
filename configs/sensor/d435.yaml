@@ -1,0 +1,11 @@
+_target_: drone_playground.environments.sensors.depth.DepthCamera
+name: d435_depth
+width: 120
+height: 90
+horizontal_fov_deg: 85.2
+near_m: 0.1
+far_m: 10.0
+source_rate_hz: 30.0
+stride: 6
+history: 4
+include_ground: true

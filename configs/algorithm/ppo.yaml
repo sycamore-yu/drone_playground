@@ -9,3 +9,5 @@ gae_lambda: 0.94
 clipping_epsilon: 0.2
 entropy_cost: 0.007
 max_grad_norm: 1.0
+gradient:
+  transition: direct

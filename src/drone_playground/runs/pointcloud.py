@@ -34,6 +34,9 @@ def save_training_state(path, state, config, selection=None):
 def load_training_state(path):
     path = Path(path).resolve()
     metadata = json.loads(path.with_suffix(".json").read_text())
+    from drone_playground.runs.migration import require_current
+
+    metadata["config"] = require_current(metadata["config"])
     if metadata.get("family") != "paper_pointcloud_gru":
         raise ValueError("Wrong checkpoint family")
     if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["sha256"]:

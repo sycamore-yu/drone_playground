@@ -14,7 +14,7 @@ def required(name):
 
 
 def test_pointnet_permutation_invariance_and_empty_returns():
-    network = required("drone_playground.learning.pointcloud_network").PointCloudPolicy()
+    network = required("drone_playground.networks.pointcloud").PointCloudPolicy()
     points = jax.random.normal(jax.random.PRNGKey(1), (2, 7, 3))
     valid = jnp.array([[1, 1, 0, 1, 1, 0, 1], [0, 0, 0, 0, 0, 0, 0]], bool)
     proprio = jnp.ones((2, 10))
@@ -38,7 +38,7 @@ def test_pointnet_permutation_invariance_and_empty_returns():
 
 
 def test_gru_keeps_history_and_encoder_parameters_receive_gradients():
-    network = required("drone_playground.learning.pointcloud_network").PointCloudPolicy()
+    network = required("drone_playground.networks.pointcloud").PointCloudPolicy()
     points = jax.random.normal(jax.random.PRNGKey(3), (1, 8, 3))
     valid = jnp.ones((1, 8), bool)
     proprio = jnp.ones((1, 10))
@@ -56,7 +56,7 @@ def test_gru_keeps_history_and_encoder_parameters_receive_gradients():
 
 
 def test_paper_velocity_loss_follows_vector_error_norm_equation():
-    objective = required("drone_playground.learning.pointcloud_objective").PaperObjective(
+    objective = required("drone_playground.learning.objectives.pointcloud").PaperObjective(
         velocity_window=1
     )
     trace = dict(
@@ -73,7 +73,7 @@ def test_paper_velocity_loss_follows_vector_error_norm_equation():
 
 
 def test_paper_collision_and_jerk_terms_have_explicit_units():
-    objective = required("drone_playground.learning.pointcloud_objective").PaperObjective(
+    objective = required("drone_playground.learning.objectives.pointcloud").PaperObjective(
         velocity_weight=0, collision_weight=1, acceleration_weight=0, jerk_weight=0
     )
     clearance = jnp.array([[0.3], [0.2]])
@@ -91,7 +91,7 @@ def test_paper_collision_and_jerk_terms_have_explicit_units():
     np.testing.assert_allclose(loss, expected, rtol=1e-6)
     gradient = jax.grad(lambda c: objective({**trace, "clearance": c}, 0.1)[0])(clearance)
     assert np.all(np.asarray(gradient) < 0)
-    jerk_only = required("drone_playground.learning.pointcloud_objective").PaperObjective(
+    jerk_only = required("drone_playground.learning.objectives.pointcloud").PaperObjective(
         velocity_weight=0,
         collision_weight=0,
         acceleration_weight=0,
@@ -104,7 +104,7 @@ def test_paper_collision_and_jerk_terms_have_explicit_units():
 
 
 def test_paper_train_scene_is_static_and_seeded_independently():
-    scene = required("drone_playground.tasks.scenes.pointcloud").PaperPrimitiveScene(
+    scene = required("drone_playground.environments.scenes.pointcloud").PaperPrimitiveScene(
         obstacles_per_kind=2
     )
     a = scene.sample(jax.random.PRNGKey(1), 2)

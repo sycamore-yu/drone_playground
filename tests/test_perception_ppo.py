@@ -10,10 +10,11 @@ import jax.numpy as jnp
 import numpy as np
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.composition import compose_config, native_training_config, sensor_layout
-from drone_playground.learning.networks import network_factory
-from drone_playground.learning.perception import SensorLayout, privileged_critic_fields
+from drone_playground.composition import native_training_config, sensor_layout
+from drone_playground.networks.encoders import SensorLayout, privileged_critic_fields
+from drone_playground.networks.policies import network_factory
 from drone_playground.runs.checkpoints import load_policy, save_policy
+from tests.reference_configs import compose_reference as compose_config
 
 
 def native(name: str) -> dict:
@@ -79,7 +80,7 @@ def test_perception_checkpoint_round_trip_rebuilds_the_same_network():
         actual = maker(loaded, deterministic=True)(obs, jax.random.PRNGKey(4))[0]
     np.testing.assert_array_equal(actual, expected)
     assert meta["step"] == 17
-    assert meta["config"]["observation"]["name"] == "navigation_lidar"
+    assert meta["config"]["env"]["observation"]["name"] == "navigation_lidar"
 
 
 def test_dynamic_presets_keep_the_same_matched_perception_contract():
@@ -91,5 +92,5 @@ def test_dynamic_presets_keep_the_same_matched_perception_contract():
         assert sensor_layout(a) == sensor_layout(b)
         assert a["network"] == b["network"]
         assert a["objective"] == b["objective"]
-        assert a["policy"] == b["policy"]
-        assert a["dynamics"] == b["dynamics"]
+        assert a["method"] == b["method"]
+        assert a["env"]["execution"] == b["env"]["execution"]

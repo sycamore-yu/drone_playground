@@ -1,4 +1,4 @@
-_target_: drone_playground.learning.pointcloud_objective.PaperObjective
+_target_: drone_playground.learning.objectives.pointcloud.PaperObjective
 name: paper_pointcloud_loss
 velocity_weight: 1.0
 collision_weight: 1.5

@@ -1,0 +1,6 @@
+defaults:
+- /controller@controller: crazyflow_attitude
+- /dynamics@dynamics: crazyflow
+- _self_
+command: attitude_thrust
+tracker: null

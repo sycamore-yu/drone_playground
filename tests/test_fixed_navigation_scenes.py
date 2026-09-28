@@ -5,14 +5,14 @@ from pathlib import Path
 import numpy as np
 from hydra.utils import instantiate
 
-from drone_playground.composition import compose_config
-from drone_playground.tasks.scenes.fixed_navigation import (
+from drone_playground.environments.scenes.catalog import (
     build_fixed_bank,
     catalog_obstacle,
     load_fixed_catalog,
     validate_fixed_catalog,
 )
-from drone_playground.tasks.scenes.navigation import MOTION_STATIC
+from drone_playground.environments.scenes.navigation import MOTION_STATIC
+from tests.reference_configs import compose_reference as compose_config
 
 
 def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
@@ -84,7 +84,7 @@ def test_static_and_dynamic_motion_identity_is_explicit():
 
 
 def test_default_catalog_is_a_committed_route_free_human_readable_file():
-    path = Path("configs/scene/navigation8.json")
+    path = Path("assets/scenes/navigation/catalog.json")
     assert path.is_file()
     text = path.read_text()
     assert '"inspection_path"' not in text
@@ -92,7 +92,7 @@ def test_default_catalog_is_a_committed_route_free_human_readable_file():
 
 
 def test_navigation8_primary_scenes_match_sando_difficulty_protocol():
-    catalog = load_fixed_catalog("configs/scene/navigation8.json")
+    catalog = load_fixed_catalog("assets/scenes/navigation/catalog.json")
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert [len(by_id[scene_id]["obstacles"]) for scene_id in ("S01", "S02", "S03")] == [
         41,
@@ -105,7 +105,10 @@ def test_navigation8_primary_scenes_match_sando_difficulty_protocol():
         200,
     ]
     assert [
-        sum(obstacle.get("motion", "static") != "static" for obstacle in by_id[scene_id]["obstacles"])
+        sum(
+            obstacle.get("motion", "static") != "static"
+            for obstacle in by_id[scene_id]["obstacles"]
+        )
         for scene_id in ("D01", "D02", "D03")
     ] == [32, 65, 130]
     expected_static_geometry = {
@@ -116,25 +119,40 @@ def test_navigation8_primary_scenes_match_sando_difficulty_protocol():
     for scene_id, (cylinders, vertical_boxes, horizontal_boxes) in expected_static_geometry.items():
         obstacles = by_id[scene_id]["obstacles"]
         assert sum(o.get("role") == "sando_dynamic_static_cylinder" for o in obstacles) == cylinders
-        assert sum(o.get("role") == "sando_static_vertical_box" for o in obstacles) == vertical_boxes
-        assert sum(o.get("role") == "sando_static_horizontal_box" for o in obstacles) == horizontal_boxes
+        assert (
+            sum(o.get("role") == "sando_static_vertical_box" for o in obstacles) == vertical_boxes
+        )
+        assert (
+            sum(o.get("role") == "sando_static_horizontal_box" for o in obstacles)
+            == horizontal_boxes
+        )
         rectangular = [
             o
             for o in obstacles
             if o.get("role") in {"sando_static_vertical_box", "sando_static_horizontal_box"}
         ]
         assert all(o["motion"] == "static" for o in rectangular)
-        assert all(o["size"] == [0.2, 0.2, 2.0] for o in rectangular if o["role"] == "sando_static_vertical_box")
-        assert all(o["size"] == [0.2, 2.0, 0.2] for o in rectangular if o["role"] == "sando_static_horizontal_box")
+        assert all(
+            o["size"] == [0.2, 0.2, 2.0]
+            for o in rectangular
+            if o["role"] == "sando_static_vertical_box"
+        )
+        assert all(
+            o["size"] == [0.2, 2.0, 0.2]
+            for o in rectangular
+            if o["role"] == "sando_static_horizontal_box"
+        )
 
 
 def test_navigation8_retains_3d_extensions_and_moves_d06_crossbars():
-    catalog = load_fixed_catalog("configs/scene/navigation8.json")
+    catalog = load_fixed_catalog("assets/scenes/navigation/catalog.json")
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert by_id["S06"]["benchmark_role"] == "3d-extension"
     assert by_id["D06"]["benchmark_role"] == "3d-extension"
     bars = [
-        obstacle for obstacle in by_id["D06"]["obstacles"] if obstacle.get("role") == "moving_crossbar"
+        obstacle
+        for obstacle in by_id["D06"]["obstacles"]
+        if obstacle.get("role") == "moving_crossbar"
     ]
     assert len(bars) == 4
     assert all(obstacle["motion"] == "linear_bounce" for obstacle in bars)
@@ -157,34 +175,46 @@ def test_navigation8_hydra_entries_expand_the_accepted_eight_scenes():
     }
     for experiment, (dynamic, scene_ids) in expected.items():
         config = compose_config(experiment)
-        assert config["scene"]["name"] == "navigation8"
-        assert config["scene"]["dynamic"] is dynamic
-        assert config["scene"]["_target_"].endswith("fixed_navigation.Navigation8Scene")
-        scene = instantiate(config["scene"], _convert_="all")
+        assert config["env"]["scene"]["name"] == "navigation"
+        assert config["env"]["scene"]["dynamic"] is dynamic
+        assert config["env"]["scene"]["_target_"].endswith("catalog.NavigationScene")
+        scene = instantiate(config["env"]["scene"], _convert_="all")
         bank, manifest = scene.build(seed=12345, per_difficulty=4)
         assert bank.num_instances == 12
         assert list(bank.subtype_names) == scene_ids
         assert manifest["catalog"] == "navigation8"
-        assert manifest["accepted_scene_ids"] == list(config["scene"]["scene_ids"])
+        assert manifest["accepted_scene_ids"] == list(config["env"]["scene"]["scene_ids"])
 
 
 def test_all_p5_navigation_experiments_use_navigation8():
-    experiments = sorted(Path("configs/experiment").glob("p5_*.yaml"))
-    assert experiments
+    from drone_playground.composition import compose_method
+
+    experiments = [
+        (method, environment)
+        for method in (
+            "learning/ppo",
+            "learning/apg",
+            "learning/shac",
+            "learning/dva",
+            "paper/ego_planner",
+            "paper/super",
+        )
+        for environment in ("navigation/static", "navigation/dynamic")
+    ]
     checked = []
-    for path in experiments:
-        config = compose_config(path.stem)
-        if config["task"]["name"] != "navigation":
+    for method, environment in experiments:
+        config = compose_method(method, environment)
+        if config["env"]["task"]["name"] != "navigation":
             continue
-        checked.append(path.stem)
-        assert config["scene"]["name"] == "navigation8"
-        assert config["scene"]["_target_"].endswith("fixed_navigation.Navigation8Scene")
-        assert config["scene"]["dynamic"] is config["task"]["dynamic"]
+        checked.append((method, environment))
+        assert config["env"]["scene"]["name"] == "navigation"
+        assert config["env"]["scene"]["_target_"].endswith("catalog.NavigationScene")
+        assert config["env"]["scene"]["dynamic"] is config["env"]["task"]["dynamic"]
     assert checked
 
 
 def test_v2_catalog_is_100_by_40_and_uses_half_to_six_meter_flight_bounds():
-    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v2.json")
+    catalog = load_fixed_catalog("assets/scenes/archive/p5_fixed_catalog_v2.json")
     world = catalog["world"]
     assert world["length_m"] == 100.0
     assert world["width_m"] == 40.0
@@ -201,7 +231,7 @@ def test_v2_catalog_is_100_by_40_and_uses_half_to_six_meter_flight_bounds():
 
 
 def test_v3_catalog_scales_density_and_has_visible_physical_boundaries():
-    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v3.json")
+    catalog = load_fixed_catalog("assets/scenes/archive/p5_fixed_catalog_v3.json")
     reports = validate_fixed_catalog(catalog, minimum_route_clearance_m=0.5)
     expected = {"easy": 50, "medium": 100, "hard": 150}
     assert len(catalog["boundary_obstacles"]) == 4
@@ -224,7 +254,7 @@ def test_v3_catalog_scales_density_and_has_visible_physical_boundaries():
 
 
 def test_v4_catalog_has_no_reference_route_and_requires_topological_connectivity():
-    catalog = load_fixed_catalog("configs/scene/p5_fixed_catalog_v4.json")
+    catalog = load_fixed_catalog("assets/scenes/archive/p5_fixed_catalog_v4.json")
     assert all("inspection_path" not in scene for scene in catalog["scenes"])
     assert all("inspection_duration_s" not in scene for scene in catalog["scenes"])
     reports = validate_fixed_catalog(

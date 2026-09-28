@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+- /scene@env.scene: lsy_racing
+- /task@env.task: racing
+- /sensor@env.sensor: none
+- /observation@env.observation: state_reference
+- /execution@env.execution: attitude_thrust
+- /objective: tracking_exp
+- _self_
+env:
+  name: racing
+  execution:
+    dynamics:
+      forward: first_principles
+      drone: cf21B_500

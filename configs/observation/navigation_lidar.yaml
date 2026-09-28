@@ -1,23 +1,10 @@
-_target_: drone_playground.tasks.observations.NavigationSensorObservation
+_target_: drone_playground.environments.observations.NavigationSensorObservation
 name: navigation_lidar
 include_goal: true
 include_previous_action: true
 action_size: 4
-# Overwritten from the instantiated sensor calibration by the composition.
 history: 4
 points_per_frame: 120
 channels: 5
 near_m: 0.1
 far_m: 40.0
-sensor:
-  _target_: drone_playground.tasks.sensors.lidar.Mid360Lidar
-  name: mid360
-  pattern: mid360
-  downsample: 200
-  source_rate_hz: 10.0
-  history: 4
-  range_m:
-  - 0.1
-  - 200.0
-  normalise_far_m: 40.0
-  include_ground: true

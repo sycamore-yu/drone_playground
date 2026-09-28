@@ -27,14 +27,14 @@ from brax.training.agents.apg import train as apg_train
 from brax.training.agents.ppo import train as ppo_train
 
 from drone_playground.composition import build_environment, native_training_config
-from drone_playground.evaluation.execution import make_evaluator
+from drone_playground.evaluation.evaluator import make_evaluator
 from drone_playground.evaluation.tracking import (
     save_report,
     select_replays,
 )
-from drone_playground.learning.networks import network_factory
+from drone_playground.learning.env_adapter import wrap_for_training
+from drone_playground.networks.policies import network_factory
 from drone_playground.runs.checkpoints import load_policy, save_policy
-from drone_playground.tasks.tracking import wrap_for_training
 
 
 def development_score(task: str, report: dict) -> tuple:
@@ -91,12 +91,21 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
     for path in (policy, policy.with_suffix(".json")):
         shutil.copyfile(path, destination / "checkpoints" / path.name)
     score = development_score(task, best)
-    save_report(destination / "checkpoints" / "best.json",
-                dict(path=policy.name, step=best["step"], score=list(score), selection_split="dev"))
-    save_report(destination / "resume-selection.json",
-                dict(source_state=str(state_path), source_state_sha256=meta["sha256"],
-                     eligible_steps=[r["step"] for r in candidates], cutoff_step=cutoff,
-                     selected_step=best["step"], future_evaluations_excluded=True))
+    save_report(
+        destination / "checkpoints" / "best.json",
+        dict(path=policy.name, step=best["step"], score=list(score), selection_split="dev"),
+    )
+    save_report(
+        destination / "resume-selection.json",
+        dict(
+            source_state=str(state_path),
+            source_state_sha256=meta["sha256"],
+            eligible_steps=[r["step"] for r in candidates],
+            cutoff_step=cutoff,
+            selected_step=best["step"],
+            future_evaluations_excluded=True,
+        ),
+    )
     save_report(destination / "eval" / f"step-{best['step']:010d}.json", best)
     return score, best
 
@@ -112,7 +121,7 @@ def export_run_replays(env, trace, report, directory):
         return export_navigation_replays(
             env, trace, directory, case_indices=select_episodes(report)
         )
-    from drone_playground.runs.rscope_io import export_rollout as write_rollout
+    from drone_playground.visualization.rscope_io import export_rollout as write_rollout
 
     return write_rollout(env.sim, directory, select_replays(trace, report))
 
@@ -123,7 +132,7 @@ def train(
     """Train the declared complete budget and record real snapshots and evaluations."""
     from drone_playground.runs.console import capture_console
     from drone_playground.runs.record import RunRecorder
-    from drone_playground.runs.rscope_io import publish_snapshot
+    from drone_playground.visualization.rscope_io import publish_snapshot
 
     config = dict(config)
     algorithm = config["algorithm"]
@@ -133,7 +142,7 @@ def train(
         device=device,
         snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
         trainer=(
-            f"drone_playground.learning.{algorithm}"
+            f"drone_playground.learning.algorithms.{algorithm}"
             if algorithm in {"shac", "dva"}
             else "brax.training.agents." + algorithm
         ),
@@ -144,6 +153,7 @@ def train(
             else "native Brax GAE masks truncated transition; time_out bootstrap disabled"
         ),
         task_protocol={
+            "hovering": "fixed-target-hover-v1",
             "figure8": "crazyflow-figure8-v1",
             "random": "lsy-random-spline-v1",
             "racing": "lsy-level0-reference-tracking-v1",
@@ -186,12 +196,17 @@ def train(
     try:
         rec.phase("initializing", step=0)
         if algorithm == "dva" and config.get("resume"):
-            best_score, best = inherit_dva_selection(Path(config["resume"]), rec.path, config["task"])
+            best_score, best = inherit_dva_selection(
+                Path(config["resume"]), rec.path, config["task"]
+            )
         env = build_environment(config["components"], device)
         if config["task"] == "racing":
             save_report(rec.path / "native-task-config.json", env.config.to_dict())
-        evaluation_env = build_environment(config["components"], device, "dev", 32)
-        dev_seeds = list(range(20000, 20032))
+        dev_count = int(config.get("development_episodes", 32))
+        if dev_count < 1:
+            raise ValueError("Development evaluation requires at least one episode")
+        evaluation_env = build_environment(config["components"], device, "dev", dev_count)
+        dev_seeds = list(range(20000, 20000 + dev_count))
         if env.task == "navigation":
             dev_case = {
                 "split": "dev",
@@ -199,8 +214,10 @@ def train(
                 "episodes_per_difficulty": evaluation_env.bank.num_instances // 3,
                 "scenario_groups": {
                     difficulty: list(
-                        range(index * (evaluation_env.bank.num_instances // 3),
-                              (index + 1) * (evaluation_env.bank.num_instances // 3))
+                        range(
+                            index * (evaluation_env.bank.num_instances // 3),
+                            (index + 1) * (evaluation_env.bank.num_instances // 3),
+                        )
                     )
                     for index, difficulty in enumerate(("easy", "medium", "hard"))
                 },
@@ -422,7 +439,7 @@ def train(
 
         else:
             trainer = __import__(
-                f"drone_playground.learning.{algorithm}", fromlist=["train"]
+                f"drone_playground.learning.algorithms.{algorithm}", fromlist=["train"]
             )
             maker, params, metrics = trainer.train(
                 env,

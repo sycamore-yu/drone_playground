@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+- /scene@env.scene: navigation/dynamic
+- /task@env.task: navigation
+- /sensor@env.sensor: mid360
+- /observation@env.observation: navigation_lidar
+- /execution@env.execution: attitude_thrust
+- /objective: navigation
+- _self_
+env:
+  name: navigation/dynamic
+  task:
+    dynamic: true
+  execution:
+    dynamics:
+      forward: first_principles
