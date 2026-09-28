@@ -49,6 +49,9 @@ pixi run experiment --multirun experiment=figure8_apg,figure8_shac   training.nu
 ## P5 导航任务
 
 P5-05—08 正式批次使用 v2。已有队列运行时不要再次启动。
+2026-09-28 阶段核验：原八训练及四规划器矩阵已经全部完成。
+当前接续入口为学习归档补采的空 checkpoint 修复，具体原因与证据见 docs/status.md。
+以下矩阵启动命令保留作历史复现；本轮恢复应先修复并完成缺失归档，再执行完整验收命令。
 主会话：学习队列 session 96099，原生规划器队列 session 27701；
 会话失效时以运行目录心跳和 PID/start marker 为准，禁止只根据旧 `status=running` 推断仍在运行。
 v1 已因地面碰撞遗漏中止，三份目录有 `interruption.json`，仅供诊断。

@@ -1,11 +1,11 @@
 # P5-07：八单元正式训练
 
 Type: task
-Status: in-progress
+Status: resolved
 Blocked by: none
-Engineering: running
-Experiment: running
-Quality: not-evaluated
+Engineering: passed
+Experiment: completed
+Quality: observed-low; threshold-unset
 Owner: main
 Session: p5-main
 Run: experiments/p5-matrix-v2/queue-state.json
@@ -31,3 +31,10 @@ Run: experiments/p5-matrix-v2/queue-state.json
 用户已授权直接执行。八配方各 8388608、seed 0、7200 秒墙钟上限；冻结 PPO/D.VA 的共享传感器与网络。
 `scripts/run_p5_learning_matrix.py` 串行调用同一组合入口，预算精确核验，开发选模后独立 dev32/heldout128 每难度。
 旧失败目录保留，队列拒绝覆盖或自动暖启动；单元失败后继续其它独立单元并汇总失败。
+
+2026-09-28 阶段核验：八训练单元全部完成，各 8388608 次，共 67108864 次交互。
+学习组独立开发 768 回合、留出 3072 回合全部完成，冻结权重和开发选模身份通过汇总检查。
+动态 MID360 PPO 留出 22/384，其余七单元 0/384；四 D.VA 单元全部越界，质量原因待诊断。
+缺少的三组早期静态学习评测逐帧归档归入 P5-08；保存的原权重用于补采，新增训练交互为零。
+证据：`experiments/p5-matrix-v2/queue-state.json`、
+`docs/verification/p5-results-v2/training.csv`、`tmp/p5/handoff-integrity-20260928.log`。
