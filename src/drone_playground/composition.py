@@ -77,6 +77,10 @@ def validate_config(config: dict) -> None:
     ):
         if name not in config:
             raise ValueError(f"Missing experiment component: {name}")
+    if config["task"]["name"] == "pointcloud_avoidance":
+        from drone_playground.tasks.pointcloud import validate_paper_config
+
+        return validate_paper_config(config)
     forward = config["dynamics"]["forward"]
     backward = config["dynamics"]["backward"]
     control = config["controller"]["name"]
@@ -258,6 +262,10 @@ def build_environment(config: dict, device: str = "cpu", split: str = "train", c
     if split not in SPLIT_SEEDS:
         raise ValueError(f"Unknown split: {split}")
     cfg = copy.deepcopy(config)
+    if cfg["task"]["name"] == "pointcloud_avoidance":
+        from drone_playground.tasks.pointcloud import PointCloudTask
+
+        return PointCloudTask(cfg)
     if cfg["task"]["name"] == "navigation":
         from drone_playground.controllers.crazyflow import AttitudeControl
         from drone_playground.tasks.navigation import NavigationEnv
@@ -375,6 +383,15 @@ def native_training_config(config: dict) -> dict:
 def run_experiment(config: dict, root: Path, run_id: str):
     validate_config(config)
     mode = config.get("mode", "train")
+    if config["task"]["name"] == "pointcloud_avoidance":
+        if mode == "train":
+            from drone_playground.learning.pointcloud_bptt import train
+
+            return train(config, root, run_id)
+        if mode in ("evaluate", "simulate"):
+            from drone_playground.evaluation.pointcloud import evaluate_pointcloud
+
+            return evaluate_pointcloud(config, root, run_id)
     if mode == "train":
         if config["algorithm"]["name"] == "lotf_bptt":
             from drone_playground.learning.lotf_bptt import train

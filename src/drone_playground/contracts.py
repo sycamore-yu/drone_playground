@@ -27,7 +27,12 @@ MOTOR_RPM = CommandSpec(
     "motor_rpm", ("motor0", "motor1", "motor2", "motor3"), ("rpm",) * 4, "rotor"
 )
 TRAJECTORY = CommandSpec("trajectory", ("position", "velocity", "time"), ("m", "m/s", "s"), "world")
-COMMANDS = {spec.name: spec for spec in (ATTITUDE_THRUST, THRUST_BODYRATES, MOTOR_RPM, TRAJECTORY)}
+WORLD_ACCELERATION = CommandSpec(
+    "world_acceleration", ("ax", "ay", "az"), ("m/s^2",) * 3, "world; gravity-compensated net acceleration"
+)
+COMMANDS = {spec.name: spec for spec in (
+    ATTITUDE_THRUST, THRUST_BODYRATES, MOTOR_RPM, TRAJECTORY, WORLD_ACCELERATION
+)}
 
 
 def require_match(output: str, input_: str) -> None:

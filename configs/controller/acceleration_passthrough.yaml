@@ -1,0 +1,2 @@
+_target_: drone_playground.controllers.acceleration.AccelerationControl
+name: acceleration_passthrough
