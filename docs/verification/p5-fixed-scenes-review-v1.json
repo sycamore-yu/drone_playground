@@ -1,0 +1,261 @@
+{
+  "catalog_version": "p5-fixed-candidate-v1",
+  "scene_count": 12,
+  "all_scene_xml_recompiled": true,
+  "all_direct_routes_blocked": true,
+  "minimum_inspection_route_clearance_m": 0.37778484060551193,
+  "scenes": [
+    {
+      "scene_id": "S01",
+      "difficulty": "easy",
+      "dynamic": false,
+      "obstacles": 3,
+      "direct_clearance_m": -0.77,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 1.2497120940553252,
+      "inspection_path_length_m": 19.167029230249437,
+      "inspection_duration_s": 12.0,
+      "title": "Offset columns",
+      "source": "manual",
+      "replay": "S01/2026_09_28-03_01_42.mj_unroll",
+      "files": {
+        "2026_09_28-03_01_42.mj_unroll": "f6f99bd9a670deb65cf552f73eab7d30b0f9dc9ba9ba58dc6ad43be4d9a7fc2d",
+        "scene.xml": "d076300fa1aaaf083323fba63b601021f1738e1ba13571fab48fba7dac20b4bf",
+        "rscope_meta.pkl": "6bbcf9bb67921fe6fb85a45544a9656100b403399c6d3359af56c8b9e3bef2c8",
+        "scene-definition.json": "64a4f9f7dbb7b7185f32b3d6e07ca2a3e5a10b4e0d6aeacf8aa7048ee4ccb00d",
+        "components.json": "b4bba0520f6eae16e64cb3213e012395180279a7239343a405abffbdad009a3b"
+      }
+    },
+    {
+      "scene_id": "S02",
+      "difficulty": "medium",
+      "dynamic": false,
+      "obstacles": 5,
+      "direct_clearance_m": -0.6200000000000001,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.7900289321315592,
+      "inspection_path_length_m": 20.035864482052904,
+      "inspection_duration_s": 12.0,
+      "title": "Column slalom",
+      "source": "manual",
+      "replay": "S02/2026_09_28-03_01_53.mj_unroll",
+      "files": {
+        "2026_09_28-03_01_53.mj_unroll": "f76ea0fd0c2fe24b27bbf4f54a1e8d1c538c868a491269cbd4f18a5fb3be53ea",
+        "scene.xml": "34d4073d565ec6c55428887048f3b3868fd14af05e9d2ac27b81a1165f7a70bd",
+        "rscope_meta.pkl": "c1daa7c6e082af2cd57fa5cb3613662a06c17e33cca92e6495df5d3befd81aa2",
+        "scene-definition.json": "62cbe994bf068a6f28da28ae4a4e53d164fe14c57a3050c4170c106430e855a3",
+        "components.json": "bc0c107573c21e55d235eb16788ed322f0726d6c1a26c88b84bbaad2ec64e14d"
+      }
+    },
+    {
+      "scene_id": "S03",
+      "difficulty": "medium",
+      "dynamic": false,
+      "obstacles": 8,
+      "direct_clearance_m": -0.52,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.37778484060551193,
+      "inspection_path_length_m": 17.324154210628837,
+      "inspection_duration_s": 12.0,
+      "title": "NavRL-inspired mixed heights",
+      "source": "NavRL",
+      "replay": "S03/2026_09_28-03_02_04.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_04.mj_unroll": "2f330e6d3bcf23c1ba770dad844f5e6c613a23ce01dfc58ac259e3ace4e88945",
+        "scene.xml": "010cb0bba7ba62a3cca77843ea27228ee3c14812cab3d4e8f8712440e0932df9",
+        "rscope_meta.pkl": "37295ab53648fcb7a33f6f826d7bd62c18ca390c37f4105549698c9e9cfdfe54",
+        "scene-definition.json": "eddcf519b6ab2b464fc0f8c831c107d6c9ad6d3e6ea50a498b7bbf9899e3b148",
+        "components.json": "0988c05b58a535e6d2b6d996e3c5edb54336881bf2a2dfd90139f5b439119d71"
+      }
+    },
+    {
+      "scene_id": "S04",
+      "difficulty": "hard",
+      "dynamic": false,
+      "obstacles": 13,
+      "direct_clearance_m": -0.37,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.46157346595140086,
+      "inspection_path_length_m": 20.468186168659305,
+      "inspection_duration_s": 12.0,
+      "title": "P2M-inspired fixed clutter",
+      "source": "P2M",
+      "replay": "S04/2026_09_28-03_02_15.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_15.mj_unroll": "48ec2e2fcb9bf90b876ce197492e13642b3dad65ba3dca325bb8ad78bfece4ff",
+        "scene.xml": "fb111e5523109465d94009eb7e5dcdfc73417357c98821810029b38be8a5ea96",
+        "rscope_meta.pkl": "775c9911eb60c455e130655febde9d2ed573fb31df886d46d732734331162430",
+        "scene-definition.json": "1ec9f5781ef7b3cb890968a88b69db15f75dc96863475ee6f49084c0315e407b",
+        "components.json": "d8544a7d71efbe1a38c59819623f35c3a5a4761b62dd357d21eb740b1f0a7f22"
+      }
+    },
+    {
+      "scene_id": "S05",
+      "difficulty": "hard",
+      "dynamic": false,
+      "obstacles": 7,
+      "direct_clearance_m": -0.77,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.5800905712940307,
+      "inspection_path_length_m": 18.87193850213187,
+      "inspection_duration_s": 12.0,
+      "title": "Two-gate mixed maze",
+      "source": "manual",
+      "replay": "S05/2026_09_28-03_02_26.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_26.mj_unroll": "ef1935760c2016cce7fe5951868592cd42742abbfa8b702b6b4141cf7f4a4b13",
+        "scene.xml": "1adcdc26683bc29b250571c8a5ef376704ef8a94473ec35131b6d4cfcfdcfc36",
+        "rscope_meta.pkl": "da158739a3ed95d0a881d474fdeb13ec4dc184a8356616d826bae2d34fd30fc4",
+        "scene-definition.json": "e527d6d6d24fec8e150eb163e5953acd64451dc4ebd11753d364156e06918591",
+        "components.json": "188d7eb81faf82b3b385785e4a8de20987bf5498bc95d18c124b0479de03581c"
+      }
+    },
+    {
+      "scene_id": "S06",
+      "difficulty": "medium",
+      "dynamic": false,
+      "obstacles": 4,
+      "direct_clearance_m": -0.37,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.4182353438312945,
+      "inspection_path_length_m": 15.549841883724467,
+      "inspection_duration_s": 12.0,
+      "title": "3D over-under crossbar",
+      "source": "manual",
+      "replay": "S06/2026_09_28-03_02_38.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_38.mj_unroll": "89fe3883429b176f617e2ae30d83e26365f4ce57918e8e3cde5a654e40bed23d",
+        "scene.xml": "da1bee1469ef1614d9af9f4879d0e8e3d2294359948639ccd186419d250db7e9",
+        "rscope_meta.pkl": "9553275f9c3eaafbd95cc6279956ad07d12158355a821d3e0cbf7230448a8226",
+        "scene-definition.json": "cbe493ce832bb7b95c85d7e0243da403c008cf8a507c1e7c6698d4b293929460",
+        "components.json": "1708ef3e45d022fff5f9d31ee20bd375d13cd8be6db621990f4c9731b20707f1"
+      }
+    },
+    {
+      "scene_id": "D01",
+      "difficulty": "easy",
+      "dynamic": true,
+      "obstacles": 3,
+      "direct_clearance_m": -0.6200000000000001,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 1.1354164655679118,
+      "inspection_path_length_m": 16.84567063428763,
+      "inspection_duration_s": 14.0,
+      "title": "Single route crosser",
+      "source": "manual",
+      "replay": "D01/2026_09_28-03_02_48.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_48.mj_unroll": "d9ad1bdbcd49a8f32571a7f55017945cc324b9fa3fd3f99c9b004feadd5bbbad",
+        "scene.xml": "e260035cbd6a488f692f36244e82eb000e24a6c61978d018692a2c1d01aebeb1",
+        "rscope_meta.pkl": "5e62f913d496114d7578b0435d50166fa2226265813f9b471dae337c30f4eef4",
+        "scene-definition.json": "a501e5cc5f2122e2f4d53db3af8e8707f54a187eaeba5af447c0244f4067f685",
+        "components.json": "452ff7222c0248b7ff6de3ea3c49fc11016111835c4301d27457cb915c30284c"
+      }
+    },
+    {
+      "scene_id": "D02",
+      "difficulty": "medium",
+      "dynamic": true,
+      "obstacles": 4,
+      "direct_clearance_m": -0.6200000000000001,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 1.1049370672827514,
+      "inspection_path_length_m": 17.85208574883179,
+      "inspection_duration_s": 14.0,
+      "title": "Opposed crossers with altitude escape",
+      "source": "manual",
+      "replay": "D02/2026_09_28-03_02_58.mj_unroll",
+      "files": {
+        "2026_09_28-03_02_58.mj_unroll": "a306c0b245a7de3fb719a1ab628728858ee1b759a332ad1ebb1fd722bc33e305",
+        "scene.xml": "1230a79695044962c41c5a6608b613ebf98bdba6b1ec786a49239e2e19589893",
+        "rscope_meta.pkl": "10f8a23aac0a9545babea914f84660175f1fcf73cdea2e2de3073e33255443bd",
+        "scene-definition.json": "7c3656f75835e7c447fa26504bd10c14fe6c4f11ed1d555e8938d2d05b40a808",
+        "components.json": "8fffc06427ec5dbe41948032d8c6edb22e5158b6e7deaf12ba4cb97196e6c628"
+      }
+    },
+    {
+      "scene_id": "D03",
+      "difficulty": "medium",
+      "dynamic": true,
+      "obstacles": 6,
+      "direct_clearance_m": -0.5700000000000001,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.47281048041566826,
+      "inspection_path_length_m": 18.534733520203673,
+      "inspection_duration_s": 14.0,
+      "title": "NavRL-inspired dynamic mix",
+      "source": "NavRL",
+      "replay": "D03/2026_09_28-03_03_11.mj_unroll",
+      "files": {
+        "2026_09_28-03_03_11.mj_unroll": "6afd0b1fce4ad7988159a97c8fd70f65ec916fdab0e7f99e1b732ab6a1a56353",
+        "scene.xml": "6fb93dd6718ed7a46009da64cf6857cabaa02d6933b6d53514f53c5922836d6d",
+        "rscope_meta.pkl": "74119535f6fc604536c99a38c1d22c86419410bc28ae195c712122a2f0cb309f",
+        "scene-definition.json": "1636d281e7f47bf4008d09f913b447773fc109c6b4aa642cbb9f2662bcc74942",
+        "components.json": "0d3bcd9ad33795195b00623ddba2e54d581577718abe4581eac0ad61263c1ba0"
+      }
+    },
+    {
+      "scene_id": "D04",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 16,
+      "direct_clearance_m": -0.35000000000000003,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.4991122082642457,
+      "inspection_path_length_m": 18.273400703236135,
+      "inspection_duration_s": 16.0,
+      "title": "P2M-inspired fixed dynamic clutter",
+      "source": "P2M",
+      "replay": "D04/2026_09_28-03_03_26.mj_unroll",
+      "files": {
+        "2026_09_28-03_03_26.mj_unroll": "01fce51dda927c0ed58a0fad99df7849de8b8b5eaf7fbff5b0f1401d5a03edf8",
+        "scene.xml": "c0f14b4135ccdd5ec75cd5ecb3325bc58db884d4b768738da87514eae5eb290a",
+        "rscope_meta.pkl": "ef47c5c799dbb8e30153c59f6575cb2bedaf67d725f9f5efa228f5aa94d7b65b",
+        "scene-definition.json": "03c9068e3b688d649a4773f1872bac3680383ed7df97442a79eb4ba9de0048bf",
+        "components.json": "75c905f582a33d1787742ad2b374cb34b323e045a983c79d0625411eef660f1e"
+      }
+    },
+    {
+      "scene_id": "D05",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 7,
+      "direct_clearance_m": -0.6200000000000001,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 0.6300355938829141,
+      "inspection_path_length_m": 18.12383385194583,
+      "inspection_duration_s": 16.0,
+      "title": "Fixed trefoil movers",
+      "source": "SANDO",
+      "replay": "D05/2026_09_28-03_03_38.mj_unroll",
+      "files": {
+        "2026_09_28-03_03_38.mj_unroll": "a35e494d24d46963bd2416d8dbe470b2a3284ec5706ac61f04fbc71b51a3557d",
+        "scene.xml": "0191af1790297fd4bfc921240d0892cc6cac5066ca9755a3d3d5570857d70d2c",
+        "rscope_meta.pkl": "81fa21872826c992a75a238939f7c23600319043ea0f1b4cc0c8e1928ac5b449",
+        "scene-definition.json": "35eeb5a905d9e9ca293c198f5cbbc2f6c51e433b2fd461f599650d70cf82f282",
+        "components.json": "4b7ac9b369548222300963d970cd5961919a8a9b1cb27ee2b5c44cd9e81c236d"
+      }
+    },
+    {
+      "scene_id": "D06",
+      "difficulty": "hard",
+      "dynamic": true,
+      "obstacles": 6,
+      "direct_clearance_m": -0.6699999999999999,
+      "straight_line_blocked": true,
+      "inspection_route_min_clearance_m": 1.115964635549311,
+      "inspection_path_length_m": 17.293782967666072,
+      "inspection_duration_s": 16.0,
+      "title": "Hybrid 3D moving gate",
+      "source": "NavRL+P2M",
+      "replay": "D06/2026_09_28-03_03_50.mj_unroll",
+      "files": {
+        "2026_09_28-03_03_50.mj_unroll": "eaafd07cb05029ed08e9c2b3685c581d0bbe0609081f68cd78c114e9ec7678c6",
+        "scene.xml": "27b35153925c58b0a18c91d8bcc8f4de2051c1358332587a14186ff3215731fc",
+        "rscope_meta.pkl": "c0f81d9b12fe4796b36993d4d9f89297220e48b6b433e9ccdd360bb860ec970d",
+        "scene-definition.json": "d63f4e48ac0b3f201de0c77930b30dee6b9173f3177fd6d9fc9f3c5a6e65633b",
+        "components.json": "92965d0b3a68e3a3c04b2016e7e18f83b2670795497c3cea4df37ab6235bcd77"
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import numpy as np
 from drone_playground.tasks.scenes.navigation import (
     KIND_CYLINDER,
     MOTION_NAMES,
+    MOTION_STATIC,
     SceneBank,
     obstacle_positions,
 )
@@ -65,12 +66,13 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
     bodies = []
     for index, obstacle in enumerate(obstacles):
         x, y, z = (float(value) for value in obstacle["origin"])
+        rgba = "0.35 0.42 0.5 1" if obstacle["motion"] == MOTION_STATIC else "0.95 0.45 0.12 1"
         if obstacle["kind"] == KIND_CYLINDER:
             radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
-            geometry = f'<geom name="obstacle_geom_{index}" type="cylinder" size="{radius} {height / 2.0}" rgba="0.35 0.42 0.5 1"/>'
+            geometry = f'<geom name="obstacle_geom_{index}" type="cylinder" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
         else:
             hx, hy, hz = (float(value) for value in obstacle["size"])
-            geometry = f'<geom name="obstacle_geom_{index}" type="box" size="{hx} {hy} {hz}" rgba="0.35 0.42 0.5 1"/>'
+            geometry = f'<geom name="obstacle_geom_{index}" type="box" size="{hx} {hy} {hz}" rgba="{rgba}"/>'
         bodies.append(
             f'<body name="obstacle_{index}" mocap="true" pos="{x} {y} {z}">{geometry}</body>'
         )
@@ -82,9 +84,7 @@ def _drone_xml() -> str:
         '<geom name="body_sphere" type="sphere" size="0.07" rgba="0.85 0.25 0.25 0.55"/>',
         '<geom name="board" type="box" size="0.03 0.03 0.006" rgba="0.2 0.25 0.3 1"/>',
     ]
-    for index, (x, y) in enumerate(
-        ((1, -1), (-1, -1), (-1, 1), (1, 1))
-    ):
+    for index, (x, y) in enumerate(((1, -1), (-1, -1), (-1, 1), (1, 1))):
         px, py = x * DRONE_MOTOR_RADIUS_M, y * DRONE_MOTOR_RADIUS_M
         geoms.append(
             f'<geom name="rotor{index}" type="cylinder" pos="{px} {py} 0.012" '
@@ -94,7 +94,7 @@ def _drone_xml() -> str:
         '<body name="drone" mocap="true" pos="0 0 2">'
         '  <geom name="drone_collision" type="sphere" size="0.07" '
         '        pos="0 0 0.005" rgba="0.9 0.4 0.2 0.25"/>'
-        f'  {"".join(geoms)}'
+        f"  {''.join(geoms)}"
         "</body>"
     )
 

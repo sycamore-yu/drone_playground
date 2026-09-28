@@ -1,0 +1,160 @@
+"""Export every numbered fixed P5 candidate as an inspectable RScope replay."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+import jax.numpy as jnp
+import numpy as np
+
+from drone_playground.runs.navigation_scene import (
+    active_indices,
+    create_replay_model,
+    obstacle_track,
+)
+from drone_playground.runs.rscope_io import export_rollout
+from drone_playground.tasks.scenes.fixed_navigation import (
+    build_fixed_bank,
+    load_fixed_catalog,
+    scene_by_id,
+    validate_fixed_catalog,
+)
+from drone_playground.tasks.scenes.navigation import clearance_and_collision
+
+
+def interpolate_path(points, frames):
+    points = np.asarray(points, np.float32)
+    lengths = np.linalg.norm(np.diff(points, axis=0), axis=1)
+    cumulative = np.concatenate([[0.0], np.cumsum(lengths)])
+    distance = np.linspace(0.0, cumulative[-1], frames)
+    output = []
+    for value in distance:
+        index = min(np.searchsorted(cumulative, value, side="right") - 1, len(lengths) - 1)
+        alpha = (value - cumulative[index]) / lengths[index] if lengths[index] else 0.0
+        output.append(points[index] + alpha * (points[index + 1] - points[index]))
+    return np.asarray(output, np.float32)
+
+
+def review_env(bank, scene_id, dt, manifest):
+    return SimpleNamespace(
+        bank=bank,
+        dt=dt,
+        component_identity={
+            "purpose": "P5 fixed-scene visual review only",
+            "scene_id": scene_id,
+            "inspection_path_is_policy_input": False,
+            "catalog_version": manifest["version"],
+        },
+        scenario=lambda scenario_id: {
+            "scene_id": scene_id,
+            "difficulty": bank.labels(int(scenario_id))["difficulty"],
+            "purpose": "candidate fixed benchmark scene",
+        },
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--catalog",
+        type=Path,
+        default=Path("configs/scene/p5_fixed_catalog.json"),
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("experiments/p5-fixed-scenes-review-v1"),
+    )
+    parser.add_argument("--fps", type=int, default=20)
+    args = parser.parse_args()
+
+    catalog = load_fixed_catalog(args.catalog)
+    review = {row["scene_id"]: row for row in validate_fixed_catalog(catalog)}
+    args.output = args.output.resolve()
+    args.output.mkdir(parents=True, exist_ok=True)
+    index = []
+    for scene in catalog["scenes"]:
+        scene_id = scene["id"]
+        bank, manifest = build_fixed_bank(catalog, [scene_id])
+        duration = float(scene["inspection_duration_s"])
+        frames = max(2, int(round(duration * args.fps)) + 1)
+        times = np.linspace(0.0, duration, frames, dtype=np.float32)
+        positions = interpolate_path(scene["inspection_path"], frames)
+        quaternions = np.zeros((frames, 1, 4), np.float32)
+        quaternions[..., 3] = 1.0
+        positions_batched = positions[:, None, :]
+        active = active_indices(bank, 0)
+        obstacle_positions = obstacle_track(bank, 0, times)[:, active][:, None]
+        clearance = []
+        collision = []
+        for position, time in zip(positions, times, strict=True):
+            value, hit = clearance_and_collision(
+                bank, jnp.int32(0), jnp.float32(time), jnp.asarray(position)
+            )
+            clearance.append(float(value))
+            collision.append(float(hit))
+        trace = {
+            "pos": positions_batched,
+            "quat": quaternions,
+            "time": times[:, None],
+            "obs": np.zeros((frames, 1, 1), np.float32),
+            "reward": np.zeros((frames, 1), np.float32),
+            "actions": np.zeros((frames, 1, 4), np.float32),
+            "metrics": {
+                "inspection/clearance_m": np.asarray(clearance, np.float32)[:, None],
+                "inspection/collision": np.asarray(collision, np.float32)[:, None],
+            },
+            "obstacle_pos": obstacle_positions,
+        }
+        env = review_env(bank, scene_id, 1.0 / args.fps, manifest)
+        target = args.output / scene_id
+        replay = export_rollout(create_replay_model(env, 0), target, trace)
+        (target / "scene-definition.json").write_text(
+            json.dumps(
+                {
+                    "catalog_version": catalog["version"],
+                    "scene": scene_by_id(catalog, scene_id),
+                    "review": review[scene_id],
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
+        index.append(
+            {
+                **review[scene_id],
+                "title": scene["title"],
+                "source": scene["source"],
+                "replay": str(replay.relative_to(args.output)),
+            }
+        )
+
+    (args.output / "index.json").write_text(
+        json.dumps({"catalog_version": catalog["version"], "scenes": index}, indent=2) + "\n"
+    )
+    lines = [
+        "# P5 fixed scene review",
+        "",
+        "These are candidate fixed scenes. The animated drone follows the catalog's",
+        "inspection-only feasible route; that route is not visible to any navigation method.",
+        "",
+        "| ID | type | difficulty | obstacles | direct blocked | route clearance | reference |",
+        "|---|---|---|---:|---|---:|---|",
+    ]
+    for row in index:
+        lines.append(
+            f"| {row['scene_id']} | {'dynamic' if row['dynamic'] else 'static'} | "
+            f"{row['difficulty']} | {row['obstacles']} | "
+            f"{'yes' if row['straight_line_blocked'] else 'no'} | "
+            f"{row['inspection_route_min_clearance_m']:.3f} m | {row['source']} |"
+        )
+    (args.output / "README.md").write_text("\n".join(lines) + "\n")
+    print(json.dumps({"output": str(args.output), "scenes": index}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
