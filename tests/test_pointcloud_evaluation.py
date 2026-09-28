@@ -121,10 +121,12 @@ def test_replay_preserves_point_mass_identity_and_positions(tmp_path):
     rollout.append_unroll(path)
     loaded = rollout.rollouts[-1]
     length = int(np.asarray(trace["active"])[:, 0].sum())
-    np.testing.assert_allclose(loaded.mocap_pos[:, 0, 0], trace["pos"][:length, 0], atol=1e-6)
-    assert loaded.metrics["action/0"].shape[0] == length
+    np.testing.assert_allclose(loaded.mocap_pos[0, 0, 0], bank.start[0], atol=1e-6)
+    np.testing.assert_allclose(loaded.mocap_pos[1:, 0, 0], trace["pos"][:length, 0], atol=1e-6)
+    assert loaded.metrics["action/0"].shape[0] == length + 1
     proof = json.loads((tmp_path / "readback-verification.json").read_text())
-    assert proof["frames"] == length and proof["positions_and_action_channels_match"]
+    assert proof["frames"] == length + 1 and proof["transitions"] == length
+    assert proof["positions_and_action_channels_match"]
 
 
 def test_navigation8_recipe_uses_eight_unique_verified_catalog_cases():
@@ -209,3 +211,39 @@ def test_evaluation_summary_keeps_failures_and_training_provenance(tmp_path):
     text = (tmp_path / "report.md").read_text()
     assert "碰撞" in text and "1000" in text and "S01" in text
     assert "collision" in (tmp_path / "episodes.csv").read_text()
+
+
+def test_first_step_numerical_failure_keeps_a_readable_two_state_replay(tmp_path):
+    ev = evaluator()
+    from rscope import rollout
+
+    _, task, bank = task_and_bank()
+    task.bank = bank
+
+    class FailingPolicy:
+        hidden_size = 192
+
+        @staticmethod
+        def apply(params, points, valid, proprio, hidden):
+            return jnp.full((*proprio.shape[:-1], 3), jnp.nan), hidden
+
+    trace = jax.tree.map(
+        np.asarray, ev.make_rollout(task, FailingPolicy(), bank)(None, jnp.array([4.0]))
+    )
+    assert int(trace["active"][:, 0].sum()) == 1
+    assert int(trace["outcome"][0, 0]) == 4
+    path = ev.export_case(task, trace, 0, tmp_path)
+    rollout.rollouts.clear()
+    rollout.num_evals = 0
+    rollout.append_unroll(path)
+    loaded = rollout.rollouts[-1]
+    assert loaded.time.shape[0] == 2
+    assert float(loaded.time[0, 0]) == 0.0
+    np.testing.assert_allclose(loaded.mocap_pos[0, 0, 0], bank.start[0], atol=1e-6)
+    assert np.isfinite(loaded.mocap_pos).all()
+    proof = json.loads((tmp_path / "readback-verification.json").read_text())
+    assert proof["frames"] == 2 and proof["transitions"] == 1
+    report = ev.summarize_trace(trace, ["fixture"], 4.0, task.duration, bank.start)
+    assert report["num_trials"] == 1 and report["numerical_failure"] == 1
+    rollout.rollouts.clear()
+    rollout.num_evals = 0

@@ -90,12 +90,24 @@ def build_commands(python, stage_result, full_run, early_run, final_run):
     }
 
 
-def verify_evaluation_result(run):
+def verify_evaluation_result(run, *, expected_selected, expected_training_run):
     run = Path(run)
     result = json.loads((run / "result.json").read_text())
     report = json.loads((run / "eval/report.json").read_text())
     if result.get("status") != "completed" or not report.get("parameters_frozen"):
         raise ValueError("Evaluation is incomplete or altered policy parameters")
+    if (
+        Path(report["checkpoint"]).resolve() != Path(expected_selected["checkpoint"]).resolve()
+        or report["parameter_sha256"] != expected_selected["parameter_sha256"]
+    ):
+        raise ValueError("Evaluation selected policy identity does not match this training phase")
+    training_run = Path(expected_training_run).resolve()
+    provenance = report.get("training_run_evidence") or {}
+    if Path(provenance.get("run", "")).resolve() != training_run:
+        raise ValueError("Evaluation training run identity does not match this pipeline")
+    training_digest = hashlib.sha256((training_run / "result.json").read_bytes()).hexdigest()
+    if provenance.get("result_sha256") != training_digest:
+        raise ValueError("Evaluation training result identity does not match its current source")
     cells = {(row["scene_id"], float(row["command_speed_m_s"])) for row in report["episodes"]}
     expected = {(scene, speed) for scene in SCENES for speed in SPEEDS}
     if report["num_trials"] != 24 or len(report["episodes"]) != 24 or cells != expected:
@@ -108,7 +120,11 @@ def verify_evaluation_result(run):
         != 24
     ):
         raise ValueError("Terminal outcomes do not account for every trial")
-    verify_checkpoint(report["checkpoint"])
+    metadata = verify_checkpoint(report["checkpoint"])
+    if metadata.get("parameter_sha256") != expected_selected["parameter_sha256"]:
+        raise ValueError(
+            "Checkpoint selected parameter identity does not match the evaluated policy"
+        )
     return report
 
 
@@ -126,6 +142,19 @@ def source_digest(root):
     return digest.hexdigest()
 
 
+def validate_source_reconciliation(changed_paths):
+    """Allow explicit supervisor repair while preserving live training source semantics."""
+    allowed = {
+        "scripts/run_pointcloud_pipeline.py",
+        "src/drone_playground/evaluation/pointcloud.py",
+    }
+    unexpected = sorted(set(changed_paths) - allowed)
+    if unexpected:
+        raise ValueError(
+            f"Source reconciliation would change live training semantics: {unexpected}"
+        )
+
+
 def process_alive(record):
     try:
         pid = int(record["pid"])
@@ -134,6 +163,30 @@ def process_alive(record):
         return record.get("start_marker") == f"{boot}:{pid}:{ticks}"
     except (KeyError, OSError, ValueError, IndexError):
         return False
+
+
+def read_process_command(pid):
+    return [
+        part.decode() for part in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0") if part
+    ]
+
+
+def verify_live_phase(run, phase_record, expected_command):
+    """Authenticate an existing child so coordinator recovery never restarts training."""
+    run = Path(run)
+    state = json.loads((run / "state.json").read_text())
+    identity = state.get("process", {})
+    if phase_record.get("pid") != identity.get("pid") or phase_record.get("run") != run.name:
+        raise RuntimeError("Running phase process identity differs from the durable ledger")
+    if phase_record.get("command") != expected_command:
+        raise RuntimeError("Recovered phase command differs from the durable ledger")
+    if not process_alive(identity):
+        raise RuntimeError(
+            "The recorded phase process is absent; recover a saved training state explicitly"
+        )
+    if read_process_command(identity["pid"]) != expected_command:
+        raise RuntimeError("Running process command differs from the declared training phase")
+    return identity
 
 
 def wait_for_training_stage(run, ledger, ledger_path):
@@ -174,11 +227,21 @@ def main():
     with (directory / "coordinator.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         digest = source_digest(root)
+        run_identity = {
+            "stage1": args.stage1_run,
+            "full": args.full_run,
+            "early_evaluation": args.early_eval_run,
+            "final_evaluation": args.final_eval_run,
+        }
         if ledger_path.exists():
             ledger = json.loads(ledger_path.read_text())
             if ledger["source_digest"] != digest:
                 raise ValueError(
                     "Pipeline source changed; reconcile the saved protocol before resuming"
+                )
+            if ledger.get("run_identity") != run_identity:
+                raise ValueError(
+                    "Pipeline training/evaluation run identities changed during recovery"
                 )
         else:
             ledger = dict(
@@ -191,6 +254,7 @@ def main():
                 ).strip(),
                 target_updates=TARGET_UPDATES,
                 target_steps=TARGET_UPDATES * STEPS_PER_UPDATE,
+                run_identity=run_identity,
                 phases={},
             )
         env = os.environ.copy()
@@ -209,9 +273,33 @@ def main():
                 atomic_json(ledger_path, ledger)
                 return report
             if run.exists():
-                raise RuntimeError(
-                    f"Existing incomplete phase requires resuming its process/state: {run}"
-                )
+                identity = verify_live_phase(run, ledger["phases"].get(name, {}), command)
+                ledger.update(status="running", phase=name, updated_at=now())
+                ledger["phases"][name].update(coordinator_adopted_at=now(), process=identity)
+                while not (run / "result.json").exists():
+                    if not process_alive(identity):
+                        if (run / "result.json").exists():
+                            break
+                        # A successful child writes its result before exiting; an absent result
+                        # therefore indicates a failed or interrupted phase, never permission to restart.
+                        raise RuntimeError(
+                            f"Adopted process ended without a complete result: {run}"
+                        )
+                    current = json.loads((run / "state.json").read_text())
+                    ledger.update(
+                        updated_at=now(),
+                        child_progress=dict(
+                            step=current.get("step"),
+                            phase=current.get("phase"),
+                            details=current.get("details"),
+                        ),
+                    )
+                    atomic_json(ledger_path, ledger)
+                    time.sleep(10)
+                report = verify(run)
+                ledger["phases"][name].update(status="completed", finished_at=now())
+                atomic_json(ledger_path, ledger)
+                return report
             ledger.update(status="running", phase=name, updated_at=now())
             with (directory / f"{name}.log").open("w") as output:
                 process = subprocess.Popen(
@@ -258,7 +346,11 @@ def main():
                 "stage1_evaluation",
                 commands["early_evaluation"],
                 args.early_eval_run,
-                verify_evaluation_result,
+                lambda run: verify_evaluation_result(
+                    run,
+                    expected_selected=first["selected"],
+                    expected_training_run=root / "experiments" / args.stage1_run,
+                ),
             )
             full = phase(
                 "full_training",
@@ -271,7 +363,14 @@ def main():
                 f"evaluation.training_run={root / 'experiments' / args.full_run}",
             ]
             final = phase(
-                "final_evaluation", final_command, args.final_eval_run, verify_evaluation_result
+                "final_evaluation",
+                final_command,
+                args.final_eval_run,
+                lambda run: verify_evaluation_result(
+                    run,
+                    expected_selected=full["selected"],
+                    expected_training_run=root / "experiments" / args.full_run,
+                ),
             )
             if not final["training_budget_completed"]:
                 raise ValueError("Final evaluation did not authenticate the completed training run")

@@ -199,6 +199,33 @@ def export_case(task, trace, case, directory):
     single["metrics"] = {
         k: np.asarray(v)[:length, case : case + 1] for k, v in trace["metrics"].items()
     }
+    # Include the real pre-action state. RScope needs two timestamps even when
+    # the first transition terminates; frame count and transition count differ.
+    initial_position = np.asarray(trace["observation_pos"])[0, case]
+    initial_rotation = np.asarray(trace["observation_rotation"])[0, case]
+    initial_centre = initial_position + initial_rotation @ np.array([0.0, 0.0, 0.005])
+    initial_clearance = float(
+        clearance_and_collision(task.bank, case, 0.0, initial_centre, task.body_radius)[0]
+    )
+    initial_metrics = {
+        "clearance": initial_clearance,
+        "goal_distance": float(np.linalg.norm(np.asarray(task.bank.goal[case]) - initial_position)),
+        "speed": float(np.linalg.norm(np.asarray(task.initial_state(task.bank).vel[case]))),
+    }
+    initial_fields = {
+        "pos": initial_position[None, None],
+        "quat": Rotation.from_matrix(initial_rotation).as_quat()[None, None],
+        "time": np.zeros_like(single["time"][:1]),
+        "obs": single["obs"][:1],
+        "actions": np.zeros_like(single["actions"][:1]),
+        "reward": np.zeros_like(single["reward"][:1]),
+    }
+    for name, initial in initial_fields.items():
+        single[name] = np.concatenate([initial, single[name]], axis=0)
+    single["metrics"] = {
+        name: np.concatenate([np.full_like(values[:1], initial_metrics[name]), values], axis=0)
+        for name, values in single["metrics"].items()
+    }
     active = active_indices(task.bank, case)
     single["obstacle_pos"] = obstacle_track(task.bank, case, single["time"][:, 0])[
         :, active, None, :
@@ -224,7 +251,9 @@ def export_case(task, trace, case, directory):
     save_report(
         directory / "readback-verification.json",
         dict(
-            frames=length,
+            frames=length + 1,
+            transitions=length,
+            initial_frame_included=True,
             action_channels=single["actions"].shape[-1],
             positions_and_action_channels_match=True,
             model_xml_recompiled=True,
@@ -392,7 +421,9 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                             scene_id=scene_id,
                             speed_m_s=float(speed),
                             path=str(path.relative_to(rec.path)),
-                            frames=report["episodes"][case]["steps"],
+                            frames=report["episodes"][case]["steps"] + 1,
+                            transitions=report["episodes"][case]["steps"],
+                            initial_frame_included=True,
                             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                             readback_verified=True,
                         )
