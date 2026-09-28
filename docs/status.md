@@ -10,7 +10,7 @@
 2026-09-28 场景复核新增决策：用户取消后续正式 benchmark 的随机密度生成场景。
 原因是已观察到两类退化：Easy 圆柱森林可只有两根且不遮挡起终点直线；高密度实例又可能
 缺少合理飞行通道。现已建立待人工确认的固定编号候选集 S01-S06、D01-D06，
-目录 configs/scene/p5_fixed_catalog.json。所有候选均要求直接起终点航线被阻挡，同时有一条
+历史第一版目录为 configs/scene/p5_fixed_catalog_v1.json。所有候选均要求直接起终点航线被阻挡，同时有一条
 最小机体净空不低于 0.35 m 的离线检查路径；该路径只用于可行性验收和 RScope 回放，不暴露给方法。
 12 个独立检查回放位于 experiments/p5-fixed-scenes-review-v1/，动态障碍在回放中使用橙色，
 静态障碍为灰色。NavRL/P2M 只作为障碍尺寸、形态和动态 clutter 设计参考，不复制其随机生成器。
@@ -31,6 +31,7 @@ SUPER PCD 语义见 `docs/research/p5-scene-reference-comparison.md`。仍等待
 均需可达。12/12 v4 场景 `full_length_straight_lanes=0`，固定 y/z 方向最大连续无障碍段
 为 21.5–33.5 m（阈值 35 m），同时保留 50/100/150 场内障碍与四面可感知边界墙。
 当前审阅目录：`experiments/p5-fixed-scenes-review-v4/`。
+当前固定场景默认入口已经切换到 `configs/scene/p5_fixed_catalog_v4.json`；V1/V2/V3 仅保留用于历史重建。
 
 2026-09-28 阶段性收尾：用户要求整理交接并协助处理问题。本轮按此要求完成状态核验与证据整理。
 代码基线为 `4c91ed7486f6050d5cef6a3dfb6522822f440e57`，原会话标识 `p5-main`。

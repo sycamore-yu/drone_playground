@@ -7,7 +7,7 @@
 > **2026-09-28 场景协议修订。** 用户在检查原 v2 场景后取消“按密度随机生成场景”作为后续
 > 正式 benchmark 的方案：部分低密度实例退化为几根不挡路的大柱子，部分高密度实例又缺少
 > 合理可飞通道。既有 v2 训练/评测保持为历史原始证据，不改写。后续 benchmark 改为人工审阅后
-> 冻结的**固定编号场景**。当前候选目录为 configs/scene/p5_fixed_catalog.json，
+> 冻结的**固定编号场景**。第一版候选目录现保留为 configs/scene/p5_fixed_catalog_v1.json，
 > 编号 S01-S06、D01-D06；每个场景显式记录障碍坐标/尺寸/运动以及一条只用于离线可行性
 > 验收和 RScope 检查的 inspection_path。该检查路径禁止进入 PPO、D.VA、EGO-Planner
 > 或 SUPER 输入。候选场景在用户逐一查看并确认前不视为新的正式 benchmark，也不据此启动重训练。
@@ -30,7 +30,7 @@
 > 在起点，仅动态障碍运动。为避免另一条固定横向 lane 贯穿全图，v4 在不同 x 位置布置三组
 > 非实墙式 staggered blocker，并验收 `full_length_straight_lanes == 0`、任一固定 y/z 直线的
 > 最大连续无障碍段不超过 35 m。当前候选为 `configs/scene/p5_fixed_catalog_v4.json`，审阅集为
-> `experiments/p5-fixed-scenes-review-v4/`。
+> `experiments/p5-fixed-scenes-review-v4/`。固定场景默认加载与默认审阅导出入口均指向 v4。
 
 ## 1. 目标、已确认选择与交付范围
 

@@ -61,12 +61,12 @@ def main():
     parser.add_argument(
         "--catalog",
         type=Path,
-        default=Path("configs/scene/p5_fixed_catalog.json"),
+        default=Path("configs/scene/p5_fixed_catalog_v4.json"),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("experiments/p5-fixed-scenes-review-v1"),
+        default=Path("experiments/p5-fixed-scenes-review-v4"),
     )
     parser.add_argument("--fps", type=int, default=20)
     args = parser.parse_args()

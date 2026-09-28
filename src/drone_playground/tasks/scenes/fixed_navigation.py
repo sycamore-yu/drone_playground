@@ -34,7 +34,7 @@ from .navigation import (
     _stack_instances,
 )
 
-DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/p5_fixed_catalog.json"
+DEFAULT_CATALOG = Path(__file__).resolve().parents[4] / "configs/scene/p5_fixed_catalog_v4.json"
 
 MOTION_BY_NAME = {
     "static": MOTION_STATIC,

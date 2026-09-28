@@ -14,6 +14,7 @@ from drone_playground.tasks.scenes.navigation import MOTION_STATIC
 
 def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
     catalog = load_fixed_catalog()
+    assert catalog["version"] == "p5-fixed-candidate-v4-route-free"
     ids = [scene["id"] for scene in catalog["scenes"]]
     assert ids == [
         "S01",
@@ -32,18 +33,22 @@ def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
     assert {scene["source"] for scene in catalog["scenes"]} >= {
         "NavRL",
         "P2M",
-        "SANDO",
+        "MIGHTY+SANDO",
         "manual",
     }
     assert catalog["references"]["NavRL"]["license"] == "MIT"
     assert catalog["references"]["P2M"]["license"] == "MIT"
 
 
-def test_every_candidate_blocks_direct_flight_and_has_a_known_clear_route():
-    reports = validate_fixed_catalog(load_fixed_catalog(), minimum_route_clearance_m=0.35)
+def test_every_candidate_blocks_direct_flight_and_has_route_free_connectivity():
+    reports = validate_fixed_catalog(load_fixed_catalog(), maximum_clear_straight_run_m=35.0)
     assert len(reports) == 12
     assert all(report["straight_line_blocked"] for report in reports)
-    assert min(report["inspection_route_min_clearance_m"] for report in reports) >= 0.35
+    for report in reports:
+        topology = report["topology"]
+        assert topology["all_snapshots_reachable"]
+        assert topology["max_full_length_straight_lanes"] == 0
+        assert topology["max_clear_straight_run_m"] <= 35.0
 
 
 def test_fixed_bank_is_exact_and_does_not_generate_extra_obstacles():
@@ -54,6 +59,7 @@ def test_fixed_bank_is_exact_and_does_not_generate_extra_obstacles():
     assert tuple(bank.subtype_names) == tuple(ids)
     declared = [
         len(next(scene for scene in catalog["scenes"] if scene["id"] == item)["obstacles"])
+        + len(catalog.get("boundary_obstacles", []))
         for item in ids
     ]
     assert [bank.active_count(index) for index in range(len(ids))] == declared
@@ -72,11 +78,11 @@ def test_static_and_dynamic_motion_identity_is_explicit():
     assert np.any(active_motion != MOTION_STATIC)
 
 
-def test_catalog_is_a_committed_human_readable_file():
-    path = Path("configs/scene/p5_fixed_catalog.json")
+def test_default_catalog_is_a_committed_route_free_human_readable_file():
+    path = Path("configs/scene/p5_fixed_catalog_v4.json")
     assert path.is_file()
     text = path.read_text()
-    assert '"inspection_path"' in text
+    assert '"inspection_path"' not in text
     assert '"P2M"' in text and '"NavRL"' in text
 
 
