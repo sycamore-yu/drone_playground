@@ -2,7 +2,9 @@
 
 **A LEGO-like, composable UAV research platform for differentiable learning, planning, and control.**
 
-Drone Playground is built on top of [Crazyflow](https://github.com/learnsyslab/crazyflow) and turns a UAV experiment into interchangeable research modules. A policy or planner, controller, forward dynamics model, backward/gradient model, scene, sensor, task, objective, and evaluation protocol can be selected independently and composed through one experiment configuration.
+Drone Playground is built on top of [Crazyflow](https://github.com/learnsyslab/crazyflow) and uses a configuration-driven, composable component architecture. An experiment selects compatible implementations of policies/planners, controllers, dynamics, scenes, observations, tasks, and training components. The composition layer validates supported combinations and records the executed configuration.
+
+**配置驱动的可组合组件架构**：通过实验配置选择职责明确、契约兼容的模块实现，由装配层形成可执行闭环，并记录实际生效的组合。详见[架构与槽位](docs/architecture.md)。
 
 The main research goal is to make **learning-based** and **optimization-based** methods comparable without forcing every method into the same implementation. Experiments can deliberately share the same controller, dynamics, scene, observations, and evaluator for controlled comparisons, or preserve a method's native controller/planner stack when that is part of the method being studied.
 
@@ -11,32 +13,32 @@ The main research goal is to make **learning-based** and **optimization-based** 
 ## Build experiments like LEGO
 
 ```mermaid
-flowchart LR
-    S[Scene] --> P[Sensor / Observation]
-    T[Task / Goal] --> P
-
-    P --> M{Policy / Planner}
-    M --> L[Learning-based\nPPO · APG/BPTT · SHAC · D.VA]
-    M --> O[Optimization-based\nSampling MPC · Attitude MPC · EGO · SUPER]
-
-    L --> C{Controller}
-    O --> C
-    C --> D{Forward Dynamics}
-    D --> X[UAV State]
-    X --> P
-
-    B[Backward / Gradient Model] -. training gradient .-> L
-    E[Task Events / Evaluator] --> R[Metrics · Checkpoints · Replay]
-    X --> E
-    S --> E
+flowchart TD
+    S[Scene and task] --> P[Measurements and visible state]
+    P --> L[Learning observation]
+    P --> O[Native planner input]
+    L --> LP[Trained neural policy]
+    O --> OP[EGO / SUPER planning]
+    LP --> LC[Command mapping]
+    OP --> OC[Trajectory tracking]
+    LC --> C[Compatible attitude / thrust commands]
+    OC --> C
+    C --> F[Shared flight-control execution]
+    F --> D[Shared forward dynamics]
+    D --> X[State and task events]
+    X -. feedback .-> P
+    X --> R[Independent evaluation and replay]
 ```
+
+Archify interactive views: [two execution lanes](docs/diagrams/composable-runtime.html) · [training and derivative rules](docs/diagrams/composable-learning.html). Open the HTML files in a browser for zoom, search, node focus, relationship tracing, and guided views; see [viewer instructions](docs/diagrams/README.md). The diagram shows the current P5 merge point. Other combinations follow their own command contracts.
 
 The same method can therefore be studied under different physical models or controllers, while different methods can be evaluated under the same external task protocol. The platform also supports a second mode in which a complete native method stack is kept intact and only the external task, scene, and evaluation rules are shared.
 
 | Module slot | Current examples |
 | --- | --- |
-| Policy / planner | PPO, APG/BPTT, SHAC, D.VA, sampling MPC, LSY AttitudeMPC, EGO-Planner, SUPER |
-| Controller | Crazyflow attitude/control chain, trajectory tracking, LSY native controller, LOTF native controller |
+| Policy / planner | Trained neural policies, fixed/random references, EGO-Planner, SUPER |
+| Training algorithm | PPO, APG, SHAC, D.VA, LOTF BPTT |
+| Controller | Crazyflow attitude/control chain, trajectory tracking, sampling MPC, LSY AttitudeMPC, LOTF native controller |
 | Forward dynamics | Four Crazyflow dynamics models, LOTF high-fidelity/native dynamics |
 | Backward model | Direct JAX gradients, LOTF analytical surrogate gradients |
 | Perception | State/reference observations, D435-style depth, MID-360 LiDAR |
