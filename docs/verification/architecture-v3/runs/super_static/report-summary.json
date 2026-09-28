@@ -1,0 +1,10 @@
+{
+  "num_trials": 3,
+  "arrived": 0,
+  "collision": 0,
+  "out_of_bounds": 0,
+  "numerical_failure": 0,
+  "timeout": 3,
+  "quality_passed": null,
+  "full_budget_completed": true
+}

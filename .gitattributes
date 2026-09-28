@@ -1,5 +1,8 @@
 # Preserve unified-diff context markers and byte-identical pinned upstream data.
-src/drone_playground/controllers/lsy_upstream/compatibility.patch -whitespace
-src/drone_playground/tasks/lsy_upstream/compatibility.patch -whitespace
-src/drone_playground/tasks/lsy_upstream/assets/obstacle.xml -whitespace
-src/drone_playground/tasks/lsy_upstream/level0.toml -whitespace
+src/drone_playground/methods/optimal_control/lsy_upstream/compatibility.patch -whitespace
+src/drone_playground/environments/tasks/lsy_upstream/compatibility.patch -whitespace
+src/drone_playground/environments/tasks/lsy_upstream/assets/obstacle.xml -whitespace
+src/drone_playground/environments/tasks/lsy_upstream/level0.toml -whitespace
+# Test reports retain the exact captured output, including pytest diff whitespace.
+docs/verification/architecture-v3/*.log -whitespace
+docs/verification/architecture-v3/*.xml -whitespace

@@ -1,0 +1,14 @@
+{
+  "completed": 1,
+  "elapsed_s": 62.0000189919956,
+  "engineer_passed": true,
+  "finished_at": "2026-09-28T14:54:10.443781+00:00",
+  "full_budget_completed": true,
+  "num_trials": 1,
+  "quality_passed": true,
+  "report": "eval/report.json",
+  "run_id": "architecture-v3-attitude-source-v2",
+  "started_at": "2026-09-28T14:53:08.443818+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/02-policy-control"
+}

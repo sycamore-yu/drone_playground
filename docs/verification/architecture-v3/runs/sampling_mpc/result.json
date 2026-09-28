@@ -1,0 +1,14 @@
+{
+  "completed": 1,
+  "elapsed_s": 61.587657576892525,
+  "engineer_passed": true,
+  "finished_at": "2026-09-28T14:54:22.062995+00:00",
+  "full_budget_completed": true,
+  "num_trials": 1,
+  "quality_passed": true,
+  "report": "eval/report.json",
+  "run_id": "architecture-v3-sampling-source-v3",
+  "started_at": "2026-09-28T14:53:20.475343+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/02-policy-control"
+}

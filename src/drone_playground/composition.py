@@ -102,6 +102,9 @@ def validate_config(config: dict) -> None:
         if key not in env:
             raise ValueError(f"Missing environment component: {key}")
     mode = config.get("mode", "train")
+    expected_backend = "jax" if method["trainable"] else "host"
+    if config["runtime"].get("backend") != expected_backend:
+        raise ValueError(f"Method {method['name']} requires runtime backend {expected_backend}")
     if mode not in ("train", "eval", "play"):
         raise ValueError(f"Unknown run mode: {mode}")
     if mode == "train" and not method["trainable"]:

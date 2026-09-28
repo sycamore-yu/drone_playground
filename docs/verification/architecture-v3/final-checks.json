@@ -1,0 +1,19 @@
+{
+  "test_suites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "279",
+      "time": "1287.927",
+      "timestamp": "2026-09-28T15:21:03.400497+00:00",
+      "hostname": "tianmushan1060"
+    }
+  ],
+  "pytest_passed": 274,
+  "subtests_passed": 5,
+  "source_hashes_verified": 96,
+  "ruff": "All checks passed!",
+  "format": "159 files already formatted"
+}

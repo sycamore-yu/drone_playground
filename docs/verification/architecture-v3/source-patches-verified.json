@@ -1,0 +1,20 @@
+{
+  "src/drone_playground/methods/optimal_control/lsy_upstream": {
+    "commit": "b1f5b36adb8e08e8e2adea85de790bd0e0a1d118",
+    "upstream": {
+      "attitude_mpc.py": "7af3a6ba87fbedcb4315119068d82784221ab23af2b71a7aaed9149f84049afa"
+    },
+    "reverse_matches_upstream": true,
+    "forward_matches_local": true
+  },
+  "src/drone_playground/environments/tasks/lsy_upstream": {
+    "commit": "b1f5b36adb8e08e8e2adea85de790bd0e0a1d118",
+    "upstream": {
+      "race_core.py": "e46859969356110719ef07607e819f46b5b7ce37a595626b237d9de94070c02b",
+      "randomize.py": "8f0ee3e91212961f4d51eef9341b332a0712d4bea9f90958103e18452db65253",
+      "utils.py": "9cd06128794bd21db86c6b368f3a33d2a04340950cb43b51cde72d117cf55880"
+    },
+    "reverse_matches_upstream": true,
+    "forward_matches_local": true
+  }
+}

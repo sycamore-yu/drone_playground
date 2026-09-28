@@ -1,9 +1,7 @@
 # 控制器模块
 
-同一个controller预设拥有需要的跟踪、飞控内环和命令转换；动力学保存机体与电机状态。
-`crazyflow.py`接通姿态命令，`lsy_mpc.py`运行原生acados，`sampling.py`运行真实候选预测；
-`lotf.py`复用作者Betaflight风格内环。LOTF每个物理子步只调用一次控制器。
+`env.execution` 声明命令层级、可选轨迹跟踪器、内环及实际动力学。`trajectory.py` 将轨迹转换为姿态与总推力；`crazyflow.py` 接入姿态执行；`lotf.py` 复用 Betaflight 风格内环；`acceleration.py` 处理点云方法的加速度命令。
 
-`factory.py`从同一实验配置构造优化控制器。策略可提供固定或随机轨迹；命令类型、预测模型、
-控制频率随运行记录。两种MPC已有P4正式结果，模块化迁移又核对了真实求解和完整过门。
-`demo.py`继续提供Mellinger固定示例；新方法在已有调用位置添加适配。
+完整命令应用和物理子步顺序由上层 `execution/transition.py` 掌握，同一个控制阶段执行一次。MPC 的在线决策、预测模型与暖启动位于 `methods/optimal_control/`。轨迹跟踪层是本项目控制比较的主要替换位置，内环保持独立职责。
+
+`demo.py` 提供既有 Mellinger 固定示例。各配方的真实支持能力、调用频率和数值验证记录见 [架构](../../../../docs/architecture.md)。

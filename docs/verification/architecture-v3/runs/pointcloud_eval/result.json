@@ -1,0 +1,12 @@
+{
+  "arrived": 0,
+  "elapsed_s": 886.830081007909,
+  "finished_at": "2026-09-28T14:35:39.634751+00:00",
+  "num_trials": 24,
+  "parameters_frozen": true,
+  "run_id": "architecture-v3-pointcloud-eval-v1",
+  "started_at": "2026-09-28T14:20:52.804696+00:00",
+  "status": "completed",
+  "task_id": "DP-005-navigation8",
+  "training_budget_completed": true
+}

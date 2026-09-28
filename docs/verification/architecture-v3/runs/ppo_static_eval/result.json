@@ -1,0 +1,12 @@
+{
+  "arrived": 0,
+  "elapsed_s": 61.31244295928627,
+  "finished_at": "2026-09-28T14:20:42.054422+00:00",
+  "full_budget_completed": true,
+  "num_trials": 6,
+  "quality_passed": null,
+  "run_id": "architecture-v3-ppo-nav-static-eval-v2",
+  "started_at": "2026-09-28T14:19:40.742005+00:00",
+  "status": "completed",
+  "task_id": "p5-navigation-evaluation"
+}

@@ -1,0 +1,15 @@
+{
+  "num_trials": 1,
+  "completed": 1,
+  "completion_rate": 1.0,
+  "actual_steps": 853,
+  "quality_passed": true,
+  "full_budget_completed": true,
+  "actual_environment_devices": [
+    "TFRT_CPU_0"
+  ],
+  "prediction_device": "cpu/native-acados",
+  "decision_p50_ms": 14.99830698594451,
+  "decision_p95_ms": 29.25079076085239,
+  "elapsed_seconds": 59.203870761208236
+}

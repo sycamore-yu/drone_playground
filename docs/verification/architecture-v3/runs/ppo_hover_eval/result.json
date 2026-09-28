@@ -1,0 +1,12 @@
+{
+  "completed": 0,
+  "elapsed_s": 7.442843887023628,
+  "finished_at": "2026-09-28T14:11:22.558190+00:00",
+  "full_budget_completed": true,
+  "num_trials": 2,
+  "quality_passed": false,
+  "run_id": "architecture-v3-ppo-hover-eval-v1",
+  "started_at": "2026-09-28T14:11:15.115364+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/05-task-evaluation"
+}

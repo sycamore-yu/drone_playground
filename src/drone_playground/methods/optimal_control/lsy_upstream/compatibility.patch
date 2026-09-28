@@ -11,7 +11,7 @@
  from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 -from crazyflow.drones import load_params as load_hardware_params
 -from crazyflow.dynamics.core import load_params as load_dynamics_params
-+from drone_playground.tasks.lsy_upstream.compat import load_hardware_params
++from drone_playground.environments.tasks.lsy_upstream.compat import load_hardware_params
 +from crazyflow.dynamics.core import load_fn_params as load_dynamics_params
  from crazyflow.dynamics.so_rpy import dynamics, symbolic_dynamics_euler
  from crazyflow.dynamics.utils.rotation import ang_vel2rpy_rates

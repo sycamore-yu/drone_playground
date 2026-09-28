@@ -1,0 +1,26 @@
+{
+  "actual_steps": 16,
+  "actual_updates": 2,
+  "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/architecture-v3-pointcloud-native-v1/training-state/update-0000002.pkl",
+  "elapsed_s": 17.97677812213078,
+  "finished_at": "2026-09-28T14:19:38.439788+00:00",
+  "first_update_seconds": 8.284970395732671,
+  "full_budget_completed": true,
+  "navigation8_evaluated": false,
+  "parameter_delta_l2": 0.10247400403022766,
+  "run_id": "architecture-v3-pointcloud-native-v1",
+  "selected": {
+    "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/architecture-v3-pointcloud-native-v1/training-state/update-0000002.pkl",
+    "development_loss": 4.74648380279541,
+    "parameter_sha256": "b441f227c6d6392d54ba3d57d8307166405ffdda596f8c5415f09e63aa4b9613",
+    "updates": 2
+  },
+  "session_steps": 16,
+  "started_at": "2026-09-28T14:19:20.463013+00:00",
+  "status": "completed",
+  "steady_update_seconds": 1.4751598360016942,
+  "target_steps": 16,
+  "target_updates": 2,
+  "task_id": "DP-005-pointcloud-paper",
+  "training_scene": "independent static primitives"
+}

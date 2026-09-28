@@ -1,0 +1,42 @@
+[
+  {
+    "environment": "hovering",
+    "observation_shape": [
+      43
+    ],
+    "finite": true,
+    "reward": 0.36784830689430237
+  },
+  {
+    "environment": "tracking",
+    "observation_shape": [
+      43
+    ],
+    "finite": true,
+    "reward": 0.6443911790847778
+  },
+  {
+    "environment": "racing",
+    "observation_shape": [
+      43
+    ],
+    "finite": true,
+    "reward": 0.9994096755981445
+  },
+  {
+    "environment": "navigation/static",
+    "observation_shape": [
+      2420
+    ],
+    "finite": true,
+    "reward": -0.009999999776482582
+  },
+  {
+    "environment": "navigation/dynamic",
+    "observation_shape": [
+      2420
+    ],
+    "finite": true,
+    "reward": -0.009999999776482582
+  }
+]

@@ -1,0 +1,64 @@
+...FFF.                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_single_execution_override_keeps_the_checkpoint_task[env.execution.dynamics.forward=so_rpy] _
+
+tmp_path = PosixPath('/tmp/pytest-of-tong/pytest-593/test_single_execution_override0')
+override = 'env.execution.dynamics.forward=so_rpy'
+
+    @pytest.mark.parametrize(
+        "override",
+        ["env.execution.dynamics.forward=so_rpy", "dynamics@env.execution.dynamics=crazyflow"],
+    )
+    def test_single_execution_override_keeps_the_checkpoint_task(tmp_path, override):
+        saved = compose_method("learning/ppo", "racing")
+        requested = compose_method("learning/ppo", overrides=[override])
+        requested.update(mode="eval", checkpoint=metadata(tmp_path, saved))
+        resolved = resolve_checkpoint_execution(requested, [override])
+>       assert resolved["env"]["name"] == "racing"
+E       AssertionError: assert 'tracking' == 'racing'
+E         
+E         - racing
+E         + tracking
+E         ? +   +
+
+tests/test_frozen_contract_v3.py:55: AssertionError
+_ test_single_execution_override_keeps_the_checkpoint_task[dynamics@env.execution.dynamics=crazyflow] _
+
+tmp_path = PosixPath('/tmp/pytest-of-tong/pytest-593/test_single_execution_override1')
+override = 'dynamics@env.execution.dynamics=crazyflow'
+
+    @pytest.mark.parametrize(
+        "override",
+        ["env.execution.dynamics.forward=so_rpy", "dynamics@env.execution.dynamics=crazyflow"],
+    )
+    def test_single_execution_override_keeps_the_checkpoint_task(tmp_path, override):
+        saved = compose_method("learning/ppo", "racing")
+        requested = compose_method("learning/ppo", overrides=[override])
+        requested.update(mode="eval", checkpoint=metadata(tmp_path, saved))
+        resolved = resolve_checkpoint_execution(requested, [override])
+>       assert resolved["env"]["name"] == "racing"
+E       AssertionError: assert 'tracking' == 'racing'
+E         
+E         - racing
+E         + tracking
+E         ? +   +
+
+tests/test_frozen_contract_v3.py:55: AssertionError
+________________ test_device_override_keeps_saved_command_delay ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-tong/pytest-593/test_device_override_keeps_sav0')
+
+    def test_device_override_keeps_saved_command_delay(tmp_path):
+        saved = compose_method("learning/ppo", "hovering", ["runtime.action_delay_steps=2"])
+        requested = compose_method("learning/ppo", overrides=["runtime.device=cpu"])
+        requested.update(mode="eval", checkpoint=metadata(tmp_path, saved))
+        resolved = resolve_checkpoint_execution(requested, ["runtime.device=cpu"])
+>       assert resolved["runtime"]["action_delay_steps"] == 2
+E       assert 0 == 2
+
+tests/test_frozen_contract_v3.py:69: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_frozen_contract_v3.py::test_single_execution_override_keeps_the_checkpoint_task[env.execution.dynamics.forward=so_rpy]
+FAILED tests/test_frozen_contract_v3.py::test_single_execution_override_keeps_the_checkpoint_task[dynamics@env.execution.dynamics=crazyflow]
+FAILED tests/test_frozen_contract_v3.py::test_device_override_keeps_saved_command_delay
+3 failed, 4 passed in 2.25s

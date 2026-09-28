@@ -1,146 +1,105 @@
 # Drone Playground
 
-**A LEGO-like, composable UAV research platform for differentiable learning, planning, and control.**
+面向无人机学习、规划和控制的可组合仿真实验平台。通过一份方法配方与一份完整环境预设，运行训练、独立评测及实际轨迹展示。当前配置版本为 3。
 
-Drone Playground is built on top of [Crazyflow](https://github.com/learnsyslab/crazyflow) and uses a configuration-driven, composable component architecture. An experiment selects compatible implementations of policies/planners, controllers, dynamics, scenes, observations, tasks, and training components. The composition layer validates supported combinations and records the executed configuration.
+平台采用 JAX 原生实现优先的路线，复用锁定版本的 Crazyflow、Brax 和 LOTF；原生 EGO-Planner、SUPER 与 acados 通过明确适配进入同一任务环境。控制研究重点是轨迹跟踪层，机体状态由仿真提供，传感器提供深度或点云测量。
 
-**配置驱动的可组合组件架构**：通过实验配置选择职责明确、契约兼容的模块实现，由装配层形成可执行闭环，并记录实际生效的组合。详见[架构与槽位](docs/architecture.md)。
+## 当前可运行能力
 
-The main research goal is to make **learning-based** and **optimization-based** methods comparable without forcing every method into the same implementation. Experiments can deliberately share the same controller, dynamics, scene, observations, and evaluator for controlled comparisons, or preserve a method's native controller/planner stack when that is part of the method being studied.
+PPO 的公开配方覆盖悬停、轨迹跟踪、竞速、静态导航和动态导航。APG、SHAC、D.VA、LOTF 与点云论文具名训练器保留各自参数更新语义。两种现有 MPC 与 EGO/SUPER 支持冻结条件下的独立评测及展示。
 
-> Research preview. The platform is under active development; completed experiments, negative results, protocol changes, and known limitations are retained as reproducible evidence rather than hidden behind a polished benchmark score.
+本次重组的短训练证明参数更新、保存、重载和闭环执行。完整训练预算和任务表现单独验收，逐项结果见 [架构重组验证](docs/verification/architecture-v3/README.md)。LOONG、AERO-MPPI、AC-MPC 的身份记录在来源清单中，其完整 JAX 实现属于后续具名任务。
 
-## Build experiments like LEGO
+## 环境与方法
 
-```mermaid
-flowchart TD
-    S[Scene and task] --> P[Measurements and visible state]
-    P --> L[Learning observation]
-    P --> O[Native planner input]
-    L --> LP[Trained neural policy]
-    O --> OP[EGO / SUPER planning]
-    LP --> LC[Command mapping]
-    OP --> OC[Trajectory tracking]
-    LC --> C[Compatible attitude / thrust commands]
-    OC --> C
-    C --> F[Shared flight-control execution]
-    F --> D[Shared forward dynamics]
-    D --> X[State and task events]
-    X -. feedback .-> P
-    X --> R[Independent evaluation and replay]
+```text
+方法：允许的信息 → 神经策略 / 在线优化 / 具名组合 → 轨迹或控制命令
+环境：场景 + 任务 + 传感测量 + 观测表示 + 命令执行与动力学
+训练：环境交互或可微展开 → 训练目标 → 参数更新 → 开发集选模
+评测：固定条件和试次 → 共享闭环 → 原始事件、全分母统计、回放
 ```
 
-Archify interactive views: [two execution lanes](docs/diagrams/composable-runtime.html) · [training and derivative rules](docs/diagrams/composable-learning.html). Open the HTML files in a browser for zoom, search, node focus, relationship tracing, and guided views; see [viewer instructions](docs/diagrams/README.md). The diagram shows the current P5 merge point. Other combinations follow their own command contracts.
+场景文件只定义外部几何及运动。目标、重置、到达、过门、碰撞终止与时限属于任务。`env` 是这些组件的组合入口，学习与优化方法均使用完整环境。训练目标由独立 `objective` 配置选择；当前 Brax 任务状态保留奖励字段，以便沿用既有训练和评测数值语义。
 
-The same method can therefore be studied under different physical models or controllers, while different methods can be evaluated under the same external task protocol. The platform also supports a second mode in which a complete native method stack is kept intact and only the external task, scene, and evaluation rules are shared.
+## 安装
 
-| Module slot | Current examples |
-| --- | --- |
-| Policy / planner | Trained neural policies, fixed/random references, EGO-Planner, SUPER |
-| Training algorithm | PPO, APG, SHAC, D.VA, LOTF BPTT |
-| Controller | Crazyflow attitude/control chain, trajectory tracking, sampling MPC, LSY AttitudeMPC, LOTF native controller |
-| Forward dynamics | Four Crazyflow dynamics models, LOTF high-fidelity/native dynamics |
-| Backward model | Direct JAX gradients, LOTF analytical surrogate gradients |
-| Perception | State/reference observations, D435-style depth, MID-360 LiDAR |
-| Scene / task | Figure-eight tracking, random splines, racing, Navigation8 fixed static/dynamic navigation |
-| Evaluation | Frozen checkpoints, independent development/held-out trials, full-denominator failure accounting, RScope replay |
-
-## What this project adds
-
-### 1. Composable research architecture
-
-Hydra configurations select real implementation modules rather than only changing scalar hyperparameters. Policies/planners, controllers, dynamics, observations, scenes, tasks, learning algorithms, networks, objectives, and training/evaluation settings are assembled through a common composition layer with explicit command, state, unit, and coordinate-frame contracts.
-
-This makes questions such as the following directly testable:
-
-- Does a learning policy still work when only the forward dynamics model changes?
-- What changes when two methods share the same low-level controller?
-- How does a differentiable training model transfer to a higher-fidelity evaluation model?
-- How do a learned policy and an optimization planner behave under the same scene, collision rules, timing, and held-out trials?
-
-### 2. Differentiable learning with explicit forward/backward choices
-
-The JAX/Brax training path supports direct differentiable dynamics and short-/full-horizon policy optimization. The LOTF integration additionally separates the **forward model used to generate states** from the **backward model used to propagate gradients**, enabling high-fidelity forward simulation with analytical surrogate gradients. D.VA is integrated as a perception-policy training path while keeping the current depth/LiDAR sampling operation outside the gradient path.
-
-The platform records which forward, backward, prediction, and evaluation models are actually used in each run so that a differentiable experiment is defined by its executed model chain rather than by an algorithm label alone.
-
-### 3. One evaluation layer for learning and optimization
-
-Learning policies and optimization-based planners use the same task events, collision semantics, timing, run recorder, independent evaluation, and replay format whenever the comparison is intended to be controlled. Native planners can also run through isolated ROS workers while consuming the same simulated sensors and odometry, which keeps their original mapping/planning logic outside the training process.
-
-The project distinguishes three claims: an implementation can be connected correctly, an experimental budget can be completed reproducibly, and a policy can achieve useful task performance. Failed or low-performing policies remain in the result set.
-
-## Representative results
-
-The platform already has complete closed-loop results for tracking, racing, differentiable training, and optimization control. The current perception-navigation study is still active.
-
-| Experiment | Held-out result |
-| --- | ---: |
-| LOTF hybrid-gradient hovering | 128/128 complete; last-second position RMSE 0.077 m |
-| LOTF hybrid-gradient figure-eight tracking | 128/128 complete; full-trajectory position RMSE 0.185 m |
-| Racing PPO / APG | 128/128 complete for each trained policy |
-| Racing sampling MPC | 128/128 complete |
-| Racing LSY AttitudeMPC | 117/128 complete; 11 collisions retained |
-| Static navigation with SUPER | 377/384 reached the goal |
-| Dynamic navigation with SUPER | 379/384 reached the goal |
-
-<p align="center">
-  <img src="docs/verification/composable-lotf-figures/lotf-hybrid-tracking-seed0-v1-trajectory.png" width="48%" alt="LOTF hybrid-gradient trajectory tracking" />
-  <img src="docs/verification/p5-results-v2/heldout-matrix.png" width="48%" alt="Perception navigation held-out matrix" />
-</p>
-
-Full evidence is kept in [P3/P4 results](docs/verification/p3-p4-results.md), [LOTF delivery](docs/verification/composable-lotf-delivery.md), and the current [P5 perception-navigation matrix](docs/verification/p5-results-v2/report.md).
-
-## 30-second smoke test
-
-After the environment is installed, this CPU-only command runs one second of real Crazyflow flight, records 50 simulation frames, and writes an RScope replay:
+需要 Linux、Git、Pixi。原生规划器另需 Docker，GPU 训练另需匹配的 NVIDIA 驱动。
 
 ```bash
-env -u PYTHONPATH JAX_PLATFORMS=cpu pixi run demo \
-  --run-id quick-demo --duration 1 --device cpu
+# 在项目根目录执行，锁定源码进入项目自管缓存。
+python3 scripts/tools/fetch_sources.py
+pixi install --locked
 ```
 
-On the current development machine the command completes successfully in about 5 seconds after startup/compilation and reports finite states plus a trajectory RMSE. To inspect a full experiment composition without training:
+源码来源及提交见 `third_party/sources.yaml`，依赖解析见 `pixi.lock`。首次源码获取脚本只使用 Python 标准库；清单采用兼容 YAML 的 JSON 表示。LOTF 所需机体和场景资源随固定源码缓存保留。
+
+完整测试包含实际 acados 求解。先执行 `bash scripts/tools/setup_acados.sh`，或设置已有构建的 `ACADOS_SOURCE_DIR`，随后执行 `pixi run test`。
+
+## 训练
 
 ```bash
-pixi run experiment --cfg job experiment=p5_static_lidar_ppo
+pixi run train method=learning/ppo env=hovering
+pixi run train method=learning/ppo env=tracking
+pixi run train method=learning/ppo env=racing
+pixi run train method=learning/ppo env=navigation/static
+pixi run train method=learning/ppo env=navigation/dynamic
+
+# Learning on the Fly 与点云论文分别选择。
+pixi run train method=paper/lotf env=paper/lotf_hover
+pixi run train method=paper/pointcloud_flight
 ```
 
-### Environment setup
+CPU 验证使用 `runtime.device=cpu`；预算使用 `training.num_timesteps` 或具名算法的 `training.policy_updates`。PPO 新入口的各任务短训练命令和实际参数增量在验证目录中逐项记录。
 
-The current development layout keeps Crazyflow as a sibling repository and pins LOTF as a Git submodule:
+## 评测和展示
 
 ```bash
-git clone https://github.com/learnsyslab/crazyflow.git ../crazyflow
-git -C ../crazyflow checkout 36f584d114d9d331f0cee0fe4b9066f821c0fbfd
-git submodule update --init --recursive
-pixi install
+pixi run eval method=paper/super env=navigation/static evaluation=navigation_v1
+pixi run eval method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v1
+pixi run eval method=optimization/attitude_mpc env=racing
+pixi run eval method=optimization/sampling_mpc env=racing
+
+# 实际检查点文件由其旁边的元数据恢复方法、网络和输入契约。
+pixi run eval checkpoint=experiments/<运行标识>/checkpoints/<检查点>.pkl
+pixi run play checkpoint=experiments/<运行标识>/checkpoints/<检查点>.pkl
+pixi run play method=paper/super env=navigation/static
+pixi run play replay=experiments/<运行标识>/rollouts
 ```
 
-The public release will keep this dependency relationship explicit rather than presenting Crazyflow as code authored in this repository.
+`play` 在线运行与正式评测共享执行层，结束后发布实际回放包到 RScope；现有回放模式只读取轨迹产物。服务器验证可选 `visualization=headless`，生成与核对回放且保持当前查看器选择。优化配方的训练入口在创建运行目录前检查训练能力。
 
-## Current research scope
+EGO/SUPER 运行环境由 `native_planners/` 自管：`bash native_planners/setup.sh`。acados 构建使用 `bash scripts/tools/setup_acados.sh`，已有固定构建可通过 `ACADOS_SOURCE_DIR` 指定。
 
-Current implemented paths include four Crazyflow dynamics models; PPO, APG/BPTT, SHAC, D.VA; sampling MPC and LSY AttitudeMPC; LOTF high-fidelity-forward/surrogate-backward training; idealized D435 depth and MID-360 LiDAR; and isolated native EGO-Planner/SUPER workers for static and dynamic navigation.
+## 高级组合
 
-The perception-navigation learning baselines are an active research problem. In the current single-seed P5 matrix, PPO/D.VA navigation performance is substantially below the native planning baselines. These runs are retained because the platform is intended to expose failure modes and model/training differences as well as successful policies. Multi-seed navigation results, real-sensor noise/state estimation, online adaptation, and real-UAV deployment remain future work.
+```bash
+# 组件的实际所有者可直接覆盖。
+pixi run train method=learning/ppo env=tracking env.execution.dynamics.forward=first_principles
 
-## Relationship to Crazyflow and other upstream projects
+# Hydra 配置组重选使用其挂载路径。
+pixi run train method=learning/ppo env=navigation/static \
+  sensor@env.sensor=d435 observation@env.observation=navigation_depth
 
-Drone Playground has its own Git history. It **uses and extends Crazyflow as a dependency** for UAV simulation, dynamics, and control rather than claiming Crazyflow as original work. Additional task/controller components are adapted from LSY Drone Racing, LOTF is pinned as a GPLv3 submodule, D.VA is independently adapted to the JAX/Brax stack, and EGO-Planner/SUPER are executed as external native planner processes.
+# 显式两控制步命令延迟；默认零附加延迟。
+pixi run train method=learning/ppo env=hovering runtime.action_delay_steps=2
+```
 
-Exact upstream commits, reused files, modifications, and license notices are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+`dynamics` 产生实际状态；方法内部 `prediction` 提供未来预测；`algorithm.gradient` 选择直接或具名代理导数。动力学实现和算法配置各自拥有唯一来源。组合约束在启动时检查，真实支持范围由方法配方与验证证据共同界定。
 
-## Reproducibility and documentation
+## 数据、协议与来源
 
-- [Architecture](docs/architecture.md) — module contracts, composition, forward/backward models, P5 perception-navigation execution chain.
-- [Evaluation protocol](docs/evaluation.md) — engineering validation, experiment completion, policy quality, held-out evaluation, and failure accounting.
-- [Runbook](docs/runbook.md) — train, evaluate, simulate, replay, inspect metrics, and reproduce verification steps.
-- [Current development status](docs/status.md) — active work, completed stages, blockers, and exact evidence locations.
-- [Research/source inventory](docs/research/references.md) — external projects and what is reused from each one.
+`assets/scenes/navigation/catalog.json` 保存已验收的八个几何场景，公开名称为 navigation；静态和动态视图引用同一资产。`benchmarks/navigation/v1/` 保存协议、划分和几何验收证据。历史场景编号及资产摘要保持可核对。
 
-Every formal run records the resolved configuration, code/dependency identity, process identity, budget, scalar metrics, checkpoints, per-episode outcomes, and replay data required by its evaluation stage.
+每次运行独占 `experiments/<运行标识>/`，保存解析配置、提交和补丁、依赖、实际进程命令、状态、检查点、评测和回放。历史版本检查点通过显式复制迁移：
 
-## License
+```bash
+pixi run python scripts/tools/migrate_artifact.py <可信旧检查点.pkl> <新目标目录>
+```
 
-Drone Playground is released under **GPL-3.0-only**. This choice keeps the current LOTF-derived integration and the rest of the distributed platform under one clear project license. Third-party components retain their original copyright and license terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for exact provenance and boundaries.
+迁移检查源摘要，重定位序列化类型路径，保留数组和优化器状态，并拒绝覆盖目标。Pickle 产物只应来自可信的本地实验。
+
+## 导航与边界
+
+完整实际目录见 [项目目录](docs/project-tree.md)，模块职责见 [架构](docs/architecture.md)，运行说明见 [操作手册](docs/runbook.md)，当前任务见 [状态](docs/status.md)。许可与上游差异见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+
+继承的原生规划器参数仍采用 2 m/s 速度上限；96 m 的导航位移与 40 s 时限在该速度约束下需要另行校准。架构回归保留这组条件及其超时结果，后续配方调参须生成新的实验身份。

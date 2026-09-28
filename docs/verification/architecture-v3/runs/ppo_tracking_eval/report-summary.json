@@ -1,0 +1,9 @@
+{
+  "num_trials": 2,
+  "completed": 0,
+  "completion_rate": 0.0,
+  "quality_passed": false,
+  "full_budget_completed": true,
+  "parameter_sha256": "7f7fa7356e25cd40d254325ee306be33f258dc66f32f2c1fabb91a0f3de0c6f3",
+  "elapsed_seconds": 2.4841666631400585
+}

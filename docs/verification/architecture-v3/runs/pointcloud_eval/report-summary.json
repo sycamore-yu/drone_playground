@@ -1,0 +1,10 @@
+{
+  "num_trials": 24,
+  "arrived": 0,
+  "collision": 24,
+  "out_of_bounds": 0,
+  "numerical_failure": 0,
+  "timeout": 0,
+  "collision_sampling_hz": 500,
+  "parameter_sha256": "b441f227c6d6392d54ba3d57d8307166405ffdda596f8c5415f09e63aa4b9613"
+}

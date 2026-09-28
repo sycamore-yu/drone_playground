@@ -1,11 +1,7 @@
 # 学习模块
 
-`train.py` 调用原生Brax PPO/APG及`shac.py`；`lotf_bptt.py`保持作者的确定性策略、
-时间展开、回报总和、随机数和Adam更新。四组配置为algorithm、network、objective、training。
-网络构造和唯一奖励入口分别位于`networks.py`与`objectives.py`，LOTF任务奖励直接复用上游。
+`train.py` 编排 Brax PPO/APG 与具名训练器；`algorithms/` 保存 SHAC、D.VA、LOTF 和点云时间反传的更新规则。网络实现在同级 `../networks/`，环境包装在 `env_adapter.py`，具名任务损失在 `objectives/`。任务奖励沿用已核对的任务实现及上游，算法负责将训练信号组合为更新损失。
 
-PPO支持原生参数暖启动；SHAC与LOTF保存优化器、随机数及环境状态。LOTF完整实验续训
-同时继承恢复时刻以前的开发集最佳模型，来源存入`resume-selection.json`，未来评估不参与选择。
-CPU小规模保存恢复与连续更新逐元素相同；跨进程GPU正式快照恢复的浮点差异单独报告。
+PPO 支持参数暖启动；SHAC、D.VA、LOTF 与点云具名训练器按其能力保存完整训练状态。恢复核对参数、优化器、随机数、行为配置和开发集选择历史。参数热启动与完整续训分别记录。
 
-LOTF两任务正式训练及独立评测见`docs/verification/composable-lotf-delivery.md`。
+本轮五任务 PPO 各 256 交互、点云 2 次更新，用于验证真实更新、保存和重载。完整训练预算及策略质量以 [本次验证](../../../docs/verification/architecture-v3/README.md) 的独立字段为准。LOTF 与点云论文保持独立方法身份。

@@ -46,6 +46,29 @@ def script_main(mode):
     main()
 
 
+def _selected_component(saved, requested, arguments, root):
+    """Overlay explicitly selected resolved fields onto the saved component."""
+    result = copy.deepcopy(saved[root])
+    for argument in arguments:
+        key = argument.split("=", 1)[0].lstrip("+~")
+        target = key.split("@", 1)[-1]
+        if target == root:
+            return copy.deepcopy(requested[root])
+        if not target.startswith(root + "."):
+            continue
+        parts = target.split(".")[1:]
+        source, destination = requested[root], result
+        for part in parts[:-1]:
+            source = source[part]
+            destination = destination.setdefault(part, {})
+        leaf = parts[-1]
+        if leaf in source:
+            destination[leaf] = copy.deepcopy(source[leaf])
+        else:
+            destination.pop(leaf, None)
+    return result
+
+
 def resolve_checkpoint_execution(config, arguments):
     """Restore frozen identity while retaining explicitly selected execution conditions."""
     from drone_playground.runs.migration import require_current
@@ -53,15 +76,19 @@ def resolve_checkpoint_execution(config, arguments):
     saved = require_current(
         json.loads(Path(config["checkpoint"]).with_suffix(".json").read_text())["config"]
     )
-    if config["method"]["implementation"] != saved["method"]["implementation"]:
+    if any(config["method"][key] != saved["method"][key] for key in ("name", "implementation")):
         raise ValueError("Selected method and frozen checkpoint identity differ")
-    immutable = ("network.", "method.", "algorithm.")
+    immutable = ("network.", "method.", "algorithm.", "network=", "algorithm=")
     if any(arg.lstrip("+").startswith(immutable) for arg in arguments):
         raise ValueError("Checkpoint inference freezes method, network and update identity")
-    explicit_env = any(
-        arg.startswith("env=") or arg.lstrip("+").startswith("env.") for arg in arguments
-    )
-    resolved = copy.deepcopy(config if explicit_env else saved)
+    resolved = copy.deepcopy(saved)
+    resolved["env"] = _selected_component(saved, config, arguments, "env")
+    resolved["runtime"] = _selected_component(saved, config, arguments, "runtime")
+    for slot in ("sensor", "observation"):
+        if resolved["env"][slot] != saved["env"][slot]:
+            raise ValueError(f"Frozen input contract differs on env.{slot}")
+    if any(arg.lstrip("+").startswith("env=") for arg in arguments):
+        resolved["objective"] = copy.deepcopy(config["objective"])
     for group in ("method", "network", "algorithm", "training"):
         resolved[group] = copy.deepcopy(saved[group])
     for group in (
@@ -69,7 +96,6 @@ def resolve_checkpoint_execution(config, arguments):
         "checkpoint",
         "run_id",
         "evaluation",
-        "runtime",
         "visualization",
         "replay",
     ):

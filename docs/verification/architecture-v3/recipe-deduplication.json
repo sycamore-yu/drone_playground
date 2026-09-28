@@ -1,0 +1,15 @@
+{
+  "methods": [
+    "learning/apg",
+    "learning/dva",
+    "learning/ppo",
+    "learning/shac",
+    "optimization/attitude_mpc",
+    "optimization/sampling_mpc",
+    "paper/ego_planner",
+    "paper/lotf",
+    "paper/pointcloud_flight",
+    "paper/super"
+  ],
+  "default_resolved_config_identical": true
+}

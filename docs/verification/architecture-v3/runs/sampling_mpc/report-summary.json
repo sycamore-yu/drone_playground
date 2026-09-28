@@ -1,0 +1,15 @@
+{
+  "num_trials": 1,
+  "completed": 1,
+  "completion_rate": 1.0,
+  "actual_steps": 850,
+  "quality_passed": true,
+  "full_budget_completed": true,
+  "actual_environment_devices": [
+    "TFRT_CPU_0"
+  ],
+  "prediction_device": "cuda:0",
+  "decision_p50_ms": 4.945361986756325,
+  "decision_p95_ms": 6.663781777024269,
+  "elapsed_seconds": 57.86598750669509
+}
