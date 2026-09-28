@@ -68,6 +68,12 @@ def load_fixed_catalog(path: Path | str = DEFAULT_CATALOG) -> dict[str, Any]:
     return catalog
 
 
+def scene_obstacles(catalog: dict[str, Any], scene: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return shared physical boundaries followed by scene-specific geometry."""
+
+    return [*catalog.get("boundary_obstacles", []), *scene["obstacles"]]
+
+
 def catalog_obstacle(payload: dict[str, Any]) -> Obstacle:
     """Convert one explicit JSON obstacle to the shared analytic primitive."""
 
@@ -142,7 +148,7 @@ def inspect_fixed_scene(
     world = catalog["world"]
     start = np.asarray(world["start"], np.float64)
     goal = np.asarray(world["goal"], np.float64)
-    obstacles = [catalog_obstacle(item) for item in scene["obstacles"]]
+    obstacles = [catalog_obstacle(item) for item in scene_obstacles(catalog, scene)]
     route = _piecewise_path(scene["inspection_path"], samples)
     duration = float(scene["inspection_duration_s"])
     times = np.linspace(0.0, duration, samples)
@@ -155,8 +161,10 @@ def inspect_fixed_scene(
     direct_clearance = min(
         _signed_clearance(obstacle, point, 0.0) for point in direct for obstacle in obstacles
     )
-    low = np.array([0.0, -world["width_m"] / 2.0, 0.0])
-    high = np.array([world["length_m"], world["width_m"] / 2.0, world["height_m"]])
+    z_min = float(world.get("z_min_m", 0.0))
+    z_max = float(world.get("z_max_m", world.get("height_m", 5.0)))
+    low = np.array([0.0, -world["width_m"] / 2.0, z_min])
+    high = np.array([world["length_m"], world["width_m"] / 2.0, z_max])
     if np.any(route < low - 1e-9) or np.any(route > high + 1e-9):
         raise ValueError(f"inspection path exits world bounds: {scene['id']}")
     if not np.allclose(route[0], start) or not np.allclose(route[-1], goal):
@@ -166,6 +174,8 @@ def inspect_fixed_scene(
         "difficulty": scene["difficulty"],
         "dynamic": bool(scene["dynamic"]),
         "obstacles": len(obstacles),
+        "field_obstacles": len(scene["obstacles"]),
+        "boundary_obstacles": len(catalog.get("boundary_obstacles", [])),
         "direct_clearance_m": float(direct_clearance),
         "straight_line_blocked": bool(direct_clearance < 0.0),
         "inspection_route_min_clearance_m": float(route_clearance),
@@ -205,10 +215,10 @@ def build_fixed_bank(
     if not scene_ids:
         raise ValueError("scene_ids must not be empty")
     selected = [scene_by_id(catalog, scene_id) for scene_id in scene_ids]
-    capacity = max(len(scene["obstacles"]) for scene in selected)
+    capacity = max(len(scene_obstacles(catalog, scene)) for scene in selected)
     instances = []
     for scene in selected:
-        obstacles = [catalog_obstacle(item) for item in scene["obstacles"]]
+        obstacles = [catalog_obstacle(item) for item in scene_obstacles(catalog, scene)]
         instances.append(_pack_instance(obstacles, capacity))
     bank = _stack_instances(instances)
     world = catalog["world"]
@@ -220,9 +230,17 @@ def build_fixed_bank(
         ),
         subtype=jnp.arange(len(selected), dtype=jnp.int32),
         subtype_names=tuple(scene["id"] for scene in selected),
-        world_low=jnp.asarray([0.0, -world["width_m"] / 2.0, 0.0], jnp.float32),
+        world_low=jnp.asarray(
+            [0.0, -world["width_m"] / 2.0, float(world.get("z_min_m", 0.0))],
+            jnp.float32,
+        ),
         world_high=jnp.asarray(
-            [world["length_m"], world["width_m"] / 2.0, world["height_m"]], jnp.float32
+            [
+                world["length_m"],
+                world["width_m"] / 2.0,
+                float(world.get("z_max_m", world.get("height_m", 5.0))),
+            ],
+            jnp.float32,
         ),
     )
     reports = {report["scene_id"]: report for report in validate_fixed_catalog(catalog)}

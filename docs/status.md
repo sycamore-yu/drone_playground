@@ -16,6 +16,13 @@
 静态障碍为灰色。NavRL/P2M 只作为障碍尺寸、形态和动态 clutter 设计参考，不复制其随机生成器。
 用户确认场景前不启动基于新场景的训练；原 v2 结果保持历史证据，不覆盖。
 
+第二轮人工检查后又增加 `p5-fixed-candidate-v3-density-boundary`：原 100 x 40 m 候选在
+放大地图后障碍密度不足，而且两侧可沿空白带绕过。v3 固定每个 Easy/Medium/Hard 场景为
+50/100/150 个场内障碍，另加四面共享物理边界墙；墙同时进入传感、碰撞和回放，不是隐藏终止条件。
+12 个 v3 RScope 审阅文件位于 `experiments/p5-fixed-scenes-review-v3/`，最小已知检查通道净空
+0.646 m，12/12 直接起终点线均被障碍阻断，所有 scene XML 均重新编译通过。外部场景来源与
+SUPER PCD 语义见 `docs/research/p5-scene-reference-comparison.md`。仍等待用户视觉确认后再冻结新 benchmark。
+
 2026-09-28 阶段性收尾：用户要求整理交接并协助处理问题。本轮按此要求完成状态核验与证据整理。
 代码基线为 `4c91ed7486f6050d5cef6a3dfb6522822f440e57`，原会话标识 `p5-main`。
 01:44 UTC 进程核验：P5 训练、补采和 ROS 规划进程均已退出；RTX 4090 利用率 0%、显存 146 MiB。

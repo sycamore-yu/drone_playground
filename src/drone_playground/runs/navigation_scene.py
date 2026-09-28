@@ -116,8 +116,8 @@ def create_replay_model(env, scenario_id: int):
   <visual><global offwidth="1600" offheight="1000"/></visual>
   <worldbody>
     <light pos="8 0 9" dir="0 0 -1"/>
-    <geom name="ground" type="plane" size="{half[0]} {half[1]} .1" rgba=".86 .88 .9 1"/>
-    <geom name="floor_marker" type="box" pos="{centre[0]} {centre[1]} -0.02" size="{half[0]} {half[1]} 0.02" rgba=".78 .82 .86 1"/>
+    <geom name="ground" type="plane" pos="0 0 {corridor_low[2]}" size="{half[0]} {half[1]} .1" rgba=".86 .88 .9 1"/>
+    <geom name="floor_marker" type="box" pos="{centre[0]} {centre[1]} {corridor_low[2] - 0.02}" size="{half[0]} {half[1]} 0.02" rgba=".78 .82 .86 1"/>
     <geom name="start_marker" type="sphere" pos="{start[0]} {start[1]} {start[2]}" size="0.12" rgba="0.2 0.8 0.3 0.8"/>
     <geom name="goal_marker" type="sphere" pos="{goal[0]} {goal[1]} {goal[2]}" size="0.5" rgba="0.9 0.8 0.2 0.35"/>
     {_drone_xml()}

@@ -116,6 +116,7 @@ def main():
             json.dumps(
                 {
                     "catalog_version": catalog["version"],
+                    "boundary_obstacles": catalog.get("boundary_obstacles", []),
                     "scene": scene_by_id(catalog, scene_id),
                     "review": review[scene_id],
                 },
@@ -142,13 +143,14 @@ def main():
         "These are candidate fixed scenes. The animated drone follows the catalog's",
         "inspection-only feasible route; that route is not visible to any navigation method.",
         "",
-        "| ID | type | difficulty | obstacles | direct blocked | route clearance | reference |",
-        "|---|---|---|---:|---|---:|---|",
+        "| ID | type | difficulty | field | boundary | total | direct blocked | route clearance | reference |",
+        "|---|---|---|---:|---:|---:|---|---:|---|",
     ]
     for row in index:
         lines.append(
             f"| {row['scene_id']} | {'dynamic' if row['dynamic'] else 'static'} | "
-            f"{row['difficulty']} | {row['obstacles']} | "
+            f"{row['difficulty']} | {row['field_obstacles']} | {row['boundary_obstacles']} | "
+            f"{row['obstacles']} | "
             f"{'yes' if row['straight_line_blocked'] else 'no'} | "
             f"{row['inspection_route_min_clearance_m']:.3f} m | {row['source']} |"
         )
