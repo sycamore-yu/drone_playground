@@ -1,0 +1,15 @@
+defaults:
+- default
+- _self_
+# 25 repetitions of each of the 8 fixed scenes = 100 static + 100 dynamic.
+episodes: 25
+release_validation: navigation-v1
+commanded_speed: 4.0
+protocol: benchmarks/navigation/v2/protocol.yaml
+initial_conditions:
+  name: navigation8-initial-v1
+  position_half_width_m: [0.25, 0.25, 0.1]
+  velocity_half_width_mps: [0.1, 0.1, 0.1]
+  yaw_half_width_rad: 0.08726646259971647
+  minimum_clearance_m: 0.15
+  position_candidates: 32

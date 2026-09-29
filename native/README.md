@@ -75,3 +75,5 @@ Use the matching task, observation, model, clock and `execution@env.execution=at
 Host chains currently run at the environment control frequency and are not a differentiable training backend. Neural Waypoint/Trajectory decoders, general JAX chain training and per-module frequencies remain implementation work. `pipeline` rejects training; an opaque RPC never silently transmits a gradient. See `docs/implementation-plan.md` for the complete combination acceptance criteria.
 
 The user confirmed that C++ modules do not need a differentiable training chain. Their acceptance covers physical composition and execution; gradient checks apply only to components that explicitly support differentiation.
+
+`controller@env.execution.tracker=trajectory_curve_tracking` samples the full polynomial at the current simulation time with PD tracking. This is a distinct component recipe from the default original ROS execution sample, which may include lookahead. Neither recipe replaces an MPC horizon with a repeated current sample.

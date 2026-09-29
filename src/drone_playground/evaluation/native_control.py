@@ -156,6 +156,7 @@ def evaluate_native_control(config, root, run_id):
                             position=body["pos"].tolist(),
                             quaternion=body["quat"].tolist(),
                             velocity=body["vel"].tolist(),
+                            angular_velocity=body["ang_vel"].tolist(),
                         )
                         if sensor is not None and tick % period == 0:
                             data = jax.tree.map(

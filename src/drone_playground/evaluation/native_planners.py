@@ -83,6 +83,7 @@ def sensor_packet(env, method, sample, state):
         "position": body["pos"].tolist(),
         "quaternion": body["quat"].tolist(),
         "velocity": body["vel"].tolist(),
+        "angular_velocity": body["ang_vel"].tolist(),
     }
     if method == "none" or int(data.step_index) % env.sensor_period:
         return packet

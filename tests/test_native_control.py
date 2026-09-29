@@ -83,3 +83,25 @@ def test_ground_start_bootstrap_moves_only_vertical_target():
     np.testing.assert_array_equal(bootstrap_position("hovering", start), start)
     high = np.array([1.0, 2.0, 1.5])
     np.testing.assert_array_equal(bootstrap_position("racing", high), high)
+
+
+def test_curve_tracking_does_not_use_the_original_lookahead_sample(tmp_path):
+    from types import SimpleNamespace
+
+    from drone_playground.execution.native_tracking import NativeTracking
+    from drone_playground.native.contracts import Trajectory
+
+    body = dict(pos=np.array([0.,0.,1.]), vel=np.zeros(3), quat=np.array([0.,0.,0.,1.]))
+    env = SimpleNamespace(freq=50, low=np.array([-1,-1,-3.2,0]), high=np.array([1,1,3.2,1]),
+                          default=SimpleNamespace(params=SimpleNamespace(mass=np.array([.03]))),
+                          controller=SimpleNamespace(input_kind="attitude_thrust"),
+                          controller_observation=lambda state: body)
+    curve = Trajectory(0., [2.], np.array([[[0.],[0.],[1.],[0.]]]))
+    ahead = dict(position=np.array([10.,0.,1.]),velocity=np.zeros(3),acceleration=np.zeros(3),yaw=0.)
+    reply = dict(reference=ahead, trajectory=curve)
+    original = NativeTracking(dict(name='trajectory_tracking'), env, None, tmp_path)
+    actual = NativeTracking(dict(name='trajectory_tracking',reference_source='trajectory'),env,None,tmp_path)
+    assert original.command(reply,None,0)[1] > .1
+    np.testing.assert_allclose(actual.command(reply,None,0),[0.,0.,0.,.03*9.81],atol=1e-7)
+    actual.command(dict(reference=ahead,trajectory=None),None,1)
+    assert actual.missing == 1  # Do not borrow an executable sample after declaring curve-only input.

@@ -15,6 +15,9 @@ class NativeTracking:
     def __init__(self, settings, env, state, directory):
         settings = settings or dict(name="direct")
         self.env, self.name = env, settings["name"]
+        self.reference_source = settings.get("reference_source", "execution_sample")
+        if self.reference_source not in ("execution_sample", "trajectory"):
+            raise ValueError("Unknown trajectory reference source")
         self.hold = np.asarray(env.controller_observation(state)["pos"])
         self.fallback = TrajectoryTracking().bind(env.low, env.high)
         self.controller = None
@@ -23,7 +26,7 @@ class NativeTracking:
         self.waypoints, self.waypoint_index = None, 0
         if self.name in ("trajectory_tracking", "waypoint_tracking"):
             self.fallback = TrajectoryTracking(
-                **{k: v for k, v in settings.items() if k != "name"}
+                **{k: v for k, v in settings.items() if k not in ("name", "reference_source")}
             ).bind(env.low, env.high)
         elif self.name == "attitude_mpc":
             from drone_playground.methods.optimal_control.lsy_mpc import LSYAttitudeMPC
@@ -54,6 +57,10 @@ class NativeTracking:
         default = self.env.default if hasattr(self.env, "default") else self.env.sim.default_data
         mass = float(np.asarray(default.params.mass).reshape(-1)[0])
         sample, curve = reply.get("reference"), reply.get("trajectory")
+        if self.name == "trajectory_tracking" and self.reference_source == "trajectory":
+            sample = curve.sample(tick / self.env.freq) if curve is not None else None
+            if sample is not None and not curve.yaw_defined:
+                sample["yaw"] = Rotation.from_quat(body["quat"]).as_euler("xyz")[2]
         output = reply.get("output")
         if output is not None and reply.get("valid_until", tick / self.env.freq) < tick / self.env.freq:
             raise ValueError("Expired physical output reached the execution controller")

@@ -15,7 +15,7 @@ from drone_playground.evaluation.tracking import save_report, tree_digest
 
 
 class PointCloudNavigationEvaluator:
-    def __init__(self, task, network, seed_start=20000, repeats=1, commanded_speed=4.0):
+    def __init__(self, task, network, seed_start=20000, repeats=1, commanded_speed=4.0, initial_conditions=None):
         if repeats < 1 or not 0 < commanded_speed <= task.settings["max_speed"]:
             raise ValueError("Choose positive repeats and an admissible commanded cruise speed")
         self.task = copy.copy(task)
@@ -26,12 +26,24 @@ class PointCloudNavigationEvaluator:
         self.speed = commanded_speed
         self.repeats = repeats
         self.network = network
+        self.initial_conditions = None
+        self.initial_velocity = jnp.zeros((len(self.ids), 3))
+        self.initial_rotation = jnp.broadcast_to(jnp.eye(3), (len(self.ids),3,3))
+        if initial_conditions:
+            from .navigation_resets import navigation_resets
+
+            reset = navigation_resets(self.task.bank, np.arange(len(self.ids)), self.seeds,
+                                      initial_conditions, task.body_radius)
+            self.task.bank = self.task.bank.replace(start=jnp.asarray(reset['position']))
+            self.initial_velocity = jnp.asarray(reset['velocity'])
+            self.initial_rotation = jnp.asarray(reset['rotation'])
+            self.initial_conditions = reset['record']
         self._run = jax.jit(self._rollout)
 
     def _rollout(self, params, speeds, delays):
         task, network, bank = self.task, self.network, self.task.bank
         count, length = bank.num_instances, task.episode_length
-        physical = task.initial_state(bank)
+        physical = task.initial_state(bank).replace(vel=self.initial_velocity, rotation=self.initial_rotation)
         hidden = jnp.zeros((count, network.hidden_size))
         last = jnp.zeros((count, 3))
         clock = jnp.zeros(count)
@@ -165,7 +177,10 @@ class PointCloudNavigationEvaluator:
             quality_rule="mean arrival >=0.9 and each named scene >=0.8; evaluate independent seeds after selection",
             elapsed_seconds=time.monotonic() - started,
             catalog_sha256=self.task.manifest["catalog_sha256"],
-            evaluation_scope="fixed geometry and start pose; independent seeded transport delays only",
+            evaluation_scope=("fixed Navigation8 geometry; independently seeded initial pose/velocity and transport delays"
+                              if self.initial_conditions else
+                              "fixed geometry and start pose; independent seeded transport delays only"),
+            initial_conditions=self.initial_conditions,
             dynamics_transition_hz=self.task.physics_freq,
             policy_hz=self.task.freq,
             action_delay_ms=self.task.config["runtime"]["action_delay_ms"],
@@ -175,6 +190,10 @@ class PointCloudNavigationEvaluator:
             if explicit
             else "seeded uniform milliseconds rounded to physics ticks",
         )
+        for index, episode in enumerate(report['episodes']):
+            episode.update(seed=self.seeds[index], delay_ticks=int(delays[index]),
+                           initial_position_m=np.asarray(self.task.bank.start[index]).tolist(),
+                           initial_velocity_mps=np.asarray(self.initial_velocity[index]).tolist())
         return report, trace
 
     def export(self, trace, directory, all_repeats=False):
@@ -212,7 +231,8 @@ def evaluate(config, root, run_id):
         start if start is not None else (20000 if cfg["evaluation"]["split"] == "dev" else 30000)
     )
     evaluator = PointCloudNavigationEvaluator(
-        task, network, start, cfg["evaluation"]["episodes"], cfg["evaluation"]["commanded_speed"]
+        task, network, start, cfg["evaluation"]["episodes"], cfg["evaluation"]["commanded_speed"],
+        cfg["evaluation"].get("initial_conditions")
     )
     with RunRecorder(
         root, run_id, cfg, task_id="navigation-convergence/pointcloud-evaluation"
@@ -224,6 +244,16 @@ def evaluate(config, root, run_id):
             split=cfg["evaluation"]["split"],
         )
         save_report(rec.path / "eval/report.json", report)
+        if cfg["evaluation"].get("release_validation"):
+            from .navigation_resets import validate_navigation_report
+
+            if cfg["evaluation"]["release_validation"] != "navigation-v1":
+                raise ValueError("Unknown navigation release validation")
+            release = validate_navigation_report(report)
+            save_report(rec.path / "eval/release-validation.json", release)
+            report["quality_passed"] = release["passed"]
+            report["quality_rule"] = "release-navigation-v1: >=100 each static/dynamic; each task arrival >=90%"
+            save_report(rec.path / "eval/report.json", report)
         arrays = {name: value for name, value in trace.items() if name != "metrics"}
         arrays.update({"metric_" + name: value for name, value in trace["metrics"].items()})
         (rec.path / "traces").mkdir(exist_ok=True)
