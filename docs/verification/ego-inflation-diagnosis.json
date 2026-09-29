@@ -50,5 +50,97 @@
       "result.json": "b8ccc405bbae9dad34bab9656d859b717b14467ec1895b8a08f9a2e030a40383"
     },
     "scope": "Single fixed development case; independent adaptation, not the 20m/s protocol or formal quality"
+  },
+  "four_scene_development": {
+    "static": {
+      "run_id": "ego-speed2-inflation0199-static-dev4-adaptation-20260929",
+      "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+      "num_trials": 4,
+      "arrived": 3,
+      "episode_success_rate": 0.75,
+      "legacy_difficulty_macro_success_rate": 0.8333333333333334,
+      "episodes": [
+        {
+          "scene_id": "S01",
+          "seed": 20000,
+          "outcome": "arrived",
+          "steps": 3155,
+          "arrival_time_s": 63.1
+        },
+        {
+          "scene_id": "S02",
+          "seed": 20001,
+          "outcome": "arrived",
+          "steps": 3198,
+          "arrival_time_s": 63.96
+        },
+        {
+          "scene_id": "S03",
+          "seed": 20002,
+          "outcome": "arrived",
+          "steps": 3135,
+          "arrival_time_s": 62.7
+        },
+        {
+          "scene_id": "S06",
+          "seed": 20003,
+          "outcome": "collision",
+          "steps": 2216,
+          "arrival_time_s": null
+        }
+      ],
+      "scope": "Development adaptation at 2m/s bound and 0.199m inflation; not the 20m/s protocol or formal confirmation",
+      "files": {
+        "eval/report.json": "9d6c8cac7dfca1b5e2308d8eba245175bd10545a197746f1d279bc04c9cb3498",
+        "resolved-config.json": "474c3c984ebc9652c4e316eb486ded5bb032f41ed5c21b2b74a6cc396e63a716",
+        "result.json": "b926715cca30d013120ddec5353cf3ebee718d776dd8c9ac27bdf29741abf8a7",
+        "traces/index.json": "5a5067bb4280536c73557ce62e59ec36f8489ac72c8fb37143da3a4e81b65de3"
+      }
+    },
+    "dynamic": {
+      "run_id": "ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929",
+      "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+      "num_trials": 4,
+      "arrived": 3,
+      "episode_success_rate": 0.75,
+      "legacy_difficulty_macro_success_rate": 0.8333333333333334,
+      "episodes": [
+        {
+          "scene_id": "D01",
+          "seed": 20004,
+          "outcome": "arrived",
+          "steps": 3047,
+          "arrival_time_s": 60.94
+        },
+        {
+          "scene_id": "D02",
+          "seed": 20005,
+          "outcome": "arrived",
+          "steps": 3141,
+          "arrival_time_s": 62.82
+        },
+        {
+          "scene_id": "D03",
+          "seed": 20006,
+          "outcome": "arrived",
+          "steps": 3069,
+          "arrival_time_s": 61.38
+        },
+        {
+          "scene_id": "D06",
+          "seed": 20007,
+          "outcome": "collision",
+          "steps": 2137,
+          "arrival_time_s": null
+        }
+      ],
+      "scope": "Development adaptation at 2m/s bound and 0.199m inflation; not the 20m/s protocol or formal confirmation",
+      "files": {
+        "eval/report.json": "d068e939d23c14f4e5689da57d2af5799018319fcd1fbe86ffa0903d3271790a",
+        "resolved-config.json": "9f655a500648db3e06958c06763e0ba40397ee564c32b067794bbf2f54ea57a5",
+        "result.json": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b",
+        "traces/index.json": "898375c2c6c4ba744e12977f590ecb37de36b8b5dee21cab545c3231f5aa222d"
+      }
+    }
   }
 }

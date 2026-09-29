@@ -1,7 +1,7 @@
 {
-  "generated_utc": "2026-09-29T19:13:13.427615+00:00",
+  "generated_utc": "2026-09-29T19:29:52.757004+00:00",
   "scope": "Partial first-release quality evidence; not a completed release or cross-method ranking",
-  "passed_cells": 9,
+  "passed_cells": 10,
   "required_cells": 18,
   "cells": [
     {
@@ -275,8 +275,8 @@
     {
       "method": "attitude_mpc",
       "task": "racing",
-      "passed": false,
-      "status": "adaptation_confirmation_running",
+      "passed": true,
+      "status": "passed",
       "development": {
         "run_id": "attitudempc-racing-delay38-production-dev32-20260929",
         "completed": 32,
@@ -284,7 +284,32 @@
         "rmse_all_mean": 0.055454049730020674,
         "delay_compensation_ms": 38
       },
-      "confirmation_batch": "release-attitudempc-delay38-confirmation-20260929"
+      "confirmation_batch": "release-attitudempc-delay38-confirmation-20260929",
+      "evidence": {
+        "protocol": "release-control-v1",
+        "task": "racing",
+        "passed": true,
+        "num_trials": 100,
+        "completed": 100,
+        "failed": 0,
+        "completion_rate": 1.0,
+        "minimum_completion_rate": 0.9,
+        "rmse_completed_mean": 0.0552180977166926,
+        "rmse_all_mean": 0.0552180977166926,
+        "error_rule": "Completed mean RMSE <= 0.25m for tracking; all failures retained",
+        "parameter_sha256": "e6befb18af97310b619aa41fdade7a6ccdfabf2f038c5381f06b0a2d467c96bd",
+        "caveat": "Frozen solver; no learning seeds required",
+        "run_id": "release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing"
+      },
+      "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+      "execution_adaptation": {
+        "name": "issued_command_delay_prediction",
+        "estimated_delay_ms": 38.0,
+        "integration_step_ms": 2.0,
+        "input": "current observed state, model and previously issued commands only",
+        "reference": "fixed task reference advanced by estimated delay"
+      },
+      "timing_caveat": "Synchronous simulation; measured controller latency is not injected as extra control delay; no 50Hz real-time claim"
     },
     {
       "method": "sampling_mpc",
@@ -484,13 +509,103 @@
       "method": "ego_planner",
       "task": "static",
       "passed": false,
-      "status": "development_not_passed"
+      "status": "development_not_passed",
+      "development": {
+        "run_id": "ego-speed2-inflation0199-static-dev4-adaptation-20260929",
+        "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+        "num_trials": 4,
+        "arrived": 3,
+        "episode_success_rate": 0.75,
+        "legacy_difficulty_macro_success_rate": 0.8333333333333334,
+        "episodes": [
+          {
+            "scene_id": "S01",
+            "seed": 20000,
+            "outcome": "arrived",
+            "steps": 3155,
+            "arrival_time_s": 63.1
+          },
+          {
+            "scene_id": "S02",
+            "seed": 20001,
+            "outcome": "arrived",
+            "steps": 3198,
+            "arrival_time_s": 63.96
+          },
+          {
+            "scene_id": "S03",
+            "seed": 20002,
+            "outcome": "arrived",
+            "steps": 3135,
+            "arrival_time_s": 62.7
+          },
+          {
+            "scene_id": "S06",
+            "seed": 20003,
+            "outcome": "collision",
+            "steps": 2216,
+            "arrival_time_s": null
+          }
+        ],
+        "scope": "Development adaptation at 2m/s bound and 0.199m inflation; not the 20m/s protocol or formal confirmation",
+        "files": {
+          "eval/report.json": "9d6c8cac7dfca1b5e2308d8eba245175bd10545a197746f1d279bc04c9cb3498",
+          "resolved-config.json": "474c3c984ebc9652c4e316eb486ded5bb032f41ed5c21b2b74a6cc396e63a716",
+          "result.json": "b926715cca30d013120ddec5353cf3ebee718d776dd8c9ac27bdf29741abf8a7",
+          "traces/index.json": "5a5067bb4280536c73557ce62e59ec36f8489ac72c8fb37143da3a4e81b65de3"
+        }
+      }
     },
     {
       "method": "ego_planner",
       "task": "dynamic",
       "passed": false,
-      "status": "development_not_passed"
+      "status": "development_not_passed",
+      "development": {
+        "run_id": "ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929",
+        "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+        "num_trials": 4,
+        "arrived": 3,
+        "episode_success_rate": 0.75,
+        "legacy_difficulty_macro_success_rate": 0.8333333333333334,
+        "episodes": [
+          {
+            "scene_id": "D01",
+            "seed": 20004,
+            "outcome": "arrived",
+            "steps": 3047,
+            "arrival_time_s": 60.94
+          },
+          {
+            "scene_id": "D02",
+            "seed": 20005,
+            "outcome": "arrived",
+            "steps": 3141,
+            "arrival_time_s": 62.82
+          },
+          {
+            "scene_id": "D03",
+            "seed": 20006,
+            "outcome": "arrived",
+            "steps": 3069,
+            "arrival_time_s": 61.38
+          },
+          {
+            "scene_id": "D06",
+            "seed": 20007,
+            "outcome": "collision",
+            "steps": 2137,
+            "arrival_time_s": null
+          }
+        ],
+        "scope": "Development adaptation at 2m/s bound and 0.199m inflation; not the 20m/s protocol or formal confirmation",
+        "files": {
+          "eval/report.json": "d068e939d23c14f4e5689da57d2af5799018319fcd1fbe86ffa0903d3271790a",
+          "resolved-config.json": "9f655a500648db3e06958c06763e0ba40397ee564c32b067794bbf2f54ea57a5",
+          "result.json": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b",
+          "traces/index.json": "898375c2c6c4ba744e12977f590ecb37de36b8b5dee21cab545c3231f5aa222d"
+        }
+      }
     }
   ],
   "sources": [
@@ -548,6 +663,46 @@
       "source_tree": "release-solvers-20260929",
       "path": "experiments/release-super-confirmation-20260929-dynamic/traces/index.json",
       "sha256": "8d51258d062b6c9a0919dbc380c99906eaab6f72f59e519d5d37969eae28e8ee"
+    },
+    {
+      "source_tree": "release-adaptations-20260929",
+      "path": "experiments/release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing/eval/report.json",
+      "sha256": "983b1c37593c238e182fd03459585f1d6f3a56fd3e9749676d1b4c189dabdbfd"
+    },
+    {
+      "source_tree": "release-adaptations-20260929",
+      "path": "experiments/release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing/eval/release-validation.json",
+      "sha256": "f8f02a7558bbfd3a6358031251684512fb3f9889502296f0c27758fce9dc843c"
+    },
+    {
+      "source_tree": "release-adaptations-20260929",
+      "path": "experiments/release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing/resolved-config.json",
+      "sha256": "25fb7555b73468529d8ce5485104f0ad533f590ae56bf5115a831482b5072b30"
+    },
+    {
+      "source_tree": "release-adaptations-20260929",
+      "path": "experiments/release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing/result.json",
+      "sha256": "c14ffda29c34a7351cdd6dac2710c6fb9e57a95b8ed577bd6708b9c00e5f0beb"
+    },
+    {
+      "source_tree": "release-ego-candidate-20260929",
+      "path": "experiments/ego-speed2-inflation0199-static-dev4-adaptation-20260929/eval/report.json",
+      "sha256": "9d6c8cac7dfca1b5e2308d8eba245175bd10545a197746f1d279bc04c9cb3498"
+    },
+    {
+      "source_tree": "release-ego-candidate-20260929",
+      "path": "experiments/ego-speed2-inflation0199-static-dev4-adaptation-20260929/result.json",
+      "sha256": "b926715cca30d013120ddec5353cf3ebee718d776dd8c9ac27bdf29741abf8a7"
+    },
+    {
+      "source_tree": "release-ego-candidate-20260929",
+      "path": "experiments/ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929/eval/report.json",
+      "sha256": "d068e939d23c14f4e5689da57d2af5799018319fcd1fbe86ffa0903d3271790a"
+    },
+    {
+      "source_tree": "release-ego-candidate-20260929",
+      "path": "experiments/ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929/result.json",
+      "sha256": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b"
     }
   ]
 }

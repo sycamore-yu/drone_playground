@@ -1,0 +1,39 @@
+{
+  "source_revision": "97408987833a63893941285562d30c176fd546d0",
+  "archive_sha256": "86e5a011e308f0a7927b0a8e7d98b0f8da072d1f13f5277dfa452ff2ae1cd950",
+  "files": 468,
+  "scope": "Real export/extraction/RunRecorder provenance check; interpreter dependencies reused from main locked environment; not a fresh install",
+  "records": [
+    {
+      "added": [],
+      "dirty": false,
+      "manifest_sha256": "f6505f4c005e5fc2191d92b90ba0f9a4fa6101df740107d7d19001ee8a7df4e1",
+      "modified": [],
+      "removed": [],
+      "snapshot_path": "source-snapshot.tar.gz",
+      "snapshot_sha256": "fa7fb56f6105db084f1fed58c63e0a9f2cbd2fbc33005a0565a90f981cdfb592",
+      "source_revision": "97408987833a63893941285562d30c176fd546d0"
+    },
+    {
+      "added": [],
+      "dirty": true,
+      "manifest_sha256": "f6505f4c005e5fc2191d92b90ba0f9a4fa6101df740107d7d19001ee8a7df4e1",
+      "modified": [
+        "README.md"
+      ],
+      "removed": [],
+      "snapshot_path": "source-snapshot.tar.gz",
+      "snapshot_sha256": "3293876748d14df775384a12c77a2ae1c5ec342d317fdb84c15db65c48f5c4c4",
+      "source_revision": "97408987833a63893941285562d30c176fd546d0"
+    }
+  ],
+  "passed": true,
+  "archive_bytes": 859652,
+  "source_files": 469,
+  "tests": {
+    "source_archive": 5,
+    "existing_run_recorder_and_replay": 3,
+    "execution": "Initial combined run: 7 passed; final archive-only run after adding symlink test: 5 passed",
+    "lint": "passed"
+  }
+}
