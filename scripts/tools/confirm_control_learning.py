@@ -51,13 +51,17 @@ def run_job(directory, run_id, config):
             return path
         raise RuntimeError(f'Existing incomplete run requires inspection: {path}')
     job = directory / (run_id + '.json')
+    # The one-hour pilot budget applies to training. A frozen 100/200-case
+    # evaluation, especially native MPC under shared load, can take longer.
+    timeout_seconds = 3900 if config['mode'] == 'train' else 14400
     write(job, dict(run_id=run_id, config=config,
+                    supervision_timeout_seconds=timeout_seconds,
                     config_sha256=hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()))
     env = dict(os.environ, JAX_PLATFORMS='cuda,cpu', XLA_PYTHON_CLIENT_PREALLOCATE='false',
                PYTHONPATH=str(ROOT / 'src'))
     with job.with_suffix('.log').open('w') as output:
         result = subprocess.run([sys.executable, __file__, '--job', str(job)], cwd=ROOT, env=env,
-                                stdout=output, stderr=subprocess.STDOUT, timeout=3900)
+                                stdout=output, stderr=subprocess.STDOUT, timeout=timeout_seconds)
     if result.returncode:
         raise RuntimeError(f'Confirmation job failed: {run_id}; inspect {job.with_suffix(".log")}')
     return path

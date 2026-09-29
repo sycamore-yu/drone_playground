@@ -27,3 +27,5 @@ SamplingMPC竞速100回合确认期间，并发负载导致预计评测时间超
 规划速度由算法在`method.limits.max_velocity_mps`上限内选择，原配方仍为20m/s上限；不读取学习方法的`commanded_speed`作为目标。4m/s上限的EGO诊断独立登记，不能冒充20m/s协议结果。原生与点质量学习适配的实际动力学、传感器和执行器不同，不能将这两类确认表直接当成固定所有条件的算法排名。
 
 开发检查可设置`evaluation.split=dev evaluation.episodes=1 evaluation.release_validation=null`，覆盖该任务全部四场景。小样本开发结果不替代正式100回合证据。
+
+后续确认运行已分开监督时限：训练仍为3900秒（含收尾余量），冻结评测为14400秒；实际监督时限单列于任务JSON，不改变策略／求解器配置摘要或逐次求解预算。
