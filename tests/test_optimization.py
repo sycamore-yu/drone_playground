@@ -35,6 +35,21 @@ class OptimizationTests(unittest.TestCase):
             self.assertEqual(controller.last_diagnostics["status"], 0)
             self.assertEqual(controller.native._N, 25)
             np.testing.assert_array_equal(np.diag(controller.native._ocp.cost.W)[:3], [50, 50, 400])
+            from drone_playground.native.contracts import Trajectory
+
+            coefficients = np.zeros((1, 4, 2))
+            coefficients[0, :3, 0] = obs["pos"]
+            coefficients[0, 0, 1] = 0.5
+            curve = Trajectory(2, [2], coefficients)
+            action = controller.compute_trajectory(obs, curve, 2)
+            self.assertTrue(np.isfinite(action).all())
+            self.assertEqual(controller.last_diagnostics["status"], 0)
+            # Every acados stage sees a moving future point, including terminal.
+            np.testing.assert_allclose(
+                controller.native._waypoints_pos[:, 0],
+                obs["pos"][0] + 0.5 * np.linspace(0, 0.5, 26),
+            )
+            np.testing.assert_allclose(controller.native._waypoints_vel[:, 0], 0.5)
 
     def test_actual_sampling_decision_and_warm_start(self):
         m = self.module("sampling")
@@ -59,3 +74,14 @@ class OptimizationTests(unittest.TestCase):
         self.assertGreater(controller.last_diagnostics["samples"], 0)
         second = controller.compute_from_data(state.pipeline_state.sim_data, 1)
         self.assertTrue(np.isfinite(second).all())
+        from drone_playground.native.contracts import Trajectory
+
+        coefficients = np.zeros((1, 4, 2))
+        coefficients[0, :3, 0] = env.controller_observation(state)["pos"]
+        coefficients[0, 0, 1] = 1.0
+        coefficients[0, 3, 0] = 0.3
+        command = controller.compute_control(
+            env.controller_observation(state), 0, trajectory=Trajectory(0, [2], coefficients)
+        )
+        self.assertTrue(np.isfinite(command).all())
+        self.assertAlmostEqual(command[2], 0.3, places=5)

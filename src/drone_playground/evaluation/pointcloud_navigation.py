@@ -197,7 +197,7 @@ def evaluate(config, root, run_id):
 
     state, metadata = load_training_state(config["checkpoint"])
     trained = metadata["config"]
-    if trained["env"]["task"]["name"] != "pointcloud_navigation":
+    if trained["env"]["task"]["name"] not in ("pointcloud_navigation", "depth_navigation"):
         raise ValueError(
             "Use parameter warm start to adapt a source-paper checkpoint, not a relabeled evaluation"
         )

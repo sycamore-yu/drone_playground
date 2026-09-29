@@ -39,6 +39,8 @@ from drone_playground.runs.checkpoints import load_policy, save_policy
 
 def development_score(task: str, report: dict, rule: str | None = None) -> tuple:
     """Select only on development data; ties break on the declared secondary terms."""
+    if rule == "release-pilot-v1":
+        return (min(pilot_scene_rates(task, report).values()),)
     if task == "racing":
         return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
     if task == "navigation":
@@ -83,6 +85,25 @@ def development_score(task: str, report: dict, rule: str | None = None) -> tuple
             )
         return (*score, -float(np.mean([row["final_goal_distance_m"] for row in rows])))
     return (report["completed"], -report["rmse_all_mean"])
+
+
+def pilot_scene_rates(task: str, report: dict) -> dict:
+    """Frozen pilot objective: worst scenario group, with failures in the denominator."""
+    groups = {}
+    if task == "navigation":
+        for difficulty, cell in report["cells"].items():
+            for row in cell["episodes"]:
+                key = difficulty + "/" + row["subtype"]
+                groups.setdefault(key, []).append(bool(row["arrived"]))
+    else:
+        for row in report["episodes"]:
+            success = bool(row["completed"]) and not row["failed"]
+            if task != "racing":
+                success = success and np.isfinite(row["rmse_m"]) and row["rmse_m"] <= 0.25
+            groups.setdefault(task, []).append(success)
+    if not groups or any(not rows for rows in groups.values()):
+        raise ValueError("Pilot objective requires nonempty episode groups")
+    return {key: float(np.mean(rows)) for key, rows in groups.items()}
 
 
 def evaluation_scalars(task: str, report: dict) -> dict:
@@ -304,6 +325,12 @@ def train(
             t = time.monotonic()
             report, trace = evaluator.run(params)
             report.update(step=step, checkpoint=str(checkpoint.relative_to(rec.path)), split="dev")
+            if config.get("development_metric") == "release-pilot-v1":
+                report["selection_rule"] = "release-pilot-v1"
+                report["scene_success_rates"] = pilot_scene_rates(env.task, report)
+                report["pilot_objective"] = min(report["scene_success_rates"].values())
+                report["quality_passed"] = None
+                report["quality_rule"] = "Development exploration; no formal release claim"
             if config.get("development_metric") in (
                 "navigation-convergence-v1",
                 "navigation-convergence-v2",

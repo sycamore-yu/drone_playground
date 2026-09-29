@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+- /env: navigation/depth_mixed
+- /algorithm: depth_navigation_bptt
+- /network: depth_flight
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- _self_
+method:
+  name: depth_flight_navigation_adaptation
+  output: world_acceleration
+  network_output_frame: body
+  command_units: m/s^2
+  implementation: depth_recurrent
+  trainable: true
+source: Independent JAX depth CNN/GRU and velocity-prediction adaptation of Learning vision-based agile flight via differentiable physics; common navigation plant/objective, not original CUDA reproduction
+mode: train
+runtime:
+  action_delay_ms: [25.0, 50.0]
+training:
+  num_envs: 8
+  num_timesteps: null
+  policy_updates: 1000
+  num_evals: 9
+  development_episodes: 1
+  development_metric: release-pilot-v1
+  max_wall_seconds: 3600
+evaluation:
+  episodes: 1
+  commanded_speed: 4.0
+  recipe_identity: depth-flight-navigation-adaptation-v1

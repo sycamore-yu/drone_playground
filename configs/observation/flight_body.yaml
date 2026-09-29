@@ -1,0 +1,3 @@
+_target_: drone_playground.environments.tasks.pointcloud.PaperObservation
+name: flight_body_state
+proprioception_size: 10

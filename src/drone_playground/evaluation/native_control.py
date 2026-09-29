@@ -19,8 +19,9 @@ from drone_playground.composition import build_environment, build_sensor
 from drone_playground.environments.scenes.control_geometry import bank_from_environment
 from drone_playground.environments.sensors.depth import cast_depth, sensor_pose
 from drone_playground.environments.sensors.lidar import cast_lidar
-from drone_playground.execution.controllers.trajectory import TrajectoryTracking
+from drone_playground.execution.native_tracking import NativeTracking
 from drone_playground.integrations.native_planner import NativePlanner
+from drone_playground.integrations.native_service import create_native_planner
 from drone_playground.runs.record import RunRecorder
 from drone_playground.runtime.host_runner import run_steps
 from drone_playground.visualization.rscope_io import export_rollout
@@ -60,7 +61,7 @@ def bootstrap_position(task, position):
 
 
 def control_sensor(sensor, bank, kind):
-    if kind == "ego":
+    if kind in ("ego", "depth"):
 
         @jax.jit
         def sample(pos, quat, clock, tick):
@@ -94,19 +95,17 @@ def evaluate_native_control(config, root, run_id):
     try:
         bank, scene = bank_from_environment(env)
         sensor = build_sensor(config)
-        sample = control_sensor(sensor, bank, settings["method"])
+        sample = control_sensor(sensor, bank, settings.get("input_sensor", settings.get("method")))
         period = sensor.period_steps(env.freq)
         reset, advance = jax.jit(env.reset), jax.jit(env.step_physical)
-        tracker = TrajectoryTracking(
-            **{k: v for k, v in config["env"]["execution"]["tracker"].items() if k != "name"}
-        )
-        tracker.bind(env.low, env.high)
         initial = reset(jax.random.PRNGKey(seeds[0]))
         body = env.controller_observation(initial)
         jax.block_until_ready(sample(body["pos"], body["quat"], 0.0, 0))
         jax.block_until_ready(advance(initial, env.physical_action(env.hover_action)))
         adapter = dict(
             interactive_goals=True,
+            world_low=np.asarray(bank.world_low).tolist(),
+            world_high=np.asarray(bank.world_high).tolist(),
             goal_frequency_hz=5.0,
             lookahead_s=0.6,
             bootstrap_takeoff_m=0.8 if env.task == "racing" else None,
@@ -116,9 +115,11 @@ def evaluate_native_control(config, root, run_id):
             save_report(rec.path / "scene-manifest.json", scene)
             save_report(rec.path / "task-adapter.json", adapter)
             save_report(rec.path / "sensor-calibration.json", sensor.calibration())
-            worker_path = NativePlanner.install_worker(
-                Path(root) / "native_planners/bridge/worker.py", rec.path, settings["container"]
-            )
+            worker_path = None
+            if settings["implementation"] != "native_service":
+                worker_path = NativePlanner.install_worker(
+                    Path(root) / "native_planners/bridge/worker.py", rec.path, settings["container"]
+                )
             traces, diagnostics = [], []
             for case, seed in enumerate(seeds):
                 state = reset(jax.random.PRNGKey(seed))
@@ -127,18 +128,20 @@ def evaluate_native_control(config, root, run_id):
                 initial_goal = reference[
                     min(round(adapter["lookahead_s"] * env.freq), len(reference) - 1)
                 ]
-                worker = NativePlanner(
-                    settings["method"],
-                    rec.path / "native" / str(case),
-                    settings["container"],
-                    settings["port"],
-                    worker_path,
+                worker = create_native_planner(
+                    settings, rec.path / "native" / str(case), settings["port"], worker_path
                 )
                 held = bootstrap_position(env.task, env.controller_observation(state)["pos"])
+                tracker = NativeTracking(
+                    config["env"]["execution"]["tracker"], env, state, worker.directory
+                )
+                tracker.hold = held
                 rows = []
                 missing = 0
                 try:
-                    worker.start(sensor.calibration(), initial_goal, settings["limits"], adapter)
+                    worker.start(
+                        sensor.calibration(), initial_goal, settings.get("limits"), adapter
+                    )
 
                     def decide(current, tick):
                         nonlocal held, missing
@@ -154,7 +157,10 @@ def evaluate_native_control(config, root, run_id):
                                 np.asarray,
                                 sample(body["pos"], body["quat"], tick * env.dt, tick // period),
                             )
-                            if settings["method"] == "ego":
+                            if settings.get("input_sensor", settings.get("method")) in (
+                                "ego",
+                                "depth",
+                            ):
                                 depth, origin, rotation = data
                                 packet.update(
                                     depth=pack_array(depth.reshape(sensor.width, sensor.height).T),
@@ -188,11 +194,7 @@ def evaluate_native_control(config, root, run_id):
                             )
                         else:
                             held = body["pos"]
-                        physical = tracker.command(
-                            body,
-                            target,
-                            float(np.asarray(env.sim.default_data.params.mass).reshape(-1)[0]),
-                        )
+                        physical = tracker.command(reply, current, tick)
                         return physical, dict(
                             commands=reply["commands"], trajectories=reply["trajectories"]
                         )
@@ -223,6 +225,7 @@ def evaluate_native_control(config, root, run_id):
                     traces.append(trace)
                 finally:
                     worker.close()
+                    tracker.close()
                 rec.phase("evaluating", step=case + 1, completed_cases=case + 1)
             length = env.episode_length
 

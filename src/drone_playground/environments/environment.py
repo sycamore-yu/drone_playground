@@ -21,7 +21,11 @@ def build_environment(config, device="cpu", split="train", count=32):
     cfg = copy.deepcopy(config)
     settings = cfg["env"]
     task = settings["task"]
-    if task["name"] == "pointcloud_navigation":
+    if task["name"] == "depth_navigation":
+        from .tasks.depth_navigation import DepthNavigationTask
+
+        env = DepthNavigationTask(cfg)
+    elif task["name"] == "pointcloud_navigation":
         from .tasks.pointcloud_navigation import PointCloudNavigationTask
 
         env = PointCloudNavigationTask(cfg)
@@ -115,6 +119,7 @@ def build_environment(config, device="cpu", split="train", count=32):
     if delay_range is not None and task["name"] not in (
         "pointcloud_control",
         "pointcloud_navigation",
+        "depth_navigation",
     ):
         from drone_playground.execution.delay import RandomActionDelay
 

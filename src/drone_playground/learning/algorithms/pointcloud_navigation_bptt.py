@@ -36,13 +36,24 @@ def rollout_loss(task, network, parameters, key, count, horizon):
         current, memory, last = carry
         now = clocks + index * task.dt
         points, valid, proprio, _ = task.observation(bank, current, now, speeds)
-        points = augment_point_measurements(
-            points,
-            valid,
-            jax.random.fold_in(key, index),
-            float(task.config["training"].get("point_noise_std_m", 0.0)),
-        )
-        action, memory = network.apply(parameters, points, valid, proprio, memory)
+        auxiliary = jnp.float32(0)
+        if task.config.get("method", {}).get("implementation") == "depth_recurrent":
+            prediction, memory = network.apply(
+                parameters, points, valid, proprio, memory, method=network.predict
+            )
+            action = prediction[..., :3] - prediction[..., 3:]
+            auxiliary = jnp.mean(
+                (prediction[..., 3:] - jax.lax.stop_gradient(proprio[..., :3])) ** 2
+            )
+            auxiliary *= task.config["algorithm"]["velocity_prediction_weight"]
+        else:
+            points = augment_point_measurements(
+                points,
+                valid,
+                jax.random.fold_in(key, index),
+                float(task.config["training"].get("point_noise_std_m", 0.0)),
+            )
+            action, memory = network.apply(parameters, points, valid, proprio, memory)
         command = task.command(action, current)
         nxt, _ = delayed_step(
             task.model, current, command, last, delays, task.physics_dt, task.substeps
@@ -51,7 +62,9 @@ def rollout_loss(task, network, parameters, key, count, horizon):
         loss, parts = task.objective(
             current, nxt, bank.goal, speeds, clearance, command, last, task.dt
         )
+        loss = loss + auxiliary
         parts.update(
+            velocity_prediction_loss=auxiliary,
             loss=loss,
             endpoint_collision_fraction=jnp.mean((clearance < 0).astype(jnp.float32)),
             mean_speed=jnp.mean(jnp.linalg.norm(nxt.vel, axis=-1)),
@@ -186,6 +199,9 @@ def train(config, root, run_id):
                     checkpoint=str(path),
                     split="dev",
                 )
+                if settings.get("development_metric") == "release-pilot-v1":
+                    report["pilot_objective"] = min(report["scene_success_rates"].values())
+                    report["selection_rule"] = "release-pilot-v1"
                 save_report(rec.path / "eval" / f"update-{updates:07d}.json", report)
                 remaining = float(np.mean([r["final_goal_distance_m"] for r in report["episodes"]]))
                 score = (
@@ -194,6 +210,8 @@ def train(config, root, run_id):
                     -remaining,
                     -report["constrained_time_mean_s"],
                 )
+                if settings.get("development_metric") == "release-pilot-v1":
+                    score = (report["pilot_objective"],)
                 if best is None or score > tuple(best["score"]):
                     best = dict(
                         checkpoint=str(path.resolve()),

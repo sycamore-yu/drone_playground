@@ -68,26 +68,20 @@ class SamplingMPC:
         reference = np.asarray(reference, dtype=np.float32)
         if reference.ndim != 2 or reference.shape[1] != 3 or len(reference) < 2:
             raise ValueError("Reference must be [T,3] with at least two samples")
-        refs = jnp.asarray(reference)
-        refs_vel = jnp.asarray(np.gradient(reference, 1 / frequency, axis=0))
-        ref_times = jnp.arange(len(refs)) / frequency
+        self.refs = reference
+        self.refs_vel = np.gradient(reference, 1 / frequency, axis=0)
+        self.ref_times = np.arange(len(reference)) / frequency
         poles = jnp.asarray(np.zeros((0, 3)) if obstacles is None else obstacles, dtype=jnp.float32)
         self.last_diagnostics = {}
         self.last_prediction = None
 
-        def update(obs, key, mean, t):
+        def update(obs, key, mean, goals, velocities, yaw):
             key, sample_key = jax.random.split(key)
             candidates = jnp.clip(
                 mean[None] + jax.random.normal(sample_key, (samples, horizon, 4)) * sigma, low, high
             )
             candidates = candidates.at[0].set(mean)
-            stamps = t + (jnp.arange(horizon) + 1) * self.predict_dt
-            goals = jax.vmap(lambda x: jnp.interp(stamps, ref_times, x), in_axes=1, out_axes=1)(
-                refs
-            )
-            velocities = jax.vmap(
-                lambda x: jnp.interp(stamps, ref_times, x), in_axes=1, out_axes=1
-            )(refs_vel)
+            candidates = candidates.at[:, :, 2].set(yaw)
             states = base.states.replace(
                 pos=base.states.pos.at[...].set(obs["pos"]),
                 quat=base.states.quat.at[...].set(obs["quat"]),
@@ -98,7 +92,7 @@ class SamplingMPC:
             data = base.replace(states=states)
 
             def predict(data, row):
-                command, goal, velocity = row
+                command, goal, velocity, target_yaw = row
                 data = data.replace(
                     controls=data.controls.replace(
                         attitude=data.controls.attitude.replace(staged_cmd=command[:, None])
@@ -113,14 +107,14 @@ class SamplingMPC:
                 cost += (
                     5 * jnp.sum(cmd[:, :2] ** 2, axis=-1)
                     + 5 * (cmd[:, 3] - self.hover) ** 2
-                    + 100 * cmd[:, 2] ** 2
+                    + 100 * (cmd[:, 2] - target_yaw) ** 2
                 )
                 pole_distance = jnp.linalg.norm(p[:, None, :2] - poles[None, :, :2], axis=-1)
                 cost += 1000 * jnp.sum(pole_distance < (0.055 + 0.12 + 0.02), axis=-1)
                 return nxt, (cost, p)
 
             _, (cost, positions) = jax.lax.scan(
-                predict, data, (candidates.transpose(1, 0, 2), goals, velocities)
+                predict, data, (candidates.transpose(1, 0, 2), goals, velocities, yaw)
             )
             cost = jnp.sum(cost, axis=0)
             elite = jnp.argsort(cost)[: max(1, int(samples * 0.01))]
@@ -141,13 +135,34 @@ class SamplingMPC:
         obs = {name: getattr(state, name)[0, 0] for name in ("pos", "quat", "vel", "ang_vel")}
         return self.compute_control(obs, tick)
 
-    def compute_control(self, observation, tick):
+    def compute_control(self, observation, tick, *, trajectory=None, yaw=None):
         """Consume the public body-state view, retaining private thrust estimation."""
         obs = {name: jnp.asarray(observation[name]) for name in ("pos", "quat", "vel", "ang_vel")}
         obs["collective_thrust"] = jnp.float32(self.thrust_estimate)
+        offsets = (np.arange(self.horizon) + 1) * self.predict_dt
+        if trajectory is None:
+            stamps = tick / self.frequency + offsets
+            goals = np.column_stack([np.interp(stamps, self.ref_times, x) for x in self.refs.T])
+            velocities = np.column_stack(
+                [np.interp(stamps, self.ref_times, x) for x in self.refs_vel.T]
+            )
+            yaws = np.zeros(self.horizon)
+        else:
+            from drone_playground.execution.reference import reference_horizon
+
+            reference = reference_horizon(trajectory, tick / self.frequency, offsets, yaw=yaw)
+            goals, velocities, yaws = (reference[name] for name in ("position", "velocity", "yaw"))
         tic = time.perf_counter()
         inputs = jax.device_put(
-            (obs, self.key, self.mean, jnp.float32(tick / self.frequency)), self.prediction_device
+            (
+                obs,
+                self.key,
+                self.mean,
+                jnp.asarray(goals, dtype=jnp.float32),
+                jnp.asarray(velocities, dtype=jnp.float32),
+                jnp.asarray(yaws, dtype=jnp.float32),
+            ),
+            self.prediction_device,
         )
         with jax.default_device(self.prediction_device):
             action, self.key, self.mean, prediction, cost = self._update(*inputs)

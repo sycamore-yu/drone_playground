@@ -136,6 +136,12 @@ def validate_config(config: dict) -> None:
     controller = execution["controller"]["name"]
     if method["output"] == "trajectory" and not execution.get("tracker"):
         raise ValueError("Trajectory command requires one tracking controller")
+    if execution.get("tracker") and execution["tracker"]["name"] not in (
+        "trajectory_tracking",
+        "attitude_mpc",
+        "sampling_mpc",
+    ):
+        raise ValueError("Unsupported downstream trajectory tracker")
     if method["output"] != "trajectory" and execution.get("tracker") is not None:
         raise ValueError(
             "The command already occupies the tracking stage; duplicate tracker rejected"
@@ -167,7 +173,7 @@ def validate_config(config: dict) -> None:
         raise ValueError(
             "This paper method retains its native timing; added delay needs a qualified recipe"
         )
-    if task["name"] == "pointcloud_navigation":
+    if task["name"] in ("pointcloud_navigation", "depth_navigation"):
         from drone_playground.environments.tasks.pointcloud_navigation import (
             validate_navigation_adaptation,
         )
@@ -276,8 +282,9 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unsupported navigation observation: {observation}")
         if has_sensor != (observation != "navigation_state"):
             raise ValueError("Observation and env.sensor contract differ")
-        if implementation in ("native_ego", "native_super"):
-            expected = "navigation_depth" if method["method"] == "ego" else "navigation_lidar"
+        if implementation in ("native_ego", "native_super", "native_service"):
+            sensor_kind = method.get("input_sensor", method.get("method"))
+            expected = "navigation_depth" if sensor_kind in ("ego", "depth") else "navigation_lidar"
             if observation != expected:
                 raise ValueError("Native planner requires its compatible sensor input")
         if config["objective"].get("name") != "navigation":
@@ -323,7 +330,7 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unsupported task: {task['name']}")
         if env["scene"]["name"] != ("lsy_level0" if task["name"] == "racing" else "empty"):
             raise ValueError("Task requires a compatible scene adapter")
-        native_control = implementation in ("native_ego", "native_super")
+        native_control = implementation in ("native_ego", "native_super", "native_service")
         if native_control and env["observation"]["name"] != "state_reference":
             raise ValueError(
                 "Native control tasks require observation@env.observation=state_reference; the raw sensor remains separate"
@@ -438,7 +445,7 @@ def _run_experiment(config: dict, root: Path, run_id: str):
 
             return train(config, root, run_id)
         implementation = config["method"]["implementation"]
-        if implementation in ("pointcloud_recurrent", "lotf_mlp"):
+        if implementation in ("pointcloud_recurrent", "depth_recurrent", "lotf_mlp"):
             from importlib import import_module
 
             trainer = import_module(
@@ -454,7 +461,7 @@ def _run_experiment(config: dict, root: Path, run_id: str):
             config["runtime"]["device"],
             config["training"].get("warm_start"),
         )
-    if config["env"]["task"]["name"] == "pointcloud_navigation":
+    if config["env"]["task"]["name"] in ("pointcloud_navigation", "depth_navigation"):
         from drone_playground.evaluation.pointcloud_navigation import evaluate
 
         result = evaluate(config, root, run_id)

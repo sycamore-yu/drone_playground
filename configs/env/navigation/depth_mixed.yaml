@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+- /env/navigation/pointcloud_mixed
+- override /sensor@env.sensor: depth_flight
+- override /observation@env.observation: flight_body
+- _self_
+env:
+  name: navigation/depth_mixed
+  task:
+    name: depth_navigation
+    adapter_identity: depth-flight-navigation-adaptation-v1

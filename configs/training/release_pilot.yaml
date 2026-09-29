@@ -1,0 +1,11 @@
+defaults:
+- default
+- _self_
+seed: 0
+num_envs: 128
+policy_updates: 1000
+num_timesteps: null
+num_evals: 9
+max_wall_seconds: 3600
+development_episodes: 32
+development_metric: release-pilot-v1

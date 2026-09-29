@@ -62,7 +62,9 @@ Crazyflow 提供 `so_rpy`、`so_rpy_rotor`、`so_rpy_rotor_drag` 与 `first_prin
 
 SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接收观测和目标。轨迹跟踪器把轨迹转为执行命令；其控制任务使用滚动参考目标适配，导航任务使用目标点。`optimization/attitude_mpc` 和 `optimization/sampling_mpc` 对应当前真实优化实现。LOONG、AC-MPC、AERO-MPPI 作为待实现方向记录在来源清单与待办中。
 
-当前原生接入仍专用于 EGO／SUPER：`NativePlanner` 限定这两个方法，并直接启动 `docker exec`；桥接器、传感打包和装配校验中仍有方法分支。桥接器返回当前时刻的位置／速度／加速度／偏航参考，收到的完整原生轨迹只用于计数。虽然配置输出名为 `trajectory`，它尚未向宿主暴露可供 MPC 查询未来时域的完整 Traj.。通用原生接口及真实轨迹输出已纳入[第一版阶段 B](release-plan.md#通用原生方法接口首版要求)，目前属于待实现设计。
+原生宿主现在使用共用Protobuf/gRPC协议；Python客户端可启动本地可执行程序或容器进程，也能连接现有服务。C++ SDK提供相同的初始化、重置、一步请求和关闭合同。SUPER／EGO适配器保留原ROS1节点，分别把B样条和多项式转换为完整时标Trajectory；原跟踪器的当前样本另作复现依据，不冒充未来轨迹。下游可配置原轨迹跟踪器、AttitudeMPC或SamplingMPC，MPC读取真实未来时域。参见[SDK](../native/README.md)。
+
+三类接口的**传输**已具备，**通用组合执行**尚未完成：`method=native`当前只接受Trajectory服务，RPC请求已有Trajectory reference，但还没有覆盖三类输出的统一上游消息及模块调度。Waypoint与具名MotionCommand已通过Python↔C++通信验证，但这不能证明网络→Waypoint→优化规划→Trajectory→MPC→MotionCmd整链已可由配置搭建。缺口已加入持续goal与[实现计划](implementation-plan.md#三类物理接口的组合验收)。
 
 ## 传感、几何和时序
 

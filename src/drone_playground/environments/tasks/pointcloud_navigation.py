@@ -157,8 +157,13 @@ class PointCloudNavigationTask(PointCloudTask):
 
 def validate_navigation_adaptation(config):
     task, algo, settings = config["env"]["task"], config["algorithm"], config["training"]
-    if config["method"]["implementation"] != "pointcloud_recurrent":
-        raise ValueError("Navigation adaptation requires the recurrent point-cloud policy")
+    implementations = {
+        "pointcloud_recurrent": "pointcloud_navigation_bptt",
+        "depth_recurrent": "depth_navigation_bptt",
+    }
+    implementation = config["method"]["implementation"]
+    if implementation not in implementations:
+        raise ValueError("Navigation adaptation requires a qualified recurrent flight policy")
     if (
         config["method"]["output"],
         config["method"].get("network_output_frame"),
@@ -177,7 +182,7 @@ def validate_navigation_adaptation(config):
         raise ValueError(
             "Navigation adaptation retains 10/500Hz, 300s, 0.5m arrival and 0.07m body"
         )
-    if algo["name"] != "pointcloud_navigation_bptt":
+    if algo["name"] != implementations[implementation]:
         raise ValueError("Use the explicit navigation adaptation trainer")
     if config["env"]["execution"]["dynamics"]["forward"] != "point_mass_lag":
         raise ValueError("The qualified adapter uses the point-mass lag model")

@@ -57,6 +57,19 @@ class LSYAttitudeMPC:
     def step_callback(self, *args, **kwargs):
         return self.native.step_callback(*args, **kwargs)
 
+    def compute_trajectory(self, obs, trajectory, time, *, yaw=None):
+        """Supply every acados stage from the live plan, retaining the upstream solver."""
+        from drone_playground.execution.reference import reference_horizon
+
+        offsets = np.linspace(0, self.native._T_HORIZON, self.native._N + 1)
+        reference = reference_horizon(trajectory, time, offsets, yaw=yaw)
+        self.native._waypoints_pos = reference["position"]
+        self.native._waypoints_vel = reference["velocity"]
+        self.native._waypoints_yaw = reference["yaw"]
+        self.native._tick, self.native._tick_max = 0, 1
+        self.native._finished = False
+        return self.compute_control(obs)
+
     def episode_callback(self):
         self.native.episode_callback()
         self.native._finished = False

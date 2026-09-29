@@ -1,0 +1,10 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+cmake = "3.31.*"
+ninja = "1.*"
+libgrpc = "1.71.*"
+libprotobuf = "5.29.*"
+cxx-compiler = "1.*"

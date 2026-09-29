@@ -688,6 +688,8 @@ packages:
   - matplotlib>=3.10,<4
   - seaborn==0.13.2
   - tqdm>=4.67,<5
+  - grpcio==1.84.0
+  - protobuf==7.36.2
   requires_python: '>=3.13,<3.14'
 - pypi: ./tmp/sources/crazyflow
   name: crazyflow

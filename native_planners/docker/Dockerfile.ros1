@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     git \
     python3-yaml \
+    python3-pip \
+    python3-scipy \
     libboost-filesystem-dev \
     libboost-iostreams-dev \
     libboost-regex-dev \
@@ -32,6 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-tf2-ros \
     ros-noetic-visualization-msgs \
     && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir grpcio==1.62.3 protobuf==5.29.5
 
 RUN mkdir -p /opt/drone_playground/bridge /opt/drone_playground/planners
 

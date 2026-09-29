@@ -35,10 +35,11 @@ class TrainingState:
 def initialize(task, config):
     network = instantiate(config["network"], _convert_="all")
     key, init_key = jax.random.split(jax.random.PRNGKey(config["training"]["seed"]))
+    image_shape = getattr(network, "input_shape", None)
     params = network.init(
         init_key,
-        jnp.zeros((1, 1, 3)),
-        jnp.ones((1, 1), bool),
+        jnp.zeros((1, *image_shape) if image_shape else (1, 1, 3)),
+        jnp.ones((1, *image_shape) if image_shape else (1, 1), bool),
         jnp.zeros((1, 10)),
         jnp.zeros((1, network.hidden_size)),
     )

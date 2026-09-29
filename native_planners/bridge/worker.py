@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""ROS1-only native planner worker. JSON lines are the sole host dependency.
+"""ROS1 adapter for the shared native gRPC service; owns its planner and map."""
 
-Run in an isolated ROS master. Each worker owns one episode and destroys its
-planner/map processes at EOF, including when the simulator fails.
-"""
+from __future__ import annotations
 
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -15,23 +12,55 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-PROTOCOL = sys.stdout
-sys.stdout = sys.stderr
+from google.protobuf.json_format import MessageToDict
+
+from drone_playground.native.proto import algorithm_pb2 as pb
+from drone_playground.native.ros_trajectory import ego_trajectory, super_trajectory
+from drone_playground.native.server import serve
+from drone_playground.native.wire import encode_output, vec3
 
 
 def stop(process):
     if process is None or process.poll() is not None:
         return
-    os.killpg(process.pid, signal.SIGINT)
+    # roslaunch starts children in separate process groups. Killing only its own
+    # group can orphan a busy planner; retain each descendant's PID/start identity.
+    records = {}
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdecimal():
+            try:
+                fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+                records[int(entry.name)] = (int(fields[1]), fields[19])
+            except (OSError, IndexError, ValueError):
+                pass
+    owned = {process.pid}
+    while True:
+        found = {pid for pid, (parent, _) in records.items() if parent in owned}
+        if found <= owned:
+            break
+        owned |= found
+
+    def send(sig):
+        for pid in sorted(owned, reverse=True):
+            try:
+                fields = Path("/proc/%d/stat" % pid).read_text().rsplit(")", 1)[1].split()
+                if pid in records and fields[19] == records[pid][1]:
+                    os.kill(pid, sig)
+            except (ProcessLookupError, FileNotFoundError):
+                pass
+
+    send(signal.SIGINT)
     try:
         process.wait(timeout=5)
     except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
-        process.wait()
+        pass
+    send(signal.SIGKILL)
+    process.wait()
 
 
 def native_runtime_identity(method):
@@ -57,14 +86,19 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
     }
     root = ET.Element("launch")
     interactive = bool((task_adapter or {}).get("interactive_goals", False))
+    bounds = task_adapter or {}
+    low, high = bounds.get("world_low"), bounds.get("world_high")
+    ceiling = float(high[2]) - 0.1 if high else 4.9
     if method == "ego":
         source = "/opt/drone_playground/planners/ego/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml"
         node = ET.parse(source).getroot().find("node")
         k = calibration["intrinsics"]
         args = dict(
-            map_size_x_=40,
-            map_size_y_=20,
-            map_size_z_=6,
+            # EGO's map is fixed at (-size_x/2, -size_y/2, ground), unlike
+            # SUPER's rolling map. Cover the declared world in that native frame.
+            map_size_x_=2 * max(abs(low[0]), abs(high[0])) + 2 if low and high else 40,
+            map_size_y_=2 * max(abs(low[1]), abs(high[1])) + 2 if low and high else 20,
+            map_size_z_=max(6.0, high[2] + 0.5) if high else 6,
             odometry_topic="/p5/odom",
             camera_pose_topic="/p5/camera_pose",
             depth_topic="/p5/depth",
@@ -89,7 +123,7 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
                 child.set(attr, value)
         overrides = {
             "grid_map/pose_type": "1",
-            "grid_map/virtual_ceil_height": "4.9",
+            "grid_map/virtual_ceil_height": str(ceiling),
             "grid_map/depth_filter_maxdist": "10.0",
             "grid_map/max_ray_length": "10.0",
         }
@@ -121,7 +155,7 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
         )
         cfg["rog_map"]["ros_callback"].update(cloud_topic="/p5/cloud", odom_topic="/p5/odom")
         cfg["rog_map"]["visualization"]["enable"] = False
-        cfg["rog_map"]["virtual_ceil_height"] = 4.9
+        cfg["rog_map"]["virtual_ceil_height"] = ceiling
         cfg["rog_map"]["map_size"] = [40, 20, 6]
         target = folder / "super.yaml"
         with target.open("w") as handle:
@@ -138,24 +172,27 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
     return str(path)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["ego", "super"], required=True)
-    parser.add_argument("--port", type=int, required=True)
-    args = parser.parse_args()
-    os.environ["ROS_MASTER_URI"] = "http://127.0.0.1:%d" % args.port
-    os.environ["ROS_IP"] = "127.0.0.1"
-    os.environ.pop("ROS_HOSTNAME", None)
-    os.environ.pop("ROS_NAMESPACE", None)
-    # Refuse an occupied master port before setting any ROS parameters.
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", args.port))
-    core = planner = None
-    with tempfile.TemporaryDirectory(prefix="p5-ros-") as temporary:
-        os.environ["ROS_LOG_DIR"] = temporary
+class RosAlgorithm:
+    def __init__(self, method, port):
+        self.method = method
+        self.core = self.planner = None
+        self.temporary = tempfile.TemporaryDirectory(prefix="drone-ros-")
+        self.folder = Path(self.temporary.name)
+        self.lock = threading.Lock()
+        self.subscribers = []
+        self.epoch = 0
+        os.environ.update(
+            ROS_MASTER_URI="http://127.0.0.1:%d" % port,
+            ROS_IP="127.0.0.1",
+            ROS_LOG_DIR=str(self.folder),
+        )
+        os.environ.pop("ROS_HOSTNAME", None)
+        os.environ.pop("ROS_NAMESPACE", None)
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", port))
         try:
-            core = subprocess.Popen(
-                ["roscore", "-p", str(args.port)],
+            self.core = subprocess.Popen(
+                ["roscore", "-p", str(port)],
                 stdout=sys.stderr,
                 stderr=sys.stderr,
                 start_new_session=True,
@@ -165,177 +202,255 @@ def main():
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 try:
-                    rosgraph.Master("/p5_probe").getPid()
+                    rosgraph.Master("/drone_probe").getPid()
                     break
                 except Exception:
                     time.sleep(0.1)
             else:
                 raise RuntimeError("Private ROS master failed to start")
             import rospy
-            from geometry_msgs.msg import PoseStamped
-            from nav_msgs.msg import Odometry
-            from nav_msgs.msg import Path as PathMsg
-            from quadrotor_msgs.msg import PositionCommand
-            from rosgraph_msgs.msg import Clock
-            from sensor_msgs.msg import Image, PointCloud2, PointField
 
             rospy.set_param("/use_sim_time", True)
-            rospy.init_node("p5_bridge", anonymous=False, disable_signals=True)
-            pubs = {
-                "clock": rospy.Publisher("/clock", Clock, queue_size=1, latch=True),
-                "odom": rospy.Publisher("/p5/odom", Odometry, queue_size=1),
-                "pose": rospy.Publisher("/p5/camera_pose", PoseStamped, queue_size=1),
-                "depth": rospy.Publisher("/p5/depth", Image, queue_size=1),
-                "cloud": rospy.Publisher("/p5/cloud", PointCloud2, queue_size=1),
-                "goal": rospy.Publisher("/p5/goal", PoseStamped, queue_size=1, latch=True),
-                "waypoint": rospy.Publisher("/waypoint_generator/waypoints", PathMsg, queue_size=1),
-            }
-            latest = {"reference": None, "commands": 0, "trajectories": 0}
+            rospy.init_node("drone_bridge", anonymous=False, disable_signals=True)
+        except BaseException:
+            self.close()
+            raise
 
-            def command(msg):
-                latest["reference"] = {
-                    "position": [msg.position.x, msg.position.y, msg.position.z],
-                    "velocity": [msg.velocity.x, msg.velocity.y, msg.velocity.z],
-                    "acceleration": [msg.acceleration.x, msg.acceleration.y, msg.acceleration.z],
-                    "yaw": msg.yaw,
-                    "time": msg.header.stamp.to_sec() - 1.0,
-                }
-                latest["commands"] += 1
+    def initialize(self, request):
+        if request.algorithm != self.method:
+            raise ValueError("This adapter does not implement the requested algorithm")
+        self.parameters = MessageToDict(request.parameters)
+        return pb.InitializeResponse(
+            capabilities=pb.Capabilities(
+                algorithm=self.method,
+                required_inputs=["state"],
+                outputs=["trajectory"],
+                derivatives="none",
+            ),
+            provenance={
+                "runtime_sha256": json.dumps(native_runtime_identity(self.method)),
+                "adapter": "ros1-grpc-v1",
+                "clock_origin": "ROS = simulation + 1s",
+            },
+        )
 
-            def trajectory(msg):
-                if args.method == "ego" or msg.piece_num_pos > 0:
-                    latest["trajectories"] += 1
+    def reset(self, request):
+        import rospy
+        from geometry_msgs.msg import PoseStamped
+        from nav_msgs.msg import Odometry
+        from nav_msgs.msg import Path as PathMsg
+        from quadrotor_msgs.msg import PositionCommand
+        from rosgraph_msgs.msg import Clock
+        from sensor_msgs.msg import Image, PointCloud2
 
-            rospy.Subscriber("/p5/command", PositionCommand, command, queue_size=1)
-            if args.method == "ego":
-                from ego_planner.msg import Bspline
+        stop(self.planner)
+        self.planner = None
+        self.epoch += 1
+        epoch = self.epoch
+        for subscriber in self.subscribers:
+            subscriber.unregister()
+        for pub in getattr(self, "pubs", {}).values():
+            pub.unregister()
+        self.pubs = {
+            name: rospy.Publisher(topic, cls, queue_size=1, latch=latch)
+            for name, topic, cls, latch in (
+                ("clock", "/clock", Clock, True),
+                ("odom", "/p5/odom", Odometry, False),
+                ("pose", "/p5/camera_pose", PoseStamped, False),
+                ("depth", "/p5/depth", Image, False),
+                ("cloud", "/p5/cloud", PointCloud2, False),
+                ("goal", "/p5/goal", PoseStamped, True),
+                ("waypoint", "/waypoint_generator/waypoints", PathMsg, False),
+            )
+        }
+        self.latest = dict(commands=0, trajectories=0, reference=None, trajectory=None, error=None)
+        self.ticks = 0
+        if not request.goal.positions:
+            raise ValueError("ROS navigation requires a goal")
+        self.goal = request.goal.positions[-1]
 
+        def command(msg):
+            with self.lock:
+                if self.epoch != epoch:
+                    return
+                self.latest["reference"] = pb.TrackingReference(
+                    time=msg.header.stamp.to_sec() - 1.0,
+                    position=vec3([msg.position.x, msg.position.y, msg.position.z]),
+                    velocity=vec3([msg.velocity.x, msg.velocity.y, msg.velocity.z]),
+                    acceleration=vec3([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z]),
+                    yaw=msg.yaw,
+                )
+                self.latest["commands"] += 1
+
+        def trajectory(msg):
+            with self.lock:
+                if self.epoch != epoch:
+                    return
+                if self.method == "super" and msg.type & msg.EMER_STOP:
+                    self.latest["trajectory"] = None
+                    return
+                if self.method == "super" and not msg.piece_num_pos:
+                    return  # Heartbeat is not a new trajectory.
+                try:
+                    curve = ego_trajectory(msg) if self.method == "ego" else super_trajectory(msg)
+                    self.latest.update(trajectory=curve, generated=rospy.Time.now().to_sec() - 1.0)
+                    self.latest["trajectories"] += 1
+                except Exception as exc:
+                    self.latest["error"] = repr(exc)
+
+        self.subscribers = [rospy.Subscriber("/p5/command", PositionCommand, command, queue_size=1)]
+        if self.method == "ego":
+            from ego_planner.msg import Bspline
+
+            self.subscribers.append(
                 rospy.Subscriber("/planning/bspline", Bspline, trajectory, queue_size=1)
-            else:
-                from quadrotor_msgs.msg import PolynomialTrajectory
+            )
+        else:
+            from quadrotor_msgs.msg import PolynomialTrajectory
 
+            self.subscribers.append(
                 rospy.Subscriber("/p5/polynomial", PolynomialTrajectory, trajectory, queue_size=1)
-            goal = None
-            ticks = 0
-            for line in sys.stdin:
-                request = json.loads(line)
-                response = {"sequence": request["sequence"]}
-                if request["op"] == "start":
-                    if planner is not None:
-                        raise RuntimeError("One worker can own only one episode")
-                    goal = request["goal"]
-                    launch = launch_file(
-                        args.method,
-                        request["calibration"],
-                        goal,
-                        Path(temporary),
-                        request.get("limits"),
-                        request.get("task_adapter"),
-                    )
-                    pubs["clock"].publish(Clock(rospy.Time.from_sec(1.0)))
-                    planner = subprocess.Popen(
-                        ["roslaunch", launch],
-                        stdout=sys.stderr,
-                        stderr=sys.stderr,
-                        start_new_session=True,
-                    )
-                    # Large native maps can initialize slowly on a busy host.
-                    # This bounds cold setup only; simulated flight time stays fixed.
-                    startup_timeout = float(request.get("startup_timeout_s", 90.0))
-                    if not 1.0 <= startup_timeout <= 90.0:
-                        raise ValueError("Startup timeout must be within 1..90 seconds")
-                    deadline = time.monotonic() + startup_timeout
-                    sensor_pub = pubs["depth" if args.method == "ego" else "cloud"]
-                    while time.monotonic() < deadline:
-                        goal_ready = args.method == "ego" or pubs["goal"].get_num_connections()
-                        if (
-                            sensor_pub.get_num_connections()
-                            and pubs["odom"].get_num_connections()
-                            and goal_ready
-                        ):
-                            break
-                        if planner.poll() is not None:
-                            raise RuntimeError("Native planner launch failed")
-                        time.sleep(0.05)
-                    else:
-                        raise RuntimeError("Native sensor subscribers not ready")
-                    response["ready"] = True
-                    response["runtime_sha256"] = native_runtime_identity(args.method)
-                    response["launch_xml"] = Path(launch).read_text()
-                    config_path = Path(temporary) / "super.yaml"
-                    response["planner_yaml"] = (
-                        config_path.read_text() if config_path.exists() else None
-                    )
-                elif request["op"] == "step":
-                    if planner.poll() is not None:
-                        raise RuntimeError("Native planner process died")
-                    stamp = rospy.Time.from_sec(1.0 + request["time"])
-                    odom = Odometry()
-                    odom.header.stamp, odom.header.frame_id = stamp, "world"
-                    odom.child_frame_id = "body"
-                    for axis, value in zip("xyz", request["position"]):
-                        setattr(odom.pose.pose.position, axis, value)
-                    for axis, value in zip("xyzw", request["quaternion"]):
-                        setattr(odom.pose.pose.orientation, axis, value)
-                    for axis, value in zip("xyz", request["velocity"]):
-                        setattr(odom.twist.twist.linear, axis, value)
-                    pubs["odom"].publish(odom)
-                    if "depth" in request:
-                        pose = PoseStamped()
-                        pose.header = odom.header
-                        for axis, value in zip("xyz", request["camera_position"]):
-                            setattr(pose.pose.position, axis, value)
-                        for axis, value in zip("xyzw", request["camera_quaternion"]):
-                            setattr(pose.pose.orientation, axis, value)
-                        depth = Image()
-                        depth.header.stamp, depth.header.frame_id = stamp, "camera_optical"
-                        depth.height, depth.width = request["height"], request["width"]
-                        depth.encoding, depth.step = "32FC1", depth.width * 4
-                        depth.data = base64.b64decode(request["depth"])
-                        pubs["pose"].publish(pose)
-                        pubs["depth"].publish(depth)
-                    if "points" in request:
-                        cloud = PointCloud2()
-                        cloud.header = odom.header
-                        cloud.height, cloud.width = 1, request["point_count"]
-                        cloud.fields = [
-                            PointField(n, i * 4, PointField.FLOAT32, 1)
-                            for i, n in enumerate(["x", "y", "z", "intensity"])
-                        ]
-                        cloud.point_step, cloud.row_step = 16, 16 * cloud.width
-                        cloud.is_dense = True
-                        cloud.data = base64.b64decode(request["points"])
-                        pubs["cloud"].publish(cloud)
-                    pubs["clock"].publish(Clock(stamp))
-                    if "goal" in request:
-                        goal = request["goal"]
-                    if ticks == 10 or (ticks > 10 and "goal" in request):
-                        target = PoseStamped()
-                        target.header = odom.header
-                        target.pose.orientation.w = 1.0
-                        for axis, value in zip("xyz", goal):
-                            setattr(target.pose.position, axis, value)
-                        if args.method == "ego":
-                            path = PathMsg()
-                            path.header, path.poses = odom.header, [target]
-                            pubs["waypoint"].publish(path)
-                        else:
-                            pubs["goal"].publish(target)
-                    ticks += 1
-                    # Wall time for asynchronous native callbacks; simulation time is /clock.
-                    time.sleep(0.01)
-                    response.update(latest)
-                elif request["op"] == "close":
-                    response.update(latest)
-                else:
-                    raise ValueError("Unknown bridge request")
-                PROTOCOL.write(json.dumps(response, allow_nan=False) + "\n")
-                PROTOCOL.flush()
-                if request["op"] == "close":
-                    break
-        finally:
-            stop(planner)
-            stop(core)
+            )
+        launch = launch_file(
+            self.method,
+            MessageToDict(request.calibration),
+            [self.goal.x, self.goal.y, self.goal.z],
+            self.folder,
+            self.parameters.get("limits"),
+            MessageToDict(request.task),
+        )
+        self.pubs["clock"].publish(Clock(rospy.Time.from_sec(1.0 + request.header.simulation_time)))
+        self.planner = subprocess.Popen(
+            ["roslaunch", launch], stdout=sys.stderr, stderr=sys.stderr, start_new_session=True
+        )
+        deadline = time.monotonic() + 90
+        sensor = self.pubs["depth" if self.method == "ego" else "cloud"]
+        while time.monotonic() < deadline:
+            if (
+                sensor.get_num_connections()
+                and self.pubs["odom"].get_num_connections()
+                and (self.method == "ego" or self.pubs["goal"].get_num_connections())
+            ):
+                break
+            if self.planner.poll() is not None:
+                raise RuntimeError("Native planner launch failed")
+            time.sleep(0.05)
+        else:
+            raise RuntimeError("Native sensor subscribers not ready")
+        cfg = self.folder / "super.yaml"
+        return dict(
+            launch_xml=Path(launch).read_text(),
+            planner_yaml=cfg.read_text() if cfg.exists() else "",
+            runtime_sha256=json.dumps(native_runtime_identity(self.method)),
+        )
+
+    def step(self, request):
+        import rospy
+        from geometry_msgs.msg import PoseStamped
+        from nav_msgs.msg import Odometry
+        from nav_msgs.msg import Path as PathMsg
+        from rosgraph_msgs.msg import Clock
+        from sensor_msgs.msg import Image, PointCloud2, PointField
+
+        if self.planner is None or self.planner.poll() is not None:
+            raise RuntimeError("Native planner is not running")
+        stamp = rospy.Time.from_sec(1.0 + request.header.simulation_time)
+        odom = Odometry()
+        odom.header.stamp, odom.header.frame_id = stamp, "world"
+        odom.child_frame_id = "body"
+        for axis in "xyz":
+            setattr(odom.pose.pose.position, axis, getattr(request.state.position, axis))
+            setattr(odom.twist.twist.linear, axis, getattr(request.state.velocity, axis))
+        for axis, value in zip("xyzw", request.state.quaternion_xyzw):
+            setattr(odom.pose.pose.orientation, axis, value)
+        self.pubs["odom"].publish(odom)
+        measurement = request.measurement
+        kind = measurement.WhichOneof("data")
+        if kind == "depth":
+            pose = PoseStamped()
+            pose.header = odom.header
+            pose.header.stamp = rospy.Time.from_sec(1.0 + measurement.time)
+            d = measurement.depth
+            for axis in "xyz":
+                setattr(pose.pose.position, axis, getattr(d.camera_position, axis))
+            for axis, value in zip("xyzw", d.camera_quaternion_xyzw):
+                setattr(pose.pose.orientation, axis, value)
+            depth = Image()
+            depth.header.stamp, depth.header.frame_id = pose.header.stamp, "camera_optical"
+            depth.height, depth.width = d.height, d.width
+            depth.encoding, depth.step, depth.data = "32FC1", d.width * 4, d.float32_le
+            self.pubs["pose"].publish(pose)
+            self.pubs["depth"].publish(depth)
+        elif kind == "point_cloud":
+            if measurement.frame != "world":
+                raise ValueError("SUPER ROS adapter expects world point cloud")
+            c = measurement.point_cloud
+            cloud = PointCloud2()
+            cloud.header = odom.header
+            cloud.header.stamp = rospy.Time.from_sec(1.0 + measurement.time)
+            cloud.height, cloud.width = 1, c.count
+            cloud.fields = [
+                PointField(n, i * 4, PointField.FLOAT32, 1)
+                for i, n in enumerate(["x", "y", "z", "intensity"][: c.channels])
+            ]
+            cloud.point_step, cloud.row_step = 4 * c.channels, 4 * c.channels * c.count
+            cloud.is_dense, cloud.data = True, c.float32_le
+            self.pubs["cloud"].publish(cloud)
+        self.pubs["clock"].publish(Clock(stamp))
+        if request.HasField("goal"):
+            self.goal = request.goal.positions[-1]
+        if self.ticks == 10 or (self.ticks > 10 and request.HasField("goal")):
+            target = PoseStamped()
+            target.header, target.pose.orientation.w = odom.header, 1.0
+            for axis in "xyz":
+                setattr(target.pose.position, axis, getattr(self.goal, axis))
+            if self.method == "ego":
+                path = PathMsg()
+                path.header, path.poses = odom.header, [target]
+                self.pubs["waypoint"].publish(path)
+            else:
+                self.pubs["goal"].publish(target)
+        self.ticks += 1
+        time.sleep(min(0.01, request.solve_budget_seconds))
+        with self.lock:
+            latest = self.latest.copy()
+        if latest["error"]:
+            raise ValueError(latest["error"])
+        response = pb.StepResponse(
+            diagnostics={key: latest[key] for key in ("commands", "trajectories")}
+        )
+        curve, now = latest["trajectory"], request.header.simulation_time
+        if curve is not None and curve.start_time <= now <= curve.end_time:
+            response.decision.CopyFrom(
+                pb.Decision(
+                    status=pb.VALID,
+                    plan_id=str(latest["trajectories"]),
+                    generated_at=latest["generated"],
+                    valid_until=curve.end_time,
+                    trajectory=encode_output(curve),
+                )
+            )
+        else:
+            response.decision.status = pb.NO_PLAN
+            response.decision.explanation = "No trajectory covering the current simulation time"
+        if latest["reference"] is not None:
+            response.sampled_reference.CopyFrom(latest["reference"])
+        return response
+
+    def close(self):
+        stop(self.planner)
+        stop(self.core)
+        self.planner = self.core = None
+        self.temporary.cleanup()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--method", choices=["ego", "super"], required=True)
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--address", required=True)
+    args = parser.parse_args()
+    serve(RosAlgorithm(args.method, args.port), args.address)
 
 
 if __name__ == "__main__":

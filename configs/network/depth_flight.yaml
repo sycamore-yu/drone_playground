@@ -1,0 +1,3 @@
+_target_: drone_playground.networks.depth_flight.DepthFlightPolicy
+hidden_size: 192
+far_m: ${env.sensor.far_m}

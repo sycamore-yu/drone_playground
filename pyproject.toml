@@ -31,6 +31,8 @@ dependencies = [
     "matplotlib>=3.10,<4",
     "seaborn==0.13.2",
     "tqdm>=4.67,<5",
+    "grpcio==1.84.0",
+    "protobuf==7.36.2",
 ]
 
 [project.scripts]
@@ -41,6 +43,7 @@ drone-experiment = "drone_playground.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
+"drone_playground.native.proto" = ["*.proto"]
 "drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "level0.toml", "LICENSE", "*.json", "*.patch"]
 "drone_playground.methods.optimal_control.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
 
@@ -52,6 +55,7 @@ addopts = "-ra"
 line-length = 100
 target-version = "py313"
 extend-exclude = [
+    "src/drone_playground/native/proto/algorithm_pb2.py",
     "src/drone_playground/environments/tasks/lsy_upstream",
     "src/drone_playground/methods/optimal_control/lsy_upstream",
 ]

@@ -1,5 +1,7 @@
 """Command contracts are independent of algorithm names and native state layouts."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -26,7 +28,9 @@ THRUST_BODYRATES = CommandSpec(
 MOTOR_RPM = CommandSpec(
     "motor_rpm", ("motor0", "motor1", "motor2", "motor3"), ("rpm",) * 4, "rotor"
 )
-TRAJECTORY = CommandSpec("trajectory", ("position", "velocity", "time"), ("m", "m/s", "s"), "world")
+TRAJECTORY = CommandSpec("trajectory", ("start_time", "segments", "yaw_defined"),
+                         ("s", "SI polynomial coefficients and seconds", "boolean"), "world")
+WAYPOINT = CommandSpec("waypoint", ("positions", "tolerance"), ("m", "m"), "world")
 WORLD_ACCELERATION = CommandSpec(
     "world_acceleration",
     ("ax", "ay", "az"),
@@ -43,6 +47,7 @@ COMMANDS = {
         THRUST_BODYRATES,
         MOTOR_RPM,
         TRAJECTORY,
+        WAYPOINT,
         WORLD_ACCELERATION,
         VELOCITY_YAW,
     )

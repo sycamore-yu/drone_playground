@@ -1,0 +1,139 @@
+syntax = "proto3";
+package drone.native.v1;
+
+import "google/protobuf/struct.proto";
+
+// Each service owns one algorithm instance. Reset starts a new isolated episode.
+// The simulator owns physical time and dynamics; Step requests a decision only.
+service Algorithm {
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+  rpc Reset(ResetRequest) returns (Acknowledgement);
+  rpc Step(StepRequest) returns (StepResponse);
+  rpc Close(CloseRequest) returns (Acknowledgement);
+}
+
+message Header {
+  uint32 protocol_version = 1;
+  string session_id = 2;
+  string episode_id = 3;
+  uint64 sequence = 4;
+  double simulation_time = 5;
+}
+
+message Vec3 { double x = 1; double y = 2; double z = 3; }
+message BodyState {
+  Vec3 position = 1; // World metres; right-handed z-up frame.
+  Vec3 velocity = 2; // World m/s.
+  repeated double quaternion_xyzw = 3; // Unit quaternion, body to world.
+  Vec3 angular_velocity = 4; // Body rad/s.
+}
+
+message PointCloud {
+  bytes float32_le = 1; // Contiguous [count,channels], xyz metres, optional intensity.
+  uint32 count = 2;
+  uint32 channels = 3; // 3 or 4.
+}
+message DepthImage {
+  bytes float32_le = 1; // Contiguous [height,width], metres, optical z depth.
+  uint32 height = 2;
+  uint32 width = 3;
+  Vec3 camera_position = 4; // World metres.
+  repeated double camera_quaternion_xyzw = 5;
+}
+message Measurement {
+  double time = 1;
+  string frame = 2; // Explicit: world, body, or camera_optical.
+  oneof data { PointCloud point_cloud = 3; DepthImage depth = 4; }
+}
+
+message PolynomialSegment {
+  double duration = 1;
+  uint32 coefficient_count = 2;
+  // Row-major [4,coefficient_count]: world x,y,z,yaw; ascending powers of
+  // local segment seconds. Positions in metres and yaw in radians.
+  repeated double coefficients = 3;
+}
+message Trajectory {
+  double start_time = 1;
+  repeated PolynomialSegment segments = 2;
+  bool yaw_defined = 3; // False: yaw is delegated to the downstream controller.
+}
+message Waypoint {
+  repeated Vec3 positions = 1; // Ordered world positions in metres.
+  double tolerance = 2; // Metres.
+}
+message MotionCommand {
+  string kind = 1; // Exact physical command name from the advertised capabilities.
+  repeated double values = 2; // SI units and order from that command's contract.
+}
+
+message Capabilities {
+  string algorithm = 1;
+  repeated string required_inputs = 2;
+  repeated string outputs = 3; // trajectory, waypoint, or a concrete command kind.
+  string derivatives = 4; // none for an opaque native process.
+}
+message InitializeRequest {
+  Header header = 1;
+  string algorithm = 2;
+  google.protobuf.Struct parameters = 3;
+}
+message InitializeResponse {
+  Header header = 1;
+  Capabilities capabilities = 2;
+  map<string,string> provenance = 3;
+}
+message ResetRequest {
+  Header header = 1;
+  BodyState state = 2;
+  Waypoint goal = 3;
+  google.protobuf.Struct calibration = 4;
+  google.protobuf.Struct task = 5;
+}
+message Acknowledgement {
+  Header header = 1;
+  map<string,string> artifacts = 2; // Small reproducibility records, not file paths.
+}
+message StepRequest {
+  Header header = 1;
+  BodyState state = 2;
+  Measurement measurement = 3;
+  Waypoint goal = 4;
+  Trajectory reference = 5;
+  double solve_budget_seconds = 6; // Wall-clock budget, independent of simulation time.
+}
+enum DecisionStatus {
+  UNSPECIFIED = 0;
+  VALID = 1;
+  NO_PLAN = 2;
+  INFEASIBLE = 3;
+  BUDGET_EXHAUSTED = 4;
+}
+message Decision {
+  DecisionStatus status = 1;
+  string plan_id = 2;
+  double generated_at = 3; // Simulation clock, not wall clock.
+  double valid_until = 4;
+  string explanation = 5;
+  oneof output {
+    Trajectory trajectory = 6;
+    Waypoint waypoint = 7;
+    MotionCommand motion_command = 8;
+  }
+}
+message StepResponse {
+  Header header = 1;
+  Decision decision = 2;
+  map<string,double> diagnostics = 3;
+  // Optional original execution-server sample for reproduction. This is not a
+  // future trajectory and must never be repeated to construct an MPC horizon.
+  TrackingReference sampled_reference = 4;
+}
+message TrackingReference {
+  double time = 1;
+  Vec3 position = 2;
+  Vec3 velocity = 3;
+  Vec3 acceleration = 4;
+  double yaw = 5;
+}
+message CloseRequest { Header header = 1; }

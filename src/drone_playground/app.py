@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def _checkpoint_recipe(config):
     implementation = config["method"]["implementation"]
+    if config["env"]["task"]["name"] == "depth_navigation":
+        return "learning/depth_navigation"
     if config["env"]["task"]["name"] == "pointcloud_navigation":
         return "learning/pointcloud_navigation"
     if implementation == "neural" and config["method"]["output"] == "velocity_yaw":
