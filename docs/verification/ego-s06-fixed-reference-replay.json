@@ -1,0 +1,51 @@
+{
+  "generated_utc": "2026-09-29T20:18:25.858372+00:00",
+  "run_id": "ego-s06-fixed-reference-replay-20260929",
+  "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+  "scope": "Fixed execution-sample replay of the successful S06 diagnostic repeat, through original PD and physics; no planner process and no new quality result",
+  "input_hashes": {
+    "experiments/ego-s06-reference-diagnosis-v2-20260929/rows.json": "d15dc4797698e8a73f6a286f82f11ce2d855c74eb728d9226cee79de55edc3c9",
+    "experiments/ego-s06-reference-diagnosis-v2-20260929/resolved-config.json": "f95211b9869fc63efa7f56ab2569bbb4b3727098c3640d8e9a7daf96b24516d5",
+    "experiments/ego-s06-reference-diagnosis-v2-20260929/result.json": "7e294488354d9972b421a0fe126684a44710cd9065b14284a7215fa967a00158",
+    "experiments/ego-s06-reference-diagnosis-v2-20260929/scene-manifest.json": "8ab0ab4e3f0ce420f74735b5c8fdd77d362de23e758354294ba0c7e0b47ba2c5",
+    "experiments/ego-speed2-inflation0199-static-dev4-adaptation-20260929/eval/report.json": "9d6c8cac7dfca1b5e2308d8eba245175bd10545a197746f1d279bc04c9cb3498"
+  },
+  "status": "completed",
+  "frames": 3945,
+  "simulated_seconds": 78.9,
+  "wall_seconds": 65.37928383098915,
+  "max_absolute_errors": {
+    "position_before_m": 0.0,
+    "velocity_before_mps": 0.0,
+    "command": 0.0,
+    "position_after_m": 0.0,
+    "metrics": 0.0
+  },
+  "first_nonzero": {},
+  "all_compared_values_exact": true,
+  "final_outcome": 1,
+  "final_position": [
+    97.63958740234375,
+    0.2782299816608429,
+    3.124441385269165
+  ],
+  "consumed_references": 3841,
+  "missing_references": 104,
+  "scene_id": "S06",
+  "reset_seed": 20003,
+  "scene_bank_sha256": "861ac1703f9e3fc7a560979efbef2a249efb2460ea5b7a53fd7b34de7315e314",
+  "limitations": [
+    "This replays the successful diagnostic repeat, not the original collision.",
+    "Recorded execution samples suffice for this PD configuration; full original trajectory messages and planner state were not captured.",
+    "Equal downstream replay does not establish deterministic asynchronous planner outputs.",
+    "This is an engineering replay and does not alter formal or development quality counts."
+  ],
+  "artifacts": {
+    "manifest.json": "7c709fb2dfdf50dfb76adee15fd365b83466f686c3fcd583fb64e84b3815aa52",
+    "result.json": "39903c4dc99315995af11b6d9deed694424670cf9ca6611384742bfd54704242",
+    "probe-source.py": "b8a6254a332763559ca3980e27bb61311a9f8525ba76f677cec9a089a014fe5a",
+    "stdout.log": "4ec14a044498feabac9e9d79846e43d4b83163dda241022658a4a3772ed14cef",
+    "resolved-config.json": "f95211b9869fc63efa7f56ab2569bbb4b3727098c3640d8e9a7daf96b24516d5",
+    "errors.json": "943d2d0c1f15f5dc0f584780ff99bd03b529eb8cae129910191078c2e59ed3e6"
+  }
+}
