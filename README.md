@@ -4,6 +4,8 @@
 
 学习方法使用 JAX、Brax 和 Crazyflow；SUPER 与 EGO-Planner 通过项目独立管理的 ROS 容器接入。PointNet/GRU 点云方法与 LOTF 分别保留自己的来源、动力学和训练身份。
 
+处理链的组织方式 inspired by [FlightBench 表Ⅲ与图4](https://arxiv.org/abs/2406.05687)：不同方法可覆盖不同区段，在轨迹、航点或运动命令处接入后续执行系统。本项目研究 JAX 仿真、可微强化学习与 MPC 的组合。当前为研究预览；[第一版交付规格](docs/release-plan.md)定义18个必达组合，尚未全部达到质量标准。
+
 ## 安装与运行
 
 开发环境为 Linux、Python 3.13 和 Pixi。GPU 训练使用 NVIDIA CUDA；依赖版本、源码提交及必要补丁分别固定在 `pixi.lock` 和 `third_party/sources.yaml`。

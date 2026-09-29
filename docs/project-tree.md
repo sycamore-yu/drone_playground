@@ -15,12 +15,10 @@ drone_playground/
 ├── .gitattributes
 ├── assets/
 │   └── scenes/
-│       ├── navigation/              # 权威场景目录
-│       └── archive/                 # 场景生成和回归测试所需的历史夹具
+│       └── navigation/              # 唯一现役场景目录，包含固定3D扩展
 ├── benchmarks/
 │   └── navigation/
-│       ├── v1/                      # 保留的历史协议和几何校验
-│       └── v2/                      # 正式300秒、20米/秒协议
+│       └── v2/                      # 300秒协议、场景几何校验及划分说明
 ├── configs/
 │   ├── config.yaml
 │   ├── method/                      # learning、paper、optimization配方
@@ -76,6 +74,8 @@ drone_playground/
 │   ├── README.md
 │   ├── architecture.md
 │   ├── methods.md                    # 论文方法主表、接口与评测任务族
+│   ├── release-plan.md               # 第一版18格目标与接口设计
+│   ├── adr/                         # 接口与后端的重要设计决策
 │   ├── runbook.md
 │   ├── evaluation.md
 │   ├── development.md
@@ -99,4 +99,4 @@ drone_playground/
 └── .pixi/                           # Git忽略：本项目Python环境
 ```
 
-独立备份位于项目外 `simulation_dev/.archives/drone_playground/`。旧主工作树和 `pointcloud-paper` 仅保留原冻结训练的依赖，处置规则见[分支生命周期](research/branch-lifecycle.md)。新源码分发包仅包含版本管理中的公开文件。
+独立备份位于项目外 `simulation_dev/.archives/drone_playground/`。旧主工作树已离线归档，原路径不存在；`pointcloud-paper` 只保留已停止训练的冻结源码与证据，详见[分支生命周期](research/branch-lifecycle.md)。新源码分发包仅包含版本管理中的公开文件。

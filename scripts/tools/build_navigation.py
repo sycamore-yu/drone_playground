@@ -8,12 +8,14 @@ SANDO's published 50/100/200 obstacle counts, 0.65 dynamic fraction, 0.8 m cubes
 the P5 physical bounds and start/goal safety so moving bodies stay inside the
 finite MuJoCo world.
 
-S06 and D06 are retained as explicit 3-D extension scenes from v4. D06's long
-crossbars are upgraded to vertically moving gates.
+S06 and D06 are curated 3-D extensions retained from the current catalog.
+Pass the pinned SANDO world directory explicitly; no historical catalog or
+machine-specific workspace layout is required.
 """
 
 from __future__ import annotations
 
+import argparse
 import copy
 import hashlib
 import json
@@ -23,10 +25,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-WORKSPACE = REPO.parents[2]
-SANDO_SNAPSHOT = WORKSPACE / "research_dev/sando/docker/dev-workspace/upstream-93b2eed"
-SANDO_WORLDS = SANDO_SNAPSHOT / "worlds"
-V4_PATH = REPO / "assets/scenes/archive/p5_fixed_catalog_v4.json"
+SANDO_SOURCE_ID = "research_dev/sando/docker/dev-workspace/upstream-93b2eed"
 OUTPUT = REPO / "assets/scenes/navigation/catalog.json"
 
 WORLD = {
@@ -98,10 +97,10 @@ def _model_pose(model: ET.Element) -> list[float]:
     return [float(value) for value in (model.findtext("pose") or "0 0 0 0 0 0").split()]
 
 
-def load_sando_static(difficulty: str) -> tuple[list[dict], dict]:
+def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
     """Copy one pinned SANDO forest, translating x by -3 m into P5 coordinates."""
 
-    path = SANDO_WORLDS / SANDO_STATIC_WORLD[difficulty]
+    path = worlds / SANDO_STATIC_WORLD[difficulty]
     root = ET.parse(path).getroot()
     obstacles = []
     for model in root.findall(".//world/model"):
@@ -124,7 +123,7 @@ def load_sando_static(difficulty: str) -> tuple[list[dict], dict]:
             }
         )
     return obstacles, {
-        "world_file": str(path.relative_to(WORKSPACE)),
+        "world_file": f"{SANDO_SOURCE_ID}/worlds/{path.name}",
         "world_sha256": sha256(path),
         "x_translation_m": -3.0,
         "published_density": SANDO_STATIC_DENSITY[difficulty],
@@ -278,10 +277,10 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
     }
 
 
-def primary_scene(kind: str, difficulty: str) -> dict:
+def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
     suffix = PRIMARY_IDS[difficulty]
     if kind == "static":
-        obstacles, provenance = load_sando_static(difficulty)
+        obstacles, provenance = load_sando_static(difficulty, worlds)
         return {
             "id": f"S{suffix}",
             "difficulty": difficulty,
@@ -321,52 +320,31 @@ def primary_scene(kind: str, difficulty: str) -> dict:
     }
 
 
-def retained_extensions(v4: dict) -> list[dict]:
-    retained = []
-    for scene_id in ("S06", "D06"):
-        scene = copy.deepcopy(next(scene for scene in v4["scenes"] if scene["id"] == scene_id))
-        scene["benchmark_role"] = "3d-extension"
-        scene["topology_acceptance"] = {
-            "require_direct_route_blocked": True,
-            "require_reachable": True,
-            "max_full_length_straight_lanes": 0,
-            "max_clear_straight_run_m": 35.0,
-        }
-        if scene_id == "D06":
-            moving_index = 0
-            for obstacle in scene["obstacles"]:
-                if (
-                    obstacle["shape"] == "box"
-                    and obstacle.get("role") == "layout_core"
-                    and float(obstacle["size"][1]) >= 10.0
-                ):
-                    low_gate = float(obstacle["origin"][2]) < 3.5
-                    amplitude = 0.7 if low_gate else 0.5
-                    period = 8.0 + moving_index
-                    phase = 0.25 if moving_index % 2 == 0 else 0.75
-                    obstacle["motion"] = "linear_bounce"
-                    obstacle["params"] = [0.0, 0.0, amplitude, period, phase]
-                    obstacle["role"] = "moving_crossbar"
-                    moving_index += 1
-            scene["title"] = "Hybrid long 3D moving gates with moving crossbars"
-            scene["layout_policy"] = (
-                "retained v4 3D extension; long crossbars vertically oscillate; no reserved route"
-            )
-            scene["moving_crossbars"] = moving_index
-        retained.append(scene)
-    return retained
+def retained_extensions(catalog: dict) -> list[dict]:
+    return [
+        copy.deepcopy(next(scene for scene in catalog["scenes"] if scene["id"] == scene_id))
+        for scene_id in ("S06", "D06")
+    ]
 
 
 def main() -> None:
-    if not SANDO_WORLDS.is_dir():
-        raise FileNotFoundError(SANDO_WORLDS)
-    v4 = json.loads(V4_PATH.read_text())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--sando-worlds", type=Path, required=True)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    args = parser.parse_args()
+    catalog = json.loads(OUTPUT.read_text())
+    for scene in catalog["scenes"]:
+        if scene["benchmark_role"] == "primary" and not scene["dynamic"]:
+            source = scene["source_provenance"]
+            path = args.sando_worlds / Path(source["world_file"]).name
+            if sha256(path) != source["world_sha256"]:
+                raise ValueError(f"SANDO source differs from the frozen catalog: {path.name}")
     scenes = []
     for difficulty in ("easy", "medium", "hard"):
-        scenes.append(primary_scene("static", difficulty))
+        scenes.append(primary_scene("static", difficulty, args.sando_worlds))
     for difficulty in ("easy", "medium", "hard"):
-        scenes.append(primary_scene("dynamic", difficulty))
-    scenes.extend(retained_extensions(v4))
+        scenes.append(primary_scene("dynamic", difficulty, args.sando_worlds))
+    scenes.extend(retained_extensions(catalog))
 
     output = {
         "name": "navigation8",
@@ -387,7 +365,7 @@ def main() -> None:
             "Reachability is checked only through offline 3-D occupancy metrics; path coordinates are discarded.",
         ],
         "references": {
-            **v4["references"],
+            **catalog["references"],
             "SANDO_navigation8_alignment": {
                 "repository": "research_dev/sando/docker/dev-workspace/upstream-93b2eed",
                 "snapshot": "93b2eed",
@@ -403,8 +381,8 @@ def main() -> None:
         "boundary_obstacles": BOUNDARY,
         "scenes": scenes,
     }
-    OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
-    print(OUTPUT)
+    args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
+    print(args.output)
     for scene in scenes:
         moving = sum(
             obstacle.get("motion", "static") != "static" for obstacle in scene["obstacles"]

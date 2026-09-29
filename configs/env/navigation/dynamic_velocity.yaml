@@ -5,7 +5,7 @@ defaults:
 - /sensor@env.sensor: mid360
 - /observation@env.observation: navigation_lidar
 - /execution@env.execution: velocity_yaw
-- /objective: navigation_motion_v2
+- /objective: navigation_motion
 - _self_
 env:
   name: navigation/dynamic_velocity

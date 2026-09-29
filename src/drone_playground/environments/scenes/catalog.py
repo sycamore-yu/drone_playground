@@ -37,7 +37,7 @@ from .navigation import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_CATALOG = PROJECT_ROOT / "assets/scenes/navigation/catalog.json"
-DEFAULT_VERIFICATION = PROJECT_ROOT / "benchmarks/navigation/v1/geometry-verification.json"
+DEFAULT_VERIFICATION = PROJECT_ROOT / "benchmarks/navigation/v2/geometry-verification.json"
 
 
 def verified_geometry(path, verification_path=DEFAULT_VERIFICATION):

@@ -200,7 +200,7 @@ def collect(root: Path, selections: list[dict]) -> dict:
             "Quality and executed interfaces are independently reported.",
             "Control transfer and original point-cloud reconstruction are distinct recipes.",
             "SHAC racing uses BPTT warm start followed by real SHAC parameter updates.",
-            "Original point-cloud 50000-update experiment remains an independent ongoing run.",
+            "Original point-cloud reconstruction is independent of this baseline matrix.",
         ],
     )
 

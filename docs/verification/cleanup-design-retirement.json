@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-09-29T13:09:03.773068+00:00",
+  "scope": "Source cleanup, agreed design, original point-cloud stop, and retirement of the old primary worktree; no new convergence training or remote publication.",
+  "base_commit": "a26213acc025b21638eeb782e1046a40e013dd24",
+  "canonical_project": "simulation_dev/drone_playground",
+  "release_status": "research-preview; the newly agreed 18-cell quality matrix is not yet complete",
+  "tests": {
+    "command": "JAX_PLATFORMS=cpu pixi run test -q",
+    "passed": 377,
+    "subtests_passed": 5,
+    "failures": 0,
+    "warnings": 38,
+    "warning_scope": "JAXopt and Optax deprecation notices",
+    "elapsed_s": 1985.02,
+    "elapsed_note": "Includes the temporary pause during dependency migration.",
+    "log_sha256": "2e93339bf78280f432a8153e11a617b147498cf2850b1f7e7a58c37217ab4418",
+    "removed_tests": "Three tests exclusively covering retired scene catalogs v2/v3/v4.",
+    "tested_source_file_count": 345,
+    "tested_source_manifest_sha256": "f637983e239c20cc7a6728836f020b24bc2cb9e461701500e99da4dd068e3964"
+  },
+  "checks": {
+    "ruff_passed": true,
+    "git_diff_check_passed": true,
+    "document_links_passed": true,
+    "current_source_common_credential_and_local_path_patterns_clear": true,
+    "gpu_probe": {
+      "jax_version": "0.9.2",
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "JAX_PLATFORMS": "cuda,cpu",
+      "default_backend": "gpu",
+      "matrix_result_device": "cuda:0",
+      "cpu_backend_available": true,
+      "speedup_measured": false
+    }
+  },
+  "navigation": {
+    "catalog_sha256": "18866d707f000dac638e5b5afe8ff6efe45121f8ae4a302daedec7fe677f87a2",
+    "rebuilt_catalog_byte_identical": true,
+    "geometry_and_splits_moved_unchanged_from_v1_to_v2": true,
+    "resolved_config_equivalence": [
+      {
+        "env": "navigation/static_velocity",
+        "resolved_configuration_unchanged": true,
+        "progress_scale": 0.2
+      },
+      {
+        "env": "navigation/dynamic_velocity",
+        "resolved_configuration_unchanged": true,
+        "progress_scale": 0.2
+      }
+    ]
+  },
+  "historical_baseline": {
+    "cells": 30,
+    "episodes": 488,
+    "selected_checkpoints": 19,
+    "unique_replays": 245,
+    "all_results_present": true,
+    "all_execution_passed": true,
+    "all_quality_passed": false,
+    "report_sha256": "724c61eb2d225efabbba0aca150924e09d5633b7ec025a18185f6f25c72f4070",
+    "note": "Existing failures remain failures. This is artifact verification, not a new scientific evaluation."
+  },
+  "pointcloud_stop": {
+    "run_id": "paper-pointcloud-seed0-full-v1",
+    "pipeline_run_id": "paper-pointcloud-seed0-pipeline-v1",
+    "status": "cancelled",
+    "user_selected_immediate_stop": true,
+    "target_updates": 50000,
+    "resumable_updates": 45000,
+    "last_logged_updates": 49760,
+    "full_budget_completed": false,
+    "checkpoint_sha256": "c12436c966b7934dea7251b6494de8ed5123d3cbdb02c20a61c3179c5a7a3f1f",
+    "parameter_sha256": "8b0498fd543d4d088bb6bbe8ae0d0601023c2e2df93c669e56947ef483cc070a",
+    "optimizer_and_rng_backed_up": true,
+    "readback_with_main_interpreter_after_retirement_passed": true,
+    "training_and_coordinator_processes_stopped": true,
+    "final_evaluation": "not_started_user_cancelled"
+  },
+  "retirement": {
+    "old_path": "simulation_dev/mujoco/drone_playground",
+    "old_path_absent": true,
+    "main_git_is_directory": true,
+    "git_fsck_passed": true,
+    "all_branches_and_tags_preserved": true,
+    "main_uncommitted_diff_preserved_during_promotion": true,
+    "old_uncommitted_patch_preserved": true,
+    "frozen_worktree_clean": true,
+    "acados_is_independent_local_build": true,
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_shared_library_runpath": "$ORIGIN",
+    "acados_and_sampling_mpc_numeric_tests_passed": true,
+    "rehearsal_directories_removed": true
+  },
+  "backup": {
+    "location": "simulation_dev/.archives/drone_playground/cleanup-design-20260929T123143Z",
+    "source_archive_sha256": "9ee92737d17d4686f8700b3d15fd28b18b957f3b8bf010636bbfdcbac395696a",
+    "git_bundle_sha256": "ab38d2e15a4ac958f4a4dbf91c80d1d2029acbe743c5f5b789ca6c9396caee3d",
+    "git_bundle_verified": true,
+    "old_directory": "retired-primary-worktree",
+    "old_git_administration": "retired-primary-worktree/git-administration.offline",
+    "original_tempdesign_sha256": "ae682e13c2506ec1381774a68012d3be15601fa1daa427aaf0d463776bfda5c2"
+  },
+  "remaining_work": [
+    "Implement the agreed physical interfaces and missing methods.",
+    "Freeze training conditions and complete the new 18-cell quality evaluation.",
+    "Review and separately authorize remote publication of the source snapshot."
+  ]
+}

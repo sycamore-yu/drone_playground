@@ -23,6 +23,15 @@ pixi run train method=learning/shac env=racing runtime.device=gpu run_id=shac-ra
 
 正式训练采用 GPU，并按显存与预算排队。先核对已有 `state.json`、`result.json` 和进程身份，再确定新运行或恢复。`training.warm_start` 表示参数热启动；具备完整状态恢复能力的训练器使用 `training.resume`。恢复时保持所记录的模型、网络、优化器及输入合同。
 
+在 CUDA 可用的主机上，可用 `JAX_PLATFORMS=cuda,cpu` 将 GPU 设为 JAX 默认后端，同时允许代码显式使用 CPU；项目的 `runtime.device` 也应选择 `gpu`。例如：
+
+```bash
+JAX_PLATFORMS=cuda,cpu pixi run train method=learning/ppo env=tracking \
+  runtime.device=gpu run_id=ppo-tracking-new
+```
+
+该变量按顺序初始化后端，不表示 CUDA 不可用时自动回退；无 CUDA 时使用 `JAX_PLATFORMS=cpu` 和 `runtime.device=cpu`。批量仿真与训练可受益于 GPU；文件、协议及纯 Python 几何检查不会因该变量提速，小计算还可能受编译和传输开销影响。详见 [JAX 平台配置](https://docs.jax.dev/en/latest/config_options.html#platforms)。
+
 ```bash
 # 从已完成的正式参数启动另一组独立试验。
 pixi run train method=learning/bptt env=tracking \
@@ -69,6 +78,18 @@ JAX_PLATFORMS=cpu pixi run test
 
 acados v0.5.1 可通过 `ACADOS_SOURCE_DIR` 指向已经验证的构建。默认局部位置为 `tmp/p3p4/optimization/acados`。该目录与 `tmp/sources/` 是实际依赖缓存，清理时按依赖处理。
 
+## 场景维护
+
+现役场景直接从 `assets/scenes/navigation/catalog.json` 加载。确需重建六张 SANDO 来源主场景时，显式提供固定来源的 worlds 目录：
+
+```bash
+python3 scripts/tools/build_navigation.py --sando-worlds /path/to/pinned-sando/worlds \
+  --output tmp/navigation-catalog.json
+cmp assets/scenes/navigation/catalog.json tmp/navigation-catalog.json
+```
+
+脚本先校验来源 world 文件摘要，再重建主场景，并从现役目录保留 S06／D06 两张固定3D扩展。它不依赖历史场景 v1–v4，也不从本机目录结构猜测依赖位置。改变几何须另立协议与校验记录。
+
 ## 维护检查
 
 ```bash
@@ -79,4 +100,4 @@ python3 scripts/tools/summarize_final_acceptance.py \
   --output tmp/final-acceptance-check.json
 ```
 
-最后一条命令读取本地正式结果包，核对30个单元、训练来源、参数和回放摘要。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云50000次更新运行按[冻结工作树生命周期](research/branch-lifecycle.md)处理。
+最后一条命令读取本地正式结果包，核对30个单元、训练来源、参数和回放摘要。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云任务已保存45000次完整状态并停止，见[冻结工作树生命周期](research/branch-lifecycle.md)。
