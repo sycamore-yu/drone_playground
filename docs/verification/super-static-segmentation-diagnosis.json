@@ -1,0 +1,844 @@
+{
+  "run_id": "release-super-static-infrastructure-retry-20260929",
+  "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+  "scope": "Incomplete formal run and infrastructure diagnostic; no quality pass",
+  "completed_cases": 14,
+  "interrupted_cases": 3,
+  "native_failure": {
+    "case": 15,
+    "seed": 30120,
+    "scene": "S01",
+    "last_recorded_frames": 304,
+    "signal": "SIGSEGV",
+    "ros_exit_code": -11,
+    "host_pid": 2548628,
+    "native_pid": 46590,
+    "elf_offset": "0x1070b4",
+    "symbol": "geometry_utils::Piece::getDuration() const",
+    "source": "super_planner/src/utils/piece.cpp:40",
+    "interpretation": "Crash location only; caller and invalid-object cause not established",
+    "source_revision": "2ad3419c127a617c6d7df6925e81a14175a9c096"
+  },
+  "native_runtime": {
+    "/opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node": "a3e074425fb63750348742b6ac644aac8948988f60256b219318137b5507a012",
+    "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp": "6ca9c345f2a5fdce668a61ad33804cf9f3d5e8302b377adef44c8d291fa3abbd"
+  },
+  "cases": [
+    {
+      "case": 0,
+      "scene": "S01",
+      "seed": 30000,
+      "completed_execution": true,
+      "frames": 1221,
+      "error": null,
+      "record_sha256": "f3d0bef15bfdb4830b75ce08883a645203e2935eb4decad96b0e5dcbaeeef5d5",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "302d0e78b4825b49ff3a2a5cc04ad9c0329eb6bc7f2e07f6cde2c0acd876f984",
+            "episodes": 1,
+            "frames": 1221,
+            "episode_steps": [
+              1221
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 1,
+      "scene": "S01",
+      "seed": 30008,
+      "completed_execution": true,
+      "frames": 1218,
+      "error": null,
+      "record_sha256": "be5335f91601d5943c21765d3b798419e1fc7615f8361dd0ae8cb3c35f404560",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "54c8aafe86b31921b5c43a4db08e9c6db64604d36d1401c6093984182dc6850c",
+            "episodes": 1,
+            "frames": 1218,
+            "episode_steps": [
+              1218
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 2,
+      "scene": "S01",
+      "seed": 30016,
+      "completed_execution": true,
+      "frames": 1179,
+      "error": null,
+      "record_sha256": "ee180863787c23c18bc49afe648169eccdf06e9bad34f834687cd848854206b2",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "2fee83fbeee0bbf4b3ff992dd214427dcfea0a190de14d517f7e96627897b0d9",
+            "episodes": 1,
+            "frames": 1179,
+            "episode_steps": [
+              1179
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 3,
+      "scene": "S01",
+      "seed": 30024,
+      "completed_execution": true,
+      "frames": 1178,
+      "error": null,
+      "record_sha256": "f74d404d8d49971af92ef5dde209585c185486256034973005545360f04c9d91",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "40c4fc99151cc3e19d8051aa99b4ca40fd3c47fb5b412fefb11e55af3d7998aa",
+            "episodes": 1,
+            "frames": 1178,
+            "episode_steps": [
+              1178
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 4,
+      "scene": "S01",
+      "seed": 30032,
+      "completed_execution": true,
+      "frames": 1188,
+      "error": null,
+      "record_sha256": "14364cb195e6bf14ad8b20da9411e5faaef833d6017632b78e4dc48d5f9c9b03",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "70e057df5f230432c476349410e9a32288e3e8f0f9e8b1f366eb41b61dd853b3",
+            "episodes": 1,
+            "frames": 1188,
+            "episode_steps": [
+              1188
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 5,
+      "scene": "S01",
+      "seed": 30040,
+      "completed_execution": true,
+      "frames": 1170,
+      "error": null,
+      "record_sha256": "c18d14a91ebfb9c8e8f0aa7d226ed8155ffa4e8e5670df84d83324d0ce380e5a",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "0d57aa9055f3bf641abf4fe55a960e4f03e5761224f45186edeb27cbfcbfd7e4",
+            "episodes": 1,
+            "frames": 1170,
+            "episode_steps": [
+              1170
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 6,
+      "scene": "S01",
+      "seed": 30048,
+      "completed_execution": true,
+      "frames": 1185,
+      "error": null,
+      "record_sha256": "f36b9ef3360240edfa249fa493aeb7686315e79e424fb0533e9a8eec0b222de6",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "07694ae13b72f80b93dfe251089b57ea15c901a85627d1d5b58a4b4d2b1875d2",
+            "episodes": 1,
+            "frames": 1185,
+            "episode_steps": [
+              1185
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 7,
+      "scene": "S01",
+      "seed": 30056,
+      "completed_execution": true,
+      "frames": 1252,
+      "error": null,
+      "record_sha256": "b656304480ebbd8702d225ffca8b71b17fd5d1a623b24aaf2461b29b9ad33e6c",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "ccf6d0c3c461ca8dc89fbeff9c9df8092605917e0a7007aa39750bbdcb206879",
+            "episodes": 1,
+            "frames": 1252,
+            "episode_steps": [
+              1252
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 8,
+      "scene": "S01",
+      "seed": 30064,
+      "completed_execution": true,
+      "frames": 1181,
+      "error": null,
+      "record_sha256": "334944d7f53c8426d65a64da682b2f4ccfe6b190d26f414c85ec6c33511f0560",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "9793059336f7be1618cbf04258a92c06f7ba437b4523df22a83a4b6d8ec4d309",
+            "episodes": 1,
+            "frames": 1181,
+            "episode_steps": [
+              1181
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 9,
+      "scene": "S01",
+      "seed": 30072,
+      "completed_execution": true,
+      "frames": 1178,
+      "error": null,
+      "record_sha256": "6df13cbb50240b499118e54b812c9d5cd19b3b63beaeeed97fc3aecc29e06e86",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "b6f843e1305bf90aa10521ac9460ccbe14b1c235b79cb5b44d55e8ce77e46eca",
+            "episodes": 1,
+            "frames": 1178,
+            "episode_steps": [
+              1178
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 10,
+      "scene": "S01",
+      "seed": 30080,
+      "completed_execution": true,
+      "frames": 1179,
+      "error": null,
+      "record_sha256": "ff34652a49baeb3d7a705fe27abc03df24366957cd2bc92a6a8be02bfe5f4dd2",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "5b9b21a563abbb8ad023c9f7495ef28e83250073c683cee7a79e6f17ea216282",
+            "episodes": 1,
+            "frames": 1179,
+            "episode_steps": [
+              1179
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 11,
+      "scene": "S01",
+      "seed": 30088,
+      "completed_execution": true,
+      "frames": 1188,
+      "error": null,
+      "record_sha256": "98a0d457148e456e073c88ca59be307f4c4bbbb16fa7479624deea77821a78da",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "7cc4479a2b42847926da48cb99d048b758cbd97ef92528435702875221db8123",
+            "episodes": 1,
+            "frames": 1188,
+            "episode_steps": [
+              1188
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 12,
+      "scene": "S01",
+      "seed": 30096,
+      "completed_execution": true,
+      "frames": 1190,
+      "error": null,
+      "record_sha256": "6f98e4844aea7263d52839f04edf26c3c2f324d9881bab3333eb81c925cdd0d0",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "50bcf9b6025f0e9114b5fb7483d519cf0d9e26a11a7691c1c90c44aab654d111",
+            "episodes": 1,
+            "frames": 1190,
+            "episode_steps": [
+              1190
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 13,
+      "scene": "S01",
+      "seed": 30104,
+      "completed_execution": true,
+      "frames": 1215,
+      "error": null,
+      "record_sha256": "2bd2dc3848570a6f63054b213fc012bb5a430a5b9fdca2f9feb671a7be78fda2",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "432391b144637bf64bd2f0ef38296feec9dc458f78ca406376132ebaa03dc8c8",
+            "episodes": 1,
+            "frames": 1215,
+            "episode_steps": [
+              1215
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 14,
+      "scene": "S01",
+      "seed": 30112,
+      "completed_execution": false,
+      "frames": 391,
+      "error": "CancelledError('Native evaluation cancelled')",
+      "record_sha256": "25f126addb96dbebca118319885929e24a01cc1b97917d220c2b12ffb4243052",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "6bb1c40d97d854c88aa0ad3afa2ce1bf551d8d019a2462884ff7399b14f76066",
+            "episodes": 1,
+            "frames": 391,
+            "episode_steps": [
+              391
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 15,
+      "scene": "S01",
+      "seed": 30120,
+      "completed_execution": false,
+      "frames": 304,
+      "error": "<_InactiveRpcError of RPC that terminated with:\n\tstatus = StatusCode.INTERNAL\n\tdetails = \"Native planner is not running\"\n\tdebug_error_string = \"INTERNAL:Native planner is not running\"\n>",
+      "record_sha256": "90561d5997f674a40430b7523a783dc35cc52b984669ed2c1da477e1b0bba86a",
+      "archive": {
+        "schema_version": 1,
+        "timing": "post-transition; includes terminal transition",
+        "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+        "cells": {
+          "easy": {
+            "path": "easy.npz",
+            "sha256": "241ef19fabeec1b0c0bca936f8442dc9903585721b2954e0abd47917a18fa543",
+            "episodes": 1,
+            "frames": 304,
+            "episode_steps": [
+              304
+            ],
+            "fields": [
+              "actions",
+              "case_ids",
+              "done",
+              "metric_action_saturation",
+              "metric_arrived",
+              "metric_clearance",
+              "metric_collision",
+              "metric_failure",
+              "metric_goal_distance",
+              "metric_numerical_failure",
+              "metric_out_of_bounds",
+              "metric_physical_thrust",
+              "metric_sensor_sequence",
+              "offsets",
+              "outcome",
+              "pos",
+              "proprioception",
+              "quat",
+              "reward",
+              "scenario_ids",
+              "time"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "case": 16,
+      "scene": "S01",
+      "seed": 30128,
+      "completed_execution": false,
+      "frames": 0,
+      "error": "CancelledError('Native evaluation cancelled')",
+      "record_sha256": "9c1d8875143e030626e57dad8eecffa6ff7842ef569aabde545894515181d658",
+      "archive": null
+    }
+  ],
+  "input_replay": {
+    "source_revision": "1041c052841e1a0a0b33d44150cfecb10966b28f",
+    "source_run": "release-super-static-infrastructure-retry-20260929",
+    "case": {
+      "difficulty": "easy",
+      "case": 15,
+      "scenario_id": 0,
+      "seed": 30120,
+      "scene_id": "S01",
+      "initial_position_m": [
+        1.9155056476593018,
+        -0.1859426498413086,
+        3.0028936862945557
+      ],
+      "initial_velocity_mps": [
+        0.09278694540262222,
+        -0.024575266987085342,
+        -0.05870075896382332
+      ],
+      "initial_quaternion_xyzw": [
+        0.0,
+        0.0,
+        -0.022711778059601784,
+        0.9997420310974121
+      ]
+    },
+    "replayed_requests": 305,
+    "recorded_steps": 304,
+    "maximum_position_error_m": 3.0994415283203125e-06,
+    "error": null,
+    "seconds": 68.7566376440227,
+    "scope": "Input replay of captured native failure; no solver quality claim or heldout tuning",
+    "files": {
+      "diagnostic-source.py": "161adab740cba573f2c047f4a56a1b7e527f83fb4627753d86a07fb8a24d9d84",
+      "result.json": "131701511747aa05268638d21ec3cf054843a3477266f8ff8c01abc489eb145d",
+      "resolved-config.json": "e8d805eac201d4d01dff47d078106bfcb30a679379432a48485f5d7a05e58098"
+    }
+  }
+}

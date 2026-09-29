@@ -41,3 +41,9 @@ SUPER静态首个正式批次在29个回合后因ROS订阅启动超时失败；�
 [诊断凭据](../verification/ego-reference-diagnosis.json)记录实际曲线和逐步轨迹摘要。读取前已核查`reference_repos/ego-planner`的GitNexus索引与固定提交`bfda512`一致。原`GridMap::clearAndInflateLocalMap`按`ceil(inflation/resolution)`膨胀体素；当前0.1m分辨率和0.099m参数实际为一格。后续单变量开发探针仅把`method.parameters.occupancy_inflation_m`设为0.199（二格），原传感、动力学、速度、执行器与C++二进制保持原样；不根据一次探针推定质量达标。
 
 ROS适配现在将`method.parameters`通过公共Initialize参数传给服务；动力学约束继续由`method.limits`单独提供。`occupancy_inflation_m`仅用于EGO，未设置时保留上游0.099默认值，启动文件记录实际值。16项参数、航点和原生回归通过。
+
+膨胀二格探针已完成：1282步、25.64秒在x=65.51m处碰撞，原14.10秒、x约37.57m处的碰撞被避开，但地图膨胀单独不足以解决失败。保留原配置与曲线摘要，见[单变量证据](../verification/ego-inflation-diagnosis.json)。后续开发探针保持0.199m膨胀，仅把速度上限从4改为2m/s，以检验制动／跟踪裕量；仍不作为原20m/s配方结果。
+
+SUPER静态双实例重跑完成14回合后，S01／seed30120在已记录304步后发生原生SIGSEGV，随后另外两个启动中／运行中的回合被取消。系统日志与ROS退出码一致；固定二进制的地址符号定位到`Piece::getDuration()`，尚未确定其调用者及对象失效原因。所有已完成和中断轨迹均保留，见[崩溃凭据](../verification/super-static-segmentation-diagnosis.json)。当前先重放实际初态和动作，不再把降低并发视为修复，也不把中断回合移出分母后声称100回合通过。
+
+生产代码的38ms AttitudeMPC开发复核已完成32/32，RMSE 0.055454m；已冻结同配方并启动100回合留出确认。该执行适配与原无补偿配方分别报告，未完成前不增加质量通过格数。

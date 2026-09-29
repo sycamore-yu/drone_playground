@@ -1,6 +1,6 @@
 # 配置驱动的可组合架构
 
-本文描述现役实现。以 Traj.／Waypoint／Motion Cmd 为公共边界、允许网络／优化规划／MPC 覆盖不同区段的目标设计见[第一版交付规格](release-plan.md)。目前的配方选择和动作合同尚不等于所有三类接口均可自由组合。
+本文描述现役实现。以 Traj.／Waypoint／Motion Cmd 为公共边界、允许网络／优化规划／MPC 覆盖不同区段的目标设计见[第一版交付规格](release-plan.md)。现役宿主链支持按合同组合这三类接口；输入语义、时钟、坐标或有效期不兼容的组合会被拒绝。
 
 公开装配入口为 `method` 和 `env`。方法配方选择决策方式、网络或优化问题以及更新规则；环境预设选择任务、物理场景、传感器、观测、控制器和实际动力学。`composition.py` 校验组件合同并分派执行，`app.py` 提供 Hydra 命令入口。
 
@@ -68,7 +68,7 @@ SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接�
 
 现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经Waypoint／Trajectory／MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
 
-真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，网络→Waypoint／Trajectory的专用解码、检查点语义和混合频率已实现，已有显式几何头→JAX PD→延迟→物理的训练路径，任意宿主模块链的JAX化仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
+真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，网络→Waypoint／Trajectory的专用解码、检查点语义和混合频率已实现，已有显式几何头→JAX PD→延迟→物理的训练路径，任意宿主模块链的JAX化仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。网络→Waypoint→真实规划器→Trajectory→MPC已有短程工程实测；网络作为下游也可显式接收Trajectory，并按检查点观测时域采样完整未来参考。真实C++轨迹服务→已训练BPTT跟踪器完成1秒闭环，调用分别为10次与50次，无缺失命令。当前证据证明接口执行，组合质量仍需独立评测；含C++段的组合不要求端到端训练。凭据见[物理组件](research/physical-components.md)，剩余范围见[实现计划](implementation-plan.md#三类物理接口的组合验收)。
 
 ## 传感、几何和时序
 

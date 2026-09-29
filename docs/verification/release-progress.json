@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-29T17:58:06.159748+00:00",
+  "generated_utc": "2026-09-29T18:33:52.411506+00:00",
   "scope": "Partial first-release quality evidence; not a completed release or cross-method ranking",
   "passed_cells": 7,
   "required_cells": 18,
@@ -52,8 +52,48 @@
           "num_trials": 100,
           "rmse_completed_mean": null,
           "run_id": "release-control-confirmation-20260929-ppo-racing-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.061939262226223944,
+          "run_id": "release-control-confirmation-20260929-ppo-racing-seed2-heldout"
         }
-      ]
+      ],
+      "candidate_confirmation": {
+        "batch": "release-ppo-racing-t1-confirmation-20260929",
+        "expected_training_seeds": [
+          10,
+          11,
+          12
+        ],
+        "heldout_seed_range": [
+          40000,
+          40099
+        ],
+        "rows": [
+          {
+            "caveat": "One frozen policy; the cell additionally requires all 3 training seeds",
+            "checkpoint_sha256": "d64e6116027a5650613118e9450e2d1c2e925fad47aeae5f9b49c06556c488cf",
+            "completed": 100,
+            "completion_rate": 1.0,
+            "error_rule": "Completed mean RMSE <= 0.25m for tracking; all failures retained",
+            "failed": 0,
+            "minimum_completion_rate": 0.9,
+            "name": "ppo-racing",
+            "num_trials": 100,
+            "parameter_sha256": "6276496e3b3993ac92591f66d48c79a8fcdd89b25675e6ff98e53030df29ad4b",
+            "passed": true,
+            "protocol": "release-control-v1",
+            "rmse_all_mean": 0.04526928495615721,
+            "rmse_completed_mean": 0.04526928495615721,
+            "run_id": "release-ppo-racing-t1-confirmation-20260929-ppo-racing-seed10-heldout",
+            "task": "racing",
+            "training_seed": 10
+          }
+        ]
+      }
     },
     {
       "method": "shac",
@@ -198,7 +238,15 @@
       "method": "attitude_mpc",
       "task": "racing",
       "passed": false,
-      "status": "development_adaptation_pending_confirmation"
+      "status": "adaptation_confirmation_running",
+      "development": {
+        "run_id": "attitudempc-racing-delay38-production-dev32-20260929",
+        "completed": 32,
+        "num_trials": 32,
+        "rmse_all_mean": 0.055454049730020674,
+        "delay_compensation_ms": 38
+      },
+      "confirmation_batch": "release-attitudempc-delay38-confirmation-20260929"
     },
     {
       "method": "sampling_mpc",
@@ -362,7 +410,8 @@
       "method": "super",
       "task": "static",
       "passed": false,
-      "status": "running_infrastructure_retry"
+      "status": "incomplete_native_sigsegv",
+      "evidence": "super-static-segmentation-diagnosis.json"
     },
     {
       "method": "super",
@@ -387,7 +436,7 @@
     {
       "source_tree": "release-control-20260929",
       "path": "experiments/release-control-confirmation-20260929/progress.json",
-      "sha256": "377a8d46ea07edbcf686a826a2d8b71aa7417afb20879881d619d55685c2a654"
+      "sha256": "1e5cd49b8d8bef21f8e5634df1738ff1782fd921aad1e736bf11d0ab7def0a8b"
     },
     {
       "source_tree": "release-solvers-20260929",
@@ -408,6 +457,11 @@
       "source_tree": "release-navigation-20260929",
       "path": "experiments/release-depth-confirmation-20260929/progress.json",
       "sha256": "f5be7f3a026c9d52bac7ec8b56be5ac7c097e56be0b8cccea68294472a75ff65"
+    },
+    {
+      "source_tree": "release-adaptations-20260929",
+      "path": "experiments/release-ppo-racing-t1-confirmation-20260929/progress.json",
+      "sha256": "3fd4026888015c547e54982eded88278a2b4d2c68d11323970f8131a6f9ae65b"
     }
   ]
 }

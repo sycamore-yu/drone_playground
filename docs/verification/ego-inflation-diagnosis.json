@@ -1,0 +1,32 @@
+{
+  "run_id": "ego-inflation0199-diagnosis-20260929",
+  "source_revision": "1041c052841e1a0a0b33d44150cfecb10966b28f",
+  "scope": "Single-variable development diagnostic: map inflation .099 to .199; 4m/s recipe otherwise unchanged, no quality claim",
+  "scene": "S03",
+  "seed": 20002,
+  "changed_parameter": {
+    "name": "occupancy_inflation_m",
+    "before": 0.099,
+    "after": 0.199,
+    "resolution_m": 0.1
+  },
+  "recorded_frames": 1282,
+  "outcome": "collision",
+  "collision_time_s": 25.64,
+  "collision_position_m": [
+    65.5090103149414,
+    1.2752900123596191,
+    3.1639842987060547
+  ],
+  "previous_collision_time_s": 14.1,
+  "previous_collision_x_m": 37.571,
+  "inference": "Cleared the original crash location but collided later; increased inflation alone did not resolve navigation failure.",
+  "future_clearance_qualification": "Sphere around reference position, without future body-attitude offset; diagnostic only",
+  "files": {
+    "resolved-config.json": "682fe647f87b5d7c57ee6f011976555dbb4fcaac7739f310be6b3a53f0de75e3",
+    "diagnostic-source.py": "4b1a99cd49ff8b5a4ccd1696c10137a7539a0b976deb91ee3be5b8b9b615a454",
+    "rows.json": "94efa282b1c55ec3071ba07d308458ec0705bb17431aaef89d84ea073a229e3d",
+    "curves.json": "3b8a0c7cfd0699554e90cfe19111da9245340363c8f298a45fb7e260c2cf98d7",
+    "result.json": "231b7cad7028d112102bded4e4fc59586384544d30bf9d6be807600d551eb11c"
+  }
+}

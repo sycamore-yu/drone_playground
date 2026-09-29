@@ -35,7 +35,7 @@
 | 三类输出的Protobuf、Python/C++互操作 | 已实现并有真实C++进程测试 | 保留生命周期、错误与有效期回归 |
 | SUPER／EGO完整Trajectory→原跟踪器／MPC | 已接线，有SUPER→AttitudeMPC真实导航运行 | 各组合独立质量评测，失败不得算达标 |
 | 通用服务的Waypoint、MotionCmd进入宿主执行 | 已完成三类宿主执行并有真实C++闭环 | 配置选择下游，合法转换有闭环，非法组合在启动前拒绝 |
-| network／优化式planning／MPC的多个连续区段 | 已有配置式宿主链和三类上游输入；已有冻结神经三类输出和几何头导数检查；完整代表链验证进行中 | 单个模块可覆盖多层；每个模块声明输入输出合同、执行频率及求导能力；宿主整数分频已实现并有闭环调用计数 |
+| network／优化式planning／MPC的多个连续区段 | 已完成代表性短链：神经航点→真实规划器→MPC，以及C++轨迹→已训练神经跟踪器；各组合质量未验收 | 单个模块可覆盖多层；每个模块声明输入输出合同、执行频率及求导能力；宿主整数分频已实现并有闭环调用计数 |
 | 可微组合训练 | 具名方法及几何头→JAX PD→物理可训练；任意宿主链的可微化未完成 | 同一物理合同可有JAX进程内与原生宿主实现；导数不通时拒绝BPTT／SHAC训练 |
 
 至少覆盖：network→Waypoint→优化规划→Trajectory→MPC→MotionCmd；network→Trajectory→MPC→MotionCmd；network→MotionCmd→执行；原生规划器→Trajectory→可选跟踪器；具名Waypoint跟随器→MotionCmd→执行。算法名称与覆盖范围独立，MPC也可直接占据规划和控制两段。
