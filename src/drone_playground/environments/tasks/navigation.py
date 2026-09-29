@@ -240,7 +240,8 @@ class NavigationEnv(Env):
             data.sim_data.states, self.bank.goal[data.scenario_id], data.previous_action
         )
 
-    def reset(self, rng: jax.Array, scenario_id: jax.Array | None = None) -> State:
+    def reset(self, rng: jax.Array, scenario_id: jax.Array | None = None,
+              initial_state: dict | None = None) -> State:
         if rng.dtype == jnp.uint32:
             rng = jax.random.wrap_key_data(rng)
         key, scene_key = jax.random.split(rng)
@@ -254,6 +255,7 @@ class NavigationEnv(Env):
         start = self.bank.start[scenario_id]
         goal = self.bank.goal[scenario_id]
         initial_velocity = jnp.zeros(3)
+        initial_quaternion = self.identity_quat
         scene_phase = jnp.float32(0)
         if self.training_initialization == "free_course_v1":
             from .navigation_initialization import sample_free_course
@@ -266,11 +268,15 @@ class NavigationEnv(Env):
                 float(getattr(self.objective, "target_speed", 2.0)),
                 self.duration,
             )
+        if initial_state is not None:
+            start = initial_state["position"]
+            initial_velocity = initial_state["velocity"]
+            initial_quaternion = initial_state["quaternion"]
         # The scenario owns the initial pose; the reset pipeline only supplies
         # motor state and the physical default data.
         states = sim_data.states.replace(
             pos=start[None, None],
-            quat=jnp.broadcast_to(self.identity_quat, sim_data.states.quat.shape),
+            quat=jnp.broadcast_to(initial_quaternion, sim_data.states.quat.shape),
             vel=jnp.broadcast_to(initial_velocity, sim_data.states.vel.shape),
             ang_vel=jnp.zeros_like(sim_data.states.ang_vel),
         )

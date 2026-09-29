@@ -83,3 +83,36 @@ def test_navigation_release_counts_both_tasks_and_keeps_all_failures():
     failed['episodes'].pop()
     with pytest.raises(ValueError,match='Missing'):
         validate_navigation_report(failed)
+
+
+@pytest.mark.parametrize('dynamic', [False, True])
+def test_native_cases_cover_four_scenes_and_match_learning_reset_seed_meanings(dynamic):
+    from collections import Counter
+
+    from drone_playground.environments.scenes.catalog import NavigationScene
+    from drone_playground.evaluation.navigation_resets import native_navigation_cases
+
+    prefix = 'D' if dynamic else 'S'
+    names = [prefix+suffix for suffix in ('01','02','03','06')]
+    bank, _ = NavigationScene(dynamic=dynamic, scene_ids=names).build(30000, 2)
+    groups = native_navigation_cases(bank, 25, 30000, per_scene=True)
+    rows = [case for group in groups.values() for case in group]
+    assert len(rows) == 100 and len({r['seed'] for r in rows}) == 100
+    assert Counter(row['scene_id'] for row in rows) == dict.fromkeys(names, 25)
+    for row in rows:
+        assert bank.labels(row['scenario_id'])['subtype'] == row['scene_id']
+        assert (row['seed']-30000) % 8 == names.index(row['scene_id']) + 4*dynamic
+
+
+def test_native_release_accepts_exactly_one_complete_task():
+    from drone_playground.evaluation.navigation_resets import validate_navigation_report
+
+    rows = [dict(scene_id='S'+suffix, seed=30000+8*r+i, arrived=True, outcome='arrived',
+                 initial_position_m=[r*.01,i*.01,1.])
+            for r in range(25) for i,suffix in enumerate(('01','02','03','06'))]
+    report = dict(split='heldout',parameters_frozen=True,parameter_sha256='test',num_trials=100,
+                  episodes=rows,initial_conditions=dict(seeds=[r['seed'] for r in rows],
+                                                        position_m=[r['initial_position_m'] for r in rows]))
+    assert validate_navigation_report(report, tasks=('static',))['tasks']['static']['passed']
+    with pytest.raises(ValueError, match='Missing'):
+        validate_navigation_report(report)

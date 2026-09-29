@@ -67,13 +67,16 @@ def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
                             rejected_position_proposals=choices.tolist()))
 
 
-def validate_navigation_report(report, minimum_per_task=100):
+def validate_navigation_report(report, minimum_per_task=100, tasks=("static", "dynamic")):
     """Validate the two Navigation8 cells without hiding failures or missing scenes."""
     if (report.get('split') != 'heldout' or not report.get('parameters_frozen')
             or not report.get('initial_conditions')):
         raise ValueError('Release navigation needs frozen parameters and independent heldout initial conditions')
     rows = report['episodes']
-    expected = {'S01','S02','S03','S06','D01','D02','D03','D06'}
+    prefixes = dict(static='S', dynamic='D')
+    if not tasks or not set(tasks) <= set(prefixes):
+        raise ValueError('Select static and/or dynamic navigation tasks')
+    expected = {prefixes[task]+suffix for task in tasks for suffix in ('01','02','03','06')}
     if (len(rows) != report['num_trials'] or set(row['scene_id'] for row in rows) != expected
             or len({row['seed'] for row in rows}) != len(rows)):
         raise ValueError('Missing navigation scenes/episodes or repeated evaluation seeds')
@@ -86,8 +89,9 @@ def validate_navigation_report(report, minimum_per_task=100):
             or not np.allclose(actual_positions, reset['position_m'], rtol=0, atol=1e-6)
             or len(np.unique(actual_positions, axis=0)) != len(rows)):
         raise ValueError('Recorded initial positions differ from the manifest or repeat')
-    tasks = {}
-    for task, prefix in [('static','S'),('dynamic','D')]:
+    results = {}
+    for task in tasks:
+        prefix = prefixes[task]
         cases = [row for row in rows if row['scene_id'].startswith(prefix)]
         if len(cases) < minimum_per_task:
             raise ValueError('Each navigation task requires at least 100 heldout episodes')
@@ -99,9 +103,42 @@ def validate_navigation_report(report, minimum_per_task=100):
         successes = sum(row['arrived'] for row in cases)
         rates = {scene: sum(row['arrived'] for row in cases if row['scene_id']==scene)
                  / sum(row['scene_id']==scene for row in cases) for scene in sorted(expected) if scene.startswith(prefix)}
-        tasks[task] = dict(num_trials=len(cases),arrived=successes,success_rate=successes/len(cases),
+        results[task] = dict(num_trials=len(cases),arrived=successes,success_rate=successes/len(cases),
                            scene_success_rates=rates,passed=successes/len(cases)>=.9)
-    return dict(protocol='release-navigation-v1',tasks=tasks,passed=all(x['passed'] for x in tasks.values()),
+    return dict(protocol='release-navigation-v1',tasks=results,passed=all(x['passed'] for x in results.values()),
                 geometry_scope='Fixed Navigation8 only; no unseen-geometry claim',
                 parameter_sha256=report['parameter_sha256'],
-                caveat='One frozen policy; each learning cell additionally requires three training seeds')
+                caveat='Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity')
+
+
+def native_navigation_cases(bank, repeats, seed_start, per_scene=False):
+    """Map each native episode explicitly to geometry and an independent reset seed.
+
+    Per-scene seeds match the interleaved eight-scene learning protocol, even
+    when static and dynamic native processes are evaluated in separate runs.
+    """
+    from drone_playground.environments.scenes.navigation import DIFFICULTIES
+
+    groups = {difficulty: [] for difficulty in DIFFICULTIES}
+    if per_scene:
+        canonical = ['S01','S02','S03','S06','D01','D02','D03','D06']
+        unique = {}
+        for index in range(bank.num_instances):
+            label = bank.labels(index)
+            unique.setdefault(label['subtype'], (index, label['difficulty']))
+        if set(unique) not in (set(canonical[:4]), set(canonical[4:])):
+            raise ValueError('Native release requires all four scenes of one navigation task')
+        for name in canonical:
+            if name not in unique:
+                continue
+            scenario, difficulty = unique[name]
+            for repeat in range(repeats):
+                groups[difficulty].append(dict(scenario_id=scenario,
+                    seed=seed_start+8*repeat+canonical.index(name), scene_id=name))
+    else:
+        for di, difficulty in enumerate(DIFFICULTIES):
+            for case in range(repeats):
+                index = di*repeats+case
+                groups[difficulty].append(dict(scenario_id=index, seed=seed_start+case,
+                                               scene_id=bank.labels(index)['subtype']))
+    return groups

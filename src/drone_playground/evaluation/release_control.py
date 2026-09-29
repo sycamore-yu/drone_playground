@@ -9,6 +9,9 @@ def validate_control_report(report, task, minimum_episodes=100):
     rows = report['episodes']
     if report.get('split') != 'heldout' or not report.get('parameters_frozen'):
         raise ValueError('Release evidence requires a frozen policy and heldout split')
+    native = report.get('parameter_identity_kind') == 'resolved optimization configuration'
+    if native and not report.get('runtime_identity'):
+        raise ValueError('Optimization release requires its actual solver runtime identity')
     if len(rows) != report['num_trials'] or len(rows) < minimum_episodes:
         raise ValueError('Insufficient or incomplete release episode evidence')
     seeds = [row['seed'] for row in rows]
@@ -30,4 +33,5 @@ def validate_control_report(report, task, minimum_episodes=100):
                 rmse_all_mean=sum(row['rmse_m'] for row in rows) / len(rows),
                 error_rule='Completed mean RMSE <= 0.25m for tracking; all failures retained',
                 parameter_sha256=report['parameter_sha256'],
-                caveat='One frozen policy; the cell additionally requires all 3 training seeds')
+                caveat=('Frozen solver; no learning seeds required' if native else
+                        'One frozen policy; the cell additionally requires all 3 training seeds'))

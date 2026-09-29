@@ -471,6 +471,26 @@ def test_scene_clock_tracks_the_physics_step_counter():
     assert last_scene_time == pytest.approx(25 * env.dt, abs=1e-9)
 
 
+def test_explicit_initial_state_reaches_physics_observation_and_progress_origin():
+    env = synthetic_env([], duration=1.0)
+    try:
+        initial = dict(position=jnp.array([0.7, 0.1, 2.1]),
+                       velocity=jnp.array([0.1, -0.05, 0.03]),
+                       quaternion=jnp.array([0., 0., np.sin(.03), np.cos(.03)]))
+        state = jax.jit(env.reset)(jax.random.PRNGKey(7), jnp.int32(0), initial)
+        data = state.pipeline_state
+        np.testing.assert_allclose(data.sim_data.states.pos[0, 0], initial['position'])
+        np.testing.assert_allclose(data.sim_data.states.vel[0, 0], initial['velocity'])
+        np.testing.assert_allclose(data.sim_data.states.quat[0, 0], initial['quaternion'])
+        assert float(data.previous_distance) == pytest.approx(
+            float(jnp.linalg.norm(initial['position'] - env.bank.goal[0])))
+        np.testing.assert_array_equal(state.obs, env.observation(data))
+        np.testing.assert_array_equal(state.info['terminal_proprioception'], env.proprioception(data))
+        assert int(data.step_index) == 0
+    finally:
+        env.close()
+
+
 def test_observation_and_action_contract_sizes():
     env = synthetic_env([], duration=1.0)
     assert env.action_size == 4

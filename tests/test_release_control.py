@@ -32,3 +32,13 @@ def test_rejects_invalid_release_evidence(change):
         value['parameters_frozen'] = False
     with pytest.raises(ValueError):
         validate_control_report(value, 'tracking')
+
+
+def test_native_solver_needs_runtime_identity_and_does_not_require_training_seeds():
+    value = report()
+    value['parameter_identity_kind'] = 'resolved optimization configuration'
+    with pytest.raises(ValueError, match='runtime identity'):
+        validate_control_report(value, 'tracking')
+    value['runtime_identity'] = {'libacados.so': 'a'*64}
+    result = validate_control_report(value, 'tracking')
+    assert result['passed'] and result['caveat'] == 'Frozen solver; no learning seeds required'

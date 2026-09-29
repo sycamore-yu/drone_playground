@@ -8,7 +8,8 @@ import pytest
 from drone_playground.evaluation.trace_archive import load_navigation_case, save_navigation_traces
 
 
-def test_archive_round_trip_keeps_every_case_and_terminal_frame(tmp_path):
+@pytest.mark.parametrize('scenarios', [None, {'medium': [5, 0]}])
+def test_archive_round_trip_keeps_every_case_and_terminal_frame(tmp_path, scenarios):
     env = SimpleNamespace(bank=SimpleNamespace(num_instances=6))
     pos = np.arange(18, dtype=np.float32).reshape(3, 2, 3)
     trace = dict(
@@ -23,11 +24,11 @@ def test_archive_round_trip_keeps_every_case_and_terminal_frame(tmp_path):
         active=np.array([[1, 1], [0, 1], [0, 0]], bool),
         metrics={"clearance": np.full((3, 2), 0.2)},
     )
-    index = save_navigation_traces(env, {"medium": trace}, tmp_path)
+    index = save_navigation_traces(env, {"medium": trace}, tmp_path, scenarios)
     assert index["cells"]["medium"]["episode_steps"] == [1, 2]
     for case, length in enumerate((1, 2)):
         restored, scenario = load_navigation_case(tmp_path, "medium", case)
-        assert scenario == 2 + case
+        assert scenario == (2 + case if scenarios is None else scenarios['medium'][case])
         np.testing.assert_array_equal(restored["pos"][:, 0], pos[:length, case])
         assert restored["obs"].shape == (length, 1, 20)
         assert restored["done"][-1, 0] == 1

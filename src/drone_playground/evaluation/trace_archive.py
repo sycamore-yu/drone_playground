@@ -11,7 +11,7 @@ import numpy as np
 from drone_playground.environments.scenes.navigation import DIFFICULTIES
 
 
-def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
+def save_navigation_traces(env, traces: dict, directory: Path, scenario_groups: dict | None = None) -> dict:
     """Keep all poses/actions/events; raw sensor frames can be reconstructed.
 
     Frames are post-transition, as in the evaluator. The initial state and
@@ -52,7 +52,11 @@ def save_navigation_traces(env, traces: dict, directory: Path) -> dict:
             key: np.concatenate([value[: lengths[case], case] for case in range(count)])
             for key, value in fields.items()
         }
-        scenarios = DIFFICULTIES.index(difficulty) * per_difficulty + np.arange(count)
+        scenarios = (np.asarray(scenario_groups[difficulty], dtype=np.int32)
+                     if scenario_groups is not None
+                     else DIFFICULTIES.index(difficulty) * per_difficulty + np.arange(count))
+        if scenarios.shape != (count,):
+            raise ValueError("Each navigation trace requires its actual scenario identity")
         arrays.update(offsets=offsets, case_ids=np.arange(count), scenario_ids=scenarios)
         target = directory / (difficulty + ".npz")
         temporary = target.with_suffix(".npz.tmp")

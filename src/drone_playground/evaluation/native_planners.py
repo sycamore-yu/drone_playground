@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import json
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -21,6 +23,7 @@ from drone_playground.evaluation.navigation import (
     export_navigation_replays,
     summarize_cell,
 )
+from drone_playground.evaluation.navigation_resets import native_navigation_cases, navigation_resets
 from drone_playground.evaluation.tracking import save_report
 from drone_playground.execution.native_tracking import NativeTracking
 from drone_playground.integrations.native_planner import NativePlanner
@@ -111,12 +114,28 @@ def evaluate_native(config, root: Path, run_id: str):
     method = settings.get("input_sensor", settings.get("method"))
     split = config["evaluation"]["split"]
     count = int(config["evaluation"]["episodes"])
+    per_scene = config["evaluation"].get("per_scene", False)
     rec = RunRecorder(root, run_id, config, task_id="p5/06-native-planners")
     env = None
     try:
         rec.phase("initializing")
-        env = build_environment(config, config["runtime"]["device"], split, count)
+        env = build_environment(config, config["runtime"]["device"], split,
+                                max(2, count) if per_scene else count)
         save_report(rec.path / "scene-manifest.json", env.scene_manifest)
+        seed_start = config["evaluation"].get("seed_start")
+        if seed_start is None:
+            seed_start = 30000 if split == "heldout" else 20000
+        cases = native_navigation_cases(env.bank, count, seed_start, per_scene)
+        ordered = [case for group in cases.values() for case in group]
+        scenario_groups = {name: [c["scenario_id"] for c in group] for name, group in cases.items()}
+        initials = None
+        if config["evaluation"].get("initial_conditions"):
+            initials = navigation_resets(env.bank, [c["scenario_id"] for c in ordered],
+                                         [c["seed"] for c in ordered],
+                                         config["evaluation"]["initial_conditions"], env.body_radius)
+            save_report(rec.path / "initial-conditions.json", initials["record"])
+        for index, case in enumerate(ordered):
+            case["reset_index"] = index
         worker_path = None
         if settings["implementation"] not in ("native_service", "pipeline"):
             worker_path = NativePlanner.install_worker(
@@ -138,7 +157,7 @@ def evaluate_native(config, root: Path, run_id: str):
         from queue import Queue
         from threading import Event
 
-        workers = min(count, int(settings.get("workers", 1)))
+        workers = min(len(ordered), int(settings.get("workers", 1)))
         if workers < 1:
             raise ValueError("Native evaluation needs at least one worker")
         cancelled = Event()
@@ -146,14 +165,25 @@ def evaluate_native(config, root: Path, run_id: str):
         for offset in range(workers):
             ports.put(int(settings["port"]) + offset)
 
-        def run_case(difficulty_index, difficulty, case, port):
+        def run_case(difficulty, case, port):
             if cancelled.is_set():
                 raise CancelledError("Native evaluation cancelled")
-            scenario_id = difficulty_index * count + case
+            episode = cases[difficulty][case]
+            scenario_id = episode["scenario_id"]
+            initial_state = None if initials is None else {
+                field: jnp.asarray(initials[field][episode["reset_index"]])
+                for field in ("position", "velocity", "quaternion")}
             state = reset(
-                jax.random.PRNGKey(30000 + case if split == "heldout" else 20000 + case),
+                jax.random.PRNGKey(episode["seed"]),
                 jnp.int32(scenario_id),
+                initial_state=initial_state,
             )
+            actual = env.controller_observation(state)
+            reset_evidence = dict(seed=episode["seed"], scene_id=episode["scene_id"],
+                initial_position_m=actual["pos"].tolist(), initial_velocity_mps=actual["vel"].tolist(),
+                initial_quaternion_xyzw=actual["quat"].tolist())
+            if "delay_effective_ms" in state.info:
+                reset_evidence["delay_effective_ms"] = float(state.info["delay_effective_ms"])
             worker = create_native_planner(
                 settings, rec.path / "native" / difficulty / str(case), port, worker_path, env=env
             )
@@ -233,27 +263,29 @@ def evaluate_native(config, root: Path, run_id: str):
                 clipped_command_steps=controller.clipped,
                 wall_seconds=time.monotonic() - tic,
                 rpc_p95_s=float(np.percentile(worker.latencies, 95)),
+                **reset_evidence,
             )
             save_report(worker.directory / "diagnostics.json", diag)
             trace = jax.tree.map(lambda *values: np.stack(values), *rows)
-            label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id)}
+            label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id), **reset_evidence}
             return trace, label, diag
 
-        def run_slot(difficulty_index, difficulty, case):
+        def run_slot(difficulty, case):
             port = ports.get()
             try:
-                return run_case(difficulty_index, difficulty, case, port)
+                return run_case(difficulty, case, port)
             finally:
                 ports.put(port)
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {}
             try:
-                for difficulty_index, difficulty in enumerate(DIFFICULTIES):
-                    traces, labels = [None] * count, [None] * count
+                for difficulty in DIFFICULTIES:
+                    size = len(cases[difficulty])
+                    traces, labels = [None] * size, [None] * size
                     futures = {
-                        pool.submit(run_slot, difficulty_index, difficulty, case): case
-                        for case in range(count)
+                        pool.submit(run_slot, difficulty, case): case
+                        for case in range(size)
                     }
                     rec.phase("evaluating", difficulty=difficulty, completed_cases=0)
                     for finished, future in enumerate(as_completed(futures), 1):
@@ -280,12 +312,13 @@ def evaluate_native(config, root: Path, run_id: str):
                     cells[difficulty] = summarize_cell(trace, labels, env.dt, env.duration)
                     from drone_playground.evaluation.trace_archive import save_navigation_traces
 
-                    save_navigation_traces(env, {difficulty: trace}, rec.path / "traces")
+                    save_navigation_traces(env, {difficulty: trace}, rec.path / "traces", scenario_groups)
                     from drone_playground.evaluation.navigation import select_episodes
 
                     selection = select_episodes({"cells": {difficulty: cells[difficulty]}})
                     export_navigation_replays(
-                        env, {difficulty: trace}, rec.path / "rollouts", case_indices=selection
+                        env, {difficulty: trace}, rec.path / "rollouts", case_indices=selection,
+                        scenario_groups=scenario_groups,
                     )
                     save_report(rec.path / "eval" / (difficulty + ".json"), cells[difficulty])
             except BaseException:
@@ -294,9 +327,19 @@ def evaluate_native(config, root: Path, run_id: str):
                     future.cancel()
                 raise
         report = combine_cells(cells)
+        runtime_identities = [json.loads(path.read_text())
+                              for path in sorted((rec.path / "native").glob("*/*/runtime-identity.json"))]
         report.update(
             split=split,
-            episodes_per_difficulty=count,
+            episodes_per_difficulty=None if per_scene else count,
+            episodes_per_scene=count if per_scene else None,
+            episodes=[row for cell in cells.values() for row in cell["episodes"]],
+            initial_conditions=None if initials is None else initials["record"],
+            scenario_groups=scenario_groups,
+            config=config,
+            parameter_sha256=hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest(),
+            parameter_identity_kind="resolved native configuration",
+            runtime_identities=runtime_identities,
             method=method,
             scene_bank_sha256=env.bank.digest(),
             native_trajectories=total_trajectories,
@@ -311,13 +354,29 @@ def evaluate_native(config, root: Path, run_id: str):
         save_report(rec.path / "eval" / "report.json", report)
         if total_commands == 0:
             raise RuntimeError("Native process produced no executable physical commands")
+        if config["evaluation"].get("release_validation") == "native-navigation-v1":
+            from drone_playground.evaluation.navigation_resets import validate_navigation_report
+
+            if (len(runtime_identities) != len(ordered) or not runtime_identities[0]
+                    or any(identity != runtime_identities[0] for identity in runtime_identities)):
+                raise ValueError("Every native release episode requires the same authenticated runtime")
+            if any(row["arrived"] and diag["executed_native_steps"] == 0
+                   for cell in cells.values() for row in cell["episodes"]
+                   for diag in diagnostics
+                   if (diag["difficulty"], diag["case"]) == (row["difficulty"], row["case"])):
+                raise ValueError("A fallback-only arrival cannot certify the native algorithm")
+            task = "dynamic" if config["env"]["task"]["dynamic"] else "static"
+            validation = validate_navigation_report(report, tasks=(task,))
+            save_report(rec.path / "eval/release-validation.json", validation)
+            report.update(quality_passed=validation["passed"], quality_rule=validation["protocol"])
+            save_report(rec.path / "eval/report.json", report)
         rec.finish(
             "completed",
             engineer_passed=True,
             full_budget_completed=True,
             num_trials=report["num_trials"],
             arrived=report["arrived"],
-            quality_passed=None,
+            quality_passed=report["quality_passed"],
         )
         return report
     except BaseException as exc:

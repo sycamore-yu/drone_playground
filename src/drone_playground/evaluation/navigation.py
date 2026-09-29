@@ -207,7 +207,8 @@ def select_episodes(report: dict, count: int = 4) -> dict[str, list[int]]:
 
 
 def export_navigation_replays(
-    env, traces: dict, directory: Path, count: int = 4, case_indices: dict | None = None
+    env, traces: dict, directory: Path, count: int = 4, case_indices: dict | None = None,
+    scenario_groups: dict | None = None,
 ) -> list[dict]:
     """Write one self-contained rscope replay per difficulty cell."""
     from drone_playground.visualization.navigation_scene import (
@@ -229,7 +230,8 @@ def export_navigation_replays(
             else list(range(min(count, trace["pos"].shape[1])))
         )
         for case in cases:
-            scenario_id = index * per_difficulty + case
+            scenario_id = (scenario_groups[difficulty][case] if scenario_groups is not None
+                           else index * per_difficulty + case)
             stop = trace["pos"].shape[0]
             if "active" in trace:
                 live = np.flatnonzero(np.asarray(trace["active"])[:, case])

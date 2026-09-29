@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import crazyflow  # noqa: F401
@@ -52,9 +55,12 @@ def evaluate_optimization(config, root, run_id):
         timings = []
         statuses = []
         finished_flags = []
+        reset_details = []
         rec.phase("evaluating", step=0)
         for case, seed in enumerate(seeds):
             state = reset(jax.random.PRNGKey(seed))
+            reset_details.append({key: float(state.info[key]) for key in
+                                  ("delay_requested_ms", "delay_effective_ms") if key in state.info})
             if args.controller == "attitude_mpc":
                 ctrl.episode_callback()
                 # Reset solver memory between trials to make each seed independent.
@@ -150,14 +156,26 @@ def evaluate_optimization(config, root, run_id):
             trace, seeds, env.dt
         )
         for i, flag in enumerate(finished_flags):
+            report["episodes"][i].update(reset_details[i])
             if flag:
                 report["episodes"][i]["controller_finished"] = True
                 report["episodes"][i]["time_out"] = False
         report["timeouts"] = sum(x.get("time_out", False) for x in report["episodes"])
         decision = np.array([x["decision_seconds"] for x in timings])
         stable = decision[1:] if len(decision) > 1 else decision
+        runtime_files = [Path(inspect.getfile(type(ctrl))), Path(inspect.getfile(build_controller))]
+        if args.controller == "attitude_mpc":
+            runtime_files += [Path(inspect.getfile(type(ctrl.native)))]
+            runtime_files += [ctrl.source / "lib" / name for name in
+                              ("libacados.so", "libblasfeo.so", "libhpipm.so")]
+        runtime_identity = {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest()
+                            for path in runtime_files}
         report.update(
             config=config,
+            split=args.split,
+            parameter_sha256=hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest(),
+            parameter_identity_kind="resolved optimization configuration",
+            runtime_identity=runtime_identity,
             parameters_frozen=True,
             controller=args.controller,
             actual_environment_devices=execution_devices,
@@ -175,6 +193,13 @@ def evaluate_optimization(config, root, run_id):
             timing_protocol="synchronous simulation; controller latency measured, not injected as control delay",
         )
         save_report(rec.path / "eval/report.json", report)
+        if config["evaluation"].get("release_validation") == "control-v1":
+            from drone_playground.evaluation.release_control import validate_control_report
+
+            validation = validate_control_report(report, "racing" if env.task == "racing" else "tracking")
+            save_report(rec.path / "eval/release-validation.json", validation)
+            report.update(quality_passed=validation["passed"], quality_rule=validation["protocol"])
+            save_report(rec.path / "eval/report.json", report)
         save_report(rec.path / "eval/solver-steps.json", dict(steps=timings))
         export_rollout(env.sim, rec.path / "rollouts", select_replays(trace, report))
         rec.finish(
