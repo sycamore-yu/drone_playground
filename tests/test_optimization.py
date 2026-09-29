@@ -50,6 +50,19 @@ class OptimizationTests(unittest.TestCase):
                 obs["pos"][0] + 0.5 * np.linspace(0, 0.5, 26),
             )
             np.testing.assert_allclose(controller.native._waypoints_vel[:, 0], 0.5)
+            controller.episode_callback()
+            original = controller.native._waypoints_pos.copy()
+            controller.enable_delay_compensation(38., [0., 0., 0., .3])
+            np.testing.assert_allclose(controller.native._waypoints_pos[0, 0],
+                                       original[0, 0] + .5 * .038)
+            action = controller.compute_control(obs)
+            self.assertTrue(np.isfinite(action).all())
+            self.assertEqual(controller.last_diagnostics['status'], 0)
+            self.assertEqual(len(controller.delay_predictor.history), 1)
+            controller.episode_callback()
+            self.assertEqual(len(controller.delay_predictor.history), 0)
+            with self.assertRaisesRegex(ValueError, 'fixed task reference'):
+                controller.compute_trajectory(obs, curve, 2)
 
     def test_actual_sampling_decision_and_warm_start(self):
         m = self.module("sampling")

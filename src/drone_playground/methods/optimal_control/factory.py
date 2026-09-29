@@ -36,6 +36,11 @@ def build_controller(config, env, state, workdir):
             ctrl.native._waypoints_vel = velocity
             ctrl.native._waypoints_yaw = np.zeros(len(extended))
             ctrl.native._tick_max = len(points) - 1
+        delay = settings.get('delay_compensation_ms', 0.)
+        if not np.isfinite(delay) or delay < 0:
+            raise ValueError('delay_compensation_ms must be finite and nonnegative')
+        if delay:
+            ctrl.enable_delay_compensation(delay, env.physical_action(env.hover_action))
         return ctrl
     if settings["name"] == "sampling_mpc":
         from .sampling import SamplingMPC

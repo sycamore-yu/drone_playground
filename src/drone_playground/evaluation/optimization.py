@@ -166,6 +166,8 @@ def evaluate_optimization(config, root, run_id):
         runtime_files = [Path(inspect.getfile(type(ctrl))), Path(inspect.getfile(build_controller))]
         if args.controller == "attitude_mpc":
             runtime_files += [Path(inspect.getfile(type(ctrl.native)))]
+            if ctrl.delay_predictor is not None:
+                runtime_files += [Path(inspect.getfile(type(ctrl.delay_predictor)))]
             runtime_files += [ctrl.source / "lib" / name for name in
                               ("libacados.so", "libblasfeo.so", "libhpipm.so")]
         runtime_identity = {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -192,6 +194,14 @@ def evaluate_optimization(config, root, run_id):
             else "Crazyflow sampling.py",
             timing_protocol="synchronous simulation; controller latency measured, not injected as control delay",
         )
+        if args.controller == 'attitude_mpc' and ctrl.delay_predictor is not None:
+            report['execution_adaptation'] = dict(
+                name='issued_command_delay_prediction',
+                estimated_delay_ms=ctrl.delay_predictor.delay_seconds * 1000,
+                integration_step_ms=ctrl.delay_predictor.max_step_seconds * 1000,
+                input='current observed state, model and previously issued commands only',
+                reference='fixed task reference advanced by estimated delay',
+            )
         save_report(rec.path / "eval/report.json", report)
         if config["evaluation"].get("release_validation") == "control-v1":
             from drone_playground.evaluation.release_control import validate_control_report

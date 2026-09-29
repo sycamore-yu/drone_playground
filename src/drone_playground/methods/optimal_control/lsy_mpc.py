@@ -29,7 +29,7 @@ def acados_directory() -> Path:
 
 
 class LSYAttitudeMPC:
-    """The upstream controller unchanged at its optimization/control interface."""
+    """Pinned optimization problem, with separately declared execution adaptations."""
 
     def __init__(self, obs, info, config, *, workdir: Path):
         self.source = acados_directory()
@@ -39,10 +39,36 @@ class LSYAttitudeMPC:
         config.acados_directory = str(Path(workdir).resolve())
         self.native = AttitudeMPC(obs, info, config)
         self.last_diagnostics = {}
+        self.delay_predictor = None
+
+    def enable_delay_compensation(self, milliseconds, initial_action):
+        """Opt in after setting the task's reference; never read the sampled delay."""
+        import casadi as ca
+
+        from .delay_prediction import IssuedCommandPredictor
+
+        if self.delay_predictor is not None:
+            raise ValueError("Delay compensation is already configured")
+        model = self.native._ocp.model
+        rhs = ca.Function('issued_command_rhs', [model.x, model.u], [model.f_expl_expr])
+        self.delay_predictor = IssuedCommandPredictor(rhs, milliseconds / 1000, initial_action)
+        axis = np.arange(len(self.native._waypoints_pos), dtype=float)
+        ahead = axis + self.delay_predictor.delay_seconds / self.native._dt
+        for field in ('_waypoints_pos', '_waypoints_vel', '_waypoints_yaw'):
+            value = getattr(self.native, field)
+            shifted = (np.interp(ahead, axis, value) if value.ndim == 1 else
+                       np.stack([np.interp(ahead, axis, value[:, i])
+                                 for i in range(value.shape[1])], axis=1))
+            setattr(self.native, field, shifted)
 
     def compute_control(self, obs, info=None):
         tic = time.perf_counter()
+        now = self.native._tick * self.native._dt
+        if self.delay_predictor is not None:
+            obs = self.delay_predictor.predict(obs, now)
         action = np.asarray(self.native.compute_control(dict(obs), info), dtype=np.float64)
+        if self.delay_predictor is not None:
+            self.delay_predictor.record(now, action)
         self.last_diagnostics = {
             "status": int(self.native.last_status),
             "decision_seconds": time.perf_counter() - tic,
@@ -61,6 +87,8 @@ class LSYAttitudeMPC:
         """Supply every acados stage from the live plan, retaining the upstream solver."""
         from drone_playground.execution.reference import reference_horizon
 
+        if self.delay_predictor is not None:
+            raise ValueError("Delay-compensated MPC currently requires a fixed task reference")
         offsets = np.linspace(0, self.native._T_HORIZON, self.native._N + 1)
         reference = reference_horizon(trajectory, time, offsets, yaw=yaw)
         self.native._waypoints_pos = reference["position"]
@@ -73,6 +101,8 @@ class LSYAttitudeMPC:
     def episode_callback(self):
         self.native.episode_callback()
         self.native._finished = False
+        if self.delay_predictor is not None:
+            self.delay_predictor.reset()
 
     def close(self):
         self.native = None
