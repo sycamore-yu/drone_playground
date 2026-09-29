@@ -43,3 +43,38 @@ def test_archive_rejects_noncontiguous_episode_frames(tmp_path):
     env = SimpleNamespace(bank=SimpleNamespace(num_instances=3))
     with pytest.raises(ValueError, match="contiguous"):
         save_navigation_traces(env, {"easy": {"active": np.array([[1], [0], [1]])}}, tmp_path)
+
+
+def test_native_case_survives_a_later_worker_failure_and_keeps_partial_frames(tmp_path):
+    import json
+
+    from drone_playground.evaluation.trace_archive import record_native_case
+
+    env=SimpleNamespace(bank=SimpleNamespace(num_instances=8))
+    identity=dict(difficulty='medium',case=5,scenario_id=1,seed=30041)
+    row=dict(pos=np.array([1.,2.,3.]),quat=np.array([0.,0.,0.,1.]),time=.02,
+             actions=np.zeros(4),obs=np.arange(20),reward=1.,done=0.,outcome=0,
+             active=True,metrics=dict(clearance=.2))
+    first=tmp_path/'complete'
+    with record_native_case(env,first,identity) as rows:
+        rows.append(dict(row,done=1.,outcome=1))
+    before=(first/'case-record.json').read_bytes()
+    broken=tmp_path/'interrupted'
+    with pytest.raises(RuntimeError,match='RPC'):
+        with record_native_case(env,broken,dict(identity,case=6,seed=30049)) as rows:
+            rows.append(row)
+            raise RuntimeError('RPC process died')
+    assert (first/'case-record.json').read_bytes()==before
+    record=json.loads((broken/'case-record.json').read_text())
+    assert not record['completed_execution'] and record['recorded_frames']==1
+    assert record['identity']['seed']==30049 and 'RPC' in record['error']
+    trace,scenario=load_navigation_case(broken/'case-trace','medium',0)
+    np.testing.assert_array_equal(trace['pos'][0,0],row['pos'])
+    assert scenario==1 and trace['outcome'][-1,0]==0  # Not relabeled as arrival/collision.
+    startup=tmp_path/'startup-failure'
+    with pytest.raises(TimeoutError):
+        with record_native_case(env,startup,dict(identity,case=7)):
+            raise TimeoutError('Sensor subscribers not ready')
+    record=json.loads((startup/'case-record.json').read_text())
+    assert record['recorded_frames']==0 and record['archive'] is None
+    assert not record['completed_execution']

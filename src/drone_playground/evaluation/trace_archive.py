@@ -4,11 +4,43 @@ from __future__ import annotations
 
 import hashlib
 import json
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
 
 from drone_playground.environments.scenes.navigation import DIFFICULTIES
+
+
+@contextmanager
+def record_native_case(env, directory, identity):
+    """Persist each completed or interrupted case before batch aggregation.
+
+    A service failure is an incomplete execution, not an arrival/collision label.
+    Existing per-case records remain independent if a later worker fails.
+    """
+    import jax
+
+    directory = Path(directory)
+    directory.mkdir(parents=True,exist_ok=True)
+    rows, error = [], None
+    try:
+        yield rows
+    except BaseException as exception:
+        error = repr(exception)
+        raise
+    finally:
+        archive = None
+        if rows:
+            trace = jax.tree.map(lambda *values: np.stack(values)[:,None],*rows)
+            archive = save_navigation_traces(env,{identity['difficulty']:trace},directory/'case-trace',
+                                              {identity['difficulty']:[identity['scenario_id']]})
+        record = dict(identity=identity,completed_execution=error is None,
+                      recorded_frames=len(rows),error=error,archive=archive)
+        target = directory/'case-record.json'
+        temporary = target.with_suffix('.tmp')
+        temporary.write_text(json.dumps(record,indent=2,allow_nan=False)+'\n')
+        temporary.replace(target)
 
 
 def save_navigation_traces(env, traces: dict, directory: Path, scenario_groups: dict | None = None) -> dict:

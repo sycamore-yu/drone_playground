@@ -119,5 +119,47 @@
     "General configurable JAX chain training is not yet implemented",
     "No native RPC gradients are required",
     "Unseen C++ algorithms require their own adapter"
-  ]
+  ],
+  "geometric_training_entry": {
+    "checks": [
+      {
+        "run_id": "geometric-trajectory-bptt-engineering-v2-20260929",
+        "source_revision": "b36f3bf",
+        "kind": "trajectory",
+        "algorithm": "bptt",
+        "decision_steps": 32,
+        "num_envs": 2,
+        "checkpoint_sha256": "ef356cd867d15a8a522701c86c5f1e441e0d0357b81505bc27ddcac9ae5fe33f",
+        "reload_report_sha256": "546d9d14325efa6d8a5b9dc2c013333195ae60bd6a39676f35c7ebc83bf91119",
+        "reload_num_trials": 2,
+        "quality_evidence": false
+      },
+      {
+        "run_id": "geometric-waypoint-shac-engineering-v2-20260929",
+        "source_revision": "b36f3bf",
+        "kind": "waypoint",
+        "algorithm": "shac",
+        "decision_steps": 32,
+        "num_envs": 2,
+        "checkpoint_sha256": "7e952130ec61a372e503b83ffaaeec7d2bc0deb47268a5125a9bcc0ee5f05f75",
+        "reload_report_sha256": "5d6a30a89d9895e7246836787d39cf65123b413f5efece1e810e08200bbe743a",
+        "reload_num_trials": 2,
+        "quality_evidence": false
+      },
+      {
+        "run_id": "geometric-trajectory-ppo-engineering-v2-20260929",
+        "source_revision": "b36f3bf",
+        "kind": "trajectory",
+        "algorithm": "ppo",
+        "decision_steps": 32,
+        "num_envs": 2,
+        "checkpoint_sha256": "282952066ad582544a2c529b325ccb4885c510d0f3a3bd6663901a81473b3954",
+        "reload_report_sha256": "fea23a5e19a012fec1cbf44e2242cb5a4b34b6b24872a0f2116d213071b70c54",
+        "reload_num_trials": 2,
+        "quality_evidence": false
+      }
+    ],
+    "purpose": "Real parameter update, save, reload and evaluation; not convergence evidence",
+    "targeted_tests": 39
+  }
 }

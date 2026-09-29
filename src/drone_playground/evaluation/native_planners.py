@@ -24,6 +24,7 @@ from drone_playground.evaluation.navigation import (
     summarize_cell,
 )
 from drone_playground.evaluation.navigation_resets import native_navigation_cases, navigation_resets
+from drone_playground.evaluation.trace_archive import record_native_case
 from drone_playground.evaluation.tracking import save_report
 from drone_playground.execution.native_tracking import NativeTracking
 from drone_playground.integrations.native_planner import NativePlanner
@@ -184,93 +185,100 @@ def evaluate_native(config, root: Path, run_id: str):
                 initial_quaternion_xyzw=actual["quat"].tolist())
             if "delay_effective_ms" in state.info:
                 reset_evidence["delay_effective_ms"] = float(state.info["delay_effective_ms"])
-            worker = create_native_planner(
-                settings, rec.path / "native" / difficulty / str(case), port, worker_path, env=env
-            )
-            controller = NativeTracking(
-                config["env"]["execution"].get("tracker"), env, state, worker.directory
-            )
-            rows = []
-            unavailable = rejected = 0
-            commands = trajectories = 0
-            hold = np.asarray(state.pipeline_state.sim_data.states.pos[0, 0])
-            tic = time.monotonic()
-            try:
-                worker.start(
-                    env.sensor_calibration, env.bank.goal[scenario_id], settings.get("limits"),
-                    task_adapter=dict(world_low=np.asarray(env.bank.world_low).tolist(),
-                                      world_high=np.asarray(env.bank.world_high).tolist()),
-                )
+            case_directory = rec.path / "native" / difficulty / str(case)
+            identity = dict(difficulty=difficulty,case=case,scenario_id=scenario_id,**reset_evidence)
+            with record_native_case(env,case_directory,identity) as rows:
+                worker = controller = None
+                unavailable = rejected = 0
+                commands = trajectories = 0
+                hold = np.asarray(state.pipeline_state.sim_data.states.pos[0, 0])
+                tic = time.monotonic()
+                try:
+                    worker = create_native_planner(
+                        settings, rec.path / "native" / difficulty / str(case), port, worker_path, env=env
+                    )
+                    controller = NativeTracking(
+                        config["env"]["execution"].get("tracker"), env, state, worker.directory
+                    )
+                    worker.start(
+                        env.sensor_calibration, env.bank.goal[scenario_id], settings.get("limits"),
+                        task_adapter=dict(world_low=np.asarray(env.bank.world_low).tolist(),
+                                          world_high=np.asarray(env.bank.world_high).tolist()),
+                    )
 
-                def decide(current, tick):
-                    nonlocal commands, trajectories, unavailable, rejected, hold
-                    if cancelled.is_set():
-                        raise CancelledError("Native evaluation cancelled")
-                    packet = sensor_packet(env, method, sample, current)
-                    if case == 0 and tick in (0, 150):
-                        save_report(worker.directory / f"sensor-packet-{tick:04d}.json", packet)
-                    reply = worker.step(packet)
-                    reference = reply.get("reference")
-                    commands, trajectories = reply["commands"], reply["trajectories"]
-                    if reference is None and reply.get("output") is None:
-                        unavailable += 1
-                        rejected += int(reply.get("rejected_reference", False))
-                        reference = dict(
-                            position=hold,
-                            velocity=[0.0, 0.0, 0.0],
-                            acceleration=[0.0, 0.0, 0.0],
-                            yaw=0.0,
+                    def decide(current, tick):
+                        nonlocal commands, trajectories, unavailable, rejected, hold
+                        if cancelled.is_set():
+                            raise CancelledError("Native evaluation cancelled")
+                        packet = sensor_packet(env, method, sample, current)
+                        if case == 0 and tick in (0, 150):
+                            save_report(worker.directory / f"sensor-packet-{tick:04d}.json", packet)
+                        reply = worker.step(packet)
+                        reference = reply.get("reference")
+                        commands, trajectories = reply["commands"], reply["trajectories"]
+                        if reference is None and reply.get("output") is None:
+                            unavailable += 1
+                            rejected += int(reply.get("rejected_reference", False))
+                            reference = dict(
+                                position=hold,
+                                velocity=[0.0, 0.0, 0.0],
+                                acceleration=[0.0, 0.0, 0.0],
+                                yaw=0.0,
+                            )
+                        else:
+                            hold = np.asarray(env.controller_observation(current)["pos"])
+                        physical = controller.command(reply, current, tick)
+                        return physical, dict(commands=commands, trajectories=trajectories)
+
+                    for tick, transition, _ in run_steps(state, env.episode_length, decide, advance):
+                        state, physical = transition.after, transition.command
+                        action = (
+                            2 * (physical - np.asarray(env.low)) / np.asarray(env.high - env.low) - 1
                         )
-                    else:
-                        hold = np.asarray(env.controller_observation(current)["pos"])
-                    physical = controller.command(reply, current, tick)
-                    return physical, dict(commands=commands, trajectories=trajectories)
-
-                for tick, transition, _ in run_steps(state, env.episode_length, decide, advance):
-                    state, physical = transition.after, transition.command
-                    action = (
-                        2 * (physical - np.asarray(env.low)) / np.asarray(env.high - env.low) - 1
-                    )
-                    row = dict(
-                        pos=state.pipeline_state.sim_data.states.pos[0, 0],
-                        quat=state.pipeline_state.sim_data.states.quat[0, 0],
-                        obs=state.info["terminal_proprioception"],
-                        time=(tick + 1) * env.dt,
-                        actions=action,
-                        reward=state.reward,
-                        metrics=state.metrics,
-                        active=True,
-                        failed=state.done,
-                        done=state.done,
-                        outcome=state.info["outcome"],
-                    )
-                    rows.append(jax.tree.map(np.asarray, row))
-            finally:
-                worker.close()
-                controller.close()
-            diag = dict(
-                difficulty=difficulty,
-                case=case,
-                scenario_id=scenario_id,
-                commands=commands,
-                trajectories=trajectories,
-                missing_command_steps=unavailable,
-                rejected_commands=rejected,
-                downstream_tracker=controller.name,
-                downstream_missing_steps=controller.missing,
-                insufficient_horizon_steps=controller.short_horizon,
-                executed_native_steps=controller.consumed,
-                clipped_command_steps=controller.clipped,
-                wall_seconds=time.monotonic() - tic,
-                rpc_p95_s=float(np.percentile(worker.latencies, 95)),
-                **reset_evidence,
-            )
-            if hasattr(worker, "module_calls"):
-                diag["module_calls"] = list(worker.module_calls)
-            save_report(worker.directory / "diagnostics.json", diag)
-            trace = jax.tree.map(lambda *values: np.stack(values), *rows)
-            label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id), **reset_evidence}
-            return trace, label, diag
+                        row = dict(
+                            pos=state.pipeline_state.sim_data.states.pos[0, 0],
+                            quat=state.pipeline_state.sim_data.states.quat[0, 0],
+                            obs=state.info["terminal_proprioception"],
+                            time=(tick + 1) * env.dt,
+                            actions=action,
+                            reward=state.reward,
+                            metrics=state.metrics,
+                            active=True,
+                            failed=state.done,
+                            done=state.done,
+                            outcome=state.info["outcome"],
+                        )
+                        rows.append(jax.tree.map(np.asarray, row))
+                finally:
+                    try:
+                        if worker is not None:
+                            worker.close()
+                    finally:
+                        if controller is not None:
+                            controller.close()
+                diag = dict(
+                    difficulty=difficulty,
+                    case=case,
+                    scenario_id=scenario_id,
+                    commands=commands,
+                    trajectories=trajectories,
+                    missing_command_steps=unavailable,
+                    rejected_commands=rejected,
+                    downstream_tracker=controller.name,
+                    downstream_missing_steps=controller.missing,
+                    insufficient_horizon_steps=controller.short_horizon,
+                    executed_native_steps=controller.consumed,
+                    clipped_command_steps=controller.clipped,
+                    wall_seconds=time.monotonic() - tic,
+                    rpc_p95_s=float(np.percentile(worker.latencies, 95)),
+                    **reset_evidence,
+                )
+                if hasattr(worker, "module_calls"):
+                    diag["module_calls"] = list(worker.module_calls)
+                save_report(worker.directory / "diagnostics.json", diag)
+                trace = jax.tree.map(lambda *values: np.stack(values), *rows)
+                label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id), **reset_evidence}
+                return trace, label, diag
 
         def run_slot(difficulty, case):
             port = ports.get()
