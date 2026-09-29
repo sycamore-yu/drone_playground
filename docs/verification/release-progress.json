@@ -1,0 +1,413 @@
+{
+  "generated_utc": "2026-09-29T17:58:06.159748+00:00",
+  "scope": "Partial first-release quality evidence; not a completed release or cross-method ranking",
+  "passed_cells": 7,
+  "required_cells": 18,
+  "cells": [
+    {
+      "method": "ppo",
+      "task": "tracking",
+      "passed": true,
+      "status": "passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.0972010693452593,
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.10730447107543777,
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.12408731559157465,
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed2-heldout"
+        }
+      ]
+    },
+    {
+      "method": "ppo",
+      "task": "racing",
+      "passed": false,
+      "status": "not_passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.11245695531368255,
+          "run_id": "release-control-confirmation-20260929-ppo-racing-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 0,
+          "num_trials": 100,
+          "rmse_completed_mean": null,
+          "run_id": "release-control-confirmation-20260929-ppo-racing-seed1-heldout"
+        }
+      ]
+    },
+    {
+      "method": "shac",
+      "task": "tracking",
+      "passed": true,
+      "status": "passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.07243119230766851,
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.11608792027938403,
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.1483861859417279,
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed2-heldout"
+        }
+      ]
+    },
+    {
+      "method": "shac",
+      "task": "racing",
+      "passed": false,
+      "status": "not_passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 98,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.06819901185832461,
+          "run_id": "release-control-confirmation-20260929-shac-racing-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.02774011081084609,
+          "run_id": "release-control-confirmation-20260929-shac-racing-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 0,
+          "num_trials": 100,
+          "rmse_completed_mean": null,
+          "run_id": "release-control-confirmation-20260929-shac-racing-seed2-heldout"
+        }
+      ]
+    },
+    {
+      "method": "bptt",
+      "task": "tracking",
+      "passed": true,
+      "status": "passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.03898648693606058,
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.03654181635472735,
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.033626877768821756,
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed2-heldout"
+        }
+      ]
+    },
+    {
+      "method": "bptt",
+      "task": "racing",
+      "passed": true,
+      "status": "passed",
+      "training_seeds": [
+        {
+          "seed": 0,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.020053922180086375,
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed0-heldout"
+        },
+        {
+          "seed": 1,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.017223794739693404,
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed1-heldout"
+        },
+        {
+          "seed": 2,
+          "completed": 100,
+          "num_trials": 100,
+          "rmse_completed_mean": 0.020853521358221768,
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed2-heldout"
+        }
+      ]
+    },
+    {
+      "method": "attitude_mpc",
+      "task": "tracking",
+      "passed": true,
+      "status": "passed",
+      "evidence": {
+        "caveat": "Frozen solver; no learning seeds required",
+        "completed": 100,
+        "completion_rate": 1.0,
+        "error_rule": "Completed mean RMSE <= 0.25m for tracking; all failures retained",
+        "failed": 0,
+        "minimum_completion_rate": 0.95,
+        "name": "attitude_mpc-tracking",
+        "num_trials": 100,
+        "parameter_sha256": "c22ec9154b0c6b13d43f383f6441f7ceb3c0a8a5657383d643e0232b4341161c",
+        "passed": true,
+        "protocol": "release-control-v1",
+        "rmse_all_mean": 0.06189465419188858,
+        "rmse_completed_mean": 0.06189465419188858,
+        "run_id": "release-mpc-tracking-confirmation-20260929-attitude_mpc-tracking",
+        "task": "tracking"
+      }
+    },
+    {
+      "method": "attitude_mpc",
+      "task": "racing",
+      "passed": false,
+      "status": "development_adaptation_pending_confirmation"
+    },
+    {
+      "method": "sampling_mpc",
+      "task": "tracking",
+      "passed": true,
+      "status": "passed",
+      "evidence": {
+        "caveat": "Frozen solver; no learning seeds required",
+        "completed": 100,
+        "completion_rate": 1.0,
+        "error_rule": "Completed mean RMSE <= 0.25m for tracking; all failures retained",
+        "failed": 0,
+        "minimum_completion_rate": 0.95,
+        "name": "sampling_mpc-tracking",
+        "num_trials": 100,
+        "parameter_sha256": "04e8fd4ca94ce5b30b46ab5f8e909a8edac033432135ce97e6e12f7fb1b01d90",
+        "passed": true,
+        "protocol": "release-control-v1",
+        "rmse_all_mean": 0.051148067109717525,
+        "rmse_completed_mean": 0.051148067109717525,
+        "run_id": "release-mpc-tracking-confirmation-20260929-sampling_mpc-tracking",
+        "task": "tracking"
+      }
+    },
+    {
+      "method": "sampling_mpc",
+      "task": "racing",
+      "passed": true,
+      "status": "passed",
+      "evidence": {
+        "caveat": "Frozen solver; no learning seeds required",
+        "completed": 100,
+        "completion_rate": 1.0,
+        "error_rule": "Completed mean RMSE <= 0.25m for tracking; all failures retained",
+        "failed": 0,
+        "minimum_completion_rate": 0.9,
+        "name": "sampling_mpc-racing",
+        "num_trials": 100,
+        "parameter_sha256": "2569876869c97e0bc603f617dfb91906538e9715017468ae802d0263e2be705e",
+        "passed": true,
+        "protocol": "release-control-v1",
+        "rmse_all_mean": 0.03407252358074358,
+        "rmse_completed_mean": 0.03407252358074358,
+        "run_id": "release-mpc-racing-confirmation-20260929-sampling_mpc-racing",
+        "task": "racing"
+      }
+    },
+    {
+      "method": "depth",
+      "task": "static",
+      "passed": false,
+      "status": "not_passed",
+      "training_seeds": [
+        {
+          "training_seed": 0,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+          "arrived": 93,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 0.72
+          },
+          "success_rate": 0.93
+        },
+        {
+          "training_seed": 1,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
+          "arrived": 0,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "S01": 0.0,
+            "S02": 0.0,
+            "S03": 0.0,
+            "S06": 0.0
+          },
+          "success_rate": 0.0
+        },
+        {
+          "training_seed": 2,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
+          "arrived": 0,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "S01": 0.0,
+            "S02": 0.0,
+            "S03": 0.0,
+            "S06": 0.0
+          },
+          "success_rate": 0.0
+        }
+      ]
+    },
+    {
+      "method": "depth",
+      "task": "dynamic",
+      "passed": false,
+      "status": "not_passed",
+      "training_seeds": [
+        {
+          "training_seed": 0,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+          "arrived": 100,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0,
+            "D06": 1.0
+          },
+          "success_rate": 1.0
+        },
+        {
+          "training_seed": 1,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
+          "arrived": 0,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "D01": 0.0,
+            "D02": 0.0,
+            "D03": 0.0,
+            "D06": 0.0
+          },
+          "success_rate": 0.0
+        },
+        {
+          "training_seed": 2,
+          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
+          "arrived": 0,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "D01": 0.0,
+            "D02": 0.0,
+            "D03": 0.0,
+            "D06": 0.0
+          },
+          "success_rate": 0.0
+        }
+      ]
+    },
+    {
+      "method": "pointcloud",
+      "task": "static",
+      "passed": false,
+      "status": "pilot_failed"
+    },
+    {
+      "method": "pointcloud",
+      "task": "dynamic",
+      "passed": false,
+      "status": "pilot_failed"
+    },
+    {
+      "method": "super",
+      "task": "static",
+      "passed": false,
+      "status": "running_infrastructure_retry"
+    },
+    {
+      "method": "super",
+      "task": "dynamic",
+      "passed": false,
+      "status": "running"
+    },
+    {
+      "method": "ego_planner",
+      "task": "static",
+      "passed": false,
+      "status": "development_not_passed"
+    },
+    {
+      "method": "ego_planner",
+      "task": "dynamic",
+      "passed": false,
+      "status": "development_not_passed"
+    }
+  ],
+  "sources": [
+    {
+      "source_tree": "release-control-20260929",
+      "path": "experiments/release-control-confirmation-20260929/progress.json",
+      "sha256": "377a8d46ea07edbcf686a826a2d8b71aa7417afb20879881d619d55685c2a654"
+    },
+    {
+      "source_tree": "release-solvers-20260929",
+      "path": "experiments/release-mpc-tracking-confirmation-20260929/progress-attitude_mpc.json",
+      "sha256": "00c7f0da538aab4bc8f80a5460234645ba56c51ddaa70d1bad550c0ebcb87023"
+    },
+    {
+      "source_tree": "release-solvers-20260929",
+      "path": "experiments/release-mpc-tracking-confirmation-20260929/progress-sampling_mpc.json",
+      "sha256": "4d19f5e56b7ba6e43ac52b64c2607937e88f00ed5d11ef05727a32d3c586a7f7"
+    },
+    {
+      "source_tree": "release-solvers-20260929",
+      "path": "experiments/release-mpc-racing-confirmation-20260929/progress-sampling_mpc.json",
+      "sha256": "4b334a5aefbc1924b252b02f436f532183c68a0cc32d05d97a9aae1b02e34575"
+    },
+    {
+      "source_tree": "release-navigation-20260929",
+      "path": "experiments/release-depth-confirmation-20260929/progress.json",
+      "sha256": "f5be7f3a026c9d52bac7ec8b56be5ac7c097e56be0b8cccea68294472a75ff65"
+    }
+  ]
+}

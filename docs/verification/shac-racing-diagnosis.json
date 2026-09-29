@@ -1,0 +1,282 @@
+{
+  "scope": "SHAC racing development diagnosis; original heldout results unchanged",
+  "source_revision": "ac6b861",
+  "observations": [
+    {
+      "training_seed": 1,
+      "update": 0,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 5.66625,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 1.9487467780709267,
+      "report_sha256": "453c66da9fb623eb7e94ff057a24dbed2b785e6fc1d829b728b26a2d610c8e74"
+    },
+    {
+      "training_seed": 1,
+      "update": 40,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 1.9112500000000001,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 0.2942897668108344,
+      "report_sha256": "5d907812b09c2533ff169ad6d5ebc9e244a718b5a0b96b78f1bbcec01b102d1f"
+    },
+    {
+      "training_seed": 1,
+      "update": 80,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 32,
+      "mean_duration_s": 4.30375,
+      "gates_passed_mean": 0.25,
+      "rmse_m": 0.511075384914875,
+      "report_sha256": "824dbcfc7b7c8e618e406a583f4797876f4d2fda98656f93f8646c3faafb7a83"
+    },
+    {
+      "training_seed": 1,
+      "update": 120,
+      "completed": 30,
+      "num_trials": 32,
+      "collision_count": 2,
+      "mean_duration_s": 16.916875,
+      "gates_passed_mean": 4.90625,
+      "rmse_m": 0.07930647442117333,
+      "report_sha256": "9c2a6f863b3df8d25346e386439f8c5f72741d455d12c6f0a7184c38c0399c59"
+    },
+    {
+      "training_seed": 1,
+      "update": 160,
+      "completed": 22,
+      "num_trials": 32,
+      "collision_count": 10,
+      "mean_duration_s": 14.136875,
+      "gates_passed_mean": 3.90625,
+      "rmse_m": 0.08449511439539492,
+      "report_sha256": "9d54843dc4bd7142e6e15ad9e0dfbfe2714490fe0bd044e66b3c92ebbc9bad74"
+    },
+    {
+      "training_seed": 1,
+      "update": 200,
+      "completed": 32,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 17.04625,
+      "gates_passed_mean": 5.0,
+      "rmse_m": 0.027727515960577875,
+      "report_sha256": "d36c8222872ec3d88437b96100feb6dae5afa3ee075c393da30beac2a4f755ad"
+    },
+    {
+      "training_seed": 1,
+      "update": 240,
+      "completed": 32,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 17.02125,
+      "gates_passed_mean": 5.0,
+      "rmse_m": 0.015462313021998852,
+      "report_sha256": "ff6e835f3161071e6a072911aec2f1fb6f57c3d0428c51ddbe93a8781750dbb5"
+    },
+    {
+      "training_seed": 1,
+      "update": 280,
+      "completed": 32,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 17.049374999999998,
+      "gates_passed_mean": 5.0,
+      "rmse_m": 0.013965583668323234,
+      "report_sha256": "a34caab63789748c6c3aaa2f58a2c6db724c21afce5953f4c832f1a427b91e9d"
+    },
+    {
+      "training_seed": 1,
+      "update": 320,
+      "completed": 32,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 17.049374999999998,
+      "gates_passed_mean": 5.0,
+      "rmse_m": 0.01569359758286737,
+      "report_sha256": "16924212afe4470c1285bc852481e3d1a1dbec172bf2c5d008c11bfad4410dd5"
+    },
+    {
+      "training_seed": 2,
+      "update": 0,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 15,
+      "mean_duration_s": 5.164375,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 1.2930236738175154,
+      "report_sha256": "df1e589410def247db9675c5300e8f892d78616b8e56c2927d778bbbd5412cf7"
+    },
+    {
+      "training_seed": 2,
+      "update": 40,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 3.1,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 0.8229726329445839,
+      "report_sha256": "6e0816294fe033872f75d129339d6871c533787c8748889ecd85b0531931eed6"
+    },
+    {
+      "training_seed": 2,
+      "update": 80,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 0.654375,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 0.3812104482203722,
+      "report_sha256": "d5601aa2ffde323d57551bfd9865de28c9ea9888e98c2e390cb0ca25c2256042"
+    },
+    {
+      "training_seed": 2,
+      "update": 120,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 1.45,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 1.103405635803938,
+      "report_sha256": "44aef6e7403d902e3a07c839d6fe1b5c049431424172dd928f7cb6c9f225d5c0"
+    },
+    {
+      "training_seed": 2,
+      "update": 160,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 32,
+      "mean_duration_s": 1.68875,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 0.9798640720546246,
+      "report_sha256": "010f85fb061eeffcdf7efef5821ebce1d818d601d70b3a772ce6af128c513b7b"
+    },
+    {
+      "training_seed": 2,
+      "update": 200,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 6.644375,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 2.0772495977580547,
+      "report_sha256": "f8d6dfc090b0ba8a2f25fc95c997b192286b5f133b763d9c9931a24ae45c8d4c"
+    },
+    {
+      "training_seed": 2,
+      "update": 240,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 29.802500000000002,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 2.1820069402456284,
+      "report_sha256": "bc290e9f3cafe7ae8363380210781ead2ecc1d9f8548a4ac15109e7d29f25e2e"
+    },
+    {
+      "training_seed": 2,
+      "update": 280,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 14.35875,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 1.953655555844307,
+      "report_sha256": "eaf7c2657fac441b816c094e487932c3387767cbb9b04ec268f4b5555bb24d57"
+    },
+    {
+      "training_seed": 2,
+      "update": 320,
+      "completed": 0,
+      "num_trials": 32,
+      "collision_count": 0,
+      "mean_duration_s": 10.3375,
+      "gates_passed_mean": 0.0,
+      "rmse_m": 1.9711462333798409,
+      "report_sha256": "ae07e67847b640ab5964c9dc7719ae73d13ef1988c9d257a599cf3cb4065dd1a"
+    }
+  ],
+  "replay": [
+    {
+      "repeat": 0,
+      "seconds": 35.468191750813276,
+      "frames": 32,
+      "final": {
+        "tick": 32,
+        "pos": [
+          -0.8292891383171082,
+          0.057537514716386795,
+          -0.0010000000474974513
+        ],
+        "vel": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "action": [
+          -0.5371730327606201,
+          0.9080575704574585,
+          -0.8700749278068542,
+          0.8520557284355164
+        ],
+        "physical_action": [
+          -0.8437894582748413,
+          1.4263736009597778,
+          -1.3667105436325073,
+          0.7471432685852051
+        ],
+        "failure": 1.0,
+        "collision": 0.0,
+        "gates": 0.0,
+        "finite": true
+      },
+      "checkpoint_sha256": "ace1179b2304d84e10ab59b1e780e90423ce61eb869708e4f5e1f863f7e3c63d",
+      "scope": "development seed 20000; fixed update80 checkpoint",
+      "source_revision": "ac6b861"
+    },
+    {
+      "repeat": 1,
+      "seconds": 0.5004465733654797,
+      "frames": 32,
+      "final": {
+        "tick": 32,
+        "pos": [
+          -0.8292891383171082,
+          0.057537514716386795,
+          -0.0010000000474974513
+        ],
+        "vel": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "action": [
+          -0.5371730327606201,
+          0.9080575704574585,
+          -0.8700749278068542,
+          0.8520557284355164
+        ],
+        "physical_action": [
+          -0.8437894582748413,
+          1.4263736009597778,
+          -1.3667105436325073,
+          0.7471432685852051
+        ],
+        "failure": 1.0,
+        "collision": 0.0,
+        "gates": 0.0,
+        "finite": true
+      },
+      "checkpoint_sha256": "ace1179b2304d84e10ab59b1e780e90423ce61eb869708e4f5e1f863f7e3c63d",
+      "scope": "development seed 20000; fixed update80 checkpoint",
+      "source_revision": "ac6b861"
+    }
+  ],
+  "replay_sha256": "f4301ea530239afff9a41bab3a0af5c2719ee505532efa25b5238ec283d67391",
+  "pending": "Second development-phase training budget requested; no extra training launched"
+}
