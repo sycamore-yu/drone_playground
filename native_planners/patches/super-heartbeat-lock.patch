@@ -1,0 +1,13 @@
+diff --git a/super_planner/src/super_core/super_planner.cpp b/super_planner/src/super_core/super_planner.cpp
+--- a/super_planner/src/super_core/super_planner.cpp
++++ b/super_planner/src/super_core/super_planner.cpp
+@@ -295,6 +295,9 @@
+     }
+ 
+     void SuperPlanner::getOneHeartbeatTime(double &start_WT_pos, bool &traj_finish) {
++        // Replanning replaces the committed vectors under this same mutex.
++        // Heartbeat reads must hold it, just like getOneCommandFromTraj.
++        std::lock_guard<CmdTraj> guard(cmd_traj_info_);
+         double eval_t = (ros_ptr_->getSimTime() - cmd_traj_info_.getStartWallTime());
+         traj_finish = false;
+         double total_dur = cmd_traj_info_.getTotalDuration();

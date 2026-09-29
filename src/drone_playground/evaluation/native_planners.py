@@ -359,7 +359,7 @@ def evaluate_native(config, root: Path, run_id: str):
             quality_passed=None,
             quality_rule="release-plan: navigation success >=90%; formal frozen heldout evidence pending",
             diagnostics=diagnostics,
-            native_modification="upstream solver binaries retained; gRPC/ROS input and trajectory adapters",
+            native_modification="pinned upstream with declared native_planners/patches; runtime hashes identify deployed build; gRPC/ROS adapters",
         )
         save_report(rec.path / "eval" / "report.json", report)
         if total_commands == 0:

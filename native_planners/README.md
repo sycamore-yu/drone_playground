@@ -38,3 +38,7 @@ the same host contract after their actual input/output capabilities are verified
 `patches/ego-3d-goals.patch`保留交互目标的三维高度；预设导航目标路径保持原逻辑。`patches/super-control-initial-time.patch`仅在`DRONE_PLAYGROUND_CONTROL_TRANSFER=1`时改善亚米级轨迹的初始时间猜测，优化目标与约束保持原定义；导航设为0。setup.sh在固定来源上应用补丁再构建。每次新原生运行记录编译产物与相关来源文件SHA256。
 
 地面竞速开始时统一位置控制器先以0.8米垂直目标接管，实际计时和任务判据照常推进；有效原生轨迹出现后交还规划器。备用控制步数、规划轨迹和指令数分别记录，零轨迹／零指令回合标记为执行失败。
+
+## SUPER心跳并发修复
+
+`super-heartbeat-lock.patch`为`SuperPlanner::getOneHeartbeatTime`增加已提交轨迹的互斥锁。真实静态回合的SIGSEGV调用栈经过心跳读取→轨迹总时长→Piece；上游该读取未加锁，而重规划的`CmdTraj::setTrajectory`在同一互斥锁下替换轨迹数组。补丁只同步这条读取路径，不改变优化目标、地图、速度或控制参数。安装脚本显式应用补丁；服务身份同时记录主规划源码与实际二进制摘要，旧结果保留其原二进制身份。诊断见[崩溃凭据](../docs/verification/super-static-segmentation-diagnosis.json)。

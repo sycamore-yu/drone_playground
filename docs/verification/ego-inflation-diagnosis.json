@@ -28,5 +28,27 @@
     "rows.json": "94efa282b1c55ec3071ba07d308458ec0705bb17431aaef89d84ea073a229e3d",
     "curves.json": "3b8a0c7cfd0699554e90cfe19111da9245340363c8f298a45fb7e260c2cf98d7",
     "result.json": "231b7cad7028d112102bded4e4fc59586384544d30bf9d6be807600d551eb11c"
+  },
+  "lower_velocity_probe": {
+    "run_id": "ego-inflation0199-speed2-diagnosis-20260929",
+    "source_revision": "1041c052841e1a0a0b33d44150cfecb10966b28f",
+    "changed_parameter": {
+      "name": "max_velocity_mps",
+      "before": 4,
+      "after": 2
+    },
+    "kept_inflation_m": 0.199,
+    "frames": 3747,
+    "arrived": true,
+    "duration_s": 74.94,
+    "actual_peak_speed_mps": 2.25477632204549,
+    "files": {
+      "resolved-config.json": "dab32f7f997fd68a9972309797891382f73197cef86866f9137e30c1c4f5830b",
+      "diagnostic-source.py": "7e5facf378ce20d7bdd37b8b8e3a102658eaf1d33f0790580a666fd4b90beb62",
+      "rows.json": "47c055e92b99898cbbbe37bf1f33d2cfd9bbace01c2ef43eb00dd84cc99494ac",
+      "curves.json": "d71a0bd50fa429e3a2c169aeb03139d5742712986a7d4acd0a03acf1259fd183",
+      "result.json": "b8ccc405bbae9dad34bab9656d859b717b14467ec1895b8a08f9a2e030a40383"
+    },
+    "scope": "Single fixed development case; independent adaptation, not the 20m/s protocol or formal quality"
   }
 }

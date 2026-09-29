@@ -16,7 +16,7 @@
     "elf_offset": "0x1070b4",
     "symbol": "geometry_utils::Piece::getDuration() const",
     "source": "super_planner/src/utils/piece.cpp:40",
-    "interpretation": "Crash location only; caller and invalid-object cause not established",
+    "interpretation": "Core identifies heartbeat read of committed trajectory duration without the mutex used by trajectory replacement; patch adds that same mutex for the whole read. Formal rerun pending.",
     "source_revision": "2ad3419c127a617c6d7df6925e81a14175a9c096"
   },
   "native_runtime": {
@@ -840,5 +840,114 @@
       "result.json": "131701511747aa05268638d21ec3cf054843a3477266f8ff8c01abc489eb145d",
       "resolved-config.json": "e8d805eac201d4d01dff47d078106bfcb30a679379432a48485f5d7a05e58098"
     }
+  },
+  "repeat_replay": {
+    "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+    "source_run": "release-super-static-infrastructure-retry-20260929",
+    "case": {
+      "difficulty": "easy",
+      "case": 15,
+      "scenario_id": 0,
+      "seed": 30120,
+      "scene_id": "S01",
+      "initial_position_m": [
+        1.9155056476593018,
+        -0.1859426498413086,
+        3.0028936862945557
+      ],
+      "initial_velocity_mps": [
+        0.09278694540262222,
+        -0.024575266987085342,
+        -0.05870075896382332
+      ],
+      "initial_quaternion_xyzw": [
+        0.0,
+        0.0,
+        -0.022711778059601784,
+        0.9997420310974121
+      ]
+    },
+    "diagnostic_uid": 1000,
+    "scope": "Repeated original-input replay with non-root child ownership to retain readable future cores; no algorithm/config changes",
+    "attempts": [
+      {
+        "attempt": 0,
+        "requests": 305,
+        "error": null,
+        "maximum_position_error_m": 3.0994415283203125e-06,
+        "seconds": 68.01457244902849
+      },
+      {
+        "attempt": 1,
+        "requests": 305,
+        "error": null,
+        "maximum_position_error_m": 3.0994415283203125e-06,
+        "seconds": 71.56210672901943
+      },
+      {
+        "attempt": 2,
+        "requests": 305,
+        "error": null,
+        "maximum_position_error_m": 3.0994415283203125e-06,
+        "seconds": 74.6654224395752
+      },
+      {
+        "attempt": 3,
+        "requests": 305,
+        "error": null,
+        "maximum_position_error_m": 3.0994415283203125e-06,
+        "seconds": 73.56778267910704
+      },
+      {
+        "attempt": 4,
+        "requests": 305,
+        "error": null,
+        "maximum_position_error_m": 3.0994415283203125e-06,
+        "seconds": 71.16322948411107
+      }
+    ],
+    "files": {
+      "diagnostic-source.py": "359aa313b6c9c66052f00a554f811b2de4d7064836f6e9847019345aa7959bde",
+      "result.json": "e43d9f0d974ca8dfe876254b714455e5b36dae714314ae204efaea5cfac2b4db"
+    }
+  },
+  "core_diagnosis": {
+    "identity": {
+      "host_pid": 2548628,
+      "compressed_core_sha256": "b13b9b598d115cf367c6f6a15ebc98385dad166a1c2bd0f07eff297e0a809089",
+      "executable_sha256": "a3e074425fb63750348742b6ac644aac8948988f60256b219318137b5507a012",
+      "source_run": "release-super-static-infrastructure-retry-20260929",
+      "case": 15
+    },
+    "frames": [
+      "Piece::getDuration",
+      "Trajectory::getTotalDuration",
+      "CmdTraj::getTotalDuration",
+      "SuperPlanner::getOneHeartbeatTime",
+      "FsmRos1::getOneHeartBeatMsg",
+      "FsmRos1::pubCmdTimerCallback"
+    ],
+    "crashed_piece_pointer": "0x745360115018",
+    "current_vector_start": "0x745360001af0",
+    "current_vector_finish": "0x745360001be0",
+    "qualification": "Executable frames decoded with the exact recorded binary; shared-library frames are not used as evidence.",
+    "files": {
+      "identity.json": "2a3129b0f977f3350ca086b929ed90fd02f246a2b75757ee14af4ba3ec6bd7c7",
+      "backtrace.log": "9782f85c44d981074fd5ffa85d645ea0f84ce9fbcf18ba72458d7d5640eb8790",
+      "thread-stacks.log": "6786507c9ab2c857df65ed6519002d05d0a586cffff0df2b7d868afcdc191719",
+      "super_planner-before.cpp": "22e0c6d6f4fa220abeaf811a42b3e4a117d0fd81037bd0ca3f8feff75c144cb1"
+    },
+    "patch": "native_planners/patches/super-heartbeat-lock.patch",
+    "patch_sha256": "ae7d702c8b0fcddcc09704de0f0cd5420dc49192f59a3aaf4dbc746d9c643c32",
+    "build_log_sha256": "c5f68761dff79df68f9b76097a773b21d8440e9fb2e4466a45c635b734dce65b"
+  },
+  "patched_runtime": {
+    "before": "a3e074425fb63750348742b6ac644aac8948988f60256b219318137b5507a012",
+    "after": {
+      "/opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node": "877984cc67765e48474f45a0b85b1c1459112cc92486814939c2d053d67cc4da",
+      "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/super_core/super_planner.cpp": "5635b8c7683494bf2f9a91dba06b418ca0f1829c752723b104d73600eebad9b5"
+    },
+    "patch_sha256": "ae7d702c8b0fcddcc09704de0f0cd5420dc49192f59a3aaf4dbc746d9c643c32",
+    "build_exit_code": 0
   }
 }

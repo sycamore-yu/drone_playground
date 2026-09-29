@@ -65,6 +65,7 @@ tar -xf '$RUNTIME_ROOT/super.tar' -C '$RUNTIME_ROOT/planners/super/src/SUPER'
 source '$RUNTIME_ROOT/planners/ego/devel/setup.bash'
 cd '$RUNTIME_ROOT/planners/super/src/SUPER'
 git apply '$RUNTIME_ROOT/patches/super-control-initial-time.patch'
+git apply '$RUNTIME_ROOT/patches/super-heartbeat-lock.patch'
 bash scripts/select_ros_version.sh ROS1
 cd '$RUNTIME_ROOT/planners/super'
 catkin_make -j3 \

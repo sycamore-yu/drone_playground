@@ -76,6 +76,7 @@ def native_runtime_identity(method):
         paths = [
             root / "super/devel/lib/super_planner/fsm_node",
             root / "super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp",
+            root / "super/src/SUPER/super_planner/src/super_core/super_planner.cpp",
         ]
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 

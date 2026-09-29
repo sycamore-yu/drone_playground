@@ -1,0 +1,80 @@
+{
+  "source_revision": "82cd63d66cc4b3efe59ec82b4561c3547d33e968",
+  "archive_sha256": "0a5f509d506eaea05839e3146a22ad2387ca0da695fdfa04d89e348366763062",
+  "scope": "Source preview installation, not a completed quality release",
+  "steps": [
+    {
+      "name": "fetch-sources",
+      "command": [
+        "python3",
+        "scripts/tools/fetch_sources.py"
+      ],
+      "exit_code": 0,
+      "seconds": 14.210889026988298
+    },
+    {
+      "name": "locked-install",
+      "command": [
+        "pixi",
+        "install",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 12.81083643808961
+    },
+    {
+      "name": "public-config",
+      "command": [
+        "pixi",
+        "run",
+        "train",
+        "method=learning/ppo",
+        "env=hovering",
+        "--cfg",
+        "job"
+      ],
+      "exit_code": 0,
+      "seconds": 1.4195977039635181
+    },
+    {
+      "name": "devices-import",
+      "command": [
+        "pixi",
+        "run",
+        "python",
+        "-c",
+        "import crazyflow,drone_playground,jax; print(drone_playground.__file__); print(crazyflow.__file__); print(jax.devices())"
+      ],
+      "exit_code": 0,
+      "seconds": 18.82634537294507
+    }
+  ],
+  "status": "completed",
+  "started_utc": "2026-09-29T18:49:36.260568+00:00",
+  "finished_utc": "2026-09-29T18:50:23.544620+00:00",
+  "run_id": "source-preview-82cd63d-v2-20260929",
+  "source_files": 463,
+  "fresh_environment": true,
+  "cuda_visible": true,
+  "physics_test": {
+    "passed": 1,
+    "seconds": 16.29
+  },
+  "native_interop_tests": {
+    "passed": 21,
+    "seconds": 37.89
+  },
+  "files": {
+    "result.json": "db3d8b09b06606a6c9a7095175acb00c3c4dc2d9d1449c16e2261c9400c72b33",
+    "source-files.json": "b72f03c39a721307736c33de7669a3d1b046060af3cdd272c38193e410e600be",
+    "fetch-sources.log": "e78093761545060eb7587a205e7d53f344b91819c056d83765fe72992b89fc3b",
+    "locked-install.log": "b6d2bef0ecf08e5c4a8674e38b0f8d8cd4e167c2c7e6c493a09e9f8e6a142fc8",
+    "public-config.log": "4f9e8ef4cf582087f82d3f2f85bf24089bb3bea3710f9afed0628ba1b54d7df9",
+    "devices-import.log": "26a3af86502b5edd11ab46cebb25708b582dbdd75b81367a42c29934056686da",
+    "physics-step.log": "64338d10dea54152eab0954b745eb38cc1f77bb5271858a1a00bbfade65432fe",
+    "native-install.log": "b6d2bef0ecf08e5c4a8674e38b0f8d8cd4e167c2c7e6c493a09e9f8e6a142fc8",
+    "native-configure.log": "4cab52669ea71ffa72a360f0e6451a58967d34dfa130bd041f9e5748049e44a6",
+    "native-build.log": "6d0f6c2b2e928acc6e5994ea931a1a1d4f19b43e2073f6740a9803769f5ddf06",
+    "native-interop.log": "ae11738e3b44eeea903f61dc50b16fe263f9367e67feaebaf807586646538596"
+  }
+}
