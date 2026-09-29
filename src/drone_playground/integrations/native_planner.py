@@ -64,12 +64,16 @@ class NativePlanner:
         container=DEFAULT_CONTAINER,
         port=11325,
         worker_path=RUNTIME_ROOT + "/bridge/ros_bridge.py",
+        parameters=None,
     ):
         self.method, self.container, self.port = method, container, int(port)
         runtime_setup(method)  # Validate before constructing any process command.
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.worker_path, self.client = worker_path, None
+        self.parameters = dict(parameters or {})
+        if 'limits' in self.parameters:
+            raise ValueError('Kinematic limits belong to method.limits')
         self.latencies = []
 
     def request(self, payload, timeout=10.0):
@@ -106,7 +110,7 @@ class NativePlanner:
                 command=["docker", "exec", self.container, "bash", "-c", shell],
                 address=addresses[0] + ":" + str(rpc_port),
                 directory=self.directory,
-                parameters={"limits": payload["limits"]},
+                parameters={**self.parameters, "limits": payload["limits"]},
             )
             self.latencies = self.client.latencies
             reply = self.client.reset(

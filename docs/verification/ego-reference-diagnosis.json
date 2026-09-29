@@ -1,0 +1,37 @@
+{
+  "run_id": "ego-reference-diagnosis-20260929",
+  "scope": "Fixed development S03, seed20002, original EGO 4m/s limit and PD execution; not formal quality",
+  "source_revision": "0fdee31",
+  "upstream_revision": "bfda51284c8c1b476043255a8145ef925a3778a5",
+  "gitnexus_indexed_at": "2026-09-29T12:32:16.652Z",
+  "recorded_frames": 705,
+  "outcome": 2,
+  "collision_time_s": 14.1,
+  "latest_stop_reference_time_s": 13.9,
+  "speed_when_stop_reference_appeared_mps": 3.33946961027064,
+  "stop_reference_position": [
+    36.86040496826172,
+    -0.019282788038253784,
+    2.8366310596466064
+  ],
+  "late_curve_minimum_sphere_clearances_m": [
+    -0.010835476219654083,
+    -0.011891074478626251,
+    -0.011711902916431427,
+    -0.010298557579517365,
+    -0.010819144546985626
+  ],
+  "reference_vs_curve_position_difference_m": {
+    "p50": 3.595820250601821e-15,
+    "p99": 7.708754593061681e-05,
+    "max": 0.008128185518343352
+  },
+  "clearance_qualification": "Future plan positions checked against true geometry with body sphere radius, without future attitude offset. Diagnostics never enter planner inputs.",
+  "inference": "Late planned path lacks body clearance in true geometry before emergency stop. Cannot attribute solely to PD tracking; mapping margin/visibility remain hypotheses.",
+  "files": {
+    "rows.json": "8b8ad97c23afbb43024e6e7f40b5071b8ef1a62514dc52fe8d47616dd887c43f",
+    "curves.json": "6b0d6fc1495d31485e37079e5502951f43967ebe09007ba681cd69ddadd95d1e",
+    "result.json": "fe2f47478d906365803648e5fb22607c23e0fe618ca34a82ac3f6cd0276dd457",
+    "diagnostic-source.py": "4f9318d5a67c714e20c2a140bff9e93dcf2adc5cbb70ca5d67029d0b4c47bd30"
+  }
+}

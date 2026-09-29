@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import signal
 import socket
@@ -79,7 +80,12 @@ def native_runtime_identity(method):
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
 
 
-def launch_file(method, calibration, goal, folder, limits=None, task_adapter=None):
+def launch_file(method, calibration, goal, folder, limits=None, task_adapter=None, parameters=None):
+    inflation = (parameters or {}).get('occupancy_inflation_m')
+    if inflation is not None and (method != 'ego' or isinstance(inflation, bool)
+                                  or not isinstance(inflation, (int, float))
+                                  or not math.isfinite(inflation) or inflation <= 0):
+        raise ValueError('occupancy_inflation_m must be finite and positive, for EGO only')
     limits = limits or {
         "max_velocity_mps": 20.0,
         "max_acceleration_mps2": 3.0,
@@ -128,6 +134,8 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
             "grid_map/depth_filter_maxdist": "10.0",
             "grid_map/max_ray_length": "10.0",
         }
+        if inflation is not None:
+            overrides['grid_map/obstacles_inflation'] = str(inflation)
         for child in node.findall("param"):
             if child.get("name") in overrides:
                 child.set("value", overrides[child.get("name")])
@@ -336,6 +344,7 @@ class RosAlgorithm:
             self.folder,
             self.parameters.get("limits"),
             task,
+            self.parameters,
         )
         self.pubs["clock"].publish(Clock(rospy.Time.from_sec(1.0 + request.header.simulation_time)))
         self.planner = subprocess.Popen(

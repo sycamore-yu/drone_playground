@@ -127,4 +127,5 @@ def create_native_planner(settings, directory, port, worker_path, env=None):
         return NativeServicePlanner(settings, directory)
     from .native_planner import NativePlanner
 
-    return NativePlanner(settings["method"], directory, settings["container"], port, worker_path)
+    return NativePlanner(settings["method"], directory, settings["container"], port, worker_path,
+                         parameters=settings.get('parameters'))
