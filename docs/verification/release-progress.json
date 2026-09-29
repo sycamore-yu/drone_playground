@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-29T18:54:35.063265+00:00",
+  "generated_utc": "2026-09-29T19:13:13.427615+00:00",
   "scope": "Partial first-release quality evidence; not a completed release or cross-method ranking",
   "passed_cells": 9,
   "required_cells": 18,
@@ -448,8 +448,9 @@
       "method": "super",
       "task": "static",
       "passed": false,
-      "status": "incomplete_native_sigsegv",
-      "evidence": "super-static-segmentation-diagnosis.json"
+      "status": "repair_confirmation_running",
+      "evidence": "super-static-segmentation-diagnosis.json",
+      "confirmation_batch": "release-super-heartbeat-confirmation-20260929"
     },
     {
       "method": "super",

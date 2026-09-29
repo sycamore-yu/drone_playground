@@ -949,5 +949,48 @@
     },
     "patch_sha256": "ae7d702c8b0fcddcc09704de0f0cd5420dc49192f59a3aaf4dbc746d9c643c32",
     "build_exit_code": 0
+  },
+  "patched_replay": {
+    "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+    "source_run": "release-super-static-infrastructure-retry-20260929",
+    "case": {
+      "difficulty": "easy",
+      "case": 15,
+      "scenario_id": 0,
+      "seed": 30120,
+      "scene_id": "S01",
+      "initial_position_m": [
+        1.9155056476593018,
+        -0.1859426498413086,
+        3.0028936862945557
+      ],
+      "initial_velocity_mps": [
+        0.09278694540262222,
+        -0.024575266987085342,
+        -0.05870075896382332
+      ],
+      "initial_quaternion_xyzw": [
+        0.0,
+        0.0,
+        -0.022711778059601784,
+        0.9997420310974121
+      ]
+    },
+    "replayed_requests": 305,
+    "recorded_steps": 304,
+    "maximum_position_error_m": 3.0994415283203125e-06,
+    "error": null,
+    "seconds": 40.07091091712937,
+    "scope": "Original-input replay after heartbeat mutex fix; no quality claim or heldout tuning",
+    "result_sha256": "01d225cb7e01598ac6c53f3ee0d30dcb69c66a17e2e9ade1bceb10eee5cb90e3"
+  },
+  "next_confirmation": {
+    "batch": "release-super-heartbeat-confirmation-20260929",
+    "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+    "run_id": "release-super-heartbeat-static-confirmation-20260929",
+    "episodes": 100,
+    "workers": 2,
+    "status": "running",
+    "qualification": "Same original static conditions; repair only, prior interrupted runs retained"
   }
 }
