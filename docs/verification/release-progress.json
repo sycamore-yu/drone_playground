@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-29T20:04:42.157416+00:00",
+  "generated_utc": "2026-09-29T20:39:27.220013+00:00",
   "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
   "passed_cells": 11,
   "required_cells": 18,
@@ -537,30 +537,30 @@
       "method": "super",
       "task": "dynamic",
       "passed": true,
-      "status": "passed_previous_runtime_revalidation_running",
-      "run_id": "release-super-confirmation-20260929-dynamic",
+      "status": "passed",
+      "run_id": "release-super-heartbeat-dynamic-confirmation-20260929",
       "evidence": {
         "protocol": "release-navigation-v1",
         "tasks": {
           "dynamic": {
             "num_trials": 100,
-            "arrived": 93,
-            "success_rate": 0.93,
+            "arrived": 96,
+            "success_rate": 0.96,
             "scene_success_rates": {
               "D01": 1.0,
               "D02": 1.0,
               "D03": 1.0,
-              "D06": 0.72
+              "D06": 0.84
             },
             "passed": true
           }
         },
         "passed": true,
         "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
-        "parameter_sha256": "c310cfd0e9364c55fe7cf8b832cf5b64ecab91d252f89759e9a7b5214f4b6c3f",
+        "parameter_sha256": "0a795e916e77cb75db7a4de32ccddad32a098433dae2a63c607c72aa882f0c66",
         "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
       },
-      "current_runtime_passed": false,
+      "current_runtime_passed": true,
       "runtime_revalidation": {
         "batch": "release-super-heartbeat-dynamic-confirmation-20260929-batch",
         "run_id": "release-super-heartbeat-dynamic-confirmation-20260929",
@@ -573,7 +573,70 @@
           "run_id",
           "method.port"
         ],
-        "status": "running"
+        "status": "passed",
+        "validation": {
+          "protocol": "release-navigation-v1",
+          "tasks": {
+            "dynamic": {
+              "num_trials": 100,
+              "arrived": 96,
+              "success_rate": 0.96,
+              "scene_success_rates": {
+                "D01": 1.0,
+                "D02": 1.0,
+                "D03": 1.0,
+                "D06": 0.84
+              },
+              "passed": true
+            }
+          },
+          "passed": true,
+          "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+          "parameter_sha256": "0a795e916e77cb75db7a4de32ccddad32a098433dae2a63c607c72aa882f0c66",
+          "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+        },
+        "verified_artifact_sha256": "5dfaebae363db987147be0589d8e7f228ae335b14660a3d605b6984da660f659"
+      },
+      "previous_runtime_confirmation": {
+        "run_id": "release-super-confirmation-20260929-dynamic",
+        "evidence": {
+          "protocol": "release-navigation-v1",
+          "tasks": {
+            "dynamic": {
+              "num_trials": 100,
+              "arrived": 93,
+              "success_rate": 0.93,
+              "scene_success_rates": {
+                "D01": 1.0,
+                "D02": 1.0,
+                "D03": 1.0,
+                "D06": 0.72
+              },
+              "passed": true
+            }
+          },
+          "passed": true,
+          "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+          "parameter_sha256": "c310cfd0e9364c55fe7cf8b832cf5b64ecab91d252f89759e9a7b5214f4b6c3f",
+          "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+        }
+      },
+      "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+      "runtime_identity": {
+        "/opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node": "877984cc67765e48474f45a0b85b1c1459112cc92486814939c2d053d67cc4da",
+        "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp": "6ca9c345f2a5fdce668a61ad33804cf9f3d5e8302b377adef44c8d291fa3abbd",
+        "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/super_core/super_planner.cpp": "5635b8c7683494bf2f9a91dba06b418ca0f1829c752723b104d73600eebad9b5"
+      },
+      "archived_episodes": 100,
+      "archived_frames": 120204,
+      "confirmation_batch": "release-super-heartbeat-dynamic-confirmation-20260929-batch",
+      "failures_by_scene": {
+        "D01": {},
+        "D02": {},
+        "D03": {},
+        "D06": {
+          "collision": 4
+        }
       }
     },
     {
@@ -799,7 +862,37 @@
       "source_tree": "release-super-heartbeat-20260929",
       "path": "experiments/release-super-heartbeat-static-confirmation-20260929/result.json",
       "sha256": "435b695dd552f5713a319aa21d02570fc2d1c881b9384dd90bfed40bf7e0657d"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/result.json",
+      "sha256": "99fc4255ec3de290ef1a7db1bdef844f53204bc8696ec42561d0460eaa382830"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/manifest.json",
+      "sha256": "62bff70037b50350f5b350f9e17a9ed0bbc972d3d3a0c4006c31c599f0180d60"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/resolved-config.json",
+      "sha256": "2abf3bf7506953ea2a35982c073973ac19a0d1c4fe58832736830496054b2963"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/eval/report.json",
+      "sha256": "b290d3af79d1a7fb3cbd2ed32f5c781afa520bd4f427e1a0761b57a1c94839da"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/eval/release-validation.json",
+      "sha256": "c91ed788e8e566e6b815cd435df4cf15714054382a75ed3ebd509fdeec941cfd"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/traces/index.json",
+      "sha256": "1505e6ecd8fff8fa0de4ed263e0ad6e5bd5c1dd3da5a4bdeaf05b1981f8cfa28"
     }
   ],
-  "confirmed_cells_for_current_runtime": 10
+  "confirmed_cells_for_current_runtime": 11
 }

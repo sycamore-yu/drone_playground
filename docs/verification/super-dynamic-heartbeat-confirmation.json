@@ -1,0 +1,65 @@
+{
+  "verified_utc": "2026-09-29T20:38:41.264963+00:00",
+  "run_id": "release-super-heartbeat-dynamic-confirmation-20260929",
+  "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+  "validation": {
+    "protocol": "release-navigation-v1",
+    "tasks": {
+      "dynamic": {
+        "num_trials": 100,
+        "arrived": 96,
+        "success_rate": 0.96,
+        "scene_success_rates": {
+          "D01": 1.0,
+          "D02": 1.0,
+          "D03": 1.0,
+          "D06": 0.84
+        },
+        "passed": true
+      }
+    },
+    "passed": true,
+    "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+    "parameter_sha256": "0a795e916e77cb75db7a4de32ccddad32a098433dae2a63c607c72aa882f0c66",
+    "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+  },
+  "archived_episodes": 100,
+  "archived_frames": 120204,
+  "per_case_archives_verified": 100,
+  "runtime_identity": {
+    "/opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node": "877984cc67765e48474f45a0b85b1c1459112cc92486814939c2d053d67cc4da",
+    "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp": "6ca9c345f2a5fdce668a61ad33804cf9f3d5e8302b377adef44c8d291fa3abbd",
+    "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/super_core/super_planner.cpp": "5635b8c7683494bf2f9a91dba06b418ca0f1829c752723b104d73600eebad9b5"
+  },
+  "exact_initial_conditions_match_previous_binary": true,
+  "scene_counts": {
+    "D01": 25,
+    "D02": 25,
+    "D03": 25,
+    "D06": 25
+  },
+  "failures_by_scene": {
+    "D01": {},
+    "D02": {},
+    "D03": {},
+    "D06": {
+      "collision": 4
+    }
+  },
+  "artifacts": {
+    "result.json": "99fc4255ec3de290ef1a7db1bdef844f53204bc8696ec42561d0460eaa382830",
+    "manifest.json": "62bff70037b50350f5b350f9e17a9ed0bbc972d3d3a0c4006c31c599f0180d60",
+    "resolved-config.json": "2abf3bf7506953ea2a35982c073973ac19a0d1c4fe58832736830496054b2963",
+    "eval/report.json": "b290d3af79d1a7fb3cbd2ed32f5c781afa520bd4f427e1a0761b57a1c94839da",
+    "eval/release-validation.json": "c91ed788e8e566e6b815cd435df4cf15714054382a75ed3ebd509fdeec941cfd",
+    "traces/index.json": "1505e6ecd8fff8fa0de4ed263e0ad6e5bd5c1dd3da5a4bdeaf05b1981f8cfa28"
+  },
+  "verifier_sha256": "ce183b189b6dcf0fc495e7fb54a500a787b861eae696b79ff6eaeb406b21563c",
+  "verification_script_sha256": "ce183b189b6dcf0fc495e7fb54a500a787b861eae696b79ff6eaeb406b21563c",
+  "previous_runtime": {
+    "run_id": "release-super-confirmation-20260929-dynamic",
+    "arrived": 93,
+    "num_trials": 100
+  },
+  "scope": "Same frozen dynamic scenarios and initial states with patched SUPER runtime. Fixed Navigation8; no unseen-geometry or exclusive-compute performance claim."
+}
