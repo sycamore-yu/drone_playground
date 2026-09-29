@@ -85,3 +85,17 @@ class OptimizationTests(unittest.TestCase):
         )
         self.assertTrue(np.isfinite(command).all())
         self.assertAlmostEqual(command[2], 0.3, places=5)
+
+
+def test_mpc_tracking_horizon_covers_the_final_tick_without_shortening_the_task():
+    from drone_playground.methods.optimal_control.factory import tracking_reference
+
+    phase = np.arange(500) / 500 * 2 * np.pi
+    points = np.stack([np.sin(phase), np.cos(phase), np.ones(500)], axis=-1)
+    extended, velocity = tracking_reference(points, 50, 25, periodic=True)
+    np.testing.assert_array_equal(extended[:500], points)
+    np.testing.assert_array_equal(extended[500:], points[:25])
+    assert len(extended[499:499 + 26]) == 26
+    assert np.isfinite(velocity).all()
+    held, _ = tracking_reference(points, 50, 25, periodic=False)
+    np.testing.assert_array_equal(held[500:], np.broadcast_to(points[-1], (25, 3)))
