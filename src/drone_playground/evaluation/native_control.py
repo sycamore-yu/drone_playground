@@ -230,6 +230,8 @@ def evaluate_native_control(config, root, run_id):
                     diagnostics.append(
                         dict(case=case, missing_command_steps=missing, **record.diagnostics)
                     )
+                    if hasattr(worker, "module_calls"):
+                        diagnostics[-1]["module_calls"] = list(worker.module_calls)
                     export_rollout(env.sim, rec.path / "rollouts" / f"case-{case:03d}", trace)
                     traces.append(trace)
                 finally:

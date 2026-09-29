@@ -265,6 +265,8 @@ def evaluate_native(config, root: Path, run_id: str):
                 rpc_p95_s=float(np.percentile(worker.latencies, 95)),
                 **reset_evidence,
             )
+            if hasattr(worker, "module_calls"):
+                diag["module_calls"] = list(worker.module_calls)
             save_report(worker.directory / "diagnostics.json", diag)
             trace = jax.tree.map(lambda *values: np.stack(values), *rows)
             label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id), **reset_evidence}

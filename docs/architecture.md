@@ -68,7 +68,7 @@ SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接�
 
 现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
 
-真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，但网络→Waypoint／Trajectory的专用解码、通用JAX可微模块链及不同模块频率调度仍未完成。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
+真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，但网络→Waypoint／Trajectory的专用解码、通用JAX可微模块链仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
 
 ## 传感、几何和时序
 
@@ -85,3 +85,5 @@ Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议�
 运行记录保存解析配置、依赖、源提交和差异、参数摘要、原始终止事件及回放。正式矩阵的权威选择在 `docs/verification/final-acceptance/selection.json`；所有报告从所选运行取得。源码和运行状态的维护规则见[开发约定](development.md)。
 
 用户补充确认（2026-09-29）：C++模块不要求可微训练链。其首版验收为类型／时钟／生命周期兼容及实际组合控制效果；只对声明可求导的JAX组件要求相应梯度验证，含不透明C++服务的链不要求端到端BPTT／SHAC。
+
+宿主链的每个stage可设置`frequency_hz`，默认与执行频率相同；当前要求它能整除执行频率。两个调用时刻之间只缓存有效物理输出，过期后返回无计划，由执行器处理缺失；不会把失效命令继续交给下游。场景重置同时清空缓存、时钟和调用计数，报告的`module_calls`可验证实际频率。冻结神经MotionCmd仍须保持检查点声明的策略频率，不能用这一设置静默降频。

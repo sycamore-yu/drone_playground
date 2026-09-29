@@ -26,3 +26,15 @@
 5. 核查运行进程、可编辑安装和依赖引用，将旧目录整体移入项目外归档，并将其中的旧 `.git` 改为离线管理备份，避免继续作为仓库使用。
 
 归档位于 `simulation_dev/.archives/drone_playground/cleanup-design-20260929T123143Z/`，包含 Git bundle、清理前源码、未提交补丁、检查点备份、退役凭据及 `retired-primary-worktree/`。冻结点云工作树继续保留在 `simulation_dev/.worktrees/drone_playground/pointcloud-paper`，仅作证据存放。历史正式参数和回放仍由现役 `experiments/` 及原独立备份保存。
+
+## 首版确认工作树
+
+正式证据与主目录开发隔离，以下detached工作树只执行各自冻结提交，不作为新的开发仓库：
+
+| 工作树尾名 | 冻结提交 | 作用 |
+|---|---|---|
+| `release-control-20260929` | `ac6b861` | PPO／SHAC／BPTT三种子确认 |
+| `release-navigation-20260929` | `9071156` | 深度导航独立初态扰动确认 |
+| `release-solvers-20260929` | `f38fc00` | MPC与SUPER正式确认 |
+
+均位于`simulation_dev/.worktrees/drone_playground/`，运行产物在各自`experiments/`；主目录`experiments/release-*-confirmation-20260929`的链接指向对应批次清单与进度。共享的是同一平台固定依赖环境及acados库，各方法仍有独立日志、临时生成代码、求解器实例和ROS端口。待确认阶段结束并独立备份后再退役这些工作树。

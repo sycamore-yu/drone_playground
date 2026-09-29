@@ -159,3 +159,41 @@ def test_saved_neural_module_preserves_decoder_and_rejects_same_width_wrong_fiel
             FrozenNeuralCommand(checkpoint, env)
     finally:
         env.close()
+
+
+def test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions(monkeypatch, tmp_path):
+    import drone_playground.integrations.pipeline as pipeline
+
+    class Source:
+        input_kind, output_kind, derivatives = None, 'waypoint', 'none'
+        def start(self, *args):
+            self.calls = []
+        def step(self, packet, upstream):
+            self.calls.append(packet['time'])
+            return dict(output=Waypoint([[3,0,1]],.1), plan_id=str(len(self.calls)),
+                        valid_until=packet['time']+.05, decision_status='valid')
+        def close(self):
+            pass
+    source = Source()
+    monkeypatch.setattr(pipeline, 'instantiate', lambda _: source)
+    planner = PipelinePlanner(dict(output='waypoint', stages=[
+        dict(implementation='python',frequency_hz=10)]), tmp_path, SimpleNamespace(freq=50))
+    planner.start({}, [3,0,1])
+    replies = [planner.step(dict(time=t)) for t in [0.,.02,.04,.06,.08,.10]]
+    assert source.calls == [0.,.10]
+    assert [reply['output'] is not None for reply in replies] == [True,True,True,False,False,True]
+    assert replies[3]['decision_status'] == 'no_plan'
+    assert planner.contracts[0]['frequency_hz'] == 10
+    with pytest.raises(ValueError,match='clock'):
+        planner.step(dict(time=.09))
+    planner.start({}, [3,0,1])
+    planner.step(dict(time=0.))
+    assert source.calls == [0.]
+    planner.close()
+
+
+@pytest.mark.parametrize('rate',[0.,-1.,float('nan'),60.,7.])
+def test_pipeline_rejects_unsupported_module_clocks(tmp_path, rate):
+    with pytest.raises(ValueError, match='frequency'):
+        PipelinePlanner(dict(output='waypoint', stages=[dict(implementation='goal',frequency_hz=rate)]),
+                        tmp_path, SimpleNamespace(freq=50))

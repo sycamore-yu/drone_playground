@@ -127,6 +127,8 @@ class PipelinePlanner:
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.modules, self.contracts, self.latencies = [], [], []
+        self.frequency = float(env.freq)
+        self.periods = []
         self.output_kind = settings["output"]
         previous = None
         try:
@@ -157,11 +159,20 @@ class PipelinePlanner:
                     self.modules.append(module)
                 if module.input_kind != previous or module.output_kind not in COMMANDS:
                     raise ValueError(f"Pipeline contract mismatch at stage {index}: {previous} -> {module.input_kind}")
+                frequency = float(spec.get("frequency_hz", self.frequency))
+                if not np.isfinite(frequency) or not 0 < frequency <= self.frequency:
+                    raise ValueError("Module frequency must be finite, positive and no faster than execution")
+                period = self.frequency / frequency
+                if not np.isclose(period, round(period), rtol=0, atol=1e-8):
+                    raise ValueError("Module frequency must divide the execution frequency")
+                if implementation == "frozen_neural" and frequency != self.frequency:
+                    raise ValueError("Frozen neural frequency must preserve its checkpoint clock")
+                self.periods.append(round(period))
                 previous = module.output_kind
                 self.contracts.append(dict(stage=index, implementation=implementation,
                                            input=module.input_kind, output=module.output_kind,
                                            derivatives=module.derivatives,
-                                           frequency_hz=env.freq,
+                                           frequency_hz=frequency,
                                            provenance=getattr(module, "provenance", {})))
             if not self.modules or previous != self.output_kind:
                 raise ValueError("Pipeline final physical output differs from execution contract")
@@ -170,6 +181,9 @@ class PipelinePlanner:
             self.close()
             raise
         self.plans, self.trajectories, self.commands = set(), set(), 0
+        self.last_tick = None
+        self.cached, self.next_ticks = [None]*len(self.modules), [0]*len(self.modules)
+        self.module_calls = [0]*len(self.modules)
 
     def start(self, calibration, goal, limits=None, task_adapter=None):
         if limits:
@@ -177,6 +191,9 @@ class PipelinePlanner:
         self.plans.clear()
         self.trajectories.clear()
         self.commands = 0
+        self.last_tick = None
+        self.cached, self.next_ticks = [None]*len(self.modules), [0]*len(self.modules)
+        self.module_calls = [0]*len(self.modules)
         for module in self.modules:
             module.start(calibration, goal, None, task_adapter or {})
 
@@ -184,11 +201,27 @@ class PipelinePlanner:
         import time
 
         started = time.monotonic()
+        clock = float(packet["time"])*self.frequency
+        if not np.isfinite(clock) or clock < 0:
+            raise ValueError("Pipeline clock must be finite and nonnegative")
+        tick = round(clock)
+        if (abs(clock-tick) > 1e-4
+                or (self.last_tick is not None and tick <= self.last_tick)):
+            raise ValueError("Pipeline clock must advance on execution ticks; reset starts a new episode")
+        self.last_tick = tick
         upstream, identity = None, []
         reply = None
         try:
             for index, module in enumerate(self.modules):
-                reply = module.step(packet, upstream)
+                if tick >= self.next_ticks[index]:
+                    reply = module.step(packet, upstream)
+                    self.module_calls[index] += 1
+                    self.cached[index] = reply
+                    self.next_ticks[index] = tick+self.periods[index]
+                else:
+                    reply = self.cached[index]
+                    if reply.get("output") is not None and reply["valid_until"] < packet["time"]:
+                        reply = dict(output=None, decision_status="no_plan", expired_stage=index)
                 upstream = reply.get("output")
                 if upstream is None:
                     break
