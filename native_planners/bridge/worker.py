@@ -4,8 +4,10 @@
 Run in an isolated ROS master. Each worker owns one episode and destroys its
 planner/map processes at EOF, including when the simulator fails.
 """
+
 import argparse
 import base64
+import hashlib
 import json
 import os
 import signal
@@ -20,6 +22,7 @@ from pathlib import Path
 PROTOCOL = sys.stdout
 sys.stdout = sys.stderr
 
+
 def stop(process):
     if process is None or process.poll() is not None:
         return
@@ -30,17 +33,52 @@ def stop(process):
         os.killpg(process.pid, signal.SIGKILL)
         process.wait()
 
-def launch_file(method, calibration, goal, folder):
+
+def native_runtime_identity(method):
+    root = Path("/opt/drone_playground/planners")
+    if method == "ego":
+        paths = [
+            root / "ego/devel/lib/ego_planner/ego_planner_node",
+            root / "ego/src/ego-planner/src/planner/plan_manage/src/ego_replan_fsm.cpp",
+        ]
+    else:
+        paths = [
+            root / "super/devel/lib/super_planner/fsm_node",
+            root / "super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp",
+        ]
+    return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+
+
+def launch_file(method, calibration, goal, folder, limits=None, task_adapter=None):
+    limits = limits or {
+        "max_velocity_mps": 20.0,
+        "max_acceleration_mps2": 3.0,
+        "planning_horizon_m": 7.5,
+    }
     root = ET.Element("launch")
+    interactive = bool((task_adapter or {}).get("interactive_goals", False))
     if method == "ego":
         source = "/opt/drone_playground/planners/ego/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml"
         node = ET.parse(source).getroot().find("node")
         k = calibration["intrinsics"]
-        args = dict(map_size_x_=40, map_size_y_=20, map_size_z_=6,
-                    odometry_topic="/p5/odom", camera_pose_topic="/p5/camera_pose",
-                    depth_topic="/p5/depth", cloud_topic="/p5/unused_cloud",
-                    cx=k["cx_px"], cy=k["cy_px"], fx=k["fx_px"], fy=k["fy_px"],
-                    max_vel=2, max_acc=3, planning_horizon=7.5, flight_type=2, point_num=1)
+        args = dict(
+            map_size_x_=40,
+            map_size_y_=20,
+            map_size_z_=6,
+            odometry_topic="/p5/odom",
+            camera_pose_topic="/p5/camera_pose",
+            depth_topic="/p5/depth",
+            cloud_topic="/p5/unused_cloud",
+            cx=k["cx_px"],
+            cy=k["cy_px"],
+            fx=k["fx_px"],
+            fy=k["fy_px"],
+            max_vel=limits["max_velocity_mps"],
+            max_acc=limits["max_acceleration_mps2"],
+            planning_horizon=limits["planning_horizon_m"],
+            flight_type=1 if interactive else 2,
+            point_num=1,
+        )
         for i in range(5):
             for j, axis in enumerate("xyz"):
                 args["point%d_%s" % (i, axis)] = goal[j]
@@ -49,26 +87,38 @@ def launch_file(method, calibration, goal, folder):
                 for key, replacement in args.items():
                     value = value.replace("$(arg %s)" % key, str(replacement))
                 child.set(attr, value)
-        overrides = {"grid_map/pose_type": "1", "grid_map/virtual_ceil_height": "4.9",
-                     "grid_map/depth_filter_maxdist": "10.0", "grid_map/max_ray_length": "10.0"}
+        overrides = {
+            "grid_map/pose_type": "1",
+            "grid_map/virtual_ceil_height": "4.9",
+            "grid_map/depth_filter_maxdist": "10.0",
+            "grid_map/max_ray_length": "10.0",
+        }
         for child in node.findall("param"):
             if child.get("name") in overrides:
                 child.set("value", overrides[child.get("name")])
         root.append(node)
-        server = ET.SubElement(root, "node", pkg="ego_planner", name="traj_server",
-                               type="traj_server", output="screen")
+        server = ET.SubElement(
+            root, "node", pkg="ego_planner", name="traj_server", type="traj_server", output="screen"
+        )
         ET.SubElement(server, "remap", **{"from": "/position_cmd", "to": "/p5/command"})
         ET.SubElement(server, "remap", **{"from": "/odom_world", "to": "/p5/odom"})
         ET.SubElement(server, "param", name="traj_server/time_forward", value="1.0")
     else:
         import yaml
+
         source = "/opt/drone_playground/planners/super/src/SUPER/super_planner/config/click_smooth_ros1.yaml"
         with open(source) as handle:
             cfg = yaml.safe_load(handle)
-        cfg["fsm"].update(click_goal_topic="/p5/goal", click_height=float(goal[2]),
-                          cmd_topic="/p5/command", mpc_cmd_topic="/p5/polynomial")
+        cfg["fsm"].update(
+            click_goal_topic="/p5/goal",
+            click_height=-10.0 if interactive else float(goal[2]),
+            cmd_topic="/p5/command",
+            mpc_cmd_topic="/p5/polynomial",
+        )
         cfg["super_planner"]["visualization_en"] = False
-        cfg["traj_opt"]["boundary"].update(max_vel=2.0, max_acc=3.0)
+        cfg["traj_opt"]["boundary"].update(
+            max_vel=limits["max_velocity_mps"], max_acc=limits["max_acceleration_mps2"]
+        )
         cfg["rog_map"]["ros_callback"].update(cloud_topic="/p5/cloud", odom_topic="/p5/odom")
         cfg["rog_map"]["visualization"]["enable"] = False
         cfg["rog_map"]["virtual_ceil_height"] = 4.9
@@ -76,12 +126,17 @@ def launch_file(method, calibration, goal, folder):
         target = folder / "super.yaml"
         with target.open("w") as handle:
             yaml.safe_dump(cfg, handle)
-        node = ET.SubElement(root, "node", pkg="super_planner", name="fsm_node",
-                             type="fsm_node", output="screen")
+        node = ET.SubElement(
+            root, "node", pkg="super_planner", name="fsm_node", type="fsm_node", output="screen"
+        )
+        ET.SubElement(
+            node, "env", name="DRONE_PLAYGROUND_CONTROL_TRANSFER", value="1" if interactive else "0"
+        )
         ET.SubElement(node, "param", name="config_path", value=str(target))
     path = folder / "planner.launch"
     ET.ElementTree(root).write(str(path))
     return str(path)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -99,9 +154,14 @@ def main():
     with tempfile.TemporaryDirectory(prefix="p5-ros-") as temporary:
         os.environ["ROS_LOG_DIR"] = temporary
         try:
-            core = subprocess.Popen(["roscore", "-p", str(args.port)],
-                                    stdout=sys.stderr, stderr=sys.stderr, start_new_session=True)
+            core = subprocess.Popen(
+                ["roscore", "-p", str(args.port)],
+                stdout=sys.stderr,
+                stderr=sys.stderr,
+                start_new_session=True,
+            )
             import rosgraph
+
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 try:
@@ -118,6 +178,7 @@ def main():
             from quadrotor_msgs.msg import PositionCommand
             from rosgraph_msgs.msg import Clock
             from sensor_msgs.msg import Image, PointCloud2, PointField
+
             rospy.set_param("/use_sim_time", True)
             rospy.init_node("p5_bridge", anonymous=False, disable_signals=True)
             pubs = {
@@ -130,22 +191,29 @@ def main():
                 "waypoint": rospy.Publisher("/waypoint_generator/waypoints", PathMsg, queue_size=1),
             }
             latest = {"reference": None, "commands": 0, "trajectories": 0}
+
             def command(msg):
                 latest["reference"] = {
                     "position": [msg.position.x, msg.position.y, msg.position.z],
                     "velocity": [msg.velocity.x, msg.velocity.y, msg.velocity.z],
                     "acceleration": [msg.acceleration.x, msg.acceleration.y, msg.acceleration.z],
-                    "yaw": msg.yaw, "time": msg.header.stamp.to_sec() - 1.0}
+                    "yaw": msg.yaw,
+                    "time": msg.header.stamp.to_sec() - 1.0,
+                }
                 latest["commands"] += 1
+
             def trajectory(msg):
                 if args.method == "ego" or msg.piece_num_pos > 0:
                     latest["trajectories"] += 1
+
             rospy.Subscriber("/p5/command", PositionCommand, command, queue_size=1)
             if args.method == "ego":
                 from ego_planner.msg import Bspline
+
                 rospy.Subscriber("/planning/bspline", Bspline, trajectory, queue_size=1)
             else:
                 from quadrotor_msgs.msg import PolynomialTrajectory
+
                 rospy.Subscriber("/p5/polynomial", PolynomialTrajectory, trajectory, queue_size=1)
             goal = None
             ticks = 0
@@ -156,10 +224,21 @@ def main():
                     if planner is not None:
                         raise RuntimeError("One worker can own only one episode")
                     goal = request["goal"]
-                    launch = launch_file(args.method, request["calibration"], goal, Path(temporary))
+                    launch = launch_file(
+                        args.method,
+                        request["calibration"],
+                        goal,
+                        Path(temporary),
+                        request.get("limits"),
+                        request.get("task_adapter"),
+                    )
                     pubs["clock"].publish(Clock(rospy.Time.from_sec(1.0)))
-                    planner = subprocess.Popen(["roslaunch", launch], stdout=sys.stderr,
-                                               stderr=sys.stderr, start_new_session=True)
+                    planner = subprocess.Popen(
+                        ["roslaunch", launch],
+                        stdout=sys.stderr,
+                        stderr=sys.stderr,
+                        start_new_session=True,
+                    )
                     # Large native maps can initialize slowly on a busy host.
                     # This bounds cold setup only; simulated flight time stays fixed.
                     startup_timeout = float(request.get("startup_timeout_s", 90.0))
@@ -169,7 +248,11 @@ def main():
                     sensor_pub = pubs["depth" if args.method == "ego" else "cloud"]
                     while time.monotonic() < deadline:
                         goal_ready = args.method == "ego" or pubs["goal"].get_num_connections()
-                        if sensor_pub.get_num_connections() and pubs["odom"].get_num_connections() and goal_ready:
+                        if (
+                            sensor_pub.get_num_connections()
+                            and pubs["odom"].get_num_connections()
+                            and goal_ready
+                        ):
                             break
                         if planner.poll() is not None:
                             raise RuntimeError("Native planner launch failed")
@@ -177,9 +260,12 @@ def main():
                     else:
                         raise RuntimeError("Native sensor subscribers not ready")
                     response["ready"] = True
+                    response["runtime_sha256"] = native_runtime_identity(args.method)
                     response["launch_xml"] = Path(launch).read_text()
                     config_path = Path(temporary) / "super.yaml"
-                    response["planner_yaml"] = config_path.read_text() if config_path.exists() else None
+                    response["planner_yaml"] = (
+                        config_path.read_text() if config_path.exists() else None
+                    )
                 elif request["op"] == "step":
                     if planner.poll() is not None:
                         raise RuntimeError("Native planner process died")
@@ -212,14 +298,18 @@ def main():
                         cloud = PointCloud2()
                         cloud.header = odom.header
                         cloud.height, cloud.width = 1, request["point_count"]
-                        cloud.fields = [PointField(n, i * 4, PointField.FLOAT32, 1)
-                                        for i, n in enumerate(["x", "y", "z", "intensity"])]
+                        cloud.fields = [
+                            PointField(n, i * 4, PointField.FLOAT32, 1)
+                            for i, n in enumerate(["x", "y", "z", "intensity"])
+                        ]
                         cloud.point_step, cloud.row_step = 16, 16 * cloud.width
                         cloud.is_dense = True
                         cloud.data = base64.b64decode(request["points"])
                         pubs["cloud"].publish(cloud)
                     pubs["clock"].publish(Clock(stamp))
-                    if ticks == 10:
+                    if "goal" in request:
+                        goal = request["goal"]
+                    if ticks == 10 or (ticks > 10 and "goal" in request):
                         target = PoseStamped()
                         target.header = odom.header
                         target.pose.orientation.w = 1.0
@@ -246,6 +336,7 @@ def main():
         finally:
             stop(planner)
             stop(core)
+
 
 if __name__ == "__main__":
     main()

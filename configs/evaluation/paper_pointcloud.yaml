@@ -1,0 +1,9 @@
+environment: config
+split: heldout
+episodes: 1
+seed_start: null
+output: null
+training_run: null
+speeds: [4.0, 6.0, 8.0]
+scene_ids: [S01, S02, S03, S06, D01, D02, D03, D06]
+duration: 40.0

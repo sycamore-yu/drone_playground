@@ -40,6 +40,7 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
             "ppo": "warm start only; optimizer/RNG reinitialized",
             "apg": "inference only; native APG has no restore hook",
             "shac": "full continuation is stored in training-state/",
+            "bptt": "full continuation is stored in training-state/",
             "dva": "full continuation is stored in training-state/",
         }[config["algorithm"]],
     )

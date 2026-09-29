@@ -61,6 +61,7 @@ class UniformMid360Lidar:
             bank.world_low,
             bank.world_high,
             self.include_ground,
+            rotations=None if bank.rotations is None else bank.rotations[scenario_id],
         )
         valid = (distance >= self.range_m[0]) & (distance <= self.range_m[1])
         points = directions * jnp.where(valid, distance, 0.0)[:, None]

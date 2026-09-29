@@ -1,0 +1,12 @@
+{
+  "completed": 32,
+  "elapsed_s": 15.51341887935996,
+  "finished_at": "2026-09-28T18:10:14.073482+00:00",
+  "full_budget_completed": true,
+  "num_trials": 32,
+  "quality_passed": true,
+  "run_id": "final-acceptance-heldout-shac-hovering-v1",
+  "started_at": "2026-09-28T18:09:58.560052+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/05-task-evaluation"
+}

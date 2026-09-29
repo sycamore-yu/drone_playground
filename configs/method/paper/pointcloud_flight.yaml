@@ -1,11 +1,11 @@
 # @package _global_
 defaults:
+- /evaluation: paper_pointcloud
 - /env: paper/pointcloud_flight
 - /algorithm: pointcloud_bptt
 - /network: paper_pointnet_gru
 - /training: default
 - /runtime: jax
-- /evaluation: default
 - /visualization: rscope
 - _self_
 method:
@@ -48,24 +48,3 @@ reproduction:
     a text-specified update budget.
   - Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the
     policy is trained only on independent static primitives.
-evaluation:
-  environment: config
-  split: heldout
-  episodes: 1
-  seed_start: null
-  output: null
-  training_run: null
-  speeds:
-  - 4.0
-  - 6.0
-  - 8.0
-  scene_ids:
-  - S01
-  - S02
-  - S03
-  - S06
-  - D01
-  - D02
-  - D03
-  - D06
-  duration: 40.0

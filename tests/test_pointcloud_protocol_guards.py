@@ -41,5 +41,5 @@ def test_navigation8_nominal_label_requires_the_frozen_protocol(group, field, va
     config = compose_config("paper_pointcloud_navigation8")
     validate_config(config)
     (config["env"]["task"] if group == "task" else config[group])[field] = value
-    with pytest.raises(ValueError, match="Navigation8 nominal"):
+    with pytest.raises(ValueError, match="Selected navigation protocol"):
         validate_config(config)

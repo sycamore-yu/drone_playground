@@ -1,0 +1,24 @@
+{
+  "run_id": "final-acceptance-pointcloud-hovering-t1",
+  "exit_code": 0,
+  "wall_seconds": 418.3971098209731,
+  "state": "complete",
+  "score": 999.6603950694786,
+  "quality_passed": false,
+  "steps": 262144,
+  "selected_step": 0,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.3396049305214828,
+  "trainer": {
+    "acceleration": 1.0947213172912598,
+    "collision": 0.0,
+    "compile_and_first_update_seconds": 23.18276044074446,
+    "gradient_norm": 3.4726922512054443,
+    "jerk": 97.13340759277344,
+    "loss": 0.39933767914772034,
+    "net_update_seconds": 280.9418825954199,
+    "position": 0.3035723865032196,
+    "velocity": 0.09555866569280624
+  }
+}

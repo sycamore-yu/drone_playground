@@ -1,0 +1,29 @@
+{
+  "run_id": "final-acceptance-ppo-tracking-t0",
+  "exit_code": 0,
+  "wall_seconds": 124.96831657504663,
+  "state": "complete",
+  "score": 999.9672626879482,
+  "quality_passed": true,
+  "steps": 2097152,
+  "selected_step": 1572864,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.03273731205187256,
+  "trainer": {
+    "training/entropy_loss": 0.01903563179075718,
+    "training/kl_mean": 0.023749174550175667,
+    "training/learning_rate": 0.0007999998051673174,
+    "training/policy_dist_max_loc": 2.18257212638855,
+    "training/policy_dist_max_std": 0.14594578742980957,
+    "training/policy_dist_mean_loc": 0.11028964817523956,
+    "training/policy_dist_mean_std": 0.12411755323410034,
+    "training/policy_dist_min_loc": -1.742544412612915,
+    "training/policy_dist_min_std": 0.10462404787540436,
+    "training/policy_loss": 0.0044637336395680904,
+    "training/sps": 113005.54443594128,
+    "training/total_loss": 0.024530835449695587,
+    "training/v_loss": 0.0010314681567251682,
+    "training/walltime": 68.42718291282654
+  }
+}

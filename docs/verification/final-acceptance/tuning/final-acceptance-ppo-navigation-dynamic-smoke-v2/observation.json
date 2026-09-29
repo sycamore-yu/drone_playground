@@ -1,0 +1,29 @@
+{
+  "run_id": "final-acceptance-ppo-navigation-dynamic-smoke-v2",
+  "exit_code": 0,
+  "wall_seconds": 101.04421742912382,
+  "state": "complete",
+  "score": -101.0,
+  "quality_passed": null,
+  "steps": 4096,
+  "selected_step": 0,
+  "completed": null,
+  "completion_rate": 0.0,
+  "rmse_m": null,
+  "trainer": {
+    "training/entropy_loss": -0.011723784729838371,
+    "training/kl_mean": 0.0063269794918596745,
+    "training/learning_rate": 0.0007999993395060301,
+    "training/policy_dist_max_loc": 0.28229647874832153,
+    "training/policy_dist_max_std": 0.3691818416118622,
+    "training/policy_dist_mean_loc": 0.08569332957267761,
+    "training/policy_dist_mean_std": 0.3677962124347687,
+    "training/policy_dist_min_loc": -0.060671404004096985,
+    "training/policy_dist_min_std": 0.36663874983787537,
+    "training/policy_loss": -0.0003653659368865192,
+    "training/sps": 113.14612699109557,
+    "training/total_loss": 188.9560089111328,
+    "training/v_loss": 188.96810913085938,
+    "training/walltime": 36.200973987579346
+  }
+}

@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+- /env: tracking
+- /algorithm: bptt
+- /network: brax_apg
+- /training: default
+- /runtime: jax
+- /evaluation: default
+- /visualization: rscope
+- _self_
+method:
+  name: bptt
+  output: attitude_thrust
+  implementation: neural
+  trainable: true
+source: BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation
+mode: train
+runtime:
+  action_delay_ms: [25.0, 50.0]
+training:
+  num_envs: 16
+  policy_updates: 1024
+  num_timesteps: null

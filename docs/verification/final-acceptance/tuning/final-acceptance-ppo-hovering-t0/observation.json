@@ -1,0 +1,29 @@
+{
+  "run_id": "final-acceptance-ppo-hovering-t0",
+  "exit_code": 0,
+  "wall_seconds": 130.66126288706437,
+  "state": "complete",
+  "score": 999.8491197929264,
+  "quality_passed": true,
+  "steps": 2097152,
+  "selected_step": 1048576,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.15088020707356264,
+  "trainer": {
+    "training/entropy_loss": 0.026681197807192802,
+    "training/kl_mean": 0.01951408013701439,
+    "training/learning_rate": 0.0007999998051673174,
+    "training/policy_dist_max_loc": 2.072552442550659,
+    "training/policy_dist_max_std": 0.11447029560804367,
+    "training/policy_dist_mean_loc": 0.12404800206422806,
+    "training/policy_dist_mean_std": 0.09428638219833374,
+    "training/policy_dist_min_loc": -1.803844690322876,
+    "training/policy_dist_min_std": 0.08290334790945053,
+    "training/policy_loss": 0.006430035922676325,
+    "training/sps": 110080.92617337317,
+    "training/total_loss": 0.033336229622364044,
+    "training/v_loss": 0.0002249956742161885,
+    "training/walltime": 70.49204802513123
+  }
+}

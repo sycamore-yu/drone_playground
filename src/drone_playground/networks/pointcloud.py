@@ -1,5 +1,7 @@
 """The point-wise encoder, additive state fusion and GRU in paper Sec. III-C."""
 
+import math
+
 import jax.numpy as jnp
 from flax import linen as nn
 
@@ -8,8 +10,11 @@ class PointCloudPolicy(nn.Module):
     hidden_size: int = 192
     point_channels: tuple[int, ...] = (64, 128, 1024)
     negative_slope: float = 0.01
+    point_input_scale: float = 1.0
 
     def setup(self):
+        if not math.isfinite(self.point_input_scale) or self.point_input_scale <= 0:
+            raise ValueError("Point coordinate scale must be finite and positive")
         self.point_layers = tuple(
             nn.Dense(width, name=f"point_{index}")
             for index, width in enumerate(self.point_channels)
@@ -25,7 +30,7 @@ class PointCloudPolicy(nn.Module):
             raise ValueError("Point XYZ and validity shapes disagree")
         if points.shape[-2] < 1:
             raise ValueError("Use a masked placeholder for an empty scan")
-        hidden = points
+        hidden = points * self.point_input_scale
         for layer in self.point_layers:
             hidden = nn.leaky_relu(layer(hidden), negative_slope=self.negative_slope)
         valid = valid.astype(bool)

@@ -1,0 +1,13 @@
+{
+  "completed": 2,
+  "elapsed_s": 43.84109953511506,
+  "engineer_passed": true,
+  "finished_at": "2026-09-29T02:44:14.339860+00:00",
+  "full_budget_completed": true,
+  "num_trials": 2,
+  "quality_passed": false,
+  "run_id": "final-acceptance-native-super-tracking-v2",
+  "started_at": "2026-09-29T02:43:30.498757+00:00",
+  "status": "completed",
+  "task_id": "final-acceptance/native-control"
+}

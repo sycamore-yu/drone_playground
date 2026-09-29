@@ -120,3 +120,8 @@ and documented geometry deviations are recorded in the P5 source inventory.
 ## Point-cloud paper reconstruction
 
 `learning/algorithms/pointcloud_bptt.py`, `networks/pointcloud.py`, `models/point_mass.py` and the corresponding sensor/task modules were integrated from this project's `research/pointcloud-paper-navigation8` snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity, inferred settings and source audit are retained in `docs/research/pointcloud-paper-source-audit-20260928.md` and `third_party/sources.yaml`. This work is recorded separately from Learning on the Fly.
+
+
+### 原生控制迁移补丁（2026-09-29）
+
+EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`native_planners/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`docs/verification/final-acceptance/`与`native_planners/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。

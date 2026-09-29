@@ -30,7 +30,7 @@ def network_factory(config: dict):
             mean_kernel_init_fn=jax.nn.initializers.orthogonal,
             mean_kernel_init_kwargs={"scale": 0.01},
         )
-    if config["algorithm"] in ("apg", "shac"):
+    if config["algorithm"] in ("apg", "bptt", "shac"):
         return functools.partial(
             apg_networks.make_apg_networks,
             hidden_layer_sizes=sizes,

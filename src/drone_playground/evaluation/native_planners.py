@@ -160,7 +160,9 @@ def evaluate_native(config, root: Path, run_id: str):
             hold = np.asarray(state.pipeline_state.sim_data.states.pos[0, 0])
             tic = time.monotonic()
             try:
-                worker.start(env.sensor_calibration, env.bank.goal[scenario_id])
+                worker.start(
+                    env.sensor_calibration, env.bank.goal[scenario_id], settings.get("limits")
+                )
 
                 def decide(current, tick):
                     nonlocal commands, trajectories, unavailable, rejected, hold
@@ -221,8 +223,6 @@ def evaluate_native(config, root: Path, run_id: str):
                 rpc_p95_s=float(np.percentile(worker.latencies, 95)),
             )
             save_report(worker.directory / "diagnostics.json", diag)
-            final = {**rows[-1], "active": np.asarray(False)}
-            rows.extend([final] * (env.episode_length - len(rows)))
             trace = jax.tree.map(lambda *values: np.stack(values), *rows)
             label = {"scenario_id": scenario_id, **env.bank.labels(scenario_id)}
             return trace, label, diag
@@ -250,7 +250,18 @@ def evaluate_native(config, root: Path, run_id: str):
                     total_trajectories += diag["trajectories"]
                     save_report(rec.path / "native-progress.json", diagnostics)
                     rec.phase("evaluating", difficulty=difficulty, completed_cases=finished)
-                trace = jax.tree.map(lambda *values: np.stack(values, axis=1), *traces)
+                # Ragged episodes are padded only for in-memory aggregation. Every
+                # archive and replay trims on active; the worker stops at termination.
+                length = max(item["pos"].shape[0] for item in traces)
+                padded = []
+                for item in traces:
+                    n = item["pos"].shape[0]
+                    padded_item = jax.tree.map(
+                        lambda x: np.concatenate([x, np.repeat(x[-1:], length - n, axis=0)]), item
+                    )
+                    padded_item["active"][n:] = False
+                    padded.append(padded_item)
+                trace = jax.tree.map(lambda *values: np.stack(values, axis=1), *padded)
                 cells[difficulty] = summarize_cell(trace, labels, env.dt, env.duration)
                 from drone_playground.evaluation.trace_archive import save_navigation_traces
 

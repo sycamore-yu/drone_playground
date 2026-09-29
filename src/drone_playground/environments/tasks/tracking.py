@@ -165,9 +165,20 @@ class TrackingEnv(Env):
         return self.controller.physical_action(action)
 
     def step(self, state: State, action: jax.Array) -> State:
+        return self._transition(state, action)
+
+    def step_schedule(self, state, commands):
+        action = 2 * (commands[-1] - self.low) / (self.high - self.low) - 1
+        return self._transition(state, action, commands)
+
+    def _transition(self, state, action, commands=None):
         data = state.pipeline_state
         physical = self.physical_action(action)
-        sim_data = self.execution.step(data.sim_data, physical)
+        sim_data = (
+            self.execution.step(data.sim_data, physical)
+            if commands is None
+            else self.execution.step_schedule(data.sim_data, commands)
+        )
         data = data.replace(sim_data=sim_data)
         numerical_failure = jnp.array(False)
         if self.numerical_guard:

@@ -133,4 +133,10 @@ def test_public_environment_preserves_the_qualified_source_model_and_protocol(
     from drone_playground.composition import compose_method
     from tests.reference_configs import compose_reference
 
-    assert compose_method(method, environment)["env"] == compose_reference(old)["env"]
+    expected = compose_reference(old)["env"]
+    if environment.startswith("navigation/"):
+        assert expected["task"]["duration"] == 40.0
+        # The user-approved protocol v2 changes the navigation deadline only.
+        # Every other environment field remains checked against the frozen source.
+        expected["task"]["duration"] = 300.0
+    assert compose_method(method, environment)["env"] == expected

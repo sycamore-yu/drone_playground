@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+- /env/paper/pointcloud_navigation
+- /evaluation/pointcloud_navigation_v2@_global_.evaluation
+- _self_
+env:
+  name: paper/pointcloud_navigation_v2
+  task:
+    duration: 300.0
+    arrival_sampling: physics
+reproduction:
+  transfer_protocol: navigation-v2; 300s, 4/6/8/20mps requested speeds, first-terminal-event recording

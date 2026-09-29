@@ -1,0 +1,311 @@
+{
+  "num_trials": 6,
+  "arrived": 0,
+  "collision": 6,
+  "out_of_bounds": 0,
+  "numerical_failure": 0,
+  "timeout": 0,
+  "success_rate": 0.0,
+  "collision_rate": 1.0,
+  "failure_rate": 1.0,
+  "timeout_rate": 0.0,
+  "constrained_time_mean_s": 300.0,
+  "success_time_mean_s": null,
+  "return_mean": -136.43795267740884,
+  "cells": {
+    "easy": {
+      "num_trials": 2,
+      "arrived": 0,
+      "collision": 2,
+      "out_of_bounds": 0,
+      "numerical_failure": 0,
+      "timeout": 0,
+      "success_rate": 0.0,
+      "collision_rate": 1.0,
+      "failure_rate": 1.0,
+      "timeout_rate": 0.0,
+      "constrained_time_mean_s": 300.0,
+      "success_time_mean_s": null,
+      "success_time_samples": 0,
+      "min_clearance_m": -0.011007912456989288,
+      "return_mean": -133.4348907470703,
+      "episodes": [
+        {
+          "case": 0,
+          "scenario_id": 0,
+          "difficulty": "easy",
+          "subtype": "S01",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 969,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.011007912456989288,
+          "final_goal_distance_m": 92.1573486328125,
+          "return": -141.37608337402344
+        },
+        {
+          "case": 1,
+          "scenario_id": 1,
+          "difficulty": "easy",
+          "subtype": "S01",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 885,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.0008813813328742981,
+          "final_goal_distance_m": 89.09312438964844,
+          "return": -125.49369812011719
+        }
+      ]
+    },
+    "medium": {
+      "num_trials": 2,
+      "arrived": 0,
+      "collision": 2,
+      "out_of_bounds": 0,
+      "numerical_failure": 0,
+      "timeout": 0,
+      "success_rate": 0.0,
+      "collision_rate": 1.0,
+      "failure_rate": 1.0,
+      "timeout_rate": 0.0,
+      "constrained_time_mean_s": 300.0,
+      "success_time_mean_s": null,
+      "success_time_samples": 0,
+      "min_clearance_m": -0.005516715347766876,
+      "return_mean": -107.94853210449219,
+      "episodes": [
+        {
+          "case": 0,
+          "scenario_id": 2,
+          "difficulty": "medium",
+          "subtype": "S02",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 903,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.005516715347766876,
+          "final_goal_distance_m": 85.59573364257812,
+          "return": -107.94853210449219
+        },
+        {
+          "case": 1,
+          "scenario_id": 3,
+          "difficulty": "medium",
+          "subtype": "S02",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 903,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.005516715347766876,
+          "final_goal_distance_m": 85.59573364257812,
+          "return": -107.94853210449219
+        }
+      ]
+    },
+    "hard": {
+      "num_trials": 2,
+      "arrived": 0,
+      "collision": 2,
+      "out_of_bounds": 0,
+      "numerical_failure": 0,
+      "timeout": 0,
+      "success_rate": 0.0,
+      "collision_rate": 1.0,
+      "failure_rate": 1.0,
+      "timeout_rate": 0.0,
+      "constrained_time_mean_s": 300.0,
+      "success_time_mean_s": null,
+      "success_time_samples": 0,
+      "min_clearance_m": -0.04056937247514725,
+      "return_mean": -167.93043518066406,
+      "episodes": [
+        {
+          "case": 0,
+          "scenario_id": 4,
+          "difficulty": "hard",
+          "subtype": "S03",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 926,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.04056937247514725,
+          "final_goal_distance_m": 97.47097778320312,
+          "return": -167.32534790039062
+        },
+        {
+          "case": 1,
+          "scenario_id": 5,
+          "difficulty": "hard",
+          "subtype": "S06",
+          "outcome": "collision",
+          "arrived": false,
+          "collision": true,
+          "out_of_bounds": false,
+          "numerical_failure": false,
+          "timeout": false,
+          "steps": 1078,
+          "arrival_time_s": null,
+          "min_clearance_m": -0.010509200394153595,
+          "final_goal_distance_m": 97.44083404541016,
+          "return": -168.5355224609375
+        }
+      ]
+    }
+  },
+  "split": "heldout",
+  "episodes_per_difficulty": 2,
+  "method": "ego",
+  "scene_bank_sha256": "861ac1703f9e3fc7a560979efbef2a249efb2460ea5b7a53fd7b34de7315e314",
+  "native_trajectories": 78,
+  "sensor_calibration": {
+    "calibration_id": "p5-d435-ideal-120x90-hfov85.2-v1",
+    "sensor": "D435 ideal metric depth",
+    "noise_model": "none (ideal geometry; RealSense noise is out of scope)",
+    "extrinsics": {
+      "parent_frame": "body FLU",
+      "child_frame": "camera optical (x right, y down, z forward)",
+      "translation_m": [
+        0.05,
+        0.0175,
+        0.0125
+      ],
+      "rotation_body_from_optical": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ]
+    },
+    "intrinsics": {
+      "model": "pinhole",
+      "width": 120,
+      "height": 90,
+      "fx_px": 65.24950981476013,
+      "fy_px": 65.24950981476013,
+      "cx_px": 60.0,
+      "cy_px": 45.0,
+      "horizontal_fov_deg": 85.2,
+      "vertical_fov_deg": 69.18497971275337,
+      "near_m": 0.1,
+      "far_m": 10.0,
+      "depth_units": "metres, axial (optical z)",
+      "invalid_value": 0.0
+    },
+    "source_availability_hz": 30.0,
+    "policy_stride": 6,
+    "policy_points_per_frame": 300,
+    "policy_channels": 2,
+    "policy_grid": [
+      20,
+      15
+    ],
+    "policy_history_frames": 4,
+    "declared_latency_s": 0.0,
+    "floor_extends_beyond_corridor_m": 100.0,
+    "source": "SANDO urdf/_d435.gazebo.xacro + gazebo_ros_realsense intrinsics"
+  },
+  "parameters_frozen": true,
+  "quality_passed": null,
+  "quality_rule": "No user-approved numerical quality threshold",
+  "diagnostics": [
+    {
+      "difficulty": "easy",
+      "case": 1,
+      "scenario_id": 1,
+      "commands": 1507,
+      "trajectories": 14,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 102.80294180288911,
+      "rpc_p95_s": 0.015364274010062217
+    },
+    {
+      "difficulty": "easy",
+      "case": 0,
+      "scenario_id": 0,
+      "commands": 1682,
+      "trajectories": 17,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 111.39383254898712,
+      "rpc_p95_s": 0.015164664015173912
+    },
+    {
+      "difficulty": "medium",
+      "case": 1,
+      "scenario_id": 3,
+      "commands": 1533,
+      "trajectories": 15,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 99.21866903919727,
+      "rpc_p95_s": 0.014691716618835926
+    },
+    {
+      "difficulty": "medium",
+      "case": 0,
+      "scenario_id": 2,
+      "commands": 1532,
+      "trajectories": 15,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 99.17544256802648,
+      "rpc_p95_s": 0.01477553304284811
+    },
+    {
+      "difficulty": "hard",
+      "case": 0,
+      "scenario_id": 4,
+      "commands": 1573,
+      "trajectories": 8,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 104.19981685234234,
+      "rpc_p95_s": 0.015204922552220524
+    },
+    {
+      "difficulty": "hard",
+      "case": 1,
+      "scenario_id": 5,
+      "commands": 1859,
+      "trajectories": 9,
+      "missing_command_steps": 104,
+      "rejected_commands": 0,
+      "wall_seconds": 120.15249051805586,
+      "rpc_p95_s": 0.015261347242631017
+    }
+  ],
+  "native_modification": "none; ROS parameters only"
+}

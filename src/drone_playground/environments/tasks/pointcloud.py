@@ -52,6 +52,7 @@ class PointCloudTask:
         self.episode_length = round(self.duration * self.freq)
         self.body_radius = float(config["env"]["task"]["body_radius"])
         self.goal_radius = float(config["env"]["task"]["goal_radius"])
+        self.arrival_sampling = config["env"]["task"].get("arrival_sampling", "policy")
         self.physics_freq = int(config["env"]["task"]["physics_freq"])
         self.task = config["env"]["task"]["name"]
         self.dynamics = self.model.forward
@@ -158,11 +159,18 @@ def validate_navigation_protocol(config):
             "scene_ids": ["S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06"],
         },
     }
+    if config["evaluation"].get("protocol"):
+        from drone_playground.evaluation.protocols import protocol_identity
+
+        identity = protocol_identity(config)
+        if identity["version"] == 2:
+            expected["task"].update(duration=300.0, arrival_sampling="physics")
+            expected["evaluation"].update(duration=300.0, speeds=[4.0, 6.0, 8.0, 20.0])
     for group, fields in expected.items():
         for field, required in fields.items():
             actual = (config["env"]["task"] if group == "task" else config[group]).get(field)
             if actual != required:
                 raise ValueError(
-                    f"Navigation8 nominal protocol requires {group}.{field}={required!r}; "
+                    f"Selected navigation protocol requires {group}.{field}={required!r}; "
                     f"received {actual!r}. Register protocol changes as a separate ablation."
                 )

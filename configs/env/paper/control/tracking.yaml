@@ -1,0 +1,19 @@
+# @package _global_
+defaults:
+- /scene@env.scene: empty
+- /task@env.task: pointcloud_control
+- /sensor@env.sensor: paper_uniform
+- /observation@env.observation: paper_pointcloud
+- /execution@env.execution: acceleration
+- /objective: pointcloud_control
+- _self_
+env:
+  name: paper/control/tracking
+  task:
+    control_task: tracking
+    duration: 10.0
+runtime:
+  action_delay_ms: [25.0, 50.0]
+reproduction:
+  task_adapter: pointcloud-canonical-control-transfer-v1
+  task_scope: Control transfer, not the original paper navigation benchmark; uses its encoder and GRU with canonical task references and a separately named trajectory objective.

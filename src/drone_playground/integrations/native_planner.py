@@ -97,17 +97,30 @@ class NativePlanner:
         self.latencies.append(time.monotonic() - start)
         return reply
 
-    def start(self, calibration, goal):
+    def start(self, calibration, goal, limits=None, task_adapter=None):
+        limits = limits or {
+            "max_velocity_mps": 20.0,
+            "max_acceleration_mps2": 3.0,
+            "planning_horizon_m": 7.5,
+        }
+        if any(not np.isfinite(value) or value <= 0 for value in limits.values()):
+            raise ValueError("Planner limits must be finite and positive")
         reply = self.request(
             {
                 "op": "start",
                 "calibration": calibration,
                 "goal": np.asarray(goal).tolist(),
+                "limits": limits,
+                "task_adapter": task_adapter or {},
                 "startup_timeout_s": 90.0,
             },
             timeout=110.0,
         )
         (self.directory / "planner.launch").write_text(reply["launch_xml"])
+        if reply.get("runtime_sha256"):
+            (self.directory / "runtime-identity.json").write_text(
+                json.dumps(reply["runtime_sha256"], indent=2) + "\n"
+            )
         if reply.get("planner_yaml"):
             (self.directory / "planner.yaml").write_text(reply["planner_yaml"])
         return reply

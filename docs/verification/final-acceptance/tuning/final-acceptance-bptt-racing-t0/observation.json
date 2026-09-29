@@ -1,0 +1,21 @@
+{
+  "run_id": "final-acceptance-bptt-racing-t0",
+  "exit_code": 0,
+  "wall_seconds": 706.2784381960519,
+  "state": "complete",
+  "score": 1004.9933480334294,
+  "quality_passed": true,
+  "steps": 655360,
+  "selected_step": 491520,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.006651966570643708,
+  "trainer": {
+    "actor_parameter_delta_l2": 2.9848246574401855,
+    "actual_steps": 655360.0,
+    "compile_and_first_update_seconds": 68.62357078399509,
+    "net_update_seconds": 464.6713349404745,
+    "training/actor_grad_norm": 0.20417825877666473,
+    "training/actor_loss": -0.9896345138549805
+  }
+}

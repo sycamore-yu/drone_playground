@@ -86,6 +86,8 @@ def migrate_v2(config: dict) -> dict:
     value = copy.deepcopy(config.get("components", config))
     if value.get("config_version") == 3:
         return value
+    if isinstance(value.get("dynamics"), str):
+        return migrate_flat_checkpoint(value)
     if not isinstance(value.get("dynamics"), dict):
         raise ValueError("Version 2 migration requires the full resolved component configuration")
     original_digest = hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
@@ -161,6 +163,62 @@ def migrate_v2(config: dict) -> dict:
         value["evaluation"]["environment"] = "config"
     value["migration"] = dict(source_schema=2, source_config_sha256=original_digest)
     return value
+
+
+def migrate_flat_checkpoint(config):
+    """Explicit P1--P4 flat-configuration migration, using the audited legacy map.
+
+    Only the historical state-control tasks are admitted. Numerical hyperparameters
+    override present defaults; the saved run had no additional transport queue.
+    This is called by the copy-only artifact migration tool, never at runtime.
+    """
+    from drone_playground.composition import compose_method
+
+    environments = {"figure8": "tracking", "random": "tracking/random", "racing": "racing"}
+    task, algorithm = config.get("task"), config.get("algorithm")
+    if task not in environments or algorithm not in ("ppo", "apg", "shac"):
+        raise ValueError(
+            "Flat checkpoint migration requires an audited P1--P4 state-control recipe"
+        )
+    result = compose_method("learning/" + algorithm, environments[task])
+    result["env"]["execution"]["dynamics"].update(forward=config["dynamics"], drone=config["drone"])
+    for group in ("algorithm", "network", "training"):
+        for field in result[group]:
+            if field in config and field != "name":
+                result[group][field] = copy.deepcopy(config[field])
+    original_task = result["env"]["task"]
+    for field in original_task:
+        if field in config and field != "name":
+            original_task[field] = copy.deepcopy(config[field])
+    original_task["numerical_guard"] = config.get("numerical_guard", False)
+    original_task["reference_count"] = config.get("reference_count", 256)
+    network = result["network"]
+    network.update(
+        hidden_sizes=config.get("hidden_sizes", [64, 64]),
+        normalize_observations=config.get("normalize_observations", False),
+    )
+    if algorithm == "ppo":
+        network.update(
+            distribution_type=config.get("distribution_type", "tanh_normal"),
+            init_noise_std=config.get("init_noise_std", 0.367879),
+        )
+    else:
+        network["layer_norm"] = config.get("layer_norm", True)
+    result["runtime"].update(
+        device=config.get("device", "cpu"), action_delay_steps=0, action_delay_ms=None
+    )
+    result["source"] = (
+        "Explicit copy of historical P1--P4 flat checkpoint; audited legacy field mapping"
+    )
+    result["migration"] = dict(
+        source_schema=1,
+        source_config_sha256=hashlib.sha256(
+            json.dumps(config, sort_keys=True).encode()
+        ).hexdigest(),
+        source_fields=sorted(config),
+        transport_delay="historical zero additional delay",
+    )
+    return result
 
 
 def require_current(config: dict) -> dict:

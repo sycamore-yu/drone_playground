@@ -1,0 +1,14 @@
+{
+  "completed": 32,
+  "elapsed_s": 28.180926374159753,
+  "engineer_passed": true,
+  "finished_at": "2026-09-29T02:31:03.493388+00:00",
+  "full_budget_completed": true,
+  "num_trials": 32,
+  "parameters_frozen": true,
+  "quality_passed": true,
+  "run_id": "final-acceptance-heldout-pointcloud-tracking-v1",
+  "started_at": "2026-09-29T02:30:35.312476+00:00",
+  "status": "completed",
+  "task_id": "final-acceptance/pointcloud-control"
+}

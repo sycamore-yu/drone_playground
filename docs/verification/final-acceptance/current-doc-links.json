@@ -1,0 +1,18 @@
+{
+  "checked": [
+    "README.md",
+    "AGENTS.md",
+    "CONTEXT.md",
+    "docs/architecture.md",
+    "docs/runbook.md",
+    "docs/status.md",
+    "docs/backlog.md",
+    "docs/project-tree.md",
+    "scripts/README.md",
+    "native_planners/README.md",
+    "docs/research/branch-lifecycle.md",
+    "docs/verification/final-acceptance/README.md",
+    "docs/verification/final-acceptance/commands.md"
+  ],
+  "missing": []
+}

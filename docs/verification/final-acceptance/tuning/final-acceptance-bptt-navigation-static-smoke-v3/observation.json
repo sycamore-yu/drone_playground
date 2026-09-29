@@ -1,0 +1,21 @@
+{
+  "run_id": "final-acceptance-bptt-navigation-static-smoke-v3",
+  "exit_code": 0,
+  "wall_seconds": 264.37497941218317,
+  "state": "complete",
+  "score": -101.0,
+  "quality_passed": null,
+  "steps": 4096,
+  "selected_step": 0,
+  "completed": null,
+  "completion_rate": 0.0,
+  "rmse_m": null,
+  "trainer": {
+    "actor_parameter_delta_l2": 4.35452127456665,
+    "actual_steps": 4096.0,
+    "compile_and_first_update_seconds": 37.433872485067695,
+    "net_update_seconds": 166.91942927334458,
+    "training/actor_grad_norm": 0.0,
+    "training/actor_loss": -0.22100937366485596
+  }
+}

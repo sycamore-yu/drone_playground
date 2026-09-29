@@ -1,0 +1,2531 @@
+{
+  "passed": true,
+  "readback_count": 245,
+  "replays": [
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-hovering-v1/rollouts/2026_09_28-18_08_16.mj_unroll",
+      "sha256": "25018d1d3eb4762367a9b8cabd7f4eb5d7e0b072375937a3a16b490591f75b2c",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-hovering-v1/rollouts/case-001/2026_09_28-18_08_17.mj_unroll",
+      "sha256": "cf78eda590bd68bde729745bf68c4ec1088398af05e47941684fb51f371b250c",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-hovering-v1/rollouts/case-002/2026_09_28-18_08_18.mj_unroll",
+      "sha256": "25018d1d3eb4762367a9b8cabd7f4eb5d7e0b072375937a3a16b490591f75b2c",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-hovering-v1/rollouts/case-003/2026_09_28-18_08_19.mj_unroll",
+      "sha256": "93bfbbdbb589bd1ef50dbbacdf14d1e0db03f5de784df50eaec4ee9d525dd7cf",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-hovering-v1/rollouts/case-004/2026_09_28-18_08_19.mj_unroll",
+      "sha256": "2d1bffeaf87091ed2c52339f64dbfda18540c9c9e03fdffdf5c3f3d802d5396b",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/easy/case-000/2026_09_29-02_33_38.mj_unroll",
+      "sha256": "0a72ed0d86b4afd7864f792d36ecda486d2918dcd2b3c90a087539f6132623c3",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/easy/case-001/2026_09_29-02_33_38.mj_unroll",
+      "sha256": "c09a897935b225dee001204141def0184eba9f0119360fb57cf0bae39855985c",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/hard/case-000/2026_09_29-02_33_39.mj_unroll",
+      "sha256": "fb8612c2d5abcb6ae8125b4308292952b64ff2a324574310e971dd3d2355199a",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/hard/case-001/2026_09_29-02_33_39.mj_unroll",
+      "sha256": "b338a1c5d0e68b5ca107c4aeb764bc16b726bacafbc8afab0484b5596a3b6f50",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/medium/case-000/2026_09_29-02_33_38.mj_unroll",
+      "sha256": "33872efdb0746a66c40ab986c8c3ce734bf6b7b9b6994de407fa8ea2ac518518",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/rollouts/medium/case-001/2026_09_29-02_33_39.mj_unroll",
+      "sha256": "17397d260e9b7e549bceaf8f42eedc911452021d831602acecb3aca27092c1bc",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/easy/case-000/2026_09_29-02_33_08.mj_unroll",
+      "sha256": "cfdf8615d26625b49f7b8631421594218b38b52dc66fa246f331e575b0cde0dc",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/easy/case-001/2026_09_29-02_33_08.mj_unroll",
+      "sha256": "c013c01056cc5f46ac5a3052ce9f938f2ac06c9a7fe6bf2a7a06adf10f33038c",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/hard/case-000/2026_09_29-02_33_09.mj_unroll",
+      "sha256": "d9dbab8925f398ef2ddaaf2f39ffd82bc85651467531fcaaf1096464058f2cfe",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/hard/case-001/2026_09_29-02_33_09.mj_unroll",
+      "sha256": "4a61b5f12edaabdd34868e7c857689fdee109e9f930a53b34032c02902613ec6",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/medium/case-000/2026_09_29-02_33_08.mj_unroll",
+      "sha256": "e44a26fe1d032467bba04285f89ea179f6f40204bb376dac4986eff174cda9cb",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-navigation-static-v2/rollouts/medium/case-001/2026_09_29-02_33_09.mj_unroll",
+      "sha256": "cdf6d8985a184266a8b65586743f7a6a9da5094ea3788e515e2a998903734425",
+      "frames": 47,
+      "last_time_s": 0.9399999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 47
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-racing-v1/rollouts/2026_09_28-18_09_45.mj_unroll",
+      "sha256": "e2b34d3a45257c7cf9ecdab2ecd84c1cd1c5c9a99fd12a4540a6ea1e7d733284",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-racing-v1/rollouts/case-001/2026_09_28-18_09_47.mj_unroll",
+      "sha256": "f3c952c2181ce9176adecdc9c510abee7063dee851b1f8c2e734ef7f3e0b06f9",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-racing-v1/rollouts/case-002/2026_09_28-18_09_48.mj_unroll",
+      "sha256": "f39172efaea60c943ce2dfb833c0bf7d8498d2eefd6753542089db2deef2f786",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-racing-v1/rollouts/case-003/2026_09_28-18_09_49.mj_unroll",
+      "sha256": "cf2b9522be5bd3f20a9e3b1062aea864ca1e9ee37d4b36d39bdc22c440a63edd",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-racing-v1/rollouts/case-004/2026_09_28-18_09_51.mj_unroll",
+      "sha256": "0241a00244d7508ff5ab0cae8da28ea409002883f838e4e4ae779f5ec7985f90",
+      "frames": 853,
+      "last_time_s": 17.059999465942383,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 853
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts/2026_09_28-18_08_37.mj_unroll",
+      "sha256": "c5962e74854facd0e37e594fe54c485b25e598c87ececd17f2587bb4ee010abc",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts/case-001/2026_09_28-18_08_37.mj_unroll",
+      "sha256": "3e85f96741d386bdd808f554b545ff49bf52b6e074b1155df9e133de3335318e",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts/case-002/2026_09_28-18_08_38.mj_unroll",
+      "sha256": "84e16456c58858bc3871fbb2f9519a882af5c7b30591175b722b8942b6a96935",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts/case-003/2026_09_28-18_08_39.mj_unroll",
+      "sha256": "173939b156cb6fbfde204337d4b09e49196e498625330416ccc96b8126f396d5",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts/case-004/2026_09_28-18_08_39.mj_unroll",
+      "sha256": "e1351fbeb4fa195b9ddda16c9b7f30f9722210296ad97dc44ba9578f9cd40b39",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-000/2026_09_29-02_30_10.mj_unroll",
+      "sha256": "6c0eca3d4c02e801a35b5f3404a9bac4c3b56428abf944efa52cd7006d7e3d6c",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-001/2026_09_29-02_30_10.mj_unroll",
+      "sha256": "66b88f28c5e86d22ce11b15e8949d5d086d2f9812e2c7f33d38fc8264655d390",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-002/2026_09_29-02_30_11.mj_unroll",
+      "sha256": "9d1bd31c6eb81b9a732127315022b94f853cec194c299cc0c695818aa0ca84c1",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-003/2026_09_29-02_30_11.mj_unroll",
+      "sha256": "5ffee20d4299ed16bfaa7ba70a9087a4d843499b55d4983abb2c613f6932c266",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-004/2026_09_29-02_30_11.mj_unroll",
+      "sha256": "c51f80dddfb9475922cf58639e965029544e4798d2ef575f0831cea6b2e3b3fa",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-005/2026_09_29-02_30_11.mj_unroll",
+      "sha256": "38a272ce551ec84eecee4e196a0162e233024a8164ab550972885ddb10fbc0ce",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-006/2026_09_29-02_30_12.mj_unroll",
+      "sha256": "4096e7ab63a05cdacd512293471a7da7d3d3d60926d315f0d668623405b8ad9c",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-007/2026_09_29-02_30_12.mj_unroll",
+      "sha256": "21fed99942d7ea67076c266d5c0d606a83422290e6976e0d6b0e2bdc812d5885",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-008/2026_09_29-02_30_12.mj_unroll",
+      "sha256": "287536992c43a484dc2db652c2aeda34384ae69c7825ed54c5fe5dc5a032d4c5",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-009/2026_09_29-02_30_13.mj_unroll",
+      "sha256": "ee7563466618d7174a48fd5ca0db2fa73dfc2efea188c5441a58e2ac77914944",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-010/2026_09_29-02_30_13.mj_unroll",
+      "sha256": "8feaa72073e0958cddfd6de5c50cdddb615274d7dd44f234a6605f440ef8f638",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-011/2026_09_29-02_30_14.mj_unroll",
+      "sha256": "b798cafa87d13a0abd40525a2e1b86d26b5902ff44dd1fc61b9759e7186f13d5",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-012/2026_09_29-02_30_14.mj_unroll",
+      "sha256": "c9f26d077f9be108975f3e96195bdd6ccf258436e6d02bd5f6298a1b21fcb352",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-013/2026_09_29-02_30_14.mj_unroll",
+      "sha256": "2585f638222c40453927c510adac36a24fe3bba865cf6b6224ee63654f67468b",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-014/2026_09_29-02_30_14.mj_unroll",
+      "sha256": "dee60d8de3241bbe5a3d5954a7ede1888dabf134dcb419aac98b9c07440d80b9",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-015/2026_09_29-02_30_14.mj_unroll",
+      "sha256": "88c1ade128ae14fc0975f1e792c4657e5f6082837a43a48a09855bb7f4345694",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-016/2026_09_29-02_30_15.mj_unroll",
+      "sha256": "69c39001eec9b7fda30b7824faeca9ec65530f4aeef43bd73c04bf729080a27f",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-017/2026_09_29-02_30_15.mj_unroll",
+      "sha256": "ecd7452fb0f52fab3914905b2cc07b77aaf0d42f4faa07801a77fc4178096bec",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-018/2026_09_29-02_30_15.mj_unroll",
+      "sha256": "31ea4fd40b6dd7985a1ed30cd3f13b363eef759bc5ad57ee08f10ca50e04ec93",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-019/2026_09_29-02_30_15.mj_unroll",
+      "sha256": "ebef24919e50b91fec1f7e4e88ff95cdac3b8d828cc882aceeeac5c6b0895f11",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-020/2026_09_29-02_30_15.mj_unroll",
+      "sha256": "5c8b723bc408dc6324a06efee4a911df8ebb170b0a55b62118ccb74cfbf1dfc7",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-021/2026_09_29-02_30_16.mj_unroll",
+      "sha256": "93a73dd4aff55c57e77732fea6f71789e0917969b157d5dc90949c978ffac160",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-022/2026_09_29-02_30_16.mj_unroll",
+      "sha256": "118e026153a33a22d27276045237b1045f22da67cf3f96ddf47283c8c376d541",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-023/2026_09_29-02_30_16.mj_unroll",
+      "sha256": "bddf2d18a7a705634abae6b8759e6468cb1360f28c2b66f9d5414cb62da2f8d1",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-024/2026_09_29-02_30_16.mj_unroll",
+      "sha256": "362f1509c72d5165de5c3608a878374e4eb84d5d4f5c64a87e27a559784ea79d",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-025/2026_09_29-02_30_16.mj_unroll",
+      "sha256": "159061596ad1839c0be886ff868b89311000e2219c4af1e36510373523e7a73e",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-026/2026_09_29-02_30_17.mj_unroll",
+      "sha256": "410d4133850956da451b2bc0001127d10e681b12a90ae292478dfc049cf50582",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-027/2026_09_29-02_30_17.mj_unroll",
+      "sha256": "158e848149da6f938736ab77431dbdec798143d5730882b7c9818f0fe092c427",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-028/2026_09_29-02_30_17.mj_unroll",
+      "sha256": "0f013367e604e6ce5bd0ee1b9d0f4e1b1e8f16240207ca83eb8581ad53011e1c",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-029/2026_09_29-02_30_18.mj_unroll",
+      "sha256": "6b13e09ac9e6ae76c0be54a6b9aab421b3f2408dbea2dd952c23eac6369a0ba5",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-030/2026_09_29-02_30_18.mj_unroll",
+      "sha256": "88241ba7a7f294b3f9d1acb3e74d7beeb2209f883d40ff133aa684e972b077f6",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-hovering-v1/rollouts/case-031/2026_09_29-02_30_18.mj_unroll",
+      "sha256": "74607a854b1bfb68d48a91eaac4832569e03b9d4e4e857c7ecba31e8577431d0",
+      "frames": 31,
+      "last_time_s": 3.000028133392334,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-000/2026_09_29-02_41_34.mj_unroll",
+      "sha256": "391f253b2905fd9b740c13ecaa8f702a33861871987253e9ccc1d72aae23f6fe",
+      "frames": 172,
+      "last_time_s": 17.04962921142578,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-001/2026_09_29-02_41_35.mj_unroll",
+      "sha256": "2544f55b5fb50a70b51a2894a99b728112b050e33203bc6e6ed020b334104cd0",
+      "frames": 172,
+      "last_time_s": 17.0316219329834,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-002/2026_09_29-02_41_36.mj_unroll",
+      "sha256": "b0aa677c33c39ad66c7574ad2c8eae653b3bf0f67fac4795b40b6df63eabfa37",
+      "frames": 172,
+      "last_time_s": 17.023618698120117,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-003/2026_09_29-02_41_36.mj_unroll",
+      "sha256": "293756d00aa4192d689c42924fcfdd0333d84450bf0ac47df61c8c9afe25a6d8",
+      "frames": 172,
+      "last_time_s": 17.027620315551758,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-004/2026_09_29-02_41_38.mj_unroll",
+      "sha256": "0b1523ca4ee64d43c0f08a2557cb1f82fed0418babf49b225911de989292c589",
+      "frames": 172,
+      "last_time_s": 17.03762435913086,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-005/2026_09_29-02_41_38.mj_unroll",
+      "sha256": "11889dfef79839156e4a2f3ca2f2c604b987ee731a23ac05aa6a5ef02a4c3770",
+      "frames": 172,
+      "last_time_s": 17.087644577026367,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-006/2026_09_29-02_41_38.mj_unroll",
+      "sha256": "51517b3e5bfefbcb1d72ffe309fa282e791b12927fc655e58cb3ba6ff64f13b1",
+      "frames": 172,
+      "last_time_s": 17.021617889404297,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-007/2026_09_29-02_41_38.mj_unroll",
+      "sha256": "1150f9bbcb7be8bcde3d223857a45de46fda109fe7f6c01563a3b9fc4ebe9a26",
+      "frames": 172,
+      "last_time_s": 17.0316219329834,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-008/2026_09_29-02_41_39.mj_unroll",
+      "sha256": "05946c41af5b1e52a0532fb14c32198890c226afe975ff3ee2f6c351d4095c66",
+      "frames": 172,
+      "last_time_s": 17.057632446289062,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-009/2026_09_29-02_41_39.mj_unroll",
+      "sha256": "2231c9be1c7837766d34c12b2deafdcf4caa624bdc774b90a9e5fd59fb9b94f0",
+      "frames": 172,
+      "last_time_s": 17.0316219329834,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-010/2026_09_29-02_41_39.mj_unroll",
+      "sha256": "20a539d590f11a08e7074518ba39759b929529f3168185103b83a6e8f838e65d",
+      "frames": 172,
+      "last_time_s": 17.027620315551758,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-011/2026_09_29-02_41_40.mj_unroll",
+      "sha256": "6906120409812db4e55cb39a468e83d8723c4b57af8d33902fa43ef87a308d3e",
+      "frames": 172,
+      "last_time_s": 17.03962516784668,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-012/2026_09_29-02_41_40.mj_unroll",
+      "sha256": "ba630cab21a30dafdf1dbf6ec2f5c4efef47477abf6c1b6576227f9ab430daf4",
+      "frames": 172,
+      "last_time_s": 17.04562759399414,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-013/2026_09_29-02_41_40.mj_unroll",
+      "sha256": "ae39204918e9b0933f6181921dff95c8ec7ba32f592e753c2361faad9a41a7af",
+      "frames": 172,
+      "last_time_s": 17.03362274169922,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-014/2026_09_29-02_41_40.mj_unroll",
+      "sha256": "4323a9b0747cc07b24a38846184e696c002ef5a3d81187f6e9b59a26d81ae9be",
+      "frames": 172,
+      "last_time_s": 17.04962921142578,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-015/2026_09_29-02_41_40.mj_unroll",
+      "sha256": "cb7de15139a8345afadf3486dcbcfdb205c31a6b08966d982b4e0e39ad671795",
+      "frames": 172,
+      "last_time_s": 17.021617889404297,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-016/2026_09_29-02_41_41.mj_unroll",
+      "sha256": "a005bf40ce6276ccfc876e3c9ed7367e266d0a3345b5e4e8555f75568ebf82c4",
+      "frames": 172,
+      "last_time_s": 17.0316219329834,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-017/2026_09_29-02_41_41.mj_unroll",
+      "sha256": "0c75404afbff14bde0d9d8bc65ab29c50ca75a82e080a298909ab62db51b6035",
+      "frames": 172,
+      "last_time_s": 17.03362274169922,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-018/2026_09_29-02_41_41.mj_unroll",
+      "sha256": "8f30a60e3a717b93f4069f435549acc9f1d69f8e6b6aadf6ffe81a751cb77adf",
+      "frames": 172,
+      "last_time_s": 17.03762435913086,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-019/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "8e37ebfb9f11f9187a46bfb745e4c2a8d4db77213f3e408d0b85b71d77125cdc",
+      "frames": 172,
+      "last_time_s": 17.053630828857422,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-020/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "8a8a10a9b1f4fbfd9cf7a0c73230345c232da59499fa446ba7b7b19152d28abf",
+      "frames": 172,
+      "last_time_s": 17.04762840270996,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-021/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "15701b736a0f69783e0c2aaa13bc75053bcaf49b7d74fe530f4ad37f22658f4b",
+      "frames": 173,
+      "last_time_s": 17.10365104675293,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 172
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-022/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "40da61cd018cdefaf51362fcb84229a307ba68036c30edbfcf9f43b0549fb0f7",
+      "frames": 172,
+      "last_time_s": 17.04362678527832,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-023/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "6513e984669484379c70e2514fafc859469bf703dd113f562c4bde1c2cacc937",
+      "frames": 172,
+      "last_time_s": 17.069637298583984,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-024/2026_09_29-02_41_42.mj_unroll",
+      "sha256": "66b161b9935c9d3661d96160692fefeba93240d63f62486833d25fd6df1bcf2d",
+      "frames": 172,
+      "last_time_s": 17.013614654541016,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-025/2026_09_29-02_41_43.mj_unroll",
+      "sha256": "5415df9f1201658edffb54f85759a63afec92fa2145893c14d80d0fc6b7f7f82",
+      "frames": 172,
+      "last_time_s": 17.067636489868164,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-026/2026_09_29-02_41_43.mj_unroll",
+      "sha256": "9318e3bac5eb949c7da6f4b0936666faed558d50475c81a26d88117b9bf6975b",
+      "frames": 172,
+      "last_time_s": 17.04562759399414,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-027/2026_09_29-02_41_43.mj_unroll",
+      "sha256": "8a840b9b8934b17ee763ba6d33fefc5fc3986d9a904ab37a3ba22b69b0a547e6",
+      "frames": 172,
+      "last_time_s": 17.0316219329834,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-028/2026_09_29-02_41_43.mj_unroll",
+      "sha256": "081aef694932db4ac8da589d29e115e4e51b78454484e4dac7515715f3f7c9c1",
+      "frames": 172,
+      "last_time_s": 17.057632446289062,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-029/2026_09_29-02_41_43.mj_unroll",
+      "sha256": "2fa5f600a19b79f274e8769d44a904d70eb014a86e6cb071bf4304b02b67a2fc",
+      "frames": 172,
+      "last_time_s": 17.04362678527832,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-030/2026_09_29-02_41_44.mj_unroll",
+      "sha256": "950d8588824fe572647c38ab1df400114dd136362ab99f2ed688ed5168c2a051",
+      "frames": 172,
+      "last_time_s": 17.04562759399414,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts/case-031/2026_09_29-02_41_44.mj_unroll",
+      "sha256": "72dea2eac05ff83ae8f2687ec04ce07acaa62cb5f5c5e102249b43f09538b739",
+      "frames": 172,
+      "last_time_s": 17.029621124267578,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 171
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-000/2026_09_29-02_30_55.mj_unroll",
+      "sha256": "b47c1fbd59628e9d0ebccba9db58342b5ddf1e21a847339f8bb401a78f3b0f4c",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-001/2026_09_29-02_30_56.mj_unroll",
+      "sha256": "e1becc8131ac5af2972fb482c154cdb45d4ff97a1264ded37a2d7acd6285bda2",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-002/2026_09_29-02_30_56.mj_unroll",
+      "sha256": "24bca999eb643b6222cae486645f5991b5fe0810ba781ab148e56a47b9b60e9d",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-003/2026_09_29-02_30_56.mj_unroll",
+      "sha256": "9cfb1a0042a713ca197b8f4630274ec15e8d2e42d05db11b4ff3e6585353f0d9",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-004/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "ebde84398b380e2817d21fac2197cca6cd0a83dccfce36fbba26861e0b3d886b",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-005/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "c8c12106a7d87ff3666b0d7e1c881a95face6eed42befa6931b5f4a4693e5db7",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-006/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "d7f76136d98e47e3ccd01c6733bfbefec50c1d5599bbe19d598405f1a6cf67b8",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-007/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "98d065ff20daaa8d30afb3faa374ca6383961ec0fbc3b652e67ea1b125d0037a",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-008/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "2a6bfb413a78aba124e26ed2f38d7f718e86be49d82177cc864b51fdd0613d01",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-009/2026_09_29-02_30_57.mj_unroll",
+      "sha256": "5c723f4bcdb442f1e99440a3ba1b48d6b09029848a1132e4bf513f4c3c5d3dfb",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-010/2026_09_29-02_30_58.mj_unroll",
+      "sha256": "b592afdf9d24cb2189ba6736521ae485df40d3ca00b23d47d7e20433c7d66473",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-011/2026_09_29-02_30_58.mj_unroll",
+      "sha256": "4ea2cc046157cafb353b0df3e8819d72e8715fa47221e94e79a9e761537dc193",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-012/2026_09_29-02_30_58.mj_unroll",
+      "sha256": "feee50e76ee54980472a262ce1d5cc809ebe16600587adb682ea5097e5fa257d",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-013/2026_09_29-02_30_59.mj_unroll",
+      "sha256": "84a4549f441452fa103f54c1d22ce6a2539a5670e9334c4180551ee94ecbcf76",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-014/2026_09_29-02_30_59.mj_unroll",
+      "sha256": "b068c018f034f8f9cf92ff9b2a92fcedb2eeceb922a5b314b56e2ad0629ba119",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-015/2026_09_29-02_30_59.mj_unroll",
+      "sha256": "f0fe8d058743ffa85c43f0cd1cca313c65d46cc87b27719973049cbd1eac4e44",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-016/2026_09_29-02_30_59.mj_unroll",
+      "sha256": "6b025e09422bba52a9f5aed9a0297a3ac0e53d1403b7f837e57f89b75e2db65f",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-017/2026_09_29-02_31_00.mj_unroll",
+      "sha256": "181b03b2d46f02d3ccfc70a4ba78e6ef2c31ebc2b42aa8b9c129c656cadea182",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-018/2026_09_29-02_31_00.mj_unroll",
+      "sha256": "b350ed0aed279f9742048bdb6b099898ba838fe3c386709a44aded00aa37c2b9",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-019/2026_09_29-02_31_00.mj_unroll",
+      "sha256": "5d02a3bd6bb3fb02b756ecbdffb01a4b201a362f72f7e10e9f8f3d74fad5d982",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-020/2026_09_29-02_31_00.mj_unroll",
+      "sha256": "6368a48a8d97d8f79cdf11d92841a0aec9e3f998470fcfeb05f97b9606be3e2b",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-021/2026_09_29-02_31_01.mj_unroll",
+      "sha256": "817865086e57ed8ba643c6f5c3bbe21976b207b675806621f7eb523dbf18a4e9",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-022/2026_09_29-02_31_01.mj_unroll",
+      "sha256": "f75bb9c3dee501813f9979d2e769b6e49c0df2ee1708a5bb780ba124722fca03",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-023/2026_09_29-02_31_01.mj_unroll",
+      "sha256": "3dc86e4e5aeaa64a6c4ae072e57c008de850a2a6c0aa151aaec7751cc4d1109f",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-024/2026_09_29-02_31_01.mj_unroll",
+      "sha256": "be05e391bb5b9ca09ac42cf7c6f1898cbf46037b0e58d14ac8d08344127b298d",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-025/2026_09_29-02_31_02.mj_unroll",
+      "sha256": "ea2c2e371800039abff0e8acedc73aefceb98dd13d94f452326f3a89fe3fe4bc",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-026/2026_09_29-02_31_02.mj_unroll",
+      "sha256": "73dd9025b98c94c3451a394403c3d13cbf1ddbb75722241fa300cdba0002f239",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-027/2026_09_29-02_31_02.mj_unroll",
+      "sha256": "74a20d589601b5e25b1070085214987d73613bd571d19542f97b7c5b192b82c7",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-028/2026_09_29-02_31_02.mj_unroll",
+      "sha256": "393c65bd342dfd90c2c0b87b89b4e308f4c3b78dda49b4959fa4eb2af6919d71",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-029/2026_09_29-02_31_03.mj_unroll",
+      "sha256": "438a49f0f46cbb8b77c84b6840d6342f5e8e0bb49bae9b23abc19d67218be600",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-030/2026_09_29-02_31_03.mj_unroll",
+      "sha256": "76ff51f674a98d46de1c48e8c0fbf80dde744ec5466662195d85d7a3188d19ed",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-pointcloud-tracking-v1/rollouts/case-031/2026_09_29-02_31_03.mj_unroll",
+      "sha256": "1654001c420ffe4ce0d37c38caef05855db451982b44cc2935c2feb4783dbe62",
+      "frames": 101,
+      "last_time_s": 9.999640464782715,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 100
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-hovering-v1/rollouts/2026_09_28-17_05_16.mj_unroll",
+      "sha256": "e514a99ac181cae66378071138253e204a8533cc197778ac5f1bbde16b55ab62",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-hovering-v1/rollouts/case-001/2026_09_28-17_05_17.mj_unroll",
+      "sha256": "25de1a3d985bd1df70f2357129dee88e0338726c2b9f4f1a85bee10767d944f0",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-hovering-v1/rollouts/case-002/2026_09_28-17_05_18.mj_unroll",
+      "sha256": "e514a99ac181cae66378071138253e204a8533cc197778ac5f1bbde16b55ab62",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-hovering-v1/rollouts/case-003/2026_09_28-17_05_19.mj_unroll",
+      "sha256": "fd939074618a0d7174244cf34ada417bf570f15100060ba4b85501c8597f35f9",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-hovering-v1/rollouts/case-004/2026_09_28-17_05_19.mj_unroll",
+      "sha256": "be94d360e476698c3e433a1124e93b96a08b1616246e30bbcc7cd4fe034ef48a",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/easy/case-000/2026_09_29-02_32_23.mj_unroll",
+      "sha256": "2c901ec811bd81e6a520a195ad669540628114a6991354d8af9e8de1ced3047e",
+      "frames": 93,
+      "last_time_s": 1.8600000143051147,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 93
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/easy/case-001/2026_09_29-02_32_24.mj_unroll",
+      "sha256": "d01bf25107f1a55e2217060675dcb691cc08d3cd20021cd3dc8f497323b3aa60",
+      "frames": 93,
+      "last_time_s": 1.8600000143051147,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 93
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/hard/case-000/2026_09_29-02_32_28.mj_unroll",
+      "sha256": "ba3319450f265307285a7d7a97a19f55b25f3ec3cbe6e1657acabd9f61c5f946",
+      "frames": 95,
+      "last_time_s": 1.899999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 95
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/hard/case-001/2026_09_29-02_32_31.mj_unroll",
+      "sha256": "74c1a28d82e777e7ce2bd5ebfe40b64a46fedb2c03e1902a539b2258f1f16003",
+      "frames": 97,
+      "last_time_s": 1.9399999380111694,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 97
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/medium/case-000/2026_09_29-02_32_27.mj_unroll",
+      "sha256": "f663099d2851fd59f77046876405dfe3dacac5948ffa77144d86f1e9165365f4",
+      "frames": 95,
+      "last_time_s": 1.899999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 95
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/rollouts/medium/case-001/2026_09_29-02_32_27.mj_unroll",
+      "sha256": "a63f8e39e6135a6460289fe2c2fa7ffa9593e3f67501af78e27100524fe49d3b",
+      "frames": 95,
+      "last_time_s": 1.899999976158142,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 95
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/easy/case-000/2026_09_29-02_31_39.mj_unroll",
+      "sha256": "d20646c9650556b09bb8f5b25d7e47daef5a6e8d39ebec5eac71d886d8d595ff",
+      "frames": 78,
+      "last_time_s": 1.559999942779541,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 78
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/easy/case-001/2026_09_29-02_31_39.mj_unroll",
+      "sha256": "d45618b54fdc4f4aa1e65025a4f15ec9fdc2e50a9e3a7af99a018aa7de8ba2b9",
+      "frames": 78,
+      "last_time_s": 1.559999942779541,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 78
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/hard/case-000/2026_09_29-02_31_46.mj_unroll",
+      "sha256": "6df9db267a7c43067f17d56c1bbbabbe75ff4b4f4c75b4a8ec6e6e602e009510",
+      "frames": 83,
+      "last_time_s": 1.659999966621399,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 83
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/hard/case-001/2026_09_29-02_31_46.mj_unroll",
+      "sha256": "860236d8a2626a8bd0e784f42af1e78cafa2f71f74bf6340e126d1dade536091",
+      "frames": 80,
+      "last_time_s": 1.5999999046325684,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 80
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/medium/case-000/2026_09_29-02_31_42.mj_unroll",
+      "sha256": "4306c4ae5c42d023399039d8fd886f3242d9c236cce3616e9d8b6f3280a93137",
+      "frames": 80,
+      "last_time_s": 1.5999999046325684,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 80
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-navigation-static-v2/rollouts/medium/case-001/2026_09_29-02_31_43.mj_unroll",
+      "sha256": "269ab42ab5638e956c711498bc96ae314a1c1ec5b5da91dafb1549782a476325",
+      "frames": 80,
+      "last_time_s": 1.5999999046325684,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 80
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-racing-v1/rollouts/2026_09_28-17_06_54.mj_unroll",
+      "sha256": "bfa6305d6112c49ea7484ad4ff4e9afec015404781fb7af8b7d4d04a8ac94305",
+      "frames": 854,
+      "last_time_s": 17.079999923706055,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 854
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-racing-v1/rollouts/case-001/2026_09_28-17_06_56.mj_unroll",
+      "sha256": "c20ae1d03d2e944b392424e2a8adcf1863ab18d734b1e1289a01267156b7ddd5",
+      "frames": 854,
+      "last_time_s": 17.079999923706055,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 854
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-racing-v1/rollouts/case-002/2026_09_28-17_06_58.mj_unroll",
+      "sha256": "1816e650bbaef8b837e4a40deba0b8dafd2884695b3e51eab68b60e909368274",
+      "frames": 854,
+      "last_time_s": 17.079999923706055,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 854
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-racing-v1/rollouts/case-003/2026_09_28-17_07_00.mj_unroll",
+      "sha256": "701154f53488e370cb84874c867498828f80de032e6de3a64053f13d157ce155",
+      "frames": 854,
+      "last_time_s": 17.079999923706055,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 854
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-racing-v1/rollouts/case-004/2026_09_28-17_07_02.mj_unroll",
+      "sha256": "79d8007cbf6ef9a548e66de5b38fd2412d7001360523cf89863c2bc6900d2998",
+      "frames": 854,
+      "last_time_s": 17.079999923706055,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 854
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-tracking-v1/rollouts/2026_09_28-17_05_39.mj_unroll",
+      "sha256": "10a70108a84eb3d027103358463e25ed9ea976577a3e99513076e924ea7d4cad",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-tracking-v1/rollouts/case-001/2026_09_28-17_05_40.mj_unroll",
+      "sha256": "bd7eee02609ccd24250490bc3aa6adbfb8b6b16ae7e1c84d7cc7fd05142b48e4",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-tracking-v1/rollouts/case-002/2026_09_28-17_05_41.mj_unroll",
+      "sha256": "1111a99f2bd661cf499e88da084ecb9253e2fb1c000b787b521854c5428b4528",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-tracking-v1/rollouts/case-003/2026_09_28-17_05_41.mj_unroll",
+      "sha256": "057f9eed100050d1b409eb647d3fe3f23d372b059a2a8974e66bbe51df1e93bf",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-ppo-tracking-v1/rollouts/case-004/2026_09_28-17_05_42.mj_unroll",
+      "sha256": "0f01bcbcd8f3dd6800aa5a86176ceb9595e24c21d8ceb6cf3f5def72b50df9a1",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-hovering-v1/rollouts/2026_09_28-18_10_11.mj_unroll",
+      "sha256": "114be19f826dd20010a7c568204ea524f4353e56d120deb8c8c12a29dacbb4e0",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-hovering-v1/rollouts/case-001/2026_09_28-18_10_11.mj_unroll",
+      "sha256": "824806f3f435c6c9f3ef25de39883f075b99bd60bf3452d96cd5d99e671d3f01",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-hovering-v1/rollouts/case-002/2026_09_28-18_10_12.mj_unroll",
+      "sha256": "114be19f826dd20010a7c568204ea524f4353e56d120deb8c8c12a29dacbb4e0",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-hovering-v1/rollouts/case-003/2026_09_28-18_10_13.mj_unroll",
+      "sha256": "6a16fca9d7655bb571a690a0daf8b50281d21560e2bedd3932ec887bfdcba651",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-hovering-v1/rollouts/case-004/2026_09_28-18_10_13.mj_unroll",
+      "sha256": "a513c0496339c486e6474f259b11cdd75844e0b0f2d8c9e684c1742da44c7e73",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/easy/case-000/2026_09_29-02_34_43.mj_unroll",
+      "sha256": "ac3c1ca3ec0e22457216a1eae21ca8cf9444cc919f6814b6b29408b237327b17",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/easy/case-001/2026_09_29-02_34_43.mj_unroll",
+      "sha256": "1443fe7070fc4f1974d310f694e6d7935ef5f63168a7b503b3c11a8247ec0b63",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/hard/case-000/2026_09_29-02_34_44.mj_unroll",
+      "sha256": "bf02f7f7efb76dafd7138544274380a1525cb80936f796a35ac19988cc616b18",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/hard/case-001/2026_09_29-02_34_44.mj_unroll",
+      "sha256": "3a407ff5e6d4ec6a2f1ee3e40a385ab292074badd4795f9a4ae04e78e5c476ef",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/medium/case-000/2026_09_29-02_34_43.mj_unroll",
+      "sha256": "88fe067f6b7947c7ad79a15471eb93d13418b8f2e6386e5a095be0f1abc16d20",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/rollouts/medium/case-001/2026_09_29-02_34_43.mj_unroll",
+      "sha256": "d9530c465acd8baa3b690c4e7ff89baeec825be47b5d70ce0d3386982de2398d",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/easy/case-000/2026_09_29-02_34_08.mj_unroll",
+      "sha256": "3f86d6b3f8c7cdf2fa855895b6886c751775d70df0228dbbe49a411824d9a9fd",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/easy/case-001/2026_09_29-02_34_11.mj_unroll",
+      "sha256": "4b832225680243bf0bd70d36756335cde59077307fe7b53940fb35d4dcfd03cd",
+      "frames": 45,
+      "last_time_s": 0.8999999761581421,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 45
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/hard/case-000/2026_09_29-02_34_13.mj_unroll",
+      "sha256": "d41d35d2c9b18acddeec0f91e6ae94faa5f0c07072eef6d6540c81f82e324164",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/hard/case-001/2026_09_29-02_34_13.mj_unroll",
+      "sha256": "d5e592c689cb570e24a1b50e0281c8067c23999ad263d80c5381ca4faf36d6ad",
+      "frames": 45,
+      "last_time_s": 0.8999999761581421,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 45
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/medium/case-000/2026_09_29-02_34_11.mj_unroll",
+      "sha256": "744d6e8076ea65ca66d66c3b4aa3be62aba39f455972b083eb8326e9138472d6",
+      "frames": 44,
+      "last_time_s": 0.8799999952316284,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 44
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-navigation-static-v2/rollouts/medium/case-001/2026_09_29-02_34_11.mj_unroll",
+      "sha256": "2cddde0b25a6ea754244d8b419ac56cf1e10943c2291f6a7d3e25abac953d564",
+      "frames": 45,
+      "last_time_s": 0.8999999761581421,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 45
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts/2026_09_28-18_17_41.mj_unroll",
+      "sha256": "400346e2a3f4bae6067752fe17df2a781c5638109ca3e1e93737d17ebcfbed12",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts/case-001/2026_09_28-18_17_42.mj_unroll",
+      "sha256": "1f6ba03266784376ecdefbc4b655f6ac77ed3c61fb9d878bf4a3c138ce458e03",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts/case-002/2026_09_28-18_17_45.mj_unroll",
+      "sha256": "dba459bf41c786131d1a0e73f3154c477c009de71640e61259d21d4e1d52e9bb",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts/case-003/2026_09_28-18_17_46.mj_unroll",
+      "sha256": "a6092c7d385531fe3801ae658b378eca707c951828318b92aaf7ed1e2cda98e9",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts/case-004/2026_09_28-18_17_47.mj_unroll",
+      "sha256": "ff9f9a8324efc966a5c63f15d390e62ca030b8e4cde3162587842b4014789552",
+      "frames": 852,
+      "last_time_s": 17.03999900817871,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 852
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-tracking-v1/rollouts/2026_09_28-18_10_32.mj_unroll",
+      "sha256": "ec27527899068423e5157299e8b19a18a11aaea8b43aad2ed3e92e5d3f6d04ae",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-tracking-v1/rollouts/case-001/2026_09_28-18_10_33.mj_unroll",
+      "sha256": "6cd01693f067f6eea310658823c464cf89ce2a1d18ceb1fc82e9c1be9c5ab03c",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-tracking-v1/rollouts/case-002/2026_09_28-18_10_34.mj_unroll",
+      "sha256": "3a3b44d62cca4532926181782090106068651a07041e943463a2250ddd3cb2a4",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-tracking-v1/rollouts/case-003/2026_09_28-18_10_34.mj_unroll",
+      "sha256": "a9f52570ae6379d68af297ed0656177b5694360c856f3c50b543255f724cf7bb",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-heldout-shac-tracking-v1/rollouts/case-004/2026_09_28-18_10_35.mj_unroll",
+      "sha256": "f7680563ad3b52194b071dfa68fea3f1e38a0150fd6f5b8810eb2d2a7cbdfba5",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/easy/case-000/2026_09_28-17_09_49.mj_unroll",
+      "sha256": "3b3656f523a994d62d37ba5cec3191a88141fce526787c673df00ca78e0b559a",
+      "frames": 971,
+      "last_time_s": 19.42,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 971
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/easy/case-001/2026_09_28-17_09_49.mj_unroll",
+      "sha256": "3b3656f523a994d62d37ba5cec3191a88141fce526787c673df00ca78e0b559a",
+      "frames": 971,
+      "last_time_s": 19.42,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 971
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/hard/case-000/2026_09_28-17_17_51.mj_unroll",
+      "sha256": "af99e7c56c4060fdd1dcb99c0646eebe0321032d56a911c51ab99b51ef5ed05f",
+      "frames": 971,
+      "last_time_s": 19.42,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 971
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/hard/case-001/2026_09_28-17_17_53.mj_unroll",
+      "sha256": "58c82adf5c625da95bce1fe1ddf3e769f14343ed427c8c334d64bcb7ba02c651",
+      "frames": 917,
+      "last_time_s": 18.34,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 917
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/medium/case-000/2026_09_28-17_15_10.mj_unroll",
+      "sha256": "3598907f6a808f091a45cf53daf9be9883cd6c6eb9caa1d5f92123c5843556d3",
+      "frames": 1164,
+      "last_time_s": 23.28,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1164
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-dynamic-v2/rollouts/medium/case-001/2026_09_28-17_15_13.mj_unroll",
+      "sha256": "8efdaade549bde89708f7e062573076163e01c3c6d1a82029302efc606d196fc",
+      "frames": 1941,
+      "last_time_s": 38.82,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1941
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-hovering-v2/rollouts/case-000/2026_09_29-02_35_19.mj_unroll",
+      "sha256": "253ae36679b3573130430850c34d8fe28f8685e0ebdda74a1c4ba197e7202f03",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-hovering-v2/rollouts/case-001/2026_09_29-02_35_28.mj_unroll",
+      "sha256": "5ee5f01d405ac02cf4aed43132dd06a3a1afe7280ff875a6e926288c3a2b7295",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-racing-v3/rollouts/case-000/2026_09_29-02_50_50.mj_unroll",
+      "sha256": "4fcf9149b8372a83544c7ad7e144189c706902ca1629d99c6b12906595ffe928",
+      "frames": 1500,
+      "last_time_s": 30.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1500
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-racing-v3/rollouts/case-001/2026_09_29-02_52_39.mj_unroll",
+      "sha256": "ea152e59b9b850dfd0185e3da0dbb62e752f0f1f774132ad3fc3e63df0894413",
+      "frames": 1500,
+      "last_time_s": 30.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1500
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/easy/case-000/2026_09_28-17_02_55.mj_unroll",
+      "sha256": "319c9c4e204affd105ddca65b38cda4d037c3268bf6f35335b85cabbc7b6f179",
+      "frames": 969,
+      "last_time_s": 19.38,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 969
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/easy/case-001/2026_09_28-17_02_57.mj_unroll",
+      "sha256": "277565892f0365008694b6e33d95d72809ba9685d6dfa4f95e0f65f1f14b14f0",
+      "frames": 885,
+      "last_time_s": 17.7,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 885
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/hard/case-000/2026_09_28-17_06_42.mj_unroll",
+      "sha256": "4519641e574393145114bb51632161d8c14703fc7fd032448369940e85155fd9",
+      "frames": 926,
+      "last_time_s": 18.52,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 926
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/hard/case-001/2026_09_28-17_06_45.mj_unroll",
+      "sha256": "0f59fa9294d05f45fb59bc2bb2e0415d75db2313f3a26d8c4f422b714653bcb6",
+      "frames": 1078,
+      "last_time_s": 21.56,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1078
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/medium/case-000/2026_09_28-17_04_39.mj_unroll",
+      "sha256": "600d4aea7ff1680b8b6e50095bcd589c8ffd6568819baf87a3fb841ba842b8b7",
+      "frames": 903,
+      "last_time_s": 18.06,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 903
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-static-v2/rollouts/medium/case-001/2026_09_28-17_04_40.mj_unroll",
+      "sha256": "600d4aea7ff1680b8b6e50095bcd589c8ffd6568819baf87a3fb841ba842b8b7",
+      "frames": 903,
+      "last_time_s": 18.06,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 903
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-tracking-v2/rollouts/case-000/2026_09_29-02_46_36.mj_unroll",
+      "sha256": "0155178ab734984c0b6d2a0850ddc3a9a8383603e8bac533b8d8999adc46eb59",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-native-ego_planner-tracking-v2/rollouts/case-001/2026_09_29-02_46_51.mj_unroll",
+      "sha256": "457f45e655d50b66edade989f84879392bd24a814911fbde9695a35b27b16ae0",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/easy/case-000/2026_09_28-16_56_00.mj_unroll",
+      "sha256": "b0b9a975b38cc84bd620f9577757503a32bf635c12d1eee0059910e9b9948b0e",
+      "frames": 1194,
+      "last_time_s": 23.88,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1194
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/easy/case-001/2026_09_28-16_56_02.mj_unroll",
+      "sha256": "e05c3541135c375e43249bbc8093fa509fc65d8c04e3ba14106726c9dc23bac9",
+      "frames": 1179,
+      "last_time_s": 23.580000000000002,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1179
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/hard/case-000/2026_09_28-17_00_45.mj_unroll",
+      "sha256": "c50f68e59a6c27e069091a1e73b727d2d55c18b414039ebc5a4b7dfeb3fc9412",
+      "frames": 1183,
+      "last_time_s": 23.66,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1183
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/hard/case-001/2026_09_28-17_00_47.mj_unroll",
+      "sha256": "646351b266dafe179b99844863a9b9edfca829f75d15a05ce0a1f67c1f7d9881",
+      "frames": 1213,
+      "last_time_s": 24.26,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1213
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/medium/case-000/2026_09_28-16_58_20.mj_unroll",
+      "sha256": "59b9b4c4e3b25b348eae69010708d5d77dfd5c12797f9a4b08e7b83f68f8fd67",
+      "frames": 1178,
+      "last_time_s": 23.56,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1178
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-dynamic-v2/rollouts/medium/case-001/2026_09_28-16_58_22.mj_unroll",
+      "sha256": "754cc8dc27f13c048f7c64b0da4793e68906d5a8bef7eedc47be019cf3262f3e",
+      "frames": 1200,
+      "last_time_s": 24.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1200
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-hovering-v2/rollouts/case-000/2026_09_29-02_43_02.mj_unroll",
+      "sha256": "3b2c10c6c4f160f966e4e71dc9e1d63ef0827091cfa310b10d7590395f57f841",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-hovering-v2/rollouts/case-001/2026_09_29-02_43_16.mj_unroll",
+      "sha256": "3b2c10c6c4f160f966e4e71dc9e1d63ef0827091cfa310b10d7590395f57f841",
+      "frames": 150,
+      "last_time_s": 3.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 150
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-racing-v3/rollouts/case-000/2026_09_29-02_50_06.mj_unroll",
+      "sha256": "02edd63408c33cbbd531f3a7c8e6810d71cc563b4b2cbd431ba8f671b17d2410",
+      "frames": 375,
+      "last_time_s": 7.5,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 375
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-racing-v3/rollouts/case-001/2026_09_29-02_50_39.mj_unroll",
+      "sha256": "c79c6b3c6dfdff107f7b229d2d5d501c53b7a9e1da6b667796ad56b52045db92",
+      "frames": 571,
+      "last_time_s": 11.42,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 571
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/easy/case-000/2026_09_28-16_48_48.mj_unroll",
+      "sha256": "c7a14b2ed16aeabd8cb39a2bc481addd857e35e53871ff4537c4723ed4335b11",
+      "frames": 1206,
+      "last_time_s": 24.12,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1206
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/easy/case-001/2026_09_28-16_48_50.mj_unroll",
+      "sha256": "75fbed9df186325b4c65d7907f3bd5a58c5a3c8da54e858a4033714898cd4f78",
+      "frames": 1241,
+      "last_time_s": 24.82,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1241
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/hard/case-000/2026_09_28-16_53_22.mj_unroll",
+      "sha256": "8de4bf0a16b1a504497bcf2ad2b49f55824b0704616967df4e38a85d0fd9d79c",
+      "frames": 1258,
+      "last_time_s": 25.16,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1258
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/hard/case-001/2026_09_28-16_53_24.mj_unroll",
+      "sha256": "47f861d415a255caff949316e7b62b20fb4a8bee5b625927968eb3e2b521f992",
+      "frames": 1521,
+      "last_time_s": 30.42,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1521
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/medium/case-000/2026_09_28-16_50_51.mj_unroll",
+      "sha256": "6d3b4a2be8aa70ed910831d1461a2ef6f1904b25abd664fe270198c98f75ae72",
+      "frames": 1184,
+      "last_time_s": 23.68,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1184
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-static-v2/rollouts/medium/case-001/2026_09_28-16_50_53.mj_unroll",
+      "sha256": "b46d3368c3e5566320baaf348be6cb0e591c591fd71a283aedbe067882e30a4c",
+      "frames": 1196,
+      "last_time_s": 23.92,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 1196
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-tracking-v2/rollouts/case-000/2026_09_29-02_43_50.mj_unroll",
+      "sha256": "d4d5f893cb0c1c846fa605e6feb47fe161656d9990af6ee70f960afc4d354a7a",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-native-super-tracking-v2/rollouts/case-001/2026_09_29-02_44_11.mj_unroll",
+      "sha256": "8e747298ca315eb4e391e0401dc0d07b5fc2c13d7187abdfad80eeb290d36240",
+      "frames": 500,
+      "last_time_s": 10.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": false,
+      "terminal_report_steps": 500
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/D01/2026_09_29-02_25_40.mj_unroll",
+      "sha256": "8a949da6050b23055f6da66948fa41591f9930907e09b28d00a7103f5371260c",
+      "frames": 24,
+      "last_time_s": 2.2039999961853027,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 23
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/D02/2026_09_29-02_25_44.mj_unroll",
+      "sha256": "92eb7c61bf425c531990767fbb8a91de7ece3afdd18e705dc19be7861fdb88d8",
+      "frames": 51,
+      "last_time_s": 4.98799991607666,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 50
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/D03/2026_09_29-02_25_53.mj_unroll",
+      "sha256": "ef7902aa8aca0785f9c7d8183ddbd85101726fb645090a11466f3b3809cdf832",
+      "frames": 17,
+      "last_time_s": 1.503999948501587,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 16
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/D06/2026_09_29-02_25_56.mj_unroll",
+      "sha256": "9e808f8f1f9593af5f5ddfca21d518130a666aead7a2d20a284318988049d2d9",
+      "frames": 17,
+      "last_time_s": 1.5379999876022339,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 16
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/S01/2026_09_29-02_25_21.mj_unroll",
+      "sha256": "f63210bfaab88c9fc62fe6325441ecd92ce664b04849c3244783d2ad662b19b9",
+      "frames": 65,
+      "last_time_s": 6.320000171661377,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 64
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/S02/2026_09_29-02_25_26.mj_unroll",
+      "sha256": "69f41c5912313be5fd55a06fa013128a3b1e8e7979e3209648e04f96c3a80148",
+      "frames": 51,
+      "last_time_s": 4.932000160217285,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 50
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/S03/2026_09_29-02_25_31.mj_unroll",
+      "sha256": "073fd1e8d1bac5127b6c1b915be0cfe689ca847d01a14b7ee061f62fa47f7d29",
+      "frames": 16,
+      "last_time_s": 1.4359999895095825,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 15
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-20/S06/2026_09_29-02_25_36.mj_unroll",
+      "sha256": "785aabb446986edcb01d8aeda797cc975e29848020de391cafb4b648ca818a02",
+      "frames": 14,
+      "last_time_s": 1.3000000715255737,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 13
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/D01/2026_09_29-02_22_08.mj_unroll",
+      "sha256": "d487f61c6606d9bc3cee955283f2680c2b3df2100dcf37bee8dd49d7044fa096",
+      "frames": 23,
+      "last_time_s": 2.140000104904175,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 22
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/D02/2026_09_29-02_22_13.mj_unroll",
+      "sha256": "37013fb77239cc371423798eb3672b77b3d196b3d478e886252cbbfa4c721ebf",
+      "frames": 60,
+      "last_time_s": 5.872000217437744,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 59
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/D03/2026_09_29-02_22_22.mj_unroll",
+      "sha256": "c66a3bb88198c174a4ca82374283549d9cb88841ac22810fbc51a075c9c3e544",
+      "frames": 22,
+      "last_time_s": 2.0980000495910645,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 21
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/D06/2026_09_29-02_22_27.mj_unroll",
+      "sha256": "04cd1fd6a873801f5ff661260d831efab73a07da5f8fec13b2b261eca69caa7f",
+      "frames": 3001,
+      "last_time_s": 300.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 3000
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/S01/2026_09_29-02_21_43.mj_unroll",
+      "sha256": "64740ba492688d9aa4c7856ca92705d6971bb3ff92c4168f7944d0ef15eb4b93",
+      "frames": 158,
+      "last_time_s": 15.628000259399414,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 157
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/S02/2026_09_29-02_21_49.mj_unroll",
+      "sha256": "3e9a0bb44e751f2e470e946f0ee06783d3fe9070e6ea7a67cd00a425eff2e83f",
+      "frames": 3001,
+      "last_time_s": 300.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 3000
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/S03/2026_09_29-02_21_57.mj_unroll",
+      "sha256": "9b26b9cb97783b92b9b5799d3a6d639b237e91edbd67ba0015c9489395a6b81f",
+      "frames": 21,
+      "last_time_s": 1.9299999475479126,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 20
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-4/S06/2026_09_29-02_22_04.mj_unroll",
+      "sha256": "561613a6090dbc75af8dc86ea55581388d76e972b52cc09bae55cf4fc7e70340",
+      "frames": 25,
+      "last_time_s": 2.3919999599456787,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 24
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/D01/2026_09_29-02_23_36.mj_unroll",
+      "sha256": "8e26f68fb18f77548b9bc28708a545e71bc49ac55368278573a29923eda1ddf0",
+      "frames": 3001,
+      "last_time_s": 300.0,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 3000
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/D02/2026_09_29-02_23_42.mj_unroll",
+      "sha256": "5ebb50ef643730ee7e41f7e1f9552c639ddfca1f82913b512beedeea1f56ecea",
+      "frames": 39,
+      "last_time_s": 3.7100000381469727,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 38
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/D03/2026_09_29-02_23_50.mj_unroll",
+      "sha256": "b21e4b8a007f2915730d20f79dd9d17e898f43e5632cacf913c3932cfe2d897a",
+      "frames": 94,
+      "last_time_s": 9.223999977111816,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 93
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/D06/2026_09_29-02_23_55.mj_unroll",
+      "sha256": "fcc72a80ebce2cb6b9ba3da0f61153e9ddbeaa4755417531a2f93d3df76766e6",
+      "frames": 21,
+      "last_time_s": 1.9219999313354492,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 20
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/S01/2026_09_29-02_23_16.mj_unroll",
+      "sha256": "82b269d28041c30455a50f46a7af721220db9d23cc2d5e881c2ed3d0a2be3c76",
+      "frames": 113,
+      "last_time_s": 11.112000465393066,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 112
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/S02/2026_09_29-02_23_21.mj_unroll",
+      "sha256": "accf5dd654fd5644a94118c3c65570b822526db68069e0eb12feac020f52ba69",
+      "frames": 115,
+      "last_time_s": 11.314000129699707,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 114
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/S03/2026_09_29-02_23_29.mj_unroll",
+      "sha256": "0cb9506c87a856ce821e8fb47b9d61da4933447c19c921a74e61be72da622c4f",
+      "frames": 16,
+      "last_time_s": 1.4179999828338623,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 15
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-6/S06/2026_09_29-02_23_34.mj_unroll",
+      "sha256": "e555a3a38f6b05949c5a72d43bca17c4c6db85debeeedcf477140ebf515cd5ab",
+      "frames": 16,
+      "last_time_s": 1.403999924659729,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 15
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/D01/2026_09_29-02_24_37.mj_unroll",
+      "sha256": "5f7619033e0a8391928ce89f9ed70ca1d459367c1776603183d443cde7b4e2e4",
+      "frames": 31,
+      "last_time_s": 2.936000108718872,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 30
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/D02/2026_09_29-02_24_43.mj_unroll",
+      "sha256": "5036f983be4b91977159591cd8783faf373f15d74c48a80a817149bfe9c14ba6",
+      "frames": 28,
+      "last_time_s": 2.684000253677368,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 27
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/D03/2026_09_29-02_24_51.mj_unroll",
+      "sha256": "9ef1c85f1102d2c1846c6077468fa7175106d59c6281bb9eb2abad7234bf1181",
+      "frames": 70,
+      "last_time_s": 6.860000133514404,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 69
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/D06/2026_09_29-02_24_58.mj_unroll",
+      "sha256": "728f1faa23887ecca84fbde9fc04e4f15c79474fdf26c94eb5fec0fd7c043ddd",
+      "frames": 18,
+      "last_time_s": 1.6080000400543213,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 17
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/S01/2026_09_29-02_24_15.mj_unroll",
+      "sha256": "c12b2f0bf54830a86fa979fcb0cdc07de62e985d74563c11e923810262d4f5cd",
+      "frames": 85,
+      "last_time_s": 8.331999778747559,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 84
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/S02/2026_09_29-02_24_20.mj_unroll",
+      "sha256": "d80dcedfaa52ab26fb7fec0e8b9fd34b34d84723bcc42185228e4cfe9ed4ff07",
+      "frames": 91,
+      "last_time_s": 8.920001029968262,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 90
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/S03/2026_09_29-02_24_27.mj_unroll",
+      "sha256": "ca6784ad6fb06ebdb9d01e34085738bd62d49a92b8c80cb91bf31f098cdaafbe",
+      "frames": 15,
+      "last_time_s": 1.342000126838684,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 14
+    },
+    {
+      "file": "experiments/final-acceptance-pointcloud-navigation-30000-v2/rollouts/speed-8/S06/2026_09_29-02_24_33.mj_unroll",
+      "sha256": "02306e1ee437e01987a78969400e7613d120f92836a85bde0fc0a1cd7f5d1de9",
+      "frames": 14,
+      "last_time_s": 1.246000051498413,
+      "increasing_time": true,
+      "terminal_index_verified": true,
+      "initial_state_frame": true,
+      "terminal_report_steps": 13
+    }
+  ],
+  "play_commands": [
+    {
+      "method": "ppo",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-heldout-ppo-racing-v1/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-ppo-final.log"
+    },
+    {
+      "method": "bptt",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-heldout-bptt-racing-v1/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-bptt-final.log"
+    },
+    {
+      "method": "shac",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-shac-final.log"
+    },
+    {
+      "method": "pointcloud",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-pointcloud-final.log"
+    },
+    {
+      "method": "super",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-native-super-racing-v3/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-super-final.log"
+    },
+    {
+      "method": "ego_planner",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        "scripts/play.py",
+        "replay=experiments/final-acceptance-native-ego_planner-racing-v3/rollouts",
+        "visualization=headless",
+        "runtime.device=cpu"
+      ],
+      "exit_code": 0,
+      "log": "tmp/final-acceptance/play-ego_planner-final.log"
+    }
+  ],
+  "reader": "Python pickle/numpy structural and time readback; headless public play entry"
+}

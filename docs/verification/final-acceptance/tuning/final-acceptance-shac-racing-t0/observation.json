@@ -1,0 +1,29 @@
+{
+  "run_id": "final-acceptance-shac-racing-t0",
+  "exit_code": 0,
+  "wall_seconds": 347.29259173804894,
+  "state": "complete",
+  "score": -0.4909820407629013,
+  "quality_passed": false,
+  "steps": 655360,
+  "selected_step": 163840,
+  "completed": 0,
+  "completion_rate": 0.0,
+  "rmse_m": 0.4909820407629013,
+  "trainer": {
+    "actor_parameter_delta_l2": 3.1529911743120733,
+    "actual_steps": 655360.0,
+    "compile_and_first_update_seconds": 54.183846950065345,
+    "critic_parameter_delta_l2": 11.632325908086072,
+    "net_update_seconds": 148.99603030877188,
+    "training/actor_grad_norm": 0.019075686112046242,
+    "training/actor_loss": -0.2973890006542206,
+    "training/bootstrap_value": 5.005635738372803,
+    "training/critic_grad_norm": 0.5727601647377014,
+    "training/critic_loss": 0.1034998819231987,
+    "training/reward": 0.1205737441778183,
+    "training/terminated_fraction": 0.00341796875,
+    "training/value_target_mean": 5.060853958129883,
+    "updates": 320.0
+  }
+}

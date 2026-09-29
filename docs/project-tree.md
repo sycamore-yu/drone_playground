@@ -37,6 +37,10 @@ drone_playground/
 │   │   ├── map.md
 │   │   ├── p1-p2-execution.md
 │   │   └── spec.md
+│   ├── final-acceptance/
+│   │   ├── plan.md
+│   │   ├── progress.md
+│   │   └── spec.md
 │   ├── p5-navigation/
 │   │   ├── issues/
 │   │   │   ├── 00-source-protocol.md
@@ -64,13 +68,16 @@ drone_playground/
 │           └── catalog.json
 ├── benchmarks/
 │   └── navigation/
-│       └── v1/
-│           ├── geometry-verification.json
-│           ├── protocol.yaml
-│           └── splits.yaml
+│       ├── v1/
+│       │   ├── geometry-verification.json
+│       │   ├── protocol.yaml
+│       │   └── splits.yaml
+│       └── v2/
+│           └── protocol.yaml
 ├── configs/
 │   ├── algorithm/
 │   │   ├── apg.yaml
+│   │   ├── bptt.yaml
 │   │   ├── dva.yaml
 │   │   ├── lotf_bptt.yaml
 │   │   ├── none.yaml
@@ -91,10 +98,15 @@ drone_playground/
 │   │   │   ├── dynamic.yaml
 │   │   │   └── static.yaml
 │   │   ├── paper/
+│   │   │   ├── control/
+│   │   │   │   ├── hovering.yaml
+│   │   │   │   ├── racing.yaml
+│   │   │   │   └── tracking.yaml
 │   │   │   ├── lotf_hover.yaml
 │   │   │   ├── lotf_tracking.yaml
 │   │   │   ├── pointcloud_flight.yaml
-│   │   │   └── pointcloud_navigation.yaml
+│   │   │   ├── pointcloud_navigation.yaml
+│   │   │   └── pointcloud_navigation_v2.yaml
 │   │   ├── tracking/
 │   │   │   └── random.yaml
 │   │   ├── hovering.yaml
@@ -102,7 +114,10 @@ drone_playground/
 │   │   └── tracking.yaml
 │   ├── evaluation/
 │   │   ├── default.yaml
-│   │   └── navigation_v1.yaml
+│   │   ├── navigation_v1.yaml
+│   │   ├── navigation_v2.yaml
+│   │   ├── paper_pointcloud.yaml
+│   │   └── pointcloud_navigation_v2.yaml
 │   ├── execution/
 │   │   ├── acceleration.yaml
 │   │   ├── attitude_thrust.yaml
@@ -111,6 +126,7 @@ drone_playground/
 │   ├── method/
 │   │   ├── learning/
 │   │   │   ├── apg.yaml
+│   │   │   ├── bptt.yaml
 │   │   │   ├── dva.yaml
 │   │   │   ├── ppo.yaml
 │   │   │   └── shac.yaml
@@ -129,12 +145,14 @@ drone_playground/
 │   │   ├── lotf_mlp.yaml
 │   │   ├── none.yaml
 │   │   ├── paper_pointnet_gru.yaml
+│   │   ├── paper_pointnet_gru_conditioned.yaml
 │   │   └── perception_ppo.yaml
 │   ├── objective/
 │   │   ├── lotf_hover.yaml
 │   │   ├── lotf_tracking.yaml
 │   │   ├── navigation.yaml
 │   │   ├── paper_pointcloud.yaml
+│   │   ├── pointcloud_control.yaml
 │   │   └── tracking_exp.yaml
 │   ├── observation/
 │   │   ├── lotf_state.yaml
@@ -171,6 +189,7 @@ drone_playground/
 │   │   ├── navigation.yaml
 │   │   ├── paper_transfer.yaml
 │   │   ├── pointcloud_avoidance.yaml
+│   │   ├── pointcloud_control.yaml
 │   │   ├── racing.yaml
 │   │   └── random.yaml
 │   ├── training/
@@ -210,6 +229,7 @@ drone_playground/
 │   │   │   └── status-before-architecture-v3.md
 │   │   ├── alignment-history.md
 │   │   ├── architecture-v3-timing.md
+│   │   ├── branch-lifecycle.md
 │   │   ├── composable-platform-references.md
 │   │   ├── composable-slot-design.md
 │   │   ├── p5-scene-reference-comparison.md
@@ -309,6 +329,395 @@ drone_playground/
 │   │   │   ├── lotf-hybrid-tracking-seed0-v1-error.png
 │   │   │   ├── lotf-hybrid-tracking-seed0-v1-loss.png
 │   │   │   └── lotf-hybrid-tracking-seed0-v1-trajectory.png
+│   │   ├── final-acceptance/
+│   │   │   ├── runs/
+│   │   │   │   ├── final-acceptance-bptt-hovering-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-dynamic-smoke-v3/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-static-smoke-v3/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-bptt-racing-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-bptt-tracking-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-bptt-hovering-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-bptt-navigation-dynamic-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-bptt-navigation-static-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-bptt-racing-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-bptt-tracking-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-pointcloud-hovering-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-pointcloud-racing-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-pointcloud-tracking-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-ppo-hovering-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-ppo-navigation-dynamic-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-ppo-navigation-static-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-ppo-racing-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-ppo-tracking-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-shac-hovering-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-shac-navigation-dynamic-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-shac-navigation-static-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-shac-racing-trained-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-heldout-shac-tracking-v1/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-ego_planner-dynamic-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-ego_planner-hovering-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-ego_planner-racing-v3/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-ego_planner-static-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-ego_planner-tracking-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-super-dynamic-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-super-hovering-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-super-racing-v3/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-super-static-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-native-super-tracking-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-pointcloud-hovering-t2/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-pointcloud-navigation-30000-v2/
+│   │   │   │   │   ├── eval/
+│   │   │   │   │   │   └── report.json
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-pointcloud-racing-t1/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-pointcloud-tracking-t1/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-ppo-hovering-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-ppo-navigation-dynamic-smoke-v2/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-ppo-navigation-static-smoke-v2/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-ppo-racing-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-ppo-tracking-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-shac-hovering-t0/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-shac-navigation-dynamic-smoke-v3/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-shac-navigation-static-smoke-v3/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   ├── final-acceptance-shac-racing-t1/
+│   │   │   │   │   ├── command.txt
+│   │   │   │   │   ├── manifest.json
+│   │   │   │   │   ├── resolved-config.json
+│   │   │   │   │   └── result.json
+│   │   │   │   └── final-acceptance-shac-tracking-t0/
+│   │   │   │       ├── command.txt
+│   │   │   │       ├── manifest.json
+│   │   │   │       ├── resolved-config.json
+│   │   │   │       └── result.json
+│   │   │   ├── tuning/
+│   │   │   │   ├── final-acceptance-bptt-hovering-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-dynamic-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-dynamic-smoke-v3/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-static-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-navigation-static-smoke-v3/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-racing-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-bptt-tracking-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-hovering-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-hovering-t0-cli-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-hovering-t1/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-hovering-t2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-racing-t1/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-tracking-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-pointcloud-tracking-t1/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-ppo-hovering-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-ppo-navigation-dynamic-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-ppo-navigation-static-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-ppo-racing-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-ppo-tracking-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-hovering-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-navigation-dynamic-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-navigation-dynamic-smoke-v3/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-navigation-static-smoke-v2/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-navigation-static-smoke-v3/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-racing-t0/
+│   │   │   │   │   └── observation.json
+│   │   │   │   ├── final-acceptance-shac-racing-t1/
+│   │   │   │   │   └── observation.json
+│   │   │   │   └── final-acceptance-shac-tracking-t0/
+│   │   │   │       └── observation.json
+│   │   │   ├── verification-sources/
+│   │   │   │   ├── finalize_verified_delivery.py.txt
+│   │   │   │   ├── prepare_delivery.py.txt
+│   │   │   │   ├── render_delivery.py.txt
+│   │   │   │   └── verify_delivery_replays.py.txt
+│   │   │   ├── README.md
+│   │   │   ├── commands.md
+│   │   │   ├── current-doc-links.json
+│   │   │   ├── diff-check.log
+│   │   │   ├── ego-3d-goals-build.log
+│   │   │   ├── evidence-audit.log
+│   │   │   ├── evidence.json
+│   │   │   ├── final-additions-complete.log
+│   │   │   ├── final-additions-complete.xml
+│   │   │   ├── final-regression.log
+│   │   │   ├── final-regression.xml
+│   │   │   ├── format.log
+│   │   │   ├── full-regression-recovery.log
+│   │   │   ├── green-pointcloud-conditioning.log
+│   │   │   ├── green-sensor-gradients.log
+│   │   │   ├── legacy-checkpoints.json
+│   │   │   ├── native-control-exits-v2.json
+│   │   │   ├── original-paper-snapshot.json
+│   │   │   ├── pointcloud-feature-diagnosis.json
+│   │   │   ├── red-acceptance-summary.log
+│   │   │   ├── red-native-provenance.log
+│   │   │   ├── red-native-takeoff.log
+│   │   │   ├── red-pointcloud-conditioning.log
+│   │   │   ├── red-sensor-gradients.log
+│   │   │   ├── remaining-frozen-evaluations.json
+│   │   │   ├── replay-readback.json
+│   │   │   ├── ruff.log
+│   │   │   ├── selection.json
+│   │   │   ├── shac-trained-endpoint-selection.json
+│   │   │   ├── source-hashes.json
+│   │   │   ├── summary-guard-final.log
+│   │   │   ├── super-control-initial-time-build-v2.log
+│   │   │   ├── terminal-readback-complete.log
+│   │   │   └── verification.json
 │   │   ├── images/
 │   │   │   ├── p4-ppo.png
 │   │   │   ├── p4-sampling-mpc.png
@@ -415,6 +824,9 @@ drone_playground/
 │   │   └── worker.py
 │   ├── docker/
 │   │   └── Dockerfile.ros1
+│   ├── patches/
+│   │   ├── ego-3d-goals.patch
+│   │   └── super-control-initial-time.patch
 │   ├── README.md
 │   ├── setup.sh
 │   └── versions.env
@@ -434,6 +846,7 @@ drone_playground/
 │   │   ├── setup_acados.sh
 │   │   ├── setup_p5_native.sh
 │   │   ├── summarize_composable_lotf.py
+│   │   ├── summarize_final_acceptance.py
 │   │   ├── summarize_p3_p4.py
 │   │   ├── summarize_p5.py
 │   │   ├── summarize_pointcloud.py
@@ -453,6 +866,7 @@ drone_playground/
 │       │   ├── scenes/
 │       │   │   ├── __init__.py
 │       │   │   ├── catalog.py
+│       │   │   ├── control_geometry.py
 │       │   │   ├── navigation.py
 │       │   │   └── pointcloud.py
 │       │   ├── sensors/
@@ -484,6 +898,7 @@ drone_playground/
 │       │   │   ├── lotf.py
 │       │   │   ├── navigation.py
 │       │   │   ├── pointcloud.py
+│       │   │   ├── pointcloud_control.py
 │       │   │   ├── racing.py
 │       │   │   └── tracking.py
 │       │   ├── __init__.py
@@ -493,10 +908,12 @@ drone_playground/
 │       │   ├── __init__.py
 │       │   ├── evaluator.py
 │       │   ├── lotf.py
+│       │   ├── native_control.py
 │       │   ├── native_planners.py
 │       │   ├── navigation.py
 │       │   ├── optimization.py
 │       │   ├── pointcloud.py
+│       │   ├── pointcloud_control.py
 │       │   ├── protocols.py
 │       │   ├── racing.py
 │       │   ├── reporting.py
@@ -520,9 +937,11 @@ drone_playground/
 │       ├── learning/
 │       │   ├── algorithms/
 │       │   │   ├── __init__.py
+│       │   │   ├── bptt.py
 │       │   │   ├── dva.py
 │       │   │   ├── lotf_bptt.py
 │       │   │   ├── pointcloud_bptt.py
+│       │   │   ├── pointcloud_control.py
 │       │   │   └── shac.py
 │       │   ├── objectives/
 │       │   │   ├── __init__.py
@@ -593,18 +1012,22 @@ drone_playground/
 │   ├── README.md
 │   ├── __init__.py
 │   ├── reference_configs.py
+│   ├── test_acceptance_summary.py
 │   ├── test_architecture_v3.py
 │   ├── test_artifact_migration_v3.py
+│   ├── test_bptt_training.py
 │   ├── test_checkpoint.py
 │   ├── test_cli.py
 │   ├── test_component_regression.py
 │   ├── test_composition.py
 │   ├── test_console.py
+│   ├── test_control_geometry.py
 │   ├── test_depth_sensor.py
 │   ├── test_device_ownership.py
 │   ├── test_dva_navigation.py
 │   ├── test_evaluation.py
 │   ├── test_execution_config.py
+│   ├── test_final_acceptance.py
 │   ├── test_fixed_navigation_scenes.py
 │   ├── test_frozen_contract_v3.py
 │   ├── test_lidar_sensor.py
@@ -612,14 +1035,20 @@ drone_playground/
 │   ├── test_lotf.py
 │   ├── test_lotf_review.py
 │   ├── test_lotf_training.py
+│   ├── test_native_control.py
 │   ├── test_native_planners.py
 │   ├── test_navigation.py
 │   ├── test_navigation_archive.py
+│   ├── test_nested_composition.py
 │   ├── test_numerical_boundary.py
 │   ├── test_optimization.py
 │   ├── test_perception_ppo.py
+│   ├── test_pointcloud_conditioning.py
+│   ├── test_pointcloud_control.py
+│   ├── test_pointcloud_control_pipeline.py
 │   ├── test_pointcloud_evaluation.py
 │   ├── test_pointcloud_method.py
+│   ├── test_pointcloud_navigation_v2.py
 │   ├── test_pointcloud_physics.py
 │   ├── test_pointcloud_pipeline.py
 │   ├── test_pointcloud_protocol_guards.py
@@ -630,8 +1059,11 @@ drone_playground/
 │   ├── test_reporting.py
 │   ├── test_rscope_client.py
 │   ├── test_runs.py
+│   ├── test_runtime_terminal_compute.py
 │   ├── test_runtime_v3.py
+│   ├── test_sensor_gradients.py
 │   ├── test_shac.py
+│   ├── test_shac_warm_start.py
 │   └── test_tracking.py
 ├── third_party/
 │   ├── licenses/

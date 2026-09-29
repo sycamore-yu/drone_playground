@@ -151,19 +151,22 @@ def train(
         else types.identity_observation_preprocessor
     )
     sizes = tuple(config.get("hidden_sizes", [64, 64]))
-    actor = apg_networks.make_apg_networks(
+    from drone_playground.networks.policies import network_factory
+
+    actor = network_factory({**config, "algorithm": config.get("algorithm", "shac")})(
         environment.observation_size,
         environment.action_size,
         preprocess_observations_fn=preprocess,
-        hidden_layer_sizes=sizes,
-        activation=linen.elu,
-        layer_norm=config.get("layer_norm", True),
     )
-    critic = networks.make_value_network(
-        environment.observation_size,
-        preprocess_observations_fn=preprocess,
-        hidden_layer_sizes=sizes,
-        activation=linen.elu,
+    critic = (
+        actor.value_network
+        if config.get("sensor_layout")
+        else networks.make_value_network(
+            environment.observation_size,
+            preprocess_observations_fn=preprocess,
+            hidden_layer_sizes=sizes,
+            activation=linen.elu,
+        )
     )
     make_policy = apg_networks.make_inference_fn(actor)
     env = wrap_for_training(environment, environment.episode_length)
@@ -179,13 +182,48 @@ def train(
     )
     key, ak, ck, ek = jax.random.split(jax.random.PRNGKey(config.get("seed", 0)), 4)
     policy, value = actor.policy_network.init(ak), critic.init(ck)
+    normalizer = running_statistics.init_state(
+        specs.Array((environment.observation_size,), jnp.float32)
+    )
+    if config.get("warm_start"):
+        from drone_playground.composition import native_training_config
+        from drone_playground.runs.checkpoints import load_policy
+
+        if restore_state is not None:
+            raise ValueError("Select either actor warm start or full-state continuation")
+        _, previous, metadata = load_policy(config["warm_start"])
+        source = native_training_config(metadata["config"])
+        if source["algorithm"] not in ("apg", "bptt", "shac"):
+            raise ValueError("SHAC warm start requires an APG-family actor")
+        if (
+            metadata["observation_size"] != environment.observation_size
+            or metadata["action_size"] != environment.action_size
+        ):
+            raise ValueError("Warm-start observation/action dimensions differ")
+        for field in (
+            "task",
+            "dynamics",
+            "drone",
+            "hidden_sizes",
+            "layer_norm",
+            "normalize_observations",
+            "sensor_layout",
+        ):
+            if source.get(field) != config.get(field):
+                raise ValueError(f"SHAC warm-start configuration differs: {field}")
+        if config.get("components"):
+            for field in ("sensor", "observation"):
+                if metadata["config"]["env"][field] != config["components"]["env"][field]:
+                    raise ValueError(f"SHAC warm-start input semantics differ: {field}")
+        normalizer, policy = jax.tree.map(jnp.asarray, previous)
+        actor.policy_network.apply(normalizer, policy, jnp.zeros(environment.observation_size))
     state = TrainingState(
         policy,
         value,
         value,
         actor_opt.init(policy),
         critic_opt.init(value),
-        running_statistics.init_state(specs.Array((environment.observation_size,), jnp.float32)),
+        normalizer,
         jax.jit(env.reset)(jax.random.split(ek, count)),
         key,
         jnp.int32(0),

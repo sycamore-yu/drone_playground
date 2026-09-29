@@ -1,0 +1,29 @@
+diff --git a/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp b/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp
+--- a/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp
++++ b/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp
+@@ -24,6 +24,7 @@
+ #include <traj_opt/exp_traj_optimizer_s4.h>
+ #include <utils/optimization/lbfgs.h>
+ #include <ros_interface/ros_interface.hpp>
++#include <cstdlib>
+ 
+ #define POS_IDX 1
+ #define VEL_IDX 2
+@@ -538,5 +539,17 @@
+         opt_vars.times *= 0.8;
+     }
+ 
++    // The explicit platform control transfer includes sub-metre hover moves.
++    // Keep the original objective and constraints; condition their initial guess.
++    const char *control_transfer = std::getenv("DRONE_PLAYGROUND_CONTROL_TRANSFER");
++    if (control_transfer && control_transfer[0] == '1') {
++        for (int i = 0; i < opt_vars.piece_num; ++i) {
++            const double distance = (opt_vars.init_path.col(i + 1) - opt_vars.init_path.col(i)).norm();
++            const double initial_time = std::max(0.1, 4.0 * std::sqrt(distance / cfg_.max_acc));
++            opt_vars.times(i) = std::max(opt_vars.times(i), initial_time);
++        }
++    }
++
++
+     if (std::isnan(opt_vars.times.sum())) {
+         cout << YELLOW << " -- [ExpOpt] Init times and point failed." << RESET << endl;

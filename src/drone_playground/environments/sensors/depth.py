@@ -257,6 +257,7 @@ def cast_depth(
         bank.world_low,
         bank.world_high,
         camera.include_ground,
+        rotations=None if bank.rotations is None else bank.rotations[scenario_id],
     )
     valid = (distance >= camera.near_m) & (distance <= camera.far_m)
     depth = jnp.where(valid, distance, 0.0)

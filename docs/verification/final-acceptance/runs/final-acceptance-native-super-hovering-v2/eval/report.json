@@ -1,0 +1,65 @@
+{
+  "num_trials": 2,
+  "completed": 2,
+  "failed": 0,
+  "completion_rate": 1.0,
+  "rmse_completed_mean": 0.2750774505673416,
+  "rmse_all_mean": 0.2750774505673416,
+  "return_mean": 105.16374969482422,
+  "quality_passed": false,
+  "quality_rule": "complete >= ceil(0.9*N) and completed mean position RMSE <=0.25m",
+  "episodes": [
+    {
+      "case": 0,
+      "seed": 30000,
+      "completed": true,
+      "failed": false,
+      "steps": 150,
+      "duration_s": 3.0,
+      "rmse_m": 0.2750774505673416,
+      "return": 105.16374969482422
+    },
+    {
+      "case": 1,
+      "seed": 30001,
+      "completed": true,
+      "failed": false,
+      "steps": 150,
+      "duration_s": 3.0,
+      "rmse_m": 0.2750774505673416,
+      "return": 105.16374969482422
+    }
+  ],
+  "task_quality_passed": false,
+  "task": "hovering",
+  "method": "super",
+  "split": "heldout",
+  "task_adapter": {
+    "interactive_goals": true,
+    "goal_frequency_hz": 5.0,
+    "lookahead_s": 0.6,
+    "description": "canonical time-reference to receding native planner goals"
+  },
+  "diagnostics": [
+    {
+      "case": 0,
+      "missing_command_steps": 66,
+      "commands": 146,
+      "trajectories": 22
+    },
+    {
+      "case": 1,
+      "missing_command_steps": 66,
+      "commands": 146,
+      "trajectories": 22
+    }
+  ],
+  "all_trials_recorded": true,
+  "native_execution": {
+    "passed": true,
+    "fallback_only_cases": [],
+    "recorded_cases": 2,
+    "expected_cases": 2,
+    "rule": "every episode must contain a native trajectory and a native command"
+  }
+}

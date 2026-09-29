@@ -11,7 +11,9 @@ from drone_playground.composition import compose_method, validate_config
 def test_named_navigation_protocol_is_checked_and_recorded_by_identity():
     from drone_playground.evaluation.protocols import protocol_identity
 
-    cfg = compose_method("paper/super", "navigation/static", ["evaluation=navigation_v1"])
+    cfg = compose_method(
+        "paper/super", "navigation/static", ["evaluation=navigation_v1", "env.task.duration=40.0"]
+    )
     validate_config(cfg)
     identity = protocol_identity(cfg)
     assert identity["name"] == "navigation" and identity["version"] == 1
@@ -23,7 +25,9 @@ def test_named_navigation_protocol_is_checked_and_recorded_by_identity():
 
 
 def test_named_protocol_rejects_geometry_changes_before_startup(tmp_path):
-    cfg = compose_method("paper/super", "navigation/static", ["evaluation=navigation_v1"])
+    cfg = compose_method(
+        "paper/super", "navigation/static", ["evaluation=navigation_v1", "env.task.duration=40.0"]
+    )
     source = Path(__file__).parents[1] / "assets/scenes/navigation/catalog.json"
     changed = tmp_path / "catalog.json"
     changed.write_bytes(source.read_bytes() + b"\n")

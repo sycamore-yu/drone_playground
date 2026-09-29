@@ -1,0 +1,24 @@
+{
+  "run_id": "final-acceptance-pointcloud-tracking-t0",
+  "exit_code": 0,
+  "wall_seconds": 260.7925162757747,
+  "state": "complete",
+  "score": 811.0881436611122,
+  "quality_passed": false,
+  "steps": 131072,
+  "selected_step": 131072,
+  "completed": 13,
+  "completion_rate": 0.8125,
+  "rmse_m": 1.411856338887778,
+  "trainer": {
+    "acceleration": 1.0632340908050537,
+    "collision": 0.002115034032613039,
+    "compile_and_first_update_seconds": 24.62001691199839,
+    "gradient_norm": 9.530713081359863,
+    "jerk": 27.664791107177734,
+    "loss": 1.2997958660125732,
+    "net_update_seconds": 141.3270463226363,
+    "position": 1.2207629680633545,
+    "velocity": 0.7466893196105957
+  }
+}

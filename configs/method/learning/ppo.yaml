@@ -16,3 +16,5 @@ method:
 source: Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight,
   not the paper Lissajous task
 mode: train
+runtime:
+  action_delay_ms: [25.0, 50.0]

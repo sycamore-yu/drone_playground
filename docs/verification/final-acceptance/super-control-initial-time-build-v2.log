@@ -1,0 +1,47 @@
+[ 25%] Built target rog_map
+Scanning dependencies of target super
+[ 28%] Building CXX object SUPER/super_planner/CMakeFiles/super.dir/src/traj_opt/exp_traj_optimizer_s4.cpp.o
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp: In member function ‘bool traj_opt::ExpTrajOpt::processCorridorWithGuideTraj()’:
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:476:23: warning: comparison of integer expressions of different signedness: ‘int’ and ‘std::vector<Eigen::Matrix<double, 3, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, 1> > >::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  476 |     for (int i = 0; i < opt_vars.guide_path.size(); i++) {
+      |                     ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp: In member function ‘bool traj_opt::ExpTrajOpt::setInitPsAndTs(const vec_Vec3f&, const std::vector<double>&)’:
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:612:31: warning: comparison of integer expressions of different signedness: ‘Eigen::EigenBase<Eigen::Matrix<double, -1, 1> >::Index’ {aka ‘long int’} and ‘std::vector<double>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  612 |     if (opt_vars.times.size() != init_ts.size()) {
+      |         ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:615:32: warning: comparison of integer expressions of different signedness: ‘Eigen::Index’ {aka ‘long int’} and ‘std::vector<Eigen::Matrix<double, 3, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, 1> > >::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  615 |     if (opt_vars.points.cols() != init_ps.size()) {
+      |         ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp: In member function ‘double traj_opt::ExpTrajOpt::optimize(geometry_utils::Trajectory&, const double&)’:
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:651:27: warning: comparison of integer expressions of different signedness: ‘int’ and ‘std::vector<Eigen::Matrix<double, 3, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, 1> > >::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  651 |         for (int i = 0; i < opt_vars.init_ps.size(); i++) {
+      |                         ~~^~~~~~~~~~~~~~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp: In member function ‘bool traj_opt::ExpTrajOpt::optimize(const StatePVAJ&, const StatePVAJ&, super_utils::vec_E<Eigen::Matrix<double, 3, 1> >&, const std::vector<double>&, geometry_utils::PolytopeVec&, geometry_utils::Trajectory&)’:
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:913:24: warning: comparison of integer expressions of different signedness: ‘long int’ and ‘std::vector<geometry_utils::Polytope>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  913 |     for (long i = 0; i < sfcs.size(); i++) {
+      |                      ~~^~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:950:28: warning: comparison of integer expressions of different signedness: ‘long int’ and ‘std::vector<geometry_utils::Polytope>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+  950 |         for (long i = 0; i < sfcs.size(); i++) {
+      |                          ~~^~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp: In member function ‘bool traj_opt::ExpTrajOpt::optimize(const StatePVAJ&, const StatePVAJ&, geometry_utils::PolytopeVec&, const vec_Vec3f&, const VecDf&, geometry_utils::Trajectory&)’:
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:1006:24: warning: comparison of integer expressions of different signedness: ‘long int’ and ‘std::vector<geometry_utils::Polytope>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 1006 |     for (long i = 0; i < sfcs.size(); i++) {
+      |                      ~~^~~~~~~~~~~~~
+/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp:1042:28: warning: comparison of integer expressions of different signedness: ‘long int’ and ‘std::vector<geometry_utils::Polytope>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 1042 |         for (long i = 0; i < sfcs.size(); i++) {
+      |                          ~~^~~~~~~~~~~~~
+[ 31%] Linking CXX static library /opt/drone_playground/planners/super/devel/lib/libsuper.a
+[ 94%] Built target super
+[ 97%] Linking CXX executable /opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node
+[100%] Built target fsm_node
+Base path: /opt/drone_playground/planners/super
+Source space: /opt/drone_playground/planners/super/src
+Build space: /opt/drone_playground/planners/super/build
+Devel space: /opt/drone_playground/planners/super/devel
+Install space: /opt/drone_playground/planners/super/install
+####
+#### Running command: "make cmake_check_build_system" in "/opt/drone_playground/planners/super/build"
+####
+####
+#### Running command: "make -j2 fsm_node" in "/opt/drone_playground/planners/super/build"
+####

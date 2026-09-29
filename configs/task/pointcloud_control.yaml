@@ -1,0 +1,16 @@
+name: pointcloud_control
+control_task: hovering
+adapter_identity: pointcloud-platform-control-v1
+freq: 10
+physics_freq: 500
+action_delay_ms: [25.0, 50.0]
+duration: 3.0
+body_radius: 0.07
+goal_radius: 0.5
+reference_gain: 2.0
+velocity_limit: 20.0
+position_randomization_m: 0.1
+velocity_randomization_mps: 0.2
+initial_perturbation_m: 0.02
+integration: 500Hz-held-command-substeps
+floor_rule: centre-z-below-zero; canonical takeoff contact convention

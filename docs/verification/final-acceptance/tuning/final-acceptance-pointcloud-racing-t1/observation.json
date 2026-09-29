@@ -1,0 +1,24 @@
+{
+  "run_id": "final-acceptance-pointcloud-racing-t1",
+  "exit_code": 0,
+  "wall_seconds": 538.9482850334607,
+  "state": "complete",
+  "score": 1004.9354267269373,
+  "quality_passed": true,
+  "steps": 262144,
+  "selected_step": 262144,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.064573273062706,
+  "trainer": {
+    "acceleration": 1.0642180442810059,
+    "collision": 0.00021122838370501995,
+    "compile_and_first_update_seconds": 29.555766485165805,
+    "gradient_norm": 0.2801896333694458,
+    "jerk": 25.923057556152344,
+    "loss": 0.01787748374044895,
+    "net_update_seconds": 341.3029129453935,
+    "position": 0.011483103968203068,
+    "velocity": 0.05839578062295914
+  }
+}

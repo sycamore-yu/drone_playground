@@ -20,6 +20,10 @@ method:
   workers: 4
   implementation: native_ego
   trainable: false
+  limits:
+    max_velocity_mps: 20.0
+    max_acceleration_mps2: 3.0
+    planning_horizon_m: 7.5
 source: Native ego through ROS1; shared P5 geometry and dynamics
 mode: eval
 evaluation:

@@ -1,0 +1,1 @@
+/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=tracking observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-super-tracking-v2

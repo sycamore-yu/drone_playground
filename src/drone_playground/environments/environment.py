@@ -21,7 +21,11 @@ def build_environment(config, device="cpu", split="train", count=32):
     cfg = copy.deepcopy(config)
     settings = cfg["env"]
     task = settings["task"]
-    if task["name"] == "pointcloud_avoidance":
+    if task["name"] == "pointcloud_control":
+        from .tasks.pointcloud_control import ReferencePointCloudTask
+
+        env = ReferencePointCloudTask(cfg, device=device)
+    elif task["name"] == "pointcloud_avoidance":
         from .tasks.pointcloud import PointCloudTask
 
         env = PointCloudTask(cfg)
@@ -89,6 +93,11 @@ def build_environment(config, device="cpu", split="train", count=32):
         from drone_playground.execution.delay import ActionDelay
 
         env = ActionDelay(env, delay_steps)
+    delay_range = cfg["runtime"].get("action_delay_ms")
+    if delay_range is not None and task["name"] != "pointcloud_control":
+        from drone_playground.execution.delay import RandomActionDelay
+
+        env = RandomActionDelay(env, delay_range)
     env.component_identity = component_identity(cfg)
     if getattr(env, "sim", None) is not None:
         env.sim.component_identity = copy.deepcopy(env.component_identity)

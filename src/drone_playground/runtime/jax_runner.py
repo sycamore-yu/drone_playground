@@ -14,7 +14,7 @@ def rollout(env, policy, initial, length, project):
     """
     batch = initial.done.shape[0]
 
-    def one(carry, index):
+    def advance(carry, index):
         current, alive = carry
         action, _ = policy(current.obs, jax.random.PRNGKey(0))
         candidate = jax.vmap(env.step)(current, action)
@@ -27,6 +27,17 @@ def rollout(env, policy, initial, length, project):
         ended = (~alive) | next_state.done.astype(bool)
         record = project(current, next_state, action, alive, ended, index)
         return (next_state, ~ended), record
+
+    def inactive(carry, index):
+        current, alive = carry
+        action = jnp.zeros((batch, env.action_size), dtype=initial.obs.dtype)
+        record = project(current, current, action, alive, ~alive, index)
+        return carry, record
+
+    def one(carry, index):
+        # Keep static archive shapes without evaluating policy/sensors/physics after
+        # the entire batch has ended. Exporters retain only the real active prefix.
+        return jax.lax.cond(jnp.any(carry[1]), advance, inactive, carry, index)
 
     return jax.lax.scan(one, (initial, jnp.ones(batch, bool)), jnp.arange(length))[1]
 

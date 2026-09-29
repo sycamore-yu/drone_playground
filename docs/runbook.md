@@ -6,12 +6,14 @@
 
 ```bash
 pixi run train method=learning/ppo env=racing
-pixi run eval method=paper/super env=navigation/static evaluation=navigation_v1
+pixi run eval method=paper/super env=navigation/static evaluation=navigation_v2
 pixi run play checkpoint=experiments/<运行>/checkpoints/<权重>.pkl
 pixi run play replay=experiments/<运行>/rollouts visualization=headless
 ```
 
 主任务环境：`hovering`、`tracking`、`tracking/random`、`racing`、`navigation/static`、`navigation/dynamic`。
+
+点云控制迁移环境为`paper/control/hovering`、`paper/control/tracking`和`paper/control/racing`，原点云新导航协议为`paper/pointcloud_navigation_v2`。完整已执行命令和对应冻结权重见 [五任务命令](verification/final-acceptance/commands.md)。
 
 具名论文环境：`paper/lotf_hover`、`paper/lotf_tracking`、`paper/pointcloud_flight` 和 `paper/pointcloud_navigation`。
 
@@ -66,7 +68,7 @@ pixi run python -m pytest tests/test_architecture_v3.py -q
 pixi run test
 ```
 
-日志和验证摘要在 `docs/verification/architecture-v3/`，每个原始运行保留完整配置、进程、依赖、补丁、指标、事件和回放。
+当前日志和验证摘要在 `docs/verification/final-acceptance/`，架构阶段保留在`docs/verification/architecture-v3/`，每个原始运行保留完整配置、进程、依赖、补丁、指标、事件和回放。
 
 ## 冻结权重的局部执行修改
 
@@ -76,3 +78,17 @@ pixi run eval checkpoint=<当前版本权重.pkl> runtime.device=cpu \
 ```
 
 该覆盖沿用权重保存的任务、场景、机型、输入和时序，只替换指定动力学字段。使用 `dynamics@env.execution.dynamics=crazyflow` 会替换整个动力学预设；使用 `env=...` 会替换完整环境，随后检查冻结输入契约。每次变化进入新的运行记录。
+
+
+## 已验收配方和协议
+
+当前main包含30项方法—任务实测。PPO、BPTT、SHAC和点云控制迁移的12项控制质量验收均采用32回合留出；[验收表](verification/final-acceptance/README.md)列出失败、实际预算、热启动和源码身份。
+
+标准学习配方的runtime.action_delay_ms=[25,50]在每次环境重置采样，并在500赫兹物理时钟向上取整。指定runtime.action_delay_steps时同时设runtime.action_delay_ms=null。旧点云原论文训练的时序按其冻结配置执行。
+
+当前navigation_v2要求300秒和0.5米到达半径。复核旧navigation_v1时显式指定env.task.duration=40.0，保留新运行身份。原生速度上限20米/秒；原生控制任务采用显式参考到目标适配，竞速包含已计入物理时间的起飞接管。
+
+```bash
+pixi run python scripts/tools/summarize_final_acceptance.py --selection docs/verification/final-acceptance/selection.json --output tmp/final-acceptance/rechecked-evidence.json
+pixi run play replay=experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts visualization=headless
+```

@@ -1,0 +1,8 @@
+{
+  "ppo_tracking": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_tracking/step-0001310720.pkl",
+  "ppo_racing": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_racing/step-0004194304.pkl",
+  "apg_tracking": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_tracking/step-0000655360.pkl",
+  "apg_racing": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_racing/step-0000655360.pkl",
+  "lotf_hover": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/lotf_hover/step-0006000000.pkl",
+  "lotf_tracking": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/lotf_tracking/step-0022500000.pkl"
+}

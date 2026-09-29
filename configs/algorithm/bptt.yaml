@@ -1,0 +1,8 @@
+name: bptt
+horizon_length: 40
+learning_rate: 0.005
+max_grad_norm: 1.0
+use_schedule: true
+schedule_decay: 0.997
+gradient:
+  transition: direct

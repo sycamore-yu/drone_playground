@@ -1,0 +1,12 @@
+{
+  "arrived": 0,
+  "elapsed_s": 38.93678624602035,
+  "finished_at": "2026-09-29T02:32:32.087415+00:00",
+  "full_budget_completed": true,
+  "num_trials": 6,
+  "quality_passed": null,
+  "run_id": "final-acceptance-heldout-ppo-navigation-dynamic-v2",
+  "started_at": "2026-09-29T02:31:53.150623+00:00",
+  "status": "completed",
+  "task_id": "p5-navigation-evaluation"
+}

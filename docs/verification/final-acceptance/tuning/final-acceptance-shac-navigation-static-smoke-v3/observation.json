@@ -1,0 +1,29 @@
+{
+  "run_id": "final-acceptance-shac-navigation-static-smoke-v3",
+  "exit_code": 0,
+  "wall_seconds": 259.14751222077757,
+  "state": "complete",
+  "score": -101.0,
+  "quality_passed": null,
+  "steps": 4096,
+  "selected_step": 0,
+  "completed": null,
+  "completion_rate": 0.0,
+  "rmse_m": null,
+  "trainer": {
+    "actor_parameter_delta_l2": 3.3017608619786993,
+    "actual_steps": 4096.0,
+    "compile_and_first_update_seconds": 35.5523973852396,
+    "critic_parameter_delta_l2": 4.879932450356367,
+    "net_update_seconds": 164.535029691644,
+    "training/actor_grad_norm": 5.320573329925537,
+    "training/actor_loss": 3.5850894451141357,
+    "training/bootstrap_value": -66.92253112792969,
+    "training/critic_grad_norm": 5460.7177734375,
+    "training/critic_loss": 163.7014923095703,
+    "training/reward": -0.0053893630392849445,
+    "training/terminated_fraction": 0.0,
+    "training/value_target_mean": -62.878761291503906,
+    "updates": 32.0
+  }
+}

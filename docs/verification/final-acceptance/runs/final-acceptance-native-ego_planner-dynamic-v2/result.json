@@ -1,0 +1,13 @@
+{
+  "arrived": 0,
+  "elapsed_s": 663.2477556988597,
+  "engineer_passed": true,
+  "finished_at": "2026-09-28T17:17:53.288053+00:00",
+  "full_budget_completed": true,
+  "num_trials": 6,
+  "quality_passed": null,
+  "run_id": "final-acceptance-native-ego_planner-dynamic-v2",
+  "started_at": "2026-09-28T17:06:50.040318+00:00",
+  "status": "completed",
+  "task_id": "p5/06-native-planners"
+}

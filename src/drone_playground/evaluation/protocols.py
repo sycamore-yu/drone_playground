@@ -20,7 +20,7 @@ def protocol_identity(config):
     path = _path(selected)
     raw = path.read_bytes()
     specification = yaml.safe_load(raw)
-    if specification.get("name") != "navigation" or specification.get("version") != 1:
+    if specification.get("name") != "navigation" or specification.get("version") not in (1, 2):
         raise ValueError("Unsupported benchmark protocol version")
     task, scene = config["env"]["task"], config["env"]["scene"]
     if task["name"] not in ("navigation", "pointcloud_avoidance"):
@@ -33,6 +33,10 @@ def protocol_identity(config):
             raise ValueError(f"Benchmark protocol differs on task.{field}")
     if "body_radius" in task and float(task["body_radius"]) != specification["body_radius_m"]:
         raise ValueError("Benchmark protocol differs on body collision radius")
+    limits = config["method"].get("limits")
+    if specification["version"] == 2 and limits is not None:
+        if limits["max_velocity_mps"] != specification["nominal_max_velocity_mps"]:
+            raise ValueError("Benchmark protocol differs on nominal planner velocity limit")
     chosen = scene.get("scene_ids", specification["scene_ids"])
     if not chosen or not set(chosen) <= set(specification["scene_ids"]):
         raise ValueError("Benchmark contains an undeclared scene identity")

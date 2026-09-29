@@ -1,0 +1,180 @@
+{
+  "actor_parameter_delta_l2": 1.3099238765133552,
+  "actual_steps": 4096,
+  "algorithm": "ppo",
+  "best_development_result": {
+    "arrived": 0,
+    "cells": {
+      "easy": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "easy",
+            "final_goal_distance_m": 96.31107330322266,
+            "min_clearance_m": -0.014044590294361115,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -153.01084899902344,
+            "scenario_id": 0,
+            "steps": 79,
+            "subtype": "S01",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.014044590294361115,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -153.01084899902344,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      },
+      "hard": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "hard",
+            "final_goal_distance_m": 96.30473327636719,
+            "min_clearance_m": -0.0021897628903388977,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -152.95640563964844,
+            "scenario_id": 2,
+            "steps": 79,
+            "subtype": "S03",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.0021897628903388977,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -152.95640563964844,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      },
+      "medium": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "medium",
+            "final_goal_distance_m": 96.30859375,
+            "min_clearance_m": -0.008408553898334503,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -152.9874267578125,
+            "scenario_id": 1,
+            "steps": 79,
+            "subtype": "S02",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.008408553898334503,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -152.9874267578125,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      }
+    },
+    "checkpoint": "checkpoints/step-0000000000.pkl",
+    "collision": 3,
+    "collision_rate": 1.0,
+    "constrained_time_mean_s": 300.0,
+    "drone": "cf2x_L250",
+    "dynamics": "first_principles",
+    "failure_rate": 1.0,
+    "num_trials": 3,
+    "numerical_failure": 0,
+    "out_of_bounds": 0,
+    "parameter_sha256": "5c4ffc5f03185aac7f814ce8acba6023c8ce1791108e262e8d1a8aa139c70844",
+    "parameters_frozen": true,
+    "quality_passed": null,
+    "quality_rule": "pending the P5 protocol freeze; macro success rate, collision rate and constrained completion time are reported per difficulty",
+    "return_mean": -152.98489379882812,
+    "scenario_groups": {
+      "easy": [
+        0
+      ],
+      "hard": [
+        2
+      ],
+      "medium": [
+        1
+      ]
+    },
+    "scene_bank_sha256": "c7274b22cc0641a7292d8b79375290a6239e4a2261445e9e07a1d2b9ace2a40f",
+    "split": "dev",
+    "step": 0,
+    "success_rate": 0.0,
+    "success_time_mean_s": null,
+    "task": "navigation",
+    "timeout": 0,
+    "timeout_rate": 0.0
+  },
+  "elapsed_s": 506.75011807587,
+  "elapsed_seconds": 506.1997891301289,
+  "engineer_passed": true,
+  "finished_at": "2026-09-28T18:28:03.867627+00:00",
+  "full_budget_completed": true,
+  "live_publications": [],
+  "quality_passed": null,
+  "run_id": "final-acceptance-ppo-navigation-static-smoke-v2",
+  "snapshots": 2,
+  "started_at": "2026-09-28T18:19:37.117496+00:00",
+  "status": "completed",
+  "task_id": "05",
+  "trainer_metrics": {
+    "training/entropy_loss": -0.011724094860255718,
+    "training/kl_mean": 0.004946460481733084,
+    "training/learning_rate": 0.0007999993395060301,
+    "training/policy_dist_max_loc": 0.35702353715896606,
+    "training/policy_dist_max_std": 0.3690735399723053,
+    "training/policy_dist_mean_loc": 0.15691891312599182,
+    "training/policy_dist_mean_std": 0.3677998185157776,
+    "training/policy_dist_min_loc": -0.01371979434043169,
+    "training/policy_dist_min_std": 0.36664527654647827,
+    "training/policy_loss": -0.0002872603654395789,
+    "training/sps": 120.89347108500999,
+    "training/total_loss": 196.28176879882812,
+    "training/v_loss": 196.29379272460938,
+    "training/walltime": 33.88106870651245
+  }
+}

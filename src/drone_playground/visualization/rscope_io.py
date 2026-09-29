@@ -267,6 +267,24 @@ def _native_rollout(
     return native_trace, values["obs"], values["reward"]
 
 
+def trim_episode(trace: dict[str, Any], case: int) -> dict[str, Any]:
+    """Take one contiguous active episode, including its terminal transition."""
+    steps, batch = np.asarray(trace["pos"]).shape[:2]
+    if not 0 <= case < batch:
+        raise IndexError("Replay case index is out of range")
+    active = np.asarray(trace.get("active", np.ones((steps, batch), bool)))[:, case].astype(bool)
+    length = int(active.sum())
+    if length < 1 or not np.array_equal(active, np.arange(steps) < length):
+        raise ValueError("Replay requires contiguous active frames including the terminal frame")
+
+    def take(value):
+        if isinstance(value, dict):
+            return {key: take(item) for key, item in value.items()}
+        return np.asarray(value)[:length, case : case + 1]
+
+    return take(trace)
+
+
 def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
     """Export one rollout with rscope's native atomic writer and a self-contained model bundle.
 
@@ -281,6 +299,28 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
     from rscope import rscope_utils
 
     directory = Path(directory).resolve()
+    if "active" in trace:
+        # A file contains complete trajectories with a single time dimension.
+        # Split unequal episode lengths so padding never appears in a replay.
+        active = np.asarray(trace["active"], dtype=bool)
+        paths = []
+        for case in range(active.shape[1]):
+            single = trim_episode(trace, case)
+            single.pop("active", None)
+            target = directory if case == 0 else directory / f"case-{case:03d}"
+            path = export_rollout(sim, target, single)
+            paths.append(
+                dict(
+                    case=case,
+                    frames=len(single["time"]),
+                    final_time_s=float(single["time"][-1, 0]),
+                    file=str(path.relative_to(directory)),
+                )
+            )
+        _atomic_write_bytes(
+            directory / "episodes.json", (json.dumps(paths, indent=2) + "\n").encode()
+        )
+        return directory / paths[0]["file"]
     directory.mkdir(parents=True, exist_ok=True)
     identity = getattr(sim, "component_identity", None)
     if identity is not None:

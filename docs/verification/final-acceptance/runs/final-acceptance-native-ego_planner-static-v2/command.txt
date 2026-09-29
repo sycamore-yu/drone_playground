@@ -1,0 +1,1 @@
+/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=navigation/static evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55621 runtime.device=cpu run_id=final-acceptance-native-ego_planner-static-v2

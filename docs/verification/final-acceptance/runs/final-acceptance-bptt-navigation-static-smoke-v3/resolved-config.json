@@ -1,0 +1,155 @@
+{
+  "algorithm": {
+    "gradient": {
+      "transition": "direct"
+    },
+    "horizon_length": 16,
+    "learning_rate": 0.005,
+    "max_grad_norm": 1.0,
+    "name": "bptt",
+    "schedule_decay": 0.997,
+    "use_schedule": true
+  },
+  "checkpoint": null,
+  "config_version": 3,
+  "env": {
+    "execution": {
+      "command": "attitude_thrust",
+      "controller": {
+        "name": "crazyflow_attitude"
+      },
+      "dynamics": {
+        "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+        "drone": "cf2x_L250",
+        "forward": "first_principles"
+      },
+      "tracker": null
+    },
+    "name": "navigation/static",
+    "observation": {
+      "_target_": "drone_playground.environments.observations.NavigationSensorObservation",
+      "action_size": 4,
+      "channels": 5,
+      "far_m": 40.0,
+      "history": 4,
+      "include_goal": true,
+      "include_previous_action": true,
+      "name": "navigation_lidar",
+      "near_m": 0.1,
+      "points_per_frame": 120
+    },
+    "scene": {
+      "_target_": "drone_playground.environments.scenes.catalog.NavigationScene",
+      "dynamic": false,
+      "families": [
+        "navigation8"
+      ],
+      "name": "navigation",
+      "scene_ids": [
+        "S01",
+        "S02",
+        "S03",
+        "S06"
+      ]
+    },
+    "sensor": {
+      "_target_": "drone_playground.environments.sensors.lidar.Mid360Lidar",
+      "downsample": 200,
+      "history": 4,
+      "include_ground": true,
+      "name": "mid360",
+      "normalise_far_m": 40.0,
+      "pattern": "mid360",
+      "range_m": [
+        0.1,
+        200.0
+      ],
+      "source_rate_hz": 10.0
+    },
+    "task": {
+      "duration": 300,
+      "dynamic": false,
+      "freq": 50,
+      "goal_radius": 0.5,
+      "name": "navigation",
+      "numerical_guard": true,
+      "reference_count": 32
+    }
+  },
+  "evaluation": {
+    "environment": "checkpoint",
+    "episodes": 128,
+    "output": null,
+    "seed_start": null,
+    "split": "heldout"
+  },
+  "method": {
+    "implementation": "neural",
+    "name": "bptt",
+    "output": "attitude_thrust",
+    "trainable": true
+  },
+  "migration": null,
+  "mode": "train",
+  "network": {
+    "hidden_sizes": [
+      32,
+      32
+    ],
+    "layer_norm": true,
+    "name": "brax_apg",
+    "normalize_observations": false
+  },
+  "objective": {
+    "_target_": "drone_playground.learning.objectives.NavigationObjective",
+    "arrival_bonus": 20.0,
+    "clearance_radius": 0.5,
+    "clearance_scale": 0.1,
+    "failure_penalty": -150.0,
+    "name": "navigation",
+    "progress_scale": 5.0,
+    "smoothness_scale": 0.01,
+    "time_cost": 0.01
+  },
+  "provenance": {
+    "actual_devices": [
+      "TFRT_CPU_0"
+    ],
+    "crazyflow_code": {
+      "commit": "36f584d114d9d331f0cee0fe4b9066f821c0fbfd",
+      "working_tree_patch_sha256": "1f92dbf45d608a19dcc1fd2fb31e9a0971dd346cec21708456ef1e3902462dc3"
+    },
+    "trainer": "drone_playground.learning.algorithms.bptt"
+  },
+  "replay": {
+    "directory": null
+  },
+  "run_id": "final-acceptance-bptt-navigation-static-smoke-v3",
+  "runtime": {
+    "action_delay_ms": [
+      25.0,
+      50.0
+    ],
+    "action_delay_steps": 0,
+    "backend": "jax",
+    "device": "cpu",
+    "timing": "synchronous"
+  },
+  "source": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+  "training": {
+    "development_episodes": 1,
+    "max_wall_seconds": 1800,
+    "num_envs": 8,
+    "num_evals": 2,
+    "num_timesteps": null,
+    "policy_updates": 32,
+    "publish_live": false,
+    "resume": null,
+    "seed": 0,
+    "warm_start": null
+  },
+  "visualization": {
+    "mode": "rscope",
+    "publish": true
+  }
+}

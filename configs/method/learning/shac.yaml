@@ -16,6 +16,8 @@ method:
 source: Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy
   network; unchanged P2 task
 mode: train
+runtime:
+  action_delay_ms: [25.0, 50.0]
 training:
   num_envs: 64
   policy_updates: 320

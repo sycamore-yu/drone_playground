@@ -1,0 +1,143 @@
+{
+  "algorithm": {
+    "critic_learning_rate": 0.002,
+    "critic_max_grad_norm": 10.0,
+    "critic_updates": 8,
+    "discounting": 0.99,
+    "gradient": {
+      "transition": "direct"
+    },
+    "horizon_length": 32,
+    "learning_rate": 0.003,
+    "max_grad_norm": 1.0,
+    "name": "shac",
+    "schedule_decay": 0.997,
+    "target_critic_alpha": 0.4,
+    "td_lambda": 0.95,
+    "use_schedule": true
+  },
+  "checkpoint": null,
+  "config_version": 3,
+  "env": {
+    "execution": {
+      "command": "attitude_thrust",
+      "controller": {
+        "name": "crazyflow_attitude"
+      },
+      "dynamics": {
+        "_target_": "drone_playground.models.crazyflow.CrazyflowModel",
+        "drone": "cf2x_L250",
+        "forward": "so_rpy"
+      },
+      "tracker": null
+    },
+    "name": "hovering",
+    "observation": {
+      "_target_": "drone_playground.environments.observations.TrackingObservation",
+      "interval": 0.1,
+      "n_samples": 10,
+      "name": "state_reference"
+    },
+    "scene": {
+      "_target_": "drone_playground.environments.scenes.EmptyScene",
+      "name": "empty",
+      "takeoff": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "sensor": {
+      "name": "none"
+    },
+    "task": {
+      "duration": 3.0,
+      "freq": 50,
+      "name": "hovering",
+      "numerical_guard": true,
+      "reference": "hover",
+      "reference_count": 256,
+      "reference_generator": {
+        "_target_": "drone_playground.methods.planners.reference.TrajectoryPlan",
+        "amplitude": 1.0,
+        "name": "hover",
+        "target": [
+          0.0,
+          0.0,
+          1.5
+        ]
+      }
+    }
+  },
+  "evaluation": {
+    "environment": "checkpoint",
+    "episodes": 128,
+    "output": null,
+    "seed_start": null,
+    "split": "heldout"
+  },
+  "method": {
+    "implementation": "neural",
+    "name": "shac",
+    "output": "attitude_thrust",
+    "trainable": true
+  },
+  "migration": null,
+  "mode": "train",
+  "network": {
+    "hidden_sizes": [
+      64,
+      64
+    ],
+    "layer_norm": true,
+    "name": "brax_shac",
+    "normalize_observations": false
+  },
+  "objective": {
+    "_target_": "drone_playground.learning.objectives.TrackingObjective",
+    "distance_scale": 2.0,
+    "name": "tracking_exp",
+    "scale": 1.0
+  },
+  "provenance": {
+    "actual_devices": [
+      "cuda:0"
+    ],
+    "crazyflow_code": {
+      "commit": "36f584d114d9d331f0cee0fe4b9066f821c0fbfd",
+      "working_tree_patch_sha256": "1f92dbf45d608a19dcc1fd2fb31e9a0971dd346cec21708456ef1e3902462dc3"
+    },
+    "trainer": "drone_playground.learning.algorithms.shac"
+  },
+  "replay": {
+    "directory": null
+  },
+  "run_id": "final-acceptance-shac-hovering-t0",
+  "runtime": {
+    "action_delay_ms": [
+      25.0,
+      50.0
+    ],
+    "action_delay_steps": 0,
+    "backend": "jax",
+    "device": "gpu",
+    "timing": "synchronous"
+  },
+  "source": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+  "training": {
+    "development_episodes": 16,
+    "max_wall_seconds": 1800,
+    "num_envs": 64,
+    "num_evals": 5,
+    "num_timesteps": null,
+    "policy_updates": 320,
+    "publish_live": false,
+    "resume": null,
+    "seed": 0,
+    "warm_start": null
+  },
+  "visualization": {
+    "mode": "rscope",
+    "publish": true
+  }
+}

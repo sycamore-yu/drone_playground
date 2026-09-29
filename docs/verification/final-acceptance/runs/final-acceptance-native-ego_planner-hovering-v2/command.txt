@@ -1,0 +1,1 @@
+.pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=hovering observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-ego_planner-hovering-v2

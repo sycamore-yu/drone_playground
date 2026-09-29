@@ -46,10 +46,13 @@ git -C "$NATIVE_ROOT/sources/SUPER" archive \
 docker cp "$NATIVE_ROOT/.build/ego.tar" "$ROS_CONTAINER:$RUNTIME_ROOT/ego.tar"
 docker cp "$NATIVE_ROOT/.build/super.tar" "$ROS_CONTAINER:$RUNTIME_ROOT/super.tar"
 docker cp "$ROOT/native_planners/bridge/worker.py" "$ROS_CONTAINER:$RUNTIME_ROOT/bridge/ros_bridge.py"
+docker cp "$NATIVE_ROOT/patches" "$ROS_CONTAINER:$RUNTIME_ROOT/patches"
 
 docker exec "$ROS_CONTAINER" bash -lc "
 set -eo pipefail
 tar -xf '$RUNTIME_ROOT/ego.tar' -C '$RUNTIME_ROOT/planners/ego/src/ego-planner'
+cd '$RUNTIME_ROOT/planners/ego/src/ego-planner'
+git apply '$RUNTIME_ROOT/patches/ego-3d-goals.patch'
 source /opt/ros/noetic/setup.bash
 cd '$RUNTIME_ROOT/planners/ego'
 catkin_make -j4 \
@@ -62,6 +65,7 @@ set -eo pipefail
 tar -xf '$RUNTIME_ROOT/super.tar' -C '$RUNTIME_ROOT/planners/super/src/SUPER'
 source '$RUNTIME_ROOT/planners/ego/devel/setup.bash'
 cd '$RUNTIME_ROOT/planners/super/src/SUPER'
+git apply '$RUNTIME_ROOT/patches/super-control-initial-time.patch'
 bash scripts/select_ros_version.sh ROS1
 cd '$RUNTIME_ROOT/planners/super'
 catkin_make -j3 \

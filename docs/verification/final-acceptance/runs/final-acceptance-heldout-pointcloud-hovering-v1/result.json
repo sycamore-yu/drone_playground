@@ -1,0 +1,14 @@
+{
+  "completed": 32,
+  "elapsed_s": 23.551154483109713,
+  "engineer_passed": true,
+  "finished_at": "2026-09-29T02:30:18.874978+00:00",
+  "full_budget_completed": true,
+  "num_trials": 32,
+  "parameters_frozen": true,
+  "quality_passed": true,
+  "run_id": "final-acceptance-heldout-pointcloud-hovering-v1",
+  "started_at": "2026-09-29T02:29:55.323836+00:00",
+  "status": "completed",
+  "task_id": "final-acceptance/pointcloud-control"
+}

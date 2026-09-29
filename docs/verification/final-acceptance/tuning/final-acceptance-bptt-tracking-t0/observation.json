@@ -1,0 +1,21 @@
+{
+  "run_id": "final-acceptance-bptt-tracking-t0",
+  "exit_code": 0,
+  "wall_seconds": 528.5302596460097,
+  "state": "complete",
+  "score": 999.9709187355008,
+  "quality_passed": true,
+  "steps": 655360,
+  "selected_step": 655360,
+  "completed": 16,
+  "completion_rate": 1.0,
+  "rmse_m": 0.02908126449916299,
+  "trainer": {
+    "actor_parameter_delta_l2": 3.656672239303589,
+    "actual_steps": 655360.0,
+    "compile_and_first_update_seconds": 45.39506967784837,
+    "net_update_seconds": 414.8174598873593,
+    "training/actor_grad_norm": 0.12127726525068283,
+    "training/actor_loss": -0.9958791136741638
+  }
+}

@@ -1,7 +1,7 @@
 name: navigation
 dynamic: false
 freq: 50
-duration: 40.0
+duration: 300.0
 goal_radius: 0.5
 reference_count: 32
 numerical_guard: true

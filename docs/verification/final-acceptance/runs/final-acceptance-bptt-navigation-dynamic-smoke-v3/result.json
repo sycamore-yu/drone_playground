@@ -1,0 +1,172 @@
+{
+  "actor_parameter_delta_l2": 4.529311792277947,
+  "actual_steps": 4096,
+  "algorithm": "bptt",
+  "best_development_result": {
+    "arrived": 0,
+    "cells": {
+      "easy": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "easy",
+            "final_goal_distance_m": 96.1346206665039,
+            "min_clearance_m": -0.04227227717638016,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -152.1387481689453,
+            "scenario_id": 0,
+            "steps": 77,
+            "subtype": "D01",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.04227227717638016,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -152.1387481689453,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      },
+      "hard": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "hard",
+            "final_goal_distance_m": 96.13117980957031,
+            "min_clearance_m": -0.04509098082780838,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -152.12713623046875,
+            "scenario_id": 2,
+            "steps": 77,
+            "subtype": "D03",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.04509098082780838,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -152.12713623046875,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      },
+      "medium": {
+        "arrived": 0,
+        "collision": 1,
+        "collision_rate": 1.0,
+        "constrained_time_mean_s": 300.0,
+        "episodes": [
+          {
+            "arrival_time_s": null,
+            "arrived": false,
+            "case": 0,
+            "collision": true,
+            "difficulty": "medium",
+            "final_goal_distance_m": 96.1325454711914,
+            "min_clearance_m": -0.044420547783374786,
+            "numerical_failure": false,
+            "out_of_bounds": false,
+            "outcome": "collision",
+            "return": -152.1326904296875,
+            "scenario_id": 1,
+            "steps": 77,
+            "subtype": "D02",
+            "timeout": false
+          }
+        ],
+        "failure_rate": 1.0,
+        "min_clearance_m": -0.044420547783374786,
+        "num_trials": 1,
+        "numerical_failure": 0,
+        "out_of_bounds": 0,
+        "return_mean": -152.1326904296875,
+        "success_rate": 0.0,
+        "success_time_mean_s": null,
+        "success_time_samples": 0,
+        "timeout": 0,
+        "timeout_rate": 0.0
+      }
+    },
+    "checkpoint": "checkpoints/step-0000000000.pkl",
+    "collision": 3,
+    "collision_rate": 1.0,
+    "constrained_time_mean_s": 300.0,
+    "drone": "cf2x_L250",
+    "dynamics": "first_principles",
+    "failure_rate": 1.0,
+    "num_trials": 3,
+    "numerical_failure": 0,
+    "out_of_bounds": 0,
+    "parameter_sha256": "6e741918e63dc4b2d5a85669ec1e7df9e4a8c913d8411ee8771e38a51155a3d7",
+    "parameters_frozen": true,
+    "quality_passed": null,
+    "quality_rule": "pending the P5 protocol freeze; macro success rate, collision rate and constrained completion time are reported per difficulty",
+    "return_mean": -152.1328582763672,
+    "scenario_groups": {
+      "easy": [
+        0
+      ],
+      "hard": [
+        2
+      ],
+      "medium": [
+        1
+      ]
+    },
+    "scene_bank_sha256": "2640bf336f40d2de7513889376eb2ac794f5bb6c938d06c913acc8da0af8d700",
+    "split": "dev",
+    "step": 0,
+    "success_rate": 0.0,
+    "success_time_mean_s": null,
+    "task": "navigation",
+    "timeout": 0,
+    "timeout_rate": 0.0
+  },
+  "elapsed_s": 289.0470710559748,
+  "elapsed_seconds": 288.0372767583467,
+  "engineer_passed": true,
+  "finished_at": "2026-09-29T02:24:09.722550+00:00",
+  "full_budget_completed": true,
+  "live_publications": [],
+  "quality_passed": null,
+  "run_id": "final-acceptance-bptt-navigation-dynamic-smoke-v3",
+  "snapshots": 2,
+  "started_at": "2026-09-29T02:19:20.675487+00:00",
+  "status": "completed",
+  "task_id": "05",
+  "trainer_metrics": {
+    "actor_parameter_delta_l2": 4.5293121337890625,
+    "actual_steps": 4096.0,
+    "compile_and_first_update_seconds": 45.6681876918301,
+    "net_update_seconds": 185.57937160646543,
+    "training/actor_grad_norm": 0.0,
+    "training/actor_loss": -0.2169938087463379
+  }
+}

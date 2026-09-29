@@ -43,3 +43,24 @@ class ExecutionTransition:
             substep, (controlled, jnp.array(False)), jnp.arange(self.substeps)
         )
         return result, jnp.min(clearances), collided
+
+    def step_schedule(self, state, commands, probe=None):
+        """Stage the due command before each actuator tick, then advance once.
+
+        Staging writes the held command; the native controller still runs only
+        at its configured frequency inside advance. The schedule has a static
+        physical-substep axis for compiled, differentiable execution.
+        """
+        if commands.shape[0] != self.substeps:
+            raise ValueError("Command schedule must cover exactly one control interval")
+
+        def substep(current, row):
+            index, command = row
+            current = self.advance(self.apply_command(current, command), 1)
+            evidence = probe(current, index) if probe else (jnp.float32(0), jnp.array(False))
+            return current, evidence
+
+        result, (clearance, collided) = jax.lax.scan(
+            substep, state, (jnp.arange(self.substeps), commands)
+        )
+        return (result, jnp.min(clearance), jnp.any(collided)) if probe else result

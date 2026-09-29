@@ -1,0 +1,12 @@
+{
+  "completed": 32,
+  "elapsed_s": 17.648694190196693,
+  "finished_at": "2026-09-28T17:05:42.646565+00:00",
+  "full_budget_completed": true,
+  "num_trials": 32,
+  "quality_passed": true,
+  "run_id": "final-acceptance-heldout-ppo-tracking-v1",
+  "started_at": "2026-09-28T17:05:24.997887+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/05-task-evaluation"
+}

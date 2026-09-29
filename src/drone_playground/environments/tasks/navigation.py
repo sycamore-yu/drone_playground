@@ -1,7 +1,7 @@
 """Unified navigation task: SANDO-style scene, arrival, body collision, time limit.
 
-One task protocol owns the navigation episode for every method. The frozen
-rules are the user-confirmed 40 s limit, the 0.5 m arrival radius and the
+One task protocol owns the navigation episode for every method. The active
+recipe uses a 300 s limit; the archived v1 keeps 40 s. Both use the 0.5 m arrival radius and the
 Crazyflie body-collision failure, with collision taking priority over arrival
 in the same step. Static and dynamic navigation share this implementation; the
 difference is which scene families the scene bank contains, and the composition
@@ -297,6 +297,13 @@ class NavigationEnv(Env):
         return self.controller.physical_action(action)
 
     def step(self, state: State, action: jax.Array) -> State:
+        return self._transition(state, action)
+
+    def step_schedule(self, state, commands):
+        action = 2 * (commands[-1] - self.low) / (self.high - self.low) - 1
+        return self._transition(state, action, commands)
+
+    def _transition(self, state, action, commands=None):
         data = state.pipeline_state
         physical = self.physical_action(action)
         scenario_id = data.scenario_id
@@ -310,9 +317,14 @@ class NavigationEnv(Env):
             )
             return clearance, hit
 
-        sim_data, clearance, collided = self.execution.step_with_evidence(
-            data.sim_data, physical, probe
-        )
+        if commands is None:
+            sim_data, clearance, collided = self.execution.step_with_evidence(
+                data.sim_data, physical, probe
+            )
+        else:
+            sim_data, clearance, collided = self.execution.step_schedule(
+                data.sim_data, commands, probe
+            )
 
         states = sim_data.states
         position = states.pos[0, 0]

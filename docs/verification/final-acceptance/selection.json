@@ -1,0 +1,200 @@
+{
+  "cells": [
+    {
+      "method": "ppo",
+      "task": "hovering",
+      "run_id": "final-acceptance-heldout-ppo-hovering-v1",
+      "training_run": "final-acceptance-ppo-hovering-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "ppo",
+      "task": "tracking",
+      "run_id": "final-acceptance-heldout-ppo-tracking-v1",
+      "training_run": "final-acceptance-ppo-tracking-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "ppo",
+      "task": "racing",
+      "run_id": "final-acceptance-heldout-ppo-racing-v1",
+      "training_run": "final-acceptance-ppo-racing-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "ppo",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-heldout-ppo-navigation-static-v2",
+      "training_run": "final-acceptance-ppo-navigation-static-smoke-v2",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "ppo",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-heldout-ppo-navigation-dynamic-v2",
+      "training_run": "final-acceptance-ppo-navigation-dynamic-smoke-v2",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "bptt",
+      "task": "hovering",
+      "run_id": "final-acceptance-heldout-bptt-hovering-v1",
+      "training_run": "final-acceptance-bptt-hovering-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "bptt",
+      "task": "tracking",
+      "run_id": "final-acceptance-heldout-bptt-tracking-v1",
+      "training_run": "final-acceptance-bptt-tracking-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "bptt",
+      "task": "racing",
+      "run_id": "final-acceptance-heldout-bptt-racing-v1",
+      "training_run": "final-acceptance-bptt-racing-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "bptt",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-heldout-bptt-navigation-static-v2",
+      "training_run": "final-acceptance-bptt-navigation-static-smoke-v3",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "bptt",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-heldout-bptt-navigation-dynamic-v2",
+      "training_run": "final-acceptance-bptt-navigation-dynamic-smoke-v3",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "shac",
+      "task": "hovering",
+      "run_id": "final-acceptance-heldout-shac-hovering-v1",
+      "training_run": "final-acceptance-shac-hovering-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "shac",
+      "task": "tracking",
+      "run_id": "final-acceptance-heldout-shac-tracking-v1",
+      "training_run": "final-acceptance-shac-tracking-t0",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "shac",
+      "task": "racing",
+      "run_id": "final-acceptance-heldout-shac-racing-trained-v1",
+      "training_run": "final-acceptance-shac-racing-t1",
+      "scope": "Canonical control task, 25\u201350ms randomized delay"
+    },
+    {
+      "method": "shac",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-heldout-shac-navigation-static-v2",
+      "training_run": "final-acceptance-shac-navigation-static-smoke-v3",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "shac",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-heldout-shac-navigation-dynamic-v2",
+      "training_run": "final-acceptance-shac-navigation-dynamic-smoke-v3",
+      "scope": "4096-interaction engineering trial; navigation convergence optional"
+    },
+    {
+      "method": "pointcloud",
+      "task": "hovering",
+      "run_id": "final-acceptance-heldout-pointcloud-hovering-v1",
+      "training_run": "final-acceptance-pointcloud-hovering-t2",
+      "scope": "Platform point-cloud control transfer with full encoder and explicit input scale 0.02"
+    },
+    {
+      "method": "pointcloud",
+      "task": "tracking",
+      "run_id": "final-acceptance-heldout-pointcloud-tracking-v1",
+      "training_run": "final-acceptance-pointcloud-tracking-t1",
+      "scope": "Platform point-cloud control transfer with full encoder and explicit input scale 0.02"
+    },
+    {
+      "method": "pointcloud",
+      "task": "racing",
+      "run_id": "final-acceptance-heldout-pointcloud-racing-v1",
+      "training_run": "final-acceptance-pointcloud-racing-t1",
+      "scope": "Platform point-cloud control transfer with full encoder and explicit input scale 0.02"
+    },
+    {
+      "method": "pointcloud",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-pointcloud-navigation-30000-v2",
+      "scene_prefix": "S",
+      "scope": "Original paper reconstruction checkpoint at 30000/50000 updates; 4 speeds per fixed scene"
+    },
+    {
+      "method": "pointcloud",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-pointcloud-navigation-30000-v2",
+      "scene_prefix": "D",
+      "scope": "Original paper reconstruction checkpoint at 30000/50000 updates; 4 speeds per fixed scene"
+    },
+    {
+      "method": "super",
+      "task": "hovering",
+      "run_id": "final-acceptance-native-super-hovering-v2",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "super",
+      "task": "tracking",
+      "run_id": "final-acceptance-native-super-tracking-v2",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "super",
+      "task": "racing",
+      "run_id": "final-acceptance-native-super-racing-v3",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "super",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-native-super-static-v2"
+    },
+    {
+      "method": "super",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-native-super-dynamic-v2"
+    },
+    {
+      "method": "ego_planner",
+      "task": "hovering",
+      "run_id": "final-acceptance-native-ego_planner-hovering-v2",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "ego_planner",
+      "task": "tracking",
+      "run_id": "final-acceptance-native-ego_planner-tracking-v2",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "ego_planner",
+      "task": "racing",
+      "run_id": "final-acceptance-native-ego_planner-racing-v3",
+      "scope": "Explicit time-reference to native receding goals; racing starts with counted vertical takeoff fallback"
+    },
+    {
+      "method": "ego_planner",
+      "task": "navigation/static",
+      "run_id": "final-acceptance-native-ego_planner-static-v2"
+    },
+    {
+      "method": "ego_planner",
+      "task": "navigation/dynamic",
+      "run_id": "final-acceptance-native-ego_planner-dynamic-v2"
+    }
+  ]
+}

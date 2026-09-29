@@ -1,0 +1,39 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_point_conditioning_is_exact_explicit_input_rescaling ___________
+
+    def test_point_conditioning_is_exact_explicit_input_rescaling():
+        reference = PointCloudPolicy(hidden_size=8, point_channels=(8, 16))
+>       conditioned = PointCloudPolicy(hidden_size=8, point_channels=(8, 16), point_input_scale=0.02)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_pointcloud_conditioning.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PointCloudPolicy(
+    # attributes
+    hidden_size = None
+    point_channels = None
+    negative_slope = None
+)
+args = ()
+kwargs = {'hidden_size': 8, 'point_channels': (8, 16), 'point_input_scale': 0.02}
+
+    @functools.wraps(dataclass_init)
+    def init_wrapper(self, *args, **kwargs):
+      num_args = len(args)
+      if num_args > expected_num_args:
+        # we add + 1 to each to account for `self`, matching python's
+        # default error message
+        raise TypeError(
+          f'__init__() takes {expected_num_args + 1} positional '
+          f'arguments but {num_args + 1} were given'
+        )
+    
+>     dataclass_init(self, *args, **kwargs)
+E     TypeError: PointCloudPolicy.__init__() got an unexpected keyword argument 'point_input_scale'
+
+.pixi/envs/default/lib/python3.13/site-packages/flax/linen/kw_only_dataclasses.py:243: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_pointcloud_conditioning.py::test_point_conditioning_is_exact_explicit_input_rescaling
+1 failed in 0.94s

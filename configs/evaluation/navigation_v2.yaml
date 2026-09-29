@@ -1,0 +1,6 @@
+environment: config
+split: heldout
+episodes: 4
+seed_start: null
+output: null
+protocol: benchmarks/navigation/v2/protocol.yaml

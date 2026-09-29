@@ -59,6 +59,9 @@ def advance_checked(task, bank, state, command, timestamp, outcome):
         result_next = jnp.where(
             collision, 2, jnp.where(~finite, 4, jnp.where(outside, 3, 0))
         ).astype(jnp.int32)
+        if getattr(task, "arrival_sampling", "policy") == "physics":
+            arrived = euclidean_norm(bank.goal - proposed.pos) <= task.goal_radius
+            result_next = jnp.where((result_next == 0) & arrived, 1, result_next)
         physical = _select(active & finite, proposed, physical)
         clock = jnp.where(active, next_time, clock)
         result = jnp.where(active, result_next, result)
@@ -86,7 +89,7 @@ def make_rollout(task, network, bank):
         clock = jnp.zeros(count)
         outcome = jnp.zeros(count, jnp.int32)
 
-        def step(carry, index):
+        def advance(carry, index):
             physical, memory, timestamp, result = carry
             active = result == 0
             # Scene time is physical episode time. Each still-running case has this tick's time.
@@ -122,6 +125,35 @@ def make_rollout(task, network, bank):
                 ),
             )
             return (nxt, memory, new_time, new_result), row
+
+        def inactive(carry, index):
+            physical, memory, timestamp, result = carry
+            proprio, _ = task.observer.proprioception(physical, bank.goal, speeds, task.body_radius)
+            zeros = jnp.zeros(count)
+            row = dict(
+                pos=physical.pos,
+                velocity=physical.vel,
+                rotation=physical.rotation,
+                observation_pos=physical.pos,
+                observation_rotation=physical.rotation,
+                observation_time=jnp.full((count,), index * task.dt),
+                obs=proprio,
+                time=timestamp,
+                actions=jnp.zeros_like(physical.pos),
+                reward=zeros,
+                active=jnp.zeros(count, bool),
+                done=result != 0,
+                outcome=result,
+                metrics=dict(
+                    clearance=zeros,
+                    goal_distance=euclidean_norm(bank.goal - physical.pos),
+                    speed=euclidean_norm(physical.vel),
+                ),
+            )
+            return (physical, memory, timestamp, result), row
+
+        def step(carry, index):
+            return jax.lax.cond(jnp.any(carry[3] == 0), advance, inactive, carry, index)
 
         _, trace = jax.lax.scan(
             step, (state, hidden, clock, outcome), jnp.arange(task.episode_length)
@@ -318,7 +350,7 @@ def write_summary(report, directory):
         "timeout": "超时",
     }
     lines = [
-        "# 点云论文方法重建：Navigation8 测试",
+        "# 点云论文方法重建：navigation 测试",
         "",
         f"冻结检查点：`{report['checkpoint']}`。所选权重训练至 {report['trained_updates']} 次更新。",
         f"参数摘要：`{report['parameter_sha256']}`。",
@@ -349,7 +381,7 @@ def write_summary(report, directory):
     lines += [
         "",
         "离散状态转移和策略频率为10 Hz，步内碰撞采样为500 Hz；无碰撞步末状态与训练映射一致。",
-        "机器报告、逐帧归档与逐场景 RScope 回放保留全部失败，图元和运动来自验收后的 Navigation8 目录。",
+        "机器报告、逐帧归档与逐场景 RScope 回放保留全部失败，图元和运动来自验收后的 navigation 目录。",
         "",
     ]
     (directory / "report.md").write_text("\n".join(lines))
@@ -396,7 +428,7 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
     selected_is_final = int(state.updates) == trained["training"]["policy_updates"]
     run = make_rollout(task, network, bank)
     started = time.monotonic()
-    with RunRecorder(root, run_id, cfg, task_id="DP-005-navigation8") as rec:
+    with RunRecorder(root, run_id, cfg, task_id="DP-005-navigation-transfer") as rec:
         with capture_console(rec.path / "console.log"):
             save_report(rec.path / "components.json", task.component_identity)
             save_report(rec.path / "scene-manifest.json", manifest)
@@ -475,7 +507,10 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                 dynamics=task.model.forward,
                 elapsed_s=time.monotonic() - started,
                 reward_semantics="distance progress for replay only; training uses trajectory losses",
-                evaluation_scope="nominal fixed Navigation8 geometry transfer; deterministic cells",
+                evaluation_scope="fixed navigation geometry transfer; deterministic cells; protocol identity below",
+                protocol=cfg["evaluation"].get("protocol"),
+                arrival_sampling=task.arrival_sampling,
+                training_action_delay_ms=trained.get("runtime", {}).get("action_delay_ms"),
             )
             save_report(rec.path / "eval/report.json", report)
             write_summary(report, rec.path / "eval")

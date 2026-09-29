@@ -1,0 +1,21 @@
+{
+  "run_id": "final-acceptance-bptt-navigation-dynamic-smoke-v3",
+  "exit_code": 0,
+  "wall_seconds": 295.7423931439407,
+  "state": "complete",
+  "score": -101.0,
+  "quality_passed": null,
+  "steps": 4096,
+  "selected_step": 0,
+  "completed": null,
+  "completion_rate": 0.0,
+  "rmse_m": null,
+  "trainer": {
+    "actor_parameter_delta_l2": 4.5293121337890625,
+    "actual_steps": 4096.0,
+    "compile_and_first_update_seconds": 45.6681876918301,
+    "net_update_seconds": 185.57937160646543,
+    "training/actor_grad_norm": 0.0,
+    "training/actor_loss": -0.2169938087463379
+  }
+}

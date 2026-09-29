@@ -184,7 +184,29 @@ class RacingEnv(Env):
         return self.controller.physical_action(action)
 
     def step_physical(self, state, physical):
-        data = self.execution.step(state.pipeline_state, physical)
+        return self._transition(state, physical)
+
+    def step_schedule(self, state, commands):
+        return self._transition(state, commands[-1], commands)
+
+    def _transition(self, state, physical, commands=None):
+        if commands is None:
+            data = self.execution.step(state.pipeline_state, physical)
+        else:
+            from crazyflow.sim import functional
+
+            # The source action disturbance is sampled once per control decision.
+            # Reuse that sample across actuator ticks, preserving its native rate.
+            data = self.apply_action_fn(commands[0][None, None], state.pipeline_state)
+            noise = data.sim_data.controls.attitude.staged_cmd[0, 0] - commands[0]
+            scheduled = ExecutionTransition(
+                lambda d, u: d.replace(
+                    sim_data=functional.attitude_control(d.sim_data, u[None, None])
+                ),
+                self.execution.advance,
+                self.substeps,
+            )
+            data = scheduled.step_schedule(data, commands + noise)
         contacts = self.contact_fn(jax.tree.map(jax.lax.stop_gradient, data))
         data = race_core._update_disabled_drones(data, contacts)
         # Original core warps dead drones to -1 to avoid multi-drone interference.

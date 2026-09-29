@@ -42,6 +42,7 @@ KIND_EMPTY = 0
 KIND_CYLINDER = 1
 KIND_BOX = 2
 KIND_SPHERE = 3
+KIND_CAPSULE = 4
 
 MOTION_STATIC = 0
 MOTION_TREFOIL = 1
@@ -53,6 +54,7 @@ KIND_NAMES = {
     KIND_CYLINDER: "cylinder",
     KIND_BOX: "box",
     KIND_SPHERE: "sphere",
+    KIND_CAPSULE: "capsule",
 }
 
 # Instances are padded to this capacity so JAX shapes stay static.
@@ -208,6 +210,7 @@ class SceneBank:
     world_low: jax.Array
     world_high: jax.Array
     subtype_names: tuple = struct.field(pytree_node=False, default=())
+    rotations: jax.Array | None = None
 
     @property
     def num_instances(self) -> int:
@@ -223,6 +226,10 @@ class SceneBank:
         for name in ("kind", "size", "origin", "motion", "params", "active", "start", "goal"):
             array = np.asarray(getattr(self, name))
             digest.update(str((name, array.shape, array.dtype)).encode())
+            digest.update(array.tobytes())
+        if self.rotations is not None:
+            array = np.asarray(self.rotations)
+            digest.update(str(("rotations", array.shape, array.dtype)).encode())
             digest.update(array.tobytes())
         return digest.hexdigest()
 
@@ -300,7 +307,15 @@ def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: 
     q = jnp.abs(delta) - size
     box = euclidean_norm(jnp.maximum(q, 0.0)) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
     sphere = euclidean_norm(delta) - size[..., 0]
-    return jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box))
+    axis_delta = delta.at[..., 2].set(
+        delta[..., 2] - jnp.clip(delta[..., 2], -size[..., 1] / 2, size[..., 1] / 2)
+    )
+    capsule = euclidean_norm(axis_delta) - size[..., 0]
+    return jnp.where(
+        kind == KIND_CAPSULE,
+        capsule,
+        jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box)),
+    )
 
 
 def clearance_and_collision(
@@ -319,7 +334,15 @@ def clearance_and_collision(
     source inventory as the difference.
     """
     centre = obstacle_positions(bank, scenario_id, time)
-    distance = signed_distance(bank.kind[scenario_id], bank.size[scenario_id], centre, body_centre)
+    if bank.rotations is None:
+        distance = signed_distance(
+            bank.kind[scenario_id], bank.size[scenario_id], centre, body_centre
+        )
+    else:
+        local = jnp.einsum("nji,nj->ni", bank.rotations[scenario_id], body_centre - centre)
+        distance = signed_distance(
+            bank.kind[scenario_id], bank.size[scenario_id], jnp.zeros_like(centre), local
+        )
     distance = jnp.where(bank.active[scenario_id], distance, jnp.inf)
     # The same ground plane is rendered and ray-cast at world_low[2]. Walls
     # and the upper limit are flight-volume boundaries, not physical planes.

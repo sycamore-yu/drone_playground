@@ -1,0 +1,12 @@
+{
+  "completed": 32,
+  "elapsed_s": 16.902215467300266,
+  "finished_at": "2026-09-28T17:05:19.782449+00:00",
+  "full_budget_completed": true,
+  "num_trials": 32,
+  "quality_passed": true,
+  "run_id": "final-acceptance-heldout-ppo-hovering-v1",
+  "started_at": "2026-09-28T17:05:02.880256+00:00",
+  "status": "completed",
+  "task_id": "composable-flight/05-task-evaluation"
+}

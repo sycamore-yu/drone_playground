@@ -19,7 +19,7 @@ from __future__ import annotations
 import jax
 import jax.numpy as jnp
 
-from drone_playground.environments.scenes.navigation import KIND_CYLINDER, KIND_SPHERE
+from drone_playground.environments.scenes.navigation import KIND_CAPSULE, KIND_CYLINDER, KIND_SPHERE
 
 EPS = 1e-6
 NO_HIT = jnp.inf
@@ -30,6 +30,19 @@ The corridor bounds define where the drone may fly and where a body is out of
 bounds; they are not an environment edge. A physically sensible world has ground
 beyond the corridor, and without the margin a downward range ray escapes into a
 void and reports no return."""
+
+
+def _nonnegative_sqrt(value):
+    """Exact clipped square root with a finite zero derivative for masked misses.
+
+    Evaluating sqrt(0) in an inactive branch gives an infinite derivative; its
+    product with the branch's zero cotangent then contaminates unrelated hits.
+    Positive discriminants retain the analytic derivative. At tangency we use
+    the zero generalized derivative because visibility changes there.
+    """
+    positive = value > 0
+    root = jnp.sqrt(jnp.where(positive, value, 1.0))
+    return jnp.where(positive, root, 0.0)
 
 
 def _cylinder_hit(origin, direction, radius, half_height):
@@ -44,7 +57,7 @@ def _cylinder_hit(origin, direction, radius, half_height):
     # not be clamped to zero: the tangent point would then pass the height test
     # and produce a hit for a ray that never touches the surface.
     intersects = (a > EPS) & (discriminant >= 0.0)
-    root = jnp.sqrt(jnp.maximum(discriminant, 0.0))
+    root = _nonnegative_sqrt(discriminant)
     safe_a = jnp.where(a > EPS, a, 1.0)
     near = (-b - root) / (2.0 * safe_a)
     far = (-b + root) / (2.0 * safe_a)
@@ -100,7 +113,7 @@ def _sphere_hit(origin, direction, radius):
     b = jnp.sum(origin * direction, axis=-1)
     c = jnp.sum(origin * origin, axis=-1) - radius * radius
     disc = b * b - a * c
-    root = jnp.sqrt(jnp.maximum(disc, 0.0))
+    root = _nonnegative_sqrt(disc)
     near = (-b - root) / jnp.maximum(a, EPS)
     far = (-b + root) / jnp.maximum(a, EPS)
     distance = jnp.where(near > EPS, near, far)
@@ -125,7 +138,38 @@ def primitive_hit(kind, size, centre, origin, direction, world):
     cylinder = _cylinder_hit(offset, direction, size[0], size[1] / 2.0)
     box = _box_hit(offset, direction, size)
     sphere = _sphere_hit(offset, direction, size[0])
-    return jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box))
+    # The capsule is the union of the cylinder and its rounded end spheres.
+    # Remove internal flat-cap candidates by restricting the cylinder to its side.
+    ox, oy = offset[..., 0], offset[..., 1]
+    dx, dy = direction[..., 0], direction[..., 1]
+    a = dx * dx + dy * dy
+    b = ox * dx + oy * dy
+    disc = b * b - a * (ox * ox + oy * oy - size[0] ** 2)
+    root = _nonnegative_sqrt(disc)
+    side = NO_HIT
+    for sign in (-1.0, 1.0):
+        t = (-b + sign * root) / jnp.maximum(a, EPS)
+        z = offset[..., 2] + t * direction[..., 2]
+        side = jnp.minimum(
+            side,
+            jnp.where((a > EPS) & (disc >= 0) & (t > EPS) & (jnp.abs(z) <= size[1] / 2), t, NO_HIT),
+        )
+    capsule = side
+    for sign in (-1.0, 1.0):
+        local = offset - jnp.array([0.0, 0.0, 1.0]) * sign * size[1] / 2
+        aa = jnp.sum(direction**2, axis=-1)
+        bb = jnp.sum(local * direction, axis=-1)
+        dd = bb**2 - aa * (jnp.sum(local**2, axis=-1) - size[0] ** 2)
+        for root_sign in (-1.0, 1.0):
+            t = (-bb + root_sign * _nonnegative_sqrt(dd)) / jnp.maximum(aa, EPS)
+            cap_z = offset[..., 2] + t * direction[..., 2]
+            valid = (aa > EPS) & (dd >= 0) & (t > EPS) & (sign * cap_z >= size[1] / 2)
+            capsule = jnp.minimum(capsule, jnp.where(valid, t, NO_HIT))
+    return jnp.where(
+        kind == KIND_CAPSULE,
+        capsule,
+        jnp.where(kind == KIND_SPHERE, sphere, jnp.where(kind == KIND_CYLINDER, cylinder, box)),
+    )
 
 
 def cast_rays(
@@ -139,6 +183,7 @@ def cast_rays(
     world_high,
     include_ground: bool = True,
     floor_margin_m: float = FLOOR_MARGIN_M,
+    rotations=None,
 ):
     """Nearest hit distance over every active primitive of one scene instance.
 
@@ -167,7 +212,18 @@ def cast_rays(
     directions = jnp.asarray(directions)
 
     def one_slot(best, slot):
-        hit = primitive_hit(kind[slot], size[slot], centres[slot], origins, directions, None)
+        if rotations is None:
+            hit = primitive_hit(kind[slot], size[slot], centres[slot], origins, directions, None)
+        else:
+            rotation = jnp.asarray(rotations)[slot]
+            hit = primitive_hit(
+                kind[slot],
+                size[slot],
+                jnp.zeros(3),
+                (origins - centres[slot]) @ rotation,
+                directions @ rotation,
+                None,
+            )
         hit = jnp.where(active[slot], hit, NO_HIT)
         return jnp.minimum(best, hit), None
 

@@ -53,6 +53,10 @@ def resolve_evaluation_config(config, metadata):
 
 def evaluate_experiment(config, root, run_id):
     if config["method"]["implementation"] in ("native_ego", "native_super"):
+        if config["env"]["task"]["name"] != "navigation":
+            from .native_control import evaluate_native_control
+
+            return evaluate_native_control(config, root, run_id)
         from .native_planners import evaluate_native
 
         return evaluate_native(config, root, run_id)

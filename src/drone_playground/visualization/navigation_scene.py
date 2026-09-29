@@ -16,6 +16,7 @@ import mujoco
 import numpy as np
 
 from drone_playground.environments.scenes.navigation import (
+    KIND_CAPSULE,
     KIND_CYLINDER,
     KIND_SPHERE,
     MOTION_NAMES,
@@ -50,6 +51,9 @@ def instance_obstacles(bank: SceneBank, scenario_id: int) -> list[dict]:
                 "motion": motion,
                 "params": params,
                 "motion_name": MOTION_NAMES[motion],
+                "rotation": None
+                if bank.rotations is None
+                else np.asarray(bank.rotations[scenario_id, index]),
             }
         )
     return obstacles
@@ -68,7 +72,10 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
     for index, obstacle in enumerate(obstacles):
         x, y, z = (float(value) for value in obstacle["origin"])
         rgba = "0.35 0.42 0.5 1" if obstacle["motion"] == MOTION_STATIC else "0.95 0.45 0.12 1"
-        if obstacle["kind"] == KIND_CYLINDER:
+        if obstacle["kind"] == KIND_CAPSULE:
+            radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
+            geometry = f'<geom name="obstacle_geom_{index}" type="capsule" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
+        elif obstacle["kind"] == KIND_CYLINDER:
             radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
             geometry = f'<geom name="obstacle_geom_{index}" type="cylinder" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
         elif obstacle["kind"] == KIND_SPHERE:
@@ -79,6 +86,12 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
         else:
             hx, hy, hz = (float(value) for value in obstacle["size"])
             geometry = f'<geom name="obstacle_geom_{index}" type="box" size="{hx} {hy} {hz}" rgba="{rgba}"/>'
+        if obstacle.get("rotation") is not None:
+            from scipy.spatial.transform import Rotation
+
+            xyzw = Rotation.from_matrix(obstacle["rotation"]).as_quat()
+            quaternion = " ".join(str(float(value)) for value in xyzw[[3, 0, 1, 2]])
+            geometry = geometry.replace("<geom ", f'<geom quat="{quaternion}" ', 1)
         bodies.append(
             f'<body name="obstacle_{index}" mocap="true" pos="{x} {y} {z}">{geometry}</body>'
         )

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import copy
+from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
 
 from hydra import compose, initialize_config_dir
+from hydra.core.global_hydra import GlobalHydra
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
@@ -20,7 +22,21 @@ def compose_method(
     choices = [f"method={method}"]
     if environment is not None:
         choices.append(f"env={environment}")
-    with initialize_config_dir(version_base="1.3", config_dir=str(CONFIG_ROOT)):
+    global_hydra = GlobalHydra.instance()
+    if global_hydra.is_initialized():
+        roots = global_hydra.config_loader().get_search_path().get_path()
+        matching = [
+            entry
+            for entry in roots
+            if entry.provider == "main"
+            and Path(entry.path.removeprefix("file://")).resolve() == CONFIG_ROOT
+        ]
+        if not matching:
+            raise ValueError("Active Hydra belongs to a different configuration root")
+        context = nullcontext()
+    else:
+        context = initialize_config_dir(version_base="1.3", config_dir=str(CONFIG_ROOT))
+    with context:
         cfg = compose(config_name="config", overrides=[*choices, *(overrides or [])])
         result = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     return result
@@ -59,7 +75,7 @@ def build_sensor(config: dict):
 def build_observer(config: dict, sensor=None):
     spec = observation_spec(config)
     observer = instantiate(spec)
-    if sensor is None or spec["name"] == "paper_pointcloud_state":
+    if sensor is None or spec["name"] in ("paper_pointcloud_state", "state_reference"):
         return observer
     if spec["name"] == "navigation_depth":
         return replace(
@@ -135,10 +151,66 @@ def validate_config(config: dict) -> None:
     delay = config["runtime"].get("action_delay_steps", 0)
     if not isinstance(delay, int) or delay < 0:
         raise ValueError("Action delay must be a nonnegative integer step count")
+    random_delay = config["runtime"].get("action_delay_ms")
+    if random_delay is not None:
+        import math
+
+        if len(random_delay) != 2 or any(not math.isfinite(v) for v in random_delay):
+            raise ValueError("Random action delay requires two finite millisecond bounds")
+        if random_delay[0] < 0 or random_delay[1] < random_delay[0] or delay:
+            raise ValueError("Select one ordered, nonnegative action-delay configuration")
+        if task["name"] == "pointcloud_avoidance" or task["name"].startswith("lotf_"):
+            raise ValueError(
+                "This native paper recipe requires its qualified transport-delay adapter"
+            )
     if delay and (task["name"] == "pointcloud_avoidance" or task["name"].startswith("lotf_")):
         raise ValueError(
             "This paper method retains its native timing; added delay needs a qualified recipe"
         )
+    if task["name"] == "pointcloud_control":
+        if delay:
+            raise ValueError("Point-cloud control uses its millisecond command-delay adapter")
+        if random_delay is None or random_delay[1] > 1000 / task["freq"]:
+            raise ValueError("Point-cloud control delay must fit within one policy tick")
+        if config["objective"].get("name") != "pointcloud_control":
+            raise ValueError("Control transfer requires its separately named trajectory objective")
+        if (
+            method["implementation"] != "pointcloud_recurrent"
+            or config["algorithm"]["name"] != "pointcloud_bptt"
+        ):
+            raise ValueError("Point-cloud control transfer requires the recurrent paper policy")
+        if task["control_task"] not in ("hovering", "tracking", "racing"):
+            raise ValueError("Unknown point-cloud control transfer task")
+        if (
+            task["freq"] != 10
+            or task["physics_freq"] != 500
+            or env["sensor"]["source_rate_hz"] != 10
+        ):
+            raise ValueError(
+                "Control transfer uses 10Hz policy/sensing and 500Hz physical integration"
+            )
+        if env["execution"]["dynamics"]["forward"] != "point_mass_lag":
+            raise ValueError("Point-cloud transfer requires the qualified lag dynamics")
+        if mode == "train":
+            settings = config["training"]
+            updates, count, horizon = (
+                settings["policy_updates"],
+                settings["num_envs"],
+                config["algorithm"]["horizon_length"],
+            )
+            if any(not isinstance(v, int) or v < 1 for v in (updates, count, horizon)):
+                raise ValueError("Control transfer requires positive integer training counts")
+            if settings.get("num_timesteps") not in (None, updates * count * horizon):
+                raise ValueError("Control transfer interaction and update budgets disagree")
+            stop = settings.get("stop_after_updates")
+            if stop is not None and (not isinstance(stop, int) or not 1 <= stop <= updates):
+                raise ValueError("Staged control updates must lie within the declared budget")
+            if settings.get("warm_start") and settings.get("resume"):
+                raise ValueError("Select warm start or complete continuation, not both")
+            clip = config["algorithm"].get("max_grad_norm")
+            if clip is not None and (not math.isfinite(clip) or clip <= 0):
+                raise ValueError("Gradient clipping requires a positive finite norm")
+        return
     if task["name"] == "pointcloud_avoidance":
         from drone_playground.environments.tasks.pointcloud import validate_paper_config
 
@@ -175,8 +247,14 @@ def validate_config(config: dict) -> None:
             raise ValueError("Navigation controller interface requires crazyflow_attitude")
         if "families" not in env["scene"] or env["scene"]["dynamic"] != task["dynamic"]:
             raise ValueError("Navigation scene and task disagree on dynamic geometry")
-        if task["freq"] != 50 or task["duration"] != 40.0 or task["goal_radius"] != 0.5:
-            raise ValueError("Navigation protocol fixes 50 Hz, 40 s and 0.5 m goal radius")
+        if (
+            task["freq"] != 50
+            or task["goal_radius"] != 0.5
+            or task["duration"] not in (40.0, 300.0)
+        ):
+            raise ValueError(
+                "Navigation protocols require 50 Hz, 0.5m arrival, and a v1/v2 deadline"
+            )
         observation = env["observation"]["name"]
         has_sensor = env["sensor"] is not None and env["sensor"].get("name") != "none"
         if observation not in ("navigation_state", "navigation_depth", "navigation_lidar"):
@@ -230,14 +308,20 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unsupported task: {task['name']}")
         if env["scene"]["name"] != ("lsy_level0" if task["name"] == "racing" else "empty"):
             raise ValueError("Task requires a compatible scene adapter")
-        if controller != "crazyflow_attitude" or method["output"] != "attitude_thrust":
+        native_control = implementation in ("native_ego", "native_super")
+        if native_control and env["observation"]["name"] != "state_reference":
+            raise ValueError(
+                "Native control tasks require observation@env.observation=state_reference; the raw sensor remains separate"
+            )
+        required_command = "trajectory" if native_control else "attitude_thrust"
+        if controller != "crazyflow_attitude" or method["output"] != required_command:
             raise ValueError("Tracking controller interface requires attitude_thrust")
     if mode == "train":
         settings = config["training"]
         if algorithm == "ppo":
             if not settings.get("num_timesteps") or settings["num_timesteps"] < 1:
                 raise ValueError("PPO requires positive training.num_timesteps")
-        elif algorithm in ("apg", "shac", "dva", "lotf_bptt"):
+        elif algorithm in ("apg", "bptt", "shac", "dva", "lotf_bptt"):
             horizon = (
                 round(task["duration"] * task["freq"])
                 if algorithm == "lotf_bptt"
@@ -261,9 +345,9 @@ def validate_config(config: dict) -> None:
             raise ValueError("LOTF BPTT requires cosine schedule and full-episode rollout")
         if algorithm == "dva" and (task["name"] != "navigation" or not has_sensor):
             raise ValueError("D.VA requires a navigation sensor observation")
-        if settings.get("warm_start") and algorithm != "ppo":
-            raise ValueError("Parameter warm start is implemented for PPO")
-        if settings.get("resume") and algorithm not in ("lotf_bptt", "shac", "dva"):
+        if settings.get("warm_start") and algorithm not in ("ppo", "bptt", "shac"):
+            raise ValueError("Parameter warm start requires PPO, BPTT or SHAC")
+        if settings.get("resume") and algorithm not in ("lotf_bptt", "bptt", "shac", "dva"):
             raise ValueError("Exact resume requires LOTF/SHAC/D.VA training state")
     if config["training"]["seed"] < 0 or config["training"]["num_envs"] < 1:
         raise ValueError("Seed must be nonnegative and environment count positive")
@@ -334,6 +418,10 @@ def _run_experiment(config: dict, root: Path, run_id: str):
         )
     validate_config(config)
     if config["mode"] == "train":
+        if config["env"]["task"]["name"] == "pointcloud_control":
+            from drone_playground.learning.algorithms.pointcloud_control import train
+
+            return train(config, root, run_id)
         implementation = config["method"]["implementation"]
         if implementation in ("pointcloud_recurrent", "lotf_mlp"):
             from importlib import import_module
@@ -351,7 +439,11 @@ def _run_experiment(config: dict, root: Path, run_id: str):
             config["runtime"]["device"],
             config["training"].get("warm_start"),
         )
-    if config["method"]["implementation"] == "pointcloud_recurrent":
+    if config["env"]["task"]["name"] == "pointcloud_control":
+        from drone_playground.evaluation.pointcloud_control import evaluate_pointcloud_control
+
+        result = evaluate_pointcloud_control(config, root, run_id)
+    elif config["method"]["implementation"] == "pointcloud_recurrent":
         from drone_playground.evaluation.pointcloud import evaluate_pointcloud
 
         result = evaluate_pointcloud(config, root, run_id)

@@ -6,9 +6,9 @@
 
 ## 当前可运行能力
 
-PPO 的公开配方覆盖悬停、轨迹跟踪、竞速、静态导航和动态导航。APG、SHAC、D.VA、LOTF 与点云论文具名训练器保留各自参数更新语义。两种现有 MPC 与 EGO/SUPER 支持冻结条件下的独立评测及展示。
+PPO 的公开配方覆盖悬停、轨迹跟踪、竞速、静态导航和动态导航。BPTT、APG、SHAC、D.VA、LOTF 与点云论文具名训练器保留各自参数更新语义。两种现有 MPC 与 EGO/SUPER 支持冻结条件下的独立评测及展示。
 
-本次重组的短训练证明参数更新、保存、重载和闭环执行。完整训练预算和任务表现单独验收，逐项结果见 [架构重组验证](docs/verification/architecture-v3/README.md)。LOONG、AERO-MPPI、AC-MPC 的身份记录在来源清单中，其完整 JAX 实现属于后续具名任务。
+当前main已完成六方法、五任务的30项实际运行验收。PPO、BPTT、SHAC及点云控制迁移的悬停、跟踪、竞速均通过各32回合留出验收；SUPER静态／动态导航各6/6到达，其他导航和原生控制质量按实际负结果保留。方法身份、热启动、预算、冻结权重和逐项结果见 [五任务验收](docs/verification/final-acceptance/README.md)，重组阶段证据保留在 [历史验证](docs/verification/architecture-v3/README.md)。LOONG、AERO-MPPI、AC-MPC 的身份记录在来源清单中，其完整 JAX 实现属于后续具名任务。
 
 ## 环境与方法
 
@@ -44,18 +44,24 @@ pixi run train method=learning/ppo env=racing
 pixi run train method=learning/ppo env=navigation/static
 pixi run train method=learning/ppo env=navigation/dynamic
 
-# Learning on the Fly 与点云论文分别选择。
+pixi run train method=learning/bptt env=tracking
+pixi run train method=learning/shac env=racing
+
+# 点云控制迁移使用单独环境与显式输入条件化。
+pixi run train method=paper/pointcloud_flight env=paper/control/hovering network=paper_pointnet_gru_conditioned training.policy_updates=1024 training.num_envs=8 algorithm.horizon_length=32
+
+# Learning on the Fly 与原始点云论文配方分别选择。
 pixi run train method=paper/lotf env=paper/lotf_hover
 pixi run train method=paper/pointcloud_flight
 ```
 
-CPU 验证使用 `runtime.device=cpu`；预算使用 `training.num_timesteps` 或具名算法的 `training.policy_updates`。PPO 新入口的各任务短训练命令和实际参数增量在验证目录中逐项记录。
+CPU 验证使用 `runtime.device=cpu`；预算使用 `training.num_timesteps` 或具名算法的 `training.policy_updates`。已通过验收的完整命令、热启动来源和实际更新增量见 [验收命令](docs/verification/final-acceptance/commands.md)。
 
 ## 评测和展示
 
 ```bash
-pixi run eval method=paper/super env=navigation/static evaluation=navigation_v1
-pixi run eval method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v1
+pixi run eval method=paper/super env=navigation/static evaluation=navigation_v2
+pixi run eval method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v2
 pixi run eval method=optimization/attitude_mpc env=racing
 pixi run eval method=optimization/sampling_mpc env=racing
 
@@ -80,15 +86,16 @@ pixi run train method=learning/ppo env=tracking env.execution.dynamics.forward=f
 pixi run train method=learning/ppo env=navigation/static \
   sensor@env.sensor=d435 observation@env.observation=navigation_depth
 
-# 显式两控制步命令延迟；默认零附加延迟。
-pixi run train method=learning/ppo env=hovering runtime.action_delay_steps=2
+# 标准学习配方默认逐回合25–50毫秒随机命令延迟。
+# 显式固定延迟使用独立配置；两种附加延迟方式互斥。
+pixi run train method=learning/ppo env=hovering runtime.action_delay_ms=null runtime.action_delay_steps=2
 ```
 
 `dynamics` 产生实际状态；方法内部 `prediction` 提供未来预测；`algorithm.gradient` 选择直接或具名代理导数。动力学实现和算法配置各自拥有唯一来源。组合约束在启动时检查，真实支持范围由方法配方与验证证据共同界定。
 
 ## 数据、协议与来源
 
-`assets/scenes/navigation/catalog.json` 保存已验收的八个几何场景，公开名称为 navigation；静态和动态视图引用同一资产。`benchmarks/navigation/v1/` 保存协议、划分和几何验收证据。历史场景编号及资产摘要保持可核对。
+`assets/scenes/navigation/catalog.json` 保存已验收的八个几何场景，公开名称为 navigation；静态和动态视图引用同一资产。`benchmarks/navigation/v2/` 保存当前300秒协议与划分；`v1/`保存原40秒协议与几何验收证据。历史场景编号及资产摘要保持可核对。
 
 每次运行独占 `experiments/<运行标识>/`，保存解析配置、提交和补丁、依赖、实际进程命令、状态、检查点、评测和回放。历史版本检查点通过显式复制迁移：
 
@@ -102,4 +109,4 @@ pixi run python scripts/tools/migrate_artifact.py <可信旧检查点.pkl> <新�
 
 完整实际目录见 [项目目录](docs/project-tree.md)，模块职责见 [架构](docs/architecture.md)，运行说明见 [操作手册](docs/runbook.md)，当前任务见 [状态](docs/status.md)。许可与上游差异见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
-继承的原生规划器参数仍采用 2 m/s 速度上限；96 m 的导航位移与 40 s 时限在该速度约束下需要另行校准。架构回归保留这组条件及其超时结果，后续配方调参须生成新的实验身份。
+当前原生导航名义速度上限20米/秒，回合上限300秒，到达或失败后停止该回合录制。控制任务保持原悬停、跟踪和竞速时长。原点云分支停止新增开发，保留原50000更新训练及其数据来源；当前开发路径和分支生命周期见 [状态](docs/status.md)。

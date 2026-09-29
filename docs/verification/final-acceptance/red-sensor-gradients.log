@@ -1,0 +1,132 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_masked_ray_misses_have_finite_position_derivatives[2] __________
+
+kind = 2
+
+    @pytest.mark.parametrize("kind", [KIND_BOX, KIND_CYLINDER, KIND_SPHERE, KIND_CAPSULE])
+    def test_masked_ray_misses_have_finite_position_derivatives(kind):
+        directions = jnp.array([[1., 0., 0.], [0., 1., 0.], [0., 0., -1.]])
+    
+        def measured(position):
+            distances = cast_rays(
+                jnp.array([kind, 0]), jnp.array([[.5, 1., .5], [0., 0., 0.]]),
+                jnp.array([[3., 0., 2.], [0., 0., 0.]]), jnp.array([True, False]),
+                jnp.broadcast_to(position, (3, 3)), directions,
+                jnp.array([-10., -10., 0.]), jnp.array([10., 10., 10.]), True)
+            return jnp.where(jnp.isfinite(distances), distances, 0.)
+    
+        position = jnp.array([0., 0., 2.])
+        actual = jax.jit(jax.jacrev(measured))(position)
+>       assert np.isfinite(np.asarray(actual)).all(), actual
+E       AssertionError: Array([[nan, nan, nan],
+E                [nan, nan, nan],
+E                [nan, nan, nan]], dtype=float32)
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x7b6de688a370>()
+E        +    where <built-in method all of numpy.ndarray object at 0x7b6de688a370> = array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]).all
+E        +      where array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <ufunc 'isfinite'>(array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +        where <ufunc 'isfinite'> = np.isfinite
+E        +        and   array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32) = <built-in function asarray>(Array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +          where <built-in function asarray> = np.asarray
+
+tests/test_sensor_gradients.py:26: AssertionError
+__________ test_masked_ray_misses_have_finite_position_derivatives[1] __________
+
+kind = 1
+
+    @pytest.mark.parametrize("kind", [KIND_BOX, KIND_CYLINDER, KIND_SPHERE, KIND_CAPSULE])
+    def test_masked_ray_misses_have_finite_position_derivatives(kind):
+        directions = jnp.array([[1., 0., 0.], [0., 1., 0.], [0., 0., -1.]])
+    
+        def measured(position):
+            distances = cast_rays(
+                jnp.array([kind, 0]), jnp.array([[.5, 1., .5], [0., 0., 0.]]),
+                jnp.array([[3., 0., 2.], [0., 0., 0.]]), jnp.array([True, False]),
+                jnp.broadcast_to(position, (3, 3)), directions,
+                jnp.array([-10., -10., 0.]), jnp.array([10., 10., 10.]), True)
+            return jnp.where(jnp.isfinite(distances), distances, 0.)
+    
+        position = jnp.array([0., 0., 2.])
+        actual = jax.jit(jax.jacrev(measured))(position)
+>       assert np.isfinite(np.asarray(actual)).all(), actual
+E       AssertionError: Array([[nan, nan, nan],
+E                [nan, nan, nan],
+E                [nan, nan, nan]], dtype=float32)
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x7b6d87f87210>()
+E        +    where <built-in method all of numpy.ndarray object at 0x7b6d87f87210> = array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]).all
+E        +      where array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <ufunc 'isfinite'>(array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +        where <ufunc 'isfinite'> = np.isfinite
+E        +        and   array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32) = <built-in function asarray>(Array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +          where <built-in function asarray> = np.asarray
+
+tests/test_sensor_gradients.py:26: AssertionError
+__________ test_masked_ray_misses_have_finite_position_derivatives[3] __________
+
+kind = 3
+
+    @pytest.mark.parametrize("kind", [KIND_BOX, KIND_CYLINDER, KIND_SPHERE, KIND_CAPSULE])
+    def test_masked_ray_misses_have_finite_position_derivatives(kind):
+        directions = jnp.array([[1., 0., 0.], [0., 1., 0.], [0., 0., -1.]])
+    
+        def measured(position):
+            distances = cast_rays(
+                jnp.array([kind, 0]), jnp.array([[.5, 1., .5], [0., 0., 0.]]),
+                jnp.array([[3., 0., 2.], [0., 0., 0.]]), jnp.array([True, False]),
+                jnp.broadcast_to(position, (3, 3)), directions,
+                jnp.array([-10., -10., 0.]), jnp.array([10., 10., 10.]), True)
+            return jnp.where(jnp.isfinite(distances), distances, 0.)
+    
+        position = jnp.array([0., 0., 2.])
+        actual = jax.jit(jax.jacrev(measured))(position)
+>       assert np.isfinite(np.asarray(actual)).all(), actual
+E       AssertionError: Array([[nan, nan, nan],
+E                [nan, nan, nan],
+E                [nan, nan, nan]], dtype=float32)
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x7b6d1c2425b0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x7b6d1c2425b0> = array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]).all
+E        +      where array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <ufunc 'isfinite'>(array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +        where <ufunc 'isfinite'> = np.isfinite
+E        +        and   array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32) = <built-in function asarray>(Array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +          where <built-in function asarray> = np.asarray
+
+tests/test_sensor_gradients.py:26: AssertionError
+__________ test_masked_ray_misses_have_finite_position_derivatives[4] __________
+
+kind = 4
+
+    @pytest.mark.parametrize("kind", [KIND_BOX, KIND_CYLINDER, KIND_SPHERE, KIND_CAPSULE])
+    def test_masked_ray_misses_have_finite_position_derivatives(kind):
+        directions = jnp.array([[1., 0., 0.], [0., 1., 0.], [0., 0., -1.]])
+    
+        def measured(position):
+            distances = cast_rays(
+                jnp.array([kind, 0]), jnp.array([[.5, 1., .5], [0., 0., 0.]]),
+                jnp.array([[3., 0., 2.], [0., 0., 0.]]), jnp.array([True, False]),
+                jnp.broadcast_to(position, (3, 3)), directions,
+                jnp.array([-10., -10., 0.]), jnp.array([10., 10., 10.]), True)
+            return jnp.where(jnp.isfinite(distances), distances, 0.)
+    
+        position = jnp.array([0., 0., 2.])
+        actual = jax.jit(jax.jacrev(measured))(position)
+>       assert np.isfinite(np.asarray(actual)).all(), actual
+E       AssertionError: Array([[nan, nan, nan],
+E                [nan, nan, nan],
+E                [nan, nan, nan]], dtype=float32)
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x7b6deeffc5d0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x7b6deeffc5d0> = array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]).all
+E        +      where array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <ufunc 'isfinite'>(array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +        where <ufunc 'isfinite'> = np.isfinite
+E        +        and   array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32) = <built-in function asarray>(Array([[nan, nan, nan],\n       [nan, nan, nan],\n       [nan, nan, nan]], dtype=float32))
+E        +          where <built-in function asarray> = np.asarray
+
+tests/test_sensor_gradients.py:26: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_sensor_gradients.py::test_masked_ray_misses_have_finite_position_derivatives[2]
+FAILED tests/test_sensor_gradients.py::test_masked_ray_misses_have_finite_position_derivatives[1]
+FAILED tests/test_sensor_gradients.py::test_masked_ray_misses_have_finite_position_derivatives[3]
+FAILED tests/test_sensor_gradients.py::test_masked_ray_misses_have_finite_position_derivatives[4]
+4 failed in 10.96s

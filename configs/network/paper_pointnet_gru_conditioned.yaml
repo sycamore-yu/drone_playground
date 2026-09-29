@@ -1,0 +1,5 @@
+# Explicit control-transfer conditioning; measurements and replay stay in metres.
+defaults:
+- paper_pointnet_gru
+- _self_
+point_input_scale: 0.02

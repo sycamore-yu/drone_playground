@@ -233,6 +233,7 @@ def cast_lidar(
         bank.world_low,
         bank.world_high,
         lidar.include_ground,
+        rotations=None if bank.rotations is None else bank.rotations[scenario_id],
     )
     valid = (distance >= lidar.range_m[0]) & (distance <= lidar.range_m[1])
     rng = jnp.where(valid, distance, 0.0)

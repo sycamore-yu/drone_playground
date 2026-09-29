@@ -1,0 +1,21 @@
+{
+  "run_id": "final-acceptance-heldout-shac-racing-trained-v1",
+  "command": [
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+    "scripts/eval.py",
+    "checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-racing-t1/checkpoints/step-0000655360.pkl",
+    "runtime.device=gpu",
+    "evaluation.split=heldout",
+    "evaluation.episodes=32",
+    "run_id=final-acceptance-heldout-shac-racing-trained-v1"
+  ],
+  "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-racing-t1/checkpoints/step-0000655360.pkl",
+  "checkpoint_sha256": "6a5d6b57d7708ffc32969c1894ecb4d6faaa3bac8cf62ff8e2f334c270fcd044",
+  "parameter_sha256": "52da6f2b4e80b7c83bf7703bb12762707ee9cc33cee9af17da16b05650c89819",
+  "selected_step": 655360,
+  "selection": "fixed full-budget endpoint; qualified before this heldout evaluation",
+  "reason": "The minimum-RMSE incumbent is step 0. It remains the recorded incumbent, but cannot represent newly trained SHAC. The endpoint is development-qualified and contains real actor and critic training.",
+  "source_training": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-racing-t1",
+  "initialization": "BPTT-to-SHAC warm start, not cold convergence",
+  "exit_code": 0
+}

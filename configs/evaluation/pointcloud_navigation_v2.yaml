@@ -1,0 +1,6 @@
+defaults:
+- paper_pointcloud
+- _self_
+protocol: benchmarks/navigation/v2/protocol.yaml
+duration: 300.0
+speeds: [4.0, 6.0, 8.0, 20.0]

@@ -136,14 +136,14 @@ def train(
 
     config = dict(config)
     algorithm = config["algorithm"]
-    if algorithm not in {"ppo", "apg", "shac", "dva"}:
+    if algorithm not in {"ppo", "apg", "bptt", "shac", "dva"}:
         raise ValueError("Supported algorithms are PPO, APG, SHAC and D.VA")
     config.update(
         device=device,
         snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
         trainer=(
             f"drone_playground.learning.algorithms.{algorithm}"
-            if algorithm in {"shac", "dva"}
+            if algorithm in {"bptt", "shac", "dva"}
             else "brax.training.agents." + algorithm
         ),
         reset_contract="fresh-same-step-with-terminal-observation",
@@ -344,9 +344,7 @@ def train(
 
         factory = network_factory(config)
         restore = None
-        if warm_start is not None:
-            if algorithm != "ppo":
-                raise ValueError("Native APG does not expose a restore hook")
+        if warm_start is not None and algorithm == "ppo":
             _, restore, previous = load_policy(warm_start)
             previous_native = native_training_config(previous["config"])
             for key in (
