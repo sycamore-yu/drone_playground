@@ -1,0 +1,67 @@
+{
+  "run_id": "ego-s06-reference-diagnosis-v2-20260929",
+  "scope": "Independent fixed-condition development replay; paths can diverge after identical initialization. Not a formal quality result.",
+  "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+  "scene": "S06",
+  "seed": 20003,
+  "frames": 3945,
+  "duration_s": 78.89999999999999,
+  "outcome": 1,
+  "final_position_m": [
+    97.63958740234375,
+    0.2782299816608429,
+    3.124441385269165
+  ],
+  "original_frames": 2216,
+  "runtime_identity_matches_original": true,
+  "first_position_difference_over_1um_s": 5.24,
+  "maximum_first_five_seconds_position_difference_m": 0.0,
+  "first_position_difference_over_1cm_s": 5.86,
+  "reference_curve_difference_m": {
+    "p99": 2.2350502164067227e-09,
+    "max": 0.1067254996021992
+  },
+  "tracking_error_m": {
+    "p99": 0.5733730460959082,
+    "max": 0.7217422505739525
+  },
+  "reference_age_s": {
+    "max": 1.0000107408814074e-09,
+    "p99": 1.0000036354540498e-09
+  },
+  "reference_missing_frames": 104,
+  "sphere_clearance_qualification": "Sphere centred at reference position; future attitude/body-centre offset omitted, not the native occupancy query",
+  "files": {
+    "resolved-config.json": "f95211b9869fc63efa7f56ab2569bbb4b3727098c3640d8e9a7daf96b24516d5",
+    "diagnostic-source.py": "f1e697683fb8e71605ae74e74544a073a6eebcdf73dbfe42d847eebd0d6df6c9",
+    "scene-manifest.json": "8ab0ab4e3f0ce420f74735b5c8fdd77d362de23e758354294ba0c7e0b47ba2c5",
+    "rows.json": "d15dc4797698e8a73f6a286f82f11ce2d855c74eb728d9226cee79de55edc3c9",
+    "curves.json": "fafa81b34f897a5e997fa85fab0dc744f190493f0757b629448a8ebadc670b44",
+    "result.json": "7e294488354d9972b421a0fe126684a44710cd9065b14284a7215fa967a00158",
+    "native/runtime-identity.json": "25b52d22c05280d594d5dc23014d657035d870f0472a2d7d343fa989c77c239d"
+  },
+  "analysis_source_sha256": "b2318c0f3323aed01cfe3ed4b0c90dd40e2513de48eaf5d0f9980181459bb4e7",
+  "status": "original_collision_not_reproduced; repeated_condition_arrival_does_not_replace_original_failure",
+  "observed_limit": "The diagnostic includes extra curve sampling, so wall-time callback timing can differ. Same seed/configuration/runtime did not reproduce the same closed-loop path; random initialization is present upstream but its causal contribution is unproven.",
+  "reference_source_index": {
+    "repository": "ego-planner",
+    "revision": "bfda51284c8c1b476043255a8145ef925a3778a5",
+    "gitnexus_indexed_at": "2026-09-29T12:32:16.652Z",
+    "symbols": [
+      "EGOReplanFSM::planFromCurrentTraj",
+      "EGOPlannerManager::reboundReplan"
+    ]
+  },
+  "invalid_predecessor": {
+    "run_id": "ego-s06-reference-diagnosis-20260929",
+    "reason": "Stopped after scene-label check found S03 instead of S06. Replacement verifies bank digest and scene label before flight; predecessor excluded."
+  },
+  "archived_curves": 166,
+  "example_replanned_future": {
+    "received_time_s": 75.7,
+    "minimum_sphere_clearance_m": -0.2131744623184204,
+    "at_time_s": 77.44603174603175,
+    "replaced_by_clear_curve_at_s": 75.74,
+    "qualification": "Ground-truth sphere approximation; original occupancy information may be incomplete. This segment was replaced before its predicted conflict, so it is not evidence that the final flown path collided."
+  }
+}

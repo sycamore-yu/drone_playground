@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-09-29T19:29:52.757004+00:00",
-  "scope": "Partial first-release quality evidence; not a completed release or cross-method ranking",
+  "generated_utc": "2026-09-29T19:47:40.377595+00:00",
+  "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
   "passed_cells": 10,
   "required_cells": 18,
   "cells": [
@@ -481,7 +481,7 @@
       "method": "super",
       "task": "dynamic",
       "passed": true,
-      "status": "passed",
+      "status": "passed_previous_runtime_revalidation_queued",
       "run_id": "release-super-confirmation-20260929-dynamic",
       "evidence": {
         "protocol": "release-navigation-v1",
@@ -503,6 +503,20 @@
         "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
         "parameter_sha256": "c310cfd0e9364c55fe7cf8b832cf5b64ecab91d252f89759e9a7b5214f4b6c3f",
         "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+      },
+      "current_runtime_passed": false,
+      "runtime_revalidation": {
+        "batch": "release-super-heartbeat-dynamic-confirmation-20260929-batch",
+        "run_id": "release-super-heartbeat-dynamic-confirmation-20260929",
+        "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+        "binary_sha256": "877984cc67765e48474f45a0b85b1c1459112cc92486814939c2d053d67cc4da",
+        "reason": "Existing 93/100 pass used pre-lock binary; verify same declared patch used by static evaluation. Original four workers, scene/initial seeds, sensors, physics and algorithm settings preserved; new transport ports and run identity.",
+        "manifest_sha256": "cd82807cbc78d190e22b59c8c7ad2a9130a8ffee9314a3b9469478d86a8ad192",
+        "config_sha256": "0a795e916e77cb75db7a4de32ccddad32a098433dae2a63c607c72aa882f0c66",
+        "configuration_diff_verified": [
+          "run_id",
+          "method.port"
+        ]
       }
     },
     {
@@ -704,5 +718,6 @@
       "path": "experiments/ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929/result.json",
       "sha256": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b"
     }
-  ]
+  ],
+  "confirmed_cells_for_current_runtime": 9
 }
