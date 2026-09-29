@@ -6,6 +6,7 @@ does not pretend numpy values or stateful RPCs preserve policy derivatives.
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 from hydra.utils import instantiate
@@ -80,12 +81,15 @@ class FrozenNeuralCommand:
 
     input_kind, derivatives = None, "none"
 
-    def __init__(self, checkpoint, env, frequency_hz=None):
+    def __init__(self, checkpoint, env, frequency_hz=None, input_kind=None):
         import jax
 
         from drone_playground.methods.neural import NeuralPolicy
 
         self.policy, self.env = NeuralPolicy.load(checkpoint), env
+        if input_kind not in (None, 'trajectory'):
+            raise ValueError('Frozen neural upstream input must be an explicitly timed trajectory')
+        self.input_kind = input_kind
         self.frequency = float(env.freq if frequency_hz is None else frequency_hz)
         metadata = self.policy.metadata
         self.output_kind = metadata["config"]["method"]["output"]
@@ -102,12 +106,13 @@ class FrozenNeuralCommand:
         elif self.output_kind in ("waypoint", "trajectory"):
             raise ValueError("Frozen neural geometric output requires an explicit physical decoder")
         if ((self.decoder is None and self.output_kind != env.controller.input_kind)
-                or metadata["observation_size"] != env.observation_size):
+                or (input_kind is None and metadata["observation_size"] != env.observation_size)):
             raise ValueError("Frozen neural observation/command decoder differs from this environment")
         source = metadata["config"]["env"]
-        observer = instantiate(source["observation"])
+        self.observer = observer = instantiate(source["observation"])
         # Equal vector lengths alone do not establish equal field meanings.
-        if type(observer) is not type(env.observer) or vars(observer) != vars(env.observer):
+        if input_kind is None and (type(observer) is not type(env.observer)
+                                   or vars(observer) != vars(env.observer)):
             raise ValueError("Frozen neural observation field semantics differ")
         if self.goal_source == 'observation_reference' and observer.name != 'state_reference':
             raise ValueError('Frozen geometric goal requires the recorded reference observation')
@@ -115,15 +120,30 @@ class FrozenNeuralCommand:
         if (source["task"]["freq"] != self.frequency or dynamics["drone"] != env.drone
                 or dynamics["forward"] != env.dynamics):
             raise ValueError("Frozen neural clock/model action decoder differs")
+        if input_kind == 'trajectory':
+            from drone_playground.environments.observations import TrackingObservation
+
+            if (type(observer) is not TrackingObservation or observer.name != 'state_reference'
+                    or observer.n_samples < 1 or metadata['observation_size'] != observer.size):
+                raise ValueError('Upstream trajectory requires a recorded state_reference observation')
+            stride = self.frequency * observer.interval
+            # The original tracking/racing encoders round fractional strides
+            # differently. Require an unambiguous physical sampling clock.
+            if not np.isfinite(stride) or stride <= 0 or not np.isclose(stride, round(stride), atol=1e-8, rtol=0):
+                raise ValueError('Upstream reference interval must cover an integer number of policy ticks')
+            self.reference_offsets = np.arange(observer.n_samples) * round(stride) / self.frequency
         self.provenance = dict(checkpoint=str(Path(checkpoint).resolve()),
                                sha256=metadata["sha256"], step=metadata["step"],
                                observation=source["observation"], output=self.output_kind)
         self.provenance['goal_source'] = self.goal_source
+        if input_kind is not None:
+            self.provenance['reference_source'] = 'upstream_trajectory'
+            self.provenance['reference_offsets_seconds'] = self.reference_offsets.tolist()
         if self.decoder is not None:
             self.provenance['physical_decoder'] = metadata['physical_decoder']
             self.decode = jax.jit(self.decoder.decode)
         self.infer = jax.jit(self.policy.act)
-        shape = jax.eval_shape(self.policy.act, jax.ShapeDtypeStruct((env.observation_size,), np.float32))
+        shape = jax.eval_shape(self.policy.act, jax.ShapeDtypeStruct((metadata['observation_size'],), np.float32))
         if shape.shape != (metadata['action_size'],):
             raise ValueError("Frozen neural parameter output differs from checkpoint dimensions")
         self.count = 0
@@ -136,13 +156,28 @@ class FrozenNeuralCommand:
         import jax.numpy as jnp
 
         self.count += 1
-        action = self.infer(jnp.asarray(packet["policy_observation"]))
+        if self.input_kind == 'trajectory':
+            if not isinstance(upstream, Trajectory):
+                raise ValueError('Frozen neural tracker requires upstream Trajectory')
+            times = packet['time'] + self.reference_offsets
+            if times[0] < upstream.start_time - 1e-9 or times[-1] > upstream.end_time + 1e-9:
+                return dict(output=None, decision_status='no_plan',
+                            reason='insufficient_reference_horizon',
+                            required_reference_until=float(times[-1]))
+            reference = upstream.sample_many(times)
+            fields = dict(pos='position', quat='quaternion', vel='velocity', ang_vel='angular_velocity')
+            states = SimpleNamespace(**{field: jnp.asarray(packet[key])[None, None]
+                                       for field, key in fields.items()})
+            observation = self.observer(states, jnp.asarray(reference['position']))
+        else:
+            observation = jnp.asarray(packet['policy_observation'])
+        action = self.infer(observation)
         if 'goal' in packet:
             self.goal = packet['goal']
         if self.decoder is None:
             value = MotionCommand(self.output_kind, self.env.physical_action(action))
         else:
-            goal = (self.env.observer.reference_goal(jnp.asarray(packet['policy_observation']))
+            goal = (self.observer.reference_goal(observation)
                     if self.goal_source == 'observation_reference' else self.goal)
             decoded = self.decode(action, packet['position'], packet['velocity'], goal)
             value = self.decoder.message(decoded, packet['time'])
@@ -183,7 +218,8 @@ class PipelinePlanner:
                     elif implementation == "minimum_jerk":
                         module = MinimumJerkPlanning(**params)
                     elif implementation == "frozen_neural":
-                        module = FrozenNeuralCommand(spec["checkpoint"], env, spec.get("frequency_hz"))
+                        module = FrozenNeuralCommand(spec["checkpoint"], env, spec.get("frequency_hz"),
+                                                     spec.get('input'))
                     elif implementation == "python":
                         module = instantiate(params)
                     else:

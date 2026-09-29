@@ -70,3 +70,20 @@ JAX_PLATFORMS=cpu pixi run train method=learning/geometric env=hovering runtime.
 PPO改用`algorithm=ppo network=brax_ppo`并显式给出总交互步数与批量配置；SHAC改用`algorithm=shac`。单航点配方同时设置`method.output=waypoint method.physical_decoder.kind=waypoint env.execution.command=waypoint controller@env.execution.tracker=jax_waypoint_tracking`。网络结构、训练算法、物理输出和下游控制器是独立配置，兼容性在构建前检查。
 
 BPTT轨迹头、SHAC航点头和PPO轨迹头已完成两并行、32决策步的小型训练及检查点重载评测。它们只验证更新／保存／加载链路，短回合RMSE未达标，不计入18格收敛矩阵。39项几何训练／物理输出／宿主组合回归通过。含RPC或当前原生MPC的组合继续用于宿主执行，这个JAX训练入口会明确拒绝；不要求为C++算法补导数。
+
+## 规划轨迹进入神经跟踪器
+
+冻结神经模块可显式声明`input: trajectory`，放在优化规划器之后。模块从公共位置／姿态／速度／体轴角速度与上游曲线重建检查点记录的`state_reference`观测，按原采样间隔取得未来位置，再输出其声明的物理类型。宿主自身可以使用深度或点云观测；这个跟踪器实际读取的字段及曲线采样偏移记录在`pipeline-contracts.json`中。
+
+例如，在已有输出Trajectory的规划阶段后添加：
+
+```yaml
+- implementation: frozen_neural
+  input: trajectory
+  checkpoint: experiments/<trained-controller>/checkpoints/<snapshot>.pkl
+  frequency_hz: 50
+```
+
+若检查点输出姿态／推力，则整链输出和执行命令均须为`attitude_thrust`。原检查点的机型、动力学、策略频率及动作解码仍须匹配；轨迹替换不意味着跨动力学迁移或导航质量已通过。默认10个参考点、0.1秒间隔需要至少0.9秒真实未来轨迹。时域不足返回`no_plan`，分数采样步长存在歧义时拒绝构建；Waypoint须先经过显式时间分配／轨迹生成模块。
+
+23项相关检查通过，覆盖实际保存权重加载、外部参考改变网络动作、宿主观测隔离、原观测语义检查、未来时域缺失及配置式Waypoint→轨迹→神经命令链。此模式为宿主执行，不改变C++无导数的约定。
