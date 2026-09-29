@@ -22,6 +22,14 @@ over `docker exec` standard input/output. The planner source checkouts and build
 context are intentionally excluded from Git; upstream license files remain in
 their respective source trees.
 
+The current host and worker explicitly support only EGO and SUPER. The worker
+returns a reference at the current time and counts native trajectory messages;
+it does not yet export a complete trajectory horizon for a downstream MPC.
+The [first-release design](../docs/release-plan.md#通用原生方法接口首版要求)
+requires a shared native-method interface with per-algorithm adapters. Container
+launching remains one deployment option; future C++ integrations should reuse
+the same host contract after their actual input/output capabilities are verified.
+
 
 ## 2026-09-29 五任务适配
 

@@ -8,6 +8,8 @@
 
 物理接口与混合后端的取舍记录在[架构决策](adr/0001-flight-interfaces-and-native-backends.md)，术语统一见[领域术语](../CONTEXT.md)。
 
+[通用原生方法接口决定](adr/0002-shared-native-method-interface.md)说明 SUPER／EGO 和后续 C++ 方法如何共用宿主接口，以及接口统一与去 ROS 核心抽取的区别。
+
 [正式验收](verification/final-acceptance/README.md)是六方法、五任务结果的证据入口。[点云方法](research/pointcloud.md)集中记录公开论文内容、重建假设、控制迁移和导航适配的边界。
 
 [完整目录](project-tree.md)定位文件；[状态](status.md)说明当前主线；[待办](backlog.md)维护尚未完成的研究；[分支生命周期](research/branch-lifecycle.md)说明旧工作树的处置。第三方来源以根目录的 `THIRD_PARTY_NOTICES.md` 与 `third_party/sources.yaml` 为准。

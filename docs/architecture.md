@@ -62,6 +62,8 @@ Crazyflow 提供 `so_rpy`、`so_rpy_rotor`、`so_rpy_rotor_drag` 与 `first_prin
 
 SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接收观测和目标。轨迹跟踪器把轨迹转为执行命令；其控制任务使用滚动参考目标适配，导航任务使用目标点。`optimization/attitude_mpc` 和 `optimization/sampling_mpc` 对应当前真实优化实现。LOONG、AC-MPC、AERO-MPPI 作为待实现方向记录在来源清单与待办中。
 
+当前原生接入仍专用于 EGO／SUPER：`NativePlanner` 限定这两个方法，并直接启动 `docker exec`；桥接器、传感打包和装配校验中仍有方法分支。桥接器返回当前时刻的位置／速度／加速度／偏航参考，收到的完整原生轨迹只用于计数。虽然配置输出名为 `trajectory`，它尚未向宿主暴露可供 MPC 查询未来时域的完整 Traj.。通用原生接口及真实轨迹输出已纳入[第一版阶段 B](release-plan.md#通用原生方法接口首版要求)，目前属于待实现设计。
+
 ## 传感、几何和时序
 
 深度相机与两种 MID-360 配方共用解析图元求交及场景运动。通用 MID-360 使用固定 MuJoCo-LiDAR 扫描模式和四帧历史；论文点云方法使用180×30条规则角度射线。射线、碰撞和净空查询由同一场景库提供；传感器校准包含坐标系、频率、量程、采样和导数规则。
