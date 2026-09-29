@@ -78,6 +78,17 @@ pixi run eval method=paper/super env=navigation/static \
 
 原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `native_planners/versions.env`、`native_planners/patches/` 及[原生集成说明](../native_planners/README.md)。
 
+新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际收到的完整物理输出、执行参考、有效期和控制器生成的命令。相同Trajectory／Waypoint／Motion Cmd按内容摘要共用存储，`index.json`记录两个压缩文件的摘要、命令字段和SI单位；中断时也保留已收到的决策。
+
+```python
+from drone_playground.evaluation.decision_archive import load_native_decisions
+
+for frame in load_native_decisions("experiments/<run>/native/hard/0/decision-trace"):
+    print(frame["tick"], frame["time"], frame["reply"].get("output"), frame["command"])
+```
+
+读取会验证摘要并恢复三类输出对象，可在相同控制器配置下，从回合初态顺序重放执行参考，不必再次调用异步规划器。该记录位于物理转移之前；`command=null`表示控制器未返回命令。即使命令已生成，仍需按tick与物理轨迹中对应的转移配对，才能确认已执行。导航的转移记录在同回合`case-trace/`，控制任务的轨迹在运行目录`rollouts/`。记录开销可能影响原生异步调度，不能据此承诺再次调用规划器会得到同一路径。
+
 ```bash
 # 完整 acados 数值测试所需的局部依赖。
 bash scripts/tools/setup_acados.sh

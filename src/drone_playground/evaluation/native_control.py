@@ -26,6 +26,7 @@ from drone_playground.runs.record import RunRecorder
 from drone_playground.runtime.host_runner import run_steps
 from drone_playground.visualization.rscope_io import export_rollout
 
+from .decision_archive import NativeDecisionRecorder
 from .native_planners import pack_array
 from .racing import summarize_race
 from .tracking import save_report, summarize_trials
@@ -142,101 +143,107 @@ def evaluate_native_control(config, root, run_id):
                 tracker.hold = held
                 rows = []
                 missing = 0
-                try:
-                    worker.start(
-                        calibration, initial_goal, settings.get("limits"), adapter
-                    )
-
-                    def decide(current, tick):
-                        nonlocal held, missing
-                        body = env.controller_observation(current)
-                        packet = dict(
-                            time=tick * env.dt,
-                            policy_observation=np.asarray(current.obs).tolist(),
-                            position=body["pos"].tolist(),
-                            quaternion=body["quat"].tolist(),
-                            velocity=body["vel"].tolist(),
-                            angular_velocity=body["ang_vel"].tolist(),
+                with NativeDecisionRecorder(worker.directory / "decision-trace",
+                                            env.controller.input_kind) as decisions:
+                    try:
+                        worker.start(
+                            calibration, initial_goal, settings.get("limits"), adapter
                         )
-                        if sensor is not None and tick % period == 0:
-                            data = jax.tree.map(
-                                np.asarray,
-                                sample(body["pos"], body["quat"], tick * env.dt, tick // period),
+
+                        def decide(current, tick):
+                            nonlocal held, missing
+                            body = env.controller_observation(current)
+                            packet = dict(
+                                time=tick * env.dt,
+                                policy_observation=np.asarray(current.obs).tolist(),
+                                position=body["pos"].tolist(),
+                                quaternion=body["quat"].tolist(),
+                                velocity=body["vel"].tolist(),
+                                angular_velocity=body["ang_vel"].tolist(),
                             )
-                            if settings.get("input_sensor", settings.get("method")) in (
-                                "ego",
-                                "depth",
-                            ):
-                                depth, origin, rotation = data
-                                packet.update(
-                                    depth=pack_array(depth.reshape(sensor.width, sensor.height).T),
-                                    width=sensor.width,
-                                    height=sensor.height,
-                                    camera_position=origin.tolist(),
-                                    camera_quaternion=Rotation.from_matrix(rotation)
-                                    .as_quat()
-                                    .tolist(),
+                            if sensor is not None and tick % period == 0:
+                                data = jax.tree.map(
+                                    np.asarray,
+                                    sample(body["pos"], body["quat"], tick * env.dt, tick // period),
+                                )
+                                if settings.get("input_sensor", settings.get("method")) in (
+                                    "ego",
+                                    "depth",
+                                ):
+                                    depth, origin, rotation = data
+                                    packet.update(
+                                        depth=pack_array(depth.reshape(sensor.width, sensor.height).T),
+                                        width=sensor.width,
+                                        height=sensor.height,
+                                        camera_position=origin.tolist(),
+                                        camera_quaternion=Rotation.from_matrix(rotation)
+                                        .as_quat()
+                                        .tolist(),
+                                    )
+                                else:
+                                    points = data.points_world[data.valid]
+                                    packet.update(
+                                        points=pack_array(np.c_[points, np.ones(len(points))]),
+                                        point_count=len(points),
+                                    )
+                            if tick % round(env.freq / adapter["goal_frequency_hz"]) == 0:
+                                index = min(
+                                    tick + round(adapter["lookahead_s"] * env.freq), len(reference) - 1
+                                )
+                                packet["goal"] = reference[index].tolist()
+                            reply = worker.step(packet)
+                            target = reply.get("reference")
+                            if target is None and reply.get("output") is None:
+                                missing += 1
+                                target = dict(
+                                    position=held,
+                                    velocity=[0.0, 0.0, 0.0],
+                                    acceleration=[0.0, 0.0, 0.0],
+                                    yaw=0.0,
                                 )
                             else:
-                                points = data.points_world[data.valid]
-                                packet.update(
-                                    points=pack_array(np.c_[points, np.ones(len(points))]),
-                                    point_count=len(points),
-                                )
-                        if tick % round(env.freq / adapter["goal_frequency_hz"]) == 0:
-                            index = min(
-                                tick + round(adapter["lookahead_s"] * env.freq), len(reference) - 1
+                                held = body["pos"]
+                            physical = None
+                            try:
+                                physical = tracker.command(reply, current, tick)
+                            finally:
+                                decisions.record(tick, tick * env.dt, body, reply, physical)
+                            return physical, dict(
+                                commands=reply["commands"], trajectories=reply["trajectories"],
+                                plans=reply.get("plans", reply["trajectories"]),
+                                executed_native_steps=tracker.consumed,
+                                clipped_command_steps=tracker.clipped,
                             )
-                            packet["goal"] = reference[index].tolist()
-                        reply = worker.step(packet)
-                        target = reply.get("reference")
-                        if target is None and reply.get("output") is None:
-                            missing += 1
-                            target = dict(
-                                position=held,
-                                velocity=[0.0, 0.0, 0.0],
-                                acceleration=[0.0, 0.0, 0.0],
-                                yaw=0.0,
-                            )
-                        else:
-                            held = body["pos"]
-                        physical = tracker.command(reply, current, tick)
-                        return physical, dict(
-                            commands=reply["commands"], trajectories=reply["trajectories"],
-                            plans=reply.get("plans", reply["trajectories"]),
-                            executed_native_steps=tracker.consumed,
-                            clipped_command_steps=tracker.clipped,
-                        )
 
-                    for tick, record, _ in run_steps(state, env.episode_length, decide, advance):
-                        nxt = record.after
-                        x = nxt.pipeline_state.sim_data.states
-                        row = dict(
-                            pos=x.pos[0, 0],
-                            quat=x.quat[0, 0],
-                            obs=nxt.obs,
-                            time=(tick + 1) * env.dt,
-                            actions=2
-                            * (record.command - np.asarray(env.low))
-                            / np.asarray(env.high - env.low)
-                            - 1,
-                            reward=nxt.reward,
-                            metrics=nxt.metrics,
-                            active=True,
-                            failed=bool(nxt.metrics["failure"] > 0),
+                        for tick, record, _ in run_steps(state, env.episode_length, decide, advance):
+                            nxt = record.after
+                            x = nxt.pipeline_state.sim_data.states
+                            row = dict(
+                                pos=x.pos[0, 0],
+                                quat=x.quat[0, 0],
+                                obs=nxt.obs,
+                                time=(tick + 1) * env.dt,
+                                actions=2
+                                * (record.command - np.asarray(env.low))
+                                / np.asarray(env.high - env.low)
+                                - 1,
+                                reward=nxt.reward,
+                                metrics=nxt.metrics,
+                                active=True,
+                                failed=bool(nxt.metrics["failure"] > 0),
+                            )
+                            rows.append(jax.tree.map(np.asarray, row))
+                        trace = jax.tree.map(lambda *x: np.stack(x)[:, None], *rows)
+                        diagnostics.append(
+                            dict(case=case, missing_command_steps=missing, **record.diagnostics)
                         )
-                        rows.append(jax.tree.map(np.asarray, row))
-                    trace = jax.tree.map(lambda *x: np.stack(x)[:, None], *rows)
-                    diagnostics.append(
-                        dict(case=case, missing_command_steps=missing, **record.diagnostics)
-                    )
-                    if hasattr(worker, "module_calls"):
-                        diagnostics[-1]["module_calls"] = list(worker.module_calls)
-                    export_rollout(env.sim, rec.path / "rollouts" / f"case-{case:03d}", trace)
-                    traces.append(trace)
-                finally:
-                    worker.close()
-                    tracker.close()
+                        if hasattr(worker, "module_calls"):
+                            diagnostics[-1]["module_calls"] = list(worker.module_calls)
+                        export_rollout(env.sim, rec.path / "rollouts" / f"case-{case:03d}", trace)
+                        traces.append(trace)
+                    finally:
+                        worker.close()
+                        tracker.close()
                 rec.phase("evaluating", step=case + 1, completed_cases=case + 1)
             length = env.episode_length
 

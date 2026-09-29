@@ -990,7 +990,17 @@
     "run_id": "release-super-heartbeat-static-confirmation-20260929",
     "episodes": 100,
     "workers": 2,
-    "status": "running",
-    "qualification": "Same original static conditions; repair only, prior interrupted runs retained"
+    "status": "completed",
+    "qualification": "Complete patched-runtime static confirmation; four S06 collisions retained; does not prove every concurrency fault absent",
+    "arrived": 96,
+    "quality_passed": true,
+    "scene_success_counts": {
+      "S01": 25,
+      "S02": 25,
+      "S03": 25,
+      "S06": 21
+    },
+    "archived_frames": 122309,
+    "interrupted_cases": 0
   }
 }

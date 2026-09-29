@@ -1,0 +1,100 @@
+{
+  "generated_utc": "2026-09-29T20:06:57.597826+00:00",
+  "artifact": "native-decision-recording-20260929",
+  "scope": "Native decision recording and deterministic downstream input replay; engineering evidence, not 18-cell quality",
+  "source_files": {
+    "src/drone_playground/evaluation/decision_archive.py": "146eef8a7c55bd6d0069d0fda8055b39c2b55fc6ade93f77d5c3e0861f22b908",
+    "src/drone_playground/evaluation/native_control.py": "49f3efab743c9901c782c98b58063eca296a9954abae9a9016a716f38694aba2",
+    "src/drone_playground/evaluation/native_planners.py": "36489f8c0f9155b3653980b926b39046d099139beef3ab5d7ea85cdc83c0734e",
+    "tests/test_native_decision_archive.py": "c7ed05fc69c8f8747aff0d25d058bd16c80199e760b1c460fdff96517c2c98cd",
+    "tests/test_native_grpc.py": "13e7037c46768841c838a04a60b650454c51f224da85ea005d4d97c8f9752649",
+    "native/tests/interop_server.cc": "835c171cb0e566660d95d0ffb26203f36b614bc2513661707d45e5a47fb9c510"
+  },
+  "cpp_binary_sha256": "9a2b231b16cc3403f63aaa2805d9bf0c8cea7ac223836a75062af6d6ff50e72b",
+  "tests": {
+    "new_recording": 4,
+    "existing_archive_and_control": 17,
+    "actual_cpp_evaluators": 3,
+    "total_distinct": 24,
+    "final_run": "7 passed in 30.82s",
+    "earlier_related_run": "21 passed in 3.48s; includes the same 4 recording tests",
+    "lint": "passed"
+  },
+  "logs": {
+    "test-native-decision-integrated.log": "4dc16fbcc86dc224e4cae13f73c41c6bbdc21581689489f2846821dc28504b34",
+    "test-native-decision-final.log": "c313c987c62debac2739b00cd4d93f26a73ca24379f4093341852b8d099b021e"
+  },
+  "fixtures": [
+    {
+      "name": "hovering-trajectory",
+      "cases": 1,
+      "frames": 2,
+      "indices": [
+        {
+          "path": "hovering-trajectory/cases/0/decision-trace",
+          "sha256": "ace454314cf9c59257bad099a094af8dd41bbb28a64fdf29ce91559aa0d474ee",
+          "frames": 2,
+          "output_type": "Trajectory"
+        }
+      ],
+      "scope": "C++ service, real host controller and physics; navigation host loop intentionally capped to two transitions by test fixture; no task-quality claim"
+    },
+    {
+      "name": "navigation-attitude",
+      "cases": 3,
+      "frames": 6,
+      "indices": [
+        {
+          "path": "navigation-attitude/cases/0/decision-trace",
+          "sha256": "8c92352161fdd9eaa6da4f2f89bfdb725d10395cbe3e74edf29155ae73974b34",
+          "frames": 2,
+          "output_type": "MotionCommand"
+        },
+        {
+          "path": "navigation-attitude/cases/1/decision-trace",
+          "sha256": "da41f81845f7b090a1982c35a757e9569223fec2203f0a987cfe97923866b169",
+          "frames": 2,
+          "output_type": "MotionCommand"
+        },
+        {
+          "path": "navigation-attitude/cases/2/decision-trace",
+          "sha256": "c7dce7252abd825e02ed3e0054bc6de7f72bb8d753241e106bb6b351c21e8962",
+          "frames": 2,
+          "output_type": "MotionCommand"
+        }
+      ],
+      "scope": "C++ service, real host controller and physics; navigation host loop intentionally capped to two transitions by test fixture; no task-quality claim"
+    },
+    {
+      "name": "navigation-waypoint",
+      "cases": 3,
+      "frames": 6,
+      "indices": [
+        {
+          "path": "navigation-waypoint/cases/0/decision-trace",
+          "sha256": "c376f625f550fc166f3700c7b26c38a036636724956eb03e3a012fde85ac732b",
+          "frames": 2,
+          "output_type": "Waypoint"
+        },
+        {
+          "path": "navigation-waypoint/cases/1/decision-trace",
+          "sha256": "12b26a8bd03c84c91bfe243a91c879de2c74305e02430651390d2b35b9661b45",
+          "frames": 2,
+          "output_type": "Waypoint"
+        },
+        {
+          "path": "navigation-waypoint/cases/2/decision-trace",
+          "sha256": "57dbd499f813623814e51847f5c1f0aebcc734e8dde7352e45a2b09fe3a34eda",
+          "frames": 2,
+          "output_type": "Waypoint"
+        }
+      ],
+      "scope": "C++ service, real host controller and physics; navigation host loop intentionally capped to two transitions by test fixture; no task-quality claim"
+    }
+  ],
+  "limitations": [
+    "Pre-transition command generation requires post-transition trace to establish application",
+    "Recorded native decisions are fixed inputs for sequential downstream replay; they do not make asynchronous replanning bitwise deterministic",
+    "Recording may alter live native wall-clock scheduling"
+  ]
+}

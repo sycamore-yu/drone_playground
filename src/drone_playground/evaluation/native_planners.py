@@ -18,6 +18,7 @@ from drone_playground.composition import build_environment
 from drone_playground.environments.scenes.navigation import DIFFICULTIES
 from drone_playground.environments.sensors.depth import cast_depth, sensor_pose
 from drone_playground.environments.sensors.lidar import cast_lidar
+from drone_playground.evaluation.decision_archive import NativeDecisionRecorder
 from drone_playground.evaluation.navigation import (
     combine_cells,
     export_navigation_replays,
@@ -187,7 +188,9 @@ def evaluate_native(config, root: Path, run_id: str):
                 reset_evidence["delay_effective_ms"] = float(state.info["delay_effective_ms"])
             case_directory = rec.path / "native" / difficulty / str(case)
             identity = dict(difficulty=difficulty,case=case,scenario_id=scenario_id,**reset_evidence)
-            with record_native_case(env,case_directory,identity) as rows:
+            with (record_native_case(env,case_directory,identity) as rows,
+                  NativeDecisionRecorder(case_directory / "decision-trace",
+                                         env.controller.input_kind) as decisions):
                 worker = controller = None
                 unavailable = rejected = 0
                 commands = trajectories = 0
@@ -227,7 +230,12 @@ def evaluate_native(config, root: Path, run_id: str):
                             )
                         else:
                             hold = np.asarray(env.controller_observation(current)["pos"])
-                        physical = controller.command(reply, current, tick)
+                        physical = None
+                        try:
+                            physical = controller.command(reply, current, tick)
+                        finally:
+                            decisions.record(tick, tick * env.dt,
+                                             env.controller_observation(current), reply, physical)
                         return physical, dict(commands=commands, trajectories=trajectories)
 
                     for tick, transition, _ in run_steps(state, env.episode_length, decide, advance):

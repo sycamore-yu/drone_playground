@@ -89,6 +89,53 @@ def test_external_algorithm_uses_the_same_evaluation_adapter(server, tmp_path):
         planner.close()
 
 
+@pytest.mark.parametrize('task,algorithm,output,execution,output_type', [
+    ('hovering', 'trajectory', 'trajectory', 'trajectory_tracking', Trajectory),
+    ('navigation/static', 'waypoint', 'waypoint', 'waypoint_tracking', Waypoint),
+    ('navigation/static', 'attitude', 'attitude_thrust', 'attitude_thrust', MotionCommand),
+])
+def test_evaluators_archive_actual_cpp_decisions(
+    server, tmp_path, monkeypatch, task, algorithm, output, execution, output_type
+):
+    import json
+    from itertools import islice
+
+    from drone_playground.composition import compose_method, run_experiment
+    from drone_playground.evaluation.decision_archive import load_native_decisions
+
+    config = compose_method('native', task, [
+        f'method.algorithm={algorithm}', f'method.output={output}',
+        f'execution@env.execution={execution}', 'method.input_sensor=none',
+        f'env.task.duration={0.04 if task == "hovering" else 300}',
+        'evaluation.episodes=1', 'evaluation.split=dev',
+        'mode=eval', 'runtime.device=cpu',
+    ] + (['sensor@env.sensor=none', 'observation@env.observation=navigation_state']
+         if task != 'hovering' else []))
+    config['method']['deployment']['command'] = server
+    if task != 'hovering':
+        # Bound this archive integration test to two real physical transitions;
+        # keep all public navigation validation, sensing and C++ calls intact.
+        from drone_playground.evaluation import native_planners
+
+        actual_steps = native_planners.run_steps
+        monkeypatch.setattr(native_planners, 'run_steps',
+                            lambda *args, **kwargs: islice(actual_steps(*args, **kwargs), 2))
+    run_experiment(config, tmp_path, 'native-recording')
+    run = tmp_path / 'experiments/native-recording'
+    archives = list((run / 'native').rglob('decision-trace/index.json'))
+    assert len(archives) == (1 if task == 'hovering' else 3)
+    for index in archives:
+        info = json.loads(index.read_text())
+        assert info['frames'] == 2 and not info['interrupted']
+        rows = list(load_native_decisions(index.parent))
+        assert [row['tick'] for row in rows] == [0, 1]
+        assert all(isinstance(row['reply']['output'], output_type) for row in rows)
+        assert all(np.isfinite(row['command']).all() for row in rows)
+        if task != 'hovering':
+            case = json.loads((index.parent.parent / 'case-record.json').read_text())
+            assert case['recorded_frames'] == info['frames']
+
+
 @pytest.mark.parametrize("algorithm,output,execution", [
     ("trajectory", "trajectory", "trajectory_tracking"),
     ("waypoint", "waypoint", "waypoint_tracking"),

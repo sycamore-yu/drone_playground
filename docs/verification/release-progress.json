@@ -1,7 +1,7 @@
 {
-  "generated_utc": "2026-09-29T19:47:40.377595+00:00",
+  "generated_utc": "2026-09-29T20:04:42.157416+00:00",
   "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
-  "passed_cells": 10,
+  "passed_cells": 11,
   "required_cells": 18,
   "cells": [
     {
@@ -472,16 +472,72 @@
     {
       "method": "super",
       "task": "static",
-      "passed": false,
-      "status": "repair_confirmation_running",
-      "evidence": "super-static-segmentation-diagnosis.json",
-      "confirmation_batch": "release-super-heartbeat-confirmation-20260929"
+      "passed": true,
+      "status": "passed",
+      "evidence": {
+        "protocol": "release-navigation-v1",
+        "tasks": {
+          "static": {
+            "num_trials": 100,
+            "arrived": 96,
+            "success_rate": 0.96,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 0.84
+            },
+            "passed": true
+          }
+        },
+        "passed": true,
+        "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+        "parameter_sha256": "10f82ff495c62f8a9890db8783721fdb880096e6cd3bb28dad7ba2fcb0a9383f",
+        "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+      },
+      "confirmation_batch": "release-super-heartbeat-confirmation-20260929",
+      "current_runtime_passed": true,
+      "run_id": "release-super-heartbeat-static-confirmation-20260929",
+      "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+      "runtime_identity": {
+        "/opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node": "877984cc67765e48474f45a0b85b1c1459112cc92486814939c2d053d67cc4da",
+        "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/traj_opt/exp_traj_optimizer_s4.cpp": "6ca9c345f2a5fdce668a61ad33804cf9f3d5e8302b377adef44c8d291fa3abbd",
+        "/opt/drone_playground/planners/super/src/SUPER/super_planner/src/super_core/super_planner.cpp": "5635b8c7683494bf2f9a91dba06b418ca0f1829c752723b104d73600eebad9b5"
+      },
+      "archived_episodes": 100,
+      "archived_frames": 122309,
+      "failures_by_scene": {
+        "S01": {
+          "collision": 0,
+          "timeout": 0,
+          "out_of_bounds": 0,
+          "numerical_failure": 0
+        },
+        "S02": {
+          "collision": 0,
+          "timeout": 0,
+          "out_of_bounds": 0,
+          "numerical_failure": 0
+        },
+        "S03": {
+          "collision": 0,
+          "timeout": 0,
+          "out_of_bounds": 0,
+          "numerical_failure": 0
+        },
+        "S06": {
+          "collision": 4,
+          "timeout": 0,
+          "out_of_bounds": 0,
+          "numerical_failure": 0
+        }
+      }
     },
     {
       "method": "super",
       "task": "dynamic",
       "passed": true,
-      "status": "passed_previous_runtime_revalidation_queued",
+      "status": "passed_previous_runtime_revalidation_running",
       "run_id": "release-super-confirmation-20260929-dynamic",
       "evidence": {
         "protocol": "release-navigation-v1",
@@ -516,7 +572,8 @@
         "configuration_diff_verified": [
           "run_id",
           "method.port"
-        ]
+        ],
+        "status": "running"
       }
     },
     {
@@ -717,7 +774,32 @@
       "source_tree": "release-ego-candidate-20260929",
       "path": "experiments/ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929/result.json",
       "sha256": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-static-confirmation-20260929/eval/report.json",
+      "sha256": "593cd0188ec986e9a5fee92c811fb752ac06ed803e26bae9cdff88136a0ef28f"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-static-confirmation-20260929/eval/release-validation.json",
+      "sha256": "109c41b9316cb3d49ac82e54a08da00e967113fe5a497f0722f6289023f19987"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-static-confirmation-20260929/traces/index.json",
+      "sha256": "c441274f2d176a1c7908e15521338ed9261472b16ec0b4f48a69c90b189696a5"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-static-confirmation-20260929/resolved-config.json",
+      "sha256": "ae7ac7e9c959c288ab20293f71de4a2430ae3190f8003e5d6c76c8a6529a0a0c"
+    },
+    {
+      "source_tree": "release-super-heartbeat-20260929",
+      "path": "experiments/release-super-heartbeat-static-confirmation-20260929/result.json",
+      "sha256": "435b695dd552f5713a319aa21d02570fc2d1c881b9384dd90bfed40bf7e0657d"
     }
   ],
-  "confirmed_cells_for_current_runtime": 9
+  "confirmed_cells_for_current_runtime": 10
 }
