@@ -1,4 +1,4 @@
-"""Algorithm-independent deployment entry for a trajectory-producing gRPC service."""
+"""Algorithm-independent deployment entry for a physical-output gRPC service."""
 
 import base64
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 from scipy.spatial.transform import Rotation
 
 from drone_playground.native.client import NativeClient
-from drone_playground.native.contracts import Trajectory, Waypoint
+from drone_playground.native.contracts import MotionCommand, Trajectory, Waypoint
 from drone_playground.native.proto import algorithm_pb2 as pb
 from drone_playground.native.wire import vec3
 
@@ -49,11 +49,15 @@ class NativeServicePlanner:
             address=deployment.get("address"),
             parameters=settings.get("parameters"),
         )
-        if "trajectory" not in self.client.capabilities.outputs:
+        self.output_kind = settings.get("output", "trajectory")
+        if self.output_kind not in self.client.capabilities.outputs:
             self.client.close()
-            raise ValueError("This evaluator requires the service's Trajectory output")
+            raise ValueError("Service capabilities do not include the configured physical output")
         self.latencies = self.client.latencies
         self.plans, self.commands = set(), 0
+        self.trajectories = set()
+        self.goal = None
+        self.measurement = None
         (self.directory / "service-provenance.json").write_text(
             json.dumps(self.client.provenance, indent=2)
         )
@@ -61,31 +65,52 @@ class NativeServicePlanner:
     def start(self, calibration, goal, limits=None, task_adapter=None):
         if limits:
             raise ValueError("Generic service parameters belong to method.parameters")
+        self.goal = Waypoint([goal], 0.5)
+        self.plans.clear()
+        self.trajectories.clear()
+        self.commands = 0
+        self.measurement = None
         return self.client.reset(
-            goal=Waypoint([goal], 0.5), calibration=calibration, task=task_adapter or {}
+            goal=self.goal, calibration=calibration, task=task_adapter or {}
         )
 
-    def step(self, packet):
+    def step(self, packet, upstream=None):
+        if "goal" in packet:
+            self.goal = Waypoint([packet["goal"]], 0.5)
+        measurement = packet_measurement(packet)
+        if measurement is not None:
+            self.measurement = measurement
         decision = self.client.step(
             time=packet["time"],
             state=packet,
-            measurement=packet_measurement(packet),
-            goal=Waypoint([packet["goal"]], 0.5) if "goal" in packet else None,
+            measurement=self.measurement,
+            goal=self.goal,
+            upstream=upstream,
         )
-        curve, reference = decision.output, None
-        if curve is not None:
-            if not isinstance(curve, Trajectory):
-                raise ValueError("Trajectory evaluator cannot execute this physical output")
+        output, curve, reference = decision.output, None, None
+        if output is not None:
+            kind = output.kind if isinstance(output, MotionCommand) else (
+                "trajectory" if isinstance(output, Trajectory) else "waypoint"
+            )
+            if kind != self.output_kind:
+                raise ValueError("Native physical output differs from the configured command")
             self.plans.add(decision.plan_id)
-            reference = curve.sample(packet["time"])
-            if not curve.yaw_defined:
-                reference["yaw"] = Rotation.from_quat(packet["quaternion"]).as_euler("xyz")[2]
+            if isinstance(output, Trajectory):
+                curve = output
+                self.trajectories.add(decision.plan_id)
+                reference = curve.sample(packet["time"])
+                if not curve.yaw_defined:
+                    reference["yaw"] = Rotation.from_quat(packet["quaternion"]).as_euler("xyz")[2]
             self.commands += 1
         return dict(
+            output=output,
+            plan_id=decision.plan_id,
+            valid_until=decision.valid_until,
             reference=reference,
             trajectory=curve,
             commands=self.commands,
-            trajectories=len(self.plans),
+            plans=len(self.plans),
+            trajectories=len(self.trajectories),
             decision_status=decision.status,
         )
 
@@ -93,7 +118,11 @@ class NativeServicePlanner:
         self.client.close()
 
 
-def create_native_planner(settings, directory, port, worker_path):
+def create_native_planner(settings, directory, port, worker_path, env=None):
+    if settings["implementation"] == "pipeline":
+        from .pipeline import PipelinePlanner
+
+        return PipelinePlanner(settings, directory, env)
     if settings["implementation"] == "native_service":
         return NativeServicePlanner(settings, directory)
     from .native_planner import NativePlanner

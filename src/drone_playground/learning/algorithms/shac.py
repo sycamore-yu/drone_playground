@@ -174,7 +174,8 @@ def train(
     if config.get("use_schedule", True):
         lr = optax.exponential_decay(lr, 1, config.get("schedule_decay", 0.997))
     actor_opt = optax.chain(
-        optax.clip_by_global_norm(config.get("max_grad_norm", 1.0)), optax.adam(lr, b1=0.7, b2=0.95)
+        optax.clip_by_global_norm(config.get("max_grad_norm", 1.0)),
+        optax.adam(lr, b1=config.get("actor_adam_b1", 0.7), b2=config.get("actor_adam_b2", 0.95)),
     )
     critic_opt = optax.chain(
         optax.clip_by_global_norm(config.get("critic_max_grad_norm", 10.0)),

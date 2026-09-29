@@ -72,6 +72,7 @@ message Capabilities {
   repeated string required_inputs = 2;
   repeated string outputs = 3; // trajectory, waypoint, or a concrete command kind.
   string derivatives = 4; // none for an opaque native process.
+  repeated string accepted_upstream = 5; // Physical kinds accepted from a preceding module.
 }
 message InitializeRequest {
   Header header = 1;
@@ -99,7 +100,11 @@ message StepRequest {
   BodyState state = 2;
   Measurement measurement = 3;
   Waypoint goal = 4;
-  Trajectory reference = 5;
+  oneof upstream {
+    Trajectory reference = 5;
+    Waypoint waypoints = 7;
+    MotionCommand motion_command = 8;
+  }
   double solve_budget_seconds = 6; // Wall-clock budget, independent of simulation time.
 }
 enum DecisionStatus {

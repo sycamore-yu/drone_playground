@@ -64,7 +64,11 @@ SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接�
 
 原生宿主现在使用共用Protobuf/gRPC协议；Python客户端可启动本地可执行程序或容器进程，也能连接现有服务。C++ SDK提供相同的初始化、重置、一步请求和关闭合同。SUPER／EGO适配器保留原ROS1节点，分别把B样条和多项式转换为完整时标Trajectory；原跟踪器的当前样本另作复现依据，不冒充未来轨迹。下游可配置原轨迹跟踪器、AttitudeMPC或SamplingMPC，MPC读取真实未来时域。参见[SDK](../native/README.md)。
 
-三类接口的**传输**已具备，**通用组合执行**尚未完成：`method=native`当前只接受Trajectory服务，RPC请求已有Trajectory reference，但还没有覆盖三类输出的统一上游消息及模块调度。Waypoint与具名MotionCommand已通过Python↔C++通信验证，但这不能证明网络→Waypoint→优化规划→Trajectory→MPC→MotionCmd整链已可由配置搭建。缺口已加入持续goal与[实现计划](implementation-plan.md#三类物理接口的组合验收)。
+`method=native`现可执行三类物理输出；`method=pipeline`通过`method.stages`配置宿主模块链。各模块声明实际输入、输出和导数边界；gRPC Step的上游oneof可携带完整Trajectory、Waypoint或具名MotionCommand，服务能力表声明可接受的上游类型。类型不兼容、过期输出和缺少输入会被拒绝，无解不会继续调用下游模块。当前所有宿主模块在环境控制频率运行，传感测量保留自己的采样时间。
+
+现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
+
+真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，但网络→Waypoint／Trajectory的专用解码、通用JAX可微模块链及不同模块频率调度仍未完成。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
 
 ## 传感、几何和时序
 
@@ -79,3 +83,5 @@ Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议�
 公开配置版本为3。旧产物通过 `scripts/tools/migrate_artifact.py` 显式复制迁入。检查点冻结方法、网络、动作单位和输入含义；评测可以显式选择允许的执行条件，同时保存变化来源。
 
 运行记录保存解析配置、依赖、源提交和差异、参数摘要、原始终止事件及回放。正式矩阵的权威选择在 `docs/verification/final-acceptance/selection.json`；所有报告从所选运行取得。源码和运行状态的维护规则见[开发约定](development.md)。
+
+用户补充确认（2026-09-29）：C++模块不要求可微训练链。其首版验收为类型／时钟／生命周期兼容及实际组合控制效果；只对声明可求导的JAX组件要求相应梯度验证，含不透明C++服务的链不要求端到端BPTT／SHAC。

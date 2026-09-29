@@ -146,6 +146,7 @@ class NativeClient(contextlib.AbstractContextManager):
         measurement=None,
         goal=None,
         reference=None,
+        upstream=None,
         timeout=10.0,
         solve_budget_seconds=None,
     ):
@@ -170,9 +171,24 @@ class NativeClient(contextlib.AbstractContextManager):
         if goal is not None:
             request.goal.CopyFrom(encode_output(goal))
             available.add("goal")
+        if reference is not None and upstream is not None:
+            raise ValueError("Specify upstream or the legacy Trajectory reference, not both")
         if reference is not None:
-            request.reference.CopyFrom(encode_output(reference))
-            available.add("reference")
+            upstream = reference
+        if upstream is not None:
+            from .contracts import MotionCommand, Trajectory
+
+            kind = upstream.kind if isinstance(upstream, MotionCommand) else (
+                "trajectory" if isinstance(upstream, Trajectory) else "waypoint"
+            )
+            accepted = set(self.capabilities.accepted_upstream)
+            if not accepted and "reference" in self.capabilities.required_inputs:
+                accepted = {"trajectory"}
+            if kind not in accepted:
+                raise ValueError("Native service does not accept this upstream physical interface")
+            field = {"trajectory": "reference", "waypoint": "waypoints"}.get(kind, "motion_command")
+            getattr(request, field).CopyFrom(encode_output(upstream))
+            available.update(("upstream", field))
         missing = set(self.capabilities.required_inputs) - available
         if missing:
             raise ValueError(f"Native algorithm requires inputs: {sorted(missing)}")

@@ -134,15 +134,20 @@ def validate_config(config: dict) -> None:
 
     require_match(method["output"], execution["command"])
     controller = execution["controller"]["name"]
-    if method["output"] == "trajectory" and not execution.get("tracker"):
-        raise ValueError("Trajectory command requires one tracking controller")
+    if method["output"] in ("trajectory", "waypoint") and not execution.get("tracker"):
+        raise ValueError("Trajectory/Waypoint command requires one tracking controller")
     if execution.get("tracker") and execution["tracker"]["name"] not in (
         "trajectory_tracking",
         "attitude_mpc",
         "sampling_mpc",
+        "waypoint_tracking",
     ):
         raise ValueError("Unsupported downstream trajectory tracker")
-    if method["output"] != "trajectory" and execution.get("tracker") is not None:
+    if execution.get("tracker") and (
+        (method["output"] == "waypoint") != (execution["tracker"]["name"] == "waypoint_tracking")
+    ):
+        raise ValueError("Waypoint/Trajectory tracker input contract differs")
+    if method["output"] not in ("trajectory", "waypoint") and execution.get("tracker") is not None:
         raise ValueError(
             "The command already occupies the tracking stage; duplicate tracker rejected"
         )
@@ -260,7 +265,7 @@ def validate_config(config: dict) -> None:
             raise ValueError("Navigation requires the qualified attitude or velocity controller")
         if controller == "velocity_yaw" and (
             method["output"] != "velocity_yaw"
-            or implementation != "neural"
+            or implementation not in ("neural", "native_service", "pipeline")
             or execution["controller"]["max_speed"] != 20.0
         ):
             raise ValueError(
@@ -282,9 +287,11 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unsupported navigation observation: {observation}")
         if has_sensor != (observation != "navigation_state"):
             raise ValueError("Observation and env.sensor contract differ")
-        if implementation in ("native_ego", "native_super", "native_service"):
+        if implementation in ("native_ego", "native_super", "native_service", "pipeline"):
             sensor_kind = method.get("input_sensor", method.get("method"))
-            expected = "navigation_depth" if sensor_kind in ("ego", "depth") else "navigation_lidar"
+            expected = {"ego": "navigation_depth", "depth": "navigation_depth",
+                        "point_cloud": "navigation_lidar", "super": "navigation_lidar",
+                        "none": "navigation_state"}.get(sensor_kind)
             if observation != expected:
                 raise ValueError("Native planner requires its compatible sensor input")
         if config["objective"].get("name") != "navigation":
@@ -330,13 +337,17 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Unsupported task: {task['name']}")
         if env["scene"]["name"] != ("lsy_level0" if task["name"] == "racing" else "empty"):
             raise ValueError("Task requires a compatible scene adapter")
-        native_control = implementation in ("native_ego", "native_super", "native_service")
+        native_control = implementation in ("native_ego", "native_super", "native_service", "pipeline")
         if native_control and env["observation"]["name"] != "state_reference":
             raise ValueError(
                 "Native control tasks require observation@env.observation=state_reference; the raw sensor remains separate"
             )
-        required_command = "trajectory" if native_control else "attitude_thrust"
-        if controller != "crazyflow_attitude" or method["output"] != required_command:
+        required_commands = (
+            ("trajectory", "waypoint", "attitude_thrust")
+            if implementation in ("native_service", "pipeline")
+            else (("trajectory",) if native_control else ("attitude_thrust",))
+        )
+        if controller != "crazyflow_attitude" or method["output"] not in required_commands:
             raise ValueError("Tracking controller interface requires attitude_thrust")
     if mode == "train":
         settings = config["training"]

@@ -35,6 +35,7 @@ class Service final : public wire::Algorithm::Service {
  private:
   grpc::Status Check(const wire::Header&, bool reset = false);
   std::unique_ptr<Algorithm> algorithm_;
+  wire::Capabilities capabilities_;
   std::mutex mutex_;
   std::string session_, episode_;
   uint64_t sequence_ = 0;

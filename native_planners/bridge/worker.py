@@ -172,6 +172,15 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
     return str(path)
 
 
+def check_master_port(port):
+    # ROS uses SO_REUSEADDR too. A preceding, fully closed episode can leave
+    # accepted TCP connections in TIME_WAIT; those are not another live owner.
+    # Binding still fails when an active master is listening on this address.
+    with socket.socket() as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind(("127.0.0.1", port))
+
+
 class RosAlgorithm:
     def __init__(self, method, port):
         self.method = method
@@ -188,8 +197,7 @@ class RosAlgorithm:
         )
         os.environ.pop("ROS_HOSTNAME", None)
         os.environ.pop("ROS_NAMESPACE", None)
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", port))
+        check_master_port(port)
         try:
             self.core = subprocess.Popen(
                 ["roscore", "-p", str(port)],

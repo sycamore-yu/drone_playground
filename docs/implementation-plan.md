@@ -34,8 +34,8 @@
 |---|---|---|
 | 三类输出的Protobuf、Python/C++互操作 | 已实现并有真实C++进程测试 | 保留生命周期、错误与有效期回归 |
 | SUPER／EGO完整Trajectory→原跟踪器／MPC | 已接线，有SUPER→AttitudeMPC真实导航运行 | 各组合独立质量评测，失败不得算达标 |
-| 通用服务的Waypoint、MotionCmd进入宿主执行 | 尚缺；当前通用评测只收Trajectory | 配置选择下游，合法转换有闭环，非法组合在启动前拒绝 |
-| network／优化式planning／MPC的多个连续区段 | 尚缺通用串接与上游物理消息输入 | 单个模块可覆盖多层；每个模块声明输入输出合同、执行频率及求导能力 |
+| 通用服务的Waypoint、MotionCmd进入宿主执行 | 已完成三类宿主执行并有真实C++闭环 | 配置选择下游，合法转换有闭环，非法组合在启动前拒绝 |
+| network／优化式planning／MPC的多个连续区段 | 已有配置式宿主链和三类上游输入；已有冻结神经MotionCmd，仍缺神经Waypoint／Trajectory专用解码与完整代表链验证 | 单个模块可覆盖多层；每个模块声明输入输出合同、执行频率及求导能力 |
 | 可微组合训练 | 既有具名方法可训练，通用模块链未完成 | 同一物理合同可有JAX进程内与原生宿主实现；导数不通时拒绝BPTT／SHAC训练 |
 
 至少覆盖：network→Waypoint→优化规划→Trajectory→MPC→MotionCmd；network→Trajectory→MPC→MotionCmd；network→MotionCmd→执行；原生规划器→Trajectory→可选跟踪器；具名Waypoint跟随器→MotionCmd→执行。算法名称与覆盖范围独立，MPC也可直接占据规划和控制两段。
@@ -45,3 +45,5 @@
 ## 当前传感与速度约定
 
 深度导航适配已按用户要求改为D435i标称87°×58°视场与10m截止量程，见[传感依据](research/depth-flight.md#d435i参数与mujoco来源)。EGO既有SANDO D435配方本来就是10m。原生 `method.limits.max_velocity_mps=20`传给EGO的`max_vel`及SUPER的`traj_opt.boundary.max_vel`，是优化速度上限；实际轨迹／物理状态可能有数值或跟踪超调，不能当成硬裁剪保证，更没有20m/s最低成功要求。深度／点云开发评测的目标速度另由`evaluation.commanded_speed=4`给出，训练速度范围由`env.task.command_speed_range`给出；两者不得与上限混同。
+
+用户补充确认（2026-09-29）：C++模块不要求可微训练链。其首版验收为类型／时钟／生命周期兼容及实际组合控制效果；只对声明可求导的JAX组件要求相应梯度验证，含不透明C++服务的链不要求端到端BPTT／SHAC。

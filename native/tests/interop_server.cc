@@ -14,7 +14,18 @@ class Fixture final : public drone_native::Algorithm {
     wire::Capabilities capabilities;
     capabilities.set_algorithm(mode_);
     capabilities.add_required_inputs("state");
-    capabilities.add_outputs(mode_ == "motion" ? "velocity_yaw" : mode_ == "no_plan" ? "trajectory" : mode_);
+    if (mode_ == "echo") {
+      capabilities.add_required_inputs("upstream");
+      for (auto kind : {"trajectory", "waypoint", "attitude_thrust", "velocity_yaw", "world_acceleration"}) {
+        capabilities.add_accepted_upstream(kind);
+        capabilities.add_outputs(kind);
+      }
+      capabilities.set_derivatives("none");
+      return capabilities;
+    }
+    capabilities.add_outputs(mode_ == "motion" ? "velocity_yaw" :
+                             mode_ == "attitude" ? "attitude_thrust" :
+                             mode_ == "no_plan" ? "trajectory" : mode_);
     capabilities.set_derivatives("none");
     return capabilities;
   }
@@ -26,7 +37,20 @@ class Fixture final : public drone_native::Algorithm {
     result.set_plan_id(std::to_string(++count_));
     result.set_generated_at(request.header().simulation_time());
     result.set_valid_until(request.header().simulation_time() + 2.0);
-    if (mode_ == "trajectory") {
+    if (mode_ == "echo") {
+      if (request.has_reference()) {
+        *result.mutable_trajectory() = request.reference();
+        double end = request.reference().start_time();
+        for (const auto& segment : request.reference().segments()) end += segment.duration();
+        result.set_valid_until(end);
+      } else if (request.has_waypoints()) {
+        *result.mutable_waypoint() = request.waypoints();
+      } else if (request.has_motion_command()) {
+        *result.mutable_motion_command() = request.motion_command();
+      } else {
+        result.set_status(wire::NO_PLAN);
+      }
+    } else if (mode_ == "trajectory") {
       auto* trajectory = result.mutable_trajectory();
       trajectory->set_start_time(request.header().simulation_time());
       auto* segment = trajectory->add_segments();
@@ -39,6 +63,10 @@ class Fixture final : public drone_native::Algorithm {
       point->set_x(request.state().position().x() + 3.0);
       point->set_z(1.0);
       result.mutable_waypoint()->set_tolerance(0.5);
+    } else if (mode_ == "attitude") {
+      auto* command = result.mutable_motion_command();
+      command->set_kind("attitude_thrust");
+      for (double value : {0.0, 0.0, 0.0, 0.35}) command->add_values(value);
     } else if (mode_ == "motion") {
       auto* command = result.mutable_motion_command();
       command->set_kind("velocity_yaw");

@@ -36,14 +36,15 @@ def native_execution_evidence(diagnostics, expected_cases):
     missing = [
         row["case"]
         for row in diagnostics
-        if row.get("commands", 0) <= 0 or row.get("trajectories", 0) <= 0
+        if row.get("commands", 0) <= 0 or row.get("plans", row.get("trajectories", 0)) <= 0
+        or row.get("executed_native_steps", row.get("commands", 0)) <= 0
     ]
     return dict(
         passed=len(diagnostics) == expected_cases and not missing,
         fallback_only_cases=missing,
         recorded_cases=len(diagnostics),
         expected_cases=expected_cases,
-        rule="every episode must contain a native trajectory and a native command",
+        rule="every episode must contain a native physical decision and an executed command",
     )
 
 
@@ -61,6 +62,8 @@ def bootstrap_position(task, position):
 
 
 def control_sensor(sensor, bank, kind):
+    if kind == "none":
+        return lambda pos, quat, clock, tick: None
     if kind in ("ego", "depth"):
 
         @jax.jit
@@ -96,7 +99,7 @@ def evaluate_native_control(config, root, run_id):
         bank, scene = bank_from_environment(env)
         sensor = build_sensor(config)
         sample = control_sensor(sensor, bank, settings.get("input_sensor", settings.get("method")))
-        period = sensor.period_steps(env.freq)
+        period = sensor.period_steps(env.freq) if sensor else 1
         reset, advance = jax.jit(env.reset), jax.jit(env.step_physical)
         initial = reset(jax.random.PRNGKey(seeds[0]))
         body = env.controller_observation(initial)
@@ -114,9 +117,10 @@ def evaluate_native_control(config, root, run_id):
         with RunRecorder(root, run_id, config, task_id="final-acceptance/native-control") as rec:
             save_report(rec.path / "scene-manifest.json", scene)
             save_report(rec.path / "task-adapter.json", adapter)
-            save_report(rec.path / "sensor-calibration.json", sensor.calibration())
+            calibration = sensor.calibration() if sensor else {}
+            save_report(rec.path / "sensor-calibration.json", calibration)
             worker_path = None
-            if settings["implementation"] != "native_service":
+            if settings["implementation"] not in ("native_service", "pipeline"):
                 worker_path = NativePlanner.install_worker(
                     Path(root) / "native_planners/bridge/worker.py", rec.path, settings["container"]
                 )
@@ -129,18 +133,18 @@ def evaluate_native_control(config, root, run_id):
                     min(round(adapter["lookahead_s"] * env.freq), len(reference) - 1)
                 ]
                 worker = create_native_planner(
-                    settings, rec.path / "native" / str(case), settings["port"], worker_path
+                    settings, rec.path / "native" / str(case), settings["port"], worker_path, env=env
                 )
                 held = bootstrap_position(env.task, env.controller_observation(state)["pos"])
                 tracker = NativeTracking(
-                    config["env"]["execution"]["tracker"], env, state, worker.directory
+                    config["env"]["execution"].get("tracker"), env, state, worker.directory
                 )
                 tracker.hold = held
                 rows = []
                 missing = 0
                 try:
                     worker.start(
-                        sensor.calibration(), initial_goal, settings.get("limits"), adapter
+                        calibration, initial_goal, settings.get("limits"), adapter
                     )
 
                     def decide(current, tick):
@@ -148,11 +152,12 @@ def evaluate_native_control(config, root, run_id):
                         body = env.controller_observation(current)
                         packet = dict(
                             time=tick * env.dt,
+                            policy_observation=np.asarray(current.obs).tolist(),
                             position=body["pos"].tolist(),
                             quaternion=body["quat"].tolist(),
                             velocity=body["vel"].tolist(),
                         )
-                        if tick % period == 0:
+                        if sensor is not None and tick % period == 0:
                             data = jax.tree.map(
                                 np.asarray,
                                 sample(body["pos"], body["quat"], tick * env.dt, tick // period),
@@ -184,7 +189,7 @@ def evaluate_native_control(config, root, run_id):
                             packet["goal"] = reference[index].tolist()
                         reply = worker.step(packet)
                         target = reply.get("reference")
-                        if target is None:
+                        if target is None and reply.get("output") is None:
                             missing += 1
                             target = dict(
                                 position=held,
@@ -196,7 +201,10 @@ def evaluate_native_control(config, root, run_id):
                             held = body["pos"]
                         physical = tracker.command(reply, current, tick)
                         return physical, dict(
-                            commands=reply["commands"], trajectories=reply["trajectories"]
+                            commands=reply["commands"], trajectories=reply["trajectories"],
+                            plans=reply.get("plans", reply["trajectories"]),
+                            executed_native_steps=tracker.consumed,
+                            clipped_command_steps=tracker.clipped,
                         )
 
                     for tick, record, _ in run_steps(state, env.episode_length, decide, advance):

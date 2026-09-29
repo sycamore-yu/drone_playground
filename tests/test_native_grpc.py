@@ -89,6 +89,54 @@ def test_external_algorithm_uses_the_same_evaluation_adapter(server, tmp_path):
         planner.close()
 
 
+@pytest.mark.parametrize("algorithm,output,execution", [
+    ("trajectory", "trajectory", "trajectory_tracking"),
+    ("waypoint", "waypoint", "waypoint_tracking"),
+    ("attitude", "attitude_thrust", "attitude_thrust"),
+])
+def test_cpp_physical_outputs_drive_the_same_real_flight_environment(
+    server, tmp_path, algorithm, output, execution
+):
+    import jax
+
+    from drone_playground.composition import build_environment, compose_method, validate_config
+    from drone_playground.execution.native_tracking import NativeTracking
+    from drone_playground.integrations.native_service import create_native_planner
+
+    config = compose_method("native", "hovering", [
+        f"method.algorithm={algorithm}", f"method.output={output}",
+        f"execution@env.execution={execution}", "method.input_sensor=none",
+        "env.task.duration=0.2",
+    ])
+    config["method"]["deployment"]["command"] = server
+    validate_config(config)
+    env = build_environment(config, "cpu")
+    planner = create_native_planner(config["method"], tmp_path, 0, None)
+    tracker = None
+    try:
+        state = env.reset(jax.random.key(20000))
+        tracker = NativeTracking(config["env"]["execution"].get("tracker"), env, state, tmp_path)
+        planner.start({}, [0, 0, 1])
+        step = jax.jit(env.step_physical)
+        initial = np.asarray(env.controller_observation(state)["pos"]).copy()
+        for tick in range(10):
+            body = env.controller_observation(state)
+            reply = planner.step(dict(time=tick / env.freq, position=body["pos"],
+                                      velocity=body["vel"], quaternion=body["quat"]))
+            command = tracker.command(reply, state, tick)
+            assert np.isfinite(command).all()
+            state = step(state, command)
+        assert tracker.consumed == 10 and tracker.missing == 0
+        assert not np.array_equal(env.controller_observation(state)["pos"], initial)
+        assert reply["plans"] == 10
+        assert reply["trajectories"] == (10 if output == "trajectory" else 0)
+    finally:
+        planner.close()
+        if tracker:
+            tracker.close()
+        env.close()
+
+
 def test_ros_bundle_remains_parseable_by_its_python38_runtime():
     import ast
 
@@ -165,3 +213,54 @@ def test_ego_fixed_map_covers_task_world_bounds(monkeypatch, tmp_path):
     assert float(values["grid_map/map_size_x"]) / 2 > 100
     assert float(values["grid_map/map_size_y"]) / 2 > 20
     assert float(values["grid_map/virtual_ceil_height"]) == 5.9
+
+
+def test_ros_master_port_reuse_allows_closed_episode_but_rejects_live_owner():
+    import importlib.util
+    import socket
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "ros_port_test", Path(__file__).parents[1] / "native_planners/bridge/worker.py")
+    worker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker)
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+        listener.listen()
+        with pytest.raises(OSError):
+            worker.check_master_port(port)
+        with socket.create_connection(("127.0.0.1", port)) as client:
+            accepted, _ = listener.accept()
+            accepted.close()  # Server active-close creates TIME_WAIT on this port.
+            assert client.recv(1) == b""
+    worker.check_master_port(port)
+
+
+@pytest.mark.parametrize('case', ['missing_upstream', 'wrong_kind', 'bad_waypoint', 'bad_motion', 'expired', 'bad_depth'])
+def test_cpp_rejects_invalid_raw_rpc_before_algorithm_execution(server, case):
+    from drone_playground.native.proto import algorithm_pb2 as pb
+    from drone_playground.native.wire import body_state
+
+    algorithm = 'trajectory' if case == 'wrong_kind' else 'echo'
+    with NativeClient(algorithm, command=server) as client:
+        client.reset()
+        request = pb.StepRequest(header=client._header(), state=body_state(state()), solve_budget_seconds=1.)
+        if case in ('wrong_kind', 'bad_waypoint', 'bad_depth'):
+            request.waypoints.positions.add(x=1., z=1.)
+            request.waypoints.tolerance = 0. if case == 'bad_waypoint' else .1
+        elif case == 'bad_motion':
+            request.motion_command.kind = 'world_acceleration'
+            request.motion_command.values.extend([0., 0.])
+        elif case == 'expired':
+            request.reference.start_time = -2.
+            request.reference.segments.add(duration=1., coefficient_count=1, coefficients=[0.,0.,1.,0.])
+        if case == 'bad_depth':
+            request.measurement.frame = 'camera_optical'
+            request.measurement.depth.height = request.measurement.depth.width = 1
+            request.measurement.depth.camera_quaternion_xyzw.extend([0.,0.,0.,1.])
+            request.measurement.depth.float32_le = b'bad'
+        with pytest.raises(grpc.RpcError) as error:
+            client._rpc('Step', request, pb.StepResponse, 5.)
+        assert error.value.code() == grpc.StatusCode.INVALID_ARGUMENT

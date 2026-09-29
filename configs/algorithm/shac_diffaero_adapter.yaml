@@ -1,0 +1,13 @@
+defaults:
+- shac
+- _self_
+# Source-informed deterministic JAX SHAC, not the stochastic upstream algorithm.
+learning_rate: 0.001
+critic_learning_rate: 0.003
+actor_adam_b1: 0.9
+actor_adam_b2: 0.999
+use_schedule: false
+# Here alpha weights OLD parameters; upstream's 0.005 weights NEW parameters.
+target_critic_alpha: 0.995
+# Keep finite critic clipping and full-batch updates of the host implementation.
+critic_updates: 8

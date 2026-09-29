@@ -34,6 +34,8 @@ def pack_array(value):
 
 
 def sensor_function(env, method):
+    if method == "none":
+        return lambda data: None
     if method in ("ego", "depth"):
 
         @jax.jit
@@ -77,11 +79,12 @@ def sensor_packet(env, method, sample, state):
     body = env.controller_observation(state)
     packet = {
         "time": int(data.step_index) * env.dt,
+        "policy_observation": np.asarray(state.obs).tolist(),
         "position": body["pos"].tolist(),
         "quaternion": body["quat"].tolist(),
         "velocity": body["vel"].tolist(),
     }
-    if int(data.step_index) % env.sensor_period:
+    if method == "none" or int(data.step_index) % env.sensor_period:
         return packet
     if method in ("ego", "depth"):
         depth, pos, rotation = jax.tree.map(np.asarray, sample(data))
@@ -114,7 +117,7 @@ def evaluate_native(config, root: Path, run_id: str):
         env = build_environment(config, config["runtime"]["device"], split, count)
         save_report(rec.path / "scene-manifest.json", env.scene_manifest)
         worker_path = None
-        if settings["implementation"] != "native_service":
+        if settings["implementation"] not in ("native_service", "pipeline"):
             worker_path = NativePlanner.install_worker(
                 Path(__file__).resolve().parents[3] / "native_planners/bridge/worker.py",
                 rec.path,
@@ -128,7 +131,7 @@ def evaluate_native(config, root: Path, run_id: str):
         jax.block_until_ready(advance(warm, env.physical_action(env.hover_action)))
         jax.block_until_ready(sample(warm.pipeline_state))
         cells = {}
-        total_trajectories = 0
+        total_trajectories = total_commands = 0
         diagnostics = []
         from concurrent.futures import CancelledError, ThreadPoolExecutor, as_completed
         from queue import Queue
@@ -151,10 +154,10 @@ def evaluate_native(config, root: Path, run_id: str):
                 jnp.int32(scenario_id),
             )
             worker = create_native_planner(
-                settings, rec.path / "native" / difficulty / str(case), port, worker_path
+                settings, rec.path / "native" / difficulty / str(case), port, worker_path, env=env
             )
             controller = NativeTracking(
-                config["env"]["execution"]["tracker"], env, state, worker.directory
+                config["env"]["execution"].get("tracker"), env, state, worker.directory
             )
             rows = []
             unavailable = rejected = 0
@@ -178,7 +181,7 @@ def evaluate_native(config, root: Path, run_id: str):
                     reply = worker.step(packet)
                     reference = reply.get("reference")
                     commands, trajectories = reply["commands"], reply["trajectories"]
-                    if reference is None:
+                    if reference is None and reply.get("output") is None:
                         unavailable += 1
                         rejected += int(reply.get("rejected_reference", False))
                         reference = dict(
@@ -225,6 +228,8 @@ def evaluate_native(config, root: Path, run_id: str):
                 downstream_tracker=controller.name,
                 downstream_missing_steps=controller.missing,
                 insufficient_horizon_steps=controller.short_horizon,
+                executed_native_steps=controller.consumed,
+                clipped_command_steps=controller.clipped,
                 wall_seconds=time.monotonic() - tic,
                 rpc_p95_s=float(np.percentile(worker.latencies, 95)),
             )
@@ -256,6 +261,7 @@ def evaluate_native(config, root: Path, run_id: str):
                         traces[case], labels[case] = trace, label
                         diagnostics.append(diag)
                         total_trajectories += diag["trajectories"]
+                        total_commands += diag["executed_native_steps"]
                         save_report(rec.path / "native-progress.json", diagnostics)
                         rec.phase("evaluating", difficulty=difficulty, completed_cases=finished)
                     # Ragged episodes are padded only for in-memory aggregation. Every
@@ -293,6 +299,7 @@ def evaluate_native(config, root: Path, run_id: str):
             method=method,
             scene_bank_sha256=env.bank.digest(),
             native_trajectories=total_trajectories,
+            executed_native_steps=total_commands,
             sensor_calibration=env.sensor_calibration,
             parameters_frozen=True,
             quality_passed=None,
@@ -301,8 +308,8 @@ def evaluate_native(config, root: Path, run_id: str):
             native_modification="upstream solver binaries retained; gRPC/ROS input and trajectory adapters",
         )
         save_report(rec.path / "eval" / "report.json", report)
-        if total_trajectories == 0:
-            raise RuntimeError("Native process produced no trajectories in the entire evaluation")
+        if total_commands == 0:
+            raise RuntimeError("Native process produced no executable physical commands")
         rec.finish(
             "completed",
             engineer_passed=True,

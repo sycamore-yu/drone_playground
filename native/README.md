@@ -39,7 +39,7 @@ Each response must echo the exact protocol/session/episode/sequence/time header.
 
 Trajectory coefficients are world xyz/yaw, ascending powers of local segment seconds, SI units. Each segment has its own duration. Queries outside the finite interval fail. `yaw_defined=false` delegates heading to an explicit downstream policy. EGO's positional B-spline is converted analytically; its original causal yaw remains in the optional timestamped execution sample. SUPER's position/yaw polynomials are split at the union of their knots without resampling. A current execution sample is never a replacement for an MPC horizon.
 
-To run another trajectory-producing service through public navigation evaluation, use `method=native`, set `method.algorithm`, and set either `method.deployment.command` (argv list) or `method.deployment.address`. The service must accept the declared sensor: `method.input_sensor=point_cloud` with the default lidar environment, or `depth` with compatible depth sensor and observation overrides. Algorithms requiring other inputs need an explicit input adapter; the simulator does not invent missing measurements. The low-level SDK supports all three physical outputs; this first public external-method evaluation entry executes full trajectories.
+To run another service through public navigation evaluation, use `method=native`, set `method.algorithm`, and set either `method.deployment.command` (argv list) or `method.deployment.address`. The service must accept the declared sensor: `method.input_sensor=point_cloud` with the default lidar environment, or `depth` with compatible depth sensor and observation overrides. Algorithms requiring other inputs need an explicit input adapter; the simulator does not invent missing measurements. Both the SDK and public evaluator support all three outputs. Set `method.output=waypoint` with `execution@env.execution=waypoint_tracking`, or a concrete MotionCommand kind with its matching execution controller. Use `method.input_sensor=none` for a service that needs no sensor (with a compatible state-only observation). Trajectory execution uses `trajectory_tracking`, `attitude_mpc`, or `sampling_mpc`.
 
 A planner's downstream controller is configured independently:
 
@@ -48,3 +48,30 @@ JAX_PLATFORMS=cuda,cpu pixi run eval method=paper/super env=navigation/static co
 ```
 
 Choose `attitude_mpc` for acados (see `docs/runbook.md`). The default `trajectory_tracking` consumes the original ROS execution sample for reproduction. MPC variants consume the full curve and are component-comparison results. They count missing/insufficient horizons and use the declared hold fallback; such fallback is not planner success. ROS services snapshot the entire adapter/protocol bundle per run and close their private planner and master; an idle owner lease bounds orphan lifetime.
+
+## Physical module chains
+
+`method=pipeline` configures a list of host stages. Adjacent physical kinds must match; adapters are explicit. Current stage implementations are `goal`, `minimum_jerk`, `frozen_neural`, `native_service`, and `python` (Hydra `_target_` in `parameters`). A native stage declares `input` and `output`, and its service must advertise that input in `Capabilities.accepted_upstream`. `NativeClient.step(upstream=value)` transports any of the three physical values atomically with body state and measurements; `reference=` remains a Trajectory compatibility alias. The server validates required inputs and upstream capabilities as well as the Python client.
+
+For example, the following public entry executes a goal waypoint, generates a quintic minimum-jerk curve, then follows it:
+
+```bash
+JAX_PLATFORMS=cpu pixi run eval method=pipeline env=hovering method.input_sensor=none evaluation.episodes=1 evaluation.split=dev run_id=waypoint-curve-demo
+```
+
+The default curve generator has heuristic durations and **no obstacle avoidance**; it is an interface demonstration, not an EGO/SUPER baseline. An actual trained command policy can occupy the source stage:
+
+```yaml
+method:
+  output: attitude_thrust
+  input_sensor: none
+  stages:
+  - implementation: frozen_neural
+    checkpoint: experiments/<run>/checkpoints/<snapshot>.pkl
+```
+
+Use the matching task, observation, model, clock and `execution@env.execution=attitude_thrust`. The stage verifies the saved policy's observation semantics and model decoder and records its checkpoint digest. To chain a native module after it, add a `native_service` stage whose `input` is `attitude_thrust` and whose actual capabilities accept that kind.
+
+Host chains currently run at the environment control frequency and are not a differentiable training backend. Neural Waypoint/Trajectory decoders, general JAX chain training and per-module frequencies remain implementation work. `pipeline` rejects training; an opaque RPC never silently transmits a gradient. See `docs/implementation-plan.md` for the complete combination acceptance criteria.
+
+The user confirmed that C++ modules do not need a differentiable training chain. Their acceptance covers physical composition and execution; gradient checks apply only to components that explicitly support differentiation.

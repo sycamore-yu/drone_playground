@@ -27,6 +27,7 @@ class Service:
         self.sequence = 0
         self.time = 0.0
         self.last_activity = time.monotonic()
+        self.capabilities = None
 
     def call(self, method, request, context):
         with self.lock:
@@ -56,12 +57,13 @@ class Service:
             try:
                 if method == "Initialize":
                     response = self.algorithm.initialize(request)
+                    self.capabilities = response.capabilities
                     self.session = h.session_id
                 elif method == "Reset":
                     response = pb.Acknowledgement(artifacts=self.algorithm.reset(request))
                     self.episode, self.time = h.episode_id, h.simulation_time
                 elif method == "Step":
-                    validate_step(request)
+                    validate_step(request, self.capabilities)
                     if not context.is_active():
                         context.abort(grpc.StatusCode.CANCELLED, "Request cancelled")
                     started = time.monotonic()

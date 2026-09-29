@@ -35,7 +35,7 @@ def body_state(value):
     return result
 
 
-def validate_step(request):
+def validate_step(request, capabilities=None):
     """Validate physical input before crossing into a foreign runtime."""
     state = request.state
     if (
@@ -51,12 +51,37 @@ def validate_step(request):
             quaternion=state.quaternion_xyzw,
         )
     )
+    if state.HasField("angular_velocity"):
+        vec3([state.angular_velocity.x, state.angular_velocity.y, state.angular_velocity.z])
     if not np.isfinite(request.solve_budget_seconds) or request.solve_budget_seconds <= 0:
         raise ValueError("Solve budget must be positive and finite")
     if request.HasField("goal"):
         decode_output(request.goal)
-    if request.HasField("reference"):
-        decode_output(request.reference)
+    upstream = request.WhichOneof("upstream")
+    if upstream:
+        value = decode_output(getattr(request, upstream))
+        if isinstance(value, Trajectory):
+            value.sample(request.header.simulation_time)
+    if capabilities is not None:
+        available = {"state"}
+        if state.HasField("angular_velocity"):
+            available.add("angular_velocity")
+        if request.HasField("goal"):
+            available.add("goal")
+        if request.HasField("measurement"):
+            available.add(request.measurement.WhichOneof("data"))
+        if upstream:
+            kind = value.kind if isinstance(value, MotionCommand) else (
+                "trajectory" if isinstance(value, Trajectory) else "waypoint")
+            accepted = set(capabilities.accepted_upstream)
+            if not accepted and "reference" in capabilities.required_inputs:
+                accepted = {"trajectory"}
+            if kind not in accepted:
+                raise ValueError("Unsupported upstream physical interface")
+            available.update(("upstream", upstream))
+        missing = set(capabilities.required_inputs) - available
+        if missing:
+            raise ValueError(f"Native algorithm requires inputs: {sorted(missing)}")
     if not request.HasField("measurement"):
         return
     m = request.measurement
