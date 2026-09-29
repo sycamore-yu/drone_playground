@@ -21,6 +21,8 @@ from typing import Any
 
 from tensorboardX import SummaryWriter
 
+from drone_playground.source_archive import capture_source_archive
+
 _HEARTBEAT_INTERVAL_SECONDS = 60.0
 
 
@@ -64,6 +66,9 @@ def _run_command(command: list[str], cwd: Path) -> subprocess.CompletedProcess[s
 
 def _git_snapshot(root: Path) -> dict[str, Any]:
     """Capture the current commit, full worktree patch, and status before run files exist."""
+    top = _run_command(["git", "rev-parse", "--show-toplevel"], root)
+    if top is None or top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
+        return {"commit": None, "dirty": None, "status": "", "patch": ""}
     head = _run_command(["git", "rev-parse", "HEAD"], root)
     if head is None or head.returncode != 0:
         return {"commit": None, "dirty": None, "status": "", "patch": ""}
@@ -168,6 +173,7 @@ class RunRecorder:
         self.root.mkdir(parents=True, exist_ok=True)
         git = _git_snapshot(self.root)
         self.path.mkdir(parents=True, exist_ok=False)
+        archive = capture_source_archive(self.root, self.path)
         (self.path / "metrics").mkdir()
         (self.path / "checkpoints").mkdir()
         (self.path / "eval").mkdir()
@@ -210,6 +216,8 @@ class RunRecorder:
                 "platform": platform.platform(),
             },
         }
+        if archive is not None:
+            manifest["code"]["archive"] = archive
         _atomic_write_text(self.path / "manifest.json", _json_text(manifest))
 
         self._state: dict[str, Any] = {

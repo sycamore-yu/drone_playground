@@ -12,6 +12,14 @@ pixi run python -c "import jax; print(jax.devices())"
 
 固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
+本地源码导出使用已确认的提交：
+
+```bash
+python3 scripts/tools/export_source.py /tmp/drone-playground-source.tar.gz --revision HEAD
+```
+
+目标文件必须不存在。导出仅包含该提交的文件，不包含Git历史、未提交修改、未跟踪文件或忽略的实验产物；同一提交的重复导出摘要相同。包内`SOURCE_MANIFEST.json`记录来源提交、文件类型、执行位及SHA-256。解压后按上面的固定环境命令安装。无Git历史的运行保留`code.commit=null`，通过`manifest.json`中的`code.archive`记录来源、实际修改／删除／新增文件及`source-snapshot.tar.gz`摘要。实际源码快照包含本地改动，遵循项目忽略规则，实验输出不进入快照；符号链接按链接保存，不读取其外部目标。该清单用于内容追溯，不是下载来源的数字签名。源码导出不代表18格质量达标或远端发布。
+
 ## 训练与恢复
 
 ```bash
