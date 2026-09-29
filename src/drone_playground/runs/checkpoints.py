@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import jax
@@ -20,7 +21,16 @@ from drone_playground.networks.policies import network_factory
 from .migration import require_current
 
 
-def save_policy(directory: Path, params, config: dict, step: int) -> Path:
+def save_policy(directory: Path, params, config: dict, step: int, *, physical_decoder=None) -> Path:
+    current = require_current(config)
+    action_size = 4
+    if physical_decoder is not None:
+        from drone_playground.networks.physical_outputs import PhysicalOutput
+
+        decoder = PhysicalOutput(**physical_decoder)
+        if decoder.kind != current['method']['output']:
+            raise ValueError('Checkpoint method output differs from its physical decoder')
+        action_size = decoder.action_size
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"step-{int(step):010d}.pkl"
     temp = path.with_suffix(".tmp")
@@ -29,11 +39,11 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
     metadata = dict(
         config_version=3,
         step=int(step),
-        config=require_current(config),
+        config=current,
         observation_size=config.get("observation_size", 43),
-        action_size=4,
+        action_size=action_size,
         policy_family="brax",
-        checkpoint_kind="inference-parameters",
+        checkpoint_kind="component-inference-parameters" if physical_decoder else "inference-parameters",
         sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         parameter_sha256=tree_digest(params),
         continuation={
@@ -44,6 +54,11 @@ def save_policy(directory: Path, params, config: dict, step: int) -> Path:
             "dva": "full continuation is stored in training-state/",
         }[config["algorithm"]],
     )
+    if physical_decoder is not None:
+        # Persist every physical default so future decoder defaults cannot
+        # silently change a frozen policy's units, anchors or finite horizon.
+        metadata['physical_decoder'] = asdict(decoder)
+        metadata['continuation'] = 'frozen physical component; optimizer continuation is not encoded'
     save_report(path.with_suffix(".json"), metadata)
     return path
 

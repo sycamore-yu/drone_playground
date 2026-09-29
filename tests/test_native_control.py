@@ -105,3 +105,30 @@ def test_curve_tracking_does_not_use_the_original_lookahead_sample(tmp_path):
     np.testing.assert_allclose(actual.command(reply,None,0),[0.,0.,0.,.03*9.81],atol=1e-7)
     actual.command(dict(reference=ahead,trajectory=None),None,1)
     assert actual.missing == 1  # Do not borrow an executable sample after declaring curve-only input.
+
+
+def test_mpc_horizon_uses_the_same_clock_tolerance_as_trajectory_sampling(tmp_path):
+    from types import SimpleNamespace
+
+    from drone_playground.execution.native_tracking import NativeTracking
+    from drone_playground.native.contracts import Trajectory
+
+    body = dict(pos=np.array([0.,0.,1.]),vel=np.zeros(3),quat=np.array([0.,0.,0.,1.]))
+    env = SimpleNamespace(freq=50,low=np.array([-1,-1,-3.2,0]),high=np.array([1,1,3.2,1]),
+        default=SimpleNamespace(params=SimpleNamespace(mass=np.array([.03]))),
+        controller_observation=lambda _: body,controller=SimpleNamespace(input_kind='attitude_thrust'))
+    tracker=NativeTracking(dict(name='trajectory_tracking'),env,None,tmp_path)
+    tracker.name='attitude_mpc'
+    def compute(obs,curve,now,**kwargs):
+        curve.sample_many([now,now+.5])
+        return np.array([.1,.2,0.,.3])
+    tracker.controller=SimpleNamespace(native=SimpleNamespace(_T_HORIZON=.5),compute_trajectory=compute)
+    # Multiplication and division identify the same 50Hz tick differently.
+    assert 35*.02 != 35/50
+    curve=Trajectory(35*.02,[.5],np.array([[[0.],[0.],[1.],[0.]]]))
+    command=tracker.command(dict(output=curve,trajectory=curve),None,35)
+    np.testing.assert_allclose(command,[.1,.2,0.,.3])
+    assert tracker.consumed==1 and tracker.missing==0
+    insufficient=Trajectory(35*.02,[.49],curve.coefficients)
+    tracker.command(dict(output=insufficient,trajectory=insufficient),None,35)
+    assert tracker.short_horizon==1 and tracker.missing==1

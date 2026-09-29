@@ -95,7 +95,9 @@ class NativeTracking:
                 if self.name == "attitude_mpc"
                 else self.controller.horizon * self.controller.predict_dt
             )
-            if curve.start_time <= now and now + horizon <= curve.end_time:
+            # Match Trajectory.sample_many: tick*dt and tick/frequency can
+            # differ by one floating point ulp at the same physical instant.
+            if curve.start_time - 1e-9 <= now and now + horizon <= curve.end_time + 1e-9:
                 yaw = (
                     sample["yaw"]
                     if sample is not None

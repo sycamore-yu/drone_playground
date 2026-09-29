@@ -64,11 +64,11 @@ SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接�
 
 原生宿主现在使用共用Protobuf/gRPC协议；Python客户端可启动本地可执行程序或容器进程，也能连接现有服务。C++ SDK提供相同的初始化、重置、一步请求和关闭合同。SUPER／EGO适配器保留原ROS1节点，分别把B样条和多项式转换为完整时标Trajectory；原跟踪器的当前样本另作复现依据，不冒充未来轨迹。下游可配置原轨迹跟踪器、AttitudeMPC或SamplingMPC，MPC读取真实未来时域。参见[SDK](../native/README.md)。
 
-`method=native`现可执行三类物理输出；`method=pipeline`通过`method.stages`配置宿主模块链。各模块声明实际输入、输出和导数边界；gRPC Step的上游oneof可携带完整Trajectory、Waypoint或具名MotionCommand，服务能力表声明可接受的上游类型。类型不兼容、过期输出和缺少输入会被拒绝，无解不会继续调用下游模块。当前所有宿主模块在环境控制频率运行，传感测量保留自己的采样时间。
+`method=native`现可执行三类物理输出；`method=pipeline`通过`method.stages`配置宿主模块链。各模块声明实际输入、输出和导数边界；gRPC Step的上游oneof可携带完整Trajectory、Waypoint或具名MotionCommand，服务能力表声明可接受的上游类型。类型不兼容、过期输出和缺少输入会被拒绝，无解不会继续调用下游模块。各宿主模块可在执行频率的整数分频上运行，传感测量保留自己的采样时间。
 
-现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
+现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经Waypoint／Trajectory／MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
 
-真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，但网络→Waypoint／Trajectory的专用解码、通用JAX可微模块链仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
+真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，网络→Waypoint／Trajectory的专用解码、检查点语义和混合频率已实现，通用JAX可微模块链仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
 
 ## 传感、几何和时序
 
@@ -86,4 +86,6 @@ Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议�
 
 用户补充确认（2026-09-29）：C++模块不要求可微训练链。其首版验收为类型／时钟／生命周期兼容及实际组合控制效果；只对声明可求导的JAX组件要求相应梯度验证，含不透明C++服务的链不要求端到端BPTT／SHAC。
 
-宿主链的每个stage可设置`frequency_hz`，默认与执行频率相同；当前要求它能整除执行频率。两个调用时刻之间只缓存有效物理输出，过期后返回无计划，由执行器处理缺失；不会把失效命令继续交给下游。场景重置同时清空缓存、时钟和调用计数，报告的`module_calls`可验证实际频率。冻结神经MotionCmd仍须保持检查点声明的策略频率，不能用这一设置静默降频。
+宿主链的每个stage可设置`frequency_hz`，默认与执行频率相同；当前要求它能整除执行频率。两个调用时刻之间只缓存有效物理输出，过期后返回无计划，由执行器处理缺失；不会把失效命令继续交给下游。场景重置同时清空缓存、时钟和调用计数，报告的`module_calls`可验证实际频率。冻结神经模块仍须保持检查点声明的策略频率，不能用这一设置静默降频。
+
+神经几何输出由显式物理解码器定义。Waypoint预测相对当前位置、目标或世界原点的有序位置偏移；Trajectory预测终点位置／速度／加速度，解码为固定时长五次曲线，起点位置／速度取当前状态、起点参考加速度为零。检查点保存尺度、锚点、时长和输出维度；没有隐式把网络隐层解释为轨迹。数值解码支持JAX JIT／批量／梯度，宿主转换与外部MPC仍是明确的导数边界。当前公共学习入口尚未训练这些几何头，工程夹具不代表已收敛策略。

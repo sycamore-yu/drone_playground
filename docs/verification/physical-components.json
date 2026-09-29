@@ -1,0 +1,123 @@
+{
+  "date": "2026-09-29",
+  "scope": "Engineering interface fixtures, not trained geometric policies or release quality cells",
+  "neural_initialization": "zero parameters, no training",
+  "rows": [
+    {
+      "run_id": "neural-waypoint-attitudempc-engineering-20260929",
+      "report": "experiments/neural-waypoint-attitudempc-engineering-20260929/eval/report.json",
+      "report_sha256": "196cc1c5a81731ad798654442e1994847a840ae34ee58290869b3254e4ac7c63",
+      "config_sha256": "107411820df8fbf513a1b1fff5270f16b8365564a66de648288e1f8fa62e2d10",
+      "source_patch_sha256": "5fd6912e9f2f3aa0c29a133376ad529eefd7229ffa42bf103c1271414287fb6d",
+      "engineering_execution_passed": true,
+      "task_quality_passed": false,
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 0,
+          "commands": 50,
+          "trajectories": 10,
+          "plans": 10,
+          "executed_native_steps": 50,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            10,
+            10
+          ]
+        }
+      ],
+      "rmse_m": 0.4262766121082853
+    },
+    {
+      "run_id": "neural-trajectory-attitudempc-clock-fixed-20260929",
+      "report": "experiments/neural-trajectory-attitudempc-clock-fixed-20260929/eval/report.json",
+      "report_sha256": "aa6ed43bbc3850cb23d4723c63df395f9b15ee226a11708200acb965a00a2a10",
+      "config_sha256": "259939744bbddbb4569d27a89827ec88c7a092bc4ab1318f4d2420d2e110de54",
+      "source_patch_sha256": "f29052ad948893c9b1bd395ef33fcc94da71340f98568dd2bb3e35edcf2c29a3",
+      "engineering_execution_passed": true,
+      "task_quality_passed": false,
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 0,
+          "commands": 50,
+          "trajectories": 10,
+          "plans": 10,
+          "executed_native_steps": 50,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            10
+          ]
+        }
+      ],
+      "rmse_m": 0.4704629144271824
+    },
+    {
+      "run_id": "neural-waypoint-super-mpc-engineering-20260929",
+      "report": "experiments/neural-waypoint-super-mpc-engineering-20260929/eval/report.json",
+      "report_sha256": "f4d5e0bd35a83ca73298bedd0e6b6b221f17c8cbe9409cb19a6d001d34f67c50",
+      "config_sha256": "6ea7071c538d930beddcc6335a672285111d8041b3a87e2776b55627b229339b",
+      "source_patch_sha256": "f98a4db302240c3e25a3b5b037b9f5f4e235de11460227c4108277d0d7864bbd",
+      "engineering_execution_passed": true,
+      "task_quality_passed": false,
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 81,
+          "commands": 69,
+          "trajectories": 14,
+          "plans": 14,
+          "executed_native_steps": 44,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            30,
+            30
+          ]
+        }
+      ],
+      "rmse_m": 0.4100766136726373
+    },
+    {
+      "run_id": "neural-waypoint-ego-mpc-engineering-20260929",
+      "report": "experiments/neural-waypoint-ego-mpc-engineering-20260929/eval/report.json",
+      "report_sha256": "8c22a8d29dae4221fb9ce6a034d7e4ec606202ca00a50df9138bb6dc5eafaf4c",
+      "config_sha256": "ca6648750e727883734118ee417389f6a9e34617c4a9f6685520456cf1968c1e",
+      "source_patch_sha256": "a25fa9a66983effa3ee13fbdf102fd28d1acc3c113e8f36ffedcff40eaea060d",
+      "engineering_execution_passed": true,
+      "task_quality_passed": false,
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 110,
+          "commands": 40,
+          "trajectories": 8,
+          "plans": 8,
+          "executed_native_steps": 15,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            30,
+            30
+          ]
+        }
+      ],
+      "rmse_m": 0.4013210258328778
+    }
+  ],
+  "regressions": {
+    "command": "JAX_PLATFORMS=cpu pixi run test tests/test_native_control.py tests/test_native_waypoints.py tests/test_native_planners.py tests/test_physical_outputs.py tests/test_physical_pipeline.py -q",
+    "passed": 47,
+    "seconds": 105.85,
+    "metadata_followup": {
+      "command": "JAX_PLATFORMS=cpu pixi run test tests/test_physical_outputs.py -q",
+      "passed": 5,
+      "seconds": 92.38,
+      "reason": "Save all decoder defaults in metadata"
+    }
+  },
+  "limitations": [
+    "ROS startup and insufficient finite horizon cause fallback",
+    "General configurable JAX chain training is not yet implemented",
+    "No native RPC gradients are required",
+    "Unseen C++ algorithms require their own adapter"
+  ]
+}

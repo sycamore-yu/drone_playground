@@ -22,7 +22,8 @@ from google.protobuf.json_format import MessageToDict
 from drone_playground.native.proto import algorithm_pb2 as pb
 from drone_playground.native.ros_trajectory import ego_trajectory, super_trajectory
 from drone_playground.native.server import serve
-from drone_playground.native.wire import encode_output, vec3
+from drone_playground.native.waypoints import OrderedWaypointGoals
+from drone_playground.native.wire import decode_output, encode_output, vec3
 
 
 def stop(process):
@@ -228,10 +229,14 @@ class RosAlgorithm:
         if request.algorithm != self.method:
             raise ValueError("This adapter does not implement the requested algorithm")
         self.parameters = MessageToDict(request.parameters)
+        self.upstream_waypoints = self.parameters.get("use_upstream_waypoints", False)
+        if not isinstance(self.upstream_waypoints, bool):
+            raise ValueError("use_upstream_waypoints must be a boolean")
         return pb.InitializeResponse(
             capabilities=pb.Capabilities(
                 algorithm=self.method,
-                required_inputs=["state"],
+                required_inputs=["state", "upstream"] if self.upstream_waypoints else ["state"],
+                accepted_upstream=["waypoint"] if self.upstream_waypoints else [],
                 outputs=["trajectory"],
                 derivatives="none",
             ),
@@ -239,6 +244,7 @@ class RosAlgorithm:
                 "runtime_sha256": json.dumps(native_runtime_identity(self.method)),
                 "adapter": "ros1-grpc-v1",
                 "clock_origin": "ROS = simulation + 1s",
+                "goal_source": "ordered upstream waypoints" if self.upstream_waypoints else "task goal",
             },
         )
 
@@ -276,6 +282,7 @@ class RosAlgorithm:
         if not request.goal.positions:
             raise ValueError("ROS navigation requires a goal")
         self.goal = request.goal.positions[-1]
+        self.route = OrderedWaypointGoals()
 
         def command(msg):
             with self.lock:
@@ -319,13 +326,16 @@ class RosAlgorithm:
             self.subscribers.append(
                 rospy.Subscriber("/p5/polynomial", PolynomialTrajectory, trajectory, queue_size=1)
             )
+        task = MessageToDict(request.task)
+        if self.upstream_waypoints:
+            task["interactive_goals"] = True
         launch = launch_file(
             self.method,
             MessageToDict(request.calibration),
             [self.goal.x, self.goal.y, self.goal.z],
             self.folder,
             self.parameters.get("limits"),
-            MessageToDict(request.task),
+            task,
         )
         self.pubs["clock"].publish(Clock(rospy.Time.from_sec(1.0 + request.header.simulation_time)))
         self.planner = subprocess.Popen(
@@ -405,9 +415,20 @@ class RosAlgorithm:
             cloud.is_dense, cloud.data = True, c.float32_le
             self.pubs["cloud"].publish(cloud)
         self.pubs["clock"].publish(Clock(stamp))
-        if request.HasField("goal"):
+        if self.upstream_waypoints:
+            if request.WhichOneof("upstream") != "waypoints":
+                raise ValueError("ROS waypoint input mode requires upstream Waypoint")
+            target, goal_changed = self.route.update(
+                decode_output(request.waypoints),
+                [request.state.position.x, request.state.position.y, request.state.position.z],
+            )
+            self.goal = vec3(target)
+        elif request.HasField("goal"):
             self.goal = request.goal.positions[-1]
-        if self.ticks == 10 or (self.ticks > 10 and request.HasField("goal")):
+            goal_changed = True
+        else:
+            goal_changed = False
+        if self.ticks == 10 or (self.ticks > 10 and goal_changed):
             target = PoseStamped()
             target.header, target.pose.orientation.w = odom.header, 1.0
             for axis in "xyz":
@@ -427,6 +448,8 @@ class RosAlgorithm:
         response = pb.StepResponse(
             diagnostics={key: latest[key] for key in ("commands", "trajectories")}
         )
+        if self.upstream_waypoints:
+            response.diagnostics["waypoint_index"] = self.route.index
         curve, now = latest["trajectory"], request.header.simulation_time
         if curve is not None and curve.start_time <= now <= curve.end_time:
             response.decision.CopyFrom(

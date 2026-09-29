@@ -76,19 +76,30 @@ class MinimumJerkPlanning:
 
 
 class FrozenNeuralCommand:
-    """Reuse an actual trained physical-command policy with its recorded decoder."""
+    """Reuse a frozen policy with a recorded physical output and input semantics."""
 
     input_kind, derivatives = None, "none"
 
-    def __init__(self, checkpoint, env):
+    def __init__(self, checkpoint, env, frequency_hz=None):
         import jax
 
         from drone_playground.methods.neural import NeuralPolicy
 
         self.policy, self.env = NeuralPolicy.load(checkpoint), env
+        self.frequency = float(env.freq if frequency_hz is None else frequency_hz)
         metadata = self.policy.metadata
         self.output_kind = metadata["config"]["method"]["output"]
-        if self.output_kind != env.controller.input_kind or metadata["observation_size"] != env.observation_size:
+        self.decoder = None
+        if metadata.get("physical_decoder"):
+            from drone_playground.networks.physical_outputs import PhysicalOutput
+
+            self.decoder = PhysicalOutput(**metadata['physical_decoder'])
+            if self.decoder.kind != self.output_kind or self.decoder.action_size != metadata['action_size']:
+                raise ValueError("Frozen neural physical decoder differs from checkpoint dimensions or type")
+        elif self.output_kind in ("waypoint", "trajectory"):
+            raise ValueError("Frozen neural geometric output requires an explicit physical decoder")
+        if ((self.decoder is None and self.output_kind != env.controller.input_kind)
+                or metadata["observation_size"] != env.observation_size):
             raise ValueError("Frozen neural observation/command decoder differs from this environment")
         source = metadata["config"]["env"]
         observer = instantiate(source["observation"])
@@ -96,25 +107,38 @@ class FrozenNeuralCommand:
         if type(observer) is not type(env.observer) or vars(observer) != vars(env.observer):
             raise ValueError("Frozen neural observation field semantics differ")
         dynamics = source["execution"]["dynamics"]
-        if (source["task"]["freq"] != env.freq or dynamics["drone"] != env.drone
+        if (source["task"]["freq"] != self.frequency or dynamics["drone"] != env.drone
                 or dynamics["forward"] != env.dynamics):
             raise ValueError("Frozen neural clock/model action decoder differs")
         self.provenance = dict(checkpoint=str(Path(checkpoint).resolve()),
                                sha256=metadata["sha256"], step=metadata["step"],
                                observation=source["observation"], output=self.output_kind)
+        if self.decoder is not None:
+            self.provenance['physical_decoder'] = metadata['physical_decoder']
+            self.decode = jax.jit(self.decoder.decode)
         self.infer = jax.jit(self.policy.act)
+        shape = jax.eval_shape(self.policy.act, jax.ShapeDtypeStruct((env.observation_size,), np.float32))
+        if shape.shape != (metadata['action_size'],):
+            raise ValueError("Frozen neural parameter output differs from checkpoint dimensions")
         self.count = 0
 
     def start(self, calibration, goal, limits, task):
         self.count = 0
+        self.goal = goal
 
     def step(self, packet, upstream):
         import jax.numpy as jnp
 
         self.count += 1
-        value = MotionCommand(self.output_kind, self.env.physical_action(
-            self.infer(jnp.asarray(packet["policy_observation"]))))
-        return output_reply(value, packet["time"], str(self.count), packet["time"] + self.env.dt)
+        action = self.infer(jnp.asarray(packet["policy_observation"]))
+        if 'goal' in packet:
+            self.goal = packet['goal']
+        if self.decoder is None:
+            value = MotionCommand(self.output_kind, self.env.physical_action(action))
+        else:
+            decoded = self.decode(action, packet['position'], packet['velocity'], self.goal)
+            value = self.decoder.message(decoded, packet['time'])
+        return output_reply(value, packet["time"], str(self.count), packet["time"] + 1/self.frequency)
 
     def close(self):
         pass
@@ -151,7 +175,7 @@ class PipelinePlanner:
                     elif implementation == "minimum_jerk":
                         module = MinimumJerkPlanning(**params)
                     elif implementation == "frozen_neural":
-                        module = FrozenNeuralCommand(spec["checkpoint"], env)
+                        module = FrozenNeuralCommand(spec["checkpoint"], env, spec.get("frequency_hz"))
                     elif implementation == "python":
                         module = instantiate(params)
                     else:
@@ -165,8 +189,6 @@ class PipelinePlanner:
                 period = self.frequency / frequency
                 if not np.isclose(period, round(period), rtol=0, atol=1e-8):
                     raise ValueError("Module frequency must divide the execution frequency")
-                if implementation == "frozen_neural" and frequency != self.frequency:
-                    raise ValueError("Frozen neural frequency must preserve its checkpoint clock")
                 self.periods.append(round(period))
                 previous = module.output_kind
                 self.contracts.append(dict(stage=index, implementation=implementation,
