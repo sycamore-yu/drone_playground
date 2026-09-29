@@ -1,0 +1,296 @@
+{
+  "generated_utc": "2026-09-29T20:54:18.927522+00:00",
+  "run_id": "motion-echo-equivalence-20260929",
+  "source_revision": "56c1802b54b499ee170059927a39dddb3d09a0b3",
+  "scope": "Four development episodes per variant; engineering equivalence only, no new release quality cell. The C++ service is an identity fixture, not a planner.",
+  "checkpoint_sha256": "40e99a020eee6440396d0a115a91efcdedd0541ba26af6792ff824108c54b214",
+  "cpp_binary_sha256": "9a2b231b16cc3403f63aaa2805d9bf0c8cea7ac223836a75062af6d6ff50e72b",
+  "cpp_source_sha256": "835c171cb0e566660d95d0ffb26203f36b614bc2513661707d45e5a47fb9c510",
+  "configured_action_delay_ms": [
+    25,
+    50
+  ],
+  "frequency_hz": 50,
+  "episodes_per_variant": 4,
+  "seconds_per_episode": 10,
+  "compared_frame_pairs": 2000,
+  "cpp_calls": 2000,
+  "configuration_differences": [
+    "run_id",
+    "inserted C++ echo stage"
+  ],
+  "variants": {
+    "direct": {
+      "run_id": "motion-echo-equivalence-direct-20260929",
+      "completed": 4,
+      "num_trials": 4,
+      "rmse_completed_mean_m": 0.03849970077279263,
+      "report_sha256": "8bb444d634a4dda909d29c86ec5535b54fc5da4adf230f7ce7bb86d8c8523427",
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500
+          ]
+        },
+        {
+          "case": 1,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500
+          ]
+        },
+        {
+          "case": 2,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500
+          ]
+        },
+        {
+          "case": 3,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500
+          ]
+        }
+      ]
+    },
+    "cpp_echo": {
+      "run_id": "motion-echo-equivalence-cpp_echo-20260929",
+      "completed": 4,
+      "num_trials": 4,
+      "rmse_completed_mean_m": 0.03849970077279263,
+      "report_sha256": "574c6d4dfa591d7b5a6a2201b5cfdd60b8b19779605778adad2ba290568f8874",
+      "diagnostics": [
+        {
+          "case": 0,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500,
+            500
+          ]
+        },
+        {
+          "case": 1,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500,
+            500
+          ]
+        },
+        {
+          "case": 2,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500,
+            500
+          ]
+        },
+        {
+          "case": 3,
+          "missing_command_steps": 0,
+          "commands": 500,
+          "trajectories": 0,
+          "plans": 500,
+          "executed_native_steps": 500,
+          "clipped_command_steps": 0,
+          "module_calls": [
+            500,
+            500
+          ]
+        }
+      ]
+    }
+  },
+  "comparisons": [
+    {
+      "case": 0,
+      "seed": 20000,
+      "frames": 500,
+      "all_trace_fields_exact": true,
+      "physical_commands_exact": true,
+      "pre_transition_states_exact": true,
+      "max_absolute_errors": {
+        "actions": 0.0,
+        "active": 0.0,
+        "failed": 0.0,
+        "obs": 0.0,
+        "pos": 0.0,
+        "quat": 0.0,
+        "reward": 0.0,
+        "time": 0.0,
+        "metric__action_saturation": 0.0,
+        "metric__failure": 0.0,
+        "metric__physical_thrust": 0.0,
+        "metric__squared_error": 0.0,
+        "metric__tracking_error": 0.0
+      },
+      "trace_sha256": {
+        "direct": "1f6a63eaa6f63bec9e6562620f47af86febeb5f384c6b5f1e7731c10ff11d68e",
+        "cpp_echo": "1f6a63eaa6f63bec9e6562620f47af86febeb5f384c6b5f1e7731c10ff11d68e"
+      }
+    },
+    {
+      "case": 1,
+      "seed": 20001,
+      "frames": 500,
+      "all_trace_fields_exact": true,
+      "physical_commands_exact": true,
+      "pre_transition_states_exact": true,
+      "max_absolute_errors": {
+        "actions": 0.0,
+        "active": 0.0,
+        "failed": 0.0,
+        "obs": 0.0,
+        "pos": 0.0,
+        "quat": 0.0,
+        "reward": 0.0,
+        "time": 0.0,
+        "metric__action_saturation": 0.0,
+        "metric__failure": 0.0,
+        "metric__physical_thrust": 0.0,
+        "metric__squared_error": 0.0,
+        "metric__tracking_error": 0.0
+      },
+      "trace_sha256": {
+        "direct": "9b8976d554b06986edad993e3c5b9b602315e03b360ed5e66f4db1d51c33394a",
+        "cpp_echo": "9b8976d554b06986edad993e3c5b9b602315e03b360ed5e66f4db1d51c33394a"
+      }
+    },
+    {
+      "case": 2,
+      "seed": 20002,
+      "frames": 500,
+      "all_trace_fields_exact": true,
+      "physical_commands_exact": true,
+      "pre_transition_states_exact": true,
+      "max_absolute_errors": {
+        "actions": 0.0,
+        "active": 0.0,
+        "failed": 0.0,
+        "obs": 0.0,
+        "pos": 0.0,
+        "quat": 0.0,
+        "reward": 0.0,
+        "time": 0.0,
+        "metric__action_saturation": 0.0,
+        "metric__failure": 0.0,
+        "metric__physical_thrust": 0.0,
+        "metric__squared_error": 0.0,
+        "metric__tracking_error": 0.0
+      },
+      "trace_sha256": {
+        "direct": "77bba0387a645eafc42d07655a99feae238617a01e15ef7f1e92815e132df2ff",
+        "cpp_echo": "77bba0387a645eafc42d07655a99feae238617a01e15ef7f1e92815e132df2ff"
+      }
+    },
+    {
+      "case": 3,
+      "seed": 20003,
+      "frames": 500,
+      "all_trace_fields_exact": true,
+      "physical_commands_exact": true,
+      "pre_transition_states_exact": true,
+      "max_absolute_errors": {
+        "actions": 0.0,
+        "active": 0.0,
+        "failed": 0.0,
+        "obs": 0.0,
+        "pos": 0.0,
+        "quat": 0.0,
+        "reward": 0.0,
+        "time": 0.0,
+        "metric__action_saturation": 0.0,
+        "metric__failure": 0.0,
+        "metric__physical_thrust": 0.0,
+        "metric__squared_error": 0.0,
+        "metric__tracking_error": 0.0
+      },
+      "trace_sha256": {
+        "direct": "046e2cd56e25b5eaf344805af09071a114e3e83a189dab744e96fb232567c0b4",
+        "cpp_echo": "046e2cd56e25b5eaf344805af09071a114e3e83a189dab744e96fb232567c0b4"
+      }
+    }
+  ],
+  "optimizer_updates": 0,
+  "artifacts": {
+    "experiments/motion-echo-equivalence-20260929/manifest.json": "3f34d9fd746a8f394dd82d9474319b57905e2e514dd43a8a592bf20f806a7327",
+    "experiments/motion-echo-equivalence-20260929/cpp_echo-config.json": "fa29d02aa9af825cdd08bf3abe708066179656e54601483f45951e5d1ec62c2a",
+    "experiments/motion-echo-equivalence-20260929/direct-config.json": "a2c01a0f167dc8acbcc240cba8b145bf58f69035711fe5a3fa69480a3b86ebc2",
+    "experiments/motion-echo-equivalence-20260929/result.json": "2102ada7acdcd50750c45c425966ca65fc21dce95f5d76f331a299a03c3e8223",
+    "experiments/motion-echo-equivalence-20260929/probe-source.py": "6a1674ea40bfea5e46ae6f6c3cae2cc71c215a923c9df022a67b3a17dbc3409d",
+    "experiments/motion-echo-equivalence-direct-20260929/eval/report.json": "8bb444d634a4dda909d29c86ec5535b54fc5da4adf230f7ce7bb86d8c8523427",
+    "experiments/motion-echo-equivalence-direct-20260929/resolved-config.json": "836cf27f1a2883870482f2d95a2df81e1d75365c35b3015f794b88d51d3cac13",
+    "experiments/motion-echo-equivalence-direct-20260929/manifest.json": "24f153d0a9c911c2dd165111887829ebaa17c481f8ea5c3eff8038862cf929f2",
+    "experiments/motion-echo-equivalence-direct-20260929/result.json": "279355c6279121cb9cc1523d0e0df4f018d0117c345e6bc4bd2dcb68618ef8b3",
+    "experiments/motion-echo-equivalence-direct-20260929/rollouts/case-000/comparison-trace.npz": "1f6a63eaa6f63bec9e6562620f47af86febeb5f384c6b5f1e7731c10ff11d68e",
+    "experiments/motion-echo-equivalence-direct-20260929/native/0/decision-trace/index.json": "e87a005e32a5fc35dcca784460f7a5af1900e66b1666fd1ebee704c9464a5724",
+    "experiments/motion-echo-equivalence-direct-20260929/rollouts/case-001/comparison-trace.npz": "9b8976d554b06986edad993e3c5b9b602315e03b360ed5e66f4db1d51c33394a",
+    "experiments/motion-echo-equivalence-direct-20260929/native/1/decision-trace/index.json": "88fcab0dbe6da78eebac489cbdd7fe2625e74270f25bfae0b2e1d08f6930275b",
+    "experiments/motion-echo-equivalence-direct-20260929/rollouts/case-002/comparison-trace.npz": "77bba0387a645eafc42d07655a99feae238617a01e15ef7f1e92815e132df2ff",
+    "experiments/motion-echo-equivalence-direct-20260929/native/2/decision-trace/index.json": "060ac329a59cea82f367b7c94c6679048116c54f62ca7d8559813e12ca4ae2d0",
+    "experiments/motion-echo-equivalence-direct-20260929/rollouts/case-003/comparison-trace.npz": "046e2cd56e25b5eaf344805af09071a114e3e83a189dab744e96fb232567c0b4",
+    "experiments/motion-echo-equivalence-direct-20260929/native/3/decision-trace/index.json": "a77e4ed6e42820b07cf9867db2a2c1ade71248692b7de419b54c2f32537ea5e3",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/eval/report.json": "574c6d4dfa591d7b5a6a2201b5cfdd60b8b19779605778adad2ba290568f8874",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/resolved-config.json": "d3c5f06b04723ce0f22ba296955119dd0efe626b484f775493f346d20610b8fa",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/manifest.json": "22111233178933a8b68b2087744f5c223f4ea52772963ecb07a3f4a8a4c4c808",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/result.json": "8c722355a38461c1cd1b4e4b00fee5bf81e55fc9c7ef4fc4308e1cf51a2827ef",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/rollouts/case-000/comparison-trace.npz": "1f6a63eaa6f63bec9e6562620f47af86febeb5f384c6b5f1e7731c10ff11d68e",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/0/decision-trace/index.json": "993348d143bf40638defbfff32bd228a4bccc349d670c4079f7b51e24e36cfd3",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/0/1/service-provenance.json": "0c7bf6ad5801ee12979b6542e2a2c5bb91cdd785ebf614779620f262625c4a18",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/rollouts/case-001/comparison-trace.npz": "9b8976d554b06986edad993e3c5b9b602315e03b360ed5e66f4db1d51c33394a",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/1/decision-trace/index.json": "e4b4fffb193416fc9ffd2f855da1e087187a52131f532d081445410992c53237",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/1/1/service-provenance.json": "0c7bf6ad5801ee12979b6542e2a2c5bb91cdd785ebf614779620f262625c4a18",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/rollouts/case-002/comparison-trace.npz": "77bba0387a645eafc42d07655a99feae238617a01e15ef7f1e92815e132df2ff",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/2/decision-trace/index.json": "f1cfb87850d69a9166d0426d86bc6462df6b0ba1c0dfe11c2bc3ca1cd7600ef9",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/2/1/service-provenance.json": "0c7bf6ad5801ee12979b6542e2a2c5bb91cdd785ebf614779620f262625c4a18",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/rollouts/case-003/comparison-trace.npz": "046e2cd56e25b5eaf344805af09071a114e3e83a189dab744e96fb232567c0b4",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/3/decision-trace/index.json": "7d44cec5b9150ea08792bd48d15f2651536dbd6a9e370574ef6616534fb19e30",
+    "experiments/motion-echo-equivalence-cpp_echo-20260929/native/3/1/service-provenance.json": "0c7bf6ad5801ee12979b6542e2a2c5bb91cdd785ebf614779620f262625c4a18",
+    "experiments/motion-echo-equivalence-20260929/stdout.log": "4dab8bd9c12be5c239a40241becf20f5c0709e082a870c0d36e8ae00b6497a16"
+  },
+  "limitations": [
+    "Identity C++ fixture verifies composition; it is not an optimization planner or MIGHTY implementation.",
+    "Four development episodes and one frozen policy; no new 18-cell quality result.",
+    "Synchronous simulation preserves configured action delay but does not inject measured RPC wall latency.",
+    "Native report in frozen56c1802 omits per-episode delay values; future evaluations record those alongside actual resets.",
+    "Raw probe summary has a null rmse_m lookup; the numbers here are read and checked from authoritative eval/report.json rmse_completed_mean fields."
+  ]
+}
