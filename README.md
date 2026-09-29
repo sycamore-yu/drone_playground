@@ -55,6 +55,8 @@ pixi run eval \
 
 `learning/ppo`、`learning/bptt`、`learning/shac` 提供通用学习基线；`paper/pointcloud_flight` 与 `paper/lotf` 提供独立的文献方法；`paper/super`、`paper/ego_planner` 和 `optimization/attitude_mpc`、`optimization/sampling_mpc` 提供规划或优化基线。具名导航适配配方单独管理实验性训练变化，质量状态见[待办](docs/backlog.md)。
 
+[项目主表与评测分类](docs/methods.md)按FlightBench的接口组织方式增加传感器和任务列：核心任务族为悬停、跟踪、竞速和导航（静态／动态），着陆与集群协同作为专项扩展，走廊轨迹生成作为组件评测。论文原始任务与项目迁移分别标记。
+
 核心环境为 `hovering`、`tracking`、`racing`、`navigation/static` 和 `navigation/dynamic`。Navigation 的八张固定场景包括 S01/S02/S03/S06 与 D01/D02/D03/D06，共用100×40米几何、96米起终点距离、0.5米到达半径，以及导航第二版的300秒时限和20米/秒名义速度上限。实际命令速度与达到的速度另行记录。
 
 ## 文档与开发

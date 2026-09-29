@@ -75,6 +75,7 @@ drone_playground/
 ├── docs/
 │   ├── README.md
 │   ├── architecture.md
+│   ├── methods.md                    # 论文方法主表、接口与评测任务族
 │   ├── runbook.md
 │   ├── evaluation.md
 │   ├── development.md
