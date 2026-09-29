@@ -10,7 +10,7 @@
 - Trajectory：九个输出分别确定终点位置、速度和加速度；固定时长五次曲线从当前位置／速度、零参考加速度出发。它提供真正的未来时域，没有障碍或动态可行性保证。
 - MotionCmd：保留既有检查点的具名动作解码。
 
-数值解码支持JAX JIT、批量和求导；轨迹内部采样对输出的导数已与有限差分核对。`save_policy(..., physical_decoder=...)`记录全部解码参数及输出维度，`frozen_neural`核对它们、观测字段、物理模型和策略频率。当前公共学习入口尚未训练这些几何头，不能据此声称通用可微组合训练完成。
+数值解码支持JAX JIT、批量和求导；轨迹内部采样对输出的导数已与有限差分核对。`save_policy(..., physical_decoder=...)`记录全部解码参数及输出维度，`frozen_neural`核对它们、观测字段、物理模型和策略频率。公开`method=learning/geometric`现可训练几何头，下游选择明确的JAX PD跟踪器；它不等于任意宿主模块链均支持求导。
 
 例如，已取得相应物理头的冻结检查点后可以配置：
 
@@ -51,3 +51,22 @@ ROS航点模式在能力表中声明并要求上游Waypoint，按容差推进顺
 四例均未通过短回合任务的RMSE质量判据。SUPER／EGO结果验证了真实容器算法接受上游航点并返回完整曲线，尚不能说明这些组合适合导航或稳定控制；必须继续独立质量验证。最小jerk曲线采用明确启发式时长，有限曲线不足MPC预测时域时不能伪造未来参考。
 
 首次神经Trajectory试验只有49/50次MPC执行。最小回归复现了`35 * 0.02`与`35 / 50`的浮点差异；执行器现与Trajectory采样共用1ns时钟容差，新的真实acados试验达到50/50。实际不足10ms的预测时域仍被拒绝。
+
+
+## JAX组件训练入口
+
+`method=learning/geometric`复用既有PPO／SHAC／BPTT更新器、环境事件、物理模型和延迟队列。网络输出单个Waypoint或一段五次Trajectory，先经过`jax_waypoint_tracking`或`jax_trajectory_tracking`变成四维姿态／推力，再进入原执行链。多步物理梯度已与有限差分比较；静态悬停处的PD梯度也保持有限。此入口目前采用策略与PD同频，连续多航点的进度仍使用宿主模式，不隐式重解释为单点。
+
+默认轨迹PD明确采样当前曲线前方0.1秒的位置、速度和加速度；原ROS当前执行样本、当前轨迹PD及此JAX前视PD分别命名。选择零前视会令每次新曲线的起点与当前状态相同、几何头失去有效作用，因此训练配置要求前视大于零且不超过轨迹时域。
+
+几何策略的`goal_source=observation_reference`从已声明的观测字段恢复第一个世界参考点，不读取隐藏的未来真值。冻结到宿主后保持这一来源，外部规划器自己的任务目标不会替换它；改尺度、锚点、时长或目标来源的参数热启动须显式迁移。完整BPTT／SHAC恢复仍保留原优化器、随机数和物理／延迟状态。
+
+最小BPTT工程检查可运行：
+
+```bash
+JAX_PLATFORMS=cpu pixi run train method=learning/geometric env=hovering runtime.device=cpu env.task.duration=0.2 training.num_envs=2 training.policy_updates=2 algorithm.horizon_length=8 training.num_evals=2 training.development_episodes=2 'network.hidden_sizes=[8,8]' run_id=geometric-entry-check
+```
+
+PPO改用`algorithm=ppo network=brax_ppo`并显式给出总交互步数与批量配置；SHAC改用`algorithm=shac`。单航点配方同时设置`method.output=waypoint method.physical_decoder.kind=waypoint env.execution.command=waypoint controller@env.execution.tracker=jax_waypoint_tracking`。网络结构、训练算法、物理输出和下游控制器是独立配置，兼容性在构建前检查。
+
+BPTT轨迹头、SHAC航点头和PPO轨迹头已完成两并行、32决策步的小型训练及检查点重载评测。它们只验证更新／保存／加载链路，短回合RMSE未达标，不计入18格收敛矩阵。39项几何训练／物理输出／宿主组合回归通过。含RPC或当前原生MPC的组合继续用于宿主执行，这个JAX训练入口会明确拒绝；不要求为C++算法补导数。

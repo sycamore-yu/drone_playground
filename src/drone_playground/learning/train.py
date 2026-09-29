@@ -34,7 +34,11 @@ from drone_playground.evaluation.tracking import (
 )
 from drone_playground.learning.env_adapter import wrap_for_training
 from drone_playground.networks.policies import network_factory
-from drone_playground.runs.checkpoints import load_policy, save_policy
+from drone_playground.runs.checkpoints import (
+    load_policy,
+    require_matching_physical_decoder,
+    save_policy,
+)
 
 
 def development_score(task: str, report: dict, rule: str | None = None) -> tuple:
@@ -253,6 +257,9 @@ def train(
     initial_params = None
     try:
         rec.phase("initializing", step=0)
+        if config.get('warm_start'):
+            metadata = json.loads(Path(config['warm_start']).with_suffix('.json').read_text())
+            require_matching_physical_decoder(metadata,config)
         if algorithm == "dva" and config.get("resume"):
             best_score, best = inherit_dva_selection(
                 Path(config["resume"]), rec.path, config["task"]

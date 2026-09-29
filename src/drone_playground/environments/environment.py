@@ -124,6 +124,10 @@ def build_environment(config, device="cpu", split="train", count=32):
         from drone_playground.execution.delay import RandomActionDelay
 
         env = RandomActionDelay(env, delay_range)
+    if cfg['method'].get('physical_decoder') is not None:
+        from drone_playground.execution.geometric_policy import GeometricPolicyExecution
+
+        env = GeometricPolicyExecution(env,cfg['method']['physical_decoder'],settings['execution']['tracker'])
     env.component_identity = component_identity(cfg)
     if getattr(env, "sim", None) is not None:
         env.sim.component_identity = copy.deepcopy(env.component_identity)

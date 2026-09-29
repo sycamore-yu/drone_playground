@@ -141,16 +141,41 @@ def validate_config(config: dict) -> None:
         "attitude_mpc",
         "sampling_mpc",
         "waypoint_tracking",
+        "jax_trajectory_tracking",
+        "jax_waypoint_tracking",
     ):
         raise ValueError("Unsupported downstream trajectory tracker")
     if execution.get("tracker") and (
-        (method["output"] == "waypoint") != (execution["tracker"]["name"] == "waypoint_tracking")
+        (method["output"] == "waypoint") != (execution["tracker"]["name"] in ("waypoint_tracking", "jax_waypoint_tracking"))
     ):
         raise ValueError("Waypoint/Trajectory tracker input contract differs")
     if method["output"] not in ("trajectory", "waypoint") and execution.get("tracker") is not None:
         raise ValueError(
             "The command already occupies the tracking stage; duplicate tracker rejected"
         )
+    geometric = method.get('physical_decoder')
+    if geometric is not None:
+        from drone_playground.execution.controllers.trajectory_jax import JaxTrajectoryTracking
+        from drone_playground.networks.physical_outputs import PhysicalOutput
+
+        decoder = PhysicalOutput(**geometric)
+        if (method['implementation'] != 'neural' or not method['trainable']
+                or config['algorithm']['name'] not in ('ppo','bptt','shac')
+                or task['name'] not in ('hovering','figure8','random','racing')
+                or decoder.kind != method['output'] or method.get('stages')):
+            raise ValueError('JAX geometric policies require a control task, neural head and PPO/BPTT/SHAC')
+        if (method.get('goal_source') != 'observation_reference'
+                or env['observation']['name'] != 'state_reference'
+                or env['observation'].get('n_samples',0) < 1):
+            raise ValueError('JAX geometric goal must come from the declared observation_reference')
+        tracker = execution.get('tracker') or {}
+        if tracker.get('name') != 'jax_'+decoder.kind+'_tracking':
+            raise ValueError('Geometric policy training requires an explicitly differentiable JAX tracker; RPC/MPC gradients are unavailable')
+        tracking = JaxTrajectoryTracking(**{k:v for k,v in tracker.items() if k!='name'})
+        if decoder.kind == 'waypoint' and decoder.count != 1:
+            raise ValueError('JAX waypoint PD requires one target per decision')
+        if decoder.kind == 'trajectory' and not 0 < tracking.lead_seconds <= decoder.horizon_seconds:
+            raise ValueError('Trajectory tracking lead must be positive and within its horizon')
     if "backward" in execution["dynamics"]:
         raise ValueError("Derivative selection belongs to algorithm.gradient")
     if "sensor" in env["observation"]:
@@ -344,7 +369,7 @@ def validate_config(config: dict) -> None:
             )
         required_commands = (
             ("trajectory", "waypoint", "attitude_thrust")
-            if implementation in ("native_service", "pipeline")
+            if implementation in ("native_service", "pipeline") or geometric is not None
             else (("trajectory",) if native_control else ("attitude_thrust",))
         )
         if controller != "crazyflow_attitude" or method["output"] not in required_commands:

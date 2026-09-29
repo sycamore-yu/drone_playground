@@ -89,6 +89,9 @@ class FrozenNeuralCommand:
         self.frequency = float(env.freq if frequency_hz is None else frequency_hz)
         metadata = self.policy.metadata
         self.output_kind = metadata["config"]["method"]["output"]
+        self.goal_source = metadata['config']['method'].get('goal_source','task_goal')
+        if self.goal_source not in ('task_goal','observation_reference'):
+            raise ValueError('Frozen neural policy has an unknown goal source')
         self.decoder = None
         if metadata.get("physical_decoder"):
             from drone_playground.networks.physical_outputs import PhysicalOutput
@@ -106,6 +109,8 @@ class FrozenNeuralCommand:
         # Equal vector lengths alone do not establish equal field meanings.
         if type(observer) is not type(env.observer) or vars(observer) != vars(env.observer):
             raise ValueError("Frozen neural observation field semantics differ")
+        if self.goal_source == 'observation_reference' and observer.name != 'state_reference':
+            raise ValueError('Frozen geometric goal requires the recorded reference observation')
         dynamics = source["execution"]["dynamics"]
         if (source["task"]["freq"] != self.frequency or dynamics["drone"] != env.drone
                 or dynamics["forward"] != env.dynamics):
@@ -113,6 +118,7 @@ class FrozenNeuralCommand:
         self.provenance = dict(checkpoint=str(Path(checkpoint).resolve()),
                                sha256=metadata["sha256"], step=metadata["step"],
                                observation=source["observation"], output=self.output_kind)
+        self.provenance['goal_source'] = self.goal_source
         if self.decoder is not None:
             self.provenance['physical_decoder'] = metadata['physical_decoder']
             self.decode = jax.jit(self.decoder.decode)
@@ -136,7 +142,9 @@ class FrozenNeuralCommand:
         if self.decoder is None:
             value = MotionCommand(self.output_kind, self.env.physical_action(action))
         else:
-            decoded = self.decode(action, packet['position'], packet['velocity'], self.goal)
+            goal = (self.env.observer.reference_goal(jnp.asarray(packet['policy_observation']))
+                    if self.goal_source == 'observation_reference' else self.goal)
+            decoded = self.decode(action, packet['position'], packet['velocity'], goal)
             value = self.decoder.message(decoded, packet['time'])
         return output_reply(value, packet["time"], str(self.count), packet["time"] + 1/self.frequency)
 

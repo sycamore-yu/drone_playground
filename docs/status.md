@@ -29,3 +29,5 @@ AttitudeMPC跟踪末尾预测时域已修复，真实acados／SamplingMPC三项�
 深度导航正式seed=0为静态93/100、动态100/100，S06仅18/25；seed=1所有开发快照最差场景目标均0，按已冻结并列规则选中初始快照，正式静态／动态均0/100。seed=2继续按原配方执行，不能据seed=0单独宣称收敛。点云首轮失败及诊断见[诊断记录](research/pointcloud-pilot-diagnosis.md)。
 
 神经几何头与真实SUPER／EGO上游Waypoint模式已完成工程闭环，含两种原规划器→完整Trajectory→AttitudeMPC。47项针对性回归通过；纯神经轨迹到MPC的时钟边界已修复并实测50/50次执行。四个组合试验均采用未训练的测试权重，ROS启动及短时域仍有回退，未达到任务质量门槛；见[组合证据](research/physical-components.md)。
+
+JAX几何策略已有PPO／SHAC／BPTT训练入口和39项组件回归，详见[物理组件](research/physical-components.md)。SHAC竞速seed=1正式100/100，但seed=2九次开发快照均0/32、原并列规则选初始策略，正式0/100，该格未通过。SUPER静态正式批次在29个回合之后因ROS传感订阅启动超时失败，动态批次仍运行；已完成轨迹及失败日志保留，不能据局部结果填入正式通过格。

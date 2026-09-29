@@ -28,6 +28,11 @@ class NativeTracking:
             self.fallback = TrajectoryTracking(
                 **{k: v for k, v in settings.items() if k not in ("name", "reference_source")}
             ).bind(env.low, env.high)
+        elif self.name in ('jax_trajectory_tracking','jax_waypoint_tracking'):
+            from .controllers.trajectory_jax import JaxTrajectoryTracking
+
+            self.fallback = JaxTrajectoryTracking(
+                **{k:v for k,v in settings.items() if k!='name'}).bind(env.low,env.high)
         elif self.name == "attitude_mpc":
             from drone_playground.methods.optimal_control.lsy_mpc import LSYAttitudeMPC
 
@@ -61,6 +66,11 @@ class NativeTracking:
             sample = curve.sample(tick / self.env.freq) if curve is not None else None
             if sample is not None and not curve.yaw_defined:
                 sample["yaw"] = Rotation.from_quat(body["quat"]).as_euler("xyz")[2]
+        if self.name == 'jax_trajectory_tracking':
+            query = tick/self.env.freq+self.fallback.lead_seconds
+            sample = curve.sample(query) if curve is not None and curve.start_time-1e-9 <= query <= curve.end_time+1e-9 else None
+            if sample is not None and not curve.yaw_defined:
+                sample['yaw'] = Rotation.from_quat(body['quat']).as_euler('xyz')[2]
         output = reply.get("output")
         if output is not None and reply.get("valid_until", tick / self.env.freq) < tick / self.env.freq:
             raise ValueError("Expired physical output reached the execution controller")
@@ -74,7 +84,7 @@ class NativeTracking:
             self.consumed += 1
             self.hold = np.asarray(body["pos"])
             return command
-        if self.name == "waypoint_tracking" and output is not None:
+        if self.name in ("waypoint_tracking",'jax_waypoint_tracking') and output is not None:
             if not isinstance(output, Waypoint):
                 raise ValueError("Waypoint tracker requires ordered physical waypoints")
             if self.waypoints is None or not np.array_equal(output.positions, self.waypoints):
@@ -84,7 +94,7 @@ class NativeTracking:
                 self.waypoint_index += 1
             sample = dict(position=output.positions[self.waypoint_index], velocity=np.zeros(3),
                           acceleration=np.zeros(3), yaw=Rotation.from_quat(body["quat"]).as_euler("xyz")[2])
-        if self.name in ("trajectory_tracking", "waypoint_tracking") and sample is not None:
+        if self.name in ("trajectory_tracking", "waypoint_tracking",'jax_trajectory_tracking','jax_waypoint_tracking') and sample is not None:
             self.consumed += 1
             self.hold = np.asarray(body["pos"])
             return self.fallback.command(body, sample, mass)

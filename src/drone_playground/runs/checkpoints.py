@@ -21,8 +21,26 @@ from drone_playground.networks.policies import network_factory
 from .migration import require_current
 
 
+def require_matching_physical_decoder(metadata, config):
+    """Parameter transfer cannot silently reinterpret a geometric head's units."""
+    from drone_playground.networks.physical_outputs import PhysicalOutput
+
+    current = require_current(config)
+    expected = current['method'].get('physical_decoder')
+    recorded = metadata.get('physical_decoder')
+    if expected is None and recorded is None:
+        return
+    if (expected is None or recorded is None
+            or PhysicalOutput(**expected) != PhysicalOutput(**recorded)
+            or current['method'].get('goal_source','task_goal') != metadata['config']['method'].get('goal_source','task_goal')):
+        raise ValueError('Geometric warm start changes the physical decoder or goal source; explicit migration required')
+
+
 def save_policy(directory: Path, params, config: dict, step: int, *, physical_decoder=None) -> Path:
     current = require_current(config)
+    component_only = physical_decoder is not None and current['method'].get('physical_decoder') is None
+    if physical_decoder is None:
+        physical_decoder = current['method'].get('physical_decoder')
     action_size = 4
     if physical_decoder is not None:
         from drone_playground.networks.physical_outputs import PhysicalOutput
@@ -43,7 +61,7 @@ def save_policy(directory: Path, params, config: dict, step: int, *, physical_de
         observation_size=config.get("observation_size", 43),
         action_size=action_size,
         policy_family="brax",
-        checkpoint_kind="component-inference-parameters" if physical_decoder else "inference-parameters",
+        checkpoint_kind="component-inference-parameters" if component_only else "inference-parameters",
         sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         parameter_sha256=tree_digest(params),
         continuation={
@@ -58,7 +76,8 @@ def save_policy(directory: Path, params, config: dict, step: int, *, physical_de
         # Persist every physical default so future decoder defaults cannot
         # silently change a frozen policy's units, anchors or finite horizon.
         metadata['physical_decoder'] = asdict(decoder)
-        metadata['continuation'] = 'frozen physical component; optimizer continuation is not encoded'
+        if component_only:
+            metadata['continuation'] = 'frozen physical component; optimizer continuation is not encoded'
     save_report(path.with_suffix(".json"), metadata)
     return path
 

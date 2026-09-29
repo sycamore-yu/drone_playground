@@ -68,7 +68,7 @@ SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接�
 
 现有宿主模块包含目标航点、解析最小jerk轨迹生成、通用原生服务、已冻结神经Waypoint／Trajectory／MotionCmd策略和显式Python适配器。最小jerk模块在给定时长及端点位置／速度／加速度下求五次曲线，时间分配为启发式；它没有碰撞避障，也不保证任意初速度下的速度／加速度界。冻结策略核对观测语义、模型动作解码和时钟，记录权重摘要。
 
-真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，网络→Waypoint／Trajectory的专用解码、检查点语义和混合频率已实现，通用JAX可微模块链仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
+真实C++的Waypoint／MotionCmd／Trajectory均已通过宿主闭环；Waypoint→最小jerk轨迹→PD与冻结BPTT→MotionCmd→执行均有公开入口运行记录。多模块**宿主执行**已有基础，网络→Waypoint／Trajectory的专用解码、检查点语义和混合频率已实现，已有显式几何头→JAX PD→延迟→物理的训练路径，任意宿主模块链的JAX化仍未完成；宿主模块已支持各自的整数分频调度。当前`pipeline`拒绝训练，不能把numpy或RPC链声称为可微链。完整网络→Waypoint→优化规划→Trajectory→MPC的训练与实测缺口仍在[实现计划](implementation-plan.md#三类物理接口的组合验收)与持续goal中。
 
 ## 传感、几何和时序
 
@@ -88,4 +88,4 @@ Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议�
 
 宿主链的每个stage可设置`frequency_hz`，默认与执行频率相同；当前要求它能整除执行频率。两个调用时刻之间只缓存有效物理输出，过期后返回无计划，由执行器处理缺失；不会把失效命令继续交给下游。场景重置同时清空缓存、时钟和调用计数，报告的`module_calls`可验证实际频率。冻结神经模块仍须保持检查点声明的策略频率，不能用这一设置静默降频。
 
-神经几何输出由显式物理解码器定义。Waypoint预测相对当前位置、目标或世界原点的有序位置偏移；Trajectory预测终点位置／速度／加速度，解码为固定时长五次曲线，起点位置／速度取当前状态、起点参考加速度为零。检查点保存尺度、锚点、时长和输出维度；没有隐式把网络隐层解释为轨迹。数值解码支持JAX JIT／批量／梯度，宿主转换与外部MPC仍是明确的导数边界。当前公共学习入口尚未训练这些几何头，工程夹具不代表已收敛策略。
+神经几何输出由显式物理解码器定义。Waypoint预测相对当前位置、目标或世界原点的有序位置偏移；Trajectory预测终点位置／速度／加速度，解码为固定时长五次曲线，起点位置／速度取当前状态、起点参考加速度为零。检查点保存尺度、锚点、时长和输出维度；没有隐式把网络隐层解释为轨迹。数值解码支持JAX JIT／批量／梯度，宿主转换与外部MPC仍是明确的导数边界。公开`learning/geometric`已接入PPO／SHAC／BPTT，可训练单航点或五次轨迹几何头并保存解码合同；同频JAX PD和目标来源均显式配置，见[组件训练](research/physical-components.md#jax组件训练入口)。小型更新与工程夹具不代表已收敛策略。

@@ -24,6 +24,12 @@ class TrackingObservation:
             raise ValueError(f"Unknown observation encoder: {self.name}")
         return jnp.concatenate(parts)
 
+    def reference_goal(self, observation):
+        """Recover the declared first world reference, using observed fields only."""
+        if self.name != 'state_reference' or self.n_samples < 1 or observation.shape[-1] != self.size:
+            raise ValueError('Physical goal decoding requires a state_reference observation')
+        return observation[..., :3]+observation[..., 13:16]
+
 
 @dataclass(frozen=True)
 class NavigationObservation:
