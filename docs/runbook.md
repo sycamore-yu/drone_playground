@@ -10,7 +10,7 @@ pixi install --locked
 pixi run python -c "import jax; print(jax.devices())"
 ```
 
-固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
+固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
 ## 训练与恢复
 

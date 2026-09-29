@@ -6,8 +6,10 @@ tool never resets a dirty tree or switches an unrelated checkout.
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -15,6 +17,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def run(args, cwd=None):
     return subprocess.check_output(args, cwd=cwd, text=True).strip()
+
+
+def verify_checkout(directory, revision, patch, name):
+    """Compare against the patched tree using a private, disposable Git index.
+
+    Plain ``git diff HEAD`` omits newly added patch files. An alternate index
+    includes those files while leaving the user's checkout and staging intact.
+    """
+    with tempfile.TemporaryDirectory(prefix="drone-source-index-") as temporary:
+        environment = {**os.environ, "GIT_INDEX_FILE": str(Path(temporary) / "index")}
+
+        def check(args):
+            return subprocess.run(["git", *args], cwd=directory, env=environment,
+                                  capture_output=True, text=True, check=True).stdout
+
+        check(["read-tree", revision])
+        if patch:
+            check(["apply", "--cached", str(patch)])
+        difference = check(["diff", "--binary", "--no-ext-diff", "--"])
+        if difference:
+            raise ValueError(f"Cached modifications differ from the declared patch: {name}")
+        untracked = set(filter(None, check(["ls-files", "--others", "--exclude-standard", "-z"]).split("\0")))
+        if untracked - {".drone-playground-source.json"}:
+            raise ValueError(f"Unexpected cached source files: {name}")
 
 
 def fetch(root=ROOT):
@@ -55,11 +81,7 @@ def fetch(root=ROOT):
             marker.write_text(
                 json.dumps(dict(revision=revision, patch_sha256=expected_patch), indent=2)
             )
-        diff = run(["git", "diff", "--binary", "HEAD"], directory)
-        if patch and diff.strip() != patch.read_text().strip():
-            raise ValueError(f"Cached modifications differ from the declared patch: {name}")
-        if not patch and diff:
-            raise ValueError(f"Unexpected cached source modification: {name}")
+        verify_checkout(directory, revision, patch, name)
         results[name] = dict(path=relative, revision=revision, patch_sha256=expected_patch)
     return results
 
