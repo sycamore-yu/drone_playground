@@ -1,0 +1,161 @@
+{
+  "generated_utc": "2026-09-29T20:56:28.707822+00:00",
+  "artifact": "native-control-reset-contract-20260929",
+  "base_revision": "56c1802b54b499ee170059927a39dddb3d09a0b3",
+  "source_files": {
+    "src/drone_playground/evaluation/native_control.py": "0763b1b9bdd2edd1499a5507ddea6b5674069c36c016b558d952af7cd0067bbc",
+    "tests/test_native_grpc.py": "ae7947ca162d1a544a273e8edeeac2ddabb1bbe3e45c0f28f83e6ca3f3b1f239"
+  },
+  "failure_before_fix": "Configured seed_start=0 produced recorded seeds20000,20001 instead of0,1",
+  "tests": {
+    "new_actual_cpp": 2,
+    "related": 20,
+    "total_distinct": 22,
+    "new_result": "2 passed in22.30s",
+    "related_result": "20 passed in30.80s",
+    "lint": "passed"
+  },
+  "corrected_behavior": "Honor explicit seed_start including zero; retain split defaults when null; record observed reset position, velocity, quaternion and available requested/effective action delay per episode.",
+  "fixtures": [
+    {
+      "label": "dev-zero",
+      "episodes": [
+        {
+          "case": 0,
+          "seed": 0,
+          "completed": true,
+          "failed": false,
+          "steps": 2,
+          "duration_s": 0.04,
+          "rmse_m": 0.500110435210833,
+          "return": 0.7355964183807373,
+          "initial_position_m": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "initial_velocity_mps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "initial_quaternion_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "delay_requested_ms": 25.18234634399414,
+          "delay_effective_ms": 26.0
+        },
+        {
+          "case": 1,
+          "seed": 1,
+          "completed": true,
+          "failed": false,
+          "steps": 2,
+          "duration_s": 0.04,
+          "rmse_m": 0.500110435210833,
+          "return": 0.7355964183807373,
+          "initial_position_m": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "initial_velocity_mps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "initial_quaternion_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "delay_requested_ms": 35.09115982055664,
+          "delay_effective_ms": 36.0
+        }
+      ],
+      "report_sha256": "bfdf8700508e9c7e15205f53d1b7c07327a981b2093bc4158ea547d894d6ccb8"
+    },
+    {
+      "label": "heldout-custom",
+      "episodes": [
+        {
+          "case": 0,
+          "seed": 41000,
+          "completed": true,
+          "failed": false,
+          "steps": 2,
+          "duration_s": 0.04,
+          "rmse_m": 0.500110435210833,
+          "return": 0.7355964183807373,
+          "initial_position_m": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "initial_velocity_mps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "initial_quaternion_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "delay_requested_ms": 31.685686111450195,
+          "delay_effective_ms": 32.0
+        },
+        {
+          "case": 1,
+          "seed": 41001,
+          "completed": true,
+          "failed": false,
+          "steps": 2,
+          "duration_s": 0.04,
+          "rmse_m": 0.500110435210833,
+          "return": 0.7355964183807373,
+          "initial_position_m": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "initial_velocity_mps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "initial_quaternion_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "delay_requested_ms": 29.950571060180664,
+          "delay_effective_ms": 30.0
+        }
+      ],
+      "report_sha256": "e78113e01413f957e2a541e1fcc19c7a86663ef9f75baa66e8c173042a4977c8"
+    }
+  ],
+  "historical_impact": {
+    "completed_reports_checked": 17,
+    "mismatches": 0,
+    "scope": "Current experiment directories and frozen worktrees; does not audit offline historical archives"
+  },
+  "logs": {
+    "native-reset-red.log": "35d23685c023e6b0a4ce643b1d2a688415ec109747d87c1d27072dfd3e8ca412",
+    "native-reset-related.log": "c5f4c7b95c2cf9bffa6a6ac1dc52b73d0daea8be1fb1f69eff1942538efb7cfd",
+    "native-reset-green.log": "edb59e4dde01645660bbfe896e1e2bfd1b8c4f468f66d8102889408adbfcb65e",
+    "native-reset-lint.log": "e343f2c84290bd7f80e257352ba28384f6f8dc43cbd95e8596121a5edee60b67",
+    "native-control-seed-impact.json": "f127744fd9e5cd9afdcd565b53127b79f0d040b8e8710787c012f91fc06692f0"
+  },
+  "limitations": [
+    "Two-step real C++ engineering fixtures; not task convergence evidence.",
+    "Historical frozen reports are retained; existing18-cell quality counts are unchanged."
+  ]
+}

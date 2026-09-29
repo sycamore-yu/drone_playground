@@ -90,11 +90,10 @@ def evaluate_native_control(config, root, run_id):
     if count < 1:
         raise ValueError("Native control evaluation requires at least one trial")
     split = config["evaluation"]["split"]
-    seeds = list(
-        range(
-            30000 if split == "heldout" else 20000, (30000 if split == "heldout" else 20000) + count
-        )
-    )
+    seed_start = config["evaluation"].get("seed_start")
+    if seed_start is None:
+        seed_start = 30000 if split == "heldout" else 20000
+    seeds = list(range(seed_start, seed_start + count))
     env = build_environment(config, config["runtime"]["device"], split, count)
     try:
         bank, scene = bank_from_environment(env)
@@ -125,9 +124,17 @@ def evaluate_native_control(config, root, run_id):
                 worker_path = NativePlanner.install_worker(
                     Path(root) / "native_planners/bridge/worker.py", rec.path, settings["container"]
                 )
-            traces, diagnostics = [], []
+            traces, diagnostics, reset_details = [], [], []
             for case, seed in enumerate(seeds):
                 state = reset(jax.random.PRNGKey(seed))
+                body = env.controller_observation(state)
+                reset_details.append(dict(
+                    initial_position_m=np.asarray(body["pos"]).tolist(),
+                    initial_velocity_mps=np.asarray(body["vel"]).tolist(),
+                    initial_quaternion_xyzw=np.asarray(body["quat"]).tolist(),
+                    **{key: float(state.info[key]) for key in
+                       ("delay_requested_ms", "delay_effective_ms") if key in state.info},
+                ))
                 reference_id = int(state.pipeline_state.reference_id) if env.task != "racing" else 0
                 reference = np.asarray(env.trajectories)[reference_id]
                 initial_goal = reference[
@@ -259,6 +266,8 @@ def evaluate_native_control(config, root, run_id):
             report = (summarize_race if env.task == "racing" else summarize_trials)(
                 full, seeds, env.dt
             )
+            for episode, initial_conditions in zip(report["episodes"], reset_details, strict=True):
+                episode.update(initial_conditions)
             evidence = native_execution_evidence(diagnostics, count)
             report["task_quality_passed"] = report["quality_passed"]
             report["quality_passed"] = report["quality_passed"] and evidence["passed"]

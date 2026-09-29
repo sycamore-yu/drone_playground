@@ -80,6 +80,8 @@ pixi run eval method=paper/super env=navigation/static \
 
 新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际收到的完整物理输出、执行参考、有效期和控制器生成的命令。相同Trajectory／Waypoint／Motion Cmd按内容摘要共用存储，`index.json`记录两个压缩文件的摘要、命令字段和SI单位；中断时也保留已收到的决策。
 
+原生与`pipeline`的悬停／跟踪／竞速评测使用`evaluation.seed_start`作为首个重置种子，显式的0也有效；留空时开发集从20000、留出集从30000开始。新的`eval/report.json`逐回合保存实际初始位置、速度、xyzw姿态，以及启用相应延迟模型时的`delay_requested_ms`和`delay_effective_ms`。旧版曾忽略自定义首种子，回归及已完成报告的影响检查见[重置合同凭据](verification/native-control-reset-contract.json)。
+
 ```python
 from drone_playground.evaluation.decision_archive import load_native_decisions
 

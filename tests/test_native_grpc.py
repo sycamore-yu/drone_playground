@@ -136,6 +136,50 @@ def test_evaluators_archive_actual_cpp_decisions(
             assert case['recorded_frames'] == info['frames']
 
 
+@pytest.mark.parametrize('split,start,seeds', [
+    ('dev', 0, [0, 1]),
+    ('heldout', 41000, [41000, 41001]),
+])
+def test_control_evaluation_uses_requested_seeds_and_records_actual_resets(
+    server, tmp_path, split, start, seeds
+):
+    import jax
+
+    from drone_playground.composition import build_environment, compose_method, run_experiment
+    from drone_playground.evaluation.decision_archive import load_native_decisions
+
+    config = compose_method('native', 'hovering', [
+        'method.algorithm=trajectory', 'method.output=trajectory',
+        'method.input_sensor=none', 'execution@env.execution=trajectory_tracking',
+        'env.task.duration=0.04', 'evaluation.episodes=2',
+        f'evaluation.split={split}', f'evaluation.seed_start={start}',
+        'runtime.device=cpu', 'runtime.action_delay_ms=[25,50]', 'mode=eval',
+    ])
+    config['method']['deployment']['command'] = server
+    report = run_experiment(config, tmp_path, 'native-reset-contract')
+    assert [row['seed'] for row in report['episodes']] == seeds
+    env = build_environment(config, 'cpu', split, 2)
+    try:
+        for case, (row, seed) in enumerate(zip(report['episodes'], seeds)):
+            initial = env.reset(jax.random.PRNGKey(seed))
+            body = env.controller_observation(initial)
+            for recorded, actual in [('initial_position_m', 'pos'),
+                                     ('initial_velocity_mps', 'vel'),
+                                     ('initial_quaternion_xyzw', 'quat')]:
+                np.testing.assert_array_equal(row[recorded], body[actual])
+            for key in ('delay_requested_ms', 'delay_effective_ms'):
+                assert row[key] == float(initial.info[key])
+            assert 25 <= row['delay_requested_ms'] <= 50
+            assert 0 <= row['delay_effective_ms'] - row['delay_requested_ms'] < env.clock_ms
+            first = next(load_native_decisions(
+                tmp_path / f'experiments/native-reset-contract/native/{case}/decision-trace'
+            ))
+            for key in ('pos', 'vel', 'quat'):
+                np.testing.assert_array_equal(first['state'][key], body[key])
+    finally:
+        env.close()
+
+
 @pytest.mark.parametrize("algorithm,output,execution", [
     ("trajectory", "trajectory", "trajectory_tracking"),
     ("waypoint", "waypoint", "waypoint_tracking"),
