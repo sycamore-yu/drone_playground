@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def _checkpoint_recipe(config):
     implementation = config["method"]["implementation"]
+    if config["env"]["task"]["name"] == "pointcloud_navigation":
+        return "learning/pointcloud_navigation"
+    if implementation == "neural" and config["method"]["output"] == "velocity_yaw":
+        return "learning/navigation_" + config["algorithm"]["name"]
     fixed = {"pointcloud_recurrent": "paper/pointcloud_flight", "lotf_mlp": "paper/lotf"}
     return fixed.get(implementation, "learning/" + config["algorithm"]["name"])
 

@@ -23,7 +23,7 @@
     "integration": "public-paper-reconstruction",
     "reference_branch": "research/pointcloud-paper-navigation8",
     "reference_revision": "dbb660c",
-    "reference_document": "docs/research/pointcloud-paper-source-audit-20260928.md",
+    "reference_document": "docs/research/pointcloud.md",
     "qualification": "author's undisclosed settings remain explicit reconstruction assumptions"
   },
   "ego_planner": {

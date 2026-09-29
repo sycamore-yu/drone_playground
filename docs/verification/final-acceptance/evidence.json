@@ -14,14 +14,14 @@
       "rmse_all_mean_m": 0.1515217415288909,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-ppo-hovering-v1/eval/report.json": "3c51d048052015b8e161bf641bbb6ebca8f98b75a34304f001dc40e4ef93003d",
+        "experiments/final-acceptance-heldout-ppo-hovering-v1/eval/report.json": "eb0cd44ceeb5034b076207f4eecfa57a19044d083a8356e76c838ed507044724",
         "experiments/final-acceptance-heldout-ppo-hovering-v1/result.json": "f057726b4eafc781a9c65b1307755d96f5d1a185d7b2db49bb0e29b741770037",
         "experiments/final-acceptance-heldout-ppo-hovering-v1/resolved-config.json": "6897970b993acceab4c1e52a9d88c1ffbaeef6ea43111eac71a4a30adeb2623b",
-        "experiments/final-acceptance-heldout-ppo-hovering-v1/manifest.json": "20a2934d423ac9fdc2e77433ff8a2fb89bb4216dbb6919161e870f1dcbcd379e",
+        "experiments/final-acceptance-heldout-ppo-hovering-v1/manifest.json": "6fb15abaf9045633bc72c9fe6d75d715133669234a2d3484e41b0b4d02a594fb",
         "experiments/final-acceptance-heldout-ppo-hovering-v1/code.patch": "810626b7e9184ffcf8ec30ae470091bcac42aa6f7400cf4c604fec76b13c8957",
-        "experiments/final-acceptance-heldout-ppo-hovering-v1/command.txt": "23807783100f5b54b6e93f9244ceccab990e631461483f62bdada942adb6df72"
+        "experiments/final-acceptance-heldout-ppo-hovering-v1/command.txt": "b5876cc7bad9fb53328072a94f048f05262c4b85e64ee2103150e85302bc9a6b"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-hovering-t0/checkpoints/step-0001048576.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-hovering-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-hovering-t0/checkpoints/step-0001048576.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-hovering-v1",
       "task_config": {
         "duration": 3.0,
         "freq": 50,
@@ -104,7 +104,7 @@
           "training/walltime": 70.49204802513123
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=hovering run_id=final-acceptance-ppo-hovering-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=hovering run_id=final-acceptance-ppo-hovering-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -180,14 +180,14 @@
       "rmse_all_mean_m": 0.03604013515232628,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-ppo-tracking-v1/eval/report.json": "0af4fee5339f56a55366533b258c39303e2f3c6c347fc6795d1cd58bab3fb531",
+        "experiments/final-acceptance-heldout-ppo-tracking-v1/eval/report.json": "3daeec7c48da457fd78f65f7a60fb7eacb11a52faa37e8b7371410485df39f90",
         "experiments/final-acceptance-heldout-ppo-tracking-v1/result.json": "b9b08adb330b88bbddbe6a710e5bd1aa34cbe277c2c8da1dee964ca5c2096e71",
-        "experiments/final-acceptance-heldout-ppo-tracking-v1/resolved-config.json": "920054b70a91f8b0dd72229401165cdcc9b9d1ee854008a8221c4f9b861b6ed1",
-        "experiments/final-acceptance-heldout-ppo-tracking-v1/manifest.json": "4a1758b0b3cd04b6ce127d6aa79b6bc1d4097652d1163692dcdd92e707e7507c",
+        "experiments/final-acceptance-heldout-ppo-tracking-v1/resolved-config.json": "fc98c2691277d8626d98a61e2882433b70073c4ea6694ead46e2b9e3004c6e72",
+        "experiments/final-acceptance-heldout-ppo-tracking-v1/manifest.json": "4d02399bfd2736fbce8828b729555aaeac2a75e6c8d2d339e5d79d0b363da83c",
         "experiments/final-acceptance-heldout-ppo-tracking-v1/code.patch": "810626b7e9184ffcf8ec30ae470091bcac42aa6f7400cf4c604fec76b13c8957",
-        "experiments/final-acceptance-heldout-ppo-tracking-v1/command.txt": "ea4c268eb91f8994cd6e2494c70cc833ec54bc0931b4644b243c0715d79e812c"
+        "experiments/final-acceptance-heldout-ppo-tracking-v1/command.txt": "341625bd9d0518286dfb1a308b11b0d0816c4b9449f000ae9c35398d71a03e19"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-tracking-t0/checkpoints/step-0001572864.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-tracking-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-tracking-t0/checkpoints/step-0001572864.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-tracking-v1",
       "task_config": {
         "duration": 10.0,
         "freq": 50,
@@ -264,8 +264,8 @@
           "training/v_loss": 0.0010314681567251682,
           "training/walltime": 68.42718291282654
         },
-        "warm_start": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_tracking/step-0001310720.pkl",
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=tracking run_id=final-acceptance-ppo-tracking-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal training.warm_start=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_tracking/step-0001310720.pkl",
+        "warm_start": "experiments/final-acceptance-legacy/ppo_tracking/step-0001310720.pkl",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=tracking run_id=final-acceptance-ppo-tracking-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal training.warm_start=experiments/final-acceptance-legacy/ppo_tracking/step-0001310720.pkl",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -341,14 +341,14 @@
       "rmse_all_mean_m": 0.014525508595397696,
       "gates_passed_mean": 5.0,
       "evidence": {
-        "experiments/final-acceptance-heldout-ppo-racing-v1/eval/report.json": "c8a540aee95e1a8053d7b9b9bb3d3323a77bfdebf5c6f232ff41b30bd51a5427",
+        "experiments/final-acceptance-heldout-ppo-racing-v1/eval/report.json": "fbac538bee6ce345bfc31c21c033a5a394b51d79952c0a4ca8b09c94ec0136e0",
         "experiments/final-acceptance-heldout-ppo-racing-v1/result.json": "eda4a6937e6d7adde2461a291998c2b4a6a110104b880fc6e8cc06569b20547e",
-        "experiments/final-acceptance-heldout-ppo-racing-v1/resolved-config.json": "d4a68a3cecfa1b050e1eaae2efa535a36825c2c6750579415d616561594406f0",
-        "experiments/final-acceptance-heldout-ppo-racing-v1/manifest.json": "46c4a0e120f627a67798f4e7dbfb3b3ab42458ff1b16e6f9a8680650b5df53a9",
+        "experiments/final-acceptance-heldout-ppo-racing-v1/resolved-config.json": "6975f43d2ace7a11890ffa6d445ce4ded34eb8825d76c4f1cb24663fe0feda8c",
+        "experiments/final-acceptance-heldout-ppo-racing-v1/manifest.json": "55952dcd4633955c8bef26fbd65ff669e7741892d4450f3c0e7d1f186bcadc0d",
         "experiments/final-acceptance-heldout-ppo-racing-v1/code.patch": "e51be0661e98c5a5dedf86486bb5fcd7961fa41ad25c9b737bb4192e3b1fe776",
-        "experiments/final-acceptance-heldout-ppo-racing-v1/command.txt": "5e319091bd52ea51624277210a85d4e33156379b7c809246c7d8863107cc44a8"
+        "experiments/final-acceptance-heldout-ppo-racing-v1/command.txt": "aae0d222a4d589f01fd33127df63afdbcb0f61847eff90a564af19fa02334da0"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-racing-t0/checkpoints/step-0002097152.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-racing-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-racing-t0/checkpoints/step-0002097152.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-ppo-racing-v1",
       "task_config": {
         "duration": 30.0,
         "freq": 50,
@@ -425,8 +425,8 @@
           "training/v_loss": 0.0014147743349894881,
           "training/walltime": 113.64903903007507
         },
-        "warm_start": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_racing/step-0004194304.pkl",
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=racing run_id=final-acceptance-ppo-racing-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal training.warm_start=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/ppo_racing/step-0004194304.pkl algorithm.discounting=0.94 algorithm.gae_lambda=0.97 algorithm.clipping_epsilon=0.26 algorithm.max_grad_norm=1.5",
+        "warm_start": "experiments/final-acceptance-legacy/ppo_racing/step-0004194304.pkl",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=racing run_id=final-acceptance-ppo-racing-t0 runtime.device=gpu training.num_envs=512 training.num_timesteps=2097152 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 algorithm.batch_size=64 algorithm.num_minibatches=8 algorithm.num_updates_per_batch=8 network.distribution_type=normal training.warm_start=experiments/final-acceptance-legacy/ppo_racing/step-0004194304.pkl algorithm.discounting=0.94 algorithm.gae_lambda=0.97 algorithm.clipping_epsilon=0.26 algorithm.max_grad_norm=1.5",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -506,14 +506,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/eval/report.json": "91f4c8f9fb7299c028b53d021a53816466ab0300a31b8489a5b70deab7a9f3b0",
+        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/eval/report.json": "41fa415244c9a7729aecb1b9834f739ca70e3025975b59f464db1cfd1c78bb7e",
         "experiments/final-acceptance-heldout-ppo-navigation-static-v2/result.json": "9c0d1a55774be98dda6f99592131d86ce0e83d1aead7c3991be08153a5b59c0d",
-        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/resolved-config.json": "c960706bb06b51fba4d6079ee6529c55f3ba646022c3bf1949b3b5a92bc41ec5",
-        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/manifest.json": "7a550c611ba61cdce0f4f66f5bb07675afa67ec87e522bd4ca67d36396f7693d",
+        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/resolved-config.json": "92182160a931175e2d2c1787c7dbe81083acb5652e5f096db6b3953a6acc50bc",
+        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/manifest.json": "adf53fe27f6cec6da4571e1f0848a507bc048f0e101d6804c561f746baf9d499",
         "experiments/final-acceptance-heldout-ppo-navigation-static-v2/code.patch": "a0bb1ff5a09d9142ef3fcb9ff153e32da00f14fc83878005f4e32087dc25d58b",
-        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/command.txt": "a61df95d87051fa88db10489a01cf7d00e5305c48cabe877fe048987fa0d2123"
+        "experiments/final-acceptance-heldout-ppo-navigation-static-v2/command.txt": "3299f9738ac0b98db8cb47cf54b78524ec3475de9dd132ee16e428935f8bc72a"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-ppo-navigation-static-smoke-v2/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-ppo-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-navigation-static-smoke-v2/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-ppo-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": false,
@@ -604,7 +604,7 @@
           "training/walltime": 33.88106870651245
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=navigation/static run_id=final-acceptance-ppo-navigation-static-smoke-v2 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.num_timesteps=4096 algorithm.batch_size=8 algorithm.num_minibatches=2 algorithm.num_updates_per_batch=2 algorithm.unroll_length=8",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=navigation/static run_id=final-acceptance-ppo-navigation-static-smoke-v2 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.num_timesteps=4096 algorithm.batch_size=8 algorithm.num_minibatches=2 algorithm.num_updates_per_batch=2 algorithm.unroll_length=8",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -688,14 +688,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/eval/report.json": "9829899ac466e8bab26799605399d8d99ae10390cb267e207d50349c22eea47e",
+        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/eval/report.json": "dbe87ecf67a6b3c4f54e75e12e23db40ef66391b36c2c425b4efa53d418a2454",
         "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/result.json": "dec465e638723d7896b81ff03221e1e4d07e56943af3f828a9e4caaa796b1a37",
-        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/resolved-config.json": "0196820d56d011b36cad808784aa9e228c56b80beaf88775dd16c61f1f21d52c",
-        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/manifest.json": "8cc74cfa3d2e48f01473caaa92d17c6dda907fe22eea66b31b1fdaa19fea5bc7",
+        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/resolved-config.json": "1b6d2734669a461056a89baa117f9580d4ee950b62d6c548c51cfd9dceb8e5d8",
+        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/manifest.json": "0ae68680a783d450874082f23e5a2723d745fd8e33e439c755b4ff3d8cde6326",
         "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/code.patch": "25e3a7b7977e24eb15cad827db3524549804b49cb41012f07091659bb6406309",
-        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/command.txt": "5cda76678e8b66a0398244df66703048d2ee9835c5b393eaf0f05226cc183acc"
+        "experiments/final-acceptance-heldout-ppo-navigation-dynamic-v2/command.txt": "1b6d127b32bf25de6abdc475775de28bf7667c401a1961ac8161b1215d2a9c6f"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-ppo-navigation-dynamic-smoke-v2/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-ppo-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-ppo-navigation-dynamic-smoke-v2/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-ppo-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": true,
@@ -786,7 +786,7 @@
           "training/walltime": 36.200973987579346
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=navigation/dynamic run_id=final-acceptance-ppo-navigation-dynamic-smoke-v2 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.num_timesteps=4096 algorithm.batch_size=8 algorithm.num_minibatches=2 algorithm.num_updates_per_batch=2 algorithm.unroll_length=8",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/ppo env=navigation/dynamic run_id=final-acceptance-ppo-navigation-dynamic-smoke-v2 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.num_timesteps=4096 algorithm.batch_size=8 algorithm.num_minibatches=2 algorithm.num_updates_per_batch=2 algorithm.unroll_length=8",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -866,14 +866,14 @@
       "rmse_all_mean_m": 0.15148544867563163,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-bptt-hovering-v1/eval/report.json": "4e9504b29e74a293c47a98c36504697d62b036bfb62ad686004213298d1f593b",
+        "experiments/final-acceptance-heldout-bptt-hovering-v1/eval/report.json": "c07916f9790b2ce061bb3fb1c3304f1aede28b49048127d1af4ac5ac77273b5b",
         "experiments/final-acceptance-heldout-bptt-hovering-v1/result.json": "d284bdf050ba4658b72a99914effb5186f6914f6593bdfcf8222b3f2baabec5f",
-        "experiments/final-acceptance-heldout-bptt-hovering-v1/resolved-config.json": "e0ef0dc025d4ec41b287dc92a9a2a95d50d44fc7ece2250fcd00bd47dee65ed8",
-        "experiments/final-acceptance-heldout-bptt-hovering-v1/manifest.json": "7b48cb0336914cfa0ef12e1fd544f6080017264149695af27f8992a0f727b051",
+        "experiments/final-acceptance-heldout-bptt-hovering-v1/resolved-config.json": "48a2ae05f3de328056ff18060861bcce1a82d882e31999f32875359a01fa4759",
+        "experiments/final-acceptance-heldout-bptt-hovering-v1/manifest.json": "6deb67820a3e1a022a957203f9fe56a3b88b10017a3dac300f19ffc338a5125d",
         "experiments/final-acceptance-heldout-bptt-hovering-v1/code.patch": "f555bea5c5f4f628b82205e7df2a181c7eb71080b08eb5c7b91c02cd36bbc926",
-        "experiments/final-acceptance-heldout-bptt-hovering-v1/command.txt": "cfa5d11382e071c43a3eb9dbc9da6f275f393f16827601637669310e4bc960a2"
+        "experiments/final-acceptance-heldout-bptt-hovering-v1/command.txt": "6b4231b8302f1c94982648f0f89dc16294e57a63a4d91205450ff7274f44bb0d"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-bptt-hovering-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-hovering-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-bptt-hovering-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-hovering-v1",
       "task_config": {
         "duration": 3.0,
         "freq": 50,
@@ -947,7 +947,7 @@
           "training/actor_loss": -0.8280952572822571
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=hovering run_id=final-acceptance-bptt-hovering-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=hovering run_id=final-acceptance-bptt-hovering-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1017,14 +1017,14 @@
       "rmse_all_mean_m": 0.029327737200945177,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-bptt-tracking-v1/eval/report.json": "4bec13d261e41790a1da7d972d807fdd6e00a23ca9a9111eb2bf6dc53a2c4e45",
+        "experiments/final-acceptance-heldout-bptt-tracking-v1/eval/report.json": "7aa4b16589deb5077063a828da04a8de3d227b38fb91ea838bb053510296ffc2",
         "experiments/final-acceptance-heldout-bptt-tracking-v1/result.json": "54e43eabbcca9c0260720aac6bcbf51092734c8c6f1309d5b7338f434244c688",
-        "experiments/final-acceptance-heldout-bptt-tracking-v1/resolved-config.json": "bb5f0b19ed7aeb0e7afddf4b8ef678ee34997eb9168a16860d745246987608a2",
-        "experiments/final-acceptance-heldout-bptt-tracking-v1/manifest.json": "8b663618ed7259e1b37522df9228f9682762d68d13d2ce0cd97656b80c54619a",
+        "experiments/final-acceptance-heldout-bptt-tracking-v1/resolved-config.json": "1cf842d305eded46ade6dfecf6270352045eed9e4f55e86194c158042eb8c1d5",
+        "experiments/final-acceptance-heldout-bptt-tracking-v1/manifest.json": "f8c349afdf0a6662342cb9280f4050082758cee2a679b95a58a03437c4774790",
         "experiments/final-acceptance-heldout-bptt-tracking-v1/code.patch": "f555bea5c5f4f628b82205e7df2a181c7eb71080b08eb5c7b91c02cd36bbc926",
-        "experiments/final-acceptance-heldout-bptt-tracking-v1/command.txt": "0d7823c4f54c892b1e76fd6039860d05ca2e24407ef42b1d154350dddaa5df6d"
+        "experiments/final-acceptance-heldout-bptt-tracking-v1/command.txt": "fdd672bd8d29e84c18a1ec4343e0f5da64322924b081559a98efd483e660de3b"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-tracking-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-tracking-v1",
       "task_config": {
         "duration": 10.0,
         "freq": 50,
@@ -1092,8 +1092,8 @@
           "training/actor_grad_norm": 0.12127726525068283,
           "training/actor_loss": -0.9958791136741638
         },
-        "warm_start": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_tracking/step-0000655360.pkl",
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=tracking run_id=final-acceptance-bptt-tracking-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 training.warm_start=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_tracking/step-0000655360.pkl",
+        "warm_start": "experiments/final-acceptance-legacy/apg_tracking/step-0000655360.pkl",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=tracking run_id=final-acceptance-bptt-tracking-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 training.warm_start=experiments/final-acceptance-legacy/apg_tracking/step-0000655360.pkl",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1163,14 +1163,14 @@
       "rmse_all_mean_m": 0.00683787080924958,
       "gates_passed_mean": 5.0,
       "evidence": {
-        "experiments/final-acceptance-heldout-bptt-racing-v1/eval/report.json": "6861bec16ff88e6e3a373aae52c37d89459313c771d283ba59c48c2a2234eabf",
+        "experiments/final-acceptance-heldout-bptt-racing-v1/eval/report.json": "3cbdd581620e9b7819496d21882aa5d10d82c9c114299a113ee682be3734f547",
         "experiments/final-acceptance-heldout-bptt-racing-v1/result.json": "93ec617bd934bd46afc8f36c4836c65c6bc3777cf2f3a74438fab5ea559b5fda",
-        "experiments/final-acceptance-heldout-bptt-racing-v1/resolved-config.json": "62677a86d8863262d48811981c67a94f824392e0e11264ccf9ff9cd5c488e743",
-        "experiments/final-acceptance-heldout-bptt-racing-v1/manifest.json": "ad5130f4cac3c9f75bc3215c2252e5fef2fd7fa32394aad659e674fd9fc9caa6",
+        "experiments/final-acceptance-heldout-bptt-racing-v1/resolved-config.json": "07c352ed6ed0083568dc6c5ff9b2eabee15160a34696d9ece9c910341499957c",
+        "experiments/final-acceptance-heldout-bptt-racing-v1/manifest.json": "17c7da728b395b6d1f663c497e1f80a7f637f4859a46c3b330d7d55ed6d0ba5f",
         "experiments/final-acceptance-heldout-bptt-racing-v1/code.patch": "f555bea5c5f4f628b82205e7df2a181c7eb71080b08eb5c7b91c02cd36bbc926",
-        "experiments/final-acceptance-heldout-bptt-racing-v1/command.txt": "661525f19663f40a8a813310dfdb4874b383772798358af812b8642c2eb93ffa"
+        "experiments/final-acceptance-heldout-bptt-racing-v1/command.txt": "fff94c41e0a5a5a180a3a7717a853b8702188b48a1c9af8a4db8b01e2b316bef"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-bptt-racing-t0/checkpoints/step-0000491520.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-racing-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-bptt-racing-t0/checkpoints/step-0000491520.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-bptt-racing-v1",
       "task_config": {
         "duration": 30.0,
         "freq": 50,
@@ -1238,8 +1238,8 @@
           "training/actor_grad_norm": 0.20417825877666473,
           "training/actor_loss": -0.9896345138549805
         },
-        "warm_start": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_racing/step-0000655360.pkl",
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=racing run_id=final-acceptance-bptt-racing-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 training.warm_start=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-legacy/apg_racing/step-0000655360.pkl",
+        "warm_start": "experiments/final-acceptance-legacy/apg_racing/step-0000655360.pkl",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=racing run_id=final-acceptance-bptt-racing-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 training.warm_start=experiments/final-acceptance-legacy/apg_racing/step-0000655360.pkl",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1313,14 +1313,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/eval/report.json": "b8704afb6a4379e3846ba2ea14f57524a06a3bbb89508fa6caf462749ade2b44",
+        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/eval/report.json": "2451744f87f154b2a71a4737ea39dbdf223b3c10429741584cedba3c6d4de0cd",
         "experiments/final-acceptance-heldout-bptt-navigation-static-v2/result.json": "6c3bb24b894a125b7d7e5d319f561722fb6580057a9f2ce4faeac52ab59d0de2",
-        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/resolved-config.json": "540f30df3e9ae7a96ceacad46aaffda9726eba84ce9f2f993f4e796c6ff6fdd7",
-        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/manifest.json": "fbfb60e6b37e629abad894611f437516e10402f50f07f4b249088cadbdddf50f",
+        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/resolved-config.json": "0389c1d1f653c5ed867aa1d5c6c6bbdbf6d05737863b80fd869c46a9e4d02024",
+        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/manifest.json": "7fb476986f1360f6747aeb4786b050c8a8458b639d8e9bb09895f1ef71a46085",
         "experiments/final-acceptance-heldout-bptt-navigation-static-v2/code.patch": "81e513dfa1a08431038e4f59c2ea8667071200a74bb88be6e21510c55395cd84",
-        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/command.txt": "5ee35283d9ae57248204cac6fa21ad39cc16aa9b0ede5991c85974db46002d07"
+        "experiments/final-acceptance-heldout-bptt-navigation-static-v2/command.txt": "10a06d86e34ca1ae08cd2e7d59a509e9191ec4dfdd2416b758875ee3654a0a7e"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-bptt-navigation-static-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-bptt-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-bptt-navigation-static-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-bptt-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": false,
@@ -1402,7 +1402,7 @@
           "training/actor_loss": -0.22100937366485596
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=navigation/static run_id=final-acceptance-bptt-navigation-static-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=navigation/static run_id=final-acceptance-bptt-navigation-static-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1480,14 +1480,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/eval/report.json": "a4b74fa950f66d3e744b1840e104f3d06aed4b572bc00c001bf261d8a7072e1b",
+        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/eval/report.json": "5088eb45e7cfbeca657b1c8db58fc0d0e44efd592ae8bf5e539bba58d67650ed",
         "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/result.json": "20a987a4101b31ff35315e496c745a40d732b99c6df80b7560c6542d8910bab6",
-        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/resolved-config.json": "cb882903dd609f4d1aa528ff242bbd4f2830767bf5f05f09e3bab110a4700503",
-        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/manifest.json": "68d3e776c30a0bdf29af53bc65a71003a0c81d517f6dc6631a74ffbc3e121fd7",
+        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/resolved-config.json": "aaa01a1d70df3b21276364dccbf6addbbfb8276e6d8e60ce17a91af78511c009",
+        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/manifest.json": "2b8af93cf57ccd756f5e0251f52530d5469dddd91973948160161635217b9ad4",
         "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/code.patch": "81e513dfa1a08431038e4f59c2ea8667071200a74bb88be6e21510c55395cd84",
-        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/command.txt": "b42908d420197a228b89460a5ac4d9624668d8d22721ff6e05dc3ef9c3a7e553"
+        "experiments/final-acceptance-heldout-bptt-navigation-dynamic-v2/command.txt": "97994c7e94dc2219be0b0ee554f8630909e4100df3bc972f2c8d4a920554e028"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-bptt-navigation-dynamic-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-bptt-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-bptt-navigation-dynamic-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-bptt-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": true,
@@ -1569,7 +1569,7 @@
           "training/actor_loss": -0.2169938087463379
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=navigation/dynamic run_id=final-acceptance-bptt-navigation-dynamic-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/bptt env=navigation/dynamic run_id=final-acceptance-bptt-navigation-dynamic-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1643,14 +1643,14 @@
       "rmse_all_mean_m": 0.15177040828974764,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-shac-hovering-v1/eval/report.json": "8723bbf536cc92142cea32b417c3f9bb8e9cfb6af10aaacfc2622b26b4dc8800",
+        "experiments/final-acceptance-heldout-shac-hovering-v1/eval/report.json": "f1605264f1770385c1d87e236962f55e93da2162d9e5c39fb6cc5baef6840c5a",
         "experiments/final-acceptance-heldout-shac-hovering-v1/result.json": "a46943306c2b270fc407b16b0403dce5c63fdb12fc1f1e3b8146458d2a8294fe",
-        "experiments/final-acceptance-heldout-shac-hovering-v1/resolved-config.json": "c91200fa6959fd98ebf3258c79fcd717da051c220131bc0e7941af62e9207809",
-        "experiments/final-acceptance-heldout-shac-hovering-v1/manifest.json": "ce357089cb747d5a71c784a17aae1f4110ad59d9f6ec68f67e1d7b850d6e458d",
+        "experiments/final-acceptance-heldout-shac-hovering-v1/resolved-config.json": "03777ba574771e9933fe7816ce31c447a9413d485577920cf305136c1ff47d50",
+        "experiments/final-acceptance-heldout-shac-hovering-v1/manifest.json": "2b4df4f9bfb3f2be76c9445e4090a0cd4b337b88ff7f8d885188a4ba4f058e31",
         "experiments/final-acceptance-heldout-shac-hovering-v1/code.patch": "f555bea5c5f4f628b82205e7df2a181c7eb71080b08eb5c7b91c02cd36bbc926",
-        "experiments/final-acceptance-heldout-shac-hovering-v1/command.txt": "c730fa21f88ae91dde3be37bc78524ad22ba306f09320047e5f18715bd1940ad"
+        "experiments/final-acceptance-heldout-shac-hovering-v1/command.txt": "27df38b777444f6004761d1f5f995bbf08fa9d4b2661ae1a4ce3f16677189922"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-hovering-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-hovering-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-shac-hovering-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-hovering-v1",
       "task_config": {
         "duration": 3.0,
         "freq": 50,
@@ -1732,7 +1732,7 @@
           "updates": 320.0
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/shac env=hovering run_id=final-acceptance-shac-hovering-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=64 training.policy_updates=320",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/shac env=hovering run_id=final-acceptance-shac-hovering-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=64 training.policy_updates=320",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1808,14 +1808,14 @@
       "rmse_all_mean_m": 0.030456088754465635,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-shac-tracking-v1/eval/report.json": "3bbdf76d3d18e5b1a910836f72aaf034709501404bfa0240ae0b33049eb4884f",
+        "experiments/final-acceptance-heldout-shac-tracking-v1/eval/report.json": "eed073b3a1265fbc09e14f9c22c467f13a627192f2415e8d41fff36884d3109a",
         "experiments/final-acceptance-heldout-shac-tracking-v1/result.json": "a168f53d47cfaaa9301edd55c6ce92eeded6fcb6e726cd3593a817dc7e216039",
-        "experiments/final-acceptance-heldout-shac-tracking-v1/resolved-config.json": "60b8620a0cfb7125f6996b4478e0939812524c5ab50ab95e5d62bfc70e214655",
-        "experiments/final-acceptance-heldout-shac-tracking-v1/manifest.json": "b1890f0cffe11c04a5cbcace9e5912aef9fec8a3c492f29b3d2be17c0174ecc5",
+        "experiments/final-acceptance-heldout-shac-tracking-v1/resolved-config.json": "78f2c57cf3a428095955049359d66b897d0ba03109a7547f2765425c48a94623",
+        "experiments/final-acceptance-heldout-shac-tracking-v1/manifest.json": "508fb0f004ff5f9f1a8110b4b4b03372a006b3fa08d5f5edf5b386410e5de4df",
         "experiments/final-acceptance-heldout-shac-tracking-v1/code.patch": "f555bea5c5f4f628b82205e7df2a181c7eb71080b08eb5c7b91c02cd36bbc926",
-        "experiments/final-acceptance-heldout-shac-tracking-v1/command.txt": "faca1a2d08ca7fa8a3f181c02c5e28dd33609d53546c74721fd656414b263bcc"
+        "experiments/final-acceptance-heldout-shac-tracking-v1/command.txt": "bed1045c4a7910560d52652be1db84970933f02607799d4f0caf227719819dbe"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-tracking-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-tracking-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-shac-tracking-t0/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-tracking-v1",
       "task_config": {
         "duration": 10.0,
         "freq": 50,
@@ -1892,7 +1892,7 @@
           "updates": 320.0
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/shac env=tracking run_id=final-acceptance-shac-tracking-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=64 training.policy_updates=320",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/shac env=tracking run_id=final-acceptance-shac-tracking-t0 runtime.device=gpu training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 training.num_envs=64 training.policy_updates=320",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -1968,14 +1968,14 @@
       "rmse_all_mean_m": 0.009732883772812784,
       "gates_passed_mean": 5.0,
       "evidence": {
-        "experiments/final-acceptance-heldout-shac-racing-trained-v1/eval/report.json": "31f1edfca893a72a4bf1792f8bf6804c406e340a24b5df6ea9345df25b83affe",
+        "experiments/final-acceptance-heldout-shac-racing-trained-v1/eval/report.json": "bad5f26cf1e654a4b2183fa0354a29a85cba5099fecee990586b7e1da91069f8",
         "experiments/final-acceptance-heldout-shac-racing-trained-v1/result.json": "5c27a8b013fcf5903ec5a45af2ff836c6ea836715ce303763d188f3dd21f56eb",
-        "experiments/final-acceptance-heldout-shac-racing-trained-v1/resolved-config.json": "a7ff3f966e2cae95690fea36c5c3af0067c280ecc2cd4836d42635c1d54fd7e5",
-        "experiments/final-acceptance-heldout-shac-racing-trained-v1/manifest.json": "7e3a41e5e74985fa4c024890566ffae91441c4f06a4b49168508bc0b641dcf63",
+        "experiments/final-acceptance-heldout-shac-racing-trained-v1/resolved-config.json": "abc24fe05f2ae3cf0cce8cd6fecae9eb69c691b9b49a0ce45acdec4d2c1b841e",
+        "experiments/final-acceptance-heldout-shac-racing-trained-v1/manifest.json": "7ecfc434dc8b5e5fa71d49e2069cb51877ad8f4192d35c88f59bf693f1bdc15c",
         "experiments/final-acceptance-heldout-shac-racing-trained-v1/code.patch": "541b6ad000c92f0347db72e9237cdfd126a427c69b667eb3056ef432867586e0",
-        "experiments/final-acceptance-heldout-shac-racing-trained-v1/command.txt": "a3e3875d8a04b19d8cfef0a5ceea7a0725bbe0c2c28d11002f36c607d087eaf2"
+        "experiments/final-acceptance-heldout-shac-racing-trained-v1/command.txt": "4d32ca569c4e868041c2e12423a1e7f0cf6cf6ab8103f6b3337e58d593f99f85"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-racing-t1/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-racing-trained-v1",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-shac-racing-t1/checkpoints/step-0000655360.pkl runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 run_id=final-acceptance-heldout-shac-racing-trained-v1",
       "task_config": {
         "duration": 30.0,
         "freq": 50,
@@ -2052,7 +2052,7 @@
           "updates": 320.0
         },
         "warm_start": "experiments/final-acceptance-bptt-racing-t0/checkpoints/step-0000491520.pkl",
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/shac env=racing run_id=final-acceptance-shac-racing-t1 runtime.device=gpu training.num_envs=64 training.policy_updates=320 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 'network.hidden_sizes=[32,32]' algorithm.learning_rate=0.0001 training.warm_start=experiments/final-acceptance-bptt-racing-t0/checkpoints/step-0000491520.pkl",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/shac env=racing run_id=final-acceptance-shac-racing-t1 runtime.device=gpu training.num_envs=64 training.policy_updates=320 training.num_evals=5 training.development_episodes=16 training.publish_live=false training.max_wall_seconds=1800 'network.hidden_sizes=[32,32]' algorithm.learning_rate=0.0001 training.warm_start=experiments/final-acceptance-bptt-racing-t0/checkpoints/step-0000491520.pkl",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -2132,14 +2132,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-shac-navigation-static-v2/eval/report.json": "87f39dd301fb945e24fb4cf3a972ad7820584c1738bce4974368504799140d7c",
+        "experiments/final-acceptance-heldout-shac-navigation-static-v2/eval/report.json": "4eab78c8f6d7ca4045d6add9940d82c8d55222b595e209fac05f6428186ae081",
         "experiments/final-acceptance-heldout-shac-navigation-static-v2/result.json": "b0aab5db19ef3321360cd186dce04f5d2db26fc0d3f25985f8f3be74498ad775",
-        "experiments/final-acceptance-heldout-shac-navigation-static-v2/resolved-config.json": "c6f2d0b01ccae40a027294b5249e67455429fc98aaf1f7f1eaa14eb819b321cd",
-        "experiments/final-acceptance-heldout-shac-navigation-static-v2/manifest.json": "500169b14000dd5ddcb5360d6463d06c76f4cff8492827d836f3f388d5ebe0d0",
+        "experiments/final-acceptance-heldout-shac-navigation-static-v2/resolved-config.json": "610513cb79dd8493dc05ee7f932ebba2d35a7cfc63d78312e0d2de0a233a94d8",
+        "experiments/final-acceptance-heldout-shac-navigation-static-v2/manifest.json": "bdfac3c0ddd4c026b8f966f307e1827209ae85db0778a46d584d716722bb8c70",
         "experiments/final-acceptance-heldout-shac-navigation-static-v2/code.patch": "81e513dfa1a08431038e4f59c2ea8667071200a74bb88be6e21510c55395cd84",
-        "experiments/final-acceptance-heldout-shac-navigation-static-v2/command.txt": "239ac39b0320f45ae086f3d2a1ebbd1dc5a51a23075bfd56ef3f3cb58fc16db8"
+        "experiments/final-acceptance-heldout-shac-navigation-static-v2/command.txt": "c8e99562251b6b6459badfe338839cb2e55b63fb072c5585ac9ac353de2c374c"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-navigation-static-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-shac-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-shac-navigation-static-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-shac-navigation-static-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": false,
@@ -2229,7 +2229,7 @@
           "updates": 32.0
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/shac env=navigation/static run_id=final-acceptance-shac-navigation-static-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/shac env=navigation/static run_id=final-acceptance-shac-navigation-static-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -2313,14 +2313,14 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/eval/report.json": "8a884a588c92e3a564a8971bc07c0ca44d60e0478e7abf4a921b41ae3f86d6fc",
+        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/eval/report.json": "751a06816f74a98990d97345e0c9be9da7089400afc0f72f17a104bec1378044",
         "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/result.json": "cddad78d1fec2d35d5a775be82f168e26298b5826f93a0f622436406d7316c76",
-        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/resolved-config.json": "356e10c10e30ce16957c77984359ba0a62f6b9fbebc6cab8f3256a150530c966",
-        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/manifest.json": "4a2aa2ca225a36b199ab898ecf86d5dbc7d5c1b54f5d1cc6aa9ca0b9d2d51595",
+        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/resolved-config.json": "6eb5cd4fc78cb8f05e63c7aa3cecd39f1fe7744e6c396df029b1d2efc232868b",
+        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/manifest.json": "ad3ad66d8b45fb8ad8aad4471876eb06ecd0deea2af3c29ca5b202379d40aa50",
         "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/code.patch": "81e513dfa1a08431038e4f59c2ea8667071200a74bb88be6e21510c55395cd84",
-        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/command.txt": "3ed0868dfa2d7c1a50375591863ce975fc280fea782060fbde3973a21497b16b"
+        "experiments/final-acceptance-heldout-shac-navigation-dynamic-v2/command.txt": "e4fd78f45e05a7d5fc1e2148078a399c960ffbb25864d51f2f5ec2390deff798"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-shac-navigation-dynamic-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-shac-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-shac-navigation-dynamic-smoke-v3/checkpoints/step-0000004096.pkl run_id=final-acceptance-heldout-shac-navigation-dynamic-v2 runtime.device=cpu evaluation=navigation_v2 evaluation.split=heldout evaluation.episodes=2",
       "task_config": {
         "duration": 300,
         "dynamic": true,
@@ -2410,7 +2410,7 @@
           "updates": 32.0
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=learning/shac env=navigation/dynamic run_id=final-acceptance-shac-navigation-dynamic-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=learning/shac env=navigation/dynamic run_id=final-acceptance-shac-navigation-dynamic-smoke-v3 runtime.device=cpu training.num_envs=8 training.num_evals=2 training.development_episodes=1 training.max_wall_seconds=1800 training.publish_live=false env.task.duration=300 training.policy_updates=32 algorithm.horizon_length=16",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -2490,14 +2490,14 @@
       "rmse_all_mean_m": 0.17724215601900936,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/eval/report.json": "67b69b94af1a3c3e7d54f091d77712e16db79a33d5df62fda0df4d379aaa1203",
+        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/eval/report.json": "33ae2666b1a3f7ff3c1210e5006ea248793d272172ca18126f4de390f16b2ddb",
         "experiments/final-acceptance-heldout-pointcloud-hovering-v1/result.json": "5a5ac62c93f789d4be068de5e8b048857052d587c2d1b1381fb1903610c5914b",
-        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/resolved-config.json": "8e8a61664a00c51d9d75d99bc33a1af8946437e3d4125b4a24aefe9528704225",
-        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/manifest.json": "8d2ff119d7a4d51490fcf8ebe88745cbaab432a91ef24ceb9df5b08ddbc51730",
+        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/resolved-config.json": "b7652b781344a1555625d072530cd557212e1464af448660b3ce880ab522af14",
+        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/manifest.json": "52f911fab8ce2156f85979a1c8a19c4dc863045699d60bd95075297b0414223d",
         "experiments/final-acceptance-heldout-pointcloud-hovering-v1/code.patch": "a0bb1ff5a09d9142ef3fcb9ff153e32da00f14fc83878005f4e32087dc25d58b",
-        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/command.txt": "355ce696431fa176b24976ad4db0c171402bab4a6264287b0df974318616f1df"
+        "experiments/final-acceptance-heldout-pointcloud-hovering-v1/command.txt": "70aebdcf4812ad546dfb647782319fd662c791736c43dd53b0ff7ed37f23ef06"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-pointcloud-hovering-t2/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-hovering-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-pointcloud-hovering-t2/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-hovering-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
       "task_config": {
         "action_delay_ms": [
           25.0,
@@ -2594,7 +2594,7 @@
           "velocity": 0.06950539350509644
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/hovering run_id=final-acceptance-pointcloud-hovering-t2 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/hovering run_id=final-acceptance-pointcloud-hovering-t2 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -2632,7 +2632,7 @@
           ],
           "point_input_scale": 0.02
         },
-        "result_sha256": "f5b96116976f4d78802482f7f892c82add468f2411c33281564a8bb6813d1764"
+        "result_sha256": "4afa7e9f6766a131cbcb8101d251571fa58572b71370954b230e9eb71511e58f"
       },
       "replays": [
         {
@@ -2779,14 +2779,14 @@
       "rmse_all_mean_m": 0.07580893997701693,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/eval/report.json": "833ae6b875cb51f75e8481ccd80253e67fea4b2c536821b2309ccf477cf05890",
+        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/eval/report.json": "3c9b178314cf00f226a7b28a288a756eef99cdda31ad0c6d284d254f4d15f23c",
         "experiments/final-acceptance-heldout-pointcloud-tracking-v1/result.json": "1279d3aa93f21bf084fa0bb1e16b121b7d9ef70c47f669843679b8667bc33304",
-        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/resolved-config.json": "bdfd41d8df6fd229cf8f6bc1272243cb45ccd3be838e403f229672c6792003f5",
-        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/manifest.json": "432d5fc10a7f1aec03016fb81eaf3197828a1a892ef09c6e869fe5b923812b63",
+        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/resolved-config.json": "d6444889a23b887b3f9ee8914905960c2d8d3aa0981a5a840093f78e520386d8",
+        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/manifest.json": "9579efd6c91e389f199c96a52261da15caa8bef7f69b6a983e992b65050bc192",
         "experiments/final-acceptance-heldout-pointcloud-tracking-v1/code.patch": "a0bb1ff5a09d9142ef3fcb9ff153e32da00f14fc83878005f4e32087dc25d58b",
-        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/command.txt": "4347e470cb610642e5d135cb16d63d10637fb0b1ea23c7baaa649e5207818d7e"
+        "experiments/final-acceptance-heldout-pointcloud-tracking-v1/command.txt": "99e76a06ebb8699cb27560ef5488aaade173976c118d3a7ac052fb3089fe9f4a"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-pointcloud-tracking-t1/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-tracking-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-pointcloud-tracking-t1/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-tracking-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
       "task_config": {
         "action_delay_ms": [
           25.0,
@@ -2883,7 +2883,7 @@
           "velocity": 0.0953403189778328
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/tracking run_id=final-acceptance-pointcloud-tracking-t1 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/tracking run_id=final-acceptance-pointcloud-tracking-t1 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -2921,7 +2921,7 @@
           ],
           "point_input_scale": 0.02
         },
-        "result_sha256": "aa36cf6dcc989db9ca3615303a31a75732fde5076fe966c0aee0321236924d17"
+        "result_sha256": "4f09af57ff70229df5caf7bc75985b7d4feb3646cf23b4c905967de787129b3e"
       },
       "replays": [
         {
@@ -3068,14 +3068,14 @@
       "rmse_all_mean_m": 0.0652727143606171,
       "gates_passed_mean": 5.0,
       "evidence": {
-        "experiments/final-acceptance-heldout-pointcloud-racing-v1/eval/report.json": "1c1042aef6b7addd140ad16dea59f4f63679c91e8a8bead3f1fa85d0c309ccee",
+        "experiments/final-acceptance-heldout-pointcloud-racing-v1/eval/report.json": "db9cf93abebeb3e6c948baa70625d46994c61b8c5a5aa99cbeccbe21b5933899",
         "experiments/final-acceptance-heldout-pointcloud-racing-v1/result.json": "19a462fb1129b1214ddf3c7d56dcc4a15740405acf228c7446e83365e6e59e4c",
-        "experiments/final-acceptance-heldout-pointcloud-racing-v1/resolved-config.json": "e3855438295947f3f8c0a3db7a5dcd1b3966afac9325cf91ce021a0d0ebdcaca",
-        "experiments/final-acceptance-heldout-pointcloud-racing-v1/manifest.json": "304891c5743bf60bcfa41db660bae183842b9527d844679cea4af89f897c5471",
+        "experiments/final-acceptance-heldout-pointcloud-racing-v1/resolved-config.json": "c8a39b598590f517d92d681de4bd87f9047243b83d7477007ac0cfcfc4ed8b2c",
+        "experiments/final-acceptance-heldout-pointcloud-racing-v1/manifest.json": "9cd9dab3f6d12143205a691732429e7f7d695fcc566cbbc0dbf9834213e383ed",
         "experiments/final-acceptance-heldout-pointcloud-racing-v1/code.patch": "a9dc4578e54f514cd5263d0708801b4eeef2e9eae90d84331cffd2b376fa6b16",
-        "experiments/final-acceptance-heldout-pointcloud-racing-v1/command.txt": "8306d18a0a7dd8afe95c9d1dbabff2115214eb35866bd8702c4f4cff237d16ce"
+        "experiments/final-acceptance-heldout-pointcloud-racing-v1/command.txt": "a78380572c11fc21b9f7b48ec337630fbd082a3790e18bb939118bb6918c6e38"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py checkpoint=/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/experiments/final-acceptance-pointcloud-racing-t1/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-racing-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py checkpoint=experiments/final-acceptance-pointcloud-racing-t1/training-state/update-0001024.pkl run_id=final-acceptance-heldout-pointcloud-racing-v1 runtime.device=gpu evaluation.split=heldout evaluation.episodes=32",
       "task_config": {
         "action_delay_ms": [
           25.0,
@@ -3172,7 +3172,7 @@
           "velocity": 0.05839578062295914
         },
         "warm_start": null,
-        "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/racing run_id=final-acceptance-pointcloud-racing-t1 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
+        "command": ".pixi/envs/default/bin/python scripts/train.py method=paper/pointcloud_flight env=paper/control/racing run_id=final-acceptance-pointcloud-racing-t1 network=paper_pointnet_gru_conditioned runtime.device=gpu training.num_envs=8 training.policy_updates=1024 training.num_evals=5 training.development_episodes=16 training.max_wall_seconds=1800 training.publish_live=false algorithm.horizon_length=32 +algorithm.max_grad_norm=1.0",
         "runtime": {
           "action_delay_ms": [
             25.0,
@@ -3210,7 +3210,7 @@
           ],
           "point_input_scale": 0.02
         },
-        "result_sha256": "a0b6293a09609c316ca300621994a6537234b61bfdc637ef91e09b52afdfcd5f"
+        "result_sha256": "ef5d3a71a20e36d3ca17d29792993490e701b64362f4fd873178a2bafc97b2b7"
       },
       "replays": [
         {
@@ -3361,10 +3361,10 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-pointcloud-navigation-30000-v2/eval/report.json": "d8de03e8503c3a74a3f265ee3243c0b24555d5cd37b4a9b6bebd8cbee3afe47b",
+        "experiments/final-acceptance-pointcloud-navigation-30000-v2/eval/report.json": "a3f5d2f68651c7d5e50917243f4499500bee6e027a3dd7cf630cb97ee9b6ce97",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/result.json": "bb105221a8db286d891a94b2232dc2cfa640d9da661d0020c539d7f084eefa71",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/resolved-config.json": "63a58f5ddf439977e484ab080d46ce1838a4baaaf16c71c42e265c27f82198bc",
-        "experiments/final-acceptance-pointcloud-navigation-30000-v2/manifest.json": "213f4ccb71ea6876026fe1a1a9fda38ffb842188011c43da5d007bc0fede028e",
+        "experiments/final-acceptance-pointcloud-navigation-30000-v2/manifest.json": "ed9ea55128552ce00733753c7ff7147b34aff6050d07b07c4a85099892a8412d",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/code.patch": "cf49c78e359c7a6fd2a488c7dc514a242d51bd4fefc739fa0c1346a4a7982524",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/command.txt": "e38fa70c2683f741df7c84d6daccdc98dca6272868e7df88847258ca1c12c536"
       },
@@ -3590,10 +3590,10 @@
       "rmse_all_mean_m": null,
       "gates_passed_mean": null,
       "evidence": {
-        "experiments/final-acceptance-pointcloud-navigation-30000-v2/eval/report.json": "d8de03e8503c3a74a3f265ee3243c0b24555d5cd37b4a9b6bebd8cbee3afe47b",
+        "experiments/final-acceptance-pointcloud-navigation-30000-v2/eval/report.json": "a3f5d2f68651c7d5e50917243f4499500bee6e027a3dd7cf630cb97ee9b6ce97",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/result.json": "bb105221a8db286d891a94b2232dc2cfa640d9da661d0020c539d7f084eefa71",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/resolved-config.json": "63a58f5ddf439977e484ab080d46ce1838a4baaaf16c71c42e265c27f82198bc",
-        "experiments/final-acceptance-pointcloud-navigation-30000-v2/manifest.json": "213f4ccb71ea6876026fe1a1a9fda38ffb842188011c43da5d007bc0fede028e",
+        "experiments/final-acceptance-pointcloud-navigation-30000-v2/manifest.json": "ed9ea55128552ce00733753c7ff7147b34aff6050d07b07c4a85099892a8412d",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/code.patch": "cf49c78e359c7a6fd2a488c7dc514a242d51bd4fefc739fa0c1346a4a7982524",
         "experiments/final-acceptance-pointcloud-navigation-30000-v2/command.txt": "e38fa70c2683f741df7c84d6daccdc98dca6272868e7df88847258ca1c12c536"
       },
@@ -3817,11 +3817,11 @@
         "experiments/final-acceptance-native-super-hovering-v2/eval/report.json": "df41ea590196168fc0badb547683ac39631931eeeede5808f7de6f26bb8d5e2a",
         "experiments/final-acceptance-native-super-hovering-v2/result.json": "d45cd71de2e3c199b9602c0369c49f50ca803193c2fdcde4524f63422882fd5d",
         "experiments/final-acceptance-native-super-hovering-v2/resolved-config.json": "9c10ad52a67633c644da6d6a722b5d1a4fe9bf7e4e7c93a7cdbeb423145c2798",
-        "experiments/final-acceptance-native-super-hovering-v2/manifest.json": "db824efdcff34349a7213a8e2046c2e06db2f1fbab79ee0443d8e51bf3ad2b9b",
+        "experiments/final-acceptance-native-super-hovering-v2/manifest.json": "c5660d7901194afed6e65fcb7574f61ac5b556eb8808b9caecc7a21d76abb8af",
         "experiments/final-acceptance-native-super-hovering-v2/code.patch": "cc93270c86c6481e7a97960faa62ef03c14806597bc00c367861fbd1b7765cc8",
-        "experiments/final-acceptance-native-super-hovering-v2/command.txt": "efa28b664e03f047b39fe56af12ca919874e6f15febb64dd0ccd6176d7949091"
+        "experiments/final-acceptance-native-super-hovering-v2/command.txt": "6d60be8ff2b04e0cc2a208a01efdea6778dfdf1f76741d7d9be1347d40a9991a"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=hovering observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-super-hovering-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/super env=hovering observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-super-hovering-v2",
       "task_config": {
         "duration": 3.0,
         "freq": 50,
@@ -3909,11 +3909,11 @@
         "experiments/final-acceptance-native-super-tracking-v2/eval/report.json": "9affe841cc819d1d08268855756dc38e0101df69c6403e9372446e299958abbe",
         "experiments/final-acceptance-native-super-tracking-v2/result.json": "a59e85f748cb7ae2efffe8f4b726b7beec1b9ee7f71dfcc254da31e97f03b63d",
         "experiments/final-acceptance-native-super-tracking-v2/resolved-config.json": "f33c037282e2937c3f08b53812bb559c8e5fbb43e722579f7772a78389a00a29",
-        "experiments/final-acceptance-native-super-tracking-v2/manifest.json": "c59a0df771cb8ba9c0c23951478cc01e629a2e5cb073dd8856d4987722451fb9",
+        "experiments/final-acceptance-native-super-tracking-v2/manifest.json": "651332679ecd5e8d57d535d0febf3d2e72526353ff71a2f8ddbb7997e7af5980",
         "experiments/final-acceptance-native-super-tracking-v2/code.patch": "cc93270c86c6481e7a97960faa62ef03c14806597bc00c367861fbd1b7765cc8",
-        "experiments/final-acceptance-native-super-tracking-v2/command.txt": "331150b31773030d4634f1a1d6b800dacad5add5d3af0ac9432fac45539dc1c4"
+        "experiments/final-acceptance-native-super-tracking-v2/command.txt": "b769a96bc0adc70728329e7e85ed55397c321859ae6b9e6b292e0958648dfc9f"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=tracking observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-super-tracking-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/super env=tracking observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-super-tracking-v2",
       "task_config": {
         "duration": 10.0,
         "freq": 50,
@@ -3996,7 +3996,7 @@
         "experiments/final-acceptance-native-super-racing-v3/eval/report.json": "204106b10c33214682cc58c9ca6c9edf8c3e0e6f2224c9ba5d279c8770e46648",
         "experiments/final-acceptance-native-super-racing-v3/result.json": "604cb3d33be29634a9afc95b00fae423a23768bc22cb6c9db26535761ed0f300",
         "experiments/final-acceptance-native-super-racing-v3/resolved-config.json": "d0da38c684aaf56aec06a8778f719fb9dac896f2dafca67c02bc12bc974774bf",
-        "experiments/final-acceptance-native-super-racing-v3/manifest.json": "362c4fc8d420d5f82ce3c07bbd5e846985b976f1933e6f374408ec259563abff",
+        "experiments/final-acceptance-native-super-racing-v3/manifest.json": "237000235856922e004bdb5ffe326e9b64aed478db6e01a9888bd22a35c91640",
         "experiments/final-acceptance-native-super-racing-v3/code.patch": "b79f4c9fec6b62e59980f1106b9dc8ab6a8415adf599be740bbbcbde0ec61815",
         "experiments/final-acceptance-native-super-racing-v3/command.txt": "866b40811bf6fd765ce5e31af549a798f1e48de969fa4e9522d4ef2ff78603d7"
       },
@@ -4086,11 +4086,11 @@
         "experiments/final-acceptance-native-super-static-v2/eval/report.json": "addca7765d21a290e43f877a90e7f91e017bc1e1b3ad550ef53a5f8752429c9b",
         "experiments/final-acceptance-native-super-static-v2/result.json": "58b1852f5a03a540231e9c0ecfe93536760618e72c8f8169e216f68d124cf11d",
         "experiments/final-acceptance-native-super-static-v2/resolved-config.json": "783e801f1b590af2716f65cf37407b763e466777d9c7eb2388f66ec54b94f5a4",
-        "experiments/final-acceptance-native-super-static-v2/manifest.json": "9e2ab3e0a9b2b32418f73292991b08768c667ec0756b1f752dd376b47623456f",
+        "experiments/final-acceptance-native-super-static-v2/manifest.json": "8b6bae25cc47df9b34b49266c56a1facdaf9f2339e195c5f731b9344b32fc719",
         "experiments/final-acceptance-native-super-static-v2/code.patch": "ee44ac91a32d04332f126276e3f34c4fe08414396a29966df8d3f7b7df03eee6",
-        "experiments/final-acceptance-native-super-static-v2/command.txt": "c03c0419375d74b9fb488055e5de8dd840be84935c9875f13cb16dc78663e4af"
+        "experiments/final-acceptance-native-super-static-v2/command.txt": "3c11fa8bd71282150df68b82cc070674cb22faacec2f7004327182b31a4fbc90"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=navigation/static evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55601 runtime.device=cpu run_id=final-acceptance-native-super-static-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/super env=navigation/static evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55601 runtime.device=cpu run_id=final-acceptance-native-super-static-v2",
       "task_config": {
         "duration": 300.0,
         "dynamic": false,
@@ -4194,11 +4194,11 @@
         "experiments/final-acceptance-native-super-dynamic-v2/eval/report.json": "9e197e3ea39eeea6b812e8c93d4962a891661576a21ce26db3dc625d5b39f01c",
         "experiments/final-acceptance-native-super-dynamic-v2/result.json": "0b0dfe7fe5340c9483a8b6812b110769ee10787167816e6c2391791d1a4a914d",
         "experiments/final-acceptance-native-super-dynamic-v2/resolved-config.json": "be2fffae239350d1c2adac930e1ccf64db6c3037f734718caf1fca8fcc2a80dd",
-        "experiments/final-acceptance-native-super-dynamic-v2/manifest.json": "ab4ea5f58183b0fc2fab9f273312ce5dc5ea25430a6912cae595ffdba6bd1fb8",
+        "experiments/final-acceptance-native-super-dynamic-v2/manifest.json": "91f5da96dd1004b0d0fd1d97792117309fb88c38c40f8002f538a6d5100efb45",
         "experiments/final-acceptance-native-super-dynamic-v2/code.patch": "ee44ac91a32d04332f126276e3f34c4fe08414396a29966df8d3f7b7df03eee6",
-        "experiments/final-acceptance-native-super-dynamic-v2/command.txt": "69b82032e47d41f710cd990fcba6c9422274c4d238d8ae3722d0b25113e5a704"
+        "experiments/final-acceptance-native-super-dynamic-v2/command.txt": "92c7db41cddef788f2503ba2870622ce367392c01282a77fff29da60f933d4dc"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=navigation/dynamic evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55606 runtime.device=cpu run_id=final-acceptance-native-super-dynamic-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/super env=navigation/dynamic evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55606 runtime.device=cpu run_id=final-acceptance-native-super-dynamic-v2",
       "task_config": {
         "duration": 300.0,
         "dynamic": true,
@@ -4299,7 +4299,7 @@
         "experiments/final-acceptance-native-ego_planner-hovering-v2/eval/report.json": "238e77dbcce3a6d8eb61e35b77c590ad6d0b91f736b7bf73d2ffae31f6c7299e",
         "experiments/final-acceptance-native-ego_planner-hovering-v2/result.json": "f32f73c00e880e63ab24eafcb6abce6e889666898a8429c819176d618ba15e88",
         "experiments/final-acceptance-native-ego_planner-hovering-v2/resolved-config.json": "ac44021bc3036242b434c019abc04088cdebe7a51814f72a4ef5009fe636044e",
-        "experiments/final-acceptance-native-ego_planner-hovering-v2/manifest.json": "53d6873c6a0f00c761e7392b2a01a8fb29cef43ea36fb4c3b546fe54b3bd1b98",
+        "experiments/final-acceptance-native-ego_planner-hovering-v2/manifest.json": "f2fbb620e8d780092eda74d9dfcfde2744682f876d53fb0d09c78b036e9dc2a1",
         "experiments/final-acceptance-native-ego_planner-hovering-v2/code.patch": "81e513dfa1a08431038e4f59c2ea8667071200a74bb88be6e21510c55395cd84",
         "experiments/final-acceptance-native-ego_planner-hovering-v2/command.txt": "04f0e23f7beffe07de88b6c20e15bc45771a44b4f1198448d30a9f674800969e"
       },
@@ -4390,11 +4390,11 @@
         "experiments/final-acceptance-native-ego_planner-tracking-v2/eval/report.json": "845b748c58c78cf84a007ba9f1923669a23de3799ab09e71492aaad4c064ccbd",
         "experiments/final-acceptance-native-ego_planner-tracking-v2/result.json": "3147c8356cbd64152bd92c2e5a072ca3c0380e6cd5bb2c6a9f8e894fdcfc8166",
         "experiments/final-acceptance-native-ego_planner-tracking-v2/resolved-config.json": "f52afa92e4c8b52b0a5d08f881e45ac6eca850cc13e0e2e8aa80ba51d8cda6a6",
-        "experiments/final-acceptance-native-ego_planner-tracking-v2/manifest.json": "8794f9bacb13d5be00604ab6fd045b6f3ebc47eb0c6fd3e582fb341282cad751",
+        "experiments/final-acceptance-native-ego_planner-tracking-v2/manifest.json": "5afcad6c98ec228382d7574d0294d3adaeba96ad6898978e125e014fad4db6e6",
         "experiments/final-acceptance-native-ego_planner-tracking-v2/code.patch": "cc93270c86c6481e7a97960faa62ef03c14806597bc00c367861fbd1b7765cc8",
-        "experiments/final-acceptance-native-ego_planner-tracking-v2/command.txt": "a226b9d33eb4f0f20611a3cb3cc92a23b2e6c2c5cbb6bf7882f1e450cc9e6032"
+        "experiments/final-acceptance-native-ego_planner-tracking-v2/command.txt": "983bc0fc4270f6f56175e0fca1572761b47ff1f62fd39e0624e58fea8e4ba1b4"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=tracking observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-ego_planner-tracking-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=tracking observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55751 run_id=final-acceptance-native-ego_planner-tracking-v2",
       "task_config": {
         "duration": 10.0,
         "freq": 50,
@@ -4476,7 +4476,7 @@
         "experiments/final-acceptance-native-ego_planner-racing-v3/eval/report.json": "6eca3f87cbae60ef5a1ea78efd7fc7d7ac2cb4476e3967841c8c6424039221a2",
         "experiments/final-acceptance-native-ego_planner-racing-v3/result.json": "15f5c614869b81ab16555a147aaf53d979db7915a9d414304069656900730e27",
         "experiments/final-acceptance-native-ego_planner-racing-v3/resolved-config.json": "ccf9712fc93322b0b8215bc38e918bb167a3c9a8e03f6ea1c703545d5d26491e",
-        "experiments/final-acceptance-native-ego_planner-racing-v3/manifest.json": "5ce16bf52ec579d86cadfcb3b38f54ee0dbc959b2a112c6d359ad33a2eeb9060",
+        "experiments/final-acceptance-native-ego_planner-racing-v3/manifest.json": "96d6cf62d84d524fcfd9eb32f34ae0f1b2ca9216bf04dc5d2634f1055138355d",
         "experiments/final-acceptance-native-ego_planner-racing-v3/code.patch": "b79f4c9fec6b62e59980f1106b9dc8ab6a8415adf599be740bbbcbde0ec61815",
         "experiments/final-acceptance-native-ego_planner-racing-v3/command.txt": "9655f50846bde36262853f22625c88e614383675b7146b3d8238c207ffcd502e"
       },
@@ -4565,11 +4565,11 @@
         "experiments/final-acceptance-native-ego_planner-static-v2/eval/report.json": "9503ae9df82ef6cd2915a999d7c8045f840c705e420377ea056a0498813ee217",
         "experiments/final-acceptance-native-ego_planner-static-v2/result.json": "726eb98a40fcc3ffeab455cdb7704bae4fb68cd6414ac1df9db733713106e7fe",
         "experiments/final-acceptance-native-ego_planner-static-v2/resolved-config.json": "75ff921dcd969e92d3ff8286c6090e5c47b3cbe2819f266fdd31d68f00a2dedf",
-        "experiments/final-acceptance-native-ego_planner-static-v2/manifest.json": "d8c1b07ad704106931c9c149875fa38769625f3d32ff5d470fc2e979b1056660",
+        "experiments/final-acceptance-native-ego_planner-static-v2/manifest.json": "3e6f0ae66518383c9c73954c5b4105a0de0d1126e363c30e74970ae1db0ffe21",
         "experiments/final-acceptance-native-ego_planner-static-v2/code.patch": "6bd541724e1784b631a7292287a51a828b3076aca3362528dadc5a29e5cc70c3",
-        "experiments/final-acceptance-native-ego_planner-static-v2/command.txt": "f853a7a9668011e704ad5275ca49b7df0ca97fbfffe146d143feb990f056cbe2"
+        "experiments/final-acceptance-native-ego_planner-static-v2/command.txt": "239a35e147485476b72be214fc457efdc4f274e95012835d635ad77716a153a4"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=navigation/static evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55621 runtime.device=cpu run_id=final-acceptance-native-ego_planner-static-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=navigation/static evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55621 runtime.device=cpu run_id=final-acceptance-native-ego_planner-static-v2",
       "task_config": {
         "duration": 300.0,
         "dynamic": false,
@@ -4672,11 +4672,11 @@
         "experiments/final-acceptance-native-ego_planner-dynamic-v2/eval/report.json": "d4bfb1d218ec29a822a94761178e363fe3cc78378dac618dcf19a54eb7443d4a",
         "experiments/final-acceptance-native-ego_planner-dynamic-v2/result.json": "c3aabfd9f7eb95ee0b8c4ed057a39e31979d7c531c66e6cc5a452a7e8725ee8f",
         "experiments/final-acceptance-native-ego_planner-dynamic-v2/resolved-config.json": "d78b8ce03994b8870e2b8d304e58096b9b64256d3fce4e713cc041455156c5de",
-        "experiments/final-acceptance-native-ego_planner-dynamic-v2/manifest.json": "dcd97d419743d8d79d3ff81a26a97d0c0664774dc49385476e4b96a6ba008f5b",
+        "experiments/final-acceptance-native-ego_planner-dynamic-v2/manifest.json": "443795e4bfaf854337ce45f102c4f09262d1f6efa17b4da09ad213de52a1c429",
         "experiments/final-acceptance-native-ego_planner-dynamic-v2/code.patch": "ffff9302a2387d8c1eb9c826c9ce796573d352f3ddc1e5dd8ddbedb076ad9485",
-        "experiments/final-acceptance-native-ego_planner-dynamic-v2/command.txt": "9b4e03ead95dee2f97ed2e4f75d1d8bc4c4a7c9d4f12a114b12e09dbe0a71ea9"
+        "experiments/final-acceptance-native-ego_planner-dynamic-v2/command.txt": "24f62242bf7ef490e30053162951d05d0530e72f1eac9594b9af7dbaab5c4507"
       },
-      "command": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55626 runtime.device=cpu run_id=final-acceptance-native-ego_planner-dynamic-v2",
+      "command": ".pixi/envs/default/bin/python scripts/eval.py method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v2 evaluation.episodes=2 method.workers=2 method.port=55626 runtime.device=cpu run_id=final-acceptance-native-ego_planner-dynamic-v2",
       "task_config": {
         "duration": 300.0,
         "dynamic": true,

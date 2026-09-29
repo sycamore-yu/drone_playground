@@ -2457,75 +2457,77 @@
     {
       "method": "ppo",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-heldout-ppo-racing-v1/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-ppo-final.log"
+      "log": "tmp/release-checks/play-ppo-final.log"
     },
     {
       "method": "bptt",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-heldout-bptt-racing-v1/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-bptt-final.log"
+      "log": "tmp/release-checks/play-bptt-final.log"
     },
     {
       "method": "shac",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-shac-final.log"
+      "log": "tmp/release-checks/play-shac-final.log"
     },
     {
       "method": "pointcloud",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-heldout-pointcloud-racing-v1/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-pointcloud-final.log"
+      "log": "tmp/release-checks/play-pointcloud-final.log"
     },
     {
       "method": "super",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-native-super-racing-v3/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-super-final.log"
+      "log": "tmp/release-checks/play-super-final.log"
     },
     {
       "method": "ego_planner",
       "command": [
-        "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/architecture-v3/.pixi/envs/default/bin/python",
+        ".pixi/envs/default/bin/python",
         "scripts/play.py",
         "replay=experiments/final-acceptance-native-ego_planner-racing-v3/rollouts",
         "visualization=headless",
         "runtime.device=cpu"
       ],
       "exit_code": 0,
-      "log": "tmp/final-acceptance/play-ego_planner-final.log"
+      "log": "tmp/release-checks/play-ego_planner-final.log"
     }
   ],
-  "reader": "Python pickle/numpy structural and time readback; headless public play entry"
+  "reader": "RScope serialized trajectory, MuJoCo model load, finite arrays, first-terminal-frame timing, and six headless public play entries",
+  "verification_date": "2026-09-29",
+  "relocation_validated": true
 }

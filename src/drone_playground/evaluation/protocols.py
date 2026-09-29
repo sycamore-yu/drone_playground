@@ -23,7 +23,7 @@ def protocol_identity(config):
     if specification.get("name") != "navigation" or specification.get("version") not in (1, 2):
         raise ValueError("Unsupported benchmark protocol version")
     task, scene = config["env"]["task"], config["env"]["scene"]
-    if task["name"] not in ("navigation", "pointcloud_avoidance"):
+    if task["name"] not in ("navigation", "pointcloud_avoidance", "pointcloud_navigation"):
         raise ValueError("Navigation protocol requires a navigation task")
     catalog = _path(scene.get("catalog_path") or specification["catalog"])
     if hashlib.sha256(catalog.read_bytes()).hexdigest() != specification["catalog_sha256"]:

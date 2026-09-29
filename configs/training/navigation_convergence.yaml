@@ -1,0 +1,11 @@
+defaults:
+- default
+- _self_
+seed: 0
+num_envs: 16
+policy_updates: 256
+num_timesteps: null
+num_evals: 5
+max_wall_seconds: 900
+development_episodes: 2
+development_metric: navigation-convergence-v2

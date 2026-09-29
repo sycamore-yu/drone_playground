@@ -164,11 +164,16 @@ def train(
 
     @jax.jit
     def update(state):
+        start = jax.tree.map(jax.lax.stop_gradient, state.environment)
+        key = state.key
+        if config.get("resample_window_initials", False):
+            key, reset_key = jax.random.split(key)
+            start = env.reset(jax.random.split(reset_key, count))
         (loss, (end, key, obs)), grad = jax.value_and_grad(objective, has_aux=True)(
             state.policy,
             state.normalizer,
-            jax.tree.map(jax.lax.stop_gradient, state.environment),
-            state.key,
+            start,
+            key,
         )
         change, os = optimizer.update(grad, state.optimizer, state.policy)
         return state.replace(
@@ -230,5 +235,8 @@ def train(
             "actor_parameter_delta_l2": float(np.sqrt(delta)),
             "compile_and_first_update_seconds": compile_seconds,
             "net_update_seconds": net_seconds,
+            "window_resets": int(state.updates) * count
+            if config.get("resample_window_initials", False)
+            else 0,
         },
     )

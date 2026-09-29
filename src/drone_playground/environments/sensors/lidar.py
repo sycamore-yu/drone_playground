@@ -98,6 +98,8 @@ class Mid360Lidar:
     range_m: tuple[float, float] = MID360_RANGE_M
     normalise_far_m: float = 40.0
     include_ground: bool = True
+    state_gradient: str = "direct"
+    obstacle_batch_size: int = 1
     mount: str = "body FLU, sensor z up (no gimbal, no lever arm)"
     calibration_id: str = "p5-mid360-mujoco-lidar-0.3.5-120pt-v1"
 
@@ -110,6 +112,10 @@ class Mid360Lidar:
             raise ValueError("lidar range must satisfy 0 < min < max")
         if self.normalise_far_m <= 0.0:
             raise ValueError("normalisation range must be positive")
+        if self.state_gradient not in ("direct", "detached"):
+            raise ValueError("LiDAR state derivative must be direct or explicitly detached")
+        if not isinstance(self.obstacle_batch_size, int) or self.obstacle_batch_size < 1:
+            raise ValueError("Obstacle batch size must be a positive integer")
 
     @property
     def points_per_frame(self) -> int:
@@ -197,6 +203,8 @@ class Mid360Lidar:
             "range_m": list(self.range_m),
             "observation_normalise_far_m": self.normalise_far_m,
             "source_availability_hz": self.source_rate_hz,
+            "state_gradient": self.state_gradient,
+            "obstacle_batch_size": self.obstacle_batch_size,
             "history_frames": self.history,
             "policy_points_per_frame": self.points_per_frame,
             "policy_channels": self.channels,
@@ -234,18 +242,25 @@ def cast_lidar(
         bank.world_high,
         lidar.include_ground,
         rotations=None if bank.rotations is None else bank.rotations[scenario_id],
+        obstacle_batch_size=lidar.obstacle_batch_size,
     )
     valid = (distance >= lidar.range_m[0]) & (distance <= lidar.range_m[1])
     rng = jnp.where(valid, distance, 0.0)
     points_sensor = direction_sensor * rng[:, None]
     points_world = position[None, :] + direction_world * rng[:, None]
-    return LidarFrame(
+    frame = LidarFrame(
         distance=rng,
         valid=valid,
         points_sensor=points_sensor,
         points_world=points_world,
         point_time=lidar.relative_point_time(),
         time=jnp.asarray(time, jnp.float32),
+    )
+    # The optional measurement boundary changes only the training derivative.
+    # The encoder's parameter gradients and the plant/reward derivatives remain
+    # active; physical ranges and inference observations are bitwise identical.
+    return (
+        jax.tree.map(jax.lax.stop_gradient, frame) if lidar.state_gradient == "detached" else frame
     )
 
 

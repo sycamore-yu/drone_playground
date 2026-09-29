@@ -1,0 +1,7 @@
+defaults:
+- navigation_motion
+- _self_
+recipe: motion-aware-v2
+# A unit progress reward cancels the asymptotic slope of unit pseudo-Huber
+# velocity error: v>target remains attractive. Keep the progress slope lower.
+progress_scale: 0.2

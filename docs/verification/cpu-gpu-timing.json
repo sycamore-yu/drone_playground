@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-29",
+  "algorithm": "BPTT",
+  "parallel_environments": 8,
+  "horizon_steps": 64,
+  "policy_frequency_hz": 50,
+  "scope": "同机小批量探针；共享计算负载；前两次包含编译，稳定更新取第3至10次。",
+  "training_policy": "正式训练优先GPU排队；CPU用于测试和短探针。",
+  "devices": {
+    "cpu": {
+      "source_name": "update-iterations-cpu-8.json",
+      "source_sha256": "d62f53a9ff463d561e3e74afefdb31c2d962bbdea62455fa250ab162ac546f4c",
+      "compile_and_first_update_seconds": 35.62002835609019,
+      "second_update_seconds": 28.469898657873273,
+      "steady_update_seconds": [
+        2.3264859090559185,
+        2.2524161180481315,
+        2.2164478171616793,
+        2.205435544718057,
+        2.2818664610385895,
+        2.21351752942428,
+        2.2015817146748304,
+        2.339139950927347
+      ],
+      "steady_update_median_seconds": 2.2344319676049054,
+      "measured_iterations": 10,
+      "steady_measurements": 8
+    },
+    "gpu": {
+      "source_name": "update-iterations-gpu-8.json",
+      "source_sha256": "017ad2193d71abcab943427576a65ba9ec40c32cb4b910536fe4c6dc19d5b97a",
+      "compile_and_first_update_seconds": 93.12684508087113,
+      "second_update_seconds": 79.89805107098073,
+      "steady_update_seconds": [
+        0.7615822507068515,
+        0.7666478049941361,
+        0.7942868089303374,
+        0.7544845179654658,
+        0.7641655928455293,
+        0.8232942577451468,
+        0.7638800889253616,
+        0.9344129096716642
+      ],
+      "steady_update_median_seconds": 0.7654066989198327,
+      "measured_iterations": 10,
+      "steady_measurements": 8
+    }
+  },
+  "cpu_over_gpu_steady_median_ratio": 2.919274120226815
+}

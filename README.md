@@ -1,112 +1,76 @@
 # Drone Playground
 
-面向无人机学习、规划和控制的可组合仿真实验平台。通过一份方法配方与一份完整环境预设，运行训练、独立评测及实际轨迹展示。当前配置版本为 3。
+用于无人机学习、规划与控制研究的配置驱动仿真平台。通过完整的方法配方和环境预设，组合策略网络、优化器、传感器、任务、控制器和动力学，并保存可追溯的训练记录、冻结评测和物理轨迹回放。
 
-平台采用 JAX 原生实现优先的路线，复用锁定版本的 Crazyflow、Brax 和 LOTF；原生 EGO-Planner、SUPER 与 acados 通过明确适配进入同一任务环境。控制研究重点是轨迹跟踪层，机体状态由仿真提供，传感器提供深度或点云测量。
+学习方法使用 JAX、Brax 和 Crazyflow；SUPER 与 EGO-Planner 通过项目独立管理的 ROS 容器接入。PointNet/GRU 点云方法与 LOTF 分别保留自己的来源、动力学和训练身份。
 
-## 当前可运行能力
+## 安装与运行
 
-PPO 的公开配方覆盖悬停、轨迹跟踪、竞速、静态导航和动态导航。BPTT、APG、SHAC、D.VA、LOTF 与点云论文具名训练器保留各自参数更新语义。两种现有 MPC 与 EGO/SUPER 支持冻结条件下的独立评测及展示。
-
-当前main已完成六方法、五任务的30项实际运行验收。PPO、BPTT、SHAC及点云控制迁移的悬停、跟踪、竞速均通过各32回合留出验收；SUPER静态／动态导航各6/6到达，其他导航和原生控制质量按实际负结果保留。方法身份、热启动、预算、冻结权重和逐项结果见 [五任务验收](docs/verification/final-acceptance/README.md)，重组阶段证据保留在 [历史验证](docs/verification/architecture-v3/README.md)。LOONG、AERO-MPPI、AC-MPC 的身份记录在来源清单中，其完整 JAX 实现属于后续具名任务。
-
-## 环境与方法
-
-```text
-方法：允许的信息 → 神经策略 / 在线优化 / 具名组合 → 轨迹或控制命令
-环境：场景 + 任务 + 传感测量 + 观测表示 + 命令执行与动力学
-训练：环境交互或可微展开 → 训练目标 → 参数更新 → 开发集选模
-评测：固定条件和试次 → 共享闭环 → 原始事件、全分母统计、回放
-```
-
-场景文件只定义外部几何及运动。目标、重置、到达、过门、碰撞终止与时限属于任务。`env` 是这些组件的组合入口，学习与优化方法均使用完整环境。训练目标由独立 `objective` 配置选择；当前 Brax 任务状态保留奖励字段，以便沿用既有训练和评测数值语义。
-
-## 安装
-
-需要 Linux、Git、Pixi。原生规划器另需 Docker，GPU 训练另需匹配的 NVIDIA 驱动。
+开发环境为 Linux、Python 3.13 和 Pixi。GPU 训练使用 NVIDIA CUDA；依赖版本、源码提交及必要补丁分别固定在 `pixi.lock` 和 `third_party/sources.yaml`。
 
 ```bash
-# 在项目根目录执行，锁定源码进入项目自管缓存。
+git clone https://github.com/sycamore-yu/drone_playground.git
+cd drone_playground
 python3 scripts/tools/fetch_sources.py
 pixi install --locked
+
+# 查看完整解析配置，然后开始独立训练。
+pixi run train method=learning/ppo env=hovering --cfg job
+pixi run train method=learning/ppo env=hovering runtime.device=gpu run_id=ppo-hover-example
 ```
 
-源码来源及提交见 `third_party/sources.yaml`，依赖解析见 `pixi.lock`。首次源码获取脚本只使用 Python 标准库；清单采用兼容 YAML 的 JSON 表示。LOTF 所需机体和场景资源随固定源码缓存保留。
-
-完整测试包含实际 acados 求解。先执行 `bash scripts/tools/setup_acados.sh`，或设置已有构建的 `ACADOS_SOURCE_DIR`，随后执行 `pixi run test`。
-
-## 训练
+`method` 选择完整方法，`env` 选择完整环境。`train` 负责学习，`eval` 使用冻结参数，`play` 执行或查看物理轨迹。已有运行目录受到覆盖保护；新的试验使用新的 `run_id`，已有训练通过检查点恢复。
 
 ```bash
-pixi run train method=learning/ppo env=hovering
-pixi run train method=learning/ppo env=tracking
-pixi run train method=learning/ppo env=racing
-pixi run train method=learning/ppo env=navigation/static
-pixi run train method=learning/ppo env=navigation/dynamic
+# 安装正式结果包后，查看已保存的 PPO 竞速轨迹。
+pixi run play replay=experiments/final-acceptance-heldout-ppo-racing-v1/rollouts
 
-pixi run train method=learning/bptt env=tracking
-pixi run train method=learning/shac env=racing
-
-# 点云控制迁移使用单独环境与显式输入条件化。
-pixi run train method=paper/pointcloud_flight env=paper/control/hovering network=paper_pointnet_gru_conditioned training.policy_updates=1024 training.num_envs=8 algorithm.horizon_length=32
-
-# Learning on the Fly 与原始点云论文配方分别选择。
-pixi run train method=paper/lotf env=paper/lotf_hover
-pixi run train method=paper/pointcloud_flight
+# 从明确的冻结参数重新评测，输出至独立运行目录。
+pixi run eval \
+  checkpoint=experiments/final-acceptance-ppo-racing-t0/checkpoints/step-0002097152.pkl \
+  runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 \
+  run_id=recheck-ppo-racing
 ```
 
-CPU 验证使用 `runtime.device=cpu`；预算使用 `training.num_timesteps` 或具名算法的 `training.policy_updates`。已通过验收的完整命令、热启动来源和实际更新增量见 [验收命令](docs/verification/final-acceptance/commands.md)。
+权重、轨迹和依赖缓存由本地结果包管理，Git 保存源码、配置、协议和精简证据。新的源码克隆需要自行训练或取得相应结果包。原生规划器的容器准备及完整命令见[操作手册](docs/runbook.md)。
 
-## 评测和展示
+## 冻结的正式验收结果
+
+以下为2026-09-29选定的六方法、五任务历史验收矩阵。控制任务单元为“完成回合／总回合；位置均方根误差（米）”，导航单元为到达次数与终止事件。后续导航调参记录独立归档；本表始终对应[明确的运行选择](docs/verification/final-acceptance/selection.json)。
+
+| 方法 | 悬停 | 跟踪 | 竞速 | 静态导航 | 动态导航 |
+|---|---|---|---|---|---|
+| PPO | 32/32；0.152 | 32/32；0.036 | 32/32；0.015 | 0/6，6次碰撞 | 0/6，6次碰撞 |
+| BPTT | 32/32；0.151 | 32/32；0.029 | 32/32；0.007 | 0/6，6次碰撞 | 0/6，6次碰撞 |
+| SHAC | 32/32；0.152 | 32/32；0.030 | 32/32；0.010 | 0/6，6次碰撞 | 0/6，6次碰撞 |
+| 点云方法¹ | 32/32；0.177 | 32/32；0.076 | 32/32；0.065 | 0/16，15次碰撞、1次超时 | 0/16，14次碰撞、2次超时 |
+| SUPER | 2/2；0.275 | 2/2；0.251 | 0/2 | 6/6 | 6/6 |
+| EGO-Planner | 2/2；0.367 | 2/2；0.668 | 0/2，2次超时 | 0/6，6次碰撞 | 0/6，6次碰撞 |
+
+¹ 点云控制任务采用显式点坐标尺度0.02的控制迁移配方；导航采用论文公开信息重建方法的第30000次更新冻结参数。两者具有各自的训练配置。SHAC 竞速使用 BPTT 参数热启动后继续执行真实 SHAC 更新。
+
+这是一份平台集成与任务质量记录：控制学习方法各评测32回合，原生规划器控制任务各2回合；PPO、BPTT、SHAC 导航记录对应4096次交互的工程短训练。完成率、误差阈值和预算完成分别报告；SUPER、EGO-Planner 的控制误差仍高于0.25米质量阈值。完整488回合分母、245份回放索引、参数摘要及运行条件见[正式验收说明](docs/verification/final-acceptance/README.md)。
+
+## 方法与环境
+
+`learning/ppo`、`learning/bptt`、`learning/shac` 提供通用学习基线；`paper/pointcloud_flight` 与 `paper/lotf` 提供独立的文献方法；`paper/super`、`paper/ego_planner` 和 `optimization/attitude_mpc`、`optimization/sampling_mpc` 提供规划或优化基线。具名导航适配配方单独管理实验性训练变化，质量状态见[待办](docs/backlog.md)。
+
+核心环境为 `hovering`、`tracking`、`racing`、`navigation/static` 和 `navigation/dynamic`。Navigation 的八张固定场景包括 S01/S02/S03/S06 与 D01/D02/D03/D06，共用100×40米几何、96米起终点距离、0.5米到达半径，以及导航第二版的300秒时限和20米/秒名义速度上限。实际命令速度与达到的速度另行记录。
+
+## 文档与开发
+
+[架构与数据流](docs/architecture.md)说明组件职责；[操作手册](docs/runbook.md)提供安装、训练、评测与回放命令；[评测协议](docs/evaluation.md)定义指标和信息边界；[完整目录](docs/project-tree.md)用于定位文件；[开发约定](docs/development.md)统一测试、设备选择和产物管理；[状态](docs/status.md)只保留现役状态。
 
 ```bash
-pixi run eval method=paper/super env=navigation/static evaluation=navigation_v2
-pixi run eval method=paper/ego_planner env=navigation/dynamic evaluation=navigation_v2
-pixi run eval method=optimization/attitude_mpc env=racing
-pixi run eval method=optimization/sampling_mpc env=racing
-
-# 实际检查点文件由其旁边的元数据恢复方法、网络和输入契约。
-pixi run eval checkpoint=experiments/<运行标识>/checkpoints/<检查点>.pkl
-pixi run play checkpoint=experiments/<运行标识>/checkpoints/<检查点>.pkl
-pixi run play method=paper/super env=navigation/static
-pixi run play replay=experiments/<运行标识>/rollouts
+JAX_PLATFORMS=cpu pixi run test
+pixi run lint
+python3 scripts/tools/summarize_final_acceptance.py \
+  --selection docs/verification/final-acceptance/selection.json \
+  --output tmp/final-acceptance-check.json
 ```
 
-`play` 在线运行与正式评测共享执行层，结束后发布实际回放包到 RScope；现有回放模式只读取轨迹产物。服务器验证可选 `visualization=headless`，生成与核对回放且保持当前查看器选择。优化配方的训练入口在创建运行目录前检查训练能力。
+完整 MPC 数值回归需要[操作手册](docs/runbook.md)中记录的 acados 本地构建。正式训练默认使用 GPU；CPU 用于轻量验证、测试及原生规划器宿主执行。
 
-EGO/SUPER 运行环境由 `native_planners/` 自管：`bash native_planners/setup.sh`。acados 构建使用 `bash scripts/tools/setup_acados.sh`，已有固定构建可通过 `ACADOS_SOURCE_DIR` 指定。
+## 许可与来源
 
-## 高级组合
-
-```bash
-# 组件的实际所有者可直接覆盖。
-pixi run train method=learning/ppo env=tracking env.execution.dynamics.forward=first_principles
-
-# Hydra 配置组重选使用其挂载路径。
-pixi run train method=learning/ppo env=navigation/static \
-  sensor@env.sensor=d435 observation@env.observation=navigation_depth
-
-# 标准学习配方默认逐回合25–50毫秒随机命令延迟。
-# 显式固定延迟使用独立配置；两种附加延迟方式互斥。
-pixi run train method=learning/ppo env=hovering runtime.action_delay_ms=null runtime.action_delay_steps=2
-```
-
-`dynamics` 产生实际状态；方法内部 `prediction` 提供未来预测；`algorithm.gradient` 选择直接或具名代理导数。动力学实现和算法配置各自拥有唯一来源。组合约束在启动时检查，真实支持范围由方法配方与验证证据共同界定。
-
-## 数据、协议与来源
-
-`assets/scenes/navigation/catalog.json` 保存已验收的八个几何场景，公开名称为 navigation；静态和动态视图引用同一资产。`benchmarks/navigation/v2/` 保存当前300秒协议与划分；`v1/`保存原40秒协议与几何验收证据。历史场景编号及资产摘要保持可核对。
-
-每次运行独占 `experiments/<运行标识>/`，保存解析配置、提交和补丁、依赖、实际进程命令、状态、检查点、评测和回放。历史版本检查点通过显式复制迁移：
-
-```bash
-pixi run python scripts/tools/migrate_artifact.py <可信旧检查点.pkl> <新目标目录>
-```
-
-迁移检查源摘要，重定位序列化类型路径，保留数组和优化器状态，并拒绝覆盖目标。Pickle 产物只应来自可信的本地实验。
-
-## 导航与边界
-
-完整实际目录见 [项目目录](docs/project-tree.md)，模块职责见 [架构](docs/architecture.md)，运行说明见 [操作手册](docs/runbook.md)，当前任务见 [状态](docs/status.md)。许可与上游差异见 [第三方声明](THIRD_PARTY_NOTICES.md)。
-
-当前原生导航名义速度上限20米/秒，回合上限300秒，到达或失败后停止该回合录制。控制任务保持原悬停、跟踪和竞速时长。原点云分支停止新增开发，保留原50000更新训练及其数据来源；当前开发路径和分支生命周期见 [状态](docs/status.md)。
+项目使用 [GPL-3.0-only](LICENSE)。各上游代码、移植实现、补丁与外部进程的来源见[第三方声明](THIRD_PARTY_NOTICES.md)及[固定来源清单](third_party/sources.yaml)。公开源代码与研究结果的适用范围，以具体方法配置和评测协议为准。

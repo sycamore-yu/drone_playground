@@ -1,19 +1,13 @@
-# 当前进度
+# 现役状态
 
-更新时间：2026-09-29。现役工作树：`simulation_dev/.worktrees/drone_playground/architecture-v3`；当前分支`main`。架构分支已合入64838b5，后续开发在main完成，配置版本为3。
+更新日期：2026-09-29。主开发分支为 `main`，规范项目位置为 `simulation_dev/drone_playground`。
 
-本次已执行六方法×五任务的30项实测。PPO、BPTT、SHAC、点云控制迁移的悬停／跟踪／竞速共12项均通过各32回合留出质量验收。SHAC竞速明确为BPTT热启动后真实SHAC更新；其余热启动来源、训练预算和冻结检查点见[验收矩阵](verification/final-acceptance/README.md)。
+公开基线采用[六方法、五任务正式验收](verification/final-acceptance/README.md)。主目录 `experiments/` 保留29个评测运行、18个对应训练来源和两组必要来源权重；选定参数、逐回合结果和正式回放均有独立备份。表外试验及历史开发文档由项目外的清理归档管理，失败实验的大文件已按清单清理。
 
-导航协议升级到300秒，原生规划器速度上限20米/秒，到达／失败终止录制。标准学习及本轮点云控制训练启用25–50毫秒逐回合随机命令延迟。所有方法使用真实执行路径；SUPER和EGO控制适配的备用控制帧数、原生轨迹与指令数分别保存。
+可组合架构和点云方法代码已并入主线。旧架构分支停止使用；原生规划器迁移分支停止开发。`pointcloud-paper` 工作树仅承载原先启动的50000次更新冻结运行及其协调器，继续保持原解释器和源码身份。该运行的实时状态以其运行目录为准，结果独立于上述正式矩阵。分支处置见[生命周期](research/branch-lifecycle.md)。
 
-SUPER静态／动态导航各6/6到达。EGO两类导航各0/6到达、6次碰撞。PPO/BPTT/SHAC六组导航均完成4096交互、真实更新和冻结评测，各0/6到达、6次碰撞；收敛按本轮授权保留为后续质量事项。原生三控制任务均完成真实规划器调用，精度和竞速失败保留。
+导航调参代码保留具名实验配方，后续研究范围集中在[待办](backlog.md)。P2历史质量、P5补采和Archify交互图保持独立待办。本次仅完成清理与验证，后续启动先核对现有进程、运行标识和完整训练状态。
 
-原点云论文开发选中的30000更新权重经摘要校验迁入当前主线，八场景×四速度32格评测为0到达、29碰撞、3超时。原50000更新训练及协调器保留在pointcloud-paper工作树，属于独立原始配方；当前点云控制迁移的条件化网络与任务适配使用独立身份。
+380项回归全部通过；30格、488回合、19份选定权重和245份回放核验通过。新路径的源码与依赖导入、GPU计算、锁定安装、代码检查和构建均通过；完整凭据见[清理验收](verification/release-cleanup.json)。
 
-主要修复包括射线未命中分支的非数值梯度、全部终止批次的停算、点云状态输入饱和、SHAC热启动后参数变化核验、EGO三维目标传递、SUPER控制轨迹初始化，以及原生竞速起飞接管。正式结果、原始候选、命令和摘要在[本次验证](verification/final-acceptance/README.md)。测试、静态检查和源码冻结记录在该目录的verification.json与source-hashes.json。
-
-旧架构验证274项及其运行结果保留在[历史验证](verification/architecture-v3/README.md)。本轮命令见[操作手册](runbook.md)和[验收命令](verification/final-acceptance/commands.md)，实际目录见[项目目录](project-tree.md)。
-
-原主工作树refactor/native-planner-runtime保留原状态。research/pointcloud-paper-navigation8相对main独有提交为0，停止新增开发，保留冻结训练来源和结果；分支处置见[生命周期](research/branch-lifecycle.md)。LOTF仍为独立方法。
-
-后续质量事项为学习导航、EGO导航、原生时间跟踪／竞速和原论文50000更新最终评测；Archify版本3交互图、P5历史归档及LOONG/AERO-MPPI/AC-MPC按[待办](backlog.md)独立维护。
+当前源码已通过本机路径与常见凭据模式检查。历史Git对象中仍保留217个含本机路径的文件版本，发布材料采用当前提交的源码快照。远端发布由单独授权触发。

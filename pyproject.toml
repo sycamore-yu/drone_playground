@@ -82,6 +82,7 @@ OMP_NUM_THREADS = "4"
 
 [tool.pixi.tasks]
 test = "env PYTHONPATH=src PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest"
+lint = "ruff check src scripts tests"
 train = "python scripts/train.py"
 eval = "python scripts/eval.py"
 play = "python scripts/play.py"

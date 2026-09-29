@@ -45,3 +45,32 @@ def test_masked_ray_misses_have_finite_position_derivatives(kind):
         axis=-1,
     )
     np.testing.assert_allclose(actual, differences, atol=0.001)
+
+
+def test_detached_lidar_has_identical_measurements_and_explicit_zero_state_derivative():
+    from drone_playground.environments.sensors.lidar import Mid360Lidar, cast_lidar
+    from tests.test_navigation import synthetic_bank
+
+    bank = synthetic_bank([dict(kind=KIND_BOX, size=(0.5, 2.0, 2.0), origin=(4.0, 0.0, 2.0))])
+    direct = Mid360Lidar()
+    detached = Mid360Lidar(state_gradient="detached")
+    position, quat = jnp.array([1.0, 0.0, 2.0]), jnp.array([0.0, 0.0, 0.0, 1.0])
+
+    def measure(sensor, p):
+        return cast_lidar(sensor, bank, jnp.int32(0), p, quat, jnp.float32(0), 0)
+
+    a, b = measure(direct, position), measure(detached, position)
+    for x, y in zip(jax.tree.leaves(a), jax.tree.leaves(b), strict=True):
+        np.testing.assert_array_equal(x, y)
+    grad = jax.jacrev(lambda p: measure(detached, p).points_sensor)(position)
+    np.testing.assert_array_equal(grad, 0.0)
+    full = jax.jacrev(lambda p: measure(direct, p).points_sensor)(position)
+    assert np.isfinite(full).all() and np.linalg.norm(full) > 0
+    assert detached.calibration()["state_gradient"] == "detached"
+
+
+def test_lidar_derivative_contract_rejects_unknown_rules():
+    from drone_playground.environments.sensors.lidar import Mid360Lidar
+
+    with pytest.raises(ValueError):
+        Mid360Lidar(state_gradient="implicit")

@@ -1,72 +1,75 @@
-# 配置驱动的可组合组件架构
+# 配置驱动的可组合架构
 
-当前实现采用版本 3 配置。方法、环境、执行、运行、学习和评测分别拥有领域职责。分层组合使相同组件可复用于不同方法；规划与控制融合的方法可以占据联合决策位置。未来方法的边界以实际输入、状态、命令和导数契约验证。
+公开装配入口为 `method` 和 `env`。方法配方选择决策方式、网络或优化问题以及更新规则；环境预设选择任务、物理场景、传感器、观测、控制器和实际动力学。`composition.py` 校验组件合同并分派执行，`app.py` 提供 Hydra 命令入口。
 
-## 配置装配
+## 配置归属
 
-公开选择为 `method=... env=...`，三个入口 `scripts/train.py`、`eval.py`、`play.py` 共用 `app.py` 和 `composition.py`。方法配方选择默认环境、训练算法、网络和资源；环境预设选择场景、任务、传感器、观测、执行及默认目标。Hydra 的显式覆盖在解析配置中完整保留。
+| 配置 | 职责 | 主要实现 |
+|---|---|---|
+| `method` | 神经策略、原生规划器或模型预测控制的决策接口 | `methods/`、`integrations/` |
+| `env.scene` | 场景几何、运动规律、起终点和具名实例 | `environments/scenes/` |
+| `env.task` | 成功、失败、时限及任务状态 | `environments/tasks/` |
+| `env.sensor` | 在当前物理状态和场景时刻生成测量 | `environments/sensors/` |
+| `env.observation` | 组织本体状态、目标及传感历史 | `environments/observations/` |
+| `env.execution` | 命令合同、跟踪器、内环控制器和实际动力学 | `execution/`、`models/` |
+| `network` | 感知编码、策略和价值网络 | `networks/` |
+| `objective` | 任务奖励或可微损失 | `learning/objectives/` |
+| `algorithm` | 参数更新、时域和导数规则 | `learning/algorithms/` |
+| `training` | 并行数、预算、种子、恢复及开发评测 | `learning/train.py` |
+| `runtime` | 设备、后端、执行时序和传输延迟 | `runtime/` |
+| `evaluation` | 冻结参数、评测实例、协议与输出 | `evaluation/`、`benchmarks/` |
 
-装配后唯一状态所有者如下：
+场景提供物理事实；完整环境把这些事实与具体任务及执行方式组合。学习方法和优化方法均使用完整环境。优化器内部预测模型归属于该方法，实际推进飞行状态的前向模型归属于 `env.execution.dynamics`；两者通过显式配置分别描述。
 
-| 路径 | 责任 |
-|---|---|
-| `method` | 决策实现、参数身份、原生进程设置或 MPC 问题配置 |
-| `env.scene` | 外部几何、障碍运动和目录引用 |
-| `env.task` | 初始状态、目标、参考要求、事件、终止和时限 |
-| `env.sensor` | 测量模型、采样时刻、坐标、有效性和标定 |
-| `env.observation` | 允许的信息、输入组织及历史 |
-| `env.execution` | 命令契约、可选跟踪器、内环控制与 dynamics |
-| `algorithm.gradient` | 导数选择，具体实现由对应模型或算法提供 |
-| `network` | 策略、编码与价值网络结构 |
-| `objective` | 具名训练目标；在线优化代价由方法拥有 |
-| `training` | 更新预算、并行采样、保存、开发选模和恢复 |
-| `runtime` | 设备、执行后端、时钟及显式附加延迟 |
-| `evaluation` | 冻结条件、试次和具名协议 |
+## 闭环数据流
 
-源码模块位置与配置目录分别承担实现组织和配方复用，运行时实例保持单一所有者。
+```mermaid
+flowchart LR
+    Scene["场景几何与运动"] --> Sensor["传感器测量"]
+    State["真实仿真状态"] --> Sensor
+    Sensor --> Obs["观测与历史"]
+    State --> Obs
+    subgraph Learning["学习方法"]
+        Encoder["感知编码／状态输入"] --> Policy["策略网络"]
+    end
+    subgraph Optimization["优化方法"]
+        Problem["规划／优化问题与预测模型"] --> Decision["轨迹或控制决策"]
+    end
+    Obs --> Encoder
+    Obs --> Problem
+    Policy --> Command["具名动作合同"]
+    Decision --> Tracker["轨迹跟踪适配"]
+    Tracker --> Command
+    Command --> Delay["每环境独立延迟状态"]
+    Delay --> Control["选定执行控制器"]
+    Control --> Dynamics["实际前向动力学"]
+    Dynamics --> State
+    State --> Task["任务事件与奖励／损失"]
+    Scene --> Task
+    Task -. "训练信号" .-> Update["算法更新"]
+    Update -. "参数更新" .-> Policy
+```
 
-## 完整环境与执行
+状态、延迟队列、传感器扫描相位和循环网络记忆属于各自环境或方法实例。每次重置只清理结束的实例。共享运行层分别实现 JAX 批量闭环和外部进程闭环；物理执行顺序由执行层拥有。
 
-`environments/environment.py` 构造任务环境；传感器、观测和模型由独立工厂构造。TrackingEnv、RacingEnv、NavigationEnv 共同使用 `execution/transition.py`：一次命令应用，随后推进完整控制周期。导航在物理子步获取碰撞和间隙证据，任务再解释到达、失败、截断。
+## 方法与模型边界
 
-当前 JAX/Brax 状态仍含奖励和指标字段。各任务保留经过回归测试的原有奖励语义；自动重置、回合包装和向量化集中在 `learning/env_adapter.py`。原生优化方法使用任务事件和状态推进，奖励字段仅用于记录。
+PPO 使用 Brax 更新接口；BPTT 通过有限时域轨迹求导；SHAC 保留真实策略、价值网络和目标价值更新。D.VA、LOTF 和点云方法使用自己的具名训练器。参数热启动重用策略参数，完整恢复同时恢复优化器、随机数、计数和必要环境状态。
 
-LOTF 保留其原生完整状态转移与代理导数边界。点云方法保留加速度命令、质点滞后、PointNet/GRU 和论文具名时间反传；这两条方法拥有独立来源、参数和训练状态。
+Crazyflow 提供 `so_rpy`、`so_rpy_rotor`、`so_rpy_rotor_drag` 与 `first_principles`。点云论文重建使用一阶滞后的 `PointMassLag`，LOTF 使用自己的执行与反向模型。各方法的动力学、时间尺度和导数边界由配置及结果元数据共同记录。
 
-## 方法、控制与模型
+SUPER 与 EGO-Planner 在独立 ROS 容器内运行，通过显式适配器接收观测和目标。轨迹跟踪器把轨迹转为执行命令；其控制任务使用滚动参考目标适配，导航任务使用目标点。`optimization/attitude_mpc` 和 `optimization/sampling_mpc` 对应当前真实优化实现。LOONG、AC-MPC、AERO-MPPI 作为待实现方向记录在来源清单与待办中。
 
-`methods/neural.py` 表示冻结神经策略；网络实现在 `networks/`，训练器在 `learning/algorithms/`。参考生成器位于 `methods/planners/reference.py`，任务在需要时选择参考。当前路径保持继承任务的参考语义。
+## 传感、几何和时序
 
-AttitudeMPC 和 SamplingMPC 位于 `methods/optimal_control/`。其预测模型和暖启动由方法持有，实际飞行状态由 `env.execution.dynamics` 推进。SamplingMPC 接收公开机体状态视图。未来 MPCC 的路径进度、AC-MPC 的网络—求解器梯度、LOONG 的时间分配与 AERO-MPPI 的点云/候选路径组合，分别作为真实实现任务落地。
+深度相机与两种 MID-360 配方共用解析图元求交及场景运动。通用 MID-360 使用固定 MuJoCo-LiDAR 扫描模式和四帧历史；论文点云方法使用180×30条规则角度射线。射线、碰撞和净空查询由同一场景库提供；传感器校准包含坐标系、频率、量程、采样和导数规则。
 
-EGO/SUPER 的地图与求解状态保留在隔离 ROS 工作进程中。平台只发送允许的测量、机体状态、目标和时钟；工作进程输出有效轨迹，跟踪器再产生姿态/总推力命令。进程翻译代码属于 `integrations/native_planner.py`，构建与 ROS 工作代码属于 `native_planners/`。
+Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议与校验摘要在 `benchmarks/navigation/`。八张场景固定命名为 S01/S02/S03/S06、D01/D02/D03/D06。图元、移动规律和任务边界以目录事实为准；传感输入独立于训练时使用的几何损失。
 
-`dynamics` 产生实验状态；`prediction` 服务在线预测；导数规则服务训练。三种用途分别记录，模型实现可以复用。
+`runtime.action_delay_ms` 在每个回合采样传输延迟，并按物理子步交付命令；`action_delay_steps` 是独立的整数控制步延迟。500Hz物理时钟把25–50毫秒请求量化到26–50毫秒。执行器一阶响应、传输队列、规划器计算时间分别记录。具体配方的策略、传感、积分和事件检测频率以冻结配置为准。
 
-## 共享运行
+## 产物与版本
 
-`runtime/jax_runner.py` 统一跟踪、竞速和导航的批量闭环：策略调用、环境推进、结束状态冻结及轨迹投影。点云训练复用其中明确的循环展开入口。任务评测器负责指标和记录格式。
+公开配置版本为3。旧产物通过 `scripts/tools/migrate_artifact.py` 显式复制迁入。检查点冻结方法、网络、动作单位和输入含义；评测可以显式选择允许的执行条件，同时保存变化来源。
 
-`runtime/host_runner.py` 统一外部决策、物理推进和末次终止转移；原生规划器和两种 MPC 通过同一循环执行。各方法的资源创建、重置和清理由其适配层负责。两种运行方式共享时间和事件语义，并分别保留适配所需的批量或进程调用实现。
-
-`play` 在线运行共用正式闭环，生成 RScope 回放后发布；已有回放模式读取实际产物。当前显示基于实际记录的轨迹，在线低延迟流式渲染属于后续显示能力。
-
-## 时序与传感器
-
-默认采用同步仿真，计算耗时独立记录。`runtime.action_delay_steps` 为经过单元验证的显式命令队列；零值保持已有基线。LOTF 的原生动作延迟与执行器响应、点云模型的一阶滞后继续保留各自物理含义。
-
-传感器本轮保持测量模型、视场、范围、采样模式和历史语义。MID-360 当前模型有来源扫描图案和采样时间记录；单帧内几何按瞬时位姿计算。D435 当前采用理想深度模型。精确机体运动畸变、双目匹配与实际固件噪声需要单独的测量模型资格验证。
-
-延迟来源核对见 [时序依据](research/architecture-v3-timing.md)。
-
-## 协议、恢复与证据
-
-具名 navigation 协议校验资产摘要、任务时限、目标判据及场景身份；几何目录自身另有冻结验收摘要。原始试次、成功、碰撞、越界、数值失败和超时全部保留。
-
-当前配置只接受版本 3。可信历史检查点由显式迁移工具复制到新目录，检查摘要并重定位类名；源产物保持独立。冻结策略恢复方法、网络和归一化身份；`env=...` 显式替换完整环境，单个 `env.execution.*` 覆盖只修改对应字段。计算设备覆盖保留原动作延迟。完整训练续训另验证算法状态和行为配置。
-
-工程链完成、配置预算完成和任务质量分别记录。结构重组的数值基准、实际短训练、原生评测和回放证据见 [验证记录](verification/architecture-v3/README.md)。完整目录由实际文件生成，见 [项目目录](project-tree.md)。
-
-## 架构图版本
-
-`docs/diagrams/` 中的 Archify 页面对应前一版架构快照，供追溯使用；当前执行关系以本文与实际配置为准。版本3交互图更新单独记录于 `docs/backlog.md` 的 DP-004。
+运行记录保存解析配置、依赖、源提交和差异、参数摘要、原始终止事件及回放。正式矩阵的权威选择在 `docs/verification/final-acceptance/selection.json`；所有报告从所选运行取得。源码和运行状态的维护规则见[开发约定](development.md)。

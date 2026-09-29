@@ -97,7 +97,7 @@ integration code.
 `01b2be4986a0851a952aa860afb4a5958e6676e2`. It preserves the algorithmic semantics of detached
 observations, differentiable action-dynamics-reward propagation, terminal value estimation, and a
 target critic while using Drone Playground's sensor encoders. The upstream MIT text is stored in
-`docs/licenses/dva-LICENSE.md`. The point-cloud path is a project extension and is not presented as
+`third_party/licenses/DVA.txt`. The point-cloud path is a project extension and is not presented as
 a reproduction of a LiDAR method from the original D.VA paper.
 
 EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5` (GPLv3) and SUPER
@@ -105,11 +105,13 @@ EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5` (GPLv3) and SUPER
 source code is not copied into this package. The SUPER repository root does not contain a LICENSE
 file at the pinned identity, while the planner source headers used by this project state
 LGPLv3-or-later; those original headers remain in the external build tree. Build scripts select
-upstream ROS1 templates and run targets without modifying the planner algorithms. Drone Playground
-stores only its own process bridge and message adaptation.
+upstream ROS1 templates and run targets, then apply the explicitly documented control-transfer
+patches under `native_planners/patches/`. The package stores the process bridge, message adaptation,
+and those patches; full planner source trees remain external dependencies.
 
-MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. Scene provenance
-and documented geometry deviations are recorded in the P5 source inventory.
+MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. The active scene
+catalog and geometry qualification are under `assets/scenes/navigation/` and `benchmarks/navigation/`.
+The shared scene, sensor and collision contracts are described in `docs/architecture.md`.
 
 
 ## 版本 3 来源管理
@@ -119,7 +121,7 @@ and documented geometry deviations are recorded in the P5 source inventory.
 
 ## Point-cloud paper reconstruction
 
-`learning/algorithms/pointcloud_bptt.py`, `networks/pointcloud.py`, `models/point_mass.py` and the corresponding sensor/task modules were integrated from this project's `research/pointcloud-paper-navigation8` snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity, inferred settings and source audit are retained in `docs/research/pointcloud-paper-source-audit-20260928.md` and `third_party/sources.yaml`. This work is recorded separately from Learning on the Fly.
+`learning/algorithms/pointcloud_bptt.py`, `networks/pointcloud.py`, `models/point_mass.py` and the corresponding sensor/task modules were integrated from this project's `research/pointcloud-paper-navigation8` snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity, inferred settings and source audit are consolidated in `docs/research/pointcloud.md` and `third_party/sources.yaml`. This work is recorded separately from Learning on the Fly.
 
 
 ### 原生控制迁移补丁（2026-09-29）

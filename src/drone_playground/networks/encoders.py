@@ -22,6 +22,7 @@ Information boundary (spec 8.1)
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import flax.linen as linen
@@ -56,7 +57,7 @@ SENSOR_FIELDS = {
 """Actor-visible sensor channels, per observation name."""
 
 
-def privileged_critic_fields() -> dict:
+def privileged_critic_fields(critic_uses_sensor: bool = False) -> dict:
     """Value-function visibility for the matched PPO/D.VA comparison.
 
     The actor sees proprioception plus the selected sensor.  The critic is kept
@@ -68,9 +69,10 @@ def privileged_critic_fields() -> dict:
     return {
         "privileged_fields": [],
         "actor_fields": list(PROPRIOCEPTION_FIELDS) + ["selected range sensor history"],
-        "critic_fields": list(PROPRIOCEPTION_FIELDS),
+        "critic_fields": list(PROPRIOCEPTION_FIELDS)
+        + (["selected range sensor history"] if critic_uses_sensor else []),
         "actor_and_critic_share_observation_container": True,
-        "critic_uses_sensor": False,
+        "critic_uses_sensor": critic_uses_sensor,
         "scene_manifest_visible_to_policy": False,
         "future_obstacle_motion_visible_to_policy": False,
         "rejected_privileged_candidates": [
@@ -273,11 +275,23 @@ class PerceptionActor(linen.Module):
     uses softplus(log(seed)) + 0.001, about 0.31426135 for the P5 default.
     It is not the post-tanh action standard deviation.
     """
+    proprio_scale: tuple[float, ...] | None = None
+    mean_bias: tuple[float, ...] = (0.0, 0.0, 0.0, 0.0)
+    sensor_encoder: str = "pointnet"
+    range_scale: float = 40.0
 
     @linen.compact
     def __call__(self, observations: jax.Array) -> jax.Array:
         proprio, frames = self.layout.split(observations)
-        embedded = SharedEncoder(layout=self.layout)(frames)
+        if self.proprio_scale is not None:
+            proprio = proprio / jnp.asarray(self.proprio_scale)
+        if self.sensor_encoder == "polar_range":
+            from .range_encoder import polar_range_features
+
+            polar = polar_range_features(frames, range_scale=self.range_scale)
+            embedded = polar.reshape(*polar.shape[:-2], -1)
+        else:
+            embedded = SharedEncoder(layout=self.layout)(frames)
         hidden = jnp.concatenate([proprio, embedded], axis=-1)
         for index, size in enumerate(self.hidden_sizes):
             hidden = self.activation(linen.Dense(size, name=f"hidden_{index}")(hidden))
@@ -285,6 +299,7 @@ class PerceptionActor(linen.Module):
             self.param_size,
             name="mean_head",
             kernel_init=jax.nn.initializers.orthogonal(self.mean_scale),
+            bias_init=lambda key, shape, dtype=jnp.float32: jnp.asarray(self.mean_bias, dtype),
         )(hidden)
         if self.head_mode == "mean":
             return mean
@@ -310,11 +325,26 @@ class PerceptionCritic(linen.Module):
     layout: SensorLayout = None  # type: ignore[assignment]
     hidden_sizes: tuple[int, ...] = (128, 128)
     activation: object = linen.elu
+    proprio_scale: tuple[float, ...] | None = None
+    uses_sensor: bool = False
+    sensor_encoder: str = "pointnet"
+    range_scale: float = 40.0
 
     @linen.compact
     def __call__(self, observations: jax.Array) -> jax.Array:
-        proprio, _ = self.layout.split(observations)
+        proprio, frames = self.layout.split(observations)
+        if self.proprio_scale is not None:
+            proprio = proprio / jnp.asarray(self.proprio_scale)
         hidden = proprio
+        if self.uses_sensor:
+            if self.sensor_encoder == "polar_range":
+                from .range_encoder import polar_range_features
+
+                polar = polar_range_features(frames, range_scale=self.range_scale)
+                embedded = polar.reshape(*polar.shape[:-2], -1)
+            else:
+                embedded = SharedEncoder(layout=self.layout)(frames)
+            hidden = jnp.concatenate([hidden, embedded], axis=-1)
         for index, size in enumerate(self.hidden_sizes):
             hidden = self.activation(linen.Dense(size, name=f"hidden_{index}")(hidden))
         return linen.Dense(1, name="value_head")(hidden)
@@ -343,6 +373,32 @@ def perception_network_factory(layout: SensorLayout, config: dict):
     distribution_type = config.get("distribution_type", "normal")
     mean_scale = config.get("mean_kernel_scale", 0.01)
     init_noise_std = config.get("init_noise_std", 0.367879)
+    encoder = config.get("sensor_encoder", "pointnet")
+    if encoder not in ("pointnet", "polar_range"):
+        raise ValueError("Unknown navigation sensor encoder")
+    if encoder == "polar_range" and layout.kind != "lidar":
+        raise ValueError("The polar range encoder requires LiDAR measurement channels")
+    range_scale = float(config.get("range_scale", 40.0))
+    if not math.isfinite(range_scale) or range_scale <= 0:
+        raise ValueError("The physical normalization range must be positive and finite")
+    proprio_scale = config.get("proprio_scale")
+    if proprio_scale is not None:
+        proprio_scale = tuple(float(value) for value in proprio_scale)
+        if len(proprio_scale) != layout.proprioception_size or not all(
+            math.isfinite(value) and value > 0 for value in proprio_scale
+        ):
+            raise ValueError(
+                "proprio_scale must contain one finite positive divisor per state field"
+            )
+    action_bias = tuple(float(value) for value in config.get("mean_action_bias", (0, 0, 0, 0)))
+    if len(action_bias) != 4 or not all(math.isfinite(value) for value in action_bias):
+        raise ValueError("mean_action_bias must contain four finite normalized actions")
+    if distribution_type == "tanh_normal":
+        if any(abs(value) >= 1 for value in action_bias):
+            raise ValueError("tanh mean_action_bias must lie strictly within (-1, 1)")
+        mean_bias = tuple(math.atanh(value) for value in action_bias)
+    else:
+        mean_bias = action_bias
 
     def factory(observation_size, action_size, **kwargs):
         preprocess = kwargs.get(
@@ -388,8 +444,19 @@ def perception_network_factory(layout: SensorLayout, config: dict):
             mean_scale=mean_scale,
             head_mode=head_mode,
             init_noise_std=init_noise_std,
+            proprio_scale=proprio_scale,
+            mean_bias=mean_bias,
+            sensor_encoder=encoder,
+            range_scale=range_scale,
         )
-        critic = PerceptionCritic(layout=layout, hidden_sizes=hidden)
+        critic = PerceptionCritic(
+            layout=layout,
+            hidden_sizes=hidden,
+            proprio_scale=proprio_scale,
+            uses_sensor=bool(config.get("critic_uses_sensor", False)),
+            sensor_encoder=encoder,
+            range_scale=range_scale,
+        )
         return ppo_networks.PPONetworks(
             policy_network=_feed_forward(actor, preprocess),
             value_network=_feed_forward(critic, preprocess, squeeze=True),

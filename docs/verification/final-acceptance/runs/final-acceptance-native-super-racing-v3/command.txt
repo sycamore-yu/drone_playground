@@ -1,1 +1,0 @@
-.pixi/envs/default/bin/python scripts/eval.py method=paper/super env=racing observation@env.observation=state_reference runtime.device=cpu evaluation.episodes=2 method.port=55753 run_id=final-acceptance-native-super-racing-v3

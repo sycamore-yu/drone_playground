@@ -32,7 +32,7 @@ reproduction:
   paper_source: https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf
   predecessor: HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf
   author_code_status: no confirmed repository found in exact-title searches on 2026-09-28
-  assumptions_document: .scratch/pointcloud-paper/spec.md
+  assumptions_document: docs/research/pointcloud.md
   assumptions:
   - The paper specifies point mass and lag; lag constant and trapezoidal integration
     follow the predecessor.

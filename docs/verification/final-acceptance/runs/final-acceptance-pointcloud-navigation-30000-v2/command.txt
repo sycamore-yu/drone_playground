@@ -1,1 +1,0 @@
-.pixi/envs/default/bin/python scripts/eval.py method=paper/pointcloud_flight env=paper/pointcloud_navigation_v2 checkpoint=experiments/final-acceptance-artifacts/pointcloud-paper-update-0030000/update-0030000.pkl runtime.device=gpu run_id=final-acceptance-pointcloud-navigation-30000-v2

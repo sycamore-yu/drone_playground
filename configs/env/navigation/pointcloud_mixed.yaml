@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+- /scene@env.scene: navigation/catalog
+- /task@env.task: pointcloud_navigation
+- /sensor@env.sensor: paper_uniform
+- /observation@env.observation: paper_pointcloud
+- /execution@env.execution: acceleration
+- /objective: pointcloud_navigation
+- _self_
+env:
+  name: navigation/pointcloud_mixed

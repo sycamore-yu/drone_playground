@@ -167,6 +167,13 @@ def validate_config(config: dict) -> None:
         raise ValueError(
             "This paper method retains its native timing; added delay needs a qualified recipe"
         )
+    if task["name"] == "pointcloud_navigation":
+        from drone_playground.environments.tasks.pointcloud_navigation import (
+            validate_navigation_adaptation,
+        )
+
+        validate_navigation_adaptation(config)
+        return
     if task["name"] == "pointcloud_control":
         if delay:
             raise ValueError("Point-cloud control uses its millisecond command-delay adapter")
@@ -243,8 +250,16 @@ def validate_config(config: dict) -> None:
             raise ValueError(
                 "Navigation requires a supported Crazyflow model and direct derivative"
             )
-        if controller != "crazyflow_attitude":
-            raise ValueError("Navigation controller interface requires crazyflow_attitude")
+        if controller not in ("crazyflow_attitude", "velocity_yaw"):
+            raise ValueError("Navigation requires the qualified attitude or velocity controller")
+        if controller == "velocity_yaw" and (
+            method["output"] != "velocity_yaw"
+            or implementation != "neural"
+            or execution["controller"]["max_speed"] != 20.0
+        ):
+            raise ValueError(
+                "Velocity navigation is an explicit neural velocity/yaw recipe with 20m/s maximum"
+            )
         if "families" not in env["scene"] or env["scene"]["dynamic"] != task["dynamic"]:
             raise ValueError("Navigation scene and task disagree on dynamic geometry")
         if (
@@ -439,7 +454,11 @@ def _run_experiment(config: dict, root: Path, run_id: str):
             config["runtime"]["device"],
             config["training"].get("warm_start"),
         )
-    if config["env"]["task"]["name"] == "pointcloud_control":
+    if config["env"]["task"]["name"] == "pointcloud_navigation":
+        from drone_playground.evaluation.pointcloud_navigation import evaluate
+
+        result = evaluate(config, root, run_id)
+    elif config["env"]["task"]["name"] == "pointcloud_control":
         from drone_playground.evaluation.pointcloud_control import evaluate_pointcloud_control
 
         result = evaluate_pointcloud_control(config, root, run_id)

@@ -3,10 +3,4 @@ src/drone_playground/methods/optimal_control/lsy_upstream/compatibility.patch -w
 src/drone_playground/environments/tasks/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/assets/obstacle.xml -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/level0.toml -whitespace
-# Test reports retain the exact captured output, including pytest diff whitespace.
-docs/verification/architecture-v3/*.log -whitespace
-docs/verification/architecture-v3/*.xml -whitespace
-# Keep final acceptance reports and unified-diff context byte-identical.
-docs/verification/final-acceptance/*.log -whitespace
-docs/verification/final-acceptance/*.xml -whitespace
 native_planners/patches/*.patch -whitespace

@@ -3,7 +3,7 @@
 
 Install only rscope==0.0.8 and mujoco==3.14.0 on the viewing machine.
 The native viewer, plots, keyboard handling, polling and file transfer are reused.
-The installed packages remain unchanged. See docs/verification/p1-observation-checks.md.
+The installed packages remain unchanged. See docs/runbook.md.
 """
 
 from __future__ import annotations

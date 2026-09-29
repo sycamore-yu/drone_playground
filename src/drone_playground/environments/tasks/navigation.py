@@ -51,6 +51,7 @@ class NavigationData:
     sensor_values: jax.Array
     sensor_time: jax.Array
     sensor_sequence: jax.Array
+    scene_time_offset: jax.Array = 0.0
 
 
 class NavigationEnv(Env):
@@ -73,6 +74,8 @@ class NavigationEnv(Env):
         objective=None,
         sensor: DepthCamera | Mid360Lidar | None = None,
         stride: int | None = None,
+        training_initialization: str | None = None,
+        training_collision_mode: str = "terminate",
     ):
         if freq <= 0 or 500 % freq:
             raise ValueError("Task frequency must be a positive divisor of 500 Hz")
@@ -85,6 +88,12 @@ class NavigationEnv(Env):
         self.controller = controller or AttitudeControl()
         self.observer = observation or NavigationObservation()
         self.objective = objective or NavigationObjective()
+        if training_initialization not in (None, "free_course_v1"):
+            raise ValueError("Unknown navigation training initialization recipe")
+        self.training_initialization = training_initialization
+        if training_collision_mode not in ("terminate", "continuous_loss"):
+            raise ValueError("Unknown navigation training collision mode")
+        self.training_collision_mode = training_collision_mode
         self.task = task
         self.dynamics = self.model.forward
         self.drone = self.model.drone
@@ -105,10 +114,13 @@ class NavigationEnv(Env):
         self.low = jnp.asarray(self.reference.single_action_space.low)
         self.high = jnp.asarray(self.reference.single_action_space.high)
         self.controller.bind(self.low, self.high)
+        self.low, self.high = self.controller.low, self.controller.high
         self.execution = ExecutionTransition(
             self.controller.apply, self.model.advance, self.substeps
         )
         hover = jnp.array([0.0, 0.0, 0.0, float(self.default.params.mass[0]) * 9.81])
+        if hasattr(self.controller, "hover"):
+            hover = self.controller.hover(self.default)
         self.hover_action = 2 * (hover - self.low) / (self.high - self.low) - 1
         # The pinned model owns the rest attitude; Crazyflow uses xyzw order.
         self.identity_quat = jnp.asarray(self.default.states.quat[0, 0])
@@ -181,7 +193,7 @@ class NavigationEnv(Env):
         if self.sensor is None:
             return data
         states = data.sim_data.states
-        time = data.step_index.astype(jnp.float32) * self.dt
+        time = data.scene_time_offset + data.step_index.astype(jnp.float32) * self.dt
         position = states.pos[0, 0]
         quat = states.quat[0, 0]
         if isinstance(self.sensor, Mid360Lidar):
@@ -241,12 +253,25 @@ class NavigationEnv(Env):
         scenario_id = jnp.asarray(scenario_id, jnp.int32)
         start = self.bank.start[scenario_id]
         goal = self.bank.goal[scenario_id]
+        initial_velocity = jnp.zeros(3)
+        scene_phase = jnp.float32(0)
+        if self.training_initialization == "free_course_v1":
+            from .navigation_initialization import sample_free_course
+
+            start, initial_velocity, scene_phase = sample_free_course(
+                self.bank,
+                scenario_id,
+                jax.random.fold_in(key, 73),
+                self.body_radius,
+                float(getattr(self.objective, "target_speed", 2.0)),
+                self.duration,
+            )
         # The scenario owns the initial pose; the reset pipeline only supplies
         # motor state and the physical default data.
         states = sim_data.states.replace(
             pos=start[None, None],
             quat=jnp.broadcast_to(self.identity_quat, sim_data.states.quat.shape),
-            vel=jnp.zeros_like(sim_data.states.vel),
+            vel=jnp.broadcast_to(initial_velocity, sim_data.states.vel.shape),
             ang_vel=jnp.zeros_like(sim_data.states.ang_vel),
         )
         sim_data = sim_data.replace(states=states)
@@ -261,6 +286,7 @@ class NavigationEnv(Env):
             sensor_values=jnp.zeros((history, self.points_per_frame, channels), jnp.float32),
             sensor_time=jnp.zeros((history,), jnp.float32),
             sensor_sequence=jnp.int32(0),
+            scene_time_offset=scene_phase,
         )
         data = self._sample_sensor(data)
         zero = jnp.float32(0)
@@ -310,7 +336,7 @@ class NavigationEnv(Env):
         first_substep = data.step_index * self.substeps
 
         def probe(current, offset):
-            time = (first_substep + offset + 1) * self.dt_physics
+            time = data.scene_time_offset + (first_substep + offset + 1) * self.dt_physics
             centre = body_centre_from_state(current.states.pos[0, 0], current.states.quat[0, 0])
             clearance, hit = clearance_and_collision(
                 self.bank, scenario_id, time, centre, self.body_radius
@@ -349,6 +375,12 @@ class NavigationEnv(Env):
         )
         data = data.replace(sim_data=data.sim_data.replace(states=states))
         terminated = collided | arrived | out_of_bounds | numerical_failure
+        if self.training_collision_mode == "continuous_loss":
+            # The explicitly selected training surrogate continues through
+            # geometric contact to retain penetration/escape loss gradients.
+            # Collision labels below remain true. All evaluation instances are
+            # constructed with the original hard terminal rule.
+            terminated = arrived | out_of_bounds | numerical_failure
         reward = self.objective(
             arrived=arrived,
             collided=collided,
@@ -359,6 +391,9 @@ class NavigationEnv(Env):
             clearance=clearance,
             action=action,
             previous_action=state.pipeline_state.previous_action,
+            velocity=states.vel[0, 0],
+            goal_delta=goal - states.pos[0, 0],
+            dt=self.dt,
         )
         data = self._sample_sensor(data)
         outcome = _outcome(collided, arrived, out_of_bounds, numerical_failure)
@@ -367,7 +402,11 @@ class NavigationEnv(Env):
             "goal_distance": distance,
             "clearance": clearance,
             "action_saturation": jnp.mean((jnp.abs(action) >= 0.99).astype(jnp.float32)),
-            "physical_thrust": physical[3],
+            "physical_thrust": (
+                data.sim_data.controls.attitude.staged_cmd[0, 0, 3]
+                if self.controller.input_kind == "velocity_yaw"
+                else physical[3]
+            ),
             "arrived": arrived.astype(jnp.float32),
             "collision": collided.astype(jnp.float32),
             "out_of_bounds": out_of_bounds.astype(jnp.float32),

@@ -1,0 +1,8 @@
+defaults:
+  - perception_navigation_velocity
+  - _self_
+name: perception_navigation_range
+sensor_encoder: polar_range
+range_scale: 40.0
+init_noise_std: 0.08
+hidden_sizes: [128, 128]

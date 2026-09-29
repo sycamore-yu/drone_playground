@@ -1,94 +1,82 @@
-# 版本 3 操作手册
+# 操作手册
 
-从项目根目录运行。首次执行 `python3 scripts/tools/fetch_sources.py`，随后 `pixi install --locked`。固定缓存存在时重复执行会核对提交和补丁。
+所有命令从项目根目录执行。当前工作位置为 `simulation_dev/drone_playground`，代码、依赖缓存和正式产物各自拥有明确目录。
 
-## 入口与配置
+## 环境准备
 
 ```bash
-pixi run train method=learning/ppo env=racing
-pixi run eval method=paper/super env=navigation/static evaluation=navigation_v2
-pixi run play checkpoint=experiments/<运行>/checkpoints/<权重>.pkl
-pixi run play replay=experiments/<运行>/rollouts visualization=headless
+python3 scripts/tools/fetch_sources.py
+pixi install --locked
+pixi run python -c "import jax; print(jax.devices())"
 ```
 
-主任务环境：`hovering`、`tracking`、`tracking/random`、`racing`、`navigation/static`、`navigation/dynamic`。
+固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
-点云控制迁移环境为`paper/control/hovering`、`paper/control/tracking`和`paper/control/racing`，原点云新导航协议为`paper/pointcloud_navigation_v2`。完整已执行命令和对应冻结权重见 [五任务命令](verification/final-acceptance/commands.md)。
-
-具名论文环境：`paper/lotf_hover`、`paper/lotf_tracking`、`paper/pointcloud_flight` 和 `paper/pointcloud_navigation`。
-
-只解析配置可执行 `pixi run python scripts/train.py method=learning/ppo env=racing --cfg job`。组件组重新选择使用挂载路径，例如 `sensor@env.sensor=d435 observation@env.observation=navigation_depth`。
-
-## 小预算工程检查
+## 训练与恢复
 
 ```bash
-pixi run train method=learning/ppo env=hovering runtime.device=cpu \
-  run_id=ppo-hover-engineering-check training.num_envs=8 \
-  training.num_timesteps=256 training.num_evals=2 training.development_episodes=2 \
-  algorithm.batch_size=8 algorithm.num_minibatches=1 \
-  algorithm.unroll_length=16 algorithm.num_updates_per_batch=2
+pixi run train method=learning/ppo env=hovering --cfg job
+pixi run train method=learning/ppo env=hovering runtime.device=gpu run_id=ppo-hover-new
+pixi run train method=learning/bptt env=tracking runtime.device=gpu run_id=bptt-tracking-new
+pixi run train method=learning/shac env=racing runtime.device=gpu run_id=shac-racing-new
 ```
 
-该预算测试训练管线。正式策略训练沿任务配方指定预算和独立留出集完成。每次新运行使用独立 `run_id`。
-
-## 点云训练与旧状态迁入
+正式训练采用 GPU，并按显存与预算排队。先核对已有 `state.json`、`result.json` 和进程身份，再确定新运行或恢复。`training.warm_start` 表示参数热启动；具备完整状态恢复能力的训练器使用 `training.resume`。恢复时保持所记录的模型、网络、优化器及输入合同。
 
 ```bash
-pixi run python scripts/tools/migrate_artifact.py <可信旧状态.pkl> <新目录>
-pixi run train method=paper/pointcloud_flight training.resume=<迁入状态.pkl>
-pixi run eval checkpoint=<已选状态.pkl> env=paper/pointcloud_navigation \
-  evaluation.training_run=<对应训练运行目录>
+# 从已完成的正式参数启动另一组独立试验。
+pixi run train method=learning/bptt env=tracking \
+  training.warm_start=experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl \
+  training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 \
+  runtime.device=gpu run_id=bptt-tracking-warm-start
 ```
 
-完整恢复必须保持训练预算、网络、目标、场景和算法的行为配置。重组验收用原状态的相同小预算配置证明续训，完整 50000 更新训练仍在原点云工作树中。`scripts/tools/run_pointcloud_pipeline.py` 为当前配置生成对应训练/评测阶段命令，`summarize_pointcloud.py` 默认按完整预算检查，阶段汇总需显式 `--allow-stage`。
+检查点恢复的具体配置兼容性由训练器核对。BPTT 的完整恢复检查原目标预算与行为配置，适用于原预算内的未完成阶段；已完成训练可通过参数热启动开展新试验。正式基线的完整训练命令保存在[历史命令索引](verification/final-acceptance/commands.md)；重新运行时使用独立标识和适当预算。
 
-## 原生规划器和 MPC
+## 冻结评测与回放
 
 ```bash
+pixi run eval \
+  checkpoint=experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl \
+  runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 \
+  run_id=recheck-bptt-tracking
+
+pixi run play replay=experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts
+pixi run play replay=experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts \
+  visualization=headless
+```
+
+RScope 回放使用同目录的轨迹、场景和元数据。查看已有轨迹直接选择 `replay`；冻结策略重新执行选择 `checkpoint`。每个回合保留真实活动区间和最终终止状态。
+
+## 原生规划器与 MPC
+
+```bash
+# 初次准备或明确重建 ROS 容器时执行。
 bash native_planners/setup.sh
-pixi run eval method=paper/ego_planner env=navigation/static \
-  runtime.device=cpu evaluation.episodes=1 method.port=55201
-pixi run eval method=paper/super env=navigation/dynamic \
-  runtime.device=cpu evaluation.episodes=1 method.port=55211
+
+pixi run eval method=paper/super env=navigation/static \
+  evaluation=navigation_v2 evaluation.episodes=2 runtime.device=cpu \
+  run_id=super-static-new
+```
+
+原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `native_planners/versions.env`、`native_planners/patches/` 及[原生集成说明](../native_planners/README.md)。
+
+```bash
+# 完整 acados 数值测试所需的局部依赖。
 bash scripts/tools/setup_acados.sh
-pixi run eval method=optimization/attitude_mpc env=racing runtime.device=cpu
-pixi run eval method=optimization/sampling_mpc env=racing \
-  runtime.device=cpu method.decision.prediction_device=gpu
+JAX_PLATFORMS=cpu pixi run test
 ```
 
-并发原生运行使用不同端口；`evaluation.episodes` 在 navigation 中表示每个难度的回合数。已有 acados 构建可以通过 `ACADOS_SOURCE_DIR` 指定，构建产物保存在当前运行自身目录。物理执行与预测设备分别记录。
+acados v0.5.1 可通过 `ACADOS_SOURCE_DIR` 指向已经验证的构建。默认局部位置为 `tmp/p3p4/optimization/acados`。该目录与 `tmp/sources/` 是实际依赖缓存，清理时按依赖处理。
 
-## 回放与状态
-
-`play` 生成实际闭环轨迹后进入已有 RScope 流程；`visualization=headless` 保留导出及路径核对，并保持当前查看器选择。已有轨迹使用 `replay=...`，数据源只读。
+## 维护检查
 
 ```bash
-pixi run status --runs-root experiments
-pixi run python -m pytest tests/test_architecture_v3.py -q
-pixi run test
+pixi run lint
+JAX_PLATFORMS=cpu pixi run test
+python3 scripts/tools/summarize_final_acceptance.py \
+  --selection docs/verification/final-acceptance/selection.json \
+  --output tmp/final-acceptance-check.json
 ```
 
-当前日志和验证摘要在 `docs/verification/final-acceptance/`，架构阶段保留在`docs/verification/architecture-v3/`，每个原始运行保留完整配置、进程、依赖、补丁、指标、事件和回放。
-
-## 冻结权重的局部执行修改
-
-```bash
-pixi run eval checkpoint=<当前版本权重.pkl> runtime.device=cpu \
-  env.execution.dynamics.forward=so_rpy
-```
-
-该覆盖沿用权重保存的任务、场景、机型、输入和时序，只替换指定动力学字段。使用 `dynamics@env.execution.dynamics=crazyflow` 会替换整个动力学预设；使用 `env=...` 会替换完整环境，随后检查冻结输入契约。每次变化进入新的运行记录。
-
-
-## 已验收配方和协议
-
-当前main包含30项方法—任务实测。PPO、BPTT、SHAC和点云控制迁移的12项控制质量验收均采用32回合留出；[验收表](verification/final-acceptance/README.md)列出失败、实际预算、热启动和源码身份。
-
-标准学习配方的runtime.action_delay_ms=[25,50]在每次环境重置采样，并在500赫兹物理时钟向上取整。指定runtime.action_delay_steps时同时设runtime.action_delay_ms=null。旧点云原论文训练的时序按其冻结配置执行。
-
-当前navigation_v2要求300秒和0.5米到达半径。复核旧navigation_v1时显式指定env.task.duration=40.0，保留新运行身份。原生速度上限20米/秒；原生控制任务采用显式参考到目标适配，竞速包含已计入物理时间的起飞接管。
-
-```bash
-pixi run python scripts/tools/summarize_final_acceptance.py --selection docs/verification/final-acceptance/selection.json --output tmp/final-acceptance/rechecked-evidence.json
-pixi run play replay=experiments/final-acceptance-heldout-shac-racing-trained-v1/rollouts visualization=headless
-```
+最后一条命令读取本地正式结果包，核对30个单元、训练来源、参数和回放摘要。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云50000次更新运行按[冻结工作树生命周期](research/branch-lifecycle.md)处理。

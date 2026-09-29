@@ -184,6 +184,7 @@ def cast_rays(
     include_ground: bool = True,
     floor_margin_m: float = FLOOR_MARGIN_M,
     rotations=None,
+    obstacle_batch_size: int = 1,
 ):
     """Nearest hit distance over every active primitive of one scene instance.
 
@@ -210,8 +211,10 @@ def cast_rays(
     active = jnp.asarray(active)
     origins = jnp.asarray(origins)
     directions = jnp.asarray(directions)
+    if not isinstance(obstacle_batch_size, int) or obstacle_batch_size < 1:
+        raise ValueError("Obstacle intersection batch size must be a positive static integer")
 
-    def one_slot(best, slot):
+    def slot_hit(slot):
         if rotations is None:
             hit = primitive_hit(kind[slot], size[slot], centres[slot], origins, directions, None)
         else:
@@ -225,11 +228,28 @@ def cast_rays(
                 None,
             )
         hit = jnp.where(active[slot], hit, NO_HIT)
-        return jnp.minimum(best, hit), None
+        return hit
 
-    best, _ = jax.lax.scan(
-        one_slot, jnp.full(origins.shape[:-1], NO_HIT), jnp.arange(kind.shape[0])
-    )
+    best = jnp.full(origins.shape[:-1], NO_HIT)
+    capacity = kind.shape[0]
+    if capacity and obstacle_batch_size == 1:
+        best, _ = jax.lax.scan(
+            lambda current, slot: (jnp.minimum(current, slot_hit(slot)), None),
+            best,
+            jnp.arange(capacity),
+        )
+    elif capacity:
+        # Group independent intersections into one launch-sized block. Padding
+        # is masked before reduction; the final physical nearest hit is unchanged.
+        block = min(obstacle_batch_size, capacity)
+        indices = jnp.arange((capacity + block - 1) // block * block).reshape(-1, block)
+
+        def grouped(current, slots):
+            hits = jax.vmap(slot_hit)(jnp.minimum(slots, capacity - 1))
+            valid = (slots < capacity).reshape((block,) + (1,) * (hits.ndim - 1))
+            return jnp.minimum(current, jnp.min(jnp.where(valid, hits, NO_HIT), axis=0)), None
+
+        best, _ = jax.lax.scan(grouped, best, indices)
     if include_ground:
         ground = _plane_hit(
             origins,

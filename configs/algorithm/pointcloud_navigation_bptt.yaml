@@ -1,0 +1,6 @@
+defaults:
+- pointcloud_bptt
+- _self_
+name: pointcloud_navigation_bptt
+horizon_length: 80
+max_grad_norm: 1.0

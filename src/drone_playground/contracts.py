@@ -33,9 +33,19 @@ WORLD_ACCELERATION = CommandSpec(
     ("m/s^2",) * 3,
     "world; gravity-compensated net acceleration",
 )
+VELOCITY_YAW = CommandSpec(
+    "velocity_yaw", ("vx", "vy", "vz", "yaw"), ("m/s", "m/s", "m/s", "rad"), "world"
+)
 COMMANDS = {
     spec.name: spec
-    for spec in (ATTITUDE_THRUST, THRUST_BODYRATES, MOTOR_RPM, TRAJECTORY, WORLD_ACCELERATION)
+    for spec in (
+        ATTITUDE_THRUST,
+        THRUST_BODYRATES,
+        MOTOR_RPM,
+        TRAJECTORY,
+        WORLD_ACCELERATION,
+        VELOCITY_YAW,
+    )
 }
 
 

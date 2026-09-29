@@ -23,8 +23,8 @@ class NavigationObjective:
     Progress towards the goal, a per-step time cost, a continuous clearance
     penalty that grows as the body approaches any obstacle, an action-smoothness
     term, and frozen terminal terms. Collision, out-of-bounds and numerical
-    invalidity carry the same large negative cost so that ending an episode
-    early can never be a high-return shortcut.
+    invalidity carry the same legacy terminal cost. Its old short-corridor
+    calibration is not a guarantee against reward shortcuts in longer tasks.
     """
 
     name: str = "navigation"
@@ -35,14 +35,11 @@ class NavigationObjective:
     smoothness_scale: float = 0.01
     arrival_bonus: float = 20.0
     failure_penalty: float = -150.0
-    """Deliberately twice the maximum attainable progress reward.
+    """Legacy 15 m calibration, retained for frozen checkpoint reproducibility.
 
-    Progress reward is ``progress_scale * navigation_distance`` = 75 for the
-    frozen 15 m corridor. A failure cost smaller than that makes flying most of
-    the way and crashing worth more than hovering, which is exactly the shortcut
-    the protocol forbids. At -150 a collided episode is worse than every safe
-    outcome, including a full timeout, while a successful arrival (+95) stays the
-    best outcome by a wide margin.
+    On a 96 m course the progress potential is 480, not 75. This constant alone
+    therefore cannot establish a whole-episode safety ordering. New training
+    recipes must audit the actual distance, time cost and continuous gradients.
     """
 
     def __call__(
@@ -57,6 +54,9 @@ class NavigationObjective:
         clearance,
         action,
         previous_action,
+        velocity=None,
+        goal_delta=None,
+        dt=None,
     ):
         reward = self.progress_scale * (previous_distance - distance) - self.time_cost
         near = jnp.clip(self.clearance_radius - clearance, 0.0, self.clearance_radius)

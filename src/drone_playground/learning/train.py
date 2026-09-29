@@ -37,17 +37,51 @@ from drone_playground.networks.policies import network_factory
 from drone_playground.runs.checkpoints import load_policy, save_policy
 
 
-def development_score(task: str, report: dict) -> tuple:
+def development_score(task: str, report: dict, rule: str | None = None) -> tuple:
     """Select only on development data; ties break on the declared secondary terms."""
     if task == "racing":
         return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
     if task == "navigation":
         # Declared order: macro success rate, collision rate, constrained time.
-        return (
+        score = (
             report["success_rate"],
             -report["collision_rate"],
             -report["constrained_time_mean_s"],
         )
+        if rule is None:
+            return score
+        if rule not in (
+            "navigation-convergence-v1",
+            "navigation-convergence-v2",
+            "navigation-convergence-v3",
+        ):
+            raise ValueError(f"Unknown development selection rule: {rule}")
+        rows = [row for cell in report["cells"].values() for row in cell["episodes"]]
+        if rule == "navigation-convergence-v3":
+            # Once arrival is established, sub-millimetre sampling differences
+            # within the goal radius have no task meaning. Compare actual times.
+            remaining = float(
+                np.mean(
+                    [
+                        0.0 if row.get("arrived", False) else row["final_goal_distance_m"]
+                        for row in rows
+                    ]
+                )
+            )
+            return (
+                report["success_rate"],
+                -report["failure_rate"],
+                -remaining,
+                -report["constrained_time_mean_s"],
+            )
+        if rule == "navigation-convergence-v2":
+            return (
+                report["success_rate"],
+                -report["failure_rate"],
+                -float(np.mean([row["final_goal_distance_m"] for row in rows])),
+                -report["constrained_time_mean_s"],
+            )
+        return (*score, -float(np.mean([row["final_goal_distance_m"] for row in rows])))
     return (report["completed"], -report["rmse_all_mean"])
 
 
@@ -160,6 +194,9 @@ def train(
             "navigation": "sando-style-navigation-40s-0.5m-body-collision-v1",
         }[config["task"]],
     )
+    if config["task"] == "navigation":
+        duration = config["components"]["env"]["task"]["duration"]
+        config["task_protocol"] = f"navigation-{duration:g}s-0.5m-body-collision"
     if config.get("numerical_guard", False):
         config["task_protocol"] += "+finite-square-v1"
     source_root = Path(crazyflow.__file__).resolve().parents[1]
@@ -227,6 +264,16 @@ def train(
                     "the acceptance threshold is pending the P5 protocol freeze"
                 ),
             }
+            if config.get("development_metric") in (
+                "navigation-convergence-v1",
+                "navigation-convergence-v2",
+                "navigation-convergence-v3",
+            ):
+                dev_case["quality_rule"] = (
+                    "macro arrival >=0.9 and every named scene >=0.8; selection "
+                    + config["development_metric"]
+                    + "; independent heldout verification is still required"
+                )
             save_report(rec.path / "eval" / "dev-cases.json", dev_case)
         else:
             save_report(
@@ -257,6 +304,27 @@ def train(
             t = time.monotonic()
             report, trace = evaluator.run(params)
             report.update(step=step, checkpoint=str(checkpoint.relative_to(rec.path)), split="dev")
+            if config.get("development_metric") in (
+                "navigation-convergence-v1",
+                "navigation-convergence-v2",
+                "navigation-convergence-v3",
+            ):
+                report["selection_rule"] = config["development_metric"]
+                scene_outcomes = {}
+                for cell in report["cells"].values():
+                    for row in cell["episodes"]:
+                        scene_outcomes.setdefault(row["subtype"], []).append(row["arrived"])
+                report["scene_success_rates"] = {
+                    name: float(np.mean(values)) for name, values in scene_outcomes.items()
+                }
+                report["quality_passed"] = bool(
+                    report["success_rate"] >= 0.9
+                    and all(value >= 0.8 for value in report["scene_success_rates"].values())
+                )
+                report["quality_rule"] = (
+                    config["development_metric"] + ": macro arrival >=0.9 and every scene >=0.8; "
+                    "a development pass is not independent heldout convergence"
+                )
             save_report(rec.path / "eval" / f"step-{step:010d}.json", report)
             scalars = evaluation_scalars(env.task, report)
             scalars["eval/seconds"] = time.monotonic() - t
@@ -275,7 +343,7 @@ def train(
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
             export_run_replays(evaluation_env, trace, report, replay_directory)
             rec.log(step, {"record/export_seconds": time.monotonic() - t})
-            score = development_score(env.task, report)
+            score = development_score(env.task, report, config.get("development_metric"))
             if score > best_score:
                 best_score, best = score, report
                 save_report(

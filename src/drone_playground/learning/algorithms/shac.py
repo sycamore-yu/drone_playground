@@ -240,6 +240,8 @@ def train(
             "normalize_observations",
             "learning_rate",
             "critic_learning_rate",
+            "resample_window_initials",
+            "navigation_initialization",
         ):
             if meta["config"].get(name) != config.get(name):
                 raise ValueError(f"Restore configuration differs: {name}")
@@ -279,8 +281,12 @@ def train(
     def update(state):
         # Each update is a fresh differentiation window, preserving actual state.
         start = jax.tree.map(jax.lax.stop_gradient, state.environment)
+        key = state.key
+        if config.get("resample_window_initials", False):
+            key, reset_key = jax.random.split(key)
+            start = env.reset(jax.random.split(reset_key, count))
         (loss, aux), grad = jax.value_and_grad(objective, has_aux=True)(
-            state.policy, state.normalizer, state.target_critic, start, state.key
+            state.policy, state.normalizer, state.target_critic, start, key
         )
         end, key, obs, rewards, values, done, terminal, last_obs = jax.tree.map(
             jax.lax.stop_gradient, aux
@@ -389,5 +395,8 @@ def train(
         "compile_and_first_update_seconds": compile_seconds,
         "net_update_seconds": total_update_seconds,
         "updates": int(state.updates),
+        "window_resets": int(state.updates) * count
+        if config.get("resample_window_initials", False)
+        else 0,
     }
     return make_policy, (state.normalizer, state.policy), result

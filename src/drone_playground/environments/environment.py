@@ -21,7 +21,11 @@ def build_environment(config, device="cpu", split="train", count=32):
     cfg = copy.deepcopy(config)
     settings = cfg["env"]
     task = settings["task"]
-    if task["name"] == "pointcloud_control":
+    if task["name"] == "pointcloud_navigation":
+        from .tasks.pointcloud_navigation import PointCloudNavigationTask
+
+        env = PointCloudNavigationTask(cfg)
+    elif task["name"] == "pointcloud_control":
         from .tasks.pointcloud_control import ReferencePointCloudTask
 
         env = ReferencePointCloudTask(cfg, device=device)
@@ -47,11 +51,17 @@ def build_environment(config, device="cpu", split="train", count=32):
 
             per_difficulty = task["reference_count"] if split == "train" else count
             bank, manifest = make_bank(scene, SPLIT_SEEDS[split], per_difficulty)
+            controller_spec = settings["execution"]["controller"]
+            controller = (
+                instantiate(controller_spec, _convert_="all")
+                if "_target_" in controller_spec
+                else AttitudeControl()
+            )
             env = NavigationEnv(
                 scene_bank=bank,
                 task="navigation",
                 model=model,
-                controller=AttitudeControl(),
+                controller=controller,
                 observation=observer,
                 objective=objective,
                 freq=task["freq"],
@@ -59,6 +69,14 @@ def build_environment(config, device="cpu", split="train", count=32):
                 goal_radius=task["goal_radius"],
                 device=device,
                 sensor=sensor,
+                training_initialization=(
+                    cfg["training"].get("navigation_initialization") if split == "train" else None
+                ),
+                training_collision_mode=(
+                    cfg["training"].get("navigation_collision_mode", "terminate")
+                    if split == "train"
+                    else "terminate"
+                ),
             )
             env.scene_manifest = manifest
         else:
@@ -94,7 +112,10 @@ def build_environment(config, device="cpu", split="train", count=32):
 
         env = ActionDelay(env, delay_steps)
     delay_range = cfg["runtime"].get("action_delay_ms")
-    if delay_range is not None and task["name"] != "pointcloud_control":
+    if delay_range is not None and task["name"] not in (
+        "pointcloud_control",
+        "pointcloud_navigation",
+    ):
         from drone_playground.execution.delay import RandomActionDelay
 
         env = RandomActionDelay(env, delay_range)

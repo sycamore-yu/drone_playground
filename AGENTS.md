@@ -1,44 +1,28 @@
-# Drone Playground
+# Drone Playground 开发约定
 
-## 当前任务
+本项目是配置驱动的无人机学习、规划与控制仿真平台。现役分支为 `main`；先读 `docs/status.md`、`docs/backlog.md`，再直接读取相关代码和已有运行记录。
 
-从 `docs/status.md` 找到当前任务；读取对应 `.scratch/<feature>/issues/` 文件，
-再读相关规格段落、源码和证据。恢复已有执行会话，先核对进程与运行目录。
+## 边界
 
-## Agent skills
+- 复用原会话、原运行标识和完整恢复状态。启动前核对进程及工作树，避免重复训练。
+- 原点云50000次更新任务保留冻结源码及解释器；旧工作树只用于该运行，具体状态见 `docs/research/branch-lifecycle.md`。
+- 公开入口为 `method`＋`env` 与 `train`／`eval`／`play`。任务、传感器、控制器、动力学、网络和更新规则各有明确配置归属，详见 `docs/architecture.md`。
+- LOTF、点云论文重建、点云控制迁移和导航适配分别记录来源。每个配方名对应真实实现。
+- 几何、传感器、奖励和碰撞共用场景事实。记录实际动作单位、物理时钟、延迟及导数边界。
+- 工程执行、完整预算和策略质量分别验收。失败回合保留在正式结果分母中；重训使用独立结果身份。
 
-### Issue tracker
+## 命令与位置
 
-本地 Markdown，规格和任务单在 `.scratch/`。见 `docs/agents/issue-tracker.md`。
+- 固定环境：`python3 scripts/tools/fetch_sources.py`，然后 `pixi install --locked`。
+- 训练：`pixi run train method=learning/ppo env=hovering runtime.device=gpu run_id=<新标识>`。
+- 测试：`JAX_PLATFORMS=cpu pixi run test`；检查：`pixi run lint`。完整 MPC 测试的 acados 条件见 `docs/runbook.md`。
+- 正式训练优先 GPU，按显存和运行预算排队；CPU 用于测试、短探针和原生宿主任务。设备由配置明确选择。
+- 临时探针、编译缓存和临时测试放 `tmp/`；正式回归放 `tests/`；运行产物放 `experiments/`。
+- `experiments/`、`.pixi/`、依赖源码和调试日志通过忽略规则排除在源码发布之外。成功权重和回放在清理前独立备份并校验摘要。
+- 固定依赖见 `third_party/sources.yaml`；第三方声明与许可文件跟随源码维护。
 
-### Domain docs
+## 维护与交付
 
-单一领域：根目录 `CONTEXT.md` 为术语表，重要决策在 `docs/adr/`。
-见 `docs/agents/domain.md`。模块设计遵循 `docs/architecture.md`。
+稳定术语放 `CONTEXT.md`，机制放架构文档，操作放运行手册，现役状态只放 `docs/status.md`，未完成研究只放 `docs/backlog.md`。已结束的过程记录归入 Git 历史和项目外备份。
 
-## 实现
-
-- Crazyflow 是依赖；复用已锁定的函数、控制器和任务实现，在本项目做必要适配。
-- JAX 原生实现优先；Brax 提供通用训练接口，具名可微训练器保留其明确更新语义；RScope 是轨迹查看器。
-- 每次交付一条可运行、可观察、可验证的完整能力；模块目录划分用于维护职责。
-- 现役配置版本为 3，规格与执行账本在 `.scratch/architecture-v3/`。公开入口使用 method/env 与 train/eval/play。
-- 完整环境协调场景、任务、测量、观测与执行；方法负责决策，执行负责完整控制/动力学推进，运行层共享闭环。
-- 使用 dynamics 表示实际前向动力学，预测模型在方法内部；algorithm.gradient 选择具名导数。navigation 为公开名称。
-- 控制比较重点是轨迹跟踪层；传感器本轮目标为现实测量特征；LOTF 与点云论文保持独立身份。
-- 上游依赖由 third_party/sources.yaml 固定，源码缓存位于 tmp/sources；保留补丁和许可，验证后再更新固定版本。
-- 新代码通过调用者使用的接口测试。出现真实变化需求后再提取公共接口。
-- 正式测试放 `tests/`，临时验证放 `tmp/`，运行产物放 `experiments/`。
-- 保留原任务的观测、动作、奖励与终止语义；必要变更记入协议版本及上游差异。
-- 每个实验记录代码提交、未提交补丁、依赖、配置、种子、任务协议和运行标识。
-
-## 执行与验证
-
-- 更新任务单和 `docs/status.md`：当前动作、最近证据、阻塞、下一步、会话与运行路径。
-- 任务以实际命令退出码、日志、检查点和独立评测验收；声明与文件存在只是线索。
-- 工程可用、实验完成、策略达标分开记录。低分继续计入结果，独立任务照常推进。
-- 复用已有充分证据；仅对改变、失败或未解决风险运行必要检查。
-- 策略选模用开发集，正式留出评测冻结策略及归一化统计；失败回合保留。
-- 普通阶段推进自动继续；研究范围、评测标准、超出预算、外部发布的变化交给用户决定。
-- 每个可验收改动本地提交；远程推送和发布需要用户明确授权。
-
-详细执行与交接规则见 `docs/agents/workflow.md`；命令可用状态见 `docs/runbook.md`。
+修改前保护已有未提交内容；使用明确文件清单组织本地提交。根据影响范围验证测试、入口、文档链接、参数摘要和回放。提交报告写实际证据及剩余限制，远端推送和发布另行授权。

@@ -18,3 +18,9 @@ secrets/
 native_planners/sources/
 native_planners/workspaces/
 native_planners/.build/
+.optim-agent-runs/
+.scratch/
+.DS_Store
+*.key
+*.p12
+*.pfx
