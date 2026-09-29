@@ -161,5 +161,30 @@
     ],
     "purpose": "Real parameter update, save, reload and evaluation; not convergence evidence",
     "targeted_tests": 39
+  },
+  "upstream_trajectory_neural_controller": {
+    "run_id": "cpp-trajectory-neural-controller-engineering-v2-20260929",
+    "report": "experiments/cpp-trajectory-neural-controller-engineering-v2-20260929/eval/report.json",
+    "report_sha256": "4a2fa73ad140e2c55ddc902b684e4e5e65d80a1197404a1a5c4bdd864bcf6865",
+    "config_sha256": "702d0869a324102dfd46044f1f61cd9eb7dcd83e312fcdf22ab29762f33cf39a",
+    "source_patch_sha256": "4e8d5c5d32bd26220ddb971ab19f33eb27395a19f431eeee3afa755b2cbdaf26",
+    "engineering_execution_passed": true,
+    "task_quality_passed": false,
+    "diagnostics": [
+      {
+        "case": 0,
+        "missing_command_steps": 0,
+        "commands": 50,
+        "trajectories": 0,
+        "plans": 50,
+        "executed_native_steps": 50,
+        "clipped_command_steps": 0,
+        "module_calls": [
+          10,
+          50
+        ]
+      }
+    ],
+    "qualification": "Real analytic C++ service plus trained frozen BPTT tracker; 1s state-only host. Not a navigation or convergence result."
   }
 }

@@ -363,9 +363,9 @@ def validate_config(config: dict) -> None:
         if env["scene"]["name"] != ("lsy_level0" if task["name"] == "racing" else "empty"):
             raise ValueError("Task requires a compatible scene adapter")
         native_control = implementation in ("native_ego", "native_super", "native_service", "pipeline")
-        if native_control and env["observation"]["name"] != "state_reference":
+        if native_control and env["observation"]["name"] not in ('state', 'state_reference'):
             raise ValueError(
-                "Native control tasks require observation@env.observation=state_reference; the raw sensor remains separate"
+                "Native control tasks require state or state_reference observations; the raw sensor remains separate"
             )
         required_commands = (
             ("trajectory", "waypoint", "attitude_thrust")

@@ -99,3 +99,14 @@ def test_waypoint_planning_to_frozen_controller_is_a_configured_chain(artifact, 
         assert chain.contracts[-1]['derivatives'] == 'none'
     finally:
         chain.close()
+
+
+def test_public_pipeline_accepts_state_only_host_for_external_reference_controllers():
+    from drone_playground.composition import validate_config
+
+    config = compose_method('pipeline', 'hovering', ['method.input_sensor=none'])
+    config['env']['observation']['name'] = 'state'
+    validate_config(config)
+    config['env']['observation']['name'] = 'navigation_depth'
+    with pytest.raises(ValueError, match='state or state_reference'):
+        validate_config(config)
