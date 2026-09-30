@@ -1,0 +1,9 @@
+{
+  "frozen_source_revision": "927f8a7",
+  "same_backend_default_initialization_identical": true,
+  "frozen_parameters_execution_identical": true,
+  "cpu_vs_saved_gpu_initial_parameters_max_abs_difference": 1.650303602218628e-06,
+  "cross_backend_bitwise_initialization_claim": false,
+  "initialization_scope": "Both old and new source initialized on CPU; saved GPU params separately used for exact inference comparison",
+  "artifact_sha256": "1dfc724a193c73b35ac80cbee68235ed016103968faeee7ced3e8fded58e45af"
+}

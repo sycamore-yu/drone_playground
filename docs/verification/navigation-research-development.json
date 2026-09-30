@@ -1,0 +1,45 @@
+{
+  "authorization": "User2026-09-30 continues training without a count limit",
+  "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "study": "pointcloud-navigation-research",
+  "trials": [
+    {
+      "run_id": "research-pointcloud-long-seed0-t0-20260930",
+      "initialization": "scratch",
+      "num_envs": 32,
+      "horizon_length": 160,
+      "policy_updates": 500,
+      "learning_rate": 0.0003,
+      "point_input_scale": 0.1,
+      "output_init_scale": 1.0,
+      "actual_steps": 2560000,
+      "wall_seconds": 1427.5102156409994,
+      "objective": 0.053082191780821915,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/release-stage2-20260930/experiments/research-pointcloud-long-seed0-t0-20260930/training-state/update-0000500.pkl",
+        "parameter_sha256": "95696fbc4a7280528cd04cd4695c24fd8383929d152b40bc2f4f626512560deb",
+        "score": [
+          0,
+          31
+        ],
+        "selection_split": "dev",
+        "updates": 500
+      },
+      "development_successes": 31,
+      "development_trials": 64,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.25,
+        "D03": 1.0,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 0.625,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "quality_passed": false,
+      "launch_sha256": "cd6a95fda87e85f7ee13a22f94319e9d89a9b15981f6a02c4304b75b587eda9e",
+      "trial_result_sha256": "743d7f557dc530823259f639343ac07b465b3d150b178b4c3d8cfc651fda65e3"
+    }
+  ]
+}

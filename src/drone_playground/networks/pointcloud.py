@@ -11,10 +11,13 @@ class PointCloudPolicy(nn.Module):
     point_channels: tuple[int, ...] = (64, 128, 1024)
     negative_slope: float = 0.01
     point_input_scale: float = 1.0
+    output_init_scale: float = 1.0
 
     def setup(self):
         if not math.isfinite(self.point_input_scale) or self.point_input_scale <= 0:
             raise ValueError("Point coordinate scale must be finite and positive")
+        if not math.isfinite(self.output_init_scale) or self.output_init_scale <= 0:
+            raise ValueError("Output initialization scale must be finite and positive")
         self.point_layers = tuple(
             nn.Dense(width, name=f"point_{index}")
             for index, width in enumerate(self.point_channels)
@@ -22,7 +25,12 @@ class PointCloudPolicy(nn.Module):
         self.point_projection = nn.Dense(self.hidden_size, name="point_projection")
         self.state_projection = nn.Dense(self.hidden_size, name="state_projection")
         self.memory = nn.GRUCell(features=self.hidden_size, name="memory")
-        self.action_head = nn.Dense(3, name="acceleration")
+        self.action_head = nn.Dense(
+            3, name="acceleration",
+            kernel_init=nn.initializers.variance_scaling(
+                self.output_init_scale, "fan_in", "truncated_normal"
+            ),
+        )
 
     def encode(self, points, valid):
         """Encode (..., points, 3), independently of point order and point count."""

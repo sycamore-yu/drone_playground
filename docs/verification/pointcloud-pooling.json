@@ -1,0 +1,98 @@
+{
+  "scope": "Nominal unperturbed initial state only; zero optimizer updates; no claim that winner ranges prove safety failure",
+  "source_checkpoint_sha256": "6274f8a34bd7d6d7f4c1ceca0285f22ff971ed2d84e53be75ef2f539848384e5",
+  "parameter_sha256": "6d2c2dbdc459bbdb4ac5787e1e88835809791da60e51760f9e3e907018001a66",
+  "script_sha256": "48d694ed165507dc69073876f1c16f02e82ca8297cf20e356607880058fcef6a",
+  "encoder_reconstruction_matched": true,
+  "rows": [
+    {
+      "scene": "S01",
+      "valid_points": 3771,
+      "valid_points_le10m": 3336,
+      "valid_points_le20m": 3570,
+      "winner_fraction_le10m": 0.8916015625,
+      "winner_fraction_le20m": 0.96484375,
+      "winner_range_median_m": 3.5170507431030273,
+      "winner_range_max_m": 92.17082214355469,
+      "crop20_embedding_relative_l2": 0.19301864504814148
+    },
+    {
+      "scene": "S02",
+      "valid_points": 3897,
+      "valid_points_le10m": 3430,
+      "valid_points_le20m": 3801,
+      "winner_fraction_le10m": 0.8505859375,
+      "winner_fraction_le20m": 0.9794921875,
+      "winner_range_median_m": 3.8521511554718018,
+      "winner_range_max_m": 58.20759963989258,
+      "crop20_embedding_relative_l2": 0.11497168987989426
+    },
+    {
+      "scene": "S03",
+      "valid_points": 4372,
+      "valid_points_le10m": 4253,
+      "valid_points_le20m": 4355,
+      "winner_fraction_le10m": 0.9482421875,
+      "winner_fraction_le20m": 0.9951171875,
+      "winner_range_median_m": 4.557672023773193,
+      "winner_range_max_m": 23.156875610351562,
+      "crop20_embedding_relative_l2": 0.00759988185018301
+    },
+    {
+      "scene": "S06",
+      "valid_points": 3351,
+      "valid_points_le10m": 2719,
+      "valid_points_le20m": 3206,
+      "winner_fraction_le10m": 0.884765625,
+      "winner_fraction_le20m": 0.984375,
+      "winner_range_median_m": 4.520185470581055,
+      "winner_range_max_m": 29.22606086730957,
+      "crop20_embedding_relative_l2": 0.062029168009757996
+    },
+    {
+      "scene": "D01",
+      "valid_points": 3024,
+      "valid_points_le10m": 2310,
+      "valid_points_le20m": 2660,
+      "winner_fraction_le10m": 0.83984375,
+      "winner_fraction_le20m": 0.96875,
+      "winner_range_median_m": 2.059196949005127,
+      "winner_range_max_m": 99.01374816894531,
+      "crop20_embedding_relative_l2": 0.23214305937290192
+    },
+    {
+      "scene": "D02",
+      "valid_points": 3055,
+      "valid_points_le10m": 2312,
+      "valid_points_le20m": 2695,
+      "winner_fraction_le10m": 0.8203125,
+      "winner_fraction_le20m": 0.970703125,
+      "winner_range_median_m": 2.093863010406494,
+      "winner_range_max_m": 98.04661560058594,
+      "crop20_embedding_relative_l2": 0.20398187637329102
+    },
+    {
+      "scene": "D03",
+      "valid_points": 3129,
+      "valid_points_le10m": 2558,
+      "valid_points_le20m": 2792,
+      "winner_fraction_le10m": 0.7998046875,
+      "winner_fraction_le20m": 0.9521484375,
+      "winner_range_median_m": 2.1093008518218994,
+      "winner_range_max_m": 87.05147552490234,
+      "crop20_embedding_relative_l2": 0.18116861581802368
+    },
+    {
+      "scene": "D06",
+      "valid_points": 3082,
+      "valid_points_le10m": 2262,
+      "valid_points_le20m": 2842,
+      "winner_fraction_le10m": 0.8095703125,
+      "winner_fraction_le20m": 0.974609375,
+      "winner_range_median_m": 2.2416720390319824,
+      "winner_range_max_m": 80.6124267578125,
+      "crop20_embedding_relative_l2": 0.09006770700216293
+    }
+  ],
+  "artifact_sha256": "05e01e373256648bd71a5783a68c6c93dc9d7cc940aaaeeb37ee4a909393f0ac"
+}
