@@ -48,3 +48,21 @@ PPO竞速t0的确认seed=1在2,097,152步内仍未完成，开发快照的过门
 首批新候选：SHAC使用原失败seed2、实际128×32×1000，保留DiffAero启发的actor lr .001／critic .003；点云使用seed0、8×32×1000、lr .001，只将point_input_scale设为.1，检验已有输入尺度诊断；深度使用seed0、32×32×1000、lr .001，以更大批量提高采样覆盖。三者均为空warm_start／resume，单独排队使用GPU；已在启动前断言实际解析配置。导航新选模带64个初态扰动，不能直接把它的标量目标与旧8回合目标比较。
 
 新源码选模与现有初态合同的15项针对性测试通过，lint通过；固定源码为927f8a7。第二候选须依据本方法首候选的真实结果再选择，不预先自动搜索。
+
+首批从零点云候选的准确入口（后续候选和确认使用独立run_id／seed）：
+
+```bash
+JAX_PLATFORMS=cuda pixi run train method=learning/pointcloud_navigation \
+  training=navigation_development_v2 training.num_envs=8 \
+  training.policy_updates=1000 training.num_evals=9 training.seed=0 \
+  training.development_episodes=8 training.development_metric=navigation-development-v2 \
+  training.max_wall_seconds=3600 training.warm_start=null training.resume=null \
+  algorithm.horizon_length=32 algorithm.learning_rate=0.001 \
+  +network.point_input_scale=0.1 runtime.device=gpu run_id=<独立标识>
+```
+
+方法预设中的_self_可能覆盖training组，故并行数、更新数、开发回合及选模规则必须显式给出；启动器会先解析并断言，而不是只登记意图预算。
+
+SHAC第二阶段t0完成实际4,096,000步，9个快照均0/32，472.39秒。第二个且最后一个开发候选只将actor学习率从.001降低为.0003，仍128×32×1000、critic .003、seed2、原网络和开发种子。
+
+点云第二阶段t0在497.76秒内完成1000次，输入缩放.1的从零策略按新规则选择875次，最差场景0/8、总到达31/64。第二个且最后一个候选保留网络、lr .001、8并行和32步时域，仅把从零训练更新预算提高到4000（1,024,000步）；仍受3600秒上限约束。晚期进展用于提出预算检查，不提前声明增加预算一定解决失败。

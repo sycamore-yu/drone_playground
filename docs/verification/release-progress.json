@@ -909,5 +909,6 @@
   "confirmed_cells_for_current_runtime": 11,
   "user_accepted_cells": 2,
   "remaining_quality_cells": 5,
-  "release_requirement_satisfied_cells": 13
+  "release_requirement_satisfied_cells": 13,
+  "required_quality_cells": 16
 }
