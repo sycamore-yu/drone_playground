@@ -1,0 +1,83 @@
+{
+  "source_tree": "release-stage2-20260930",
+  "candidates": [
+    {
+      "method": "shac-racing",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "trial": 0,
+      "num_envs": 128,
+      "horizon_length": 32,
+      "policy_updates": 1000,
+      "training_seed": 2,
+      "warm_start": null,
+      "resume": null,
+      "actual_steps": 4096000,
+      "wall_seconds": 472.38663858827204,
+      "objective": 0.0,
+      "selected_updates": null,
+      "development_successes": 0,
+      "development_trials": 32,
+      "score": null,
+      "quality_passed": null,
+      "artifacts": {
+        "launch.json": "e3a24079570b4183c21d7c472a0394347f9fe982546ddabbec8585f0dfea28c2",
+        "result.json": "546ea774c9c0f72232d811a54aa73a9be7c315fd324c4ce620c81c716a3d9899"
+      }
+    },
+    {
+      "method": "pointcloud-navigation",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "trial": 0,
+      "num_envs": 8,
+      "horizon_length": 32,
+      "policy_updates": 1000,
+      "training_seed": 0,
+      "warm_start": null,
+      "resume": null,
+      "actual_steps": 256000,
+      "wall_seconds": 497.7619404271245,
+      "objective": 0.053082191780821915,
+      "selected_updates": 875,
+      "development_successes": 31,
+      "development_trials": 64,
+      "score": [
+        0,
+        31
+      ],
+      "quality_passed": false,
+      "artifacts": {
+        "launch.json": "b7dcc521d70681ad57df2c00dfb8dfa5448d1980f15d02b27097fba59173dee7",
+        "result.json": "d337e5818391906106382b2446a365b2a6e36ad9768ccb9af17ec295d1cae00e"
+      }
+    },
+    {
+      "method": "depth-navigation",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "trial": 0,
+      "num_envs": 32,
+      "horizon_length": 32,
+      "policy_updates": 1000,
+      "training_seed": 0,
+      "warm_start": null,
+      "resume": null,
+      "actual_steps": 1024000,
+      "wall_seconds": 442.6480944897048,
+      "objective": 1.0,
+      "selected_updates": 1000,
+      "development_successes": 64,
+      "development_trials": 64,
+      "score": [
+        8,
+        64
+      ],
+      "quality_passed": true,
+      "artifacts": {
+        "launch.json": "39ecbfebf721a563b044681f4a0f70be961867bd8c813548d581f6fcba6e1c6b",
+        "result.json": "ed23d7815affb51887b33ae4ed8d99d6900407dc7694611332eaacfdc333657f"
+      }
+    }
+  ],
+  "formal_confirmation_complete": false,
+  "quality_cells_added": 0,
+  "caveat": "Depth64/64 is development seed0 only; each learning cell needs fresh30/31/32 and independent heldout. Pointcloud scratch only, no45000 pretraining."
+}
