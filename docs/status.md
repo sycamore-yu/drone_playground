@@ -26,7 +26,7 @@ PPO竞速第二配方新种子10／11／12均100/100；SHAC低actor学习率第�
 
 32×32×3000、lr .0003、默认输出初始化的从零GPU实验已完成：1817.29秒、3,072,000决策步，主要场景规则选2625次；S01／S02／S03、D01／D03均8/8，D02为4/8，S06为1/8、D06为0/8。全开发45/64、主要44/48，但D02未达逐场景门槛，50／51／52正式队列未启动。终点3000次低于选定快照，不据此声称单调收敛。运行与全部快照见[开发凭据](verification/navigation-primary-development.json)。
 
-一份D02失败回放在9.594秒撞到静态横杆；横杆在碰撞前可见，且影响冻结PointNet编码，支持进一步检验避让时机／安全余量，不证明所有D02失败的根因。用户已选择保留网络、只将`objective.clearance_margin`从1.0m增至1.5m，继续同样的从零开发条件；配方与启动状态见[下一实验](research/pointcloud-next-candidate.md)。深度lr .0003／3000次开发已完成，840.34秒、选定2250次63/64，保留作开发证据；既有三种子深度配方已通过新标准，取消未启动的40／41／42重复确认。旧点云配方的正式确认同样未启动。
+一份D02失败回放在9.594秒撞到静态横杆；横杆在碰撞前可见，且影响冻结PointNet编码，支持进一步检验避让时机／安全余量，不证明所有D02失败的根因。用户已选择保留网络、只将`objective.clearance_margin`从1.0m增至1.5m，继续同样的从零开发条件；新实验已在RTX4090启动，源码固定为`8d9140e`，解析配置仅有该项差异。主目录入口为`experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/`；配方与启动身份见[下一实验](research/pointcloud-next-candidate.md)和[凭据](verification/pointcloud-margin15-development.json)。深度lr .0003／3000次开发已完成，840.34秒、选定2250次63/64，保留作开发证据；既有三种子深度配方已通过新标准，取消未启动的40／41／42重复确认。旧点云配方的正式确认同样未启动。
 
 新增[独立训练场景入口](research/navigation-training-scenes.md)已通过隔离与真实梯度检查；当前冻结运行仍使用Navigation8几何，不能把初态／扰动留出称作新几何泛化。点云探针与训练记录见[诊断](research/pointcloud-pilot-diagnosis.md)和[后续配方](research/pointcloud-next-candidate.md)。
 

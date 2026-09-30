@@ -22,6 +22,6 @@
 
 依据为[单回合诊断](../verification/pointcloud-d02-bar-diagnostic.json)：D02 seed50005在9.594秒碰撞静态横杆，9.0秒仅剩1.592m净空；横杆有76个有效回波、影响256/1024个最大池化通道，屏蔽横杆回波后编码相对L2变化0.375。爬升命令随后增加，但未及时越过。该证据支持验证更早惩罚近障状态，不证明安全余量一定解决D02，也不证明其他失败的根因。
 
-新运行使用冻结源码，记录与上一轮解析配置的差异及优化器ask/tell；输出统一为`experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/`。启动身份与状态另存[实验凭据](../verification/pointcloud-margin15-development.json)。当前最好结果仍保留上一轮2625次；新实验结束后按同一开发目标比较，不用未完成快照替换正式结果。
+新运行已在RTX4090启动，源码固定为`8d9140e`；学习、环境及配置源码与上一轮`bf7bc08`相同，解析配置只差安全余量。optim-agent继承上一轮已完成记录，新增trial001，记录目标、命令和ask/tell；日期入口为`experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/`，搜索记录为同日`pointcloud-navigation-primary-search/`。启动身份与状态见[实验凭据](../verification/pointcloud-margin15-development.json)。当前最好结果仍保留上一轮2625次；新实验结束后按同一开发目标比较，不用未完成快照替换正式结果。
 
 选定策略每个主要场景8/8后，才启动新的训练种子50／51／52与80000–80199留出；否则保存开发失败，再讨论损失权重或训练状态覆盖。保持失败回合，不自动把开发成绩填入正式质量格。

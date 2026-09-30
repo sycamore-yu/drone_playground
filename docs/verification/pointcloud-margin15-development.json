@@ -1,5 +1,5 @@
 {
-  "status": "planned_after_source_freeze",
+  "status": "running",
   "authorized_by": "User2026-09-30 chooses safety margin 1.5m with unchanged network",
   "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
   "study": "pointcloud-navigation-primary",
@@ -36,7 +36,98 @@
       80199
     ],
     "criterion": "release-navigation-primary-v1",
-    "formal_training_started": false
+    "formal_training_started": false,
+    "queue_directory": "experiments/tmp/260930/primary-pointcloud-margin15-confirmation-queue-20260930",
+    "process": {
+      "pid": 3282286,
+      "start_ticks": "256612123",
+      "command": [
+        "/home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/bin/python",
+        "-u",
+        "tmp/confirm_margin_when_ready.py"
+      ]
+    }
   },
-  "quality_passed": false
+  "quality_passed": false,
+  "checked_utc": "2026-09-30T06:45:36.475806+00:00",
+  "source_revision": "8d9140e0abfad26bc72c31929c99bc2d1265b034",
+  "source_worktree": "navigation-margin15-20260930",
+  "tracked_source_clean": true,
+  "code_dirty_at_start": true,
+  "initial_untracked_runtime_alias": ".pixi symlink only; no source modifications, alias removed after startup; original manifest retained",
+  "source_learning_environment_and_configs_unchanged_from_baseline": true,
+  "configuration_difference": {
+    "objective.clearance_margin": {
+      "before": 1.0,
+      "after": 1.5
+    }
+  },
+  "run_directory": "experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930",
+  "study_directory": "experiments/tmp/260930/pointcloud-navigation-primary-search",
+  "spec_sha256": "cfa496f05c913321b072c0352bfcf321b898b9e107b7d38a3e789c26139aa12b",
+  "runner_sha256": "c28da4a1650f460aede518ab7fc1b0539d2286c3ea6cdfe60820a9ba11547310",
+  "launch_sha256": "9f5f03d1245c640a8543c1b1b4430cbb0aaff21bbf7ef78ac6f1098187f7ca1d",
+  "process": {
+    "pid": 3282321,
+    "start_ticks": "256612357",
+    "cmdline": "/home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/bin/python scripts/train.py method=learning/pointcloud_navigation training.num_envs=32 training.num_evals=9 training.seed=0 training.development_episodes=8 training.max_wall_seconds=3600 training.warm_start=null training.resume=null algorithm.learning_rate=0.0003 +network.point_input_scale=0.1 runtime.device=gpu training=navigation_development_primary training.policy_updates=3000 training.development_metric=navigation-development-primary-v1 algorithm.horizon_length=32 +network.output_init_scale=1.0 objective.clearance_margin=1.5 runtime.device=gpu training.max_wall_seconds=3600 training.resume=null training.warm_start=null run_id=primary-pointcloud-margin15-seed0-t1-20260930 "
+  },
+  "runtime": {
+    "jax_platforms": "cuda,cpu",
+    "requested_device": "gpu",
+    "actual_compute_process": "NVIDIA GeForce RTX4090; PID3282321;9,728MiB at initial development snapshot",
+    "actual_device": "NVIDIA GeForce RTX4090",
+    "compute_pid": 3282321,
+    "observed_memory_mib": 9890,
+    "observed_gpu_utilization_percent": 100
+  },
+  "progress": {
+    "phase": "training",
+    "step": 617472,
+    "completed_updates": 603
+  },
+  "frozen_worktree_layout_tests": {
+    "passed": 20,
+    "wall_seconds": 0.46
+  },
+  "development_snapshots": [
+    {
+      "report": "update-0000000.json",
+      "report_sha256": "b579f8f4c3acd09ddf9e950451fb63ff573cd72c7e592e87640d1b32ae8760c2",
+      "score": [
+        0,
+        0
+      ],
+      "scene_success_rates": {
+        "D01": 0.0,
+        "D02": 0.0,
+        "D03": 0.0,
+        "D06": 0.0,
+        "S01": 0.0,
+        "S02": 0.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0000375.json",
+      "report_sha256": "ba4126c58c542fb5c51fb96c9583b4d9e9f8b8bb3b7d8072309854e5ffaa3245",
+      "score": [
+        0,
+        14
+      ],
+      "scene_success_rates": {
+        "D01": 0.0,
+        "D02": 0.0,
+        "D03": 0.0,
+        "D06": 0.0,
+        "S01": 0.75,
+        "S02": 1.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    }
+  ]
 }

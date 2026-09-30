@@ -27,3 +27,5 @@ python3 scripts/tools/summarize_final_acceptance.py \
 ```
 
 实验产物通过Git忽略规则排除，源码只跟踪此说明。新克隆需要取得结果包或自行训练；不能仅凭目录名把开发结果算作正式通过。
+
+当前进行中：[安全余量1.5m点云实验](tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/)。保留网络，从零训练；正式验收等待开发逐场景门槛。

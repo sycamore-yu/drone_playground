@@ -11,7 +11,7 @@
   "working_entries_by_date": {
     "260928": 28,
     "260929": 180,
-    "260930": 33
+    "260930": 36
   },
   "selected_cells": 18,
   "selected_records": 34,
@@ -75,6 +75,11 @@
       "name": "release-super-heartbeat-20260929",
       "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
       "tracked_source_clean": true
+    },
+    {
+      "name": "navigation-margin15-20260930",
+      "source_revision": "8d9140e0abfad26bc72c31929c99bc2d1265b034",
+      "tracked_source_clean": true
     }
   ],
   "legacy_30_cell_registry": "tmp/final-acceptance-layout-check.json",
@@ -99,5 +104,6 @@
     "total_affected_tests_passed": 93,
     "legacy_policy_load_verified": true,
     "document_links_verified": true
-  }
+  },
+  "updated_utc": "2026-09-30T06:43:05.375754+00:00"
 }
