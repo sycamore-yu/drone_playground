@@ -1,0 +1,34 @@
+{
+  "rows": [
+    {
+      "update": 0,
+      "exact_parameters": true,
+      "parameter_l2": 0.0,
+      "max_abs": 0.0,
+      "exact_rng": true
+    },
+    {
+      "update": 500,
+      "exact_parameters": false,
+      "parameter_l2": 17.293501446489632,
+      "max_abs": 0.3559892773628235,
+      "exact_rng": true
+    },
+    {
+      "update": 1000,
+      "exact_parameters": false,
+      "parameter_l2": 27.443190252116814,
+      "max_abs": 0.5287034511566162,
+      "exact_rng": true
+    }
+  ],
+  "optimizer_updates": 0,
+  "config_changes": [
+    "run_id",
+    "training.policy_updates"
+  ],
+  "caveat": "Initial parameters and per-update RNG identical. Later parameter paths differ across fresh GPU processes. Cause not established; a same-seed run is not bitwise-repeatable training evidence. No optimizer updates were made by this diagnostic.",
+  "source_revision": "927f8a7",
+  "runtime_tree": "release-stage2-20260930",
+  "artifact_sha256": "6a1dcee546b688de8619dcf7408ae9a1cd90523f0955feeda2e1c6425f566550"
+}

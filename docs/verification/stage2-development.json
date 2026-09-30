@@ -99,9 +99,43 @@
         "launch.json": "1efec5e0062256f4527eafaa7b639595eb5ba923c65984c22e5d76721d6f8596",
         "result.json": "eec0c8059b4f10abbc9febab62e327056041aede370e220a7708d618d671dfed"
       }
+    },
+    {
+      "method": "pointcloud-navigation",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "trial": 1,
+      "num_envs": 8,
+      "horizon_length": 32,
+      "policy_updates": 4000,
+      "training_seed": 0,
+      "warm_start": null,
+      "resume": null,
+      "learning_rate": 0.001,
+      "point_input_scale": 0.1,
+      "actual_steps": 1024000,
+      "wall_seconds": 1234.8353568990715,
+      "objective": 0.1969178082191781,
+      "selected_updates": 4000,
+      "development_successes": 50,
+      "development_trials": 64,
+      "score": [
+        1,
+        50
+      ],
+      "quality_passed": false,
+      "artifacts": {
+        "launch.json": "763fab1a0957a1fdf7ecdfdd4d62ae632c1583ac8e34e1f6c2105b8a90b47e8e",
+        "result.json": "cd41bf68faaecb30e2d15e738bf31a4ff60efec8fa75754ac6708769875bd8d8"
+      }
     }
   ],
   "formal_confirmation_complete": false,
   "quality_cells_added": 0,
-  "caveat": "Depth64/64 is development seed0 only; each learning cell needs fresh30/31/32 and independent heldout. Pointcloud scratch only, no45000 pretraining."
+  "caveat": "Depth64/64 is development seed0 only; each learning cell needs fresh30/31/32 and independent heldout. Pointcloud scratch only, no45000 pretraining.",
+  "search_completed": true,
+  "fresh_confirmation_seeds": [
+    30,
+    31,
+    32
+  ]
 }

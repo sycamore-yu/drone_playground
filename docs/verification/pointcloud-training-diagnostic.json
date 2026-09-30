@@ -1,0 +1,273 @@
+{
+  "checkpoint": "experiments/stage2-pointcloud-navigation-scratch-seed0-t1-20260930/training-state/update-0002000.pkl",
+  "parameter_sha256": "facb04684f4d702e4b9ee800bddf8e9854f69960bc7e2724c664b98f8763034b",
+  "optimizer_updates": 0,
+  "actual_device": "TFRT_CPU_0",
+  "scope": "Independent CPU D06 repeat, not replay of the original GPU policy path",
+  "episode": {
+    "scene_id": "D06",
+    "command_speed_m_s": 4.0,
+    "outcome": "collision",
+    "arrived": false,
+    "collision": true,
+    "out_of_bounds": false,
+    "numerical_failure": false,
+    "timeout": false,
+    "steps": 115,
+    "elapsed_s": 11.460007667541504,
+    "arrival_time_s": null,
+    "path_length_m": 40.07071304321289,
+    "peak_speed_m_s": 3.9514639377593994,
+    "mean_speed_m_s": 3.508162498474121,
+    "min_clearance_m": -0.0035304203629493713,
+    "final_goal_distance_m": 56.437191009521484,
+    "seed": 50007,
+    "delay_ticks": 18,
+    "initial_position_m": [
+      1.8800973892211914,
+      -0.1457897275686264,
+      3.0756239891052246
+    ],
+    "initial_velocity_mps": [
+      -0.09896045923233032,
+      -0.00824597105383873,
+      -0.03537898510694504
+    ]
+  },
+  "physical_replay_max_error_m": 0.0,
+  "training_clearance_hz": 10,
+  "event_check_hz": 500,
+  "first_collision_decision": 114,
+  "training_endpoint_clearance_m": -0.13034620881080627,
+  "unchecked_substep_minimum_clearance_m": -0.13034620881080627,
+  "first_event_clearance_m": -0.0035304203629493713,
+  "endpoint_vs_minimum_penalty_gradients": [
+    [
+      [
+        0.0012561450712382793,
+        0.0,
+        0.0
+      ]
+    ],
+    [
+      [
+        0.0012561450712382793,
+        0.0,
+        0.0
+      ]
+    ]
+  ],
+  "gradient_norms": [
+    0.0012561450712382793,
+    0.0012561450712382793
+  ],
+  "gradient_cosine": 0.9999999963982703,
+  "endpoint_outside_collision": false,
+  "elapsed_seconds": 27.125556295271963,
+  "source_revision": "927f8a7",
+  "runtime_tree": "release-stage2-20260930",
+  "files": {
+    "result.json": "c8551660368b0db3461d7c6baf172711477f49166e3245d9b77668923586897c",
+    "cpu-repeat.json": "dbd86a381725d676fb18aaabf45b8c94026c121f85aef57e893af5a11c7d1f60",
+    "physical-comparison.npz": "5571b1fa19636510967af5ffc344841e129cd4f1f51eba55f4a430e28be6db84",
+    "trained-gates.json": "f16ae054ba82348bda2ac69180e036e23865c8a2f7aed0f792bfa6fcae2c3e62"
+  },
+  "probe_source_sha256": "a25ded73c0a41b54bdf70b962ba8bb3fd41c6cd6bdd4b51e22858e9d932be837",
+  "gates": {
+    "scope": "Fixed nominal initial states across8scenes; zero optimizer updates; does not measure the complete recurrent trajectory",
+    "rows": [
+      {
+        "update": 0,
+        "scene": "S01",
+        "point_embedding_rms": 1.3391307592391968,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0052083334885537624,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "S02",
+        "point_embedding_rms": 0.9782211184501648,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0052083334885537624,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "S03",
+        "point_embedding_rms": 0.4375015199184418,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "S06",
+        "point_embedding_rms": 0.6608748435974121,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "D01",
+        "point_embedding_rms": 1.5258697271347046,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.010416666977107525,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "D02",
+        "point_embedding_rms": 1.4237741231918335,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0052083334885537624,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "D03",
+        "point_embedding_rms": 1.2696044445037842,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0052083334885537624,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 0,
+        "scene": "D06",
+        "point_embedding_rms": 1.1822545528411865,
+        "body_embedding_rms": 1.2933695316314697,
+        "gate_reset_abs_gt5": 0.0052083334885537624,
+        "gate_update_abs_gt5": 0.0
+      },
+      {
+        "update": 2000,
+        "scene": "S01",
+        "point_embedding_rms": 0.9492692947387695,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.0572916679084301,
+        "gate_update_abs_gt5": 0.1458333432674408
+      },
+      {
+        "update": 2000,
+        "scene": "S02",
+        "point_embedding_rms": 0.9790325164794922,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.078125,
+        "gate_update_abs_gt5": 0.1666666716337204
+      },
+      {
+        "update": 2000,
+        "scene": "S03",
+        "point_embedding_rms": 0.7374734878540039,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.046875,
+        "gate_update_abs_gt5": 0.0572916679084301
+      },
+      {
+        "update": 2000,
+        "scene": "S06",
+        "point_embedding_rms": 0.9529721140861511,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.0572916679084301,
+        "gate_update_abs_gt5": 0.1041666716337204
+      },
+      {
+        "update": 2000,
+        "scene": "D01",
+        "point_embedding_rms": 1.1517729759216309,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.09375,
+        "gate_update_abs_gt5": 0.1614583432674408
+      },
+      {
+        "update": 2000,
+        "scene": "D02",
+        "point_embedding_rms": 1.1109354496002197,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.09375,
+        "gate_update_abs_gt5": 0.15625
+      },
+      {
+        "update": 2000,
+        "scene": "D03",
+        "point_embedding_rms": 1.0649244785308838,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.0833333358168602,
+        "gate_update_abs_gt5": 0.15625
+      },
+      {
+        "update": 2000,
+        "scene": "D06",
+        "point_embedding_rms": 1.0256413221359253,
+        "body_embedding_rms": 1.2269169092178345,
+        "gate_reset_abs_gt5": 0.0677083358168602,
+        "gate_update_abs_gt5": 0.140625
+      },
+      {
+        "update": 4000,
+        "scene": "S01",
+        "point_embedding_rms": 0.8636256456375122,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.171875,
+        "gate_update_abs_gt5": 0.296875
+      },
+      {
+        "update": 4000,
+        "scene": "S02",
+        "point_embedding_rms": 0.8779585957527161,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.1875,
+        "gate_update_abs_gt5": 0.2916666865348816
+      },
+      {
+        "update": 4000,
+        "scene": "S03",
+        "point_embedding_rms": 0.7340074777603149,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.0833333358168602,
+        "gate_update_abs_gt5": 0.2135416716337204
+      },
+      {
+        "update": 4000,
+        "scene": "S06",
+        "point_embedding_rms": 0.8607438206672668,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.125,
+        "gate_update_abs_gt5": 0.2135416716337204
+      },
+      {
+        "update": 4000,
+        "scene": "D01",
+        "point_embedding_rms": 0.9608914256095886,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.1927083432674408,
+        "gate_update_abs_gt5": 0.3072916865348816
+      },
+      {
+        "update": 4000,
+        "scene": "D02",
+        "point_embedding_rms": 0.9422527551651001,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.1875,
+        "gate_update_abs_gt5": 0.296875
+      },
+      {
+        "update": 4000,
+        "scene": "D03",
+        "point_embedding_rms": 0.9208879470825195,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.1875,
+        "gate_update_abs_gt5": 0.28125
+      },
+      {
+        "update": 4000,
+        "scene": "D06",
+        "point_embedding_rms": 0.8910326361656189,
+        "body_embedding_rms": 1.1804255247116089,
+        "gate_reset_abs_gt5": 0.171875,
+        "gate_update_abs_gt5": 0.28125
+      }
+    ]
+  }
+}
