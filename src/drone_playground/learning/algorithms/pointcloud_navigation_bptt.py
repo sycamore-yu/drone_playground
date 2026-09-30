@@ -80,6 +80,9 @@ def rollout_loss(task, network, parameters, key, count, horizon):
 def adaptation_contract(config):
     value = continuation_contract(config)
     value["training"].pop("warm_start", None)
+    # A missing field in legacy states and an explicit null have the same recipe.
+    if value["training"].get("scene") is None:
+        value["training"].pop("scene", None)
     return value
 
 
@@ -171,6 +174,7 @@ def train(config, root, run_id):
     ) as rec:
         with capture_console(rec.path / "console.log"):
             save_report(rec.path / "scene-manifest.json", task.manifest)
+            save_report(rec.path / "training-scene-manifest.json", task.training_manifest)
             save_report(rec.path / "components.json", task.component_identity)
             save_report(
                 rec.path / "training-identity.json",
@@ -181,6 +185,9 @@ def train(config, root, run_id):
                     policy_hz=task.freq,
                     physics_hz=task.physics_freq,
                     initialization="safe departure/near-goal/global course states with random dynamic phases",
+                    training_bank_digest=task.training_bank.digest(),
+                    evaluation_bank_digest=task.bank.digest(),
+                    training_geometry_separate=task.training_bank.digest() != task.bank.digest(),
                     sensor_points=task.sensor.points_per_frame,
                     training_termination="continuous soft collision objective, no event truncation",
                     evaluation_termination="first physical collision/arrival/boundary/nonfinite/300s event",

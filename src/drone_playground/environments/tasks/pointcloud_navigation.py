@@ -7,6 +7,7 @@ collision-free initial-state sampling, never for a hidden route or controller.
 
 import jax
 import jax.numpy as jnp
+from hydra.utils import instantiate
 
 from drone_playground.environments.scenes.navigation import clearance_and_collision, euclidean_norm
 from drone_playground.environments.tasks.pointcloud import PointCloudTask
@@ -30,9 +31,18 @@ class PointCloudNavigationTask(PointCloudTask):
         self.physics_dt = 1 / self.physics_freq
         self.substeps = self.physics_freq // self.freq
         self.bank, self.manifest = self.scene.build()
+        self.training_bank, self.training_manifest = self.bank, self.manifest
+        training_scene = config["training"].get("scene")
+        if training_scene and config.get("mode", "train") == "train":
+            self.training_bank, self.training_manifest = instantiate(
+                training_scene, _convert_="all"
+            ).build()
+            if self.training_bank.digest() == self.bank.digest():
+                raise ValueError("Independent training geometry must differ from evaluation")
         self.physics_engine = type(self).physics_engine
 
-    def select_bank(self, indices):
+    def select_bank(self, indices, *, source=None):
+        source = self.bank if source is None else source
         names = (
             "kind",
             "size",
@@ -46,11 +56,11 @@ class PointCloudNavigationTask(PointCloudTask):
             "subtype",
             "rotations",
         )
-        return self.bank.replace(
+        return source.replace(
             **{
-                name: getattr(self.bank, name)[indices]
+                name: getattr(source, name)[indices]
                 for name in names
-                if getattr(self.bank, name) is not None
+                if getattr(source, name) is not None
             }
         )
 
@@ -77,8 +87,8 @@ class PointCloudNavigationTask(PointCloudTask):
 
     def training_initial(self, key, count):
         ik, pk, tk, sk, vk, dk = jax.random.split(key, 6)
-        ids = jax.random.randint(ik, (count,), 0, self.bank.num_instances)
-        bank = self.select_bank(ids)
+        ids = jax.random.randint(ik, (count,), 0, self.training_bank.num_instances)
+        bank = self.select_bank(ids, source=self.training_bank)
         clocks = jax.random.uniform(tk, (count,), maxval=self.duration)
         clocks = clocks.at[: count // 4].set(0.0)
         n = int(self.settings["training_position_candidates"])

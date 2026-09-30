@@ -1,0 +1,9 @@
+defaults:
+- navigation_development_v2
+- _self_
+# Only rollout geometry changes. Development/evaluation retain env.scene.
+scene:
+  _target_: drone_playground.environments.scenes.training_navigation.NavigationTrainingScene
+  name: navigation_training
+  seed: 81000
+  per_difficulty: 4

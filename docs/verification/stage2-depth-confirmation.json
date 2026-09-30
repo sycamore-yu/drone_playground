@@ -1,0 +1,179 @@
+{
+  "audit_script_sha256": "f6c7aade62fcea8f7fa03d62ebd850f92f5ca4414fbc66f5da998357730ac31b",
+  "batch_id": "stage2-depth-confirmation-20260930",
+  "cells": {
+    "depth-navigation-dynamic": false,
+    "depth-navigation-static": false
+  },
+  "completed": true,
+  "confirmation_rule": "Both cells require every independent training seed to pass; no averaging over a failing seed",
+  "geometry_scope": "Fixed Navigation8 only; independent initial conditions and transport delays, no unseen-geometry claim",
+  "heldout_seed_range": [
+    60000,
+    60199
+  ],
+  "manifest_sha256": "ed4b81c1fc06ddb3269ba4fe5e0e46b48e5484b561f00fdf56847dc77574cb41",
+  "passed": false,
+  "recipe": {
+    "horizon_length": 32,
+    "initialization": "scratch",
+    "learning_rate": 0.001,
+    "num_envs": 32,
+    "policy_updates": 1000
+  },
+  "result_sha256": "ba7cc98827d873db2273075d42d40b04ef0f41f887f676d3dfea3960a291f7b7",
+  "rows": [
+    {
+      "archive_manifest_sha256": "2dfc274fc6dc31aaa6100526ce0a959d5e902e56ff6ded1bfbe91eb67e1482fa",
+      "archives_checked": 200,
+      "artifacts": {
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/eval/release-validation.json": "a93c290478007f5081b31df8d8475bbd9d6c95997b0a227135ee56dbb031d304",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/eval/report.json": "88eaf544dfdeda6ba93b3c71bf48d8128e83468d5eea8e3fff0c74d7cb7ac909",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/manifest.json": "7576f192fc6b0202dc9390e9edaa2bb7c2f9edb47e543792e1eabba784d4046c",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/result.json": "e2c2808ee3a78a871085d52632010c0045055c5d7c08509a6a0d0b7a2f3ceffb",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-train/manifest.json": "b45a090373a4d9ad103532f14a49016fc817a041a2484bc2b6666aebc0f06749",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-train/result.json": "dcd6b1447ec24af9b20c482b20963ef5bd8656eddb0fae89247f537c3febf602"
+      },
+      "checkpoint_sha256": "2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba",
+      "development_score": [
+        3,
+        55
+      ],
+      "frames_checked": 52304,
+      "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+      "passed": false,
+      "selected_updates": 250,
+      "tasks": {
+        "dynamic": {
+          "arrived": 84,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 0.96,
+            "D03": 0.96,
+            "D06": 0.44
+          },
+          "success_rate": 0.84
+        },
+        "static": {
+          "arrived": 80,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 0.2
+          },
+          "success_rate": 0.8
+        }
+      },
+      "training_seed": 30
+    },
+    {
+      "archive_manifest_sha256": "1e5d701b3cb805009fc5b1175a93773ba4b1b89f91e3dbcb50a8db57bd6af3d5",
+      "archives_checked": 200,
+      "artifacts": {
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/eval/release-validation.json": "00c69bd22badc0eebb79e6819a4e59f9d0bd5dc6a4acaa5db52bcb9b4e73e901",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/eval/report.json": "2aefab7ec68292141079c739215cb916b9b0071a52b20c658515111c50414f44",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/manifest.json": "4c5dc3582507ad613eaf62f3b569c9f01c9f6c44f66dcbbf04d35488c11f7ab6",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/result.json": "f320c448528ceaba73e12b28826e4fc0ab936984420bca3f6b212f157a096c14",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-train/manifest.json": "a84bb9a2276cbf36a353b441e0503bf7f1e5979b3aca648a8393b862347d6436",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-train/result.json": "319860903bb868cb46eca0272a54b01d0863b0b2eb48c2cdb9796fd4fed87ae4"
+      },
+      "checkpoint_sha256": "6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56",
+      "development_score": [
+        6,
+        62
+      ],
+      "frames_checked": 54133,
+      "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+      "passed": true,
+      "selected_updates": 625,
+      "tasks": {
+        "dynamic": {
+          "arrived": 100,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0,
+            "D06": 1.0
+          },
+          "success_rate": 1.0
+        },
+        "static": {
+          "arrived": 93,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 0.72
+          },
+          "success_rate": 0.93
+        }
+      },
+      "training_seed": 31
+    },
+    {
+      "archive_manifest_sha256": "fc80a3fa04fc25329a8852e7c1c72cc57eb7cebae5d965c2ae7a7c12a4c0c8c9",
+      "archives_checked": 200,
+      "artifacts": {
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/eval/release-validation.json": "676c81799b7803c57df3d7d8340c52a3512699236361a0d1c81727cdfda8314f",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/eval/report.json": "7635fad895c31e61908f8daf97c6c7df4a1a1934d1cc0a886faa7a2dc7cf7546",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/manifest.json": "fe5eca443ca77e4e6654e0827440ea9efec2de2246c665e3ca16b4e17390fba2",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/result.json": "38f0a5c2c56777635ed7954d9e8130d612be62ec975dfc0e50bdc0a5327f46a5",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-train/manifest.json": "ab4f0ad3cd9ddafd9d62f731c4b18bace715c0e9b79570cba70755fd4469a876",
+        "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-train/result.json": "ae6a7e0a180da19c3275e372de2f6f84fb4ebcffb6a983ccb2439baa76d78125"
+      },
+      "checkpoint_sha256": "7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd",
+      "development_score": [
+        8,
+        64
+      ],
+      "frames_checked": 53224,
+      "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+      "passed": true,
+      "selected_updates": 875,
+      "tasks": {
+        "dynamic": {
+          "arrived": 100,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0,
+            "D06": 1.0
+          },
+          "success_rate": 1.0
+        },
+        "static": {
+          "arrived": 100,
+          "num_trials": 100,
+          "passed": true,
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 1.0
+          },
+          "success_rate": 1.0
+        }
+      },
+      "training_seed": 32
+    }
+  ],
+  "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "total_archives_checked": 600,
+  "total_frames_checked": 159661,
+  "training_seeds": [
+    30,
+    31,
+    32
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-29T20:39:27.220013+00:00",
+  "generated_utc": "2026-09-30T03:07:07.636899+00:00",
   "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
   "passed_cells": 11,
   "required_cells": 18,
@@ -364,8 +364,22 @@
       "status": "not_passed",
       "training_seeds": [
         {
-          "training_seed": 0,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+          "training_seed": 30,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+          "arrived": 80,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 0.2
+          },
+          "success_rate": 0.8
+        },
+        {
+          "training_seed": 31,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
           "arrived": 93,
           "num_trials": 100,
           "passed": true,
@@ -378,34 +392,71 @@
           "success_rate": 0.93
         },
         {
-          "training_seed": 1,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
-          "arrived": 0,
+          "training_seed": 32,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+          "arrived": 100,
           "num_trials": 100,
-          "passed": false,
+          "passed": true,
           "scene_success_rates": {
-            "S01": 0.0,
-            "S02": 0.0,
-            "S03": 0.0,
-            "S06": 0.0
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 1.0
           },
-          "success_rate": 0.0
-        },
-        {
-          "training_seed": 2,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
-          "arrived": 0,
-          "num_trials": 100,
-          "passed": false,
-          "scene_success_rates": {
-            "S01": 0.0,
-            "S02": 0.0,
-            "S03": 0.0,
-            "S06": 0.0
-          },
-          "success_rate": 0.0
+          "success_rate": 1.0
         }
-      ]
+      ],
+      "previous_confirmations": [
+        {
+          "training_seeds": [
+            {
+              "training_seed": 0,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+              "arrived": 93,
+              "num_trials": 100,
+              "passed": true,
+              "scene_success_rates": {
+                "S01": 1.0,
+                "S02": 1.0,
+                "S03": 1.0,
+                "S06": 0.72
+              },
+              "success_rate": 0.93
+            },
+            {
+              "training_seed": 1,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
+              "arrived": 0,
+              "num_trials": 100,
+              "passed": false,
+              "scene_success_rates": {
+                "S01": 0.0,
+                "S02": 0.0,
+                "S03": 0.0,
+                "S06": 0.0
+              },
+              "success_rate": 0.0
+            },
+            {
+              "training_seed": 2,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
+              "arrived": 0,
+              "num_trials": 100,
+              "passed": false,
+              "scene_success_rates": {
+                "S01": 0.0,
+                "S02": 0.0,
+                "S03": 0.0,
+                "S06": 0.0
+              },
+              "success_rate": 0.0
+            }
+          ],
+          "status": "not_passed"
+        }
+      ],
+      "recipe": "stage2-depth32-lr001",
+      "evidence": "docs/verification/stage2-depth-confirmation.json"
     },
     {
       "method": "depth",
@@ -414,8 +465,22 @@
       "status": "not_passed",
       "training_seeds": [
         {
-          "training_seed": 0,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+          "training_seed": 30,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+          "arrived": 84,
+          "num_trials": 100,
+          "passed": false,
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 0.96,
+            "D03": 0.96,
+            "D06": 0.44
+          },
+          "success_rate": 0.84
+        },
+        {
+          "training_seed": 31,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
           "arrived": 100,
           "num_trials": 100,
           "passed": true,
@@ -428,34 +493,71 @@
           "success_rate": 1.0
         },
         {
-          "training_seed": 1,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
-          "arrived": 0,
+          "training_seed": 32,
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+          "arrived": 100,
           "num_trials": 100,
-          "passed": false,
+          "passed": true,
           "scene_success_rates": {
-            "D01": 0.0,
-            "D02": 0.0,
-            "D03": 0.0,
-            "D06": 0.0
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0,
+            "D06": 1.0
           },
-          "success_rate": 0.0
-        },
-        {
-          "training_seed": 2,
-          "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
-          "arrived": 0,
-          "num_trials": 100,
-          "passed": false,
-          "scene_success_rates": {
-            "D01": 0.0,
-            "D02": 0.0,
-            "D03": 0.0,
-            "D06": 0.0
-          },
-          "success_rate": 0.0
+          "success_rate": 1.0
         }
-      ]
+      ],
+      "previous_confirmations": [
+        {
+          "training_seeds": [
+            {
+              "training_seed": 0,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed0-heldout",
+              "arrived": 100,
+              "num_trials": 100,
+              "passed": true,
+              "scene_success_rates": {
+                "D01": 1.0,
+                "D02": 1.0,
+                "D03": 1.0,
+                "D06": 1.0
+              },
+              "success_rate": 1.0
+            },
+            {
+              "training_seed": 1,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed1-heldout",
+              "arrived": 0,
+              "num_trials": 100,
+              "passed": false,
+              "scene_success_rates": {
+                "D01": 0.0,
+                "D02": 0.0,
+                "D03": 0.0,
+                "D06": 0.0
+              },
+              "success_rate": 0.0
+            },
+            {
+              "training_seed": 2,
+              "run_id": "release-depth-confirmation-20260929-depth-navigation-seed2-heldout",
+              "arrived": 0,
+              "num_trials": 100,
+              "passed": false,
+              "scene_success_rates": {
+                "D01": 0.0,
+                "D02": 0.0,
+                "D03": 0.0,
+                "D06": 0.0
+              },
+              "success_rate": 0.0
+            }
+          ],
+          "status": "not_passed"
+        }
+      ],
+      "recipe": "stage2-depth32-lr001",
+      "evidence": "docs/verification/stage2-depth-confirmation.json"
     },
     {
       "method": "pointcloud",
@@ -904,11 +1006,22 @@
       "source_tree": "release-super-heartbeat-20260929",
       "path": "experiments/release-super-heartbeat-dynamic-confirmation-20260929/traces/index.json",
       "sha256": "1505e6ecd8fff8fa0de4ed263e0ad6e5bd5c1dd3da5a4bdeaf05b1981f8cfa28"
+    },
+    {
+      "source_tree": "release-stage2-20260930",
+      "path": "experiments/stage2-depth-confirmation-20260930/result.json",
+      "sha256": "ba7cc98827d873db2273075d42d40b04ef0f41f887f676d3dfea3960a291f7b7"
     }
   ],
   "confirmed_cells_for_current_runtime": 11,
   "user_accepted_cells": 2,
   "remaining_quality_cells": 5,
   "release_requirement_satisfied_cells": 13,
-  "required_quality_cells": 16
+  "required_quality_cells": 16,
+  "training_search_authorization": {
+    "date": "2026-09-30",
+    "trial_count_limit": null,
+    "per_training_wall_seconds": 3600,
+    "selection": "development only; fresh independent confirmation for each selected new recipe"
+  }
 }
