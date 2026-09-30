@@ -60,7 +60,8 @@ def test_default_and_legacy_checkpoints_keep_the_original_training_geometry():
     assert task.training_bank is task.bank
     assert task.training_manifest == task.manifest
     current = adaptation_contract(cfg)
-    cfg["training"].pop("scene")
+    assert "scene" not in cfg["training"]
+    cfg["training"]["scene"] = None
     assert adaptation_contract(cfg) == current
 
 
