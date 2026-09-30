@@ -41,5 +41,42 @@
       "launch_sha256": "cd6a95fda87e85f7ee13a22f94319e9d89a9b15981f6a02c4304b75b587eda9e",
       "trial_result_sha256": "743d7f557dc530823259f639343ac07b465b3d150b178b4c3d8cfc651fda65e3"
     }
+  ],
+  "additional_development_results": [
+    {
+      "method": "depth_navigation",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "run_id": "stage2-depth-navigation-seed0-t1-20260930",
+      "num_envs": 32,
+      "horizon_length": 32,
+      "policy_updates": 3000,
+      "learning_rate": 0.0003,
+      "actual_steps": 3072000,
+      "wall_seconds": 840.3435385311022,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/release-stage2-20260930/experiments/stage2-depth-navigation-seed0-t1-20260930/training-state/update-0002250.pkl",
+        "parameter_sha256": "91a0578869f03bbb1b0462f4d939b7a38f74c46675b32929785fca44e580f3eb",
+        "score": [
+          7,
+          63
+        ],
+        "selection_split": "dev",
+        "updates": 2250
+      },
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 1.0,
+        "D06": 0.875,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 1.0,
+        "S06": 1.0
+      },
+      "development_arrived": 63,
+      "development_trials": 64,
+      "quality_status": "Development only; no new heldout confirmation needed because existing cohort passes amended criterion",
+      "trial_result_sha256": "0cb13ad51e4917f03112e05f3cffc92ffcaa8c10e5bfa79f49d9dcb1b2218583"
+    }
   ]
 }

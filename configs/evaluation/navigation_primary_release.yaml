@@ -1,0 +1,5 @@
+defaults:
+- navigation_release
+- _self_
+# All eight scenes remain in the report; only six primary scenes gate release.
+release_validation: navigation-primary-v1

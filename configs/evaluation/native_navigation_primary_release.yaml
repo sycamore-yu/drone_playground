@@ -1,0 +1,4 @@
+defaults:
+- native_navigation_release
+- _self_
+release_validation: native-navigation-primary-v1

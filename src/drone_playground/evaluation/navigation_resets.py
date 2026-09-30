@@ -67,8 +67,11 @@ def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
                             rejected_position_proposals=choices.tolist()))
 
 
-def validate_navigation_report(report, minimum_per_task=100, tasks=("static", "dynamic")):
+def validate_navigation_report(report, minimum_per_task=100, tasks=("static", "dynamic"),
+                               criterion='navigation-v1'):
     """Validate the two Navigation8 cells without hiding failures or missing scenes."""
+    if criterion not in ('navigation-v1', 'navigation-primary-v1'):
+        raise ValueError('Unknown navigation release criterion')
     if (report.get('split') != 'heldout' or not report.get('parameters_frozen')
             or not report.get('initial_conditions')):
         raise ValueError('Release navigation needs frozen parameters and independent heldout initial conditions')
@@ -105,7 +108,18 @@ def validate_navigation_report(report, minimum_per_task=100, tasks=("static", "d
                  / sum(row['scene_id']==scene for row in cases) for scene in sorted(expected) if scene.startswith(prefix)}
         results[task] = dict(num_trials=len(cases),arrived=successes,success_rate=successes/len(cases),
                            scene_success_rates=rates,passed=successes/len(cases)>=.9)
-    return dict(protocol='release-navigation-v1',tasks=results,passed=all(x['passed'] for x in results.values()),
+        if criterion == 'navigation-primary-v1':
+            primary = {scene: rate for scene, rate in rates.items() if scene != prefix+'06'}
+            primary_cases = [row for row in cases if row['scene_id'] in primary]
+            results[task].update(
+                primary_scene_success_rates=primary,
+                extension_scene_success_rates={prefix+'06': rates[prefix+'06']},
+                primary_num_trials=len(primary_cases),
+                extension_num_trials=len(cases)-len(primary_cases),
+                primary_success_rate=sum(row['arrived'] for row in primary_cases)/len(primary_cases),
+                passed=all(rate >= .9 for rate in primary.values()),
+            )
+    return dict(protocol='release-'+criterion,tasks=results,passed=all(x['passed'] for x in results.values()),
                 geometry_scope='Fixed Navigation8 only; no unseen-geometry claim',
                 parameter_sha256=report['parameter_sha256'],
                 caveat='Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity')

@@ -15,13 +15,15 @@ from drone_playground.evaluation.pointcloud import export_case, summarize_trace
 from drone_playground.evaluation.tracking import save_report, tree_digest
 
 
-def navigation_development_selection(report):
+def navigation_development_selection(report, criterion='navigation-development-v2'):
     """Frozen 64-case lexicographic objective; exact ties keep the earlier snapshot.
 
     The integer scalar preserves worst-scene priority: one additional success in
     the worst scene outweighs every possible change in total successes (0..64).
     It is an optimization objective, not a success rate.
     """
+    if criterion not in ('navigation-development-v2', 'navigation-development-primary-v1'):
+        raise ValueError('Unknown navigation development criterion')
     rows = report["episodes"]
     expected = {prefix + suffix for prefix in ("S", "D") for suffix in ("01", "02", "03", "06")}
     counts = Counter(row["scene_id"] for row in rows)
@@ -33,6 +35,15 @@ def navigation_development_selection(report):
         raise ValueError("navigation-development-v2 requires eight independent resets per Navigation8 scene")
     successes = {scene: sum(bool(row["arrived"]) for row in rows if row["scene_id"] == scene)
                  for scene in expected}
+    if criterion == 'navigation-development-primary-v1':
+        primary = {scene: count for scene, count in successes.items() if not scene.endswith('06')}
+        worst, total = min(primary.values()), sum(primary.values())
+        return dict(score=[worst, total], pilot_objective=(49 * worst + total) / 440,
+                    worst_scene_success_rate=worst / 8, overall_success_rate=sum(successes.values()) / 64,
+                    primary_success_rate=total / 48, primary_development_passed=worst / 8 >= .9,
+                    quality_passed=worst / 8 >= .9,
+                    quality_rule='Each primary scene arrival >=90%; S06/D06 reported without gating',
+                    selection_rule=criterion)
     worst, total = min(successes.values()), sum(successes.values())
     return dict(score=[worst, total], pilot_objective=(65 * worst + total) / 584,
                 worst_scene_success_rate=worst / 8, overall_success_rate=total / 64,
@@ -272,12 +283,16 @@ def evaluate(config, root, run_id):
         if cfg["evaluation"].get("release_validation"):
             from .navigation_resets import validate_navigation_report
 
-            if cfg["evaluation"]["release_validation"] != "navigation-v1":
-                raise ValueError("Unknown navigation release validation")
-            release = validate_navigation_report(report)
+            criterion = cfg["evaluation"]["release_validation"]
+            release = validate_navigation_report(report, criterion=criterion)
             save_report(rec.path / "eval/release-validation.json", release)
             report["quality_passed"] = release["passed"]
-            report["quality_rule"] = "release-navigation-v1: >=100 each static/dynamic; each task arrival >=90%"
+            report["quality_rule"] = (
+                'release-navigation-primary-v1: >=100 each static/dynamic including extensions; '
+                'each S01/S02/S03/D01/D02/D03 arrival >=90%; S06/D06 reported without gating'
+                if criterion == 'navigation-primary-v1' else
+                'release-navigation-v1: >=100 each static/dynamic; each task arrival >=90%'
+            )
             save_report(rec.path / "eval/report.json", report)
         arrays = {name: value for name, value in trace.items() if name != "metrics"}
         arrays.update({"metric_" + name: value for name, value in trace["metrics"].items()})

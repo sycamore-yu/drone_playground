@@ -213,8 +213,8 @@ def train(config, root, run_id):
                 if settings.get("development_metric") == "release-pilot-v1":
                     report["pilot_objective"] = min(report["scene_success_rates"].values())
                     report["selection_rule"] = "release-pilot-v1"
-                if settings.get("development_metric") == "navigation-development-v2":
-                    report.update(navigation_development_selection(report))
+                if settings.get("development_metric") in ("navigation-development-v2", "navigation-development-primary-v1"):
+                    report.update(navigation_development_selection(report, settings['development_metric']))
                 save_report(rec.path / "eval" / f"update-{updates:07d}.json", report)
                 remaining = float(np.mean([r["final_goal_distance_m"] for r in report["episodes"]]))
                 score = (
@@ -225,7 +225,7 @@ def train(config, root, run_id):
                 )
                 if settings.get("development_metric") == "release-pilot-v1":
                     score = (report["pilot_objective"],)
-                if settings.get("development_metric") == "navigation-development-v2":
+                if settings.get("development_metric") in ("navigation-development-v2", "navigation-development-primary-v1"):
                     score = tuple(report["score"])
                 if best is None or score > tuple(best["score"]):
                     best = dict(

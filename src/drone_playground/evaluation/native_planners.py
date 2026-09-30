@@ -372,7 +372,7 @@ def evaluate_native(config, root: Path, run_id: str):
         save_report(rec.path / "eval" / "report.json", report)
         if total_commands == 0:
             raise RuntimeError("Native process produced no executable physical commands")
-        if config["evaluation"].get("release_validation") == "native-navigation-v1":
+        if config["evaluation"].get("release_validation") in ('native-navigation-v1', 'native-navigation-primary-v1'):
             from drone_playground.evaluation.navigation_resets import validate_navigation_report
 
             if (len(runtime_identities) != len(ordered) or not runtime_identities[0]
@@ -384,7 +384,10 @@ def evaluate_native(config, root: Path, run_id: str):
                    if (diag["difficulty"], diag["case"]) == (row["difficulty"], row["case"])):
                 raise ValueError("A fallback-only arrival cannot certify the native algorithm")
             task = "dynamic" if config["env"]["task"]["dynamic"] else "static"
-            validation = validate_navigation_report(report, tasks=(task,))
+            criterion = ('navigation-primary-v1'
+                         if config['evaluation']['release_validation'] == 'native-navigation-primary-v1'
+                         else 'navigation-v1')
+            validation = validate_navigation_report(report, tasks=(task,), criterion=criterion)
             save_report(rec.path / "eval/release-validation.json", validation)
             report.update(quality_passed=validation["passed"], quality_rule=validation["protocol"])
             save_report(rec.path / "eval/report.json", report)

@@ -1,7 +1,7 @@
 {
-  "generated_utc": "2026-09-30T03:19:22.571252+00:00",
-  "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
-  "passed_cells": 12,
+  "generated_utc": "2026-09-30T04:13:10.094159+00:00",
+  "scope": "Current qualification under explicitly amended navigation criterion; original judgments retained. 14 quality-qualified cells plus two user-accepted EGO cells; pointcloud cells remain incomplete.",
+  "passed_cells": 14,
   "required_cells": 18,
   "cells": [
     {
@@ -393,22 +393,34 @@
     {
       "method": "depth",
       "task": "static",
-      "passed": false,
-      "status": "not_passed",
+      "passed": true,
+      "status": "passed_revised_criterion",
       "training_seeds": [
         {
           "training_seed": 30,
           "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
           "arrived": 80,
           "num_trials": 100,
-          "passed": false,
+          "passed": true,
           "scene_success_rates": {
             "S01": 1.0,
             "S02": 1.0,
             "S03": 1.0,
             "S06": 0.2
           },
-          "success_rate": 0.8
+          "success_rate": 0.8,
+          "original_criterion_passed": false,
+          "primary_scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0
+          },
+          "extension_scene_success_rates": {
+            "S06": 0.2
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 1.0
         },
         {
           "training_seed": 31,
@@ -422,7 +434,19 @@
             "S03": 1.0,
             "S06": 0.72
           },
-          "success_rate": 0.93
+          "success_rate": 0.93,
+          "original_criterion_passed": true,
+          "primary_scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0
+          },
+          "extension_scene_success_rates": {
+            "S06": 0.72
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 1.0
         },
         {
           "training_seed": 32,
@@ -436,7 +460,19 @@
             "S03": 1.0,
             "S06": 1.0
           },
-          "success_rate": 1.0
+          "success_rate": 1.0,
+          "original_criterion_passed": true,
+          "primary_scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0
+          },
+          "extension_scene_success_rates": {
+            "S06": 1.0
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 1.0
         }
       ],
       "previous_confirmations": [
@@ -489,27 +525,90 @@
         }
       ],
       "recipe": "stage2-depth32-lr001",
-      "evidence": "docs/verification/stage2-depth-confirmation.json"
+      "evidence": "docs/verification/navigation-primary-acceptance.json",
+      "original_criterion_assessment": {
+        "status": "not_passed",
+        "passed": false,
+        "training_seeds": [
+          {
+            "training_seed": 30,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+            "arrived": 80,
+            "num_trials": 100,
+            "passed": false,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 0.2
+            },
+            "success_rate": 0.8
+          },
+          {
+            "training_seed": 31,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
+            "arrived": 93,
+            "num_trials": 100,
+            "passed": true,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 0.72
+            },
+            "success_rate": 0.93
+          },
+          {
+            "training_seed": 32,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+            "arrived": 100,
+            "num_trials": 100,
+            "passed": true,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 1.0
+            },
+            "success_rate": 1.0
+          }
+        ],
+        "evidence": "docs/verification/stage2-depth-confirmation.json"
+      },
+      "criterion": "release-navigation-primary-v1",
+      "release_requirement_satisfied": true
     },
     {
       "method": "depth",
       "task": "dynamic",
-      "passed": false,
-      "status": "not_passed",
+      "passed": true,
+      "status": "passed_revised_criterion",
       "training_seeds": [
         {
           "training_seed": 30,
           "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
           "arrived": 84,
           "num_trials": 100,
-          "passed": false,
+          "passed": true,
           "scene_success_rates": {
             "D01": 1.0,
             "D02": 0.96,
             "D03": 0.96,
             "D06": 0.44
           },
-          "success_rate": 0.84
+          "success_rate": 0.84,
+          "original_criterion_passed": false,
+          "primary_scene_success_rates": {
+            "D01": 1.0,
+            "D02": 0.96,
+            "D03": 0.96
+          },
+          "extension_scene_success_rates": {
+            "D06": 0.44
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 0.9733333333333334
         },
         {
           "training_seed": 31,
@@ -523,7 +622,19 @@
             "D03": 1.0,
             "D06": 1.0
           },
-          "success_rate": 1.0
+          "success_rate": 1.0,
+          "original_criterion_passed": true,
+          "primary_scene_success_rates": {
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0
+          },
+          "extension_scene_success_rates": {
+            "D06": 1.0
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 1.0
         },
         {
           "training_seed": 32,
@@ -537,7 +648,19 @@
             "D03": 1.0,
             "D06": 1.0
           },
-          "success_rate": 1.0
+          "success_rate": 1.0,
+          "original_criterion_passed": true,
+          "primary_scene_success_rates": {
+            "D01": 1.0,
+            "D02": 1.0,
+            "D03": 1.0
+          },
+          "extension_scene_success_rates": {
+            "D06": 1.0
+          },
+          "primary_num_trials": 75,
+          "extension_num_trials": 25,
+          "primary_success_rate": 1.0
         }
       ],
       "previous_confirmations": [
@@ -590,7 +713,58 @@
         }
       ],
       "recipe": "stage2-depth32-lr001",
-      "evidence": "docs/verification/stage2-depth-confirmation.json"
+      "evidence": "docs/verification/navigation-primary-acceptance.json",
+      "original_criterion_assessment": {
+        "status": "not_passed",
+        "passed": false,
+        "training_seeds": [
+          {
+            "training_seed": 30,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+            "arrived": 84,
+            "num_trials": 100,
+            "passed": false,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 0.96,
+              "D03": 0.96,
+              "D06": 0.44
+            },
+            "success_rate": 0.84
+          },
+          {
+            "training_seed": 31,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
+            "arrived": 100,
+            "num_trials": 100,
+            "passed": true,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0,
+              "D06": 1.0
+            },
+            "success_rate": 1.0
+          },
+          {
+            "training_seed": 32,
+            "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+            "arrived": 100,
+            "num_trials": 100,
+            "passed": true,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0,
+              "D06": 1.0
+            },
+            "success_rate": 1.0
+          }
+        ],
+        "evidence": "docs/verification/stage2-depth-confirmation.json"
+      },
+      "criterion": "release-navigation-primary-v1",
+      "release_requirement_satisfied": true
     },
     {
       "method": "pointcloud",
@@ -1051,15 +1225,36 @@
       "sha256": "d3499a9d42bca6155afa9fdad7c762eb23022cdf6df4ef796343308d61908ce3"
     }
   ],
-  "confirmed_cells_for_current_runtime": 12,
+  "confirmed_cells_for_current_runtime": 14,
   "user_accepted_cells": 2,
-  "remaining_quality_cells": 4,
-  "release_requirement_satisfied_cells": 14,
+  "remaining_quality_cells": 2,
+  "release_requirement_satisfied_cells": 16,
   "required_quality_cells": 16,
   "training_search_authorization": {
     "date": "2026-09-30",
     "trial_count_limit": null,
     "per_training_wall_seconds": 3600,
     "selection": "development only; fresh independent confirmation for each selected new recipe"
+  },
+  "original_criterion_passed_cells": 12,
+  "revised_criterion_passed_cells": 2,
+  "navigation_criterion_amendment": {
+    "instruction": "如果只在D06、S06表现不好，而其他场景成功率90以上也可以认为通过验收",
+    "date": "2026-09-30",
+    "timing": "Criterion amended after original heldout results were available; disclosed retrospective assessment",
+    "primary_scenes": [
+      "S01",
+      "S02",
+      "S03",
+      "D01",
+      "D02",
+      "D03"
+    ],
+    "extension_scenes": [
+      "S06",
+      "D06"
+    ],
+    "threshold_per_primary_scene": 0.9,
+    "extensions_reported_not_gated": true
   }
 }

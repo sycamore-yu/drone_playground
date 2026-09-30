@@ -43,3 +43,28 @@ def test_selection_rejects_incomplete_or_repeated_perturbations(problem):
         value["initial_conditions"]["seeds"][0] += 100
     with pytest.raises(ValueError):
         navigation_development_selection(value)
+
+
+def test_primary_selection_does_not_use_extensions_to_choose_policy():
+    from drone_playground.evaluation.pointcloud_navigation import navigation_development_selection
+
+    first = report([8, 8, 8, 0, 8, 8, 8, 0])
+    full = report([8] * 8)
+    a = navigation_development_selection(first, criterion='navigation-development-primary-v1')
+    b = navigation_development_selection(full, criterion='navigation-development-primary-v1')
+    assert a['score'] == b['score'] == [8, 48]
+    assert a['pilot_objective'] == b['pilot_objective'] == 1.
+    assert a['primary_development_passed'] and a['overall_success_rate'] == .75
+    weak = navigation_development_selection(report([8, 8, 8, 8, 8, 7, 8, 8]),
+                                            criterion='navigation-development-primary-v1')
+    assert not weak['primary_development_passed']
+    assert weak['score'] < a['score']
+
+
+def test_primary_selection_retains_worst_scene_priority():
+    from drone_playground.evaluation.pointcloud_navigation import navigation_development_selection
+
+    metric = 'navigation-development-primary-v1'
+    a = navigation_development_selection(report([0, 8, 8, 8, 8, 8, 8, 8]), criterion=metric)
+    b = navigation_development_selection(report([1] * 8), criterion=metric)
+    assert b['score'] > a['score'] and b['pilot_objective'] > a['pilot_objective']
