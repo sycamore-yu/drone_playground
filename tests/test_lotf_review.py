@@ -152,6 +152,7 @@ class LOTFReviewTests(unittest.TestCase):
         from drone_playground.app import resolve_checkpoint_execution
         from drone_playground.composition import run_experiment
         from drone_playground.learning.algorithms import lotf_bptt as module
+        from drone_playground.runs.layout import find_experiment
 
         config = self.small_config()
         task = build_environment(config, "cpu")
@@ -168,7 +169,7 @@ class LOTFReviewTests(unittest.TestCase):
             requested["evaluation"]["episodes"] = 1
             resolved = resolve_checkpoint_execution(requested, [])
             run_experiment(resolved, folder, "evaluation")
-            report = json.loads((folder / "experiments/evaluation/eval/report.json").read_text())
+            report = json.loads((find_experiment(folder, 'evaluation') / 'eval/report.json').read_text())
             self.assertTrue(report["parameters_frozen"])
             self.assertEqual(report["num_trials"], 1)
 

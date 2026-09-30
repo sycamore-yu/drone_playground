@@ -18,6 +18,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src'))
+from drone_playground.runs.layout import experiment_directory, resolve_artifact
+
 TARGET_UPDATES = 50000
 STEPS_PER_UPDATE = 32 * 160
 SCENES = ("S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06")
@@ -37,7 +40,7 @@ def now():
 
 
 def verify_checkpoint(path):
-    path = Path(path)
+    path = resolve_artifact(path)
     metadata = json.loads(path.with_suffix(".json").read_text())
     if metadata.get("family") != "paper_pointcloud_gru":
         raise ValueError("Unexpected checkpoint family")
@@ -47,7 +50,7 @@ def verify_checkpoint(path):
 
 
 def verify_training_result(run, expected_updates):
-    run = Path(run)
+    run = resolve_artifact(run)
     result = json.loads((run / "result.json").read_text())
     target = int(result["target_updates"])
     complete = expected_updates == target
@@ -105,7 +108,7 @@ def verify_evaluation_result(run, *, expected_selected, expected_training_run):
     if result.get("status") != "completed" or not report.get("parameters_frozen"):
         raise ValueError("Evaluation is incomplete or altered policy parameters")
     if (
-        Path(report["checkpoint"]).resolve() != Path(expected_selected["checkpoint"]).resolve()
+        resolve_artifact(report["checkpoint"]).resolve() != resolve_artifact(expected_selected["checkpoint"]).resolve()
         or report["parameter_sha256"] != expected_selected["parameter_sha256"]
     ):
         raise ValueError("Evaluation selected policy identity does not match this training phase")
@@ -229,7 +232,7 @@ def main():
     parser.add_argument("--pipeline-run", default="paper-pointcloud-seed0-pipeline-v1")
     args = parser.parse_args()
     root = args.root.resolve()
-    directory = root / "experiments" / args.pipeline_run
+    directory = experiment_directory(root, args.pipeline_run)
     directory.mkdir(parents=True, exist_ok=True)
     ledger_path = directory / "state.json"
     with (directory / "coordinator.lock").open("w") as lock:
@@ -274,7 +277,7 @@ def main():
         def phase(name, command, run_name, verify):
             if source_digest(root) != digest:
                 raise ValueError("Frozen source changed during the pipeline")
-            run = root / "experiments" / run_name
+            run = experiment_directory(root, run_name)
             if (run / "result.json").exists():
                 report = verify(run)
                 ledger["phases"][name] = dict(status="completed", run=run_name, verified_at=now())
@@ -342,13 +345,13 @@ def main():
 
         try:
             first = wait_for_training_stage(
-                root / "experiments" / args.stage1_run, ledger, ledger_path
+                experiment_directory(root, args.stage1_run), ledger, ledger_path
             )
             commands = build_commands(
                 sys.executable, first, args.full_run, args.early_eval_run, args.final_eval_run
             )
             commands["early_evaluation"].append(
-                f"evaluation.training_run={root / 'experiments' / args.stage1_run}"
+                f"evaluation.training_run={experiment_directory(root, args.stage1_run)}"
             )
             early = phase(
                 "stage1_evaluation",
@@ -357,7 +360,7 @@ def main():
                 lambda run: verify_evaluation_result(
                     run,
                     expected_selected=first["selected"],
-                    expected_training_run=root / "experiments" / args.stage1_run,
+                    expected_training_run=experiment_directory(root, args.stage1_run),
                 ),
             )
             full = phase(
@@ -368,7 +371,7 @@ def main():
             )
             final_command = commands["final_evaluation_prefix"] + [
                 f"checkpoint={full['selected']['checkpoint']}",
-                f"evaluation.training_run={root / 'experiments' / args.full_run}",
+                f"evaluation.training_run={experiment_directory(root, args.full_run)}",
             ]
             final = phase(
                 "final_evaluation",
@@ -377,7 +380,7 @@ def main():
                 lambda run: verify_evaluation_result(
                     run,
                     expected_selected=full["selected"],
-                    expected_training_run=root / "experiments" / args.full_run,
+                    expected_training_run=experiment_directory(root, args.full_run),
                 ),
             )
             if not final["training_budget_completed"]:

@@ -12,6 +12,8 @@ pixi run python -c "import jax; print(jax.devices())"
 
 固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
+`pixi run`会在Python启动前设置`SCIPY_ARRAY_API=1`。直接调用锁定解释器时也设置该变量，避免SciPy先导入后造成JAX姿态计算的Tracer转换错误。
+
 本地源码导出使用已确认的提交：
 
 ```bash
@@ -30,6 +32,8 @@ pixi run train method=learning/shac env=racing runtime.device=gpu run_id=shac-ra
 ```
 
 正式训练采用 GPU，并按显存与预算排队。先核对已有 `state.json`、`result.json` 和进程身份，再确定新运行或恢复。`training.warm_start` 表示参数热启动；具备完整状态恢复能力的训练器使用 `training.resume`。恢复时保持所记录的模型、网络、优化器及输入合同。
+
+新运行自动写入`experiments/tmp/YYMMDD/<run_id>/`，日期为UTC启动日期。读取状态可用`pixi run status --run-id=<标识>`，无需手动查找日期。旧报告和历史命令中的`experiments/<run_id>/...`引用由现役读取接口兼容定位，原始记录不改写。
 
 在 CUDA 可用的主机上，可用 `JAX_PLATFORMS=cuda,cpu` 将 GPU 设为 JAX 默认后端，同时允许代码显式使用 CPU；项目的 `runtime.device` 也应选择 `gpu`。例如：
 
@@ -58,8 +62,8 @@ pixi run eval \
   runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 \
   run_id=recheck-bptt-tracking
 
-pixi run play replay=experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts
-pixi run play replay=experiments/final-acceptance-heldout-bptt-tracking-v1/rollouts \
+pixi run play replay=experiments/tmp/260928/final-acceptance-heldout-bptt-tracking-v1/rollouts
+pixi run play replay=experiments/tmp/260928/final-acceptance-heldout-bptt-tracking-v1/rollouts \
   visualization=headless
 ```
 
@@ -112,6 +116,15 @@ cmp assets/scenes/navigation/catalog.json tmp/navigation-catalog.json
 脚本先校验来源 world 文件摘要，再重建主场景，并从现役目录保留 S06／D06 两张固定3D扩展。它不依赖历史场景 v1–v4，也不从本机目录结构猜测依赖位置。改变几何须另立协议与校验记录。
 
 ## 维护检查
+
+本地第一版18格结果直接打开`experiments/main_result/v1-18-cells/README.md`。中间结果在`experiments/tmp/<日期>/`。每格的日期／种子目录包含报告、配置、选定权重和回放入口；`qualification.json`区分正式质量、开发结果及用户接受的例外。更新本地结果视图：
+
+```bash
+pixi run python scripts/tools/organize_experiments.py \
+  --pointcloud-run primary-pointcloud-short32-seed0-t0-20260930 --apply
+```
+
+不带`--apply`仅查看迁移计划。该工具拒绝移动活跃运行；冻结工作树只链接，报告与权重不改写。目录组织与验收状态由[结果凭据](verification/experiment-layout.json)记录。
 
 ```bash
 pixi run lint

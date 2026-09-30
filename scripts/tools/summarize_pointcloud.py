@@ -13,12 +13,16 @@ import csv
 import hashlib
 import importlib.util
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'src'))
+from drone_playground.runs.layout import resolve_artifact  # noqa: E402
+
 OUTCOMES = ("arrived", "collision", "out_of_bounds", "numerical_failure", "timeout")
 OUTCOME_LABELS = dict(zip(OUTCOMES, ("到达", "碰撞", "越界", "数值失败", "超时"), strict=True))
 SLOTS = ("method", "env", "algorithm", "network", "objective", "training", "runtime")
@@ -49,8 +53,8 @@ def checked_path(directory, relative):
 
 def verify_delivery(training_run, evaluation_run, *, require_complete=True):
     """Validate counts, policy identity, raw terminal states, and replay proofs."""
-    training_run = Path(training_run).resolve()
-    evaluation_run = Path(evaluation_run).resolve()
+    training_run = resolve_artifact(training_run).resolve()
+    evaluation_run = resolve_artifact(evaluation_run).resolve()
     pipeline = load_pipeline()
     declared = read_json(training_run / "result.json")
     updates = declared["actual_updates"]

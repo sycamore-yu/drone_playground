@@ -8,13 +8,15 @@ from pathlib import Path
 
 from confirm_control_learning import ROOT, read, run_job, write
 
+from drone_playground.runs.layout import experiment_directory
+
 
 def confirm(manifest_path, method):
     manifest = read(manifest_path)
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     if revision != manifest['source_revision']:
         raise ValueError('Solver confirmation requires the declared frozen source revision')
-    directory = ROOT / 'experiments' / manifest['batch_id']
+    directory = experiment_directory(ROOT, manifest['batch_id'])
     frozen = directory / 'manifest.json'
     if frozen.exists() and read(frozen) != manifest:
         raise ValueError('Existing solver confirmation manifest differs')

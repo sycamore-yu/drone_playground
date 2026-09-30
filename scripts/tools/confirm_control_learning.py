@@ -17,6 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
 
+from drone_playground.runs.layout import experiment_directory, resolve_artifact  # noqa: E402
+
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -45,7 +47,7 @@ def child(job):
 def run_job(directory, run_id, config):
     subprocess.run(['git', 'diff', '--quiet', 'HEAD', '--', 'src', 'configs', 'scripts'],
                    cwd=ROOT, check=True)
-    path = ROOT / 'experiments' / run_id
+    path = experiment_directory(ROOT, run_id)
     if path.exists():
         if read(path / 'state.json')['status'] == 'completed':
             return path
@@ -64,7 +66,7 @@ def run_job(directory, run_id, config):
                                 stdout=output, stderr=subprocess.STDOUT, timeout=timeout_seconds)
     if result.returncode:
         raise RuntimeError(f'Confirmation job failed: {run_id}; inspect {job.with_suffix(".log")}')
-    return path
+    return experiment_directory(ROOT, run_id)
 
 
 def confirm(manifest_path):
@@ -75,7 +77,7 @@ def confirm(manifest_path):
     revision = subprocess.check_output(['git','rev-parse','HEAD'], cwd=ROOT, text=True).strip()
     if revision != manifest['source_revision']:
         raise ValueError('Run confirmation from the declared isolated source revision')
-    directory = ROOT / 'experiments' / manifest['batch_id']
+    directory = experiment_directory(ROOT, manifest['batch_id'])
     directory.mkdir(parents=True, exist_ok=True)
     # Fail rather than silently reusing a batch with different conditions.
     frozen = directory / 'manifest.json'
@@ -99,6 +101,7 @@ def confirm(manifest_path):
                 if selection['selection_split'] != 'dev':
                     raise ValueError('Policy selection must use development episodes')
                 checkpoint = training / 'checkpoints' / selection['path']
+            checkpoint = resolve_artifact(checkpoint)
             metadata = read(checkpoint.with_suffix('.json'))
             # Checkpoint digest is independently checked by load_policy at evaluation.
             if metadata['config']['training']['seed'] != seed:

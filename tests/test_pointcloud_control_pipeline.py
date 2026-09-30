@@ -78,7 +78,9 @@ def test_control_public_train_and_frozen_eval_save_nonzero_updates(tmp_path, tas
     assert report["num_trials"] == len(report["episodes"]) == 2
     assert report["requested_delay_ms"][0] >= 25.0
     assert max(report["effective_delay_ms"]) <= 50.0
-    index = json.loads((tmp_path / "experiments/control-eval/rollouts/index.json").read_text())
+    from drone_playground.runs.layout import find_experiment
+
+    index = json.loads((find_experiment(tmp_path, 'control-eval') / 'rollouts/index.json').read_text())
     assert len(index["replays"]) == 2
     for case, row in enumerate(index["replays"]):
         assert row["transitions"] == report["episodes"][case]["steps"]

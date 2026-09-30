@@ -4,9 +4,13 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src'))
 import numpy as np
+
+from drone_playground.runs.layout import experiment_directory
 
 
 def hashes(directory):
@@ -37,7 +41,7 @@ def main():
         for row in json.loads(matrix.read_text())["rows"]:
             if row.get("status") != "completed":
                 continue
-            run = root / "experiments" / row["run_id"]
+            run = experiment_directory(root, row["run_id"])
             directories.extend(
                 run / f"independent-{split}" / "rollouts" for split in ("dev", "heldout")
             )

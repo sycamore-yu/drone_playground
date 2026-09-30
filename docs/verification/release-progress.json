@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-30T04:13:10.094159+00:00",
+  "generated_utc": "2026-09-30T06:29:06.697056+00:00",
   "scope": "Current qualification under explicitly amended navigation criterion; original judgments retained. 14 quality-qualified cells plus two user-accepted EGO cells; pointcloud cells remain incomplete.",
   "passed_cells": 14,
   "required_cells": 18,
@@ -31,7 +31,8 @@
           "rmse_completed_mean": 0.12408731559157465,
           "run_id": "release-control-confirmation-20260929-ppo-tracking-seed2-heldout"
         }
-      ]
+      ],
+      "result_directory": "experiments/main_result/v1-18-cells/01-ppo-tracking"
     },
     {
       "method": "ppo",
@@ -131,7 +132,8 @@
         10,
         11,
         12
-      ]
+      ],
+      "result_directory": "experiments/main_result/v1-18-cells/02-ppo-racing"
     },
     {
       "method": "shac",
@@ -160,7 +162,8 @@
           "rmse_completed_mean": 0.1483861859417279,
           "run_id": "release-control-confirmation-20260929-shac-tracking-seed2-heldout"
         }
-      ]
+      ],
+      "result_directory": "experiments/main_result/v1-18-cells/03-shac-tracking"
     },
     {
       "method": "shac",
@@ -222,7 +225,8 @@
         }
       ],
       "recipe": "stage2-shac128-lr0003",
-      "evidence": "docs/verification/stage2-shac-confirmation.json"
+      "evidence": "docs/verification/stage2-shac-confirmation.json",
+      "result_directory": "experiments/main_result/v1-18-cells/04-shac-racing"
     },
     {
       "method": "bptt",
@@ -251,7 +255,8 @@
           "rmse_completed_mean": 0.033626877768821756,
           "run_id": "release-control-confirmation-20260929-bptt-tracking-seed2-heldout"
         }
-      ]
+      ],
+      "result_directory": "experiments/main_result/v1-18-cells/05-bptt-tracking"
     },
     {
       "method": "bptt",
@@ -280,7 +285,8 @@
           "rmse_completed_mean": 0.020853521358221768,
           "run_id": "release-control-confirmation-20260929-bptt-racing-seed2-heldout"
         }
-      ]
+      ],
+      "result_directory": "experiments/main_result/v1-18-cells/06-bptt-racing"
     },
     {
       "method": "attitude_mpc",
@@ -303,7 +309,8 @@
         "rmse_completed_mean": 0.06189465419188858,
         "run_id": "release-mpc-tracking-confirmation-20260929-attitude_mpc-tracking",
         "task": "tracking"
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/07-attitude_mpc-tracking"
     },
     {
       "method": "attitude_mpc",
@@ -342,7 +349,8 @@
         "input": "current observed state, model and previously issued commands only",
         "reference": "fixed task reference advanced by estimated delay"
       },
-      "timing_caveat": "Synchronous simulation; measured controller latency is not injected as extra control delay; no 50Hz real-time claim"
+      "timing_caveat": "Synchronous simulation; measured controller latency is not injected as extra control delay; no 50Hz real-time claim",
+      "result_directory": "experiments/main_result/v1-18-cells/08-attitude_mpc-racing"
     },
     {
       "method": "sampling_mpc",
@@ -365,7 +373,8 @@
         "rmse_completed_mean": 0.051148067109717525,
         "run_id": "release-mpc-tracking-confirmation-20260929-sampling_mpc-tracking",
         "task": "tracking"
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/09-sampling_mpc-tracking"
     },
     {
       "method": "sampling_mpc",
@@ -388,7 +397,8 @@
         "rmse_completed_mean": 0.03407252358074358,
         "run_id": "release-mpc-racing-confirmation-20260929-sampling_mpc-racing",
         "task": "racing"
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/10-sampling_mpc-racing"
     },
     {
       "method": "depth",
@@ -576,7 +586,8 @@
         "evidence": "docs/verification/stage2-depth-confirmation.json"
       },
       "criterion": "release-navigation-primary-v1",
-      "release_requirement_satisfied": true
+      "release_requirement_satisfied": true,
+      "result_directory": "experiments/main_result/v1-18-cells/11-depth-static"
     },
     {
       "method": "depth",
@@ -764,19 +775,62 @@
         "evidence": "docs/verification/stage2-depth-confirmation.json"
       },
       "criterion": "release-navigation-primary-v1",
-      "release_requirement_satisfied": true
+      "release_requirement_satisfied": true,
+      "result_directory": "experiments/main_result/v1-18-cells/12-depth-dynamic"
     },
     {
       "method": "pointcloud",
       "task": "static",
       "passed": false,
-      "status": "pilot_failed"
+      "status": "development_not_confirmed",
+      "development": {
+        "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+        "training_seed": 0,
+        "selected_updates": 2625,
+        "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+        "scene_success_rates": {
+          "S01": 1.0,
+          "S02": 1.0,
+          "S03": 1.0,
+          "S06": 0.125
+        },
+        "primary_scene_success_rates": {
+          "S01": 1.0,
+          "S02": 1.0,
+          "S03": 1.0
+        },
+        "repeats_per_scene": 8,
+        "scope": "Development only; not a formal three-training-seed acceptance"
+      },
+      "evidence": "docs/verification/navigation-primary-development.json",
+      "result_directory": "experiments/main_result/v1-18-cells/13-pointcloud-static"
     },
     {
       "method": "pointcloud",
       "task": "dynamic",
       "passed": false,
-      "status": "pilot_failed"
+      "status": "development_not_qualified",
+      "development": {
+        "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+        "training_seed": 0,
+        "selected_updates": 2625,
+        "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+        "scene_success_rates": {
+          "D01": 1.0,
+          "D02": 0.5,
+          "D03": 1.0,
+          "D06": 0.0
+        },
+        "primary_scene_success_rates": {
+          "D01": 1.0,
+          "D02": 0.5,
+          "D03": 1.0
+        },
+        "repeats_per_scene": 8,
+        "scope": "Development only; not a formal three-training-seed acceptance"
+      },
+      "evidence": "docs/verification/navigation-primary-development.json",
+      "result_directory": "experiments/main_result/v1-18-cells/14-pointcloud-dynamic"
     },
     {
       "method": "super",
@@ -840,7 +894,8 @@
           "out_of_bounds": 0,
           "numerical_failure": 0
         }
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/15-super-static"
     },
     {
       "method": "super",
@@ -946,7 +1001,8 @@
         "D06": {
           "collision": 4
         }
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/16-super-dynamic"
     },
     {
       "method": "ego_planner",
@@ -1003,7 +1059,8 @@
         "date": "2026-09-30",
         "instruction": "EGO可以认为已经完成不用再调试",
         "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/17-ego_planner-static"
     },
     {
       "method": "ego_planner",
@@ -1060,7 +1117,8 @@
         "date": "2026-09-30",
         "instruction": "EGO可以认为已经完成不用再调试",
         "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
-      }
+      },
+      "result_directory": "experiments/main_result/v1-18-cells/18-ego_planner-dynamic"
     }
   ],
   "sources": [

@@ -17,7 +17,8 @@
 - 训练：`pixi run train method=learning/ppo env=hovering runtime.device=gpu run_id=<新标识>`。
 - 测试：`JAX_PLATFORMS=cpu pixi run test`；检查：`pixi run lint`。完整 MPC 测试的 acados 条件见 `docs/runbook.md`。
 - 正式训练优先 GPU，按显存和运行预算排队；CPU 用于测试、短探针和原生宿主任务。设备由配置明确选择。
-- 临时探针、编译缓存和临时测试放 `tmp/`；正式回归放 `tests/`；运行产物放 `experiments/`。
+- 临时探针、编译缓存和临时测试放 `tmp/`；正式回归放 `tests/`。运行产物按UTC启动日期放 `experiments/tmp/YYMMDD/<run_id>/`；最终／最好结果按目标放 `experiments/main_result/<目标>/<单元>/<日期-种子>/`，第一版目标为 `v1-18-cells`。
+- 读取运行使用 `runs.layout` 的定位函数，兼容历史扁平路径；冻结工作树的原始目录不迁移。选定结果验证权重与报告摘要，开发结果和用户接受的例外显式标注。
 - `experiments/`、`.pixi/`、依赖源码和调试日志通过忽略规则排除在源码发布之外。成功权重和回放在清理前独立备份并校验摘要。
 - 固定依赖见 `third_party/sources.yaml`；第三方声明与许可文件跟随源码维护。
 

@@ -102,6 +102,7 @@ def test_evaluators_archive_actual_cpp_decisions(
 
     from drone_playground.composition import compose_method, run_experiment
     from drone_playground.evaluation.decision_archive import load_native_decisions
+    from drone_playground.runs.layout import find_experiment
 
     config = compose_method('native', task, [
         f'method.algorithm={algorithm}', f'method.output={output}',
@@ -121,7 +122,7 @@ def test_evaluators_archive_actual_cpp_decisions(
         monkeypatch.setattr(native_planners, 'run_steps',
                             lambda *args, **kwargs: islice(actual_steps(*args, **kwargs), 2))
     run_experiment(config, tmp_path, 'native-recording')
-    run = tmp_path / 'experiments/native-recording'
+    run = find_experiment(tmp_path, 'native-recording')
     archives = list((run / 'native').rglob('decision-trace/index.json'))
     assert len(archives) == (1 if task == 'hovering' else 3)
     for index in archives:
@@ -147,6 +148,7 @@ def test_control_evaluation_uses_requested_seeds_and_records_actual_resets(
 
     from drone_playground.composition import build_environment, compose_method, run_experiment
     from drone_playground.evaluation.decision_archive import load_native_decisions
+    from drone_playground.runs.layout import find_experiment
 
     config = compose_method('native', 'hovering', [
         'method.algorithm=trajectory', 'method.output=trajectory',
@@ -172,7 +174,7 @@ def test_control_evaluation_uses_requested_seeds_and_records_actual_resets(
             assert 25 <= row['delay_requested_ms'] <= 50
             assert 0 <= row['delay_effective_ms'] - row['delay_requested_ms'] < env.clock_ms
             first = next(load_native_decisions(
-                tmp_path / f'experiments/native-reset-contract/native/{case}/decision-trace'
+                find_experiment(tmp_path, 'native-reset-contract') / f'native/{case}/decision-trace'
             ))
             for key in ('pos', 'vel', 'quat'):
                 np.testing.assert_array_equal(first['state'][key], body[key])

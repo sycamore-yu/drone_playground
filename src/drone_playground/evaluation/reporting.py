@@ -11,6 +11,8 @@ import json
 import math
 from pathlib import Path
 
+from drone_playground.runs.layout import experiment_directory, resolve_artifact
+
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -46,7 +48,7 @@ def _report(path: Path, expected_count: int, expected_start: int) -> dict:
 def learning_result(root: Path, run_id: str) -> dict:
     """Return validated public evidence, retaining incomplete/error/low-quality states."""
     root = Path(root).resolve()
-    run = root / "experiments" / run_id
+    run = experiment_directory(root, run_id)
     row = dict(run_id=run_id, experiment_completed=False, quality_passed=False)
     result_path = run / "result.json"
     if not result_path.exists():
@@ -102,7 +104,7 @@ def learning_result(root: Path, run_id: str) -> dict:
             or report["parameter_sha256"] != meta["parameter_sha256"]
         ):
             raise ValueError(f"Evaluated policy digest differs from selected checkpoint: {path}")
-        if "checkpoint" in report and Path(report["checkpoint"]).resolve() != checkpoint.resolve():
+        if "checkpoint" in report and resolve_artifact(report["checkpoint"]).resolve() != checkpoint.resolve():
             raise ValueError(f"Evaluation references a different checkpoint: {path}")
         row[split] = {
             key: report[key]
@@ -140,7 +142,7 @@ def learning_result(root: Path, run_id: str) -> dict:
 def controller_result(root: Path, run_id: str) -> dict:
     """Verify an aggregated controller result against all four original shard reports."""
     root = Path(root).resolve()
-    run = root / "experiments" / run_id
+    run = experiment_directory(root, run_id)
     result_path = run / "result.json"
     if not result_path.exists():
         return dict(run_id=run_id, status="running-or-not-started", experiment_completed=False)
@@ -156,7 +158,7 @@ def controller_result(root: Path, run_id: str) -> dict:
     report = _report(path, 128, 30000)
     source_rows = []
     for source in report["shards"]:
-        original = root / "experiments" / source["run_id"] / "eval/report.json"
+        original = experiment_directory(root, source['run_id']) / 'eval/report.json'
         if digest(original) != source["report_sha256"]:
             raise ValueError(f"Original controller shard digest mismatch: {original}")
         fragment = _report(original, source["episodes"], source["seed_start"])

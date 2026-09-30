@@ -457,6 +457,18 @@ def native_training_config(config: dict) -> dict:
 
 
 def run_experiment(config: dict, root: Path, run_id: str):
+    from drone_playground.runs.layout import resolve_artifact
+
+    config = copy.deepcopy(config)
+    if config.get('checkpoint'):
+        config['checkpoint'] = str(resolve_artifact(config['checkpoint']))
+    for field in ('resume', 'warm_start'):
+        if config.get('training', {}).get(field):
+            config['training'][field] = str(resolve_artifact(config['training'][field]))
+    if config.get('evaluation', {}).get('training_run'):
+        config['evaluation']['training_run'] = str(resolve_artifact(config['evaluation']['training_run']))
+    if config.get('replay', {}).get('directory'):
+        config['replay']['directory'] = str(resolve_artifact(config['replay']['directory']))
     if config.get("mode") == "play" and config.get("replay", {}).get("directory"):
         return _run_experiment(config, root, run_id)
     validate_config(config)
@@ -514,5 +526,7 @@ def _run_experiment(config: dict, root: Path, run_id: str):
 
         result = evaluate_experiment(config, root, run_id)
     if config["mode"] == "play":
-        result["replay_directory"] = str(Path(root) / "experiments" / run_id / "rollouts")
+        from drone_playground.runs.layout import experiment_directory
+
+        result["replay_directory"] = str(experiment_directory(root, run_id) / 'rollouts')
     return result

@@ -14,6 +14,7 @@ import pytest
 from tensorboardX.proto import event_pb2
 
 from drone_playground.runs import RunRecorder
+from drone_playground.runs.layout import find_experiment
 from drone_playground.visualization.rscope_io import export_rollout, publish_run
 
 
@@ -77,7 +78,7 @@ def test_run_recorder_writes_manifest_metrics_state_and_result(tmp_path: Path) -
     config = {"seed": 17, "task": {"name": "figure_eight", "freq": 50}}
 
     recorder = RunRecorder(tmp_path, "run-a", config)
-    assert recorder.path == tmp_path / "experiments" / "run-a"
+    assert recorder.path == tmp_path / 'experiments/tmp' / recorder._started_at[:10].replace('-', '')[2:] / 'run-a'
     recorder.log(7, {"tracking_error": 0.125, "record_overhead_s": 0.002})
     recorder.phase("evaluating", step=7, episodes=2)
     recorder.finish("completed", accepted=True, steps=7)
@@ -147,7 +148,7 @@ def test_run_recorder_heartbeat_and_exception_result(tmp_path: Path, monkeypatch
     with pytest.raises(ValueError, match="boom"):
         with RunRecorder(tmp_path, "failed", {"seed": 2}):
             raise ValueError("boom")
-    failed = json.loads((tmp_path / "experiments" / "failed" / "result.json").read_text())
+    failed = json.loads((find_experiment(tmp_path, 'failed') / 'result.json').read_text())
     assert failed["status"] == "failed"
     assert failed["exception"]["type"] == "ValueError"
     assert failed["exception"]["message"] == "boom"

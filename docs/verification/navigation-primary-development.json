@@ -1,6 +1,6 @@
 {
-  "recorded_utc": "2026-09-30T04:26:49.166978+00:00",
-  "status": "running",
+  "recorded_utc": "2026-09-30T06:07:28.471761+00:00",
+  "status": "completed",
   "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
   "source_revision": "bf7bc08c67949b8f84e6ba26e1721bdeec45d8d6",
   "process": {
@@ -86,10 +86,143 @@
         "S06": 0.0
       },
       "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 750,
+      "score": [
+        0,
+        29
+      ],
+      "primary_success_rate": 0.6041666666666666,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.0,
+        "D03": 0.25,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.375,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 1125,
+      "score": [
+        0,
+        29
+      ],
+      "primary_success_rate": 0.6041666666666666,
+      "scene_success_rates": {
+        "D01": 0.75,
+        "D02": 0.625,
+        "D03": 0.25,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 1500,
+      "score": [
+        0,
+        24
+      ],
+      "primary_success_rate": 0.5,
+      "scene_success_rates": {
+        "D01": 0.0,
+        "D02": 0.0,
+        "D03": 1.0,
+        "D06": 0.125,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 1875,
+      "score": [
+        0,
+        27
+      ],
+      "primary_success_rate": 0.5625,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.375,
+        "D03": 0.0,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 0.625,
+        "S03": 0.375,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 2250,
+      "score": [
+        0,
+        38
+      ],
+      "primary_success_rate": 0.7916666666666666,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.0,
+        "D03": 0.75,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 1.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 2625,
+      "score": [
+        4,
+        44
+      ],
+      "primary_success_rate": 0.9166666666666666,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.5,
+        "D03": 1.0,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 1.0,
+        "S06": 0.125
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 3000,
+      "score": [
+        0,
+        36
+      ],
+      "primary_success_rate": 0.75,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.0,
+        "D03": 0.5,
+        "D06": 0.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 1.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
     }
   ],
   "formal_confirmation": {
-    "status": "waiting_for_development",
+    "status": "development_not_qualified",
     "training_seeds": [
       50,
       51,
@@ -101,7 +234,36 @@
     ],
     "criterion": "release-navigation-primary-v1",
     "gate": "Selected development policy >=90% in every primary scene; eight cases per scene requires8/8",
-    "batch_id": "primary-pointcloud-short32-confirmation-20260930"
+    "batch_id": "primary-pointcloud-short32-confirmation-20260930",
+    "formal_training_started": false
   },
-  "quality_passed": null
+  "quality_passed": false,
+  "selected": {
+    "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/navigation-primary-20260930/experiments/primary-pointcloud-short32-seed0-t0-20260930/training-state/update-0002625.pkl",
+    "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+    "score": [
+      4,
+      44
+    ],
+    "selection_split": "dev",
+    "updates": 2625
+  },
+  "wall_seconds": 1817.2945291167125,
+  "actual_updates": 3000,
+  "actual_steps": 3072000,
+  "full_budget_completed": true,
+  "best_scene_success_rates": {
+    "D01": 1.0,
+    "D02": 0.5,
+    "D03": 1.0,
+    "D06": 0.0,
+    "S01": 1.0,
+    "S02": 1.0,
+    "S03": 1.0,
+    "S06": 0.125
+  },
+  "primary_successes": 44,
+  "primary_trials": 48,
+  "quality_scope": "Development only; static primary24/24, dynamic20/24; D02=4/8, so formal three-seed cohort not started",
+  "trial_result_sha256": "35ce6cd63dcdde99ceb89f0fa4d4c0e54feac9fe0cd39644e89a2701244ca0ab"
 }

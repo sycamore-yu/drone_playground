@@ -1,0 +1,152 @@
+{
+  "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+  "selected_updates": 2625,
+  "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+  "episode": {
+    "scene_id": "D02",
+    "command_speed_m_s": 4.0,
+    "outcome": "collision",
+    "arrived": false,
+    "collision": true,
+    "out_of_bounds": false,
+    "numerical_failure": false,
+    "timeout": false,
+    "steps": 96,
+    "elapsed_s": 9.593999862670898,
+    "arrival_time_s": null,
+    "path_length_m": 35.84916687011719,
+    "peak_speed_m_s": 4.114246368408203,
+    "mean_speed_m_s": 3.7449514865875244,
+    "min_clearance_m": -0.0016513094305992126,
+    "final_goal_distance_m": 60.4473876953125,
+    "seed": 50005,
+    "delay_ticks": 18,
+    "initial_position_m": [
+      2.021533727645874,
+      0.24215324223041534,
+      2.928816080093384
+    ],
+    "initial_velocity_mps": [
+      -0.07924944162368774,
+      -0.0761338397860527,
+      0.07305687665939331
+    ]
+  },
+  "obstacle": {
+    "index": 86,
+    "kind": "box",
+    "motion": "static",
+    "centre_m": [
+      37.89089584350586,
+      2.9270341396331787,
+      3.0760979652404785
+    ],
+    "half_extents_m": [
+      0.20000000298023224,
+      2.0,
+      0.20000000298023224
+    ]
+  },
+  "frames": [
+    {
+      "time_s": 8.0,
+      "position_m": [
+        32.03773880004883,
+        2.9863362312316895,
+        3.0663042068481445
+      ],
+      "nearest_obstacle": 96,
+      "clearance_m": 1.6531964540481567,
+      "bar_visible_return_count": 36,
+      "bar_winning_channels": 39,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.006039496511220932,
+      "ray_count": 5400,
+      "world_z_command": 0.14554578065872192
+    },
+    {
+      "time_s": 8.5,
+      "position_m": [
+        34.075035095214844,
+        2.931361675262451,
+        3.0797643661499023
+      ],
+      "nearest_obstacle": 96,
+      "clearance_m": 3.2419962882995605,
+      "bar_visible_return_count": 87,
+      "bar_winning_channels": 110,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.06586890667676926,
+      "ray_count": 5400,
+      "world_z_command": -0.004615161567926407
+    },
+    {
+      "time_s": 9.0,
+      "position_m": [
+        36.029544830322266,
+        2.896084785461426,
+        3.093740940093994
+      ],
+      "nearest_obstacle": 86,
+      "clearance_m": 1.592384696006775,
+      "bar_visible_return_count": 76,
+      "bar_winning_channels": 256,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.37519359588623047,
+      "ray_count": 5400,
+      "world_z_command": 0.45170336961746216
+    },
+    {
+      "time_s": 9.3,
+      "position_m": [
+        36.97248840332031,
+        2.885106086730957,
+        3.134678363800049
+      ],
+      "nearest_obstacle": 86,
+      "clearance_m": 0.649956226348877,
+      "bar_visible_return_count": 102,
+      "bar_winning_channels": 254,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.6128624081611633,
+      "ray_count": 5400,
+      "world_z_command": 0.9400578141212463
+    },
+    {
+      "time_s": 9.5,
+      "position_m": [
+        37.439510345458984,
+        2.9050300121307373,
+        3.2012596130371094
+      ],
+      "nearest_obstacle": 86,
+      "clearance_m": 0.1824345588684082,
+      "bar_visible_return_count": 470,
+      "bar_winning_channels": 314,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.7896574139595032,
+      "ray_count": 5400,
+      "world_z_command": 1.0761421918869019
+    },
+    {
+      "time_s": 9.593999862670898,
+      "position_m": [
+        37.6230583190918,
+        2.907217502593994,
+        3.245309352874756
+      ],
+      "nearest_obstacle": 86,
+      "clearance_m": -0.0016513094305992126,
+      "bar_visible_return_count": 326,
+      "bar_winning_channels": 494,
+      "encoder_channels": 1024,
+      "bar_masked_embedding_relative_l2": 0.8098028898239136,
+      "ray_count": 5400,
+      "world_z_command": 1.3587781190872192
+    }
+  ],
+  "replay_sha256": "766b78a9045b9d9700f668e7f2aba23becb9a9e41af881d0d6977fbc4a33b098",
+  "report_sha256": "abdad768c856aad5c834dac9ef4907656cc55051134d946ca8124f6ef2667db4",
+  "probe_scope": "Read-only reconstruction from an existing failed development replay; no new optimizer updates or policy selection. Visibility reconstructs identical ideal lidar geometry. Pool winners and a masked-return counterfactual measure frozen encoder sensitivity; this is one failed replay, not a global cause proof.",
+  "no_training_performed": true
+}

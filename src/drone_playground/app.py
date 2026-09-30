@@ -12,6 +12,8 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
+from drone_playground.runs.layout import resolve_artifact
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -37,7 +39,7 @@ def script_main(mode):
         from drone_playground.runs.migration import require_current
 
         saved = require_current(
-            json.loads(Path(checkpoint).with_suffix(".json").read_text())["config"]
+            json.loads(resolve_artifact(checkpoint).with_suffix(".json").read_text())["config"]
         )
         if not any(arg.startswith("method=") for arg in arguments):
             arguments.insert(0, "method=" + _checkpoint_recipe(saved))
@@ -80,7 +82,7 @@ def resolve_checkpoint_execution(config, arguments):
     from drone_playground.runs.migration import require_current
 
     saved = require_current(
-        json.loads(Path(config["checkpoint"]).with_suffix(".json").read_text())["config"]
+        json.loads(resolve_artifact(config['checkpoint']).with_suffix('.json').read_text())['config']
     )
     if any(config["method"][key] != saved["method"][key] for key in ("name", "implementation")):
         raise ValueError("Selected method and frozen checkpoint identity differ")

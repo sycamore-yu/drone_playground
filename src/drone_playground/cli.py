@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from drone_playground.runs.layout import experiment_directory, iter_experiments, resolve_artifact
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -59,7 +61,7 @@ def main(argv=None) -> None:
     elif args.command == "replay":
         from drone_playground.visualization.rscope_io import publish_run
 
-        result = {"active_directory": str(publish_run(args.directory))}
+        result = {"active_directory": str(publish_run(resolve_artifact(args.directory)))}
         if args.launch:
             command = [sys.executable, str(ROOT / "scripts/tools/rscope_client.py")]
             if args.show_metrics:
@@ -83,9 +85,9 @@ def main(argv=None) -> None:
         return
     else:
         paths = (
-            [ROOT / "experiments" / args.run_id]
+            [experiment_directory(ROOT, args.run_id)]
             if args.run_id
-            else sorted((ROOT / "experiments").glob("*"))
+            else iter_experiments(ROOT)
         )
         result = []
         for path in paths:

@@ -54,7 +54,9 @@ def test_optimization_recipe_exposes_modes_before_any_run_is_created(method, tmp
     cfg["mode"] = "train"
     with pytest.raises(ValueError, match="训练阶段|trainable|training stage"):
         module.run_experiment(cfg, tmp_path, "must-not-exist")
-    assert not (tmp_path / "experiments/must-not-exist").exists()
+    from drone_playground.runs.layout import find_experiment
+
+    assert find_experiment(tmp_path, 'must-not-exist') is None
 
 
 def test_sensor_and_forward_model_have_one_config_owner():

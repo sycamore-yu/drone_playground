@@ -1,0 +1,42 @@
+{
+  "status": "planned_after_source_freeze",
+  "authorized_by": "User2026-09-30 chooses safety margin 1.5m with unchanged network",
+  "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
+  "study": "pointcloud-navigation-primary",
+  "baseline_run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+  "changed_parameter": {
+    "name": "objective.clearance_margin",
+    "before": 1.0,
+    "after": 1.5,
+    "unit": "m"
+  },
+  "num_envs": 32,
+  "horizon_length": 32,
+  "policy_updates": 3000,
+  "learning_rate": 0.0003,
+  "training_seed": 0,
+  "initialization": "scratch",
+  "point_input_scale": 0.1,
+  "output_init_scale": 1.0,
+  "max_wall_seconds": 3600,
+  "development_metric": "navigation-development-primary-v1",
+  "development_episodes_per_scene": 8,
+  "development_seed_start": 50000,
+  "scene_geometry": "Navigation8; unchanged training/development geometry",
+  "criterion": "Six primary scenes individually >=90%; eight development cases per scene requires 8/8; S06/D06 reported only",
+  "formal_confirmation": {
+    "status": "waiting_development",
+    "training_seeds": [
+      50,
+      51,
+      52
+    ],
+    "heldout_seed_range": [
+      80000,
+      80199
+    ],
+    "criterion": "release-navigation-primary-v1",
+    "formal_training_started": false
+  },
+  "quality_passed": false
+}

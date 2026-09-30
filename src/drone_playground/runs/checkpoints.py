@@ -18,6 +18,7 @@ from brax.training.agents.ppo import networks as ppo_networks
 from drone_playground.evaluation.tracking import save_report, tree_digest
 from drone_playground.networks.policies import network_factory
 
+from .layout import resolve_artifact
 from .migration import require_current
 
 
@@ -83,7 +84,7 @@ def save_policy(directory: Path, params, config: dict, step: int, *, physical_de
 
 
 def load_policy(path):
-    path = Path(path).resolve()
+    path = resolve_artifact(path).resolve()
     meta = json.loads(path.with_suffix(".json").read_text())
     if meta.get("policy_family") == "lotf_mlp":
         from drone_playground.learning.algorithms.lotf_bptt import load_policy as load_lotf

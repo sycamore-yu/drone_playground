@@ -9,7 +9,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src'))
+from drone_playground.runs.layout import experiment_directory, resolve_artifact
 
 
 def read_json(path: Path) -> dict:
@@ -90,7 +94,7 @@ def collect(root: Path, selections: list[dict]) -> dict:
         raise ValueError("Acceptance requires exactly the 30 distinct registered cells")
     collected = []
     for item in selections:
-        run = root / "experiments" / item["run_id"]
+        run = experiment_directory(root, item["run_id"])
         report, result, config = (
             read_json(run / path)
             for path in ("eval/report.json", "result.json", "resolved-config.json")
@@ -132,6 +136,7 @@ def collect(root: Path, selections: list[dict]) -> dict:
             checkpoint = Path(checkpoint_name)
             if not checkpoint.is_absolute():
                 checkpoint = root / checkpoint
+            checkpoint = resolve_artifact(checkpoint)
             metadata = read_json(checkpoint.with_suffix(".json"))
             digest = sha256(checkpoint)
             if digest != metadata["sha256"]:
@@ -147,7 +152,7 @@ def collect(root: Path, selections: list[dict]) -> dict:
             )
         source = item.get("training_run")
         if source:
-            train = root / "experiments" / source
+            train = experiment_directory(root, source)
             trained, train_cfg = (
                 read_json(train / "result.json"),
                 read_json(train / "resolved-config.json"),

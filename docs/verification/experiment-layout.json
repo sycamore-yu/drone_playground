@@ -1,0 +1,103 @@
+{
+  "organized_utc": "2026-09-30T06:22:25.908546+00:00",
+  "working_layout": "experiments/tmp/YYMMDD/<run_id>",
+  "selected_layout": "experiments/main_result/v1-18-cells/<cell>/<YYMMDD-seed>",
+  "root_entries": [
+    "README.md",
+    "main_result",
+    "tmp"
+  ],
+  "moved_root_entries": 141,
+  "working_entries_by_date": {
+    "260928": 28,
+    "260929": 180,
+    "260930": 33
+  },
+  "selected_cells": 18,
+  "selected_records": 34,
+  "verified_weight_records": 26,
+  "quality_passed_cells": 14,
+  "release_requirement_satisfied_cells": 16,
+  "all_selected_report_config_and_manifest_bytes_match_source": true,
+  "broken_links": [],
+  "frozen_worktrees": [
+    {
+      "name": "navigation-primary-20260930",
+      "source_revision": "bf7bc08c67949b8f84e6ba26e1721bdeec45d8d6",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "navigation-research-20260930",
+      "source_revision": "75b32d60f69df7eb73daf7f235eae3fda9dd9fed",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "pointcloud-paper",
+      "source_revision": "dbb660c7a964074af00220ad94e314dcdd2b7eb4",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-adaptations-20260929",
+      "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-control-20260929",
+      "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-ego-candidate-20260929",
+      "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-interface-equivalence-20260929",
+      "source_revision": "56c1802b54b499ee170059927a39dddb3d09a0b3",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-navigation-20260929",
+      "source_revision": "9071156d7834121ba59664bd7a846be1e8b04d4d",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-solvers-20260929",
+      "source_revision": "f38fc00eae51e1afb2ca67edec27945d7647341d",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-stage2-20260930",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "tracked_source_clean": true
+    },
+    {
+      "name": "release-super-heartbeat-20260929",
+      "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+      "tracked_source_clean": true
+    }
+  ],
+  "legacy_30_cell_registry": "tmp/final-acceptance-layout-check.json",
+  "scope": "Original evidence preserved; development-only pointcloud and user-accepted EGO explicitly labelled. Final weights copied and authenticated; full replays linked, external backups retained.",
+  "verification": {
+    "affected_tests_passed": 66,
+    "subtests_passed": 3,
+    "wall_seconds": 32.07,
+    "environment": "SCIPY_ARRAY_API=1 JAX_PLATFORMS=cpu PYTHONPATH=src PYTEST_DISABLE_PLUGIN_AUTOLOAD=1; locked Pixi interpreter",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "historical_registry": {
+      "cells": 30,
+      "all_results_present": true,
+      "all_execution_passed": true
+    },
+    "initial_direct_python_check": "One Crazyflow/SciPy Tracer conversion failed without Pixi activation environment; same affected tests passed after setting configured SCIPY_ARRAY_API=1 before Python startup. No numerical code change required.",
+    "related_output_contract_tests_passed": 14,
+    "related_output_contract_wall_seconds": 149.17,
+    "pointcloud_summary_tests_passed": 13,
+    "pointcloud_summary_wall_seconds": 3.26,
+    "total_affected_tests_passed": 93,
+    "legacy_policy_load_verified": true,
+    "document_links_verified": true
+  }
+}

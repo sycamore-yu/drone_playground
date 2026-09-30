@@ -66,10 +66,15 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("experiments/navigation8-review"),
+        default=None,
     )
     parser.add_argument("--fps", type=int, default=20)
     args = parser.parse_args()
+
+    if args.output is None:
+        from drone_playground.runs.layout import experiment_directory
+
+        args.output = experiment_directory(Path.cwd(), 'navigation8-review')
 
     catalog = load_fixed_catalog(args.catalog)
     review = {row["scene_id"]: row for row in validate_fixed_catalog(catalog)}

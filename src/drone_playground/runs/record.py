@@ -21,6 +21,7 @@ from typing import Any
 
 from tensorboardX import SummaryWriter
 
+from drone_playground.runs.layout import experiment_directory
 from drone_playground.source_archive import capture_source_archive
 
 _HEARTBEAT_INTERVAL_SECONDS = 60.0
@@ -135,7 +136,7 @@ class RunRecorder:
     """Record one experiment's configuration, progress, metrics, and terminal result.
 
     Args:
-        root: Project root. The run is created below ``root/experiments``.
+        root: Project root. Runs are created below ``experiments/tmp/YYMMDD``.
         run_id: Stable identifier for this run. Existing run directories are rejected.
         config: Fully resolved run configuration.
         task_id: Project task identifier associated with the run.
@@ -151,11 +152,11 @@ class RunRecorder:
         self.root = Path(root).resolve()
         self.run_id = run_id
         self.task_id = task_id
-        self.path = self.root / "experiments" / run_id
+        self._started_at = _utc_now()
+        self.path = experiment_directory(self.root, run_id, date=self._started_at[:10].replace('-', '')[2:])
         self._lock = threading.RLock()
         self._stop_event = threading.Event()
         self._finished = False
-        self._started_at = _utc_now()
         self._started_monotonic = time.monotonic()
         self._process = {
             "pid": os.getpid(),

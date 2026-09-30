@@ -117,6 +117,8 @@ class LOTFTrainingTests(unittest.TestCase):
                     m.load_training_state(path, initial, changed)
 
     def test_complete_small_run_has_independent_evaluation_and_native_replay(self):
+        from drone_playground.runs.layout import find_experiment
+
         m = self.module()
         cfg = self.small_config()
         cfg["evaluation"]["episodes"] = 2
@@ -124,6 +126,6 @@ class LOTFTrainingTests(unittest.TestCase):
             result = m.train(cfg, Path(folder), "lotf-small-test")
             self.assertEqual(result["actual_steps"], 16)
             self.assertGreater(result["actor_parameter_delta_l2"], 0.0)
-            root = Path(folder) / "experiments/lotf-small-test"
+            root = find_experiment(folder, 'lotf-small-test')
             self.assertTrue((root / "checkpoints/best.json").is_file())
             self.assertGreater(len(list((root / "rollouts").rglob("*.mj_unroll"))), 1)

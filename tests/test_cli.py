@@ -38,14 +38,16 @@ class CommandTests(unittest.TestCase):
 
     def test_real_control_demo_records_measured_states(self):
         from drone_playground.execution.controllers.demo import run_demo
+        from drone_playground.runs.layout import find_experiment
 
         with tempfile.TemporaryDirectory() as tmp:
             report = run_demo(Path(tmp), "native-flight", duration=0.2)
             self.assertEqual(report["frames"], 10)
             self.assertTrue(report["finite_states"])
-            self.assertTrue((Path(tmp) / "experiments/native-flight/result.json").is_file())
+            run = find_experiment(Path(tmp), 'native-flight')
+            self.assertTrue((run / 'result.json').is_file())
             self.assertEqual(
-                len(list((Path(tmp) / "experiments/native-flight/rollouts").rglob("*.mj_unroll"))),
+                len(list((run / 'rollouts').rglob('*.mj_unroll'))),
                 1,
             )
 

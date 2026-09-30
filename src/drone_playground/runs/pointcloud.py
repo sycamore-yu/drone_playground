@@ -9,6 +9,7 @@ import numpy as np
 from brax.io import model
 
 from drone_playground.evaluation.tracking import save_report, tree_digest
+from drone_playground.runs.layout import resolve_artifact
 
 
 def save_training_state(path, state, config, selection=None):
@@ -32,7 +33,7 @@ def save_training_state(path, state, config, selection=None):
 
 
 def load_training_state(path):
-    path = Path(path).resolve()
+    path = resolve_artifact(path).resolve()
     metadata = json.loads(path.with_suffix(".json").read_text())
     from drone_playground.runs.migration import require_current
 
