@@ -1,7 +1,7 @@
 {
-  "generated_utc": "2026-09-30T03:07:07.636899+00:00",
+  "generated_utc": "2026-09-30T03:19:22.571252+00:00",
   "scope": "Fixed-version quality records; passed_cells retains earlier valid evidence. confirmed_cells_for_current_runtime excludes pending native binary revalidation. Not a completed release or cross-method ranking.",
-  "passed_cells": 11,
+  "passed_cells": 12,
   "required_cells": 18,
   "cells": [
     {
@@ -165,31 +165,64 @@
     {
       "method": "shac",
       "task": "racing",
-      "passed": false,
-      "status": "not_passed",
+      "passed": true,
+      "status": "passed",
       "training_seeds": [
         {
-          "seed": 0,
-          "completed": 98,
-          "num_trials": 100,
-          "rmse_completed_mean": 0.06819901185832461,
-          "run_id": "release-control-confirmation-20260929-shac-racing-seed0-heldout"
-        },
-        {
-          "seed": 1,
+          "training_seed": 30,
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed30-heldout",
           "completed": 100,
           "num_trials": 100,
-          "rmse_completed_mean": 0.02774011081084609,
-          "run_id": "release-control-confirmation-20260929-shac-racing-seed1-heldout"
+          "passed": true,
+          "rmse_all_mean": 0.015930615216493606
         },
         {
-          "seed": 2,
-          "completed": 0,
+          "training_seed": 31,
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed31-heldout",
+          "completed": 100,
           "num_trials": 100,
-          "rmse_completed_mean": null,
-          "run_id": "release-control-confirmation-20260929-shac-racing-seed2-heldout"
+          "passed": true,
+          "rmse_all_mean": 0.030322451293468475
+        },
+        {
+          "training_seed": 32,
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed32-heldout",
+          "completed": 100,
+          "num_trials": 100,
+          "passed": true,
+          "rmse_all_mean": 0.011494001792743801
         }
-      ]
+      ],
+      "previous_confirmations": [
+        {
+          "training_seeds": [
+            {
+              "seed": 0,
+              "completed": 98,
+              "num_trials": 100,
+              "rmse_completed_mean": 0.06819901185832461,
+              "run_id": "release-control-confirmation-20260929-shac-racing-seed0-heldout"
+            },
+            {
+              "seed": 1,
+              "completed": 100,
+              "num_trials": 100,
+              "rmse_completed_mean": 0.02774011081084609,
+              "run_id": "release-control-confirmation-20260929-shac-racing-seed1-heldout"
+            },
+            {
+              "seed": 2,
+              "completed": 0,
+              "num_trials": 100,
+              "rmse_completed_mean": null,
+              "run_id": "release-control-confirmation-20260929-shac-racing-seed2-heldout"
+            }
+          ],
+          "status": "not_passed"
+        }
+      ],
+      "recipe": "stage2-shac128-lr0003",
+      "evidence": "docs/verification/stage2-shac-confirmation.json"
     },
     {
       "method": "bptt",
@@ -1011,12 +1044,17 @@
       "source_tree": "release-stage2-20260930",
       "path": "experiments/stage2-depth-confirmation-20260930/result.json",
       "sha256": "ba7cc98827d873db2273075d42d40b04ef0f41f887f676d3dfea3960a291f7b7"
+    },
+    {
+      "source_tree": "release-stage2-20260930",
+      "path": "experiments/stage2-shac-confirmation-20260930/result.json",
+      "sha256": "d3499a9d42bca6155afa9fdad7c762eb23022cdf6df4ef796343308d61908ce3"
     }
   ],
-  "confirmed_cells_for_current_runtime": 11,
+  "confirmed_cells_for_current_runtime": 12,
   "user_accepted_cells": 2,
-  "remaining_quality_cells": 5,
-  "release_requirement_satisfied_cells": 13,
+  "remaining_quality_cells": 4,
+  "release_requirement_satisfied_cells": 14,
   "required_quality_cells": 16,
   "training_search_authorization": {
     "date": "2026-09-30",

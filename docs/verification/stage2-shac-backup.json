@@ -1,0 +1,123 @@
+{
+  "status": "verified",
+  "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "training_seeds": [
+    30,
+    31,
+    32
+  ],
+  "files": [
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/checkpoints/step-0001024000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/checkpoints/step-0001024000.pkl",
+      "sha256": "97d873a790a25021b27d2d2439c28b5537a8418963879bd80062e549aa011e1b",
+      "bytes": 185455
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/checkpoints/step-0001024000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/checkpoints/step-0001024000.json",
+      "sha256": "f5b856fcb9efae5a691000902c1db25033ad857c2de86bebfb102b7ac150db2f",
+      "bytes": 3765
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0000250.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0000250.pkl",
+      "sha256": "d10bb3bab0197452710e6e3999c98c9caafa06b61c0762cb533a956378f1f215",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0000250.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0000250.json",
+      "sha256": "ffae680c0f1a2464ecd0de497a0557d0a94332b237bd62286e0626c7558ea3cb",
+      "bytes": 5608
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0001000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0001000.pkl",
+      "sha256": "4adc9cf3ed3dd6ca951b8fb4f46d2359ac1f51e284addca8f0d7afb8cd114347",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0001000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed30-train/training-state/update-0001000.json",
+      "sha256": "d6229a58133a7d574262ef66947431683f2d30e4b7b9b9da323e4aaa147c6a8e",
+      "bytes": 5609
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/checkpoints/step-0000512000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/checkpoints/step-0000512000.pkl",
+      "sha256": "3e07916a2460972468168e74ea2fb4c6f3d7427398d741d418286fd78a776550",
+      "bytes": 185455
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/checkpoints/step-0000512000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/checkpoints/step-0000512000.json",
+      "sha256": "5e59db8e9870e1631b587aa8504f143ab6796a494178eb187921b129c36cd58f",
+      "bytes": 3764
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0000125.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0000125.pkl",
+      "sha256": "364cd0b641db973c636dc9b9f3906434fc7411c9c3a7c525387ef7eb7dad3c47",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0000125.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0000125.json",
+      "sha256": "f84d3b72a846f4124bf4581490beba916407060cb9fc776bef1405ee50a1c3ca",
+      "bytes": 5608
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0001000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0001000.pkl",
+      "sha256": "39b9b1dbfbcc3f0b316c75af1f6a0e12926323e56ecc90503bfab81a212518d4",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0001000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed31-train/training-state/update-0001000.json",
+      "sha256": "6c5ba665cd2b39fa7a206c608695a7a0e8436e220115344924bdf7e02609fefb",
+      "bytes": 5609
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/checkpoints/step-0001024000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/checkpoints/step-0001024000.pkl",
+      "sha256": "fc53b05be65c2a7c0df8ac0ae2818c02199d72fcc63aae6329b63dbbe56ebf41",
+      "bytes": 185455
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/checkpoints/step-0001024000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/checkpoints/step-0001024000.json",
+      "sha256": "ce333a37be48a962db9a93098dd7136b2a7e3f2cfcd04405db016bac09fbfe06",
+      "bytes": 3765
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0000250.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0000250.pkl",
+      "sha256": "d2ea2075c71d34f7a2ce43789bc888114157204c8f4571f8add570b45452facf",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0000250.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0000250.json",
+      "sha256": "9bdd5d325d0b3dda60aabc9c6b6e5102c1785eef30564c7de2b903c91c7cbb65",
+      "bytes": 5608
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0001000.pkl",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0001000.pkl",
+      "sha256": "057c43c007387da1212ba8eba324053e44a33d7933147b9239cff84f70a5ad29",
+      "bytes": 1617774
+    },
+    {
+      "source": "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0001000.json",
+      "backup": "checkpoints/stage2-shac-confirmation-20260930-shac-racing-seed32-train/training-state/update-0001000.json",
+      "sha256": "cc79ac3fb006d5c31883435b2a2c661d682ff99efa3971b95bd2f909a04a0b03",
+      "bytes": 5609
+    }
+  ],
+  "source_archive_sha256": "13697fe4c78abad7eeed4582499fd89e5a05db34760cb8363821ee3778a6122b",
+  "copied_policies_read_back": true,
+  "copied_optimizer_rng_environment_states_read_back": true,
+  "backup_root_role": "Project-external archive under owning drone_playground platform; same physical disk"
+}

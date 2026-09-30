@@ -1,0 +1,100 @@
+{
+  "audit_script_sha256": "df18cc97f5dcff4419aeaacb57f7d7ee1e741ccdb7e2ef768f32cd040edeb02f",
+  "batch_id": "stage2-shac-confirmation-20260930",
+  "cells": {
+    "shac-racing": true
+  },
+  "completed": true,
+  "confirmation_rule": "All three independent training seeds must pass",
+  "heldout_seed_range": [
+    60000,
+    60099
+  ],
+  "manifest_sha256": "05f2a4c97b067f12b27992fdc02f69c06a05e3e647158352ff8f808a791ce9a9",
+  "passed": true,
+  "recipe": {
+    "actor_learning_rate": 0.0003,
+    "critic_learning_rate": 0.003,
+    "horizon_length": 32,
+    "initialization": "scratch",
+    "network": "DiffAero-inspired256/128LayerNormELU; deterministic adapter",
+    "num_envs": 128,
+    "policy_updates": 1000
+  },
+  "replay_scope": "Each100-case report retains all trials; archived selected replays only, not300 full replays",
+  "result_sha256": "d3499a9d42bca6155afa9fdad7c762eb23022cdf6df4ef796343308d61908ce3",
+  "rows": [
+    {
+      "artifacts": {
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-heldout/eval/release-validation.json": "8884fcb9fa29a76bb87a7d4b6e9fb0ec095960375a14d762b9bf070a7c314a99",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-heldout/eval/report.json": "a4f172d2442214343ba15f77a1a488863d3834f2134fe6f3ea50c85821131d48",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-heldout/manifest.json": "d612d1b35f72930ee17ba1ed49cdd854da295660fc5a75d0940cac07b205d6fd",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-heldout/result.json": "ab29e66c61ba498206719448e2f0ecd49eeff80f606fd4e8601ddbd9036c7daf",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/manifest.json": "b9219c296acb289d944660362a33a2515dc0baabe630686c33d56da66feef1e5",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed30-train/result.json": "a2252112f7b7a0999157a409fd38817cdbabdf86714122a5f59039caf4ba1ad9"
+      },
+      "checkpoint_sha256": "97d873a790a25021b27d2d2439c28b5537a8418963879bd80062e549aa011e1b",
+      "completed": 100,
+      "development_successes": 32,
+      "num_trials": 100,
+      "parameter_sha256": "ba86450227eec1d7666d5a6865e7eeae4ffd83df24667e0214705bf55bc211d1",
+      "passed": true,
+      "rmse_all_mean": 0.015930615216493606,
+      "selected_archive_manifest_sha256": "2cbd4e829c705cf50be1309c0b29d8e219638a908dc1127ef5f6a03e3dc5ce04",
+      "selected_replays_archived": 4,
+      "selected_step": 1024000,
+      "selected_updates": 250,
+      "training_seed": 30
+    },
+    {
+      "artifacts": {
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-heldout/eval/release-validation.json": "ecc4accdf41599daeb852f00f5f8b455bbe2f57c3eb3c6b5d39975621370a9df",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-heldout/eval/report.json": "dbc7749d25e8c8899d359f01e23a2d5995cc114e137fc47d04a4860deb2e45e8",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-heldout/manifest.json": "b10f46ca52d8304bfbbe6a777315ef92a71c227ce6fea080d99ee4753fa6ece8",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-heldout/result.json": "5af63f14b911a5a98e79e7aa9ae71229eb06ba53502c2e58681bcb0cc6301f77",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/manifest.json": "8b3d1b4f45ff060929b57c28fc662584bb762ac42133538f7d8495b13b3168ab",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed31-train/result.json": "d6ed96639327aeb7bc8eeba9299dddc295c0bdfff83d1217673c6272f8ddfc05"
+      },
+      "checkpoint_sha256": "3e07916a2460972468168e74ea2fb4c6f3d7427398d741d418286fd78a776550",
+      "completed": 100,
+      "development_successes": 32,
+      "num_trials": 100,
+      "parameter_sha256": "1815032694520a154bc6b0b2dc8c872856b4151423befad96409329cfad1856d",
+      "passed": true,
+      "rmse_all_mean": 0.030322451293468475,
+      "selected_archive_manifest_sha256": "d0e081860f21315d8665d166227c3e41525b528faa3b37726083b6b8a79afb8c",
+      "selected_replays_archived": 4,
+      "selected_step": 512000,
+      "selected_updates": 125,
+      "training_seed": 31
+    },
+    {
+      "artifacts": {
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-heldout/eval/release-validation.json": "0f4506a7797c2abfa1d86c394e9523b8220287f417c6257d8765434f45a652a8",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-heldout/eval/report.json": "0724f5a747efe18a48e8027f2e4d0b57c3fb1668161be53faf2c397655c0ce2f",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-heldout/manifest.json": "248a0e1e2d5fa53fd52fe0e0e0abcef96b605aa71955ba0c8327c05d9104a3e9",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-heldout/result.json": "750a9b8ebdbf6a78c8258083e709c9bf433a01edcefead72fb1258a7218baa9c",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/manifest.json": "d580bf7937a645087f2ef273974d6515747f8249c7fb8456f6eecb66224f4159",
+        "experiments/stage2-shac-confirmation-20260930-shac-racing-seed32-train/result.json": "a8c28010af3e3173ee6f5d3e6ab26fe75bd3d675489041f99f7f552a8b810104"
+      },
+      "checkpoint_sha256": "fc53b05be65c2a7c0df8ac0ae2818c02199d72fcc63aae6329b63dbbe56ebf41",
+      "completed": 100,
+      "development_successes": 32,
+      "num_trials": 100,
+      "parameter_sha256": "9928d60a08d47ad41fa5b53d1de8ef7feb629d8bee4a037fe05b97d8329b2f81",
+      "passed": true,
+      "rmse_all_mean": 0.011494001792743801,
+      "selected_archive_manifest_sha256": "34ec7ebed80412a99d3962ba75b066e55a13cbf17a2e8d4efe4574a9dbd6814d",
+      "selected_replays_archived": 4,
+      "selected_step": 1024000,
+      "selected_updates": 250,
+      "training_seed": 32
+    }
+  ],
+  "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "training_seeds": [
+    30,
+    31,
+    32
+  ]
+}
