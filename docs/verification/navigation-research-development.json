@@ -39,7 +39,50 @@
       },
       "quality_passed": false,
       "launch_sha256": "cd6a95fda87e85f7ee13a22f94319e9d89a9b15981f6a02c4304b75b587eda9e",
-      "trial_result_sha256": "743d7f557dc530823259f639343ac07b465b3d150b178b4c3d8cfc651fda65e3"
+      "trial_result_sha256": "743d7f557dc530823259f639343ac07b465b3d150b178b4c3d8cfc651fda65e3",
+      "study": "pointcloud-navigation-research",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e"
+    },
+    {
+      "study": "pointcloud-navigation-initialization",
+      "source_revision": "75b32d60f69df7eb73daf7f235eae3fda9dd9fed",
+      "run_id": "research-pointcloud-smallhead-seed0-t0-20260930",
+      "initialization": "scratch",
+      "num_envs": 32,
+      "horizon_length": 160,
+      "policy_updates": 500,
+      "learning_rate": 0.0003,
+      "point_input_scale": 0.1,
+      "output_init_scale": 0.0001,
+      "actual_steps": 2560000,
+      "wall_seconds": 1421.813859611284,
+      "objective": 0.06164383561643835,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/navigation-research-20260930/experiments/research-pointcloud-smallhead-seed0-t0-20260930/training-state/update-0000500.pkl",
+        "parameter_sha256": "c80bc09f753d9c120e77c340098bebbab87fc54a085a0f001d55e840310d6db0",
+        "score": [
+          0,
+          36
+        ],
+        "selection_split": "dev",
+        "updates": 500
+      },
+      "development_successes": 36,
+      "development_trials": 64,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 0.375,
+        "D06": 0.125,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "quality_passed": false,
+      "primary_criterion_passed": false,
+      "launch_sha256": "d281742e1572c6cc543e696ddbaf809a3fc0afeb9118287129b49398d76383a5",
+      "trial_result_sha256": "773d25af04209fcc3fccf073f77bc8981936636c47b558ed981b7e75d3f3d412"
     }
   ],
   "additional_development_results": [
@@ -78,5 +121,6 @@
       "quality_status": "Development only; no new heldout confirmation needed because existing cohort passes amended criterion",
       "trial_result_sha256": "0cb13ad51e4917f03112e05f3cffc92ffcaa8c10e5bfa79f49d9dcb1b2218583"
     }
-  ]
+  ],
+  "comparison_scope": "Different source revisions and candidate recipes explicitly recorded; development results only, no heldout quality claim."
 }

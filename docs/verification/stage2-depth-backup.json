@@ -1,0 +1,239 @@
+{
+  "backup_directory": "/home/tong/tongworkspace/simulation_dev/.archives/drone_playground/quality-navigation-primary-20260930",
+  "training_source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "source_archive_sha256": "13697fe4c78abad7eeed4582499fd89e5a05db34760cb8363821ee3778a6122b",
+  "files": [
+    {
+      "path": "seed-30/selected/update-0000250.pkl",
+      "sha256": "2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-30/selected/update-0000250.json",
+      "sha256": "1288b28635e5a61ae97d6e78e386a8c1f45151b11b9c8bff3663a5281185db23",
+      "bytes": 5368
+    },
+    {
+      "path": "seed-30/final/update-0001000.pkl",
+      "sha256": "695489724ab8659dfddc7c59c75a9f43f826194dd6b0b39e847bea71148ecb1f",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-30/final/update-0001000.json",
+      "sha256": "31631f4b3e62debef379c1a69508252030c64695b327822661c2f6aaf46ab6bd",
+      "bytes": 5369
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/eval/release-validation.json",
+      "sha256": "a93c290478007f5081b31df8d8475bbd9d6c95997b0a227135ee56dbb031d304",
+      "bytes": 864
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/eval/report.json",
+      "sha256": "88eaf544dfdeda6ba93b3c71bf48d8128e83468d5eea8e3fff0c74d7cb7ac909",
+      "bytes": 250376
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/manifest.json",
+      "sha256": "7576f192fc6b0202dc9390e9edaa2bb7c2f9edb47e543792e1eabba784d4046c",
+      "bytes": 10896
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/result.json",
+      "sha256": "e2c2808ee3a78a871085d52632010c0045055c5d7c08509a6a0d0b7a2f3ceffb",
+      "bytes": 407
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-train/manifest.json",
+      "sha256": "b45a090373a4d9ad103532f14a49016fc817a041a2484bc2b6666aebc0f06749",
+      "bytes": 10127
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-train/result.json",
+      "sha256": "dcd6b1447ec24af9b20c482b20963ef5bd8656eddb0fae89247f537c3febf602",
+      "bytes": 90243
+    },
+    {
+      "path": "seed-31/selected/update-0000625.pkl",
+      "sha256": "6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-31/selected/update-0000625.json",
+      "sha256": "d6128f71fa384da79ffe3d3f5e78b594ee7c32558d904c82e929e7ed23fd9c59",
+      "bytes": 5368
+    },
+    {
+      "path": "seed-31/final/update-0001000.pkl",
+      "sha256": "885712e55726e5789d6aa7ef4a22c356af2ca4447e532bd4ffb0b60627fd1d17",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-31/final/update-0001000.json",
+      "sha256": "2e623a17e82b38c5d9bb8129a4a335d228e6fb4926f53b94d8b822fbebdb011d",
+      "bytes": 5369
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/eval/release-validation.json",
+      "sha256": "00c69bd22badc0eebb79e6819a4e59f9d0bd5dc6a4acaa5db52bcb9b4e73e901",
+      "bytes": 860
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/eval/report.json",
+      "sha256": "2aefab7ec68292141079c739215cb916b9b0071a52b20c658515111c50414f44",
+      "bytes": 250556
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/manifest.json",
+      "sha256": "4c5dc3582507ad613eaf62f3b569c9f01c9f6c44f66dcbbf04d35488c11f7ab6",
+      "bytes": 10896
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/result.json",
+      "sha256": "f320c448528ceaba73e12b28826e4fc0ab936984420bca3f6b212f157a096c14",
+      "bytes": 408
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-train/manifest.json",
+      "sha256": "a84bb9a2276cbf36a353b441e0503bf7f1e5979b3aca648a8393b862347d6436",
+      "bytes": 10127
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-train/result.json",
+      "sha256": "319860903bb868cb46eca0272a54b01d0863b0b2eb48c2cdb9796fd4fed87ae4",
+      "bytes": 90279
+    },
+    {
+      "path": "seed-32/selected/update-0000875.pkl",
+      "sha256": "7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-32/selected/update-0000875.json",
+      "sha256": "814a669c51db006f2303ea43a07104d448604b3118798e79ac05ca6919d3e0d7",
+      "bytes": 5368
+    },
+    {
+      "path": "seed-32/final/update-0001000.pkl",
+      "sha256": "fd32bb0def7ef1b72f851a29147ba2c4f3f3ea8f9919b90cefa8f2ae9e5840bf",
+      "bytes": 6172368
+    },
+    {
+      "path": "seed-32/final/update-0001000.json",
+      "sha256": "84f60fc7cc2963821c0fd09f5fc0b0f409046ebddc1d2e3150ba405eeedbf136",
+      "bytes": 5369
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/eval/release-validation.json",
+      "sha256": "676c81799b7803c57df3d7d8340c52a3512699236361a0d1c81727cdfda8314f",
+      "bytes": 859
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/eval/report.json",
+      "sha256": "7635fad895c31e61908f8daf97c6c7df4a1a1934d1cc0a886faa7a2dc7cf7546",
+      "bytes": 250518
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/manifest.json",
+      "sha256": "fe5eca443ca77e4e6654e0827440ea9efec2de2246c665e3ca16b4e17390fba2",
+      "bytes": 10896
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/result.json",
+      "sha256": "38f0a5c2c56777635ed7954d9e8130d612be62ec975dfc0e50bdc0a5327f46a5",
+      "bytes": 408
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-train/manifest.json",
+      "sha256": "ab4f0ad3cd9ddafd9d62f731c4b18bace715c0e9b79570cba70755fd4469a876",
+      "bytes": 10127
+    },
+    {
+      "path": "evidence/experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-train/result.json",
+      "sha256": "ae6a7e0a180da19c3275e372de2f6f84fb4ebcffb6a983ccb2439baa76d78125",
+      "bytes": 90268
+    },
+    {
+      "path": "evidence/stage2-depth-confirmation.json",
+      "sha256": "302a90a10f06f8647ef4761d265b8747cb5b501f367bd8f927e4d6c51e404970",
+      "bytes": 7624
+    },
+    {
+      "path": "evidence/navigation-primary-acceptance.json",
+      "sha256": "e323b738b2adbe5446e6dd549ecfc2e415e217afd3b1966ca3581358ce94d8e0",
+      "bytes": 8385
+    }
+  ],
+  "states": [
+    {
+      "training_seed": 30,
+      "kind": "selected",
+      "updates": 250,
+      "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    },
+    {
+      "training_seed": 30,
+      "kind": "final",
+      "updates": 1000,
+      "parameter_sha256": "465f0c7a3bdb2ce4d5a88914495bfd8135c2ef1a899b00e203ce97f0bad55eec",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    },
+    {
+      "training_seed": 31,
+      "kind": "selected",
+      "updates": 625,
+      "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    },
+    {
+      "training_seed": 31,
+      "kind": "final",
+      "updates": 1000,
+      "parameter_sha256": "014533aaf02859486ef4d01b60c33fe2bc18a0abb3cab519a166ceb61b40abd7",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    },
+    {
+      "training_seed": 32,
+      "kind": "selected",
+      "updates": 875,
+      "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    },
+    {
+      "training_seed": 32,
+      "kind": "final",
+      "updates": 1000,
+      "parameter_sha256": "63aaffd7d94f21fd8399b13cadb76a6bbac97ef17352c0624bbcb70d8756b39b",
+      "complete_state_loaded": true,
+      "optimizer_leaf_count": 35,
+      "rng_shape": [
+        2
+      ]
+    }
+  ],
+  "all_file_digests_verified": true,
+  "all_complete_states_read_back": true,
+  "scope": "Selected and final full optimizer/RNG states, original evidence and original source snapshot. Full replays remain in authenticated frozen runtime; not copied here.",
+  "storage": "Independent directory on the same physical disk; not an off-machine backup"
+}

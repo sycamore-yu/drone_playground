@@ -1,0 +1,107 @@
+{
+  "recorded_utc": "2026-09-30T04:26:49.166978+00:00",
+  "status": "running",
+  "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+  "source_revision": "bf7bc08c67949b8f84e6ba26e1721bdeec45d8d6",
+  "process": {
+    "pid": 3138421,
+    "start_ticks": "255792061",
+    "cmdline": "/home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/bin/python scripts/train.py method=learning/pointcloud_navigation training.num_envs=32 training.num_evals=9 training.seed=0 training.development_episodes=8 training.max_wall_seconds=3600 training.warm_start=null training.resume=null algorithm.learning_rate=0.0003 +network.point_input_scale=0.1 runtime.device=gpu training=navigation_development_primary training.policy_updates=3000 training.development_metric=navigation-development-primary-v1 algorithm.horizon_length=32 +network.output_init_scale=1.0 runtime.device=gpu training.max_wall_seconds=3600 training.resume=null training.warm_start=null run_id=primary-pointcloud-short32-seed0-t0-20260930 "
+  },
+  "initialization": "scratch",
+  "recipe": {
+    "num_envs": 32,
+    "policy_updates": 3000,
+    "horizon_length": 32,
+    "learning_rate": 0.0003,
+    "point_input_scale": 0.1,
+    "output_init_scale": 1.0,
+    "development_metric": "navigation-development-primary-v1",
+    "development_episodes_per_scene": 8,
+    "training_scene": "Fixed Navigation8 with randomized training states",
+    "max_wall_seconds": 3600,
+    "device": "gpu"
+  },
+  "command": [
+    "/home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/bin/python",
+    "scripts/train.py",
+    "method=learning/pointcloud_navigation",
+    "training.num_envs=32",
+    "training.num_evals=9",
+    "training.seed=0",
+    "training.development_episodes=8",
+    "training.max_wall_seconds=3600",
+    "training.warm_start=null",
+    "training.resume=null",
+    "algorithm.learning_rate=0.0003",
+    "+network.point_input_scale=0.1",
+    "runtime.device=gpu",
+    "training=navigation_development_primary",
+    "training.policy_updates=3000",
+    "training.development_metric=navigation-development-primary-v1",
+    "algorithm.horizon_length=32",
+    "+network.output_init_scale=1.0",
+    "runtime.device=gpu",
+    "training.max_wall_seconds=3600",
+    "training.resume=null",
+    "training.warm_start=null",
+    "run_id=primary-pointcloud-short32-seed0-t0-20260930"
+  ],
+  "launch_sha256": "58adaaddba6a3af67cbec42db1560fdca38f697e68215ae3d9ff3a43454cd664",
+  "snapshots_at_record": [
+    {
+      "updates": 0,
+      "score": [
+        0,
+        0
+      ],
+      "primary_success_rate": 0.0,
+      "scene_success_rates": {
+        "D01": 0.0,
+        "D02": 0.0,
+        "D03": 0.0,
+        "D06": 0.0,
+        "S01": 0.0,
+        "S02": 0.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    },
+    {
+      "updates": 375,
+      "score": [
+        0,
+        9
+      ],
+      "primary_success_rate": 0.1875,
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 0.0,
+        "D03": 0.125,
+        "D06": 0.0,
+        "S01": 0.0,
+        "S02": 0.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "selection_rule": "navigation-development-primary-v1"
+    }
+  ],
+  "formal_confirmation": {
+    "status": "waiting_for_development",
+    "training_seeds": [
+      50,
+      51,
+      52
+    ],
+    "heldout_seed_range": [
+      80000,
+      80199
+    ],
+    "criterion": "release-navigation-primary-v1",
+    "gate": "Selected development policy >=90% in every primary scene; eight cases per scene requires8/8",
+    "batch_id": "primary-pointcloud-short32-confirmation-20260930"
+  },
+  "quality_passed": null
+}
