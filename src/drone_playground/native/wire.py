@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .contracts import MotionCommand, Trajectory, Waypoint
+from .geometry import ConvexPolytope, PlannerGeometry, SafeFlightCorridor, TrajectoryPreview
 from .proto import algorithm_pb2 as pb
 
 
@@ -71,8 +72,11 @@ def validate_step(request, capabilities=None):
         if request.HasField("measurement"):
             available.add(request.measurement.WhichOneof("data"))
         if upstream:
-            kind = value.kind if isinstance(value, MotionCommand) else (
-                "trajectory" if isinstance(value, Trajectory) else "waypoint")
+            kind = (
+                value.kind
+                if isinstance(value, MotionCommand)
+                else ("trajectory" if isinstance(value, Trajectory) else "waypoint")
+            )
             accepted = set(capabilities.accepted_upstream)
             if not accepted and "reference" in capabilities.required_inputs:
                 accepted = {"trajectory"}
@@ -177,9 +181,57 @@ class Decision:
     diagnostics: dict
     explanation: str = ""
     sampled_reference: dict | None = None
+    planner_geometry: PlannerGeometry | None = None
+
+
+def encode_geometry(value):
+    result = pb.PlannerGeometry(
+        frame=value.frame, generated_at=value.generated_at, valid_until=value.valid_until
+    )
+    for corridor in value.corridors:
+        wire = result.corridors.add(name=corridor.name)
+        for polytope in corridor.polytopes:
+            poly = wire.polytopes.add()
+            if polytope.vertices is not None:
+                poly.vertices.extend(vec3(v) for v in polytope.vertices)
+            else:
+                poly.halfspaces.extend(polytope.halfspaces.ravel())
+    for preview in value.trajectories:
+        result.trajectories.add(name=preview.name, trajectory=encode_output(preview.trajectory))
+    return result
+
+
+def decode_geometry(value):
+    corridors = []
+    for corridor in value.corridors:
+        polytopes = []
+        for poly in corridor.polytopes:
+            if bool(poly.vertices) == bool(poly.halfspaces):
+                raise ValueError("Polytope requires exactly one representation")
+            if poly.vertices:
+                polytopes.append(ConvexPolytope(vertices=[[v.x, v.y, v.z] for v in poly.vertices]))
+            else:
+                if len(poly.halfspaces) % 4:
+                    raise ValueError("Halfspace planes must have four coefficients")
+                polytopes.append(
+                    ConvexPolytope(halfspaces=np.asarray(poly.halfspaces).reshape(-1, 4))
+                )
+        corridors.append(SafeFlightCorridor(corridor.name, tuple(polytopes)))
+    return PlannerGeometry(
+        value.generated_at,
+        value.valid_until,
+        tuple(corridors),
+        tuple(TrajectoryPreview(v.name, decode_output(v.trajectory)) for v in value.trajectories),
+        value.frame,
+    )
 
 
 def decode_decision(response, time, capabilities):
+    geometry = None
+    if response.HasField("planner_geometry"):
+        geometry = decode_geometry(response.planner_geometry)
+        if geometry.generated_at > time + 1e-9:
+            raise ValueError("Planner geometry has a future origin")
     decision = response.decision
     if decision.status not in (pb.VALID, pb.NO_PLAN, pb.INFEASIBLE, pb.BUDGET_EXHAUSTED):
         raise ValueError("Native decision has no supported status")
@@ -232,4 +284,5 @@ def decode_decision(response, time, capabilities):
         diagnostics,
         decision.explanation,
         sampled,
+        geometry,
     )

@@ -205,10 +205,14 @@ grpc::Status Service::Step(grpc::ServerContext* context, const wire::StepRequest
   try {
     const auto start = std::chrono::steady_clock::now();
     *response->mutable_decision() = algorithm_->Step(*request);
+    auto geometry = algorithm_->Geometry(*request);
+    if (!geometry.corridors().empty() || !geometry.trajectories().empty())
+      *response->mutable_planner_geometry() = std::move(geometry);
     const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start);
     (*response->mutable_diagnostics())["algorithm_seconds"] = elapsed.count();
     if (elapsed.count() > request->solve_budget_seconds()) {
       response->mutable_decision()->Clear();
+      response->clear_planner_geometry();
       response->mutable_decision()->set_status(wire::BUDGET_EXHAUSTED);
       response->mutable_decision()->set_explanation("Algorithm exceeded its wall-clock solve budget");
     }

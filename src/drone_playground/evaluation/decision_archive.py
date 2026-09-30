@@ -11,8 +11,9 @@ from pathlib import Path
 
 from drone_playground.contracts import COMMANDS
 from drone_playground.native.contracts import MotionCommand, Trajectory, Waypoint
+from drone_playground.native.geometry import PlannerGeometry
 
-_OUTPUTS = {kind.__name__: kind for kind in (Trajectory, Waypoint, MotionCommand)}
+_OUTPUTS = {kind.__name__: kind for kind in (Trajectory, Waypoint, MotionCommand, PlannerGeometry)}
 
 
 def _json(value):
@@ -41,7 +42,7 @@ class NativeDecisionRecorder:
         return self
 
     def _pack(self, value):
-        if isinstance(value, (Trajectory, Waypoint, MotionCommand)):
+        if isinstance(value, tuple(_OUTPUTS.values())):
             data = dict(type=type(value).__name__, fields=self._pack(asdict(value)))
             digest = hashlib.sha256(_json(data).encode()).hexdigest()
             self.outputs.setdefault(digest, data)

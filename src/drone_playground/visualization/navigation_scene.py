@@ -147,9 +147,14 @@ def create_replay_model(env, scenario_id: int):
     model = spec.compile()
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
+    from drone_playground.visualization.layers import ReplayLayers, sensor_view
+
+    sensor = getattr(env, "sensor", None)
     return SimpleNamespace(
         spec=spec,
         mj_model=model,
+        replay_visualization=ReplayLayers(
+            sensor=sensor_view(sensor.calibration()) if sensor is not None else None),
         data=SimpleNamespace(
             core=SimpleNamespace(
                 drone_mocap_ids=np.array([0]),

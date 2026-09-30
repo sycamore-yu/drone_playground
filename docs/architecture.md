@@ -89,3 +89,5 @@ Navigation 的权威几何在 `assets/scenes/navigation/catalog.json`，协议�
 宿主链的每个stage可设置`frequency_hz`，默认与执行频率相同；当前要求它能整除执行频率。两个调用时刻之间只缓存有效物理输出，过期后返回无计划，由执行器处理缺失；不会把失效命令继续交给下游。场景重置同时清空缓存、时钟和调用计数，报告的`module_calls`可验证实际频率。冻结神经模块仍须保持检查点声明的策略频率，不能用这一设置静默降频。
 
 神经几何输出由显式物理解码器定义。Waypoint预测相对当前位置、目标或世界原点的有序位置偏移；Trajectory预测终点位置／速度／加速度，解码为固定时长五次曲线，起点位置／速度取当前状态、起点参考加速度为零。检查点保存尺度、锚点、时长和输出维度；没有隐式把网络隐层解释为轨迹。数值解码支持JAX JIT／批量／梯度，宿主转换与外部MPC仍是明确的导数边界。公开`learning/geometric`已接入PPO／SHAC／BPTT，可训练单航点或五次轨迹几何头并保存解码合同；同频JAX PD和目标来源均显式配置，见[组件训练](research/physical-components.md#jax组件训练入口)。小型更新与工程夹具不代表已收敛策略。
+
+回放的规划检查数据与可执行物理输出分开。`PlannerGeometry`通过可选gRPC字段携带凸多面体走廊和轨迹预览；实际Trajectory及模块链中间输出也进入决策归档。统一`ReplayLayers`把传感标定和因果计划转换为标准mj_unroll的辅助几何，细节见[回放可视化](research/replay-visualization.md)。显示数据不参与传感、控制器、动力学和求导链。

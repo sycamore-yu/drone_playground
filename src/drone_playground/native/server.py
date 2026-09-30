@@ -74,6 +74,7 @@ class Service:
                         response.decision.status = pb.BUDGET_EXHAUSTED
                         response.decision.explanation = "Algorithm exceeded its wall-clock solve budget"
                         response.ClearField("sampled_reference")
+                        response.ClearField("planner_geometry")
                     self.time = h.simulation_time
                     if not context.is_active():
                         self.episode = ""

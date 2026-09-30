@@ -106,6 +106,7 @@ def evaluate_native_control(config, root, run_id):
         jax.block_until_ready(sample(body["pos"], body["quat"], 0.0, 0))
         jax.block_until_ready(advance(initial, env.physical_action(env.hover_action)))
         adapter = dict(
+            record_planner_visualization=config['evaluation'].get('record_planner_visualization', True),
             interactive_goals=True,
             world_low=np.asarray(bank.world_low).tolist(),
             world_high=np.asarray(bank.world_high).tolist(),
@@ -246,11 +247,18 @@ def evaluate_native_control(config, root, run_id):
                         )
                         if hasattr(worker, "module_calls"):
                             diagnostics[-1]["module_calls"] = list(worker.module_calls)
-                        export_rollout(env.sim, rec.path / "rollouts" / f"case-{case:03d}", trace)
                         traces.append(trace)
                     finally:
                         worker.close()
                         tracker.close()
+                from drone_playground.evaluation.decision_archive import load_native_decisions
+                from drone_playground.visualization.layers import layers_from_decisions, sensor_view
+
+                visualization = layers_from_decisions(
+                    load_native_decisions(worker.directory / 'decision-trace'),
+                    sensor=sensor_view(calibration))
+                export_rollout(env.sim, rec.path / "rollouts" / f"case-{case:03d}", trace,
+                               visualization=visualization)
                 rec.phase("evaluating", step=case + 1, completed_cases=case + 1)
             length = env.episode_length
 

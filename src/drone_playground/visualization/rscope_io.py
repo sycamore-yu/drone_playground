@@ -285,7 +285,7 @@ def trim_episode(trace: dict[str, Any], case: int) -> dict[str, Any]:
     return take(trace)
 
 
-def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
+def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualization=None) -> Path:
     """Export one rollout with rscope's native atomic writer and a self-contained model bundle.
 
     Args:
@@ -296,9 +296,12 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
     Returns:
         Path to the exported ``.mj_unroll`` file.
     """
-    from rscope import rscope_utils
-
     directory = Path(directory).resolve()
+    layers = (
+        visualization if visualization is not None else getattr(sim, "replay_visualization", None)
+    )
+    if layers is not None and layers.planning and np.asarray(trace["pos"]).shape[1] != 1:
+        raise ValueError("Planner layers require one episode; export each case separately")
     if "active" in trace:
         # A file contains complete trajectories with a single time dimension.
         # Split unequal episode lengths so padding never appears in a replay.
@@ -308,7 +311,7 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
             single = trim_episode(trace, case)
             single.pop("active", None)
             target = directory if case == 0 else directory / f"case-{case:03d}"
-            path = export_rollout(sim, target, single)
+            path = export_rollout(sim, target, single, visualization=visualization)
             paths.append(
                 dict(
                     case=case,
@@ -330,6 +333,26 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any]) -> Path:
         )
     xml_path, model_assets = _model_bundle(sim, directory)
     native_trace, obs, reward = _native_rollout(sim, trace)
+    if layers is not None:
+        xml = ET.fromstring(xml_path.read_bytes())
+        mocap_id = int(np.asarray(sim.data.core.drone_mocap_ids).reshape(-1)[0])
+        body_id = int(np.flatnonzero(sim.mj_model.body_mocapid == mocap_id)[0])
+        body_name = sim.mj_model.body(body_id).name
+        drone_body = xml.find(f".//body[@name='{body_name}']")
+        if drone_body is None:
+            raise ValueError("Replay model is missing its drone mocap body")
+        metadata = layers.add_to_model(xml, native_trace, drone_body)
+        _atomic_write_bytes(xml_path, ET.tostring(xml, encoding="utf-8"))
+        _atomic_write_bytes(
+            directory / "replay-visualization.json",
+            (json.dumps(metadata, indent=2) + "\n").encode(),
+        )
+
+    return _write_native(directory, xml_path, model_assets, native_trace, obs, reward)
+
+
+def _write_native(directory, xml_path, model_assets, native_trace, obs, reward):
+    from rscope import rscope_utils
 
     with _exclusive_rscope():
         stage_root = Path(tempfile.mkdtemp(prefix=".rscope-export-", dir=directory.parent))
@@ -365,9 +388,10 @@ def _publication_files(directory: Path) -> list[Path]:
     xml = directory / "scene.xml"
     if xml.is_file():
         files.append(xml)
-    identity = directory / "components.json"
-    if identity.is_file():
-        files.append(identity)
+    for name in ("components.json", "replay-visualization.json"):
+        identity = directory / name
+        if identity.is_file():
+            files.append(identity)
     assets = directory / "assets"
     if assets.is_dir():
         files.extend(sorted(path for path in assets.rglob("*") if path.is_file()))
@@ -519,3 +543,50 @@ def publish_snapshot(
         return {"status": "published", "directory": str(directory), "active_dir": str(active_dir)}
     except Exception as error:
         return {"status": "error", "error": repr(error), "directory": str(directory)}
+
+
+def enhance_replay(source: Path, directory: Path, visualization, *, drone_mocap_id=0) -> Path:
+    """Copy a trusted local RScope replay and add layers without reevaluating it."""
+    import hashlib
+    import pickle
+
+    import mujoco
+
+    source, directory = Path(source).resolve(), Path(directory).resolve()
+    directory.mkdir(parents=True, exist_ok=False)
+    with source.open("rb") as handle:
+        recorded = pickle.load(handle)
+    with (source.parent / "rscope_meta.pkl").open("rb") as handle:
+        meta = pickle.load(handle)
+    assets = dict(meta["model_assets"])
+    xml_name = Path(meta["xml_path"]).name
+    xml = ET.fromstring(assets[xml_name])
+    model = mujoco.MjModel.from_xml_string(assets[xml_name].decode(), assets=assets)
+    ids = np.flatnonzero(model.body_mocapid == drone_mocap_id)
+    if len(ids) != 1:
+        raise ValueError("Replay must identify one original drone mocap body")
+    body = xml.find(f".//body[@name='{model.body(int(ids[0])).name}']")
+    native_trace = {
+        name: np.array(getattr(recorded, name), copy=True)
+        for name in ("qpos", "qvel", "mocap_pos", "mocap_quat", "time")
+    }
+    native_trace["metrics"] = recorded.metrics
+    metadata = visualization.add_to_model(xml, native_trace, body)
+    metadata["source"] = dict(
+        file=str(source), sha256=hashlib.sha256(source.read_bytes()).hexdigest()
+    )
+    xml_path = directory / "scene.xml"
+    for name, payload in assets.items():
+        if name == xml_name:
+            continue
+        relative = Path(name)
+        if relative.is_absolute() or ".." in relative.parts:
+            continue  # In-memory assets remain available under their original keys.
+        _atomic_write_bytes(directory / relative, payload)
+    _atomic_write_bytes(xml_path, ET.tostring(xml, encoding="utf-8"))
+    _atomic_write_bytes(
+        directory / "replay-visualization.json", (json.dumps(metadata, indent=2) + "\n").encode()
+    )
+    if (source.parent / "components.json").is_file():
+        shutil.copy2(source.parent / "components.json", directory / "components.json")
+    return _write_native(directory, xml_path, assets, native_trace, recorded.obs, recorded.reward)

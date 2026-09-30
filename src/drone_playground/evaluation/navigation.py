@@ -209,6 +209,7 @@ def select_episodes(report: dict, count: int = 4) -> dict[str, list[int]]:
 def export_navigation_replays(
     env, traces: dict, directory: Path, count: int = 4, case_indices: dict | None = None,
     scenario_groups: dict | None = None,
+    decision_root: Path | None = None,
 ) -> list[dict]:
     """Write one self-contained rscope replay per difficulty cell."""
     from drone_playground.visualization.navigation_scene import (
@@ -253,6 +254,13 @@ def export_navigation_replays(
             }
             target = directory / difficulty / f"case-{case:03d}"
             replay_model = create_replay_model(env, scenario_id)
+            if decision_root is not None:
+                from drone_playground.evaluation.decision_archive import load_native_decisions
+                from drone_playground.visualization.layers import layers_from_decisions
+
+                replay_model.replay_visualization = layers_from_decisions(
+                    load_native_decisions(decision_root / difficulty / str(case) / 'decision-trace'),
+                    sensor=replay_model.replay_visualization.sensor)
             path = export_rollout(replay_model, target, single)
             published.append(
                 {

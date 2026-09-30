@@ -1,0 +1,482 @@
+{
+  "native": [
+    {
+      "algorithm": "super",
+      "difficulty": "easy",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/super/easy/2026_09_30-07_45_06.mj_unroll",
+      "sha256": "9a5db797ad9c7f10e321769b20bd0668903f2997a155793f3c920e27a41fc594",
+      "decision_frames": 1176,
+      "geometry_frames": 1165,
+      "trajectory_frames": 1165,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 270,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "MID360 ideal range sensor",
+          "kind": "lidar",
+          "near_m": 0.1,
+          "far_m": 200.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            -7.212297,
+            52.164
+          ],
+          "rotation_body_from_sensor": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 334,
+            "kind": "trajectory"
+          },
+          {
+            "name": "stage-output/sfc/candidate",
+            "segments": 135,
+            "received_snapshots": 611,
+            "kind": "sfc"
+          },
+          {
+            "name": "stage-output/sfc/backup",
+            "segments": 72,
+            "received_snapshots": 404,
+            "kind": "sfc"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/easy/case-000/2026_09_30-07_45_06.mj_unroll",
+          "sha256": "9a5db797ad9c7f10e321769b20bd0668903f2997a155793f3c920e27a41fc594",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/easy/case-000/2026_09_30-07_45_06.mj_unroll",
+      "model_sha256": "11fff09733065a2c412b685ba89cd37730d7d3874b240e645bf79dfc721ae7f9",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    },
+    {
+      "algorithm": "super",
+      "difficulty": "medium",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/super/medium/2026_09_30-07_47_36.mj_unroll",
+      "sha256": "0c866dd54850257b5b21da8db322f5a63041d322cc3a02b1fcf9732b422665f7",
+      "decision_frames": 1192,
+      "geometry_frames": 1180,
+      "trajectory_frames": 1179,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 324,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "MID360 ideal range sensor",
+          "kind": "lidar",
+          "near_m": 0.1,
+          "far_m": 200.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            -7.212297,
+            52.164
+          ],
+          "rotation_body_from_sensor": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/sfc/candidate",
+            "segments": 159,
+            "received_snapshots": 598,
+            "kind": "sfc"
+          },
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 334,
+            "kind": "trajectory"
+          },
+          {
+            "name": "stage-output/sfc/backup",
+            "segments": 102,
+            "received_snapshots": 403,
+            "kind": "sfc"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/medium/case-000/2026_09_30-07_47_36.mj_unroll",
+          "sha256": "0c866dd54850257b5b21da8db322f5a63041d322cc3a02b1fcf9732b422665f7",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/medium/case-000/2026_09_30-07_47_36.mj_unroll",
+      "model_sha256": "33f6f992cb3f2a365182609a9e0a9e852c39c77c5cadd43c49fb7f6edd38dae9",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    },
+    {
+      "algorithm": "super",
+      "difficulty": "hard",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/super/hard/2026_09_30-07_50_13.mj_unroll",
+      "sha256": "0946102acc27b48b831e54042e6367be02651fc7bf74b1aac7ec12a991498f18",
+      "decision_frames": 1279,
+      "geometry_frames": 1267,
+      "trajectory_frames": 1266,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 318,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "MID360 ideal range sensor",
+          "kind": "lidar",
+          "near_m": 0.1,
+          "far_m": 200.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            -7.212297,
+            52.164
+          ],
+          "rotation_body_from_sensor": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/sfc/candidate",
+            "segments": 147,
+            "received_snapshots": 589,
+            "kind": "sfc"
+          },
+          {
+            "name": "stage-output/sfc/backup",
+            "segments": 108,
+            "received_snapshots": 420,
+            "kind": "sfc"
+          },
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 356,
+            "kind": "trajectory"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/hard/case-000/2026_09_30-07_50_13.mj_unroll",
+          "sha256": "0946102acc27b48b831e54042e6367be02651fc7bf74b1aac7ec12a991498f18",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-super-sfc-engineering-20260930/rollouts/hard/case-000/2026_09_30-07_50_13.mj_unroll",
+      "model_sha256": "14da1d1930f1fe6ead59e23b3f7c9d131d617dd587daff045af27a7909ec59f8",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    },
+    {
+      "algorithm": "ego",
+      "difficulty": "easy",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/ego/easy/2026_09_30-07_47_58.mj_unroll",
+      "sha256": "ce80d2bf90a13bc69718462d1cdab85a9833461cbdd0e69509a527417ddf215d",
+      "decision_frames": 2000,
+      "geometry_frames": 0,
+      "trajectory_frames": 1895,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 63,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "D435 ideal metric depth",
+          "kind": "depth",
+          "near_m": 0.1,
+          "far_m": 10.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            85.2,
+            69.18497971275337
+          ],
+          "rotation_body_from_sensor": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "translation_m": [
+            0.05,
+            0.0175,
+            0.0125
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 48,
+            "kind": "trajectory"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/easy/case-000/2026_09_30-07_47_58.mj_unroll",
+          "sha256": "ce80d2bf90a13bc69718462d1cdab85a9833461cbdd0e69509a527417ddf215d",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/easy/case-000/2026_09_30-07_47_58.mj_unroll",
+      "model_sha256": "9d72ea71770cc469e348b0ac092209712a53688a3896e50d540c379e5e6f8054",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    },
+    {
+      "algorithm": "ego",
+      "difficulty": "medium",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/ego/medium/2026_09_30-07_51_02.mj_unroll",
+      "sha256": "656e26018e0f6225059716b47fbf710948ca92781ea0e8c15ee49b0fb6dc3784",
+      "decision_frames": 1121,
+      "geometry_frames": 0,
+      "trajectory_frames": 1016,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 63,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "D435 ideal metric depth",
+          "kind": "depth",
+          "near_m": 0.1,
+          "far_m": 10.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            85.2,
+            69.18497971275337
+          ],
+          "rotation_body_from_sensor": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "translation_m": [
+            0.05,
+            0.0175,
+            0.0125
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 25,
+            "kind": "trajectory"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/medium/case-000/2026_09_30-07_51_02.mj_unroll",
+          "sha256": "656e26018e0f6225059716b47fbf710948ca92781ea0e8c15ee49b0fb6dc3784",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/medium/case-000/2026_09_30-07_51_02.mj_unroll",
+      "model_sha256": "d21a9a31473f022fe9b05ededa151e195b3409e44580b05894fe2f67bc57db2b",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    },
+    {
+      "algorithm": "ego",
+      "difficulty": "hard",
+      "replay": "experiments/tmp/260930/replay-visualization-20260930/native/ego/hard/2026_09_30-07_53_25.mj_unroll",
+      "sha256": "2d65db1942df7680d4426576cead168a3ecb7d152c47b5f4558bf535c64bf09d",
+      "decision_frames": 836,
+      "geometry_frames": 0,
+      "trajectory_frames": 732,
+      "rendered_curve_endpoint_error_m": 0.0,
+      "model_tendons": 63,
+      "metadata": {
+        "schema_version": 1,
+        "frame": "world",
+        "units": "m",
+        "sensor": {
+          "name": "D435 ideal metric depth",
+          "kind": "depth",
+          "near_m": 0.1,
+          "far_m": 10.0,
+          "display_range_m": 10.0,
+          "angles_deg": [
+            85.2,
+            69.18497971275337
+          ],
+          "rotation_body_from_sensor": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "translation_m": [
+            0.05,
+            0.0175,
+            0.0125
+          ],
+          "meaning": "unoccluded ideal envelope; display range may be clipped"
+        },
+        "layers": [
+          {
+            "name": "stage-output/trajectory",
+            "segments": 63,
+            "received_snapshots": 7,
+            "kind": "trajectory"
+          }
+        ],
+        "source": {
+          "file": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/hard/case-000/2026_09_30-07_53_25.mj_unroll",
+          "sha256": "2d65db1942df7680d4426576cead168a3ecb7d152c47b5f4558bf535c64bf09d",
+          "scope": "Replay byte-identical; refresh sensor styling through ReplayLayers"
+        }
+      },
+      "scope": "Engineering visualization only; not added to v1 quality matrix",
+      "original_engineering_replay": "experiments/tmp/260930/replay-ego-planning-engineering-20260930/rollouts/hard/case-000/2026_09_30-07_53_25.mj_unroll",
+      "model_sha256": "d7b8684836dbe73f08206859498716b7a1eb16eacfcb105c3816dc5ef0ca2677",
+      "original_replay_bytes_preserved": true,
+      "standard_reader_and_model_mocap_verified": true
+    }
+  ],
+  "targeted_tests": "62 passed; final protocol checks 37 passed; final export/reader checks 19 passed; Python3.8/future-preview checks 3 passed",
+  "full_suite": {
+    "passed": 556,
+    "subtests_passed": 5,
+    "warnings": 38,
+    "elapsed_seconds": 1782.57,
+    "log": "tmp/replay-full-suite.log"
+  },
+  "standard_rscope_readback": true,
+  "selected_result_files_digest_verified": 230,
+  "headless_previews": [
+    "super-all-layers.png",
+    "ego-planning.png",
+    "depth-bright.png",
+    "pointcloud-bright.png"
+  ],
+  "final_contract_checks": {
+    "passed": 37,
+    "deselected": 6,
+    "log": "tmp/replay-contract-final.log"
+  },
+  "enhanced_selected_replays": {
+    "count": 642,
+    "index": "experiments/tmp/260930/v1-enhanced-replays-20260930/index.json",
+    "index_sha256": "32e19c471da94b0a9f420a0ae68b7c782fa745c648bbd0ba32231e95890e5268",
+    "all_original_arrays_verified_equal": true,
+    "scope": "Sensor FOV only; missing historical planning/SFC not invented",
+    "enhanced_files_digest_reverified": 642
+  },
+  "final_export_checks": {
+    "passed": 19,
+    "elapsed_seconds": 7.3,
+    "log": "tmp/replay-export-final.log"
+  }
+}

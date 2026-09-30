@@ -25,7 +25,7 @@ class Fixture final : public drone_native::Algorithm {
     }
     capabilities.add_outputs(mode_ == "motion" ? "velocity_yaw" :
                              mode_ == "attitude" ? "attitude_thrust" :
-                             mode_ == "no_plan" ? "trajectory" : mode_);
+                             (mode_ == "no_plan" || mode_ == "visualized") ? "trajectory" : mode_);
     capabilities.set_derivatives("none");
     return capabilities;
   }
@@ -50,7 +50,7 @@ class Fixture final : public drone_native::Algorithm {
       } else {
         result.set_status(wire::NO_PLAN);
       }
-    } else if (mode_ == "trajectory") {
+    } else if (mode_ == "trajectory" || mode_ == "visualized") {
       auto* trajectory = result.mutable_trajectory();
       trajectory->set_start_time(request.header().simulation_time());
       auto* segment = trajectory->add_segments();
@@ -72,6 +72,20 @@ class Fixture final : public drone_native::Algorithm {
       command->set_kind("velocity_yaw");
       for (double value : {1.0, 2.0, 3.0, 0.0}) command->add_values(value);
     }
+    return result;
+  }
+  wire::PlannerGeometry Geometry(const wire::StepRequest& request) override {
+    wire::PlannerGeometry result;
+    if (mode_ != "visualized") return result;
+    result.set_frame("world");
+    result.set_generated_at(request.header().simulation_time());
+    result.set_valid_until(request.header().simulation_time() + 2.0);
+    auto* corridor = result.add_corridors();
+    corridor->set_name("candidate");
+    auto* poly = corridor->add_polytopes();
+    for (double value : {1.,0.,0.,-1., -1.,0.,0.,-1., 0.,1.,0.,-1.,
+                         0.,-1.,0.,-1., 0.,0.,1.,-1., 0.,0.,-1.,-1.})
+      poly->add_halfspaces(value);
     return result;
   }
  private:

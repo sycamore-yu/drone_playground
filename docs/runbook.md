@@ -135,3 +135,7 @@ python3 scripts/tools/summarize_final_acceptance.py \
 ```
 
 最后一条命令读取本地正式结果包，核对30个单元、训练来源、参数和回放摘要。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云任务已保存45000次完整状态并停止，见[冻结工作树生命周期](research/branch-lifecycle.md)。
+
+## 回放显示
+
+新导航回放自动显示实际深度／MID360视场；原生方法和模块链在保存真实输出时还显示规划轨迹及可选SFC。配套XML与mj_unroll必须一起保留。历史文件可复制增强，操作和数据合同见[回放可视化](research/replay-visualization.md)。工程示例在`experiments/tmp/260930/replay-visualization-20260930/README.md`；它们不增加正式质量通过数。

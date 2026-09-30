@@ -286,6 +286,19 @@ def test_solver_budget_does_not_publish_a_late_action(server):
         assert decision.status == "budget_exhausted" and decision.output is None
 
 
+def test_cpp_optional_corridor_geometry_uses_the_same_rpc_and_budget(server):
+    with NativeClient('visualized', command=server) as client:
+        client.reset()
+        result = client.step(time=0., state=state())
+        assert isinstance(result.output, Trajectory)
+        assert result.planner_geometry.corridors[0].name == 'candidate'
+        assert result.planner_geometry.corridors[0].polytopes[0].halfspaces.shape == (6,4)
+    with NativeClient('visualized', command=server, parameters={'delay_seconds':.05}) as client:
+        client.reset()
+        result = client.step(time=0., state=state(), timeout=2., solve_budget_seconds=.01)
+        assert result.output is None and result.planner_geometry is None
+
+
 def test_ego_fixed_map_covers_task_world_bounds(monkeypatch, tmp_path):
     import importlib.util
     import xml.etree.ElementTree as ET

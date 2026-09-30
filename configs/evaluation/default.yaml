@@ -3,3 +3,5 @@ split: heldout
 episodes: 128
 seed_start: null
 output: null
+# Capture optional planner inspection geometry independently of commands.
+record_planner_visualization: true

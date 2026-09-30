@@ -206,7 +206,9 @@ def evaluate_native(config, root: Path, run_id: str):
                     worker.start(
                         env.sensor_calibration, env.bank.goal[scenario_id], settings.get("limits"),
                         task_adapter=dict(world_low=np.asarray(env.bank.world_low).tolist(),
-                                          world_high=np.asarray(env.bank.world_high).tolist()),
+                                          world_high=np.asarray(env.bank.world_high).tolist(),
+                                          record_planner_visualization=config['evaluation'].get(
+                                              'record_planner_visualization', True)),
                     )
 
                     def decide(current, tick):
@@ -337,6 +339,7 @@ def evaluate_native(config, root: Path, run_id: str):
                     export_navigation_replays(
                         env, {difficulty: trace}, rec.path / "rollouts", case_indices=selection,
                         scenario_groups=scenario_groups,
+                        decision_root=rec.path / 'native',
                     )
                     save_report(rec.path / "eval" / (difficulty + ".json"), cells[difficulty])
             except BaseException:

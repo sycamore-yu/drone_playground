@@ -17,6 +17,8 @@ class Algorithm {
   virtual wire::Capabilities Initialize(const wire::InitializeRequest&) = 0;
   virtual void Reset(const wire::ResetRequest&) = 0;
   virtual wire::Decision Step(const wire::StepRequest&) = 0;
+  // Optional inspection in world metres. Existing algorithms need no override.
+  virtual wire::PlannerGeometry Geometry(const wire::StepRequest&) { return {}; }
   virtual void Close() {}
 };
 

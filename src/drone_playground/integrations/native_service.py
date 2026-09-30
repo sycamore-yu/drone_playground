@@ -105,6 +105,8 @@ class NativeServicePlanner:
         return dict(
             output=output,
             plan_id=decision.plan_id,
+            generated_at=decision.generated_at,
+            planner_geometry=decision.planner_geometry,
             valid_until=decision.valid_until,
             reference=reference,
             trajectory=curve,

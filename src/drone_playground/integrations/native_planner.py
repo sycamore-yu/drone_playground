@@ -134,6 +134,10 @@ class NativePlanner:
         return dict(
             reference=result.sampled_reference,
             trajectory=result.output,
+            plan_id=result.plan_id,
+            generated_at=result.generated_at,
+            valid_until=result.valid_until,
+            planner_geometry=result.planner_geometry,
             decision_status=result.status,
             **result.diagnostics,
         )

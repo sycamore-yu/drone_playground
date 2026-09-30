@@ -133,6 +133,30 @@ message StepResponse {
   // Optional original execution-server sample for reproduction. This is not a
   // future trajectory and must never be repeated to construct an MPC horizon.
   TrackingReference sampled_reference = 4;
+  // Optional inspection only. Geometry is never an executable output or a
+  // safety certificate. Old clients/services may omit this field.
+  PlannerGeometry planner_geometry = 5;
+}
+message ConvexPolytope {
+  // Exactly one representation: world vertices or row-major [M,4] planes
+  // with A*x+b <= 0. Geometry must be bounded with a 3D interior.
+  repeated Vec3 vertices = 1;
+  repeated double halfspaces = 2;
+}
+message SafeFlightCorridor {
+  string name = 1; // For example candidate, committed, backup.
+  repeated ConvexPolytope polytopes = 2;
+}
+message TrajectoryPreview {
+  string name = 1;
+  Trajectory trajectory = 2;
+}
+message PlannerGeometry {
+  string frame = 1; // world, right-handed z-up, metres.
+  double generated_at = 2; // Simulation time.
+  double valid_until = 3;
+  repeated SafeFlightCorridor corridors = 4;
+  repeated TrajectoryPreview trajectories = 5;
 }
 message TrackingReference {
   double time = 1;

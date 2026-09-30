@@ -20,11 +20,13 @@ from pathlib import Path
 
 from google.protobuf.json_format import MessageToDict
 
+from drone_playground.native.geometry import PlannerGeometry
 from drone_playground.native.proto import algorithm_pb2 as pb
 from drone_playground.native.ros_trajectory import ego_trajectory, super_trajectory
+from drone_playground.native.ros_visualization import corridor_from_markers
 from drone_playground.native.server import serve
 from drone_playground.native.waypoints import OrderedWaypointGoals
-from drone_playground.native.wire import decode_output, encode_output, vec3
+from drone_playground.native.wire import decode_output, encode_geometry, encode_output, vec3
 
 
 def stop(process):
@@ -159,7 +161,7 @@ def launch_file(method, calibration, goal, folder, limits=None, task_adapter=Non
             cmd_topic="/p5/command",
             mpc_cmd_topic="/p5/polynomial",
         )
-        cfg["super_planner"]["visualization_en"] = False
+        cfg["super_planner"]["visualization_en"] = bool(bounds.get("record_planner_visualization", False))
         cfg["traj_opt"]["boundary"].update(
             max_vel=limits["max_velocity_mps"], max_acc=limits["max_acceleration_mps2"]
         )
@@ -286,7 +288,8 @@ class RosAlgorithm:
                 ("waypoint", "/waypoint_generator/waypoints", PathMsg, False),
             )
         }
-        self.latest = dict(commands=0, trajectories=0, reference=None, trajectory=None, error=None)
+        self.latest = dict(commands=0, trajectories=0, reference=None, trajectory=None, error=None,
+                           corridors={})
         self.ticks = 0
         if not request.goal.positions:
             raise ValueError("ROS navigation requires a goal")
@@ -336,6 +339,25 @@ class RosAlgorithm:
                 rospy.Subscriber("/p5/polynomial", PolynomialTrajectory, trajectory, queue_size=1)
             )
         task = MessageToDict(request.task)
+        if self.method == "super" and task.get("record_planner_visualization", False):
+            from visualization_msgs.msg import MarkerArray
+
+            def corridor_callback(role):
+                def callback(msg):
+                    with self.lock:
+                        if self.epoch != epoch:
+                            return
+                        try:
+                            now = max(0., rospy.Time.now().to_sec() - 1.)
+                            value = corridor_from_markers(msg.markers, role)
+                            self.latest['corridors'][role] = (now, value)
+                        except Exception as exc:
+                            self.latest['error'] = repr(exc)
+                return callback
+
+            for topic, role in [('exp_sfc','candidate'),('backup_sfc','backup')]:
+                self.subscribers.append(rospy.Subscriber(
+                    '/fsm_node/visualization/'+topic, MarkerArray, corridor_callback(role), queue_size=2))
         if self.upstream_waypoints:
             task["interactive_goals"] = True
         launch = launch_file(
@@ -453,6 +475,7 @@ class RosAlgorithm:
         time.sleep(min(0.01, request.solve_budget_seconds))
         with self.lock:
             latest = self.latest.copy()
+            corridors = list(self.latest['corridors'].values())
         if latest["error"]:
             raise ValueError(latest["error"])
         response = pb.StepResponse(
@@ -461,6 +484,13 @@ class RosAlgorithm:
         if self.upstream_waypoints:
             response.diagnostics["waypoint_index"] = self.route.index
         curve, now = latest["trajectory"], request.header.simulation_time
+        # Marker topics inspect asynchronous candidate/backup work, not a proof
+        # that this corridor belongs to the committed executable polynomial.
+        current = [(stamp, value) for stamp, value in corridors if stamp <= now <= stamp + .5]
+        if current:
+            geometry = PlannerGeometry(max(stamp for stamp, _ in current),
+                min(stamp+.5 for stamp, _ in current), tuple(value for _, value in current))
+            response.planner_geometry.CopyFrom(encode_geometry(geometry))
         if curve is not None and curve.start_time <= now <= curve.end_time:
             response.decision.CopyFrom(
                 pb.Decision(

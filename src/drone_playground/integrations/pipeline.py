@@ -276,7 +276,7 @@ class PipelinePlanner:
             raise ValueError("Pipeline clock must advance on execution ticks; reset starts a new episode")
         self.last_tick = tick
         upstream, identity = None, []
-        reply = None
+        reply, stages = None, []
         try:
             for index, module in enumerate(self.modules):
                 if tick >= self.next_ticks[index]:
@@ -288,6 +288,7 @@ class PipelinePlanner:
                     reply = self.cached[index]
                     if reply.get("output") is not None and reply["valid_until"] < packet["time"]:
                         reply = dict(output=None, decision_status="no_plan", expired_stage=index)
+                stages.append(dict(reply, stage=index))
                 upstream = reply.get("output")
                 if upstream is None:
                     break
@@ -308,6 +309,7 @@ class PipelinePlanner:
                         reference["yaw"] = Rotation.from_quat(packet["quaternion"]).as_euler("xyz")[2]
                     self.trajectories.add(plan_id)
             return dict(reply, output=upstream, reference=reference, trajectory=curve,
+                        stages=stages,
                         plan_id=plan_id, commands=self.commands, plans=len(self.plans),
                         trajectories=len(self.trajectories))
         finally:
