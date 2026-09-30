@@ -1,0 +1,165 @@
+{
+  "source_revision": "927f8a7",
+  "run_id": "navigation-stage2-snapshot-review-20260930",
+  "runtime_tree": "release-stage2-20260930",
+  "mode": "read-only development reevaluation",
+  "devices": "CUDA RTX4090",
+  "training_updates": 0,
+  "development_seeds": [
+    50000,
+    50063
+  ],
+  "repeats_per_scene": 8,
+  "episodes_per_snapshot": 64,
+  "snapshots": 45,
+  "episode_evaluations": 2880,
+  "scratch_only": true,
+  "original_selections_unchanged": true,
+  "results": [
+    {
+      "source_run": "release-pilot-depth-navigation-seed0-t0-20260929",
+      "snapshots": 9,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/drone_playground/experiments/release-pilot-depth-navigation-seed0-t0-20260929/training-state/update-0000750.pkl",
+        "updates": 750,
+        "score": [
+          4,
+          60
+        ],
+        "pilot_objective": 0.547945205479452,
+        "worst_scene_success_rate": 0.5,
+        "overall_success_rate": 0.9375,
+        "quality_passed": false,
+        "parameter_sha256": "6933fee55c3a6bb8eb8edcceab0a1ad618246f58462d716654af43089860a4f8",
+        "report": "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000750.json"
+      },
+      "original_best_sha256": "d7106b1c66d7085aacdc04549c6d8f392fd12b9b6a56a0f057244c082f09fae4"
+    },
+    {
+      "source_run": "release-depth-confirmation-20260929-depth-navigation-seed1-train",
+      "snapshots": 9,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/release-navigation-20260929/experiments/release-depth-confirmation-20260929-depth-navigation-seed1-train/training-state/update-0001000.pkl",
+        "updates": 1000,
+        "score": [
+          1,
+          53
+        ],
+        "pilot_objective": 0.20205479452054795,
+        "worst_scene_success_rate": 0.125,
+        "overall_success_rate": 0.828125,
+        "quality_passed": false,
+        "parameter_sha256": "598394b77df913a9af140b50705f2aeff2e154e75015822384ce2022e225a3b0",
+        "report": "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0001000.json"
+      },
+      "original_best_sha256": "ba7ba69bcbfe99b03b0c888d0bb9aba43d6ac268c7150f63a01ca13aeceac650"
+    },
+    {
+      "source_run": "release-depth-confirmation-20260929-depth-navigation-seed2-train",
+      "snapshots": 9,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/release-navigation-20260929/experiments/release-depth-confirmation-20260929-depth-navigation-seed2-train/training-state/update-0000625.pkl",
+        "updates": 625,
+        "score": [
+          0,
+          49
+        ],
+        "pilot_objective": 0.0839041095890411,
+        "worst_scene_success_rate": 0.0,
+        "overall_success_rate": 0.765625,
+        "quality_passed": false,
+        "parameter_sha256": "504ca63c0d348b73fa13853cd5745a95208c6f06690b0f1ccc0988e483bc895f",
+        "report": "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000625.json"
+      },
+      "original_best_sha256": "292d1a3aebcb8ac46d140b71c4b72a863525002579baac41086494fd4f1ac124"
+    },
+    {
+      "source_run": "release-pilot-pointcloud-navigation-seed0-t0-20260929",
+      "snapshots": 9,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/drone_playground/experiments/release-pilot-pointcloud-navigation-seed0-t0-20260929/training-state/update-0000000.pkl",
+        "updates": 0,
+        "score": [
+          0,
+          0
+        ],
+        "pilot_objective": 0.0,
+        "worst_scene_success_rate": 0.0,
+        "overall_success_rate": 0.0,
+        "quality_passed": false,
+        "parameter_sha256": "a8112332daf7eba1aebe224a582c45dae79499676f386a5cafa729ab5808343d",
+        "report": "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000000.json"
+      },
+      "original_best_sha256": "fc8a1de20dee96137e53f6edee38863a57e11b4b03423504522c0f62b8da8710"
+    },
+    {
+      "source_run": "release-pilot-pointcloud-navigation-seed0-t1-20260929",
+      "snapshots": 9,
+      "selected": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/drone_playground/experiments/release-pilot-pointcloud-navigation-seed0-t1-20260929/training-state/update-0000000.pkl",
+        "updates": 0,
+        "score": [
+          0,
+          0
+        ],
+        "pilot_objective": 0.0,
+        "worst_scene_success_rate": 0.0,
+        "overall_success_rate": 0.0,
+        "quality_passed": false,
+        "parameter_sha256": "a8112332daf7eba1aebe224a582c45dae79499676f386a5cafa729ab5808343d",
+        "report": "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000000.json"
+      },
+      "original_best_sha256": "1334eee11253af38e621aa75024ff1fa41151fcad0229ef81de60df2069f83ec"
+    }
+  ],
+  "files": {
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000000.json": "bb464a37da5add4799f7b6051ac7f6ce68671f9160e1aea4f14a91c27d54b4bb",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000125.json": "84818a154e007a16fb7632e369343016643e206f2177b0242327261630a1f80d",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000250.json": "64061d6747c194fdb061bd5308dc8208fea2f0d4cfc3c1fb272a305488b14d44",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000375.json": "cfdf4b8eeb9ed317469fd980a7eb04b2e8aebe98d086734f9419a3083bb214b4",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000500.json": "a0d5602bfc768a367286dbae54570c5d4325d6f96a1a6046428e36b8cf324937",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000625.json": "b52aa914406f59b755f9e01167adae725a2c67c2f51a12267734b387236b8097",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000750.json": "3c98ef15c70430087e64e7c909f12c00f0ca9219b1c79890e6e27512cde327e2",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0000875.json": "86980013e172ef5cb6a8f23832651a7e1635c6b7938ce9f4dc1a8e3443e7177d",
+    "eval/release-pilot-depth-navigation-seed0-t0-20260929/update-0001000.json": "6dea3503ab490c6222c995fc1426391a1efe02f75d616b04a0d5cd42d6f0e7df",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000000.json": "82d5453fbd35f397ebfa6209f3ad67bbd17aa8e37b46ff65e517a0d1fd718cf5",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000125.json": "f1a193078ee59c1dd0ce55618da707c93c1df383347667e60464d4e1670b0f35",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000250.json": "94a8033f41b16a69f5d7a7422a2a7c6ad30939a0455722418567cbb851f54fb3",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000375.json": "852bb81e38d42abfebd39b7854f35c6a14ffe272680f490cea6ed23fbcbc9d6e",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000500.json": "cf8a5ffe45fae2ca749ed0e58e509385273e59c7f8419b0c74f0ec2e609bcbd9",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000625.json": "bf54410a67cd6e4b2a9bc9268fc0169481a3b16d3e4d81404ae7fcc1793373b0",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000750.json": "60b9c9ce472bb86964a3dcb4acd0aa28815fae3002cc4d58f2025ab26a1ab929",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0000875.json": "6a80412138fe96cf38c70803364d5cbe2c52958f44cc73ef1ebc37251b963165",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed1-train/update-0001000.json": "4289faf15f292c1b44740e93419e4bca626d86cd9cafed145361de21bc789e43",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000000.json": "86d6689627a30bbb72794e8be9a9cfc5b9b8821b8642c749773c919422dcb038",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000125.json": "0ef7f9094d9fb28161477f9c58b855430d1fa6ef2d0b79f2da3ee11480446186",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000250.json": "ff15abb773fdcfd937964165d661d780d447a3e0239324f5cbdf2dd67b58ee0e",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000375.json": "e5b79050ce00fde880c13cac5fe666d7d1ec6b580f03fed9a37bec222af649e5",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000500.json": "581d63a1be5e007f241eac2f32099ac468f030150d0a487a9ac157035d16b596",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000625.json": "393baaf6039c1bd09f09abbc040ff5f3fca6811f839f5d32a3db5e7d9bc4850d",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000750.json": "42f8df94346a7d2284237f615b96f6de9647183f1e1543141ab95bef0f9acbe6",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0000875.json": "2881f61000a2656d73c60086349c2009f0fd6ab7ba2648ea2747955fd42b223f",
+    "eval/release-depth-confirmation-20260929-depth-navigation-seed2-train/update-0001000.json": "52d844f298fdc8e4f1d3948fa442190718303dd88ed966eb9526faea2ba72084",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000000.json": "92c66f133f87479059cf71b6bd9310c8993c1d8af2fd66d576ee30de8b065b43",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000125.json": "66c34b33f9cafa16a0aac4bf3b8d0a15338901de8a29cab55edde11dfd39daee",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000250.json": "c3fd09fde98254aad35d4d4f14499ab7cdb437611d6269005ed2b5bad85f7795",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000375.json": "863f236cde4b61ad0c59af43a242ccbd32bcd8ffe6806aba34c4f2277a5dc789",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000500.json": "532f1009f0cbffcdd5322701f047c06e5d290799535f507b07f0807bdf47f162",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000625.json": "3bb94331f2e3b5995d659fdcd45bc6b56eadcd02a665c1cdb44bbee578c9eb10",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000750.json": "ec9c3a1d1a34cc074f1a0e0e1bcc325cbf9802d8601ae31566d7a3d4f0389853",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0000875.json": "dec9bf095bb7db1c0a3920da3433b1acf8003c59059b76d664096aa71433ed19",
+    "eval/release-pilot-pointcloud-navigation-seed0-t0-20260929/update-0001000.json": "0c86d681048680992d090e537abb9dbcf8e098e988a0587398d81ed18bc15e79",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000000.json": "82835aafe7379f66a8c5e5242b93e9fb0399d83e05d885588e0dd6d2378e3a80",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000125.json": "3c3df823dd76dc7f88a01c95abeb29a5c8403c0a0e0189495ea1002178fa77f1",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000250.json": "7ab42b9d8b30c5a5cf84cd60b9750c5e28034b714d6fea917d2a7a1cb3bd6865",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000375.json": "cdfdc5ee1fd38339f699e329dda812c245d54fd9d681cbe875c39402a710cdac",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000500.json": "d5c1ae654076c7323a8ad6906f006ec9ec28801dbd1fa70cf6d48a2b8598831a",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000625.json": "d8fe1e6a48a3cf9d3801c25137ea9ccf2a0862e91377d00546bea24551530ebf",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000750.json": "99c9720b879494a7890ec7c645b7d5cd6e6c3a8e679e5f834dc7200648a68d69",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0000875.json": "d090bf49527ae1b32df89944424091504184ce9286e47792d0c517a17cf7a0e2",
+    "eval/release-pilot-pointcloud-navigation-seed0-t1-20260929/update-0001000.json": "74953a1cdd9c01a30fa93711d93e4e7fdf86576302d6f7c6833c4a2f480d6c90"
+  },
+  "review_sha256": "6ca0e37eb0f1bd10ed61cc6ccde415a055b1ead795b9970b5c58b45b6a9b4a16",
+  "script_sha256": "cd426b1e018dd0816bed884406a14643f8d9c8af8701cf08b55a4838448e291d",
+  "caveat": "Development only; old formal results remain separate; no new quality cells confirmed"
+}
