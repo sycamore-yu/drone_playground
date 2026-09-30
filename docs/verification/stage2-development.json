@@ -75,6 +75,30 @@
         "launch.json": "39ecbfebf721a563b044681f4a0f70be961867bd8c813548d581f6fcba6e1c6b",
         "result.json": "ed23d7815affb51887b33ae4ed8d99d6900407dc7694611332eaacfdc333657f"
       }
+    },
+    {
+      "method": "shac-racing",
+      "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+      "trial": 1,
+      "num_envs": 128,
+      "horizon_length": 32,
+      "policy_updates": 1000,
+      "training_seed": 2,
+      "warm_start": null,
+      "resume": null,
+      "actor_learning_rate": 0.0003,
+      "critic_learning_rate": 0.003,
+      "actual_steps": 4096000,
+      "wall_seconds": 463.37654754007235,
+      "objective": 1.0,
+      "selected_step": 1024000,
+      "selected_updates": 250,
+      "development_successes": 32,
+      "development_trials": 32,
+      "artifacts": {
+        "launch.json": "1efec5e0062256f4527eafaa7b639595eb5ba923c65984c22e5d76721d6f8596",
+        "result.json": "eec0c8059b4f10abbc9febab62e327056041aede370e220a7708d618d671dfed"
+      }
     }
   ],
   "formal_confirmation_complete": false,
