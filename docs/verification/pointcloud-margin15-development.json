@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed_development_not_qualified",
   "authorized_by": "User2026-09-30 chooses safety margin 1.5m with unchanged network",
   "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
   "study": "pointcloud-navigation-primary",
@@ -25,7 +25,7 @@
   "scene_geometry": "Navigation8; unchanged training/development geometry",
   "criterion": "Six primary scenes individually >=90%; eight development cases per scene requires 8/8; S06/D06 reported only",
   "formal_confirmation": {
-    "status": "waiting_development",
+    "status": "development_not_qualified",
     "training_seeds": [
       50,
       51,
@@ -128,6 +128,220 @@
         "S06": 0.0
       },
       "intermediate_only": true
+    },
+    {
+      "report": "update-0000750.json",
+      "report_sha256": "e7a581705cba57e68f5ac4913c9d7305f273bd7f625604d7cd8e49700afbac51",
+      "score": [
+        0,
+        8
+      ],
+      "scene_success_rates": {
+        "D01": 0.0,
+        "D02": 0.0,
+        "D03": 0.125,
+        "D06": 0.0,
+        "S01": 0.0,
+        "S02": 0.875,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0001125.json",
+      "report_sha256": "6a960aef60c7fdb3aeddcddf9a5ad356905e3d52f6d5e17489c538c92602be8c",
+      "score": [
+        0,
+        8
+      ],
+      "scene_success_rates": {
+        "D01": 0.125,
+        "D02": 0.0,
+        "D03": 0.125,
+        "D06": 0.0,
+        "S01": 0.0,
+        "S02": 0.25,
+        "S03": 0.5,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0001500.json",
+      "report_sha256": "6253a34fe11d18d2ec7abd550724b309c3083d7a9745c09b57197af8b47e99df",
+      "score": [
+        3,
+        38
+      ],
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 0.375,
+        "D06": 0.75,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.375,
+        "S06": 0.125
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0001875.json",
+      "report_sha256": "ff03250fefa95d9a4bcc4be553702e98144001d7a0cd12947107836d4f687911",
+      "score": [
+        0,
+        26
+      ],
+      "scene_success_rates": {
+        "D01": 0.25,
+        "D02": 0.125,
+        "D03": 0.875,
+        "D06": 0.125,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.0,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0002250.json",
+      "report_sha256": "78475a6bbecd62f315c83c9a8252a7f3698c1e0779c5acf53d0d8ac34f2b470f",
+      "score": [
+        2,
+        41
+      ],
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 0.875,
+        "D06": 0.125,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.25,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0002625.json",
+      "report_sha256": "c581856ff39f0ca2bf6818a2a1b29fd630dba9a8392e3c7b0362740b1f22e4ef",
+      "score": [
+        2,
+        40
+      ],
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 0.75,
+        "D06": 0.625,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 0.25,
+        "S06": 0.0
+      },
+      "intermediate_only": true
+    },
+    {
+      "report": "update-0003000.json",
+      "report_sha256": "8b935aa60a298c36fd41651505c2b5239af0bca57b0aff3ae9bc3f4c8abdfba8",
+      "score": [
+        7,
+        47
+      ],
+      "scene_success_rates": {
+        "D01": 1.0,
+        "D02": 1.0,
+        "D03": 0.875,
+        "D06": 1.0,
+        "S01": 1.0,
+        "S02": 1.0,
+        "S03": 1.0,
+        "S06": 0.25
+      },
+      "intermediate_only": false
     }
-  ]
+  ],
+  "actual_updates": 3000,
+  "actual_steps": 3072000,
+  "elapsed_seconds": 1969.389140554238,
+  "selected": {
+    "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/drone_playground/navigation-margin15-20260930/experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/training-state/update-0003000.pkl",
+    "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
+    "score": [
+      7,
+      47
+    ],
+    "selection_split": "dev",
+    "updates": 3000
+  },
+  "scene_counts": {
+    "S01": [
+      8,
+      8
+    ],
+    "S02": [
+      8,
+      8
+    ],
+    "S03": [
+      8,
+      8
+    ],
+    "S06": [
+      2,
+      8
+    ],
+    "D01": [
+      8,
+      8
+    ],
+    "D02": [
+      8,
+      8
+    ],
+    "D03": [
+      7,
+      8
+    ],
+    "D06": [
+      8,
+      8
+    ]
+  },
+  "scene_success_rates": {
+    "S01": 1.0,
+    "S02": 1.0,
+    "S03": 1.0,
+    "S06": 0.25,
+    "D01": 1.0,
+    "D02": 1.0,
+    "D03": 0.875,
+    "D06": 1.0
+  },
+  "primary_arrived": 47,
+  "primary_trials": 48,
+  "whole_arrived": 57,
+  "whole_trials": 64,
+  "finished_at": "2026-09-30T07:11:40.859382+00:00",
+  "last_verified_state": {
+    "details": {},
+    "finished_at": "2026-09-30T07:11:40.859382+00:00",
+    "heartbeat_count": 32,
+    "heartbeat_interval_s": 60.0,
+    "phase": "development",
+    "process": {
+      "pid": 3282321,
+      "start_marker": "028528e0-c832-4b72-bfdf-a10d7c3e539a:3282321:256612357"
+    },
+    "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
+    "started_at": "2026-09-30T06:38:51.467984+00:00",
+    "status": "completed",
+    "step": 3072000,
+    "task_id": "navigation-convergence/pointcloud-training",
+    "updated_at": "2026-09-30T07:11:40.859382+00:00"
+  },
+  "result_sha256": "d83692af3eab68bbd135c20c4754885317b3c6c2b5b3e76a32559f1bf5229883",
+  "limitation": "D03 7/8 is below the per-scene 90% gate. No formal confirmation launched."
 }

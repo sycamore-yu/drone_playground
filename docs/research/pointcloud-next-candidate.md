@@ -22,6 +22,6 @@
 
 依据为[单回合诊断](../verification/pointcloud-d02-bar-diagnostic.json)：D02 seed50005在9.594秒碰撞静态横杆，9.0秒仅剩1.592m净空；横杆有76个有效回波、影响256/1024个最大池化通道，屏蔽横杆回波后编码相对L2变化0.375。爬升命令随后增加，但未及时越过。该证据支持验证更早惩罚近障状态，不证明安全余量一定解决D02，也不证明其他失败的根因。
 
-新运行已在RTX4090启动，源码固定为`8d9140e`；学习、环境及配置源码与上一轮`bf7bc08`相同，解析配置只差安全余量。optim-agent继承上一轮已完成记录，新增trial001，记录目标、命令和ask/tell；日期入口为`experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/`，搜索记录为同日`pointcloud-navigation-primary-search/`。启动身份与状态见[实验凭据](../verification/pointcloud-margin15-development.json)。当前最好结果仍保留上一轮2625次；新实验结束后按同一开发目标比较，不用未完成快照替换正式结果。
+新运行已在RTX4090启动，源码固定为`8d9140e`；学习、环境及配置源码与上一轮`bf7bc08`相同，解析配置只差安全余量。optim-agent继承上一轮已完成记录，新增trial001，记录目标、命令和ask/tell；日期入口为`experiments/tmp/260930/primary-pointcloud-margin15-seed0-t1-20260930/`，搜索记录为同日`pointcloud-navigation-primary-search/`。启动身份与状态见[实验凭据](../verification/pointcloud-margin15-development.json)。本轮已完成1969.39秒／3000更新／3,072,000决策步，选定3000次[7,47]优于上一轮[4,44]。D02升至8/8、D03为7/8，其他四个主要场景8/8；S06为2/8、D06为8/8。开发静态26/32、动态31/32，主要47/48；D03仍低于逐场景90%门槛，正式50／51／52未启动。新的最好开发权重已进入main_result，上一轮及全部快照保留；完整选定／最终状态已[备份并读回](../verification/pointcloud-margin15-backup.json)。
 
 选定策略每个主要场景8/8后，才启动新的训练种子50／51／52与80000–80199留出；否则保存开发失败，再讨论损失权重或训练状态覆盖。保持失败回合，不自动把开发成绩填入正式质量格。

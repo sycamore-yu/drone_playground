@@ -1,0 +1,47 @@
+{
+  "backup_directory": "/home/tong/tongworkspace/simulation_dev/.archives/drone_playground/pointcloud-margin15-20260930",
+  "created_utc": "2026-09-30T07:56:53.820193+00:00",
+  "updates": 3000,
+  "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
+  "complete_state_fields": [
+    "params",
+    "opt_state",
+    "key",
+    "updates"
+  ],
+  "complete_state_loaded": true,
+  "selected_is_final": true,
+  "files": [
+    {
+      "path": "training-state/update-0003000.pkl",
+      "sha256": "e1750add4300262fe2907943651e6530c4ba27667751b4a5cba98cb7b1b1f9d7"
+    },
+    {
+      "path": "training-state/update-0003000.json",
+      "sha256": "10496c2a4e0f9241abe93de66414166ad370cabf6a15443616956d0a610a8869"
+    },
+    {
+      "path": "resolved-config.json",
+      "sha256": "16915f4f1d635478653478b397278cdebc753f5ed694c218eec7372463f024f2"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "667cafaa494429ec47a835b8c3a1fd9e8fd02878e1514c63d7d48abd0f98036e"
+    },
+    {
+      "path": "result.json",
+      "sha256": "d83692af3eab68bbd135c20c4754885317b3c6c2b5b3e76a32559f1bf5229883"
+    },
+    {
+      "path": "best.json",
+      "sha256": "7ae346d7a95b29cbf5e27873c3979bb24c71aef58231350bbb0b1ee8a0f0c253"
+    },
+    {
+      "path": "eval/update-0003000.json",
+      "sha256": "8b935aa60a298c36fd41651505c2b5239af0bca57b0aff3ae9bc3f4c8abdfba8"
+    }
+  ],
+  "source_archive_sha256": "3aef39003fe94eef54620b62541d19331086c64bd68aa9cfdbfc6fee78d739ec",
+  "storage": "Independent directory on the same physical disk; not off-machine",
+  "scope": "Best development state only; not formal quality confirmation"
+}

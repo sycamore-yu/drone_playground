@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-30T06:29:06.697056+00:00",
+  "generated_utc": "2026-09-30T07:46:09.225149+00:00",
   "scope": "Current qualification under explicitly amended navigation criterion; original judgments retained. 14 quality-qualified cells plus two user-accepted EGO cells; pointcloud cells remain incomplete.",
   "passed_cells": 14,
   "required_cells": 18,
@@ -784,15 +784,15 @@
       "passed": false,
       "status": "development_not_confirmed",
       "development": {
-        "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+        "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
         "training_seed": 0,
-        "selected_updates": 2625,
-        "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+        "selected_updates": 3000,
+        "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
         "scene_success_rates": {
           "S01": 1.0,
           "S02": 1.0,
           "S03": 1.0,
-          "S06": 0.125
+          "S06": 0.25
         },
         "primary_scene_success_rates": {
           "S01": 1.0,
@@ -800,10 +800,35 @@
           "S03": 1.0
         },
         "repeats_per_scene": 8,
-        "scope": "Development only; not a formal three-training-seed acceptance"
+        "primary_arrived": 24,
+        "primary_num_trials": 24,
+        "arrived": 26,
+        "num_trials": 32,
+        "scope": "Development only; no formal three-training-seed acceptance"
       },
-      "evidence": "docs/verification/navigation-primary-development.json",
-      "result_directory": "experiments/main_result/v1-18-cells/13-pointcloud-static"
+      "evidence": "docs/verification/pointcloud-margin15-development.json",
+      "result_directory": "experiments/main_result/v1-18-cells/13-pointcloud-static",
+      "previous_development": [
+        {
+          "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+          "training_seed": 0,
+          "selected_updates": 2625,
+          "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+          "scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0,
+            "S06": 0.125
+          },
+          "primary_scene_success_rates": {
+            "S01": 1.0,
+            "S02": 1.0,
+            "S03": 1.0
+          },
+          "repeats_per_scene": 8,
+          "scope": "Development only; not a formal three-training-seed acceptance"
+        }
+      ]
     },
     {
       "method": "pointcloud",
@@ -811,26 +836,51 @@
       "passed": false,
       "status": "development_not_qualified",
       "development": {
-        "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+        "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
         "training_seed": 0,
-        "selected_updates": 2625,
-        "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+        "selected_updates": 3000,
+        "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
         "scene_success_rates": {
           "D01": 1.0,
-          "D02": 0.5,
-          "D03": 1.0,
-          "D06": 0.0
+          "D02": 1.0,
+          "D03": 0.875,
+          "D06": 1.0
         },
         "primary_scene_success_rates": {
           "D01": 1.0,
-          "D02": 0.5,
-          "D03": 1.0
+          "D02": 1.0,
+          "D03": 0.875
         },
         "repeats_per_scene": 8,
-        "scope": "Development only; not a formal three-training-seed acceptance"
+        "primary_arrived": 23,
+        "primary_num_trials": 24,
+        "arrived": 31,
+        "num_trials": 32,
+        "scope": "Development only; no formal three-training-seed acceptance"
       },
-      "evidence": "docs/verification/navigation-primary-development.json",
-      "result_directory": "experiments/main_result/v1-18-cells/14-pointcloud-dynamic"
+      "evidence": "docs/verification/pointcloud-margin15-development.json",
+      "result_directory": "experiments/main_result/v1-18-cells/14-pointcloud-dynamic",
+      "previous_development": [
+        {
+          "run_id": "primary-pointcloud-short32-seed0-t0-20260930",
+          "training_seed": 0,
+          "selected_updates": 2625,
+          "parameter_sha256": "ddf9dae52bbcd1437659633665938a5a6267a2f2e1d7945baa142cf421c15a70",
+          "scene_success_rates": {
+            "D01": 1.0,
+            "D02": 0.5,
+            "D03": 1.0,
+            "D06": 0.0
+          },
+          "primary_scene_success_rates": {
+            "D01": 1.0,
+            "D02": 0.5,
+            "D03": 1.0
+          },
+          "repeats_per_scene": 8,
+          "scope": "Development only; not a formal three-training-seed acceptance"
+        }
+      ]
     },
     {
       "method": "super",
@@ -1057,7 +1107,7 @@
       "release_requirement_satisfied": true,
       "acceptance": {
         "date": "2026-09-30",
-        "instruction": "EGO可以认为已经完成不用再调试",
+        "instruction": "EGO\u53ef\u4ee5\u8ba4\u4e3a\u5df2\u7ecf\u5b8c\u6210\u4e0d\u7528\u518d\u8c03\u8bd5",
         "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
       },
       "result_directory": "experiments/main_result/v1-18-cells/17-ego_planner-static"
@@ -1115,7 +1165,7 @@
       "release_requirement_satisfied": true,
       "acceptance": {
         "date": "2026-09-30",
-        "instruction": "EGO可以认为已经完成不用再调试",
+        "instruction": "EGO\u53ef\u4ee5\u8ba4\u4e3a\u5df2\u7ecf\u5b8c\u6210\u4e0d\u7528\u518d\u8c03\u8bd5",
         "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
       },
       "result_directory": "experiments/main_result/v1-18-cells/18-ego_planner-dynamic"
@@ -1297,7 +1347,7 @@
   "original_criterion_passed_cells": 12,
   "revised_criterion_passed_cells": 2,
   "navigation_criterion_amendment": {
-    "instruction": "如果只在D06、S06表现不好，而其他场景成功率90以上也可以认为通过验收",
+    "instruction": "\u5982\u679c\u53ea\u5728D06\u3001S06\u8868\u73b0\u4e0d\u597d\uff0c\u800c\u5176\u4ed6\u573a\u666f\u6210\u529f\u738790\u4ee5\u4e0a\u4e5f\u53ef\u4ee5\u8ba4\u4e3a\u901a\u8fc7\u9a8c\u6536",
     "date": "2026-09-30",
     "timing": "Criterion amended after original heldout results were available; disclosed retrospective assessment",
     "primary_scenes": [
