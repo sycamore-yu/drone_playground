@@ -454,7 +454,7 @@
     "log": "tmp/replay-full-suite.log"
   },
   "standard_rscope_readback": true,
-  "selected_result_files_digest_verified": 230,
+  "selected_result_files_digest_verified": 218,
   "headless_previews": [
     "super-all-layers.png",
     "ego-planning.png",
@@ -478,5 +478,19 @@
     "passed": 19,
     "elapsed_seconds": 7.3,
     "log": "tmp/replay-export-final.log"
-  }
+  },
+  "pointcloud_current_selection_paths": [
+    {
+      "cell": "13-pointcloud-static",
+      "retired": "experiments/tmp/260930/retired-selected-pointcloud/13-pointcloud-static/260930-seed0-dev-primary-pointcloud-short32-seed0-t0-20260930",
+      "current": "experiments/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev",
+      "run_id": "primary-pointcloud-margin15-seed0-t1-20260930"
+    },
+    {
+      "cell": "14-pointcloud-dynamic",
+      "retired": "experiments/tmp/260930/retired-selected-pointcloud/14-pointcloud-dynamic/260930-seed0-dev-primary-pointcloud-short32-seed0-t0-20260930",
+      "current": "experiments/main_result/v1-18-cells/14-pointcloud-dynamic/260930-seed0-dev",
+      "run_id": "primary-pointcloud-margin15-seed0-t1-20260930"
+    }
+  ]
 }
