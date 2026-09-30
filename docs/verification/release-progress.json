@@ -643,7 +643,7 @@
       "method": "ego_planner",
       "task": "static",
       "passed": false,
-      "status": "development_not_passed",
+      "status": "accepted_by_user",
       "development": {
         "run_id": "ego-speed2-inflation0199-static-dev4-adaptation-20260929",
         "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
@@ -688,13 +688,19 @@
           "result.json": "b926715cca30d013120ddec5353cf3ebee718d776dd8c9ac27bdf29741abf8a7",
           "traces/index.json": "5a5067bb4280536c73557ce62e59ec36f8489ac72c8fb37143da3a4e81b65de3"
         }
+      },
+      "release_requirement_satisfied": true,
+      "acceptance": {
+        "date": "2026-09-30",
+        "instruction": "EGO可以认为已经完成不用再调试",
+        "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
       }
     },
     {
       "method": "ego_planner",
       "task": "dynamic",
       "passed": false,
-      "status": "development_not_passed",
+      "status": "accepted_by_user",
       "development": {
         "run_id": "ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929",
         "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
@@ -739,6 +745,12 @@
           "result.json": "accdcc61c9e013f6bd55adfe8e36b309fc57cd9f40437c3337b62b37a6b7ce5b",
           "traces/index.json": "898375c2c6c4ba744e12977f590ecb37de36b8b5dee21cab545c3231f5aa222d"
         }
+      },
+      "release_requirement_satisfied": true,
+      "acceptance": {
+        "date": "2026-09-30",
+        "instruction": "EGO可以认为已经完成不用再调试",
+        "quality_waiver": "User accepts delivery; existing 3/4 development result retained, no formal 100-episode quality pass claimed"
       }
     }
   ],
@@ -894,5 +906,8 @@
       "sha256": "1505e6ecd8fff8fa0de4ed263e0ad6e5bd5c1dd3da5a4bdeaf05b1981f8cfa28"
     }
   ],
-  "confirmed_cells_for_current_runtime": 11
+  "confirmed_cells_for_current_runtime": 11,
+  "user_accepted_cells": 2,
+  "remaining_quality_cells": 5,
+  "release_requirement_satisfied_cells": 13
 }

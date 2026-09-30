@@ -2,6 +2,7 @@
 
 import copy
 import time
+from collections import Counter
 from pathlib import Path
 
 import jax
@@ -12,6 +13,30 @@ from hydra.utils import instantiate
 from drone_playground.environments.scenes.navigation import euclidean_norm
 from drone_playground.evaluation.pointcloud import export_case, summarize_trace
 from drone_playground.evaluation.tracking import save_report, tree_digest
+
+
+def navigation_development_selection(report):
+    """Frozen 64-case lexicographic objective; exact ties keep the earlier snapshot.
+
+    The integer scalar preserves worst-scene priority: one additional success in
+    the worst scene outweighs every possible change in total successes (0..64).
+    It is an optimization objective, not a success rate.
+    """
+    rows = report["episodes"]
+    expected = {prefix + suffix for prefix in ("S", "D") for suffix in ("01", "02", "03", "06")}
+    counts = Counter(row["scene_id"] for row in rows)
+    seeds = [row["seed"] for row in rows]
+    reset = report.get("initial_conditions")
+    if (report["num_trials"] != 64 or len(rows) != 64
+            or counts != dict.fromkeys(expected, 8) or len(set(seeds)) != 64
+            or not reset or reset["seeds"] != seeds):
+        raise ValueError("navigation-development-v2 requires eight independent resets per Navigation8 scene")
+    successes = {scene: sum(bool(row["arrived"]) for row in rows if row["scene_id"] == scene)
+                 for scene in expected}
+    worst, total = min(successes.values()), sum(successes.values())
+    return dict(score=[worst, total], pilot_objective=(65 * worst + total) / 584,
+                worst_scene_success_rate=worst / 8, overall_success_rate=total / 64,
+                selection_rule="navigation-development-v2")
 
 
 class PointCloudNavigationEvaluator:

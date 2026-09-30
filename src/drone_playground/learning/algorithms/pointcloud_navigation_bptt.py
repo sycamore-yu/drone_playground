@@ -85,7 +85,10 @@ def adaptation_contract(config):
 
 def train(config, root, run_id):
     from drone_playground.composition import build_environment
-    from drone_playground.evaluation.pointcloud_navigation import PointCloudNavigationEvaluator
+    from drone_playground.evaluation.pointcloud_navigation import (
+        PointCloudNavigationEvaluator,
+        navigation_development_selection,
+    )
     from drone_playground.runs.console import capture_console
     from drone_playground.runs.record import RunRecorder
 
@@ -139,9 +142,10 @@ def train(config, root, run_id):
     evaluator = PointCloudNavigationEvaluator(
         task,
         network,
-        20000,
+        int(settings.get("development_seed_start", 20000)),
         int(settings["development_episodes"]),
         config["evaluation"]["commanded_speed"],
+        settings.get("development_initial_conditions"),
     )
     milestones = {
         int(value) for value in np.linspace(first_update, stop, max(2, settings["num_evals"]))
@@ -202,6 +206,8 @@ def train(config, root, run_id):
                 if settings.get("development_metric") == "release-pilot-v1":
                     report["pilot_objective"] = min(report["scene_success_rates"].values())
                     report["selection_rule"] = "release-pilot-v1"
+                if settings.get("development_metric") == "navigation-development-v2":
+                    report.update(navigation_development_selection(report))
                 save_report(rec.path / "eval" / f"update-{updates:07d}.json", report)
                 remaining = float(np.mean([r["final_goal_distance_m"] for r in report["episodes"]]))
                 score = (
@@ -212,6 +218,8 @@ def train(config, root, run_id):
                 )
                 if settings.get("development_metric") == "release-pilot-v1":
                     score = (report["pilot_objective"],)
+                if settings.get("development_metric") == "navigation-development-v2":
+                    score = tuple(report["score"])
                 if best is None or score > tuple(best["score"]):
                     best = dict(
                         checkpoint=str(path.resolve()),

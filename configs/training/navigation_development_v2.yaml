@@ -1,0 +1,14 @@
+defaults:
+- release_pilot
+- _self_
+# Eight independent perturbations for each fixed Navigation8 scene.
+development_metric: navigation-development-v2
+development_episodes: 8
+development_seed_start: 50000
+development_initial_conditions:
+  name: navigation8-initial-v1
+  position_half_width_m: [0.25, 0.25, 0.1]
+  velocity_half_width_mps: [0.1, 0.1, 0.1]
+  yaw_half_width_rad: 0.08726646259971647
+  minimum_clearance_m: 0.15
+  position_candidates: 32
