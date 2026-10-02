@@ -1,0 +1,241 @@
+{
+  "protocol": "release-navigation-primary-v1",
+  "assessed_utc": "2026-09-30T04:09:46.632316+00:00",
+  "amendment": {
+    "instruction": "如果只在D06、S06表现不好，而其他场景成功率90以上也可以认为通过验收",
+    "date": "2026-09-30",
+    "timing": "Criterion amended after original heldout results were available; disclosed retrospective assessment",
+    "primary_scenes": [
+      "S01",
+      "S02",
+      "S03",
+      "D01",
+      "D02",
+      "D03"
+    ],
+    "extension_scenes": [
+      "S06",
+      "D06"
+    ],
+    "threshold_per_primary_scene": 0.9,
+    "extensions_reported_not_gated": true
+  },
+  "batch_id": "stage2-depth-confirmation-20260930",
+  "training_source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+  "original_assessment_path": "artifacts/verification/stage2-depth-confirmation.json",
+  "original_assessment_sha256": "302a90a10f06f8647ef4761d265b8747cb5b501f367bd8f927e4d6c51e404970",
+  "original_passed": false,
+  "selection_unchanged": true,
+  "no_new_training_or_evaluation": true,
+  "original_replays_previously_verified": 600,
+  "original_frames_previously_verified": 159661,
+  "replay_verification": "Original audited record reused; reports and authenticated artifact files rehashed here; no second replay export",
+  "num_trials_per_task_per_seed": 100,
+  "primary_trials_per_task_per_seed": 75,
+  "extension_trials_per_task_per_seed": 25,
+  "geometry_scope": "Fixed Navigation8 only; independent initial conditions and transport delays, no unseen-geometry claim",
+  "heldout_seed_range": [
+    60000,
+    60199
+  ],
+  "rows": [
+    {
+      "training_seed": 30,
+      "report_path": "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout/eval/report.json",
+      "report_sha256": "88eaf544dfdeda6ba93b3c71bf48d8128e83468d5eea8e3fff0c74d7cb7ac909",
+      "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+      "original_validation_passed": false,
+      "assessment": {
+        "protocol": "release-navigation-primary-v1",
+        "tasks": {
+          "static": {
+            "num_trials": 100,
+            "arrived": 80,
+            "success_rate": 0.8,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 0.2
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0
+            },
+            "extension_scene_success_rates": {
+              "S06": 0.2
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 1.0
+          },
+          "dynamic": {
+            "num_trials": 100,
+            "arrived": 84,
+            "success_rate": 0.84,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 0.96,
+              "D03": 0.96,
+              "D06": 0.44
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "D01": 1.0,
+              "D02": 0.96,
+              "D03": 0.96
+            },
+            "extension_scene_success_rates": {
+              "D06": 0.44
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 0.9733333333333334
+          }
+        },
+        "passed": true,
+        "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+        "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+        "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+      }
+    },
+    {
+      "training_seed": 31,
+      "report_path": "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout/eval/report.json",
+      "report_sha256": "2aefab7ec68292141079c739215cb916b9b0071a52b20c658515111c50414f44",
+      "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+      "original_validation_passed": true,
+      "assessment": {
+        "protocol": "release-navigation-primary-v1",
+        "tasks": {
+          "static": {
+            "num_trials": 100,
+            "arrived": 93,
+            "success_rate": 0.93,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 0.72
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0
+            },
+            "extension_scene_success_rates": {
+              "S06": 0.72
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 1.0
+          },
+          "dynamic": {
+            "num_trials": 100,
+            "arrived": 100,
+            "success_rate": 1.0,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0,
+              "D06": 1.0
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0
+            },
+            "extension_scene_success_rates": {
+              "D06": 1.0
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 1.0
+          }
+        },
+        "passed": true,
+        "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+        "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+        "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+      }
+    },
+    {
+      "training_seed": 32,
+      "report_path": "experiments/stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout/eval/report.json",
+      "report_sha256": "7635fad895c31e61908f8daf97c6c7df4a1a1934d1cc0a886faa7a2dc7cf7546",
+      "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+      "original_validation_passed": true,
+      "assessment": {
+        "protocol": "release-navigation-primary-v1",
+        "tasks": {
+          "static": {
+            "num_trials": 100,
+            "arrived": 100,
+            "success_rate": 1.0,
+            "scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0,
+              "S06": 1.0
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "S01": 1.0,
+              "S02": 1.0,
+              "S03": 1.0
+            },
+            "extension_scene_success_rates": {
+              "S06": 1.0
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 1.0
+          },
+          "dynamic": {
+            "num_trials": 100,
+            "arrived": 100,
+            "success_rate": 1.0,
+            "scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0,
+              "D06": 1.0
+            },
+            "passed": true,
+            "primary_scene_success_rates": {
+              "D01": 1.0,
+              "D02": 1.0,
+              "D03": 1.0
+            },
+            "extension_scene_success_rates": {
+              "D06": 1.0
+            },
+            "primary_num_trials": 75,
+            "extension_num_trials": 25,
+            "primary_success_rate": 1.0
+          }
+        },
+        "passed": true,
+        "geometry_scope": "Fixed Navigation8 only; no unseen-geometry claim",
+        "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+        "caveat": "Each learning cell additionally requires three training seeds; native solvers require a frozen configuration and runtime identity"
+      }
+    }
+  ],
+  "training_seeds": [
+    30,
+    31,
+    32
+  ],
+  "cells": {
+    "static": true,
+    "dynamic": true
+  },
+  "passed": true,
+  "validator_sha256": "1078b60e50e173964418cfb8601e05c3de9a0029e59e4627a68db19fd5b6b40c",
+  "audit_script_sha256": "ea36a4d80af22138d507c80192f52676cf0ac39c777507ca2494653e2e2c351a"
+}

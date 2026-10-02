@@ -5,12 +5,12 @@
 ## 环境准备
 
 ```bash
-python3 scripts/tools/fetch_sources.py
+python3 scripts/tools/setup.py sources
 pixi install --locked
 pixi run python -c "import jax; print(jax.devices())"
 ```
 
-固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow 和 LOTF。源码提交与补丁由 `third_party/sources.yaml` 记录，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
+固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow、LOTF 和 Brax。源码提交与补丁由 `patches/sources.json` 声明，`scripts/tools/setup.py` 负责准备和校验缓存，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
 `pixi run`会在Python启动前设置`SCIPY_ARRAY_API=1`。直接调用锁定解释器时也设置该变量，避免SciPy先导入后造成JAX姿态计算的Tracer转换错误。
 
@@ -25,20 +25,20 @@ python3 scripts/tools/export_source.py /tmp/drone-playground-source.tar.gz --rev
 ## 训练与恢复
 
 ```bash
-pixi run train method=learning/ppo env=hovering --cfg job
-pixi run train method=learning/ppo env=hovering runtime.device=gpu run_id=ppo-hover-new
-pixi run train method=learning/bptt env=tracking runtime.device=gpu run_id=bptt-tracking-new
-pixi run train method=learning/shac env=racing runtime.device=gpu run_id=shac-racing-new
+pixi run train experiment=control/ppo env=hovering --cfg job
+pixi run train experiment=control/ppo env=hovering runtime.device=gpu run_id=ppo-hover-new
+pixi run train experiment=control/bptt env=tracking runtime.device=gpu run_id=bptt-tracking-new
+pixi run train experiment=control/shac env=racing runtime.device=gpu run_id=shac-racing-new
 ```
 
 正式训练采用 GPU，并按显存与预算排队。先核对已有 `state.json`、`result.json` 和进程身份，再确定新运行或恢复。`training.warm_start` 表示参数热启动；具备完整状态恢复能力的训练器使用 `training.resume`。恢复时保持所记录的模型、网络、优化器及输入合同。
 
-新运行自动写入`experiments/tmp/YYMMDD/<run_id>/`，日期为UTC启动日期。读取状态可用`pixi run status --run-id=<标识>`，无需手动查找日期。旧报告和历史命令中的`experiments/<run_id>/...`引用由现役读取接口兼容定位，原始记录不改写。
+新运行自动写入`results/runs/<task>/<method>/<run_id>/`。Task／Method 来自解析配置，默认 `run_id` 为UTC时间戳加训练 seed；读取状态可用`pixi run status --run-id=<标识>`。检查点和评测报告属于该 run，选定结果由`results/selected/`引用，不再复制成另一棵目录。
 
 在 CUDA 可用的主机上，可用 `JAX_PLATFORMS=cuda,cpu` 将 GPU 设为 JAX 默认后端，同时允许代码显式使用 CPU；项目的 `runtime.device` 也应选择 `gpu`。例如：
 
 ```bash
-JAX_PLATFORMS=cuda,cpu pixi run train method=learning/ppo env=tracking \
+JAX_PLATFORMS=cuda,cpu pixi run train experiment=control/ppo env=tracking \
   runtime.device=gpu run_id=ppo-tracking-new
 ```
 
@@ -46,50 +46,75 @@ JAX_PLATFORMS=cuda,cpu pixi run train method=learning/ppo env=tracking \
 
 ```bash
 # 从已完成的正式参数启动另一组独立试验。
-pixi run train method=learning/bptt env=tracking \
-  training.warm_start=experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl \
+pixi run train experiment=control/bptt env=tracking \
+  training.warm_start=results/runs/tracking/bptt/<source-run>/checkpoints/<checkpoint>.pkl \
   training.num_envs=16 training.policy_updates=1024 algorithm.horizon_length=40 \
   runtime.device=gpu run_id=bptt-tracking-warm-start
 ```
 
-检查点恢复的具体配置兼容性由训练器核对。BPTT 的完整恢复检查原目标预算与行为配置，适用于原预算内的未完成阶段；已完成训练可通过参数热启动开展新试验。正式基线的完整训练命令保存在[历史命令索引](verification/final-acceptance/commands.md)；重新运行时使用独立标识和适当预算。
+检查点恢复的具体配置兼容性由训练器核对。BPTT 的完整恢复检查原目标预算与行为配置，适用于原预算内的未完成阶段；已完成训练可通过参数热启动开展新试验。正式基线的完整训练命令保存在[历史命令索引](../artifacts/verification/final-acceptance/commands.md)；重新运行时使用独立标识和适当预算。
+
+## 随机化与动力学组合
+
+随机化属于训练配置。以下命令展示参数位置，实际范围须匹配选定模型：
+
+```bash
+pixi run train experiment=control/bptt env=hovering \
+  training.domain_randomization.enabled=true \
+  '+training.observation_noise.position_std_m=0.02' \
+  '+training.reset_randomization.orientation_half_width_rad=[0.1,0.1,0.2]' \
+  '+training.command_distribution={kind:position,distribution:uniform,low:[-1,-1,1],high:[1,1,2]}' \
+  runtime.device=gpu run_id=randomized-hover
+
+# LOTF 是 dynamics source；任务、网络和训练器保持通用。
+pixi run train experiment=control/bptt env=tracking \
+  dynamics@env.dynamics=lotf_high_fidelity \
+  action/controller@env.action.controller=bodyrates \
+  env.action.command=thrust_bodyrates \
+  algorithm.gradient.transition=analytical_surrogate \
+  runtime.device=gpu run_id=lotf-tracking
+```
+
+将 Dynamics preset 改为 `lotf_simplified` 即使用简化动力学；前向模型与 `algorithm.gradient.transition` 的反向规则独立选择。Navigation 组合使用 `env.task.physics_freq=1000`，并在自定义评测下选择适合的协议；标准 Navigation8 的模型条件仍由原协议规定。模型拒绝没有物理作用的参数：拟合姿态与 LOTF simplified 不接受惯量 DR，PointMassLag 只接受 `motor_strength`／`lag` 倍率。外力、力矩使用 N／Nm，点质量使用加速度 m/s²；测量噪声和动作误差单独声明。
+
+初态分布由对应 experiment 的 `training.reset_randomization` 声明。`training.scene_distribution.type` 声明 fixed／generated／procedural，固定库和固定 command range 不叫 curriculum。
 
 ## 冻结评测与回放
 
 ```bash
 pixi run eval \
-  checkpoint=experiments/final-acceptance-bptt-tracking-t0/checkpoints/step-0000655360.pkl \
-  runtime.device=gpu evaluation.split=heldout evaluation.episodes=32 \
+  checkpoint=results/runs/tracking/bptt/<source-run>/checkpoints/<checkpoint>.pkl \
+  runtime.device=gpu evaluation.episodes=32 evaluation.record_replays=true \
   run_id=recheck-bptt-tracking
 
-pixi run play replay=experiments/tmp/260928/final-acceptance-heldout-bptt-tracking-v1/rollouts
-pixi run play replay=experiments/tmp/260928/final-acceptance-heldout-bptt-tracking-v1/rollouts \
-  visualization=headless
+pixi run play replay=results/runs/tracking/bptt/recheck-bptt-tracking/rollouts
+pixi run play replay=results/runs/tracking/bptt/recheck-bptt-tracking/rollouts \
+  visualization.publish=false
 ```
 
-RScope 回放使用同目录的轨迹、场景和元数据。查看已有轨迹直接选择 `replay`；冻结策略重新执行选择 `checkpoint`。每个回合保留真实活动区间和最终终止状态。
+数值报告和选模记录始终保存；普通 train/eval 的完整 RScope/MuJoCo replay 默认关闭，设置 `evaluation.record_replays=true` 才写入 `rollouts/`。Brax 训练显式启用 `training.publish_live=true` 时也会记录回放供实时查看。`play checkpoint=...` 自动记录本次执行轨迹；查看已有轨迹直接选择 `replay`。正式 Benchmark 由对应 `benchmarks/` specification 固定 cases、种子、预算与指标，不通过额外 Environment role 区分。
 
 ## 原生规划器与 MPC
 
 ```bash
 # 初次准备或明确重建 ROS 容器时执行。
-bash native_planners/setup.sh
+bash ros_integrations/ros1/setup.sh
 
-pixi run eval method=paper/super env=navigation/static \
-  evaluation=navigation_v2 evaluation.episodes=2 runtime.device=cpu \
+pixi run eval experiment=papers/super env=navigation/static \
+  +evaluation.protocol=benchmarks/navigation.yaml evaluation.episodes=2 runtime.device=cpu \
   run_id=super-static-new
 ```
 
-原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `native_planners/versions.env`、`native_planners/patches/` 及[原生集成说明](../native_planners/README.md)。
+原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `ros_integrations/ros1/versions.env`、`ros_integrations/ros1/patches/` 及[原生集成说明](../ros_integrations/ros1/README.md)。
 
 新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际收到的完整物理输出、执行参考、有效期和控制器生成的命令。相同Trajectory／Waypoint／Motion Cmd按内容摘要共用存储，`index.json`记录两个压缩文件的摘要、命令字段和SI单位；中断时也保留已收到的决策。
 
-原生与`pipeline`的悬停／跟踪／竞速评测使用`evaluation.seed_start`作为首个重置种子，显式的0也有效；留空时开发集从20000、留出集从30000开始。新的`eval/report.json`逐回合保存实际初始位置、速度、xyzw姿态，以及启用相应延迟模型时的`delay_requested_ms`和`delay_effective_ms`。旧版曾忽略自定义首种子，回归及已完成报告的影响检查见[重置合同凭据](verification/native-control-reset-contract.json)。
+原生与`pipeline`的悬停／跟踪／竞速评测使用`evaluation.seed_start`作为首个重置种子，显式的0也有效；留空时训练内 `checkpoint_eval` 从20000、最终 `benchmark` 从30000开始。新的`eval/report.json`逐回合保存实际初始位置、速度、xyzw姿态，以及启用相应延迟模型时的`delay_requested_ms`和`delay_effective_ms`。旧版曾忽略自定义首种子，回归及已完成报告的影响检查见[重置合同凭据](../artifacts/verification/native-control-reset-contract.json)。
 
 ```python
-from drone_playground.evaluation.decision_archive import load_native_decisions
+from drone_playground.artifacts.decisions import load_native_decisions
 
-for frame in load_native_decisions("experiments/<run>/native/hard/0/decision-trace"):
+for frame in load_native_decisions("results/runs/<task>/<method>/<run_id>/native/hard/0/decision-trace"):
     print(frame["tick"], frame["time"], frame["reply"].get("output"), frame["command"])
 ```
 
@@ -97,7 +122,7 @@ for frame in load_native_decisions("experiments/<run>/native/hard/0/decision-tra
 
 ```bash
 # 完整 acados 数值测试所需的局部依赖。
-bash scripts/tools/setup_acados.sh
+pixi run setup-acados
 JAX_PLATFORMS=cpu pixi run test
 ```
 
@@ -117,25 +142,21 @@ cmp assets/scenes/navigation/catalog.json tmp/navigation-catalog.json
 
 ## 维护检查
 
-本地第一版18格结果直接打开`experiments/main_result/v1-18-cells/README.md`。中间结果在`experiments/tmp/<日期>/`。每格的日期／种子目录包含报告、配置、选定权重和回放入口；`qualification.json`区分正式质量、开发结果及用户接受的例外。更新本地结果视图：
+本地第一版18格选择直接查看`results/selected/v1-18-cells.json`；真实执行位于`results/runs/<task>/<method>/<run_id>/`，预览、诊断和迁移历史位于`results/scratch/`。更新选择视图：
 
 ```bash
-pixi run python scripts/tools/organize_experiments.py \
-  --pointcloud-run primary-pointcloud-short32-seed0-t0-20260930 --apply
+pixi run python scripts/tools/organize_experiments.py --apply
 ```
 
-不带`--apply`仅查看迁移计划。该工具拒绝移动活跃运行；冻结工作树只链接，报告与权重不改写。目录组织与验收状态由[结果凭据](verification/experiment-layout.json)记录。
+Selection 只引用已有 run、report 和 checkpoint，不复制权重或回放。迁移前复制式结果包保留在`results/scratch/legacy/main_result/`作历史证据；清理 run 前先检查`selected/`引用。
 
 ```bash
 pixi run lint
 JAX_PLATFORMS=cpu pixi run test
-python3 scripts/tools/summarize_final_acceptance.py \
-  --selection docs/verification/final-acceptance/selection.json \
-  --output tmp/final-acceptance-check.json
 ```
 
-最后一条命令读取本地正式结果包，核对30个单元、训练来源、参数和回放摘要。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云任务已保存45000次完整状态并停止，见[冻结工作树生命周期](research/branch-lifecycle.md)。
+历史 final-acceptance 汇总器及对应一次性实验脚本已归档到 `tmp/retired-experiments/`，不再作为现役运行入口。源码克隆自身包含公开证据索引；完整产物检查需要对应结果包。原点云任务已保存45000次完整状态并停止，见[冻结工作树生命周期](notes/research/branch-lifecycle.md)。
 
 ## 回放显示
 
-新导航回放自动显示实际深度／MID360视场；原生方法和模块链在保存真实输出时还显示规划轨迹及可选SFC。配套XML与mj_unroll必须一起保留。历史文件可复制增强，操作和数据合同见[回放可视化](research/replay-visualization.md)。工程示例在`experiments/tmp/260930/replay-visualization-20260930/README.md`；它们不增加正式质量通过数。
+新导航回放自动显示实际深度／MID360视场；原生方法和模块链在保存真实输出时还显示规划轨迹及可选SFC。配套XML与mj_unroll必须一起保留。历史文件可复制增强，操作和数据合同见[回放可视化](notes/research/replay-visualization.md)。工程预览统一放在`results/scratch/previews/`或`results/scratch/replays/`；它们不增加正式质量通过数。

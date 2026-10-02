@@ -1,0 +1,675 @@
+{
+  "goal": "v1-18-cells",
+  "generated_utc": "2026-10-02T11:19:24.503963+00:00",
+  "origin": "legacy-main-result-import",
+  "legacy_index": "results/scratch/legacy/main_result/v1-18-cells/index.json",
+  "legacy_index_sha256": "b0aad96309f891977cd74d18b93f8c0960517cbb3c2e77192707ed9eeba91865",
+  "cells": [
+    {
+      "cell": "01-ppo-tracking",
+      "method": "ppo",
+      "task": "tracking",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed0-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0/original-run",
+          "training_seed": 0,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "9dce73ca3a2620dbb92804978902cae286738c6e1b7eed07f7e1effa5eb04ee7",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0/weights/step-0000524288.pkl",
+            "sha256": "9bbf509856f53283e8e7b6bd80f631d2fe66a432311700e826f7d992b9fca86c"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed1-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1/original-run",
+          "training_seed": 1,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "91967bfe7af81c5bcbcba34ea19e9c8c4b6f3b4772559dfc4a243bb7a2ff084e",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1/weights/step-0000524288.pkl",
+            "sha256": "138a6bad50e7ad775d1e85e328fa507956804c22bee592c71cd5763ef218c774"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-ppo-tracking-seed2-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2/original-run",
+          "training_seed": 2,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "12aece08c0c17b7b1548408605681ede46a021e4cb97de1019ba8e7b8c942cc8",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2/weights/step-0000524288.pkl",
+            "sha256": "6c65adab02cc9296b09d698ae8b3f6436f00660c197103be93c1befe9dc05026"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "02-ppo-racing",
+      "method": "ppo",
+      "task": "racing",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-ppo-racing-t1-confirmation-20260929-ppo-racing-seed10-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10/original-run",
+          "training_seed": 10,
+          "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+          "parameter_sha256": "6276496e3b3993ac92591f66d48c79a8fcdd89b25675e6ff98e53030df29ad4b",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10/weights/step-0001572864.pkl",
+            "sha256": "d64e6116027a5650613118e9450e2d1c2e925fad47aeae5f9b49c06556c488cf"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-ppo-racing-t1-confirmation-20260929-ppo-racing-seed11-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11/original-run",
+          "training_seed": 11,
+          "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+          "parameter_sha256": "663fb07144754f91a78b4a54d61a4446e4f1b827a4818975415bf85962a4cded",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11/weights/step-0002097152.pkl",
+            "sha256": "7b6d414f5c79561b49826a3ade9fe8db9299742cd7763034be54f3ca79b22500"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-ppo-racing-t1-confirmation-20260929-ppo-racing-seed12-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12/original-run",
+          "training_seed": 12,
+          "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+          "parameter_sha256": "b1edc5e488b44d89b902bf11f700c29e0fb89dea8631d5983f32c4bb2675e4dc",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12/weights/step-0001572864.pkl",
+            "sha256": "c889e8465d8caa9c8b0519205a938231af7f98651dc1b9434449c671e26a1c08"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "03-shac-tracking",
+      "method": "shac",
+      "task": "tracking",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed0-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0/original-run",
+          "training_seed": 0,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "efdc2e6a9d6e9333d5f8a02992dd3196b518a2e18195ca91b564091fb6d3ae52",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0/weights/step-0000512000.pkl",
+            "sha256": "dbabf8f7a31c48d6dd7a15eec2954dd44c957e39628b0c557dffa1ceeb87d636"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed1-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1/original-run",
+          "training_seed": 1,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "f234418671715159efe8c8762c69ce89ea3fd51ce14d26898ab73a6e3eaabd62",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1/weights/step-0000512000.pkl",
+            "sha256": "73c3e76409c207c9ac491036c51563df911bacd7a3253cb134d17da750be8423"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-shac-tracking-seed2-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2/original-run",
+          "training_seed": 2,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "23f5447ab66445d68e1050c5cb4f8bc24ff83f6945510b9076f80d71c037ad2a",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2/weights/step-0000512000.pkl",
+            "sha256": "dbc3c62a00783b08cb042db4a221689fc25b18bd21d94098e712cbf0347dfef5"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "04-shac-racing",
+      "method": "shac",
+      "task": "racing",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed30-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30/original-run",
+          "training_seed": 30,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "ba86450227eec1d7666d5a6865e7eeae4ffd83df24667e0214705bf55bc211d1",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30/weights/step-0001024000.pkl",
+            "sha256": "97d873a790a25021b27d2d2439c28b5537a8418963879bd80062e549aa011e1b"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed31-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31/original-run",
+          "training_seed": 31,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "1815032694520a154bc6b0b2dc8c872856b4151423befad96409329cfad1856d",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31/weights/step-0000512000.pkl",
+            "sha256": "3e07916a2460972468168e74ea2fb4c6f3d7427398d741d418286fd78a776550"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "stage2-shac-confirmation-20260930-shac-racing-seed32-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32/original-run",
+          "training_seed": 32,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "9928d60a08d47ad41fa5b53d1de8ef7feb629d8bee4a037fe05b97d8329b2f81",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32/weights/step-0001024000.pkl",
+            "sha256": "fc53b05be65c2a7c0df8ac0ae2818c02199d72fcc63aae6329b63dbbe56ebf41"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "05-bptt-tracking",
+      "method": "bptt",
+      "task": "tracking",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed0-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0/original-run",
+          "training_seed": 0,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "84ca7c379ff34229510caa18e2ebe522c0a424da022ed129b0525935b130fde8",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0/weights/step-0000512000.pkl",
+            "sha256": "40e99a020eee6440396d0a115a91efcdedd0541ba26af6792ff824108c54b214"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed1-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1/original-run",
+          "training_seed": 1,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "4bdf68ad5d9afa4c4445a9afba039660554e7b840fcc41c360fe09e2482d4e83",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1/weights/step-0000512000.pkl",
+            "sha256": "5666403a29f6179de646d34f98cf4a00cab89f7d6f88b32fd41728f07ed4d641"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-tracking-seed2-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2/original-run",
+          "training_seed": 2,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "79414178ba6f412e470adeb3086b62640d45266474960c5cfa4fb18e52e58086",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2/weights/step-0000512000.pkl",
+            "sha256": "f89412fedbc5d6e6e8bf74381b82a841b445cbe27b7e6e963d2065f3fc538659"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "06-bptt-racing",
+      "method": "bptt",
+      "task": "racing",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed0-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0/original-run",
+          "training_seed": 0,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "b7bc1236abd451698911db788da1300ad7c872df8a147da7362728ce6faf1593",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0/weights/step-0000512000.pkl",
+            "sha256": "9097b9ebbf484fcc828bc661424906b5ef50f9d3e2ac4a41e61d390e96c39741"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed1-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1/original-run",
+          "training_seed": 1,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "1fab786d91c2ba3f621547212e05f62a7669ef1e4c1a3c7f72b4aa0bc9f0a4ad",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1/weights/step-0000512000.pkl",
+            "sha256": "9febddb1564cea748e8b09b0b51f0f7a757e77b170103126f428c787a064f236"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1",
+          "quality_passed": true,
+          "status": "passed"
+        },
+        {
+          "run_id": "release-control-confirmation-20260929-bptt-racing-seed2-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2/original-run",
+          "training_seed": 2,
+          "source_revision": "ac6b861bd621f6f38953ac450fae1439bd56ec43",
+          "parameter_sha256": "6038bbc44d92b4f12e29ee7208f5d92b1e6167b74e37943f6f00f526ec04abc1",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2/weights/step-0000512000.pkl",
+            "sha256": "3fd75fb10a9698ca6801a24a4f8530ecadc35974d79faf28b2fc57ad2d61aac0"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "07-attitude_mpc-tracking",
+      "method": "attitude_mpc",
+      "task": "tracking",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-mpc-tracking-confirmation-20260929-attitude_mpc-tracking",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/07-attitude_mpc-tracking/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "f38fc00eae51e1afb2ca67edec27945d7647341d",
+          "parameter_sha256": "c22ec9154b0c6b13d43f383f6441f7ceb3c0a8a5657383d643e0232b4341161c",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/07-attitude_mpc-tracking/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/07-attitude_mpc-tracking/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "08-attitude_mpc-racing",
+      "method": "attitude_mpc",
+      "task": "racing",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-attitudempc-delay38-confirmation-20260929-attitude_mpc-racing",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/08-attitude_mpc-racing/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "0fdee3187e49cc380c7cf9e96089ca6c53508959",
+          "parameter_sha256": "e6befb18af97310b619aa41fdade7a6ccdfabf2f038c5381f06b0a2d467c96bd",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/08-attitude_mpc-racing/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/08-attitude_mpc-racing/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "09-sampling_mpc-tracking",
+      "method": "sampling_mpc",
+      "task": "tracking",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-mpc-tracking-confirmation-20260929-sampling_mpc-tracking",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/09-sampling_mpc-tracking/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "f38fc00eae51e1afb2ca67edec27945d7647341d",
+          "parameter_sha256": "04e8fd4ca94ce5b30b46ab5f8e909a8edac033432135ce97e6e12f7fb1b01d90",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/09-sampling_mpc-tracking/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/09-sampling_mpc-tracking/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "10-sampling_mpc-racing",
+      "method": "sampling_mpc",
+      "task": "racing",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-mpc-racing-confirmation-20260929-sampling_mpc-racing",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/10-sampling_mpc-racing/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "f38fc00eae51e1afb2ca67edec27945d7647341d",
+          "parameter_sha256": "2569876869c97e0bc603f617dfb91906538e9715017468ae802d0263e2be705e",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/10-sampling_mpc-racing/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/10-sampling_mpc-racing/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "11-depth-static",
+      "method": "depth",
+      "task": "static",
+      "status": "passed_revised_criterion",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/original-run",
+          "training_seed": 30,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/weights/update-0000250.pkl",
+            "sha256": "2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        },
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/original-run",
+          "training_seed": 31,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/weights/update-0000625.pkl",
+            "sha256": "6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        },
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/original-run",
+          "training_seed": 32,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/weights/update-0000875.pkl",
+            "sha256": "7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        }
+      ]
+    },
+    {
+      "cell": "12-depth-dynamic",
+      "method": "depth",
+      "task": "dynamic",
+      "status": "passed_revised_criterion",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed30-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed30/original-run",
+          "training_seed": 30,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed30/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed30/weights/update-0000250.pkl",
+            "sha256": "2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed30",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        },
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed31-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed31/original-run",
+          "training_seed": 31,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed31/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed31/weights/update-0000625.pkl",
+            "sha256": "6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed31",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        },
+        {
+          "run_id": "stage2-depth-confirmation-20260930-depth-navigation-seed32-heldout",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed32/original-run",
+          "training_seed": 32,
+          "source_revision": "927f8a754c8c2dea8666bdb952aee80503820b0e",
+          "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed32/original-run/eval/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed32/weights/update-0000875.pkl",
+            "sha256": "7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/12-depth-dynamic/260930-seed32",
+          "quality_passed": true,
+          "status": "passed_revised_criterion"
+        }
+      ]
+    },
+    {
+      "cell": "13-pointcloud-static",
+      "method": "pointcloud",
+      "task": "static",
+      "status": "development_not_confirmed",
+      "quality_passed": false,
+      "release_requirement_satisfied": false,
+      "runs": [
+        {
+          "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/original-run",
+          "training_seed": 0,
+          "source_revision": "8d9140e0abfad26bc72c31929c99bc2d1265b034",
+          "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/weights/update-0003000.pkl",
+            "sha256": "e1750add4300262fe2907943651e6530c4ba27667751b4a5cba98cb7b1b1f9d7"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev",
+          "quality_passed": false,
+          "status": "development_not_confirmed"
+        }
+      ]
+    },
+    {
+      "cell": "14-pointcloud-dynamic",
+      "method": "pointcloud",
+      "task": "dynamic",
+      "status": "development_not_qualified",
+      "quality_passed": false,
+      "release_requirement_satisfied": false,
+      "runs": [
+        {
+          "run_id": "primary-pointcloud-margin15-seed0-t1-20260930",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/14-pointcloud-dynamic/260930-seed0-dev/original-run",
+          "training_seed": 0,
+          "source_revision": "8d9140e0abfad26bc72c31929c99bc2d1265b034",
+          "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/14-pointcloud-dynamic/260930-seed0-dev/report.json",
+          "checkpoint": {
+            "path": "results/scratch/legacy/main_result/v1-18-cells/14-pointcloud-dynamic/260930-seed0-dev/weights/update-0003000.pkl",
+            "sha256": "e1750add4300262fe2907943651e6530c4ba27667751b4a5cba98cb7b1b1f9d7"
+          },
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/14-pointcloud-dynamic/260930-seed0-dev",
+          "quality_passed": false,
+          "status": "development_not_qualified"
+        }
+      ]
+    },
+    {
+      "cell": "15-super-static",
+      "method": "super",
+      "task": "static",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-super-heartbeat-static-confirmation-20260929",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/15-super-static/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+          "parameter_sha256": "10f82ff495c62f8a9890db8783721fdb880096e6cd3bb28dad7ba2fcb0a9383f",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/15-super-static/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/15-super-static/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "16-super-dynamic",
+      "method": "super",
+      "task": "dynamic",
+      "status": "passed",
+      "quality_passed": true,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "release-super-heartbeat-dynamic-confirmation-20260929",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/16-super-dynamic/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "5f6fcbac21037005aa9d976f8744d7da4cf5b083",
+          "parameter_sha256": "0a795e916e77cb75db7a4de32ccddad32a098433dae2a63c607c72aa882f0c66",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/16-super-dynamic/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/16-super-dynamic/260929-solver",
+          "quality_passed": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "cell": "17-ego_planner-static",
+      "method": "ego_planner",
+      "task": "static",
+      "status": "accepted_by_user",
+      "quality_passed": false,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "ego-speed2-inflation0199-static-dev4-adaptation-20260929",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/17-ego_planner-static/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+          "parameter_sha256": "aac22e1a563b04f19f89d15bbf510a3404373fd2f374ad8ebc7152f32bbe5270",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/17-ego_planner-static/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/17-ego_planner-static/260929-solver",
+          "quality_passed": false,
+          "status": "accepted_by_user"
+        }
+      ]
+    },
+    {
+      "cell": "18-ego_planner-dynamic",
+      "method": "ego_planner",
+      "task": "dynamic",
+      "status": "accepted_by_user",
+      "quality_passed": false,
+      "release_requirement_satisfied": true,
+      "runs": [
+        {
+          "run_id": "ego-speed2-inflation0199-dynamic-dev4-adaptation-20260929",
+          "source_run": "results/scratch/legacy/main_result/v1-18-cells/18-ego_planner-dynamic/260929-solver/original-run",
+          "training_seed": null,
+          "source_revision": "a0e2e22d6de1636e94eb6b770e50eda935b3f010",
+          "parameter_sha256": "fac7be0f4ee855af28b8196db571ab49185c183b0358cf67cddc1aff4d9be88a",
+          "report": "results/scratch/legacy/main_result/v1-18-cells/18-ego_planner-dynamic/260929-solver/original-run/eval/report.json",
+          "checkpoint": null,
+          "legacy_package": "results/scratch/legacy/main_result/v1-18-cells/18-ego_planner-dynamic/260929-solver",
+          "quality_passed": false,
+          "status": "accepted_by_user"
+        }
+      ]
+    }
+  ]
+}

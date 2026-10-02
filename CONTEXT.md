@@ -16,7 +16,7 @@
 | 原生方法接口 | 宿主调用 C++ 等外部方法的公共数据与生命周期合同；声明输入能力和 Traj.／Waypoint／Motion Cmd 输出，与容器或本地进程的部署方式分开 |
 | 方法适配器 | 将某个原生方法的参数、消息、时间和输出转换到公共接口的实现；保留该方法真实的信息需求、状态和求导能力 |
 | 完整环境 `env` | 场景、任务、传感器、观测和实际执行系统的组合 |
-| 场景 `scene` | 几何、运动、起终点及实例身份 |
+| 场景 `scene` | 几何、运动、实例身份及默认起终点；采样的任务指令独立保存 |
 | 任务 `task` | 成功、失败、时限和任务进度 |
 | 传感器 `sensor` | 在明确物理时刻生成测量的组件 |
 | 观测 `observation` | 策略或规划器实际接收的输入及历史 |
@@ -30,7 +30,31 @@
 | 工程通过 | 配置、执行、记录或恢复接口完成相应验证 |
 | 质量通过 | 达到协议中明确的任务完成率及误差等标准 |
 | 正式结果 | 由选定运行清单及其原始报告确定的发布基线 |
+| 生成时间 | 模块在仿真时钟上产出该决策的物理时刻，不是墙钟时间 |
+| 有效时域 | 一个物理输出仍可执行的最晚仿真时刻；轨迹取自身区间终点，航点按声明 |
+| 坐标系 | 物理输出声明的坐标参考系；当前可执行的轨迹系数与航点均为世界系 |
+| 时间合同 | `Decision` 统一声明输出的生成时间与有效期；轨迹另有自身起止时域，航点在裸跨模块传输时镜像同一时间窗；过期输出由执行层拒绝 |
+| 时限 `duration` | 单个回合的最大仿真秒数；区别于每次更新展开的 `horizon_length` 步数 |
+| 任务截止 `termination` | 到达截止即任务结束，末态价值为零 |
+| 人工截断 `truncation` | 继续任务为采样而重置，带 critic 的算法从重置前末态 bootstrap |
+| 方法复现 `method_reproduction` | 保留各完整方法的观测、模型、控制接口及声明的适配条件 |
+| 受控比较 `controlled_comparison` | 固定环境、观测、执行和 actor 条件，只替换更新算法；记录固定条件身份及摘要 |
 
-Navigation 统一指当前八张具名导航场景。历史 `navigation8` 名称可以出现在冻结版本的来源记录中，现役入口使用 `navigation`。
+| 动力学随机化 `domain_randomization` | 训练 reset 采样真实模型参数，如质量、惯量、电机能力；不同于运行时外力 |
+| 初态随机化 `reset_randomization` | 初始位置、姿态、速度与场景／参考相位的分布 |
+| 测量噪声 `observation_noise` | 传感器及状态估计测量的误差、丢测；影响输入，不改真实状态和奖励 |
+| 探索噪声 `policy exploration` | 训练算法的策略采样分布；不同于测量误差和执行误差 |
+| 动作不确定性 `action_noise` | 已产生的控制命令在执行时的偏差，声明归一化或物理单位 |
+| 扰动 `disturbance` | 运行时外力、力矩、阵风；点质量使用显式加速度扰动 |
+| 指令分布 `command_distribution` | position goal、velocity command 或 reference 的采样，与障碍几何分离 |
+| 场景分布 `scene_distribution` | fixed 固定库、generated 一次生成库、procedural 每次采样几何 |
+| 课程 `curriculum` | 按训练进度或表现实际调整难度；固定库和固定范围不是课程 |
+| 名义评测 `nominal evaluation` | 冻结策略，在标准模型、标准传感器条件及固定种子下评测 |
 
-LOTF、点云论文公开信息重建、点云控制任务迁移和点云导航域适配各有独立身份。优化器、控制器、前向模型与导数规则的选择分别明确，结果按真实执行配置解释。
+Navigation 是到达目标并避免碰撞的任务；Navigation8 是当前固定场景 benchmark，不限定通用任务的训练场景或目标分布。
+
+Environment 运行角色只有 `train`／`eval`。训练内 eval 用于监控和 checkpoint selection；正式 Benchmark 也使用 `eval` 环境语义，由版本化 benchmark specification 区分。历史证据中的旧 split/role 字段按原文留存。
+
+现役公开配方统一由 `experiment=...` 选择；点云可微重建使用 `differentiable_pointcloud`。论文标题、来源与重建假设只保存在 reproduction/source metadata 中，不形成新的 Method、Task 或配置命名空间。
+
+LOTF 是动力学来源，公开为并列的 `lotf_high_fidelity` 与 `lotf_simplified` 两个 Dynamics；不定义 Task、Environment、Method、Evaluation 或运行角色。点云论文公开信息重建、控制任务迁移和导航域适配共享一个 Method 身份，但分别记录真实适配配置与来源。前向 Dynamics 与 diffRL 的 `algorithm.gradient.transition` 独立选择，结果按真实执行配置解释。

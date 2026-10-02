@@ -19,15 +19,15 @@ JAX_PLATFORMS=cpu pixi run test
 
 正式训练默认选择 GPU。单卡任务按显存和预算排队，重型训练与大批量评测分别调度。CPU 用于单元测试、短时诊断及原生规划器宿主执行。设备选择显式写入解析配置。
 
-2026-09-29的8环境、64步 BPTT 探针显示，越过前两次编译后，GPU 更新约0.76秒，CPU约2.2秒。此前为了与原点云训练及大批量GPU评测并发，曾安排CPU长训练；后续采用GPU排队。小批量编译耗时与稳定更新耗时分别测量，完整数值及样本范围见 `verification/cpu-gpu-timing.json`。
+2026-09-29的8环境、64步 BPTT 探针显示，越过前两次编译后，GPU 更新约0.76秒，CPU约2.2秒。此前为了与原点云训练及大批量GPU评测并发，曾安排CPU长训练；后续采用GPU排队。小批量编译耗时与稳定更新耗时分别测量，完整数值及样本范围见 `../artifacts/verification/cpu-gpu-timing.json`。
 
 ## 数据与文档
 
-每个运行独占`experiments/tmp/YYMMDD/<run_id>/`，日期为UTC启动日期；重训使用独立标识。记录完整配置、来源、预算、种子、实际设备、参数摘要和终止事件。`training.warm_start`保存参数来源；完整恢复保存优化器、随机数和环境状态的来源。
+每个真实运行独占`results/runs/<task>/<method>/<run_id>/`；Task／Method 属于目录语义，`run_id`只标识一次执行，重训使用新标识。运行记录完整配置、来源、预算、种子、实际设备、参数摘要和终止事件。`training.warm_start`保存参数来源；完整恢复保存优化器、随机数和环境状态的来源。
 
-最终／当前最好结果按目标放入`experiments/main_result/<目标>/`，第一版18格入口为`v1-18-cells/README.md`。每格按日期、训练种子组织，原报告与权重经摘要核验后复制，完整回放链接原始来源。开发结果、修订标准和用户接受的例外分别注明；不据目录名自动提升验收状态。冻结工作树保持原始布局，现役日期目录提供链接；读取运行统一使用`runs.layout`，支持旧路径。
+最终／当前最好结果不复制成另一棵产物目录，而由`results/selected/<目标>.json`引用已有 run、report 和 checkpoint。第一版入口为`selected/v1-18-cells.json`。预览、诊断、迁移材料和历史复制包放`results/scratch/`，不能据目录名提升验收状态。读取运行统一使用`artifacts.layout`按稳定`run_id`定位。
 
-正式结果由一个选择清单确定。清理前核对运行进程和引用关系，将成功权重、正式回放和唯一未提交源码备份到项目外，并验证摘要。原始报告与整理后的路径元数据分别留痕，失败回合继续计入正式分母。
+完整 RScope/MuJoCo replay 默认关闭；需要可视化证据时显式设置`evaluation.record_replays=true`。数值报告、失败回合和必要 trace 与 replay 开关独立保存。清理前核对运行进程和`selected/`引用关系，将唯一成功权重、正式回放和唯一未提交源码备份到项目外并验证摘要。
 
 稳定术语放 `CONTEXT.md`，组件职责放 `architecture.md`，命令放 `runbook.md`，当前状态放 `status.md`，尚未完成事项放 `backlog.md`。已经结束的计划、控制台转录和阶段复盘归入Git历史与独立备份。
 

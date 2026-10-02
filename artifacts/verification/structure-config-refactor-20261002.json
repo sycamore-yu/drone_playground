@@ -1,0 +1,72 @@
+{
+  "scope": "Module/configuration migration closeout; targeted execution, no quality retraining",
+  "source_commit": "10c721b00643e012974c09ad01fa77f70c761ad1",
+  "working_tree_modified": true,
+  "commit_or_push_performed": false,
+  "full_regression_run": false,
+  "bptt_training": {
+    "actual_steps": 4,
+    "actor_parameter_delta_l2": 0.07756428865605566,
+    "engineer_passed": true,
+    "full_budget_completed": true
+  },
+  "frozen_evaluation": {
+    "num_trials": 1,
+    "parameters_frozen": true,
+    "parameter_sha256": "4c88578591a1789e2ea883c58ad0d611dda2945be04ea005da033551dddcd8ac"
+  },
+  "replay": {
+    "default_training_recorded": false,
+    "default_eval_recorded": false,
+    "play_trajectories": 1
+  },
+  "sampling_mpc": {
+    "num_trials": 1,
+    "completed": 1,
+    "actual_steps": 2,
+    "nonzero_solve_status_count": 0,
+    "parameters_frozen": true,
+    "parameter_identity_kind": "resolved optimization configuration"
+  },
+  "selected_results": {
+    "cells": 18,
+    "records": 34,
+    "verified_weight_references": 26,
+    "archive_aliases_repaired": 78,
+    "missing_selected_references": 0,
+    "selection_and_quality_unchanged": true,
+    "raw_runs_and_weights_modified": false
+  },
+  "documentation_broken_links": [],
+  "targeted_test_logs": {
+    "replay-green.log": {
+      "result": "1 passed, 2 warnings in 34.22s",
+      "sha256": "54525424ed5b76feed69788acc64d3ca7ad6dd963c8e91463dbeb6d5e5518273"
+    },
+    "generated-gradients.log": {
+      "result": "2 passed, 1 warning in 33.51s",
+      "sha256": "ff10e30f6654ca55d9ed5ad558bdf54869f8795b7a5b887e7cf4a868457923da"
+    },
+    "selection-cli-green.log": {
+      "result": "4 passed in 0.19s",
+      "sha256": "44091516c6f7d278c9900d796163d45f95d1ad1819370ffeeaf887bc704f2e38"
+    },
+    "initialization-green.log": {
+      "result": "1 passed, 1 warning in 21.56s",
+      "sha256": "ea98bbb7506a4a506540e4ce9df8eb5a6618fc9b88d1c22e1091dc5e08a9d4f3"
+    }
+  },
+  "checks": {
+    "git_diff_check": 0,
+    "ruff_rules": [
+      "F821",
+      "F822",
+      "F823"
+    ]
+  },
+  "documentation_scope": "README.md, results/README.md, docs excluding historical docs/notes",
+  "native_benchmark_example": {
+    "episodes_per_scene": 25,
+    "initial_conditions_resolved": true
+  }
+}
