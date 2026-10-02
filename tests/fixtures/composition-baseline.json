@@ -56,36 +56,9 @@
       "key": 31,
       "reference_seed": 20000,
       "reference_count": 2
-    },
-    {
-      "task": "racing",
-      "dynamics": "so_rpy",
-      "key": 31,
-      "reference_seed": 20000,
-      "reference_count": 2
-    },
-    {
-      "task": "racing",
-      "dynamics": "so_rpy_rotor",
-      "key": 31,
-      "reference_seed": 20000,
-      "reference_count": 2
-    },
-    {
-      "task": "racing",
-      "dynamics": "so_rpy_rotor_drag",
-      "key": 31,
-      "reference_seed": 20000,
-      "reference_count": 2
-    },
-    {
-      "task": "racing",
-      "dynamics": "first_principles",
-      "key": 31,
-      "reference_seed": 20000,
-      "reference_count": 2
     }
   ],
-  "sha256": "6ac5b88ae15256d72b3bc1c483921d64c049d19bdbcd0c32ce55ae0265c3db09",
-  "generated_command": "python tmp/composable-flight/capture_baseline.py"
+  "sha256": "4517d242eeb2c7fd81dc521d544963662a6a669feffba2cb50e7b569a40cebe1",
+  "generated_command": "python tmp/composable-flight/capture_baseline.py",
+  "scope": "Unchanged tracking transitions; obsolete implicitly disturbed racing cases replaced by explicit nominal/noise behavior tests."
 }
