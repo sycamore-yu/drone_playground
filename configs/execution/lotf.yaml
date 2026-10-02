@@ -1,6 +1,0 @@
-defaults:
-- /controller@controller: lotf_betaflight
-- /dynamics@dynamics: lotf
-- _self_
-command: thrust_bodyrates
-tracker: null

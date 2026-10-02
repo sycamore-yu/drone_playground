@@ -50,6 +50,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
       - pypi: ./
+      - pypi: ./tmp/sources/brax
       - pypi: ./tmp/sources/crazyflow
       - pypi: ./tmp/sources/lotf
       - pypi: https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl
@@ -65,7 +66,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/25/0c/21890c10cc94da917c8e47efc1c55cd3e56a1d25ab5947bdd35abaf9fdc1/hydra_core-1.3.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/25/48/b54a06168a2190572a312bfe4ce443687773eb61367ced31e064953dd2f7/nvidia_cuda_nvcc_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/2c/34/c12809ec36063ffab41880b37f2305f8d502345dbf6b5a6471133231c687/brax-0.14.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2e/07/eb30593524303d1367f0dc00c1c66582c994dba412a47751e34bad9fa29b/evdev-2.0.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/32/0d/aa360056c4dbb263339aa4d315c45b2c7046ef95f7b2f55732eed396a63f/flax-0.12.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/33/40/79b0c64d44d6c166c0964ec1d803d067f4a145cca23e23925fd351d0e642/nvidia_cusolver_cu12-11.7.5.82-py3-none-manylinux_2_27_x86_64.whl
@@ -691,6 +691,35 @@ packages:
   - grpcio==1.84.0
   - protobuf==7.36.2
   requires_python: '>=3.13,<3.14'
+- pypi: ./tmp/sources/brax
+  name: brax
+  requires_dist:
+  - absl-py
+  - dataclasses ; python_full_version < '3.7'
+  - etils
+  - flask
+  - flask-cors
+  - flax
+  - jax>=0.4.6
+  - jaxlib>=0.4.6
+  - jaxopt
+  - jinja2
+  - ml-collections
+  - mujoco
+  - mujoco-mjx
+  - numpy
+  - optax
+  - orbax-checkpoint>=0.11.22
+  - pillow
+  - scipy
+  - tensorboardx
+  - trimesh
+  - typing-extensions
+  - pytest ; extra == 'develop'
+  - transforms3d ; extra == 'develop'
+  - gym ; extra == 'develop'
+  - dm-env ; extra == 'develop'
+  requires_python: '>=3.11'
 - pypi: ./tmp/sources/crazyflow
   name: crazyflow
   requires_dist:
@@ -830,37 +859,6 @@ packages:
   version: 0.8.2
   sha256: 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/2c/34/c12809ec36063ffab41880b37f2305f8d502345dbf6b5a6471133231c687/brax-0.14.2-py3-none-any.whl
-  name: brax
-  version: 0.14.2
-  sha256: d33b7b222ba5d85fd0fc4d4c59aa46feb978684107ad3f79de6bfef97ab06693
-  requires_dist:
-  - absl-py
-  - dataclasses ; python_full_version < '3.7'
-  - etils
-  - flask
-  - flask-cors
-  - flax
-  - jax>=0.4.6
-  - jaxlib>=0.4.6
-  - jaxopt
-  - jinja2
-  - ml-collections
-  - mujoco
-  - mujoco-mjx
-  - numpy
-  - optax
-  - orbax-checkpoint>=0.11.22
-  - pillow
-  - scipy
-  - tensorboardx
-  - trimesh
-  - typing-extensions
-  - dm-env ; extra == 'develop'
-  - gym ; extra == 'develop'
-  - pytest ; extra == 'develop'
-  - transforms3d ; extra == 'develop'
-  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/2e/07/eb30593524303d1367f0dc00c1c66582c994dba412a47751e34bad9fa29b/evdev-2.0.0.tar.gz
   name: evdev
   version: 2.0.0

@@ -1,0 +1,5 @@
+_target_: drone_playground.dynamics.point_mass.PointMassLag
+forward: point_mass_lag
+drone: point_mass_lag
+time_constant: 0.08333333333333333
+gravity: 9.80665

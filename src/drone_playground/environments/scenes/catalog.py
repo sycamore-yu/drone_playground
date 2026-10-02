@@ -1,11 +1,6 @@
-"""Navigation8: the accepted fixed P5 navigation scene catalog.
+"""Navigation8 fixed scenes, validated without an oracle/reference route.
 
-The random density generator remains readable for historical experiment
-reconstruction. Navigation8 is the current eight-scene authority: six
-SANDO-aligned primary scenes plus S06/D06 3-D extensions. Legacy v1-v3
-catalogs contain an ``inspection_path`` used only for review. Route-free v4 and
-Navigation8 store no oracle/reference trajectory; connectivity is checked with
-offline 3-D occupancy A* and the resulting path coordinates are discarded.
+Connectivity uses offline 3-D occupancy A*; resulting path coordinates are discarded.
 """
 
 from __future__ import annotations
@@ -21,7 +16,7 @@ from typing import Any
 import jax.numpy as jnp
 import numpy as np
 
-from .navigation import (
+from drone_playground.environments.scenes.geometry import (
     BODY_RADIUS_M,
     DIFFICULTIES,
     KIND_BOX,
@@ -37,7 +32,9 @@ from .navigation import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_CATALOG = PROJECT_ROOT / "assets/scenes/navigation/catalog.json"
-DEFAULT_VERIFICATION = PROJECT_ROOT / "benchmarks/navigation/v2/geometry-verification.json"
+DEFAULT_VERIFICATION = (
+    PROJECT_ROOT / "benchmarks/navigation-geometry-verification.json"
+)
 
 
 def verified_geometry(path, verification_path=DEFAULT_VERIFICATION):
@@ -48,7 +45,9 @@ def verified_geometry(path, verification_path=DEFAULT_VERIFICATION):
     record = json.loads(Path(verification_path).read_text())
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if digest != record.get("catalog_sha256"):
-        raise ValueError("Navigation catalog differs from its accepted verification record")
+        raise ValueError(
+            "Navigation catalog differs from its accepted verification record"
+        )
     return {row["scene_id"]: row for row in record["scenes"]}, digest
 
 
@@ -57,7 +56,16 @@ class NavigationCatalogScene:
     """Unique fixed cases, backed by the existing accepted catalog's verified digest."""
 
     name: str = "navigation"
-    scene_ids: tuple[str, ...] = ("S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06")
+    scene_ids: tuple[str, ...] = (
+        "S01",
+        "S02",
+        "S03",
+        "S06",
+        "D01",
+        "D02",
+        "D03",
+        "D06",
+    )
     catalog_path: str | None = None
     verification_path: str | None = None
 
@@ -68,7 +76,9 @@ class NavigationCatalogScene:
         if len(self.scene_ids) != len(set(self.scene_ids)):
             raise ValueError("Nominal Navigation8 cases must be unique")
         catalog = load_fixed_catalog(path)
-        bank, manifest = build_fixed_bank(catalog, self.scene_ids, validated_reports=reports)
+        bank, manifest = build_fixed_bank(
+            catalog, self.scene_ids, validated_reports=reports
+        )
         manifest.update(
             catalog_sha256=digest,
             verification=str(evidence),
@@ -89,6 +99,10 @@ def load_fixed_catalog(path: Path | str = DEFAULT_CATALOG) -> dict[str, Any]:
 
     path = Path(path)
     catalog = json.loads(path.read_text())
+    if catalog.get("version") != "navigation-v1":
+        raise ValueError(
+            "Only the current navigation-v1 catalog format is supported"
+        )
     scenes = catalog.get("scenes", [])
     if not scenes:
         raise ValueError("fixed scene catalog is empty")
@@ -96,22 +110,36 @@ def load_fixed_catalog(path: Path | str = DEFAULT_CATALOG) -> dict[str, Any]:
     if len(ids) != len(set(ids)):
         raise ValueError("fixed scene ids must be unique")
     for scene in scenes:
+        if "inspection_path" in scene or "inspection_duration_s" in scene:
+            raise ValueError(
+                "Historical inspection-path catalogs are unsupported"
+            )
         if scene["difficulty"] not in DIFFICULTIES:
-            raise ValueError(f"unknown difficulty in {scene['id']}: {scene['difficulty']}")
+            raise ValueError(
+                f"unknown difficulty in {scene['id']}: {scene['difficulty']}"
+            )
         if bool(scene["dynamic"]) != scene["id"].startswith("D"):
             raise ValueError(f"scene id/dynamic flag mismatch: {scene['id']}")
         if scene["dynamic"] and not any(
-            obstacle.get("motion", "static") != "static" for obstacle in scene["obstacles"]
+            obstacle.get("motion", "static") != "static"
+            for obstacle in scene["obstacles"]
         ):
-            raise ValueError(f"dynamic scene has no moving obstacle: {scene['id']}")
+            raise ValueError(
+                f"dynamic scene has no moving obstacle: {scene['id']}"
+            )
         if not scene["dynamic"] and any(
-            obstacle.get("motion", "static") != "static" for obstacle in scene["obstacles"]
+            obstacle.get("motion", "static") != "static"
+            for obstacle in scene["obstacles"]
         ):
-            raise ValueError(f"static scene contains moving obstacle: {scene['id']}")
+            raise ValueError(
+                f"static scene contains moving obstacle: {scene['id']}"
+            )
     return catalog
 
 
-def scene_obstacles(catalog: dict[str, Any], scene: dict[str, Any]) -> list[dict[str, Any]]:
+def scene_obstacles(
+    catalog: dict[str, Any], scene: dict[str, Any]
+) -> list[dict[str, Any]]:
     """Return shared physical boundaries followed by scene-specific geometry."""
 
     return [*catalog.get("boundary_obstacles", []), *scene["obstacles"]]
@@ -152,22 +180,9 @@ def scene_by_id(catalog: dict[str, Any], scene_id: str) -> dict[str, Any]:
     return matches[0]
 
 
-def _piecewise_path(points: list[list[float]], samples: int) -> np.ndarray:
-    points_np = np.asarray(points, np.float64)
-    lengths = np.linalg.norm(np.diff(points_np, axis=0), axis=1)
-    cumulative = np.concatenate([[0.0], np.cumsum(lengths)])
-    if cumulative[-1] <= 0:
-        raise ValueError("inspection path has zero length")
-    distances = np.linspace(0.0, cumulative[-1], samples)
-    result = []
-    for distance in distances:
-        index = min(np.searchsorted(cumulative, distance, side="right") - 1, len(lengths) - 1)
-        fraction = (distance - cumulative[index]) / lengths[index] if lengths[index] > 0 else 0.0
-        result.append(points_np[index] + fraction * (points_np[index + 1] - points_np[index]))
-    return np.asarray(result, np.float64)
-
-
-def _signed_clearance(obstacle: Obstacle, point: np.ndarray, time: float) -> float:
+def _signed_clearance(
+    obstacle: Obstacle, point: np.ndarray, time: float
+) -> float:
     centre = np.asarray(obstacle.position(float(time)), np.float64)
     delta = point - centre
     if obstacle.kind == KIND_CYLINDER:
@@ -227,10 +242,17 @@ def _occupancy_grid(
             radial = np.linalg.norm(delta[:, :2], axis=1) - radius
             vertical = np.abs(delta[:, 2]) - height / 2.0
             outside = np.linalg.norm(
-                np.stack([np.maximum(radial, 0.0), np.maximum(vertical, 0.0)], axis=-1),
+                np.stack(
+                    [np.maximum(radial, 0.0), np.maximum(vertical, 0.0)],
+                    axis=-1,
+                ),
                 axis=1,
             )
-            signed = outside + np.minimum(np.maximum(radial, vertical), 0.0) - BODY_RADIUS_M
+            signed = (
+                outside
+                + np.minimum(np.maximum(radial, vertical), 0.0)
+                - BODY_RADIUS_M
+            )
         else:
             q = np.abs(delta) - np.asarray(obstacle.size, np.float64)
             signed = (
@@ -245,7 +267,9 @@ def _occupancy_grid(
 def _nearest_grid_index(
     point: np.ndarray, axes: tuple[np.ndarray, np.ndarray, np.ndarray]
 ) -> tuple[int, int, int]:
-    return tuple(int(np.argmin(np.abs(axis - point[i]))) for i, axis in enumerate(axes))
+    return tuple(
+        int(np.argmin(np.abs(axis - point[i]))) for i, axis in enumerate(axes)
+    )
 
 
 def _astar_length(
@@ -260,15 +284,29 @@ def _astar_length(
     goal_index = _nearest_grid_index(goal, axes)
     if occupied[start_index] or occupied[goal_index]:
         return False, math.inf, 0
-    steps = [delta for delta in itertools.product((-1, 0, 1), repeat=3) if delta != (0, 0, 0)]
+    steps = [
+        delta
+        for delta in itertools.product((-1, 0, 1), repeat=3)
+        if delta != (0, 0, 0)
+    ]
     scales = np.array(
-        [float(np.median(np.diff(axis))) if len(axis) > 1 else 1.0 for axis in axes],
+        [
+            float(np.median(np.diff(axis))) if len(axis) > 1 else 1.0
+            for axis in axes
+        ],
         np.float64,
     )
-    costs = {delta: float(np.linalg.norm(np.asarray(delta) * scales)) for delta in steps}
+    costs = {
+        delta: float(np.linalg.norm(np.asarray(delta) * scales))
+        for delta in steps
+    }
 
     def heuristic(index):
-        return float(np.linalg.norm((np.asarray(index) - np.asarray(goal_index)) * scales))
+        return float(
+            np.linalg.norm(
+                (np.asarray(index) - np.asarray(goal_index)) * scales
+            )
+        )
 
     queue = [(heuristic(start_index), 0.0, start_index)]
     distance = {start_index: 0.0}
@@ -283,12 +321,17 @@ def _astar_length(
             return True, float(current_cost), expanded
         for delta in steps:
             nxt = tuple(current[i] + delta[i] for i in range(3))
-            if any(nxt[i] < 0 or nxt[i] >= shape[i] for i in range(3)) or occupied[nxt]:
+            if (
+                any(nxt[i] < 0 or nxt[i] >= shape[i] for i in range(3))
+                or occupied[nxt]
+            ):
                 continue
             candidate = current_cost + costs[delta]
             if candidate + 1e-12 < distance.get(nxt, math.inf):
                 distance[nxt] = candidate
-                heapq.heappush(queue, (candidate + heuristic(nxt), candidate, nxt))
+                heapq.heappush(
+                    queue, (candidate + heuristic(nxt), candidate, nxt)
+                )
     return False, math.inf, expanded
 
 
@@ -305,7 +348,9 @@ def _straight_lane_report(
     world = catalog["world"]
     start_x = float(world["start"][0])
     goal_x = float(world["goal"][0])
-    ys = np.arange(-float(world["width_m"]) / 2.0 + 1.0, float(world["width_m"]) / 2.0, 1.0)
+    ys = np.arange(
+        -float(world["width_m"]) / 2.0 + 1.0, float(world["width_m"]) / 2.0, 1.0
+    )
     z_min = float(world.get("z_min_m", 0.0))
     z_max = float(world.get("z_max_m", world.get("height_m", 5.0)))
     zs = np.arange(z_min + 0.5, z_max, 0.5)
@@ -322,10 +367,17 @@ def _straight_lane_report(
             radial = np.linalg.norm(delta[:, :2], axis=1) - radius
             vertical = np.abs(delta[:, 2]) - height / 2.0
             outside = np.linalg.norm(
-                np.stack([np.maximum(radial, 0.0), np.maximum(vertical, 0.0)], axis=-1),
+                np.stack(
+                    [np.maximum(radial, 0.0), np.maximum(vertical, 0.0)],
+                    axis=-1,
+                ),
                 axis=1,
             )
-            signed = outside + np.minimum(np.maximum(radial, vertical), 0.0) - BODY_RADIUS_M
+            signed = (
+                outside
+                + np.minimum(np.maximum(radial, vertical), 0.0)
+                - BODY_RADIUS_M
+            )
         else:
             q = np.abs(delta) - np.asarray(obstacle.size, np.float64)
             signed = (
@@ -375,7 +427,9 @@ def topology_report(
             z_resolution_m=z_resolution_m,
             clearance_m=clearance_m,
         )
-        reachable, path_length, expanded = _astar_length(occupied, axes, start, goal)
+        reachable, path_length, expanded = _astar_length(
+            occupied, axes, start, goal
+        )
         full_lanes, longest = _straight_lane_report(
             catalog,
             scene,
@@ -387,7 +441,9 @@ def topology_report(
                 "time_s": float(time_s),
                 "reachable": bool(reachable),
                 "astar_path_length_m": float(path_length),
-                "detour_ratio": float(path_length / direct) if reachable else math.inf,
+                "detour_ratio": float(path_length / direct)
+                if reachable
+                else math.inf,
                 "astar_expanded": int(expanded),
                 "full_length_straight_lanes": int(full_lanes),
                 "longest_clear_straight_run_m": float(longest),
@@ -403,43 +459,30 @@ def topology_report(
         "max_full_length_straight_lanes": max(
             row["full_length_straight_lanes"] for row in snapshots
         ),
-        "max_clear_straight_run_m": max(row["longest_clear_straight_run_m"] for row in snapshots),
+        "max_clear_straight_run_m": max(
+            row["longest_clear_straight_run_m"] for row in snapshots
+        ),
     }
 
 
 def inspect_fixed_scene(
     catalog: dict[str, Any], scene: dict[str, Any], samples: int = 601
 ) -> dict[str, Any]:
-    """Compute review-only route and direct-line clearance diagnostics."""
+    """Compute direct-line clearance and route-free connectivity diagnostics."""
 
     world = catalog["world"]
     start = np.asarray(world["start"], np.float64)
     goal = np.asarray(world["goal"], np.float64)
-    obstacles = [catalog_obstacle(item) for item in scene_obstacles(catalog, scene)]
-    route = None
-    route_clearance = None
-    duration = float(scene.get("inspection_duration_s", scene.get("review_duration_s", 40.0)))
-    if "inspection_path" in scene:
-        route = _piecewise_path(scene["inspection_path"], samples)
-        times = np.linspace(0.0, duration, samples)
-        route_clearance = min(
-            _signed_clearance(obstacle, point, time)
-            for point, time in zip(route, times, strict=True)
-            for obstacle in obstacles
-        )
+    obstacles = [
+        catalog_obstacle(item) for item in scene_obstacles(catalog, scene)
+    ]
+    duration = float(scene.get("review_duration_s", 40.0))
     direct = np.linspace(start, goal, samples)
     direct_clearance = min(
-        _signed_clearance(obstacle, point, 0.0) for point in direct for obstacle in obstacles
+        _signed_clearance(obstacle, point, 0.0)
+        for point in direct
+        for obstacle in obstacles
     )
-    z_min = float(world.get("z_min_m", 0.0))
-    z_max = float(world.get("z_max_m", world.get("height_m", 5.0)))
-    low = np.array([0.0, -world["width_m"] / 2.0, z_min])
-    high = np.array([world["length_m"], world["width_m"] / 2.0, z_max])
-    if route is not None:
-        if np.any(route < low - 1e-9) or np.any(route > high + 1e-9):
-            raise ValueError(f"inspection path exits world bounds: {scene['id']}")
-        if not np.allclose(route[0], start) or not np.allclose(route[-1], goal):
-            raise ValueError(f"inspection path endpoints differ from start/goal: {scene['id']}")
     result = {
         "scene_id": scene["id"],
         "difficulty": scene["difficulty"],
@@ -451,73 +494,53 @@ def inspect_fixed_scene(
         "straight_line_blocked": bool(direct_clearance < 0.0),
         "review_duration_s": duration,
     }
-    if route is not None:
-        result.update(
-            inspection_route_min_clearance_m=float(route_clearance),
-            inspection_path_length_m=float(
-                np.linalg.norm(
-                    np.diff(np.asarray(scene["inspection_path"], float), axis=0), axis=1
-                ).sum()
-            ),
-            inspection_duration_s=duration,
-        )
-    else:
-        result["topology"] = topology_report(catalog, scene)
+    result["topology"] = topology_report(catalog, scene)
     return result
 
 
 def validate_fixed_catalog(
     catalog: dict[str, Any],
     *,
-    minimum_route_clearance_m: float = 0.35,
     maximum_clear_straight_run_m: float = 35.0,
 ) -> list[dict[str, Any]]:
-    """Require blocked direct flight plus route-free topological feasibility.
-
-    Legacy catalogs are still accepted through their historical
-    ``inspection_path`` evidence so old review artifacts remain reconstructable.
-    New route-free catalogs instead pass A* connectivity without storing an
-    oracle path. A scene may explicitly relax straight-lane limits when source
-    fidelity requires preserving the original benchmark geometry.
-    """
+    """Require blocked direct flight plus route-free topological feasibility."""
 
     reports = []
     for scene in catalog["scenes"]:
         report = inspect_fixed_scene(catalog, scene)
         acceptance = scene.get("topology_acceptance", {})
-        require_direct_blocked = acceptance.get("require_direct_route_blocked", True)
+        require_direct_blocked = acceptance.get(
+            "require_direct_route_blocked", True
+        )
         require_reachable = acceptance.get("require_reachable", True)
         max_full_lanes = acceptance.get("max_full_length_straight_lanes", 0)
-        max_straight_run = acceptance.get("max_clear_straight_run_m", maximum_clear_straight_run_m)
+        max_straight_run = acceptance.get(
+            "max_clear_straight_run_m", maximum_clear_straight_run_m
+        )
         if require_direct_blocked and not report["straight_line_blocked"]:
-            raise ValueError(f"fixed scene does not block the direct route: {scene['id']}")
-        if "inspection_route_min_clearance_m" in report:
-            if report["inspection_route_min_clearance_m"] < minimum_route_clearance_m:
-                raise ValueError(
-                    f"fixed scene inspection route is too tight: {scene['id']} "
-                    f"({report['inspection_route_min_clearance_m']:.3f} m)"
-                )
-        else:
-            topology = report["topology"]
-            if require_reachable and not topology["all_snapshots_reachable"]:
-                raise ValueError(
-                    f"fixed scene is disconnected in a validation snapshot: {scene['id']}"
-                )
-            if (
-                max_full_lanes is not None
-                and topology["max_full_length_straight_lanes"] > max_full_lanes
-            ):
-                raise ValueError(
-                    f"fixed scene contains a full-length straight shortcut: {scene['id']}"
-                )
-            if (
-                max_straight_run is not None
-                and topology["max_clear_straight_run_m"] > max_straight_run
-            ):
-                raise ValueError(
-                    f"fixed scene contains an overlong straight shortcut: {scene['id']} "
-                    f"({topology['max_clear_straight_run_m']:.1f} m)"
-                )
+            raise ValueError(
+                f"fixed scene does not block the direct route: {scene['id']}"
+            )
+        topology = report["topology"]
+        if require_reachable and not topology["all_snapshots_reachable"]:
+            raise ValueError(
+                f"fixed scene is disconnected in a validation snapshot: {scene['id']}"
+            )
+        if (
+            max_full_lanes is not None
+            and topology["max_full_length_straight_lanes"] > max_full_lanes
+        ):
+            raise ValueError(
+                f"fixed scene contains a full-length straight shortcut: {scene['id']}"
+            )
+        if (
+            max_straight_run is not None
+            and topology["max_clear_straight_run_m"] > max_straight_run
+        ):
+            raise ValueError(
+                f"fixed scene contains an overlong straight shortcut: {scene['id']} "
+                f"({topology['max_clear_straight_run_m']:.1f} m)"
+            )
         reports.append(report)
     return reports
 
@@ -536,15 +559,22 @@ def build_fixed_bank(
     capacity = max(len(scene_obstacles(catalog, scene)) for scene in selected)
     instances = []
     for scene in selected:
-        obstacles = [catalog_obstacle(item) for item in scene_obstacles(catalog, scene)]
+        obstacles = [
+            catalog_obstacle(item) for item in scene_obstacles(catalog, scene)
+        ]
         instances.append(_pack_instance(obstacles, capacity))
     bank = _stack_instances(instances)
     world = catalog["world"]
     bank = bank.replace(
-        start=jnp.asarray(np.tile(np.asarray(world["start"], np.float32), (len(selected), 1))),
-        goal=jnp.asarray(np.tile(np.asarray(world["goal"], np.float32), (len(selected), 1))),
+        start=jnp.asarray(
+            np.tile(np.asarray(world["start"], np.float32), (len(selected), 1))
+        ),
+        goal=jnp.asarray(
+            np.tile(np.asarray(world["goal"], np.float32), (len(selected), 1))
+        ),
         difficulty=jnp.asarray(
-            [DIFFICULTIES.index(scene["difficulty"]) for scene in selected], np.int32
+            [DIFFICULTIES.index(scene["difficulty"]) for scene in selected],
+            np.int32,
         ),
         subtype=jnp.arange(len(selected), dtype=jnp.int32),
         subtype_names=tuple(scene["id"] for scene in selected),
@@ -564,9 +594,13 @@ def build_fixed_bank(
     reports = validated_reports or {
         report["scene_id"]: report for report in validate_fixed_catalog(catalog)
     }
-    missing_reports = [scene_id for scene_id in scene_ids if scene_id not in reports]
+    missing_reports = [
+        scene_id for scene_id in scene_ids if scene_id not in reports
+    ]
     if missing_reports:
-        raise ValueError(f"missing fixed-scene validation reports: {missing_reports}")
+        raise ValueError(
+            f"missing fixed-scene validation reports: {missing_reports}"
+        )
     manifest = {
         "version": catalog["version"],
         "status": catalog["status"],
@@ -575,62 +609,83 @@ def build_fixed_bank(
         "design_rules": catalog["design_rules"],
         "scene_ids": list(scene_ids),
         "bank_digest": bank.digest(),
-        "scenes": [{**scene, "review": reports[scene["id"]]} for scene in selected],
+        "scenes": [
+            {**scene, "review": reports[scene["id"]]} for scene in selected
+        ],
     }
     return bank, manifest
 
 
 @dataclass(frozen=True)
-class NavigationScene:
+class CatalogNavigationScene:
     """Hydra scene adapter for the accepted Navigation8 fixed catalog.
 
     The catalog has four static and four dynamic scenes. Existing P5 training
     and evaluation code expects an equal number of instances per difficulty,
     so each view expands its fixed IDs deterministically: Easy and Medium repeat
     their one scene, while Hard alternates the primary hard scene and S06/D06.
-    Geometry never depends on the split seed.
+    Geometry never depends on the run-role seed.
     """
 
     dynamic: bool
     scene_ids: tuple[str, ...]
     name: str = "navigation"
-    families: tuple[str, ...] = ("navigation8",)
+    families: tuple[str, ...] = ("navigation",)
     catalog_path: str | None = None
 
-    def build(self, seed: int, per_difficulty: int) -> tuple[SceneBank, dict[str, Any]]:
+    def build(
+        self, seed: int, per_difficulty: int
+    ) -> tuple[SceneBank, dict[str, Any]]:
         if per_difficulty < 1:
-            raise ValueError("Navigation8 requires at least one instance per difficulty")
+            raise ValueError(
+                "Navigation8 requires at least one instance per difficulty"
+            )
         catalog = load_fixed_catalog(self.catalog_path or DEFAULT_CATALOG)
-        selected = [scene_by_id(catalog, scene_id) for scene_id in self.scene_ids]
+        selected = [
+            scene_by_id(catalog, scene_id) for scene_id in self.scene_ids
+        ]
         if any(bool(scene["dynamic"]) != self.dynamic for scene in selected):
-            raise ValueError("Navigation8 view mixes static and dynamic scene IDs")
+            raise ValueError(
+                "Navigation8 view mixes static and dynamic scene IDs"
+            )
 
-        grouped: dict[str, list[str]] = {difficulty: [] for difficulty in DIFFICULTIES}
+        grouped: dict[str, list[str]] = {
+            difficulty: [] for difficulty in DIFFICULTIES
+        }
         for scene in selected:
             grouped[scene["difficulty"]].append(scene["id"])
         missing = [difficulty for difficulty, ids in grouped.items() if not ids]
         if missing:
-            raise ValueError(f"Navigation8 view has no scenes for difficulties: {missing}")
+            raise ValueError(
+                f"Navigation8 view has no scenes for difficulties: {missing}"
+            )
 
         expanded: list[str] = []
         for difficulty in DIFFICULTIES:
             ids = grouped[difficulty]
-            expanded.extend(ids[index % len(ids)] for index in range(per_difficulty))
+            expanded.extend(
+                ids[index % len(ids)] for index in range(per_difficulty)
+            )
 
         if self.catalog_path is None:
             reports, _ = verified_geometry(DEFAULT_CATALOG)
         else:
-            reports = {report["scene_id"]: report for report in validate_fixed_catalog(catalog)}
-        bank, manifest = build_fixed_bank(catalog, expanded, validated_reports=reports)
+            reports = {
+                report["scene_id"]: report
+                for report in validate_fixed_catalog(catalog)
+            }
+        bank, manifest = build_fixed_bank(
+            catalog, expanded, validated_reports=reports
+        )
         manifest.update(
             name=self.name,
-            catalog="navigation8",
+            catalog="navigation",
             view="dynamic" if self.dynamic else "static",
             accepted_scene_ids=list(self.scene_ids),
             instance_expansion=(
                 "repeat fixed IDs within each difficulty; hard alternates primary and 3-D extension"
             ),
             requested_seed=int(seed),
-            geometry_seed_role="none; Navigation8 geometry is fixed across splits",
+            geometry_seed_role="none; Navigation8 geometry is fixed across run roles",
         )
         return bank, manifest

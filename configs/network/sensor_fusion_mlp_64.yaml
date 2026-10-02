@@ -1,0 +1,15 @@
+name: sensor_fusion_mlp_64
+distribution_type: tanh_normal
+normalize_observations: false
+hidden_sizes: [64, 64]
+init_noise_std: 0.05
+mean_kernel_scale: 0.01
+# Initialization only, not a runtime controller or residual policy. All four
+# outputs subsequently come from the learned network. 0.4 is the t001 launch
+# bias, NOT equilibrium hover (3s calibration ends with +1.664m/s vertical speed).
+mean_action_bias: [0.0, 0.0, 0.0, 0.4]
+# p(3), q_xyzw(4), v(3), omega(3), goal-p(3), previous_action(4).
+proprio_scale: [100, 20, 6, 1, 1, 1, 1, 10, 10, 10, 10, 10, 10, 100, 40, 6, 1, 1, 1, 1]
+critic_uses_sensor: true
+encoder: sensor_fusion
+embedding_size: 128

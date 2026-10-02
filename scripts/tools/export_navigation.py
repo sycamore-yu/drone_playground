@@ -16,7 +16,8 @@ from drone_playground.environments.scenes.catalog import (
     scene_by_id,
     validate_fixed_catalog,
 )
-from drone_playground.environments.scenes.navigation import clearance_and_collision
+from drone_playground.environments.scenes.geometry import clearance_and_collision
+from drone_playground.environments.sensors.lidar import Mid360Lidar
 from drone_playground.visualization.navigation_scene import (
     active_indices,
     create_replay_model,
@@ -25,27 +26,14 @@ from drone_playground.visualization.navigation_scene import (
 from drone_playground.visualization.rscope_io import export_rollout
 
 
-def interpolate_path(points, frames):
-    points = np.asarray(points, np.float32)
-    lengths = np.linalg.norm(np.diff(points, axis=0), axis=1)
-    cumulative = np.concatenate([[0.0], np.cumsum(lengths)])
-    distance = np.linspace(0.0, cumulative[-1], frames)
-    output = []
-    for value in distance:
-        index = min(np.searchsorted(cumulative, value, side="right") - 1, len(lengths) - 1)
-        alpha = (value - cumulative[index]) / lengths[index] if lengths[index] else 0.0
-        output.append(points[index] + alpha * (points[index + 1] - points[index]))
-    return np.asarray(output, np.float32)
-
-
 def review_env(bank, scene_id, dt, manifest):
     return SimpleNamespace(
         bank=bank,
         dt=dt,
+        sensor=Mid360Lidar(),
         component_identity={
             "purpose": "Navigation8 visual verification",
             "scene_id": scene_id,
-            "inspection_path_is_policy_input": False,
             "catalog_version": manifest["version"],
         },
         scenario=lambda scenario_id: {
@@ -72,9 +60,13 @@ def main():
     args = parser.parse_args()
 
     if args.output is None:
-        from drone_playground.runs.layout import experiment_directory
-
-        args.output = experiment_directory(Path.cwd(), 'navigation8-review')
+        args.output = (
+            Path.cwd()
+            / "results"
+            / "scratch"
+            / "previews"
+            / "navigation-review"
+        )
 
     catalog = load_fixed_catalog(args.catalog)
     review = {row["scene_id"]: row for row in validate_fixed_catalog(catalog)}
@@ -83,17 +75,15 @@ def main():
     index = []
     for scene in catalog["scenes"]:
         scene_id = scene["id"]
-        bank, manifest = build_fixed_bank(catalog, [scene_id], validated_reports=review)
-        duration = float(scene.get("review_duration_s", scene.get("inspection_duration_s", 40.0)))
+        bank, manifest = build_fixed_bank(
+            catalog, [scene_id], validated_reports=review
+        )
+        duration = float(scene.get("review_duration_s", 40.0))
         frames = max(2, int(round(duration * args.fps)) + 1)
         times = np.linspace(0.0, duration, frames, dtype=np.float32)
-        if "inspection_path" in scene:
-            positions = interpolate_path(scene["inspection_path"], frames)
-            replay_motion = "legacy inspection route"
-        else:
-            start = np.asarray(catalog["world"]["start"], np.float32)
-            positions = np.repeat(start[None, :], frames, axis=0)
-            replay_motion = "drone held at start; no reference or oracle route"
+        start = np.asarray(catalog["world"]["start"], np.float32)
+        positions = np.repeat(start[None, :], frames, axis=0)
+        replay_motion = "drone held at start; no reference or oracle route"
         quaternions = np.zeros((frames, 1, 4), np.float32)
         quaternions[..., 3] = 1.0
         positions_batched = positions[:, None, :]
@@ -107,7 +97,7 @@ def main():
             )
             clearance.append(float(value))
             collision.append(float(hit))
-        metric_prefix = "inspection" if "inspection_path" in scene else "review/start"
+        metric_prefix = "review/start"
         trace = {
             "pos": positions_batched,
             "quat": quaternions,
@@ -116,16 +106,18 @@ def main():
             "reward": np.zeros((frames, 1), np.float32),
             "actions": np.zeros((frames, 1, 4), np.float32),
             "metrics": {
-                f"{metric_prefix}/clearance_m": np.asarray(clearance, np.float32)[:, None],
-                f"{metric_prefix}/collision": np.asarray(collision, np.float32)[:, None],
+                f"{metric_prefix}/clearance_m": np.asarray(
+                    clearance, np.float32
+                )[:, None],
+                f"{metric_prefix}/collision": np.asarray(collision, np.float32)[
+                    :, None
+                ],
             },
             "obstacle_pos": obstacle_positions,
         }
         env = review_env(bank, scene_id, 1.0 / args.fps, manifest)
         env.component_identity["review_drone_motion"] = replay_motion
-        env.component_identity["reference_route"] = (
-            "none" if "inspection_path" not in scene else "legacy-inspection-only"
-        )
+        env.component_identity["reference_route"] = "none"
         target = args.output / scene_id
         replay = export_rollout(create_replay_model(env, 0), target, trace)
         (target / "scene-definition.json").write_text(
@@ -153,7 +145,7 @@ def main():
     (args.output / "index.json").write_text(
         json.dumps(
             {
-                "catalog": catalog.get("name", "navigation8"),
+                "catalog": catalog.get("name", "navigation"),
                 "catalog_version": catalog["version"],
                 "status": catalog["status"],
                 "scenes": index,
@@ -168,20 +160,20 @@ def main():
         "These are the accepted Navigation8 fixed scenes. Route-free catalogs hold the drone at the",
         "start pose and animate only scene dynamics: no reference/oracle trajectory is exported.",
         "",
-        "| ID | type | difficulty | field | boundary | total | direct blocked | A* reachable | max straight run | reference |",
+        "| ID | type | difficulty | field | boundary | total | direct blocked | A* reachable | max straight run | source |",
         "|---|---|---|---:|---:|---:|---|---|---:|---|",
     ]
     for row in index:
-        topology = row.get("topology", {})
-        reachable = topology.get("all_snapshots_reachable")
-        longest = topology.get("max_clear_straight_run_m")
+        topology = row["topology"]
+        reachable = topology["all_snapshots_reachable"]
+        longest = topology["max_clear_straight_run_m"]
         lines.append(
             f"| {row['scene_id']} | {'dynamic' if row['dynamic'] else 'static'} | "
             f"{row['difficulty']} | {row['field_obstacles']} | {row['boundary_obstacles']} | "
             f"{row['obstacles']} | "
             f"{'yes' if row['straight_line_blocked'] else 'no'} | "
-            f"{('yes' if reachable else 'no') if reachable is not None else 'legacy'} | "
-            f"{(f'{longest:.1f} m' if longest is not None else 'legacy')} | {row['source']} |"
+            f"{'yes' if reachable else 'no'} | "
+            f"{longest:.1f} m | {row['source']} |"
         )
     (args.output / "README.md").write_text("\n".join(lines) + "\n")
     print(json.dumps({"output": str(args.output), "scenes": index}, indent=2))

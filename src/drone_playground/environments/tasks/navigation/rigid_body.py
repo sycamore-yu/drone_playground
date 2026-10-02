@@ -1,0 +1,641 @@
+"""Unified navigation task: SANDO-style scene, arrival, body collision, time limit.
+
+One task protocol owns the navigation episode for every method. The active
+recipe uses a 300 s limit; the archived v1 keeps 40 s. Both use the 0.5 m arrival radius and the
+Crazyflie body-collision failure, with collision taking priority over arrival
+in the same step. Static and dynamic navigation share this implementation; the
+difference is which scene families the scene bank contains, and the composition
+refuses a mismatch.
+
+Collision is evaluated at every 500 Hz physics substep against the analytic
+obstacles and ground. This catches the tested 40 m/s thin-bar crossing; it is
+discrete detection, not a continuous-collision guarantee at arbitrary speeds.
+Body geometry is the 0.07 m sphere of the pinned Crazyflow model, offsets included.
+"""
+
+from __future__ import annotations
+
+import jax
+import jax.numpy as jnp
+import numpy as np
+from brax.envs.base import Env, State
+from crazyflow.sim.data import SimData
+from flax import struct
+
+from drone_playground.actions.controllers.crazyflow import AttitudeControl
+from drone_playground.actions.transition import ActionTransition
+from drone_playground.dynamics.crazyflow import CrazyflowModel
+from drone_playground.environments.observations.state import NavigationObservation
+from drone_playground.environments.scenes.geometry import (
+    BODY_RADIUS_M,
+    SceneBank,
+    body_centre_from_state,
+    clearance_and_collision,
+    euclidean_norm,
+)
+from drone_playground.environments.sensors.depth import DepthCamera, cast_depth
+from drone_playground.environments.sensors.lidar import Mid360Lidar, cast_lidar
+from drone_playground.environments.observations.state import numerically_valid_observation
+from drone_playground.environments.tasks.rewards import NavigationObjective
+
+
+@struct.dataclass
+class NavigationData:
+    """All evolving navigation state; the immutable scene bank belongs to the task."""
+
+    sim_data: SimData
+    scenario_id: jax.Array
+    step_index: jax.Array
+    previous_distance: jax.Array
+    previous_action: jax.Array
+    sensor_values: jax.Array
+    sensor_time: jax.Array
+    sensor_sequence: jax.Array
+    goal: jax.Array
+    scene_time_offset: jax.Array = 0.0
+
+
+class NavigationTask:
+    """One task definition for all dynamics and observation/execution adapters."""
+
+    def __init__(self, goal_radius, body_radius):
+        if goal_radius <= 0 or body_radius <= 0:
+            raise ValueError("Task radii must be positive")
+        self.goal_radius, self.body_radius = goal_radius, body_radius
+
+    def clearance(self, bank, scenario_id, centre, time):
+        return clearance_and_collision(
+            bank, scenario_id, time, centre, self.body_radius
+        )
+
+    def events(self, bank, position, goal, collided, numerical_failure):
+        distance = euclidean_norm(position - goal)
+        arrived = distance <= self.goal_radius
+        outside = jnp.any(
+            (position < bank.world_low) | (position > bank.world_high), axis=-1
+        )
+        outcome = _outcome(collided, arrived, outside, numerical_failure)
+        return distance, arrived, outside, outcome
+
+
+class NavigationEnv(Env):
+    """Single-environment navigation interface; Brax owns the outer batch axis."""
+
+    def __init__(
+        self,
+        scene_bank: SceneBank,
+        task: str = "navigation",
+        dynamics: str = "first_principles",
+        drone: str = "cf2x_L250",
+        freq: int = 50,
+        physics_freq: int = 500,
+        duration: float = 40.0,
+        goal_radius: float = 0.5,
+        body_radius: float = BODY_RADIUS_M,
+        device: str = "cpu",
+        model=None,
+        controller=None,
+        observation=None,
+        objective=None,
+        sensor: DepthCamera | Mid360Lidar | None = None,
+        stride: int | None = None,
+        reset_randomization: dict | None = None,
+        training_collision_mode: str = "terminate",
+    ):
+        if freq <= 0 or physics_freq <= 0 or physics_freq % freq:
+            raise ValueError(
+                "Task frequency must be a positive divisor of physics frequency"
+            )
+        if duration <= 0:
+            raise ValueError("Navigation duration must be positive")
+        if goal_radius <= 0:
+            raise ValueError("Goal radius must be positive")
+        self.bank = scene_bank
+        self.model = model or CrazyflowModel(dynamics, drone)
+        self.controller = controller or AttitudeControl()
+        self.observer = observation or NavigationObservation()
+        self.objective = objective or NavigationObjective()
+        self.reset_randomization = reset_randomization
+        if training_collision_mode not in ("terminate", "continuous_loss"):
+            raise ValueError("Unknown navigation training collision mode")
+        self.training_collision_mode = training_collision_mode
+        self.task = task
+        self.dynamics = self.model.forward
+        self.drone = self.model.drone
+        self.freq = freq
+        self.physics_freq = physics_freq
+        self.duration = float(duration)
+        self.goal_radius = float(goal_radius)
+        self.body_radius = float(body_radius)
+        self.task_definition = NavigationTask(
+            self.goal_radius, self.body_radius
+        )
+        self.episode_length = round(self.duration * freq)
+
+        self.reference = self.model.create_navigation(
+            self.duration,
+            freq,
+            device,
+            tuple(np.asarray(scene_bank.start[0], np.float32)),
+        )
+        self.sim = self.reference.sim
+        if physics_freq != self.sim.freq:
+            self.reference.close()
+            raise ValueError(
+                "Requested physics frequency differs from the actual dynamics backend"
+            )
+        self.default = self.sim.default_data
+        self.reset_fn = self.sim.build_reset_fn()
+        self.substeps = self.reference.n_substeps
+        self.dt_physics = 1.0 / self.physics_freq
+        self.low = jnp.asarray(self.reference.single_action_space.low)
+        self.high = jnp.asarray(self.reference.single_action_space.high)
+        self.controller.bind(self.low, self.high)
+        self.low, self.high = self.controller.low, self.controller.high
+        self.transition = ActionTransition(
+            self.controller.apply, self.model.advance, self.substeps
+        )
+        hover = jnp.array(
+            [0.0, 0.0, 0.0, float(self.default.params.mass[0]) * 9.81]
+        )
+        if hasattr(self.controller, "hover"):
+            hover = self.controller.hover(self.default)
+        self.hover_action = 2 * (hover - self.low) / (self.high - self.low) - 1
+        # The pinned model owns the rest attitude; Crazyflow uses xyzw order.
+        self.identity_quat = jnp.asarray(self.default.states.quat[0, 0])
+        self.bounds_low = jnp.asarray(scene_bank.world_low, jnp.float32)
+        self.bounds_high = jnp.asarray(scene_bank.world_high, jnp.float32)
+
+        self.sensor = sensor
+        if sensor is None:
+            self.points_per_frame = 0
+            self.sensor_period = 1
+            self.depth_stride = 1
+        else:
+            self.depth_stride = stride
+            self.points_per_frame = sensor.points_per_frame
+            self.sensor_period = sensor.period_steps(freq)
+            expected = (
+                sensor.history * sensor.points_per_frame * sensor.channels
+            )
+            if self.observer.sensor_size != expected:
+                raise ValueError(
+                    "the observation sensor block does not match the sensor frame size; "
+                    f"observation expects {self.observer.sensor_size}, sensor produces "
+                    f"{expected}"
+                )
+        self.sensor_calibration = (
+            None if sensor is None else sensor.calibration()
+        )
+
+    # -- Brax Env interface ------------------------------------------------------------
+
+    @property
+    def observation_size(self) -> int:
+        return self.observer.size
+
+    @property
+    def action_size(self) -> int:
+        return 4
+
+    @property
+    def backend(self) -> str:
+        return type(self.model).__name__
+
+    @property
+    def dt(self) -> float:
+        return 1.0 / self.freq
+
+    def scenario(self, scenario_id) -> dict:
+        """Human-readable identity of one scenario instance."""
+        index = int(np.asarray(scenario_id))
+        return {
+            "scenario_id": index,
+            **self.bank.labels(index),
+            "obstacles": self.bank.active_count(index),
+            "start": [
+                float(value) for value in np.asarray(self.bank.start[index])
+            ],
+            "goal": [
+                float(value) for value in np.asarray(self.bank.goal[index])
+            ],
+        }
+
+    def observation(self, data: NavigationData) -> jax.Array:
+        states = data.sim_data.states
+        goal = data.goal
+        if self.sensor is None:
+            return self.observer(states, goal, data.previous_action)
+        return self.observer(
+            states, goal, data.previous_action, {"values": data.sensor_values}
+        )
+
+    def _sample_sensor(self, data: NavigationData) -> NavigationData:
+        """Generate the due measurement and refresh the history at its own rate.
+
+        The scene is advanced and the body pose synchronised before the
+        measurement is generated, so a sample always describes the pose at its
+        recorded capture time. Frames are refreshed on a fixed control-step
+        divisor, which makes the realised availability exact and recordable
+        instead of an aliased 50/30 ratio.
+        """
+        if self.sensor is None:
+            return data
+        states = data.sim_data.states
+        time = (
+            data.scene_time_offset
+            + data.step_index.astype(jnp.float32) * self.dt
+        )
+        position = states.pos[0, 0]
+        quat = states.quat[0, 0]
+        if isinstance(self.sensor, Mid360Lidar):
+            # The scan phase is episode state, so a reset restarts the horizon
+            # instead of continuing a cursor owned by the generator.
+            frame = cast_lidar(
+                self.sensor,
+                self.bank,
+                data.scenario_id,
+                position,
+                quat,
+                time,
+                data.sensor_sequence,
+            )
+        else:
+            frame = cast_depth(
+                self.sensor,
+                self.bank,
+                data.scenario_id,
+                position,
+                quat,
+                time,
+                self.depth_stride,
+            )
+        values = self.sensor.frame_values(frame)
+        noise = getattr(self, "observation_noise", {})
+        std, dropout = noise.get("sensor_std_m", 0.0), noise.get(
+            "sensor_dropout_probability", 0.0
+        )
+        if std or dropout:
+            from drone_playground.environments.randomization import point_measurement_noise
+
+            noise_key = jax.random.fold_in(
+                data.sim_data.core.rng_key, data.sensor_sequence
+            )
+            valid = values[..., -1] > 0.5
+            coordinates = (
+                values[..., :1]
+                if self.sensor.channels == 2
+                else values[..., :3]
+            )
+            noisy, valid = point_measurement_noise(
+                coordinates, valid, noise_key, std, dropout
+            )
+            if self.sensor.channels == 2:
+                values = values.at[..., 0].set(
+                    jnp.clip(
+                        noisy[..., 0], self.sensor.near_m, self.sensor.far_m
+                    )
+                )
+            else:
+                values = (
+                    values.at[..., :3]
+                    .set(noisy)
+                    .at[..., 3]
+                    .set(euclidean_norm(noisy))
+                )
+            values = values.at[..., -1].set(valid.astype(jnp.float32))
+        due = (data.step_index % self.sensor_period) == 0
+        history = jnp.where(
+            due,
+            jnp.concatenate([data.sensor_values[1:], values[None]]),
+            data.sensor_values,
+        )
+        times = jnp.where(
+            due,
+            jnp.concatenate([data.sensor_time[1:], frame.time[None]]),
+            data.sensor_time,
+        )
+        sequence = data.sensor_sequence + due.astype(jnp.int32)
+        return data.replace(
+            sensor_values=history, sensor_time=times, sensor_sequence=sequence
+        )
+
+    def proprioception(self, data: NavigationData) -> jax.Array:
+        """Value input before auto-reset, independent of the ray-casting graph."""
+        observer = NavigationObservation(
+            include_goal=self.observer.include_goal,
+            include_previous_action=self.observer.include_previous_action,
+            action_size=self.observer.action_size,
+        )
+        return observer(data.sim_data.states, data.goal, data.previous_action)
+
+    def reset(
+        self,
+        rng: jax.Array,
+        scenario_id: jax.Array | None = None,
+        initial_state: dict | None = None,
+    ) -> State:
+        if rng.dtype == jnp.uint32:
+            rng = jax.random.wrap_key_data(rng)
+        key, scene_key = jax.random.split(rng)
+        sim_data = self.default.replace(
+            core=self.default.core.replace(rng_key=key)
+        )
+        sim_data = self.reset_fn(sim_data, self.default)
+        sim_data = self.model.randomize(sim_data, jax.random.fold_in(key, 101))
+        if scenario_id is None:
+            scenario_id = jax.random.randint(
+                scene_key, (), 0, self.bank.num_instances, dtype=jnp.int32
+            )
+        scenario_id = jnp.asarray(scenario_id, jnp.int32)
+        start = self.bank.start[scenario_id]
+        goal = self.bank.goal[scenario_id]
+        from drone_playground.environments.randomization import sample_command
+
+        goal = sample_command(
+            goal,
+            jax.random.fold_in(key, 110),
+            getattr(self, "command_distribution", {}),
+        )
+        initial_velocity = jnp.zeros(3)
+        initial_quaternion = self.identity_quat
+        scene_phase = jnp.float32(0)
+        if self.reset_randomization:
+            from drone_playground.environments.tasks.navigation.initialization import (
+                sample_initial_state,
+            )
+
+            start, initial_velocity, scene_phase = sample_initial_state(
+                self.bank,
+                scenario_id,
+                jax.random.fold_in(key, 73),
+                self.body_radius,
+                float(getattr(self.objective, "target_speed", 2.0)),
+                self.reset_randomization,
+            )
+            from jax.scipy.spatial.transform import Rotation
+
+            width = jnp.asarray(
+                self.reset_randomization.get(
+                    "orientation_half_width_rad", [0, 0, 0]
+                )
+            )
+            angles = (
+                jax.random.uniform(
+                    jax.random.fold_in(key, 74), (3,), minval=-1, maxval=1
+                )
+                * width
+            )
+            initial_quaternion = (
+                Rotation.from_quat(initial_quaternion)
+                * Rotation.from_euler("xyz", angles)
+            ).as_quat()
+        angular_velocity = jax.random.normal(
+            jax.random.fold_in(key, 75), (3,)
+        ) * jnp.asarray(
+            (self.reset_randomization or {}).get(
+                "angular_velocity_std_radps", 0.0
+            )
+        )
+        if initial_state is not None:
+            start = initial_state["position"]
+            initial_velocity = initial_state["velocity"]
+            initial_quaternion = initial_state["quaternion"]
+        # The scenario owns the initial pose; the reset pipeline only supplies
+        # motor state and the physical default data.
+        states = sim_data.states.replace(
+            pos=start[None, None],
+            quat=jnp.broadcast_to(
+                initial_quaternion, sim_data.states.quat.shape
+            ),
+            vel=jnp.broadcast_to(initial_velocity, sim_data.states.vel.shape),
+            ang_vel=jnp.broadcast_to(
+                angular_velocity, sim_data.states.ang_vel.shape
+            ),
+        )
+        sim_data = sim_data.replace(states=states)
+        history = 1 if self.sensor is None else self.sensor.history
+        channels = 1 if self.sensor is None else self.sensor.channels
+        data = NavigationData(
+            sim_data=sim_data,
+            scenario_id=scenario_id,
+            step_index=jnp.int32(0),
+            previous_distance=euclidean_norm(start - goal),
+            previous_action=self.hover_action,
+            sensor_values=jnp.zeros(
+                (history, self.points_per_frame, channels), jnp.float32
+            ),
+            sensor_time=jnp.zeros((history,), jnp.float32),
+            sensor_sequence=jnp.int32(0),
+            goal=goal,
+            scene_time_offset=scene_phase,
+        )
+        data = self._sample_sensor(data)
+        zero = jnp.float32(0)
+        metrics = {
+            name: zero
+            for name in (
+                "goal_distance",
+                "clearance",
+                "action_saturation",
+                "physical_thrust",
+                "arrived",
+                "collision",
+                "out_of_bounds",
+                "numerical_failure",
+                "failure",
+                "sensor_sequence",
+            )
+        }
+        metrics["sensor_sequence"] = zero
+        return State(
+            pipeline_state=data,
+            obs=self.observation(data),
+            reward=zero,
+            done=zero,
+            metrics=metrics,
+            info={
+                "terminated": zero,
+                "physical_parameters": self.model.physical_parameters(sim_data),
+                "outcome": jnp.int32(OUTCOME_RUNNING),
+                "terminal_proprioception": self.proprioception(data),
+            },
+        )
+
+    def physical_action(self, action: jax.Array) -> jax.Array:
+        return self.controller.physical_action(action)
+
+    def step(self, state: State, action: jax.Array) -> State:
+        return self._transition(state, action)
+
+    def step_schedule(self, state, commands):
+        action = 2 * (commands[-1] - self.low) / (self.high - self.low) - 1
+        return self._transition(state, action, commands)
+
+    def _transition(self, state, action, commands=None):
+        data = state.pipeline_state
+        physical = self.physical_action(action)
+        scenario_id = data.scenario_id
+        first_substep = data.step_index * self.substeps
+
+        def probe(current, offset):
+            time = (
+                data.scene_time_offset
+                + (first_substep + offset + 1) * self.dt_physics
+            )
+            centre = body_centre_from_state(
+                current.states.pos[0, 0], current.states.quat[0, 0]
+            )
+            clearance, hit = self.task_definition.clearance(
+                self.bank, scenario_id, centre, time
+            )
+            return clearance, hit
+
+        if commands is None:
+            sim_data, clearance, collided = self.transition.step_with_evidence(
+                data.sim_data, physical, probe
+            )
+        else:
+            sim_data, clearance, collided = self.transition.step_schedule(
+                data.sim_data, commands, probe
+            )
+
+        states = sim_data.states
+        position = states.pos[0, 0]
+        goal = data.goal
+        distance, arrived, out_of_bounds, _ = self.task_definition.events(
+            self.bank, position, goal, collided, jnp.array(False)
+        )
+        data = data.replace(
+            sim_data=sim_data,
+            step_index=data.step_index + 1,
+            previous_distance=distance,
+            previous_action=action,
+        )
+        numerical_failure = ~numerically_valid_observation(
+            self.observation(data)
+        )
+        # Numerical invalidity is a failed trial. Retain the last finite pose for
+        # terminal recording; healthy transitions pass through unchanged and no
+        # physical limit is relaxed.
+        states = jax.tree.map(
+            lambda new, old: jnp.where(
+                numerical_failure, jax.lax.stop_gradient(old), new
+            ),
+            data.sim_data.states,
+            state.pipeline_state.sim_data.states,
+        )
+        data = data.replace(sim_data=data.sim_data.replace(states=states))
+        terminated = collided | arrived | out_of_bounds | numerical_failure
+        if self.training_collision_mode == "continuous_loss":
+            # The explicitly selected training surrogate continues through
+            # geometric contact to retain penetration/escape loss gradients.
+            # Collision labels below remain true. All evaluation instances are
+            # constructed with the original hard terminal rule.
+            terminated = arrived | out_of_bounds | numerical_failure
+        reward = self.objective(
+            arrived=arrived,
+            collided=collided,
+            out_of_bounds=out_of_bounds,
+            numerical_failure=numerical_failure,
+            previous_distance=state.pipeline_state.previous_distance,
+            distance=distance,
+            clearance=clearance,
+            action=action,
+            previous_action=state.pipeline_state.previous_action,
+            velocity=states.vel[0, 0],
+            goal_delta=goal - states.pos[0, 0],
+            dt=self.dt,
+        )
+        data = self._sample_sensor(data)
+        _, _, _, outcome = self.task_definition.events(
+            self.bank, position, goal, collided, numerical_failure
+        )
+        metrics = {
+            **state.metrics,
+            "goal_distance": distance,
+            "clearance": clearance,
+            "action_saturation": jnp.mean(
+                (jnp.abs(action) >= 0.99).astype(jnp.float32)
+            ),
+            "physical_thrust": (
+                data.sim_data.controls.attitude.staged_cmd[0, 0, 3]
+                if self.controller.input_kind == "velocity_yaw"
+                else physical[0]
+                if self.controller.input_kind == "thrust_bodyrates"
+                else physical[3]
+            ),
+            "arrived": arrived.astype(jnp.float32),
+            "collision": collided.astype(jnp.float32),
+            "out_of_bounds": out_of_bounds.astype(jnp.float32),
+            "numerical_failure": numerical_failure.astype(jnp.float32),
+            "failure": (collided | out_of_bounds | numerical_failure).astype(
+                jnp.float32
+            ),
+        }
+        return state.replace(
+            pipeline_state=data,
+            obs=self.observation(data),
+            reward=reward,
+            done=terminated.astype(jnp.float32),
+            metrics=metrics,
+            info={
+                **state.info,
+                "terminated": terminated.astype(jnp.float32),
+                "outcome": outcome,
+                "terminal_proprioception": self.proprioception(data),
+            },
+        )
+
+    @property
+    def realised_sensor_rate_hz(self) -> float:
+        """Actual frame availability after snapping to the control-step divisor."""
+        return self.freq / self.sensor_period
+
+    def close(self) -> None:
+        self.reference.close()
+
+    def step_physical(self, state, physical):
+        normalized = 2 * (physical - self.low) / (self.high - self.low) - 1
+        return self.step(state, normalized)
+
+    def controller_observation(self, state):
+        data = state.pipeline_state.sim_data.states
+        return {
+            name: np.asarray(getattr(data, name)[0, 0])
+            for name in ("pos", "quat", "vel", "ang_vel")
+        }
+
+
+OUTCOME_RUNNING = 0
+OUTCOME_ARRIVED = 1
+OUTCOME_COLLISION = 2
+OUTCOME_OUT_OF_BOUNDS = 3
+OUTCOME_NUMERICAL = 4
+OUTCOME_TIMEOUT = 5
+
+OUTCOME_NAMES = {
+    OUTCOME_RUNNING: "running",
+    OUTCOME_ARRIVED: "arrived",
+    OUTCOME_COLLISION: "collision",
+    OUTCOME_OUT_OF_BOUNDS: "out_of_bounds",
+    OUTCOME_NUMERICAL: "numerical_failure",
+    OUTCOME_TIMEOUT: "timeout",
+}
+
+
+def _outcome(collided, arrived, out_of_bounds, numerical_failure) -> jax.Array:
+    """Collision wins over arrival in the same step, as the protocol requires."""
+    return jnp.where(
+        collided,
+        OUTCOME_COLLISION,
+        jnp.where(
+            numerical_failure,
+            OUTCOME_NUMERICAL,
+            jnp.where(
+                out_of_bounds,
+                OUTCOME_OUT_OF_BOUNDS,
+                jnp.where(arrived, OUTCOME_ARRIVED, OUTCOME_RUNNING),
+            ),
+        ),
+    ).astype(jnp.int32)

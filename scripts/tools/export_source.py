@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from drone_playground.source_archive import export_source  # noqa: E402
+from drone_playground.artifacts.source_snapshot import export_source  # noqa: E402
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

@@ -1,6 +1,0 @@
-name: brax_apg
-normalize_observations: false
-hidden_sizes:
-- 32
-- 32
-layer_norm: true

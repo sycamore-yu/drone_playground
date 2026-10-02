@@ -1,6 +1,0 @@
-defaults:
-- perception_navigation
-- _self_
-name: perception_navigation_velocity
-mean_action_bias: [0.08, 0.0, 0.0, 0.0]
-init_noise_std: 0.02

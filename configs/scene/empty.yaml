@@ -1,6 +1,0 @@
-_target_: drone_playground.environments.scenes.EmptyScene
-name: empty
-takeoff:
-- -1.5
-- 1.0
-- 0.07

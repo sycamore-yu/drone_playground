@@ -11,3 +11,4 @@ entropy_cost: 0.007
 max_grad_norm: 1.0
 gradient:
   transition: direct
+trainer: drone_playground.learning.train.train_experiment

@@ -1,4 +1,0 @@
-_target_: drone_playground.learning.objectives.TrackingObjective
-name: tracking_exp
-scale: 1.0
-distance_scale: 2.0

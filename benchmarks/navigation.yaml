@@ -1,0 +1,44 @@
+name: navigation
+version: 2
+catalog: assets/scenes/navigation/catalog.json
+catalog_sha256: 5df4966da53232a0c2aebf1b223c0d17a7e8d452fce5b878e543bff15eaed04f
+scenes:
+  static: [S01, S02, S03, S06]
+  dynamic: [D01, D02, D03, D06]
+primary_scenes: [S01, S02, S03, D01, D02, D03]
+episodes_per_scene:
+  checkpoint_eval: 8
+  benchmark: 25
+seeds:
+  train: 10000
+  checkpoint_eval: 50000
+  benchmark: 80000
+success_threshold:
+  navigation-checkpoint_eval-v2: {scope: all}
+  navigation-checkpoint_eval-primary-v1: {scope: primary, per_scene: 0.9}
+  navigation-v1: {scope: all, aggregate: 0.9}
+  navigation-primary-v1: {scope: primary, per_scene: 0.9}
+timeout:
+  duration_s: 300.0
+  kind: termination
+execution_conditions:
+  drone_playground.dynamics.crazyflow.CrazyflowModel:
+    control_frequency_hz: 50
+    physics_frequency_hz: 500
+  drone_playground.dynamics.point_mass.PointMassLag:
+    control_frequency_hz: 10
+    physics_frequency_hz: 500
+initial_conditions:
+  name: navigation-initial-v1
+  position_half_width_m: [0.25, 0.25, 0.1]
+  velocity_half_width_mps: [0.1, 0.1, 0.1]
+  yaw_half_width_rad: 0.08726646259971647
+  minimum_clearance_m: 0.15
+  position_candidates: 32
+nominal_max_velocity_mps: 20.0
+body_radius_m: 0.07
+goal_radius_m: 0.5
+recording: through-first-terminal-transition
+event_priority: [collision, numerical_failure, out_of_bounds, arrived, timeout]
+history_identity: Navigation8
+geometry_split: fixed catalog shared across train, checkpoint_eval and benchmark; no unseen-scene generalization claim

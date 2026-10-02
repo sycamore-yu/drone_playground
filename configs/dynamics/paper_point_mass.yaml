@@ -1,5 +1,0 @@
-_target_: drone_playground.models.point_mass.PointMassLag
-forward: point_mass_lag
-drone: paper_point_mass
-time_constant: 0.08333333333333333
-gravity: 9.80665

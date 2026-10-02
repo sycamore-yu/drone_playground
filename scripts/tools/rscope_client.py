@@ -35,7 +35,9 @@ class RemoteSFTP:
 
     def get(self, remote, local, *args, **kwargs):
         name = str(remote).replace("\\", "/").rsplit("/", 1)[-1]
-        return self.client.get(str(PurePosixPath(self.remote_root) / name), local, *args, **kwargs)
+        return self.client.get(
+            str(PurePosixPath(self.remote_root) / name), local, *args, **kwargs
+        )
 
     def close(self):
         return self.client.close()
@@ -72,7 +74,9 @@ def resolve_ssh_target(spec: str) -> tuple[str, str, int, list[Path]]:
             if host and user:
                 keys = []
                 for raw in cfg.get("identityfile", []):
-                    expanded = os.path.expandvars(os.path.expanduser(raw.strip('"')))
+                    expanded = os.path.expandvars(
+                        os.path.expanduser(raw.strip('"'))
+                    )
                     candidate = Path(expanded)
                     if candidate.exists():
                         keys.append(candidate)
@@ -106,7 +110,9 @@ def load_private_key(paramiko, path: Path):
                 password = getpass.getpass(f"SSH key passphrase for {path}: ")
                 prompted = True
                 try:
-                    return key_class.from_private_key_file(str(path), password=password)
+                    return key_class.from_private_key_file(
+                        str(path), password=password
+                    )
                 except paramiko.SSHException as exc:
                     errors.append(exc)
                     continue
@@ -114,7 +120,8 @@ def load_private_key(paramiko, path: Path):
         except paramiko.SSHException as exc:
             errors.append(exc)
     raise paramiko.SSHException(
-        f"Could not load SSH private key {path}: " + "; ".join(str(error) for error in errors[-2:])
+        f"Could not load SSH private key {path}: "
+        + "; ".join(str(error) for error in errors[-2:])
     )
 
 
@@ -175,7 +182,9 @@ def update_reference_route(
     best_score = _reference_route_score(points)
     if candidate_rollouts is not None and env_index is not None:
         for candidate in candidate_rollouts:
-            candidate_points = reference_points_from_rollout(candidate, env_index=env_index)
+            candidate_points = reference_points_from_rollout(
+                candidate, env_index=env_index
+            )
             score = _reference_route_score(candidate_points)
             if score > best_score:
                 points, best_score = candidate_points, score
@@ -197,7 +206,9 @@ def update_reference_route(
         if np.linalg.norm(end - start) <= 1e-12:
             continue
         geom = scene.geoms[count]
-        mujoco.mjv_initGeom(geom, mujoco.mjtGeom.mjGEOM_LINE, size, pos, mat, rgba)
+        mujoco.mjv_initGeom(
+            geom, mujoco.mjtGeom.mjGEOM_LINE, size, pos, mat, rgba
+        )
         mujoco.mjv_connector(geom, mujoco.mjtGeom.mjGEOM_LINE, 3.0, start, end)
         count += 1
     scene.ngeom = count
@@ -210,10 +221,12 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
 
     original = importlib.import_module("rscope.main")
 
-    if importlib.metadata.version("rscope") != "0.0.8" or not mujoco.__version__.startswith(
-        "3.14."
-    ):
-        raise RuntimeError("This verified client requires rscope 0.0.8 and MuJoCo 3.14.x")
+    if importlib.metadata.version(
+        "rscope"
+    ) != "0.0.8" or not mujoco.__version__.startswith("3.14."):
+        raise RuntimeError(
+            "This verified client requires rscope 0.0.8 and MuJoCo 3.14.x"
+        )
     tree = ast.parse(inspect.getsource(original.main))
 
     class LockScope(ast.NodeTransformer):
@@ -245,14 +258,18 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
                 self.added += 1
                 lock = ast.Call(
                     func=ast.Attribute(
-                        value=ast.Name(id="viewer", ctx=ast.Load()), attr="lock", ctx=ast.Load()
+                        value=ast.Name(id="viewer", ctx=ast.Load()),
+                        attr="lock",
+                        ctx=ast.Load(),
                     ),
                     args=[],
                     keywords=[],
                 )
                 return ast.copy_location(
                     ast.With(
-                        items=[ast.withitem(context_expr=lock)], body=[node], type_comment=None
+                        items=[ast.withitem(context_expr=lock)],
+                        body=[node],
+                        type_comment=None,
                     ),
                     node,
                 )
@@ -269,19 +286,25 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
                 self.reference_added += 1
                 lock = ast.Call(
                     func=ast.Attribute(
-                        value=ast.Name(id="viewer", ctx=ast.Load()), attr="lock", ctx=ast.Load()
+                        value=ast.Name(id="viewer", ctx=ast.Load()),
+                        attr="lock",
+                        ctx=ast.Load(),
                     ),
                     args=[],
                     keywords=[],
                 )
                 update = ast.Expr(
                     value=ast.Call(
-                        func=ast.Name(id="_update_reference_route", ctx=ast.Load()),
+                        func=ast.Name(
+                            id="_update_reference_route", ctx=ast.Load()
+                        ),
                         args=[
                             ast.Name(id="viewer", ctx=ast.Load()),
                             ast.Name(id="cur_rollout", ctx=ast.Load()),
                             ast.Attribute(
-                                value=ast.Name(id="viewer_state", ctx=ast.Load()),
+                                value=ast.Name(
+                                    id="viewer_state", ctx=ast.Load()
+                                ),
                                 attr="cur_env",
                                 ctx=ast.Load(),
                             ),
@@ -309,8 +332,14 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
 
     transformer = LockScope()
     tree = transformer.visit(tree)
-    if (transformer.removed, transformer.added, transformer.reference_added) != (1, 1, 1):
-        raise RuntimeError("Unexpected rscope source: refusing to apply an unverified lock change")
+    if (
+        transformer.removed,
+        transformer.added,
+        transformer.reference_added,
+    ) != (1, 1, 1):
+        raise RuntimeError(
+            "Unexpected rscope source: refusing to apply an unverified lock change"
+        )
     ast.fix_missing_locations(tree)
     namespace = dict(original.__dict__)
     state_class = original.ViewerState
@@ -322,7 +351,9 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
 
     namespace["ViewerState"] = state_factory
     namespace["_update_reference_route"] = (
-        update_reference_route if show_reference else lambda *_args, **_kwargs: 0
+        update_reference_route
+        if show_reference
+        else lambda *_args, **_kwargs: 0
     )
     exec(compile(tree, "<rscope-0.0.8-ui-lock-compatible>", "exec"), namespace)
     return namespace["main"], {
@@ -337,11 +368,17 @@ def main(argv=None):
         description="rscope 原生查看器：安全缓存与 MuJoCo 3.14 界面锁兼容"
     )
     parser.add_argument("--directory", type=Path, help="本地导出目录")
-    parser.add_argument("--ssh_to", help="OpenSSH Host alias or username@host[:port]")
     parser.add_argument(
-        "--ssh_key", type=Path, help="已有 SSH 私钥文件；省略时尝试现有代理/默认密钥"
+        "--ssh_to", help="OpenSSH Host alias or username@host[:port]"
     )
-    parser.add_argument("--known_hosts", type=Path, help="已信任的 SSH 主机公钥清单")
+    parser.add_argument(
+        "--ssh_key",
+        type=Path,
+        help="已有 SSH 私钥文件；省略时尝试现有代理/默认密钥",
+    )
+    parser.add_argument(
+        "--known_hosts", type=Path, help="已信任的 SSH 主机公钥清单"
+    )
     parser.add_argument("--remote_directory", default="/tmp/rscope/active_run")
     parser.add_argument("--cache_dir", type=Path, help="新建或空的本地缓存目录")
     parser.add_argument("--polling_interval", type=int, default=5)
@@ -367,7 +404,9 @@ def main(argv=None):
         if not PurePosixPath(args.remote_directory).is_absolute():
             parser.error("remote_directory must be an absolute Linux path")
         try:
-            username, host, port, configured_keys = resolve_ssh_target(args.ssh_to)
+            username, host, port, configured_keys = resolve_ssh_target(
+                args.ssh_to
+            )
         except (OSError, ValueError, subprocess.SubprocessError) as exc:
             parser.error(str(exc))
         if not 1 <= port <= 65535:
@@ -400,7 +439,9 @@ def main(argv=None):
                 banner_timeout=10,
             )
             native_open = ssh.open_sftp
-            ssh.open_sftp = lambda: RemoteSFTP(native_open(), args.remote_directory)
+            ssh.open_sftp = lambda: RemoteSFTP(
+                native_open(), args.remote_directory
+            )
 
         # Fail before starting background polling when credentials are unavailable.
         with paramiko.SSHClient() as preflight:
@@ -415,7 +456,9 @@ def main(argv=None):
             else Path(tempfile.mkdtemp(prefix="rscope-client-"))
         )
         if cache.exists() and any(cache.iterdir()):
-            parser.error("Use an empty cache directory; existing files are preserved")
+            parser.error(
+                "Use an empty cache directory; existing files are preserved"
+            )
         cache.mkdir(parents=True, exist_ok=True)
         config.BASE_PATH = cache
         config.TEMP_PATH = cache.parent / (cache.name + "-transfer")
@@ -423,11 +466,17 @@ def main(argv=None):
         ssh_utils.ssh_connect = connect
         model_loader.ssh_connect = connect
     else:
-        directory = (args.directory or Path("/tmp/rscope/active_run")).expanduser().resolve()
+        directory = (
+            (args.directory or Path("/tmp/rscope/active_run"))
+            .expanduser()
+            .resolve()
+        )
         if not (directory / "rscope_meta.pkl").is_file():
             parser.error(f"No rscope metadata in {directory}")
         config.BASE_PATH = directory
-        config.TEMP_PATH = Path(tempfile.mkdtemp(prefix="rscope-local-transfer-"))
+        config.TEMP_PATH = Path(
+            tempfile.mkdtemp(prefix="rscope-local-transfer-")
+        )
         config.META_PATH = directory / "rscope_meta.pkl"
 
     viewer_main, details = compatible_main(
@@ -438,13 +487,17 @@ def main(argv=None):
             {
                 "local_cache": str(config.BASE_PATH),
                 "ssh": bool(args.ssh_to),
-                "remote_directory": args.remote_directory if args.ssh_to else None,
+                "remote_directory": args.remote_directory
+                if args.ssh_to
+                else None,
                 "compatibility": details,
             }
         ),
         flush=True,
     )
-    viewer_main(ssh_enabled=bool(args.ssh_to), polling_interval=args.polling_interval)
+    viewer_main(
+        ssh_enabled=bool(args.ssh_to), polling_interval=args.polling_interval
+    )
 
 
 if __name__ == "__main__":

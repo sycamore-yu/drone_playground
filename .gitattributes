@@ -2,5 +2,6 @@
 src/drone_playground/methods/optimal_control/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/assets/obstacle.xml -whitespace
-src/drone_playground/environments/tasks/lsy_upstream/level0.toml -whitespace
-native_planners/patches/*.patch -whitespace
+assets/scenes/racing/lsy_level0.toml -whitespace
+native/ros1/patches/*.patch -whitespace
+patches/upstream/*.patch -whitespace

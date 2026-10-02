@@ -1,3 +1,0 @@
-_target_: drone_playground.environments.tasks.pointcloud.PaperObservation
-name: paper_pointcloud_state
-proprioception_size: 10

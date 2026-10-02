@@ -34,8 +34,8 @@ from drone_playground.learning.algorithms.shac import (
     lambda_returns,
     segment_objective,
 )
-from drone_playground.learning.env_adapter import wrap_for_training
-from drone_playground.networks.policies import network_factory
+from drone_playground.learning.wrappers import wrap_for_training
+from drone_playground.networks.factory import network_factory
 
 
 @struct.dataclass
@@ -77,7 +77,9 @@ def save_training_state(path: Path, state: TrainingState, config: dict) -> None:
     typed_paths = []
 
     def to_host(keypath, leaf):
-        if hasattr(leaf, "dtype") and jax.dtypes.issubdtype(leaf.dtype, jax.dtypes.prng_key):
+        if hasattr(leaf, "dtype") and jax.dtypes.issubdtype(
+            leaf.dtype, jax.dtypes.prng_key
+        ):
             typed_paths.append(jax.tree_util.keystr(keypath))
             return np.asarray(jax.random.key_data(leaf))
         return np.asarray(leaf)
@@ -136,10 +138,23 @@ def _linear_schedule(initial: float, updates: int):
 def restore_contract(config: dict) -> dict:
     """Keep all training/environment semantics; exclude only run destinations."""
     config = json.loads(json.dumps(config))
-    for key in ("resume", "max_wall_seconds", "num_evals", "publish_live", "actual_devices"):
+    for key in (
+        "resume",
+        "max_wall_seconds",
+        "num_evals",
+        "publish_live",
+        "actual_devices",
+    ):
         config.pop(key, None)
     components = config.get("components", {})
-    for key in ("run_id", "evaluation", "replay", "checkpoint", "source", "provenance"):
+    for key in (
+        "run_id",
+        "evaluation",
+        "replay",
+        "checkpoint",
+        "source",
+        "provenance",
+    ):
         components.pop(key, None)
     for key in ("resume", "max_wall_seconds", "num_evals", "publish_live"):
         components.get("training", {}).pop(key, None)
@@ -150,8 +165,12 @@ def terminal_critic_observation(state, layout):
     """Use the physical terminal state even when the wrapper already reset."""
     proprio = state.info["terminal_proprioception"]
     if proprio.shape[-1] != layout.proprioception_size:
-        raise ValueError("Terminal proprioception differs from the declared sensor layout")
-    return jnp.pad(proprio, [(0, 0)] * (proprio.ndim - 1) + [(0, layout.sensor_size)])
+        raise ValueError(
+            "Terminal proprioception differs from the declared sensor layout"
+        )
+    return jnp.pad(
+        proprio, [(0, 0)] * (proprio.ndim - 1) + [(0, layout.sensor_size)]
+    )
 
 
 def critic_observation_from_pipeline(environment, pipeline_state, layout):
@@ -173,13 +192,17 @@ def critic_observation_from_pipeline(environment, pipeline_state, layout):
     vel = states.vel[:, 0, 0]
     ang_vel = states.ang_vel[:, 0, 0]
     goal = environment.bank.goal[data.scenario_id]
-    proprio = jnp.concatenate([pos, quat, vel, ang_vel, goal - pos, data.previous_action], axis=-1)
+    proprio = jnp.concatenate(
+        [pos, quat, vel, ang_vel, goal - pos, data.previous_action], axis=-1
+    )
     if proprio.shape[-1] != layout.proprioception_size:
         raise ValueError(
             f"critic proprioception has {proprio.shape[-1]} fields; "
             f"layout declares {layout.proprioception_size}"
         )
-    sensor = jnp.zeros((*proprio.shape[:-1], layout.sensor_size), dtype=proprio.dtype)
+    sensor = jnp.zeros(
+        (*proprio.shape[:-1], layout.sensor_size), dtype=proprio.dtype
+    )
     return jnp.concatenate([proprio, sensor], axis=-1)
 
 
@@ -197,7 +220,9 @@ def train(
     horizon = int(config["horizon_length"])
     updates = int(config["policy_updates"])
     if min(count, horizon, updates) < 1:
-        raise ValueError("D.VA requires positive environment, horizon and update counts")
+        raise ValueError(
+            "D.VA requires positive environment, horizon and update counts"
+        )
     if not config.get("sensor_layout"):
         raise ValueError("D.VA requires a declared P5 perception sensor layout")
 
@@ -220,7 +245,7 @@ def train(
         environment.action_size,
         preprocess_observations_fn=preprocess,
     )
-    from drone_playground.networks.encoders import SensorLayout
+    from drone_playground.networks.perception import SensorLayout
 
     layout = SensorLayout.from_dict(config["sensor_layout"])
     from brax.training.agents.ppo import networks as ppo_networks
@@ -228,17 +253,25 @@ def train(
     make_policy = ppo_networks.make_inference_fn(networks)
     env = wrap_for_training(environment, environment.episode_length)
 
-    actor_lr = _linear_schedule(float(config.get("learning_rate", 0.002)), updates)
-    critic_lr = _linear_schedule(float(config.get("critic_learning_rate", 0.0002)), updates)
+    actor_lr = _linear_schedule(
+        float(config.get("learning_rate", 0.002)), updates
+    )
+    critic_lr = _linear_schedule(
+        float(config.get("critic_learning_rate", 0.0002)), updates
+    )
     beta1, beta2 = tuple(config.get("betas", (0.7, 0.95)))
     actor_opt = optax.chain(
         optax.clip_by_global_norm(float(config.get("max_grad_norm", 1.0))),
         optax.adam(actor_lr, b1=float(beta1), b2=float(beta2)),
     )
     critic_opt = optax.chain(
-        optax.clip_by_global_norm(float(config.get("critic_max_grad_norm", 10.0))),
+        optax.clip_by_global_norm(
+            float(config.get("critic_max_grad_norm", 10.0))
+        ),
         optax.adam(
-            lambda step: critic_lr(step // value_iterations), b1=float(beta1), b2=float(beta2)
+            lambda step: critic_lr(step // value_iterations),
+            b1=float(beta1),
+            b2=float(beta2),
         ),
     )
 
@@ -263,12 +296,16 @@ def train(
 
     if restore_state is not None:
         restored, meta = load_training_state(restore_state)
-        previous, current = restore_contract(meta["config"]), restore_contract(config)
+        previous, current = restore_contract(meta["config"]), restore_contract(
+            config
+        )
         for name in sorted(previous.keys() | current.keys()):
             if previous.get(name) != current.get(name):
                 raise ValueError(f"D.VA restore configuration differs: {name}")
         if int(restored.updates) >= updates:
-            raise ValueError("D.VA checkpoint has already completed the declared budget")
+            raise ValueError(
+                "D.VA checkpoint has already completed the declared budget"
+            )
         state = restored
 
     initial_policy = jax.tree.map(np.asarray, state.policy)
@@ -282,7 +319,12 @@ def train(
             current, key = carry
             key, sample = jax.random.split(key)
             action = detached_policy_action(
-                networks, normalizer, params, current.obs, sample, deterministic=False
+                networks,
+                normalizer,
+                params,
+                current.obs,
+                sample,
+                deterministic=False,
             )
             nxt = env.step(current, action)
             terminal = nxt.info["terminated"].astype(bool)
@@ -302,7 +344,9 @@ def train(
             )
             return (nxt, key), row
 
-        (end, key), rows = jax.lax.scan(one_step, (start, key), None, length=horizon)
+        (end, key), rows = jax.lax.scan(
+            one_step, (start, key), None, length=horizon
+        )
         observations, rewards, values, done, terminal = rows
         loss = segment_objective(rewards, values, done, gamma)
         return loss, (end, key, observations, rewards, values, done, terminal)
@@ -310,14 +354,16 @@ def train(
     @jax.jit
     def update(state):
         start = jax.tree.map(jax.lax.stop_gradient, state.environment)
-        (actor_loss, aux), actor_grad = jax.value_and_grad(objective, has_aux=True)(
-            state.policy, state.normalizer, state.target_critic, start, state.key
-        )
+        (actor_loss, aux), actor_grad = jax.value_and_grad(
+            objective, has_aux=True
+        )(state.policy, state.normalizer, state.target_critic, start, state.key)
         end, key, observations, rewards, values, done, terminal = jax.tree.map(
             jax.lax.stop_gradient, aux
         )
         targets = lambda_returns(rewards, values, done, terminal, gamma, lam)
-        actor_delta, actor_os = actor_opt.update(actor_grad, state.actor_optimizer, state.policy)
+        actor_delta, actor_os = actor_opt.update(
+            actor_grad, state.actor_optimizer, state.policy
+        )
         policy = optax.apply_updates(state.policy, actor_delta)
 
         flat_obs = observations.reshape((-1, environment.observation_size))
@@ -327,11 +373,15 @@ def train(
             weights, optimizer_state = carry
 
             def critic_loss(p):
-                prediction = networks.value_network.apply(state.normalizer, p, flat_obs)
+                prediction = networks.value_network.apply(
+                    state.normalizer, p, flat_obs
+                )
                 return jnp.mean(jnp.square(prediction - flat_target))
 
             loss, grad = jax.value_and_grad(critic_loss)(weights)
-            delta, optimizer_state = critic_opt.update(grad, optimizer_state, weights)
+            delta, optimizer_state = critic_opt.update(
+                grad, optimizer_state, weights
+            )
             return (optax.apply_updates(weights, delta), optimizer_state), (
                 loss,
                 optax.global_norm(grad),
@@ -373,9 +423,14 @@ def train(
     start_clock = time.monotonic()
     initial_updates = int(state.updates)
     initial_step = initial_updates * count * horizon
-    policy_params_fn(initial_step, make_policy, (state.normalizer, state.policy))
+    policy_params_fn(
+        initial_step, make_policy, (state.normalizer, state.policy)
+    )
     milestones = set(
-        int(x) for x in np.linspace(0, updates, max(int(config.get("num_evals", 9)), 2))
+        int(x)
+        for x in np.linspace(
+            0, updates, max(int(config.get("num_evals", 9)), 2)
+        )
     )
     total_update_seconds = 0.0
     compile_seconds = 0.0
@@ -390,7 +445,9 @@ def train(
         else:
             total_update_seconds += duration
         if not all(np.isfinite(value) for value in metrics.values()):
-            raise FloatingPointError(f"Non-finite D.VA update {iteration}: {metrics}")
+            raise FloatingPointError(
+                f"Non-finite D.VA update {iteration}: {metrics}"
+            )
         step = iteration * count * horizon
         if iteration in milestones or iteration % 10 == 0:
             progress_fn(
@@ -405,12 +462,22 @@ def train(
         if iteration in milestones:
             if state_directory is not None:
                 save_training_state(
-                    Path(state_directory) / f"update-{iteration:07d}.pkl", state, config
+                    Path(state_directory) / f"update-{iteration:07d}.pkl",
+                    state,
+                    config,
                 )
-            policy_params_fn(step, make_policy, (state.normalizer, state.policy))
-        if time.monotonic() - start_clock > float(config.get("max_wall_seconds", 3600)):
+            policy_params_fn(
+                step, make_policy, (state.normalizer, state.policy)
+            )
+        if time.monotonic() - start_clock > float(
+            config.get("max_wall_seconds", 3600)
+        ):
             if state_directory is not None:
-                save_training_state(Path(state_directory) / "budget-exhausted.pkl", state, config)
+                save_training_state(
+                    Path(state_directory) / "budget-exhausted.pkl",
+                    state,
+                    config,
+                )
             raise TimeoutError("D.VA wall-clock budget reached")
 
     def delta(old, new):

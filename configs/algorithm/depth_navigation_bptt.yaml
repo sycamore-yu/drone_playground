@@ -1,7 +1,0 @@
-defaults:
-- pointcloud_navigation_bptt
-- _self_
-name: depth_navigation_bptt
-learning_rate: 0.001
-horizon_length: 32
-velocity_prediction_weight: 1.0

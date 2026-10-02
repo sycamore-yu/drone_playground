@@ -22,8 +22,8 @@ from brax.training.acme import running_statistics, specs
 from brax.training.agents.apg.networks import make_inference_fn
 from flax import struct
 
-from drone_playground.learning.env_adapter import wrap_for_training
-from drone_playground.networks.policies import network_factory
+from drone_playground.learning.wrappers import wrap_for_training
+from drone_playground.networks.factory import network_factory
 
 
 @struct.dataclass
@@ -71,15 +71,30 @@ def load_state(path, config):
     meta = json.loads(path.with_suffix(".json").read_text())
     if hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]:
         raise ValueError("BPTT state digest mismatch")
-    ignored = {"num_evals", "max_wall_seconds", "resume", "components", "actual_devices"}
+    ignored = {
+        "num_evals",
+        "max_wall_seconds",
+        "resume",
+        "components",
+        "actual_devices",
+    }
     for field, value in meta["config"].items():
         if field not in ignored and config.get(field) != value:
             raise ValueError(f"BPTT continuation differs on {field}")
     if "components" in config:
         old, new = meta["config"]["components"], config["components"]
-        for group in ("env", "method", "algorithm", "network", "objective", "runtime"):
+        for group in (
+            "env",
+            "method",
+            "algorithm",
+            "network",
+            "objective",
+            "runtime",
+        ):
             if old[group] != new[group]:
-                raise ValueError(f"BPTT continuation differs on component {group}")
+                raise ValueError(
+                    f"BPTT continuation differs on component {group}"
+                )
     paths = set(meta["typed_key_paths"])
     return jax.tree_util.tree_map_with_path(
         lambda p, x: (
@@ -110,7 +125,9 @@ def train(
         else types.identity_observation_preprocessor
     )
     net = network_factory(config)(
-        environment.observation_size, environment.action_size, preprocess_observations_fn=preprocess
+        environment.observation_size,
+        environment.action_size,
+        preprocess_observations_fn=preprocess,
     )
     make_policy = make_inference_fn(net)
     lr = config.get("learning_rate", 0.005)
@@ -128,15 +145,19 @@ def train(
         specs.Array((environment.observation_size,), jnp.float32)
     )
     if config.get("warm_start"):
-        from drone_playground.runs.checkpoints import load_policy
+        from drone_playground.artifacts.checkpoints import load_policy
 
         _, previous, meta = load_policy(config["warm_start"])
         if meta["config"]["algorithm"]["name"] not in ("apg", "bptt", "shac"):
-            raise ValueError("BPTT warm start requires the same APG-family policy parameterization")
+            raise ValueError(
+                "BPTT warm start requires the same APG-family policy parameterization"
+            )
         if meta["observation_size"] != environment.observation_size:
             raise ValueError("Warm-start observation contract differs")
         normalizer, params = jax.tree.map(jnp.asarray, previous)
-        net.policy_network.apply(normalizer, params, jnp.zeros((environment.observation_size,)))
+        net.policy_network.apply(
+            normalizer, params, jnp.zeros((environment.observation_size,))
+        )
     state = TrainingState(
         params,
         optimizer.init(params),
@@ -159,7 +180,9 @@ def train(
             nxt = env.step(current, action)
             return (nxt, key), (nxt.reward, current.obs)
 
-        (end, key), (rewards, obs) = jax.lax.scan(step, (current, key), None, length=horizon)
+        (end, key), (rewards, obs) = jax.lax.scan(
+            step, (current, key), None, length=horizon
+        )
         return -jnp.mean(rewards), (end, key, obs)
 
     @jax.jit
@@ -169,7 +192,9 @@ def train(
         if config.get("resample_window_initials", False):
             key, reset_key = jax.random.split(key)
             start = env.reset(jax.random.split(reset_key, count))
-        (loss, (end, key, obs)), grad = jax.value_and_grad(objective, has_aux=True)(
+        (loss, (end, key, obs)), grad = jax.value_and_grad(
+            objective, has_aux=True
+        )(
             state.policy,
             state.normalizer,
             start,
@@ -183,12 +208,20 @@ def train(
             environment=jax.tree.map(jax.lax.stop_gradient, end),
             key=key,
             updates=state.updates + 1,
-        ), {"training/actor_loss": loss, "training/actor_grad_norm": optax.global_norm(grad)}
+        ), {
+            "training/actor_loss": loss,
+            "training/actor_grad_norm": optax.global_norm(grad),
+        }
 
-    milestones = {int(v) for v in np.linspace(0, updates, max(config.get("num_evals", 9), 2))}
+    milestones = {
+        int(v)
+        for v in np.linspace(0, updates, max(config.get("num_evals", 9), 2))
+    }
     start, net_seconds, compile_seconds = time.monotonic(), 0.0, 0.0
     policy_params_fn(
-        int(state.updates) * count * horizon, make_policy, (state.normalizer, state.policy)
+        int(state.updates) * count * horizon,
+        make_policy,
+        (state.normalizer, state.policy),
     )
     metrics = {}
     for iteration in range(int(state.updates) + 1, updates + 1):
@@ -201,7 +234,9 @@ def train(
         else:
             net_seconds += elapsed
         if not all(np.isfinite(value) for value in metrics.values()):
-            raise FloatingPointError(f"Non-finite BPTT update {iteration}: {metrics}")
+            raise FloatingPointError(
+                f"Non-finite BPTT update {iteration}: {metrics}"
+            )
         if iteration % 10 == 0 or iteration in milestones:
             progress_fn(
                 iteration * count * horizon,
@@ -214,13 +249,23 @@ def train(
             )
         if iteration in milestones:
             if state_directory:
-                save_state(Path(state_directory) / f"update-{iteration:07d}.pkl", state, config)
+                save_state(
+                    Path(state_directory) / f"update-{iteration:07d}.pkl",
+                    state,
+                    config,
+                )
             policy_params_fn(
-                iteration * count * horizon, make_policy, (state.normalizer, state.policy)
+                iteration * count * horizon,
+                make_policy,
+                (state.normalizer, state.policy),
             )
         if time.monotonic() - start > config.get("max_wall_seconds", 3600):
             if state_directory:
-                save_state(Path(state_directory) / "budget-exhausted.pkl", state, config)
+                save_state(
+                    Path(state_directory) / "budget-exhausted.pkl",
+                    state,
+                    config,
+                )
             raise TimeoutError("BPTT wall-clock budget reached")
     delta = sum(
         np.square(np.asarray(a) - np.asarray(b)).sum()

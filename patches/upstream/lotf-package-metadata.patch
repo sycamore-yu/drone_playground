@@ -1,0 +1,68 @@
+diff --git a/pyproject.toml b/pyproject.toml
+new file mode 100644
+index 0000000..304a6d0
+--- /dev/null
++++ b/pyproject.toml
+@@ -0,0 +1,13 @@
++[build-system]
++requires = ["setuptools>=68"]
++build-backend = "setuptools.build_meta"
++
++[project]
++name = "lotf"
++version = "0.1.0"
++description = "A Python package to learn agile flight using differentiable simulation."
++requires-python = ">=3.10"
++dependencies = []
++
++[tool.setuptools.packages.find]
++include = ["lotf*"]
+diff --git a/lotf/objects/quadrotor_obj.py b/lotf/objects/quadrotor_obj.py
+index 81d1880..0f2ac6f 100644
+--- a/lotf/objects/quadrotor_obj.py
++++ b/lotf/objects/quadrotor_obj.py
+@@ -434,7 +434,8 @@ class Quadrotor:
+ 
+         return p_new, R_new, v_new
+     
+-    def _full_dyn(self, state: QuadrotorState, motor_omega_d, dt):
++    def _full_dyn(self, state: QuadrotorState, motor_omega_d, dt,
++                  external_force_world=None, external_torque_body=None):
+         """High-fidelity physics integration using RK4."""
+         p = state.p
+         R = state.R
+@@ -443,14 +444,9 @@ class Quadrotor:
+         motor_omega = state.motor_omega
+         res_acc_mean = state.res_acc_mean
+ 
+-        # prepare domain randomization
+-        key_thrust, key_drag = jax.random.split(state.dr_key)
++        # Parameters are selected explicitly by the integration at reset.
++        # Nominal evaluation must not contain an implicit thrust randomization.
+         thrust_map = self._thrust_map[0]
+-        thrust_map = jax.random.uniform(
+-            key_thrust, thrust_map.shape,
+-            minval=0.85 * thrust_map,
+-            maxval=1.15 * thrust_map,
+-        )
+         
+         # calculate individual motor thrusts
+         f = thrust_map * motor_omega**2
+@@ -461,6 +457,8 @@ class Quadrotor:
+ 
+         # total acceleration in world frame
+         acc = self._gravity + R @ f_vec / self._mass + rotor_acc_residual + res_acc_mean
++        if external_force_world is not None:
++            acc = acc + external_force_world / self._mass
+ 
+         # rk4 for p and v
+         def int_pv(p, v):
+@@ -490,6 +488,8 @@ class Quadrotor:
+         J_inv = jnp.linalg.inv(J)
+         f_T_and_tau = self.allocation_matrix @ f
+         f_T, tau = f_T_and_tau[0], f_T_and_tau[1:]
++        if external_torque_body is not None:
++            tau = tau + external_torque_body
+         
+         def int_omega(omega):
+             return J_inv @ (tau - jnp.cross(omega, J @ omega) + inertia_torque)

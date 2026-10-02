@@ -1,6 +1,0 @@
-name: sampling_mpc
-prediction: so_rpy_rotor_drag
-horizon: 25
-prediction_seconds: 1.0
-samples: 2000
-prediction_device: gpu

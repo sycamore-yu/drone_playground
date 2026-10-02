@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import shutil
@@ -39,7 +40,9 @@ def _exclusive_rscope() -> Iterator[None]:
 
 
 @contextmanager
-def _temporary_rscope_config(base_path: Path, temp_path: Path) -> Iterator[None]:
+def _temporary_rscope_config(
+    base_path: Path, temp_path: Path
+) -> Iterator[None]:
     """Point rscope at a private staging directory and restore its global config."""
     from rscope import config
 
@@ -67,19 +70,25 @@ def _atomic_write_bytes(path: Path, payload: bytes) -> None:
 
 def _batch_base(array: np.ndarray, batch: int) -> np.ndarray:
     if array.ndim == 0:
-        raise ValueError("rscope base array is missing its environment dimension")
+        raise ValueError(
+            "rscope base array is missing its environment dimension"
+        )
     if array.shape[0] >= batch:
         return np.array(array[:batch], copy=True)
     if array.shape[0] == 1:
         return np.repeat(array, batch, axis=0)
-    raise ValueError(f"simulation has {array.shape[0]} worlds but rollout needs {batch}")
+    raise ValueError(
+        f"simulation has {array.shape[0]} worlds but rollout needs {batch}"
+    )
 
 
 def _validated_trace(trace: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
     required = ("pos", "quat", "time", "obs", "reward", "metrics")
     missing = [name for name in required if name not in trace]
     if missing:
-        raise KeyError(f"trace is missing required fields: {', '.join(missing)}")
+        raise KeyError(
+            f"trace is missing required fields: {', '.join(missing)}"
+        )
 
     converted = {
         "pos": np.asarray(trace["pos"]),
@@ -87,7 +96,9 @@ def _validated_trace(trace: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
         "time": np.asarray(trace["time"]),
         "obs": np.asarray(trace["obs"]),
         "reward": np.asarray(trace["reward"]),
-        "metrics": {name: np.asarray(value) for name, value in trace["metrics"].items()},
+        "metrics": {
+            name: np.asarray(value) for name, value in trace["metrics"].items()
+        },
     }
     if "actions" in trace:
         converted["actions"] = np.asarray(trace["actions"])
@@ -103,17 +114,28 @@ def _validated_trace(trace: dict[str, Any]) -> tuple[int, int, dict[str, Any]]:
     }
     for name, shape in expected.items():
         if converted[name].shape != shape:
-            raise ValueError(f"{name} must have shape {shape}, got {converted[name].shape}")
-    if converted["obs"].ndim != 3 or converted["obs"].shape[:2] != (steps, batch):
+            raise ValueError(
+                f"{name} must have shape {shape}, got {converted[name].shape}"
+            )
+    if converted["obs"].ndim != 3 or converted["obs"].shape[:2] != (
+        steps,
+        batch,
+    ):
         raise ValueError(
             f"obs must have shape [T, B, O] with T={steps}, B={batch}, got {converted['obs'].shape}"
         )
     for name, value in converted["metrics"].items():
         if value.shape != (steps, batch):
-            raise ValueError(f"metric {name!r} must have shape {(steps, batch)}, got {value.shape}")
+            raise ValueError(
+                f"metric {name!r} must have shape {(steps, batch)}, got {value.shape}"
+            )
     if "actions" in converted:
         actions = converted["actions"]
-        if actions.ndim != 3 or actions.shape[:2] != (steps, batch) or actions.shape[-1] < 1:
+        if (
+            actions.ndim != 3
+            or actions.shape[:2] != (steps, batch)
+            or actions.shape[-1] < 1
+        ):
             raise ValueError(
                 f"actions must have shape [T={steps}, B={batch}, A>0], got {actions.shape}"
             )
@@ -138,14 +160,18 @@ def _model_bundle(sim: Any, directory: Path) -> tuple[Path, dict[str, bytes]]:
                 continue
             previous = seen[name]
             empty = len(node) == 0 and set(node.attrib) == {"class"}
-            previous_empty = len(previous) == 0 and set(previous.attrib) == {"class"}
+            previous_empty = len(previous) == 0 and set(previous.attrib) == {
+                "class"
+            }
             if empty:
                 defaults.remove(node)
             elif previous_empty:
                 defaults.remove(previous)
                 seen[name] = node
             else:
-                raise ValueError(f"Conflicting nonempty attached defaults: {name}")
+                raise ValueError(
+                    f"Conflicting nonempty attached defaults: {name}"
+                )
     dummy = xml.find(".//body[@name='_dummy']")
     if dummy is not None and dummy.find("inertial") is None:
         body = sim.mj_model.body("_dummy")
@@ -160,7 +186,9 @@ def _model_bundle(sim: Any, directory: Path) -> tuple[Path, dict[str, bytes]]:
             },
         )
 
-    raw_assets = {str(name): bytes(value) for name, value in dict(sim.spec.assets).items()}
+    raw_assets = {
+        str(name): bytes(value) for name, value in dict(sim.spec.assets).items()
+    }
     model_assets = dict(raw_assets)
     meshdir_value = getattr(sim.spec.compiler, "meshdir", "")
     meshdir = Path(str(meshdir_value)) if meshdir_value else Path(".")
@@ -199,7 +227,9 @@ def _model_bundle(sim: Any, directory: Path) -> tuple[Path, dict[str, bytes]]:
             if not source.is_absolute():
                 source = texturedir / source
             payload = source.read_bytes()
-        relative = Path("assets") / f"texture_{index:03d}_{Path(source_name).name}"
+        relative = (
+            Path("assets") / f"texture_{index:03d}_{Path(source_name).name}"
+        )
         texture.set("file", relative.as_posix())
         _atomic_write_bytes(directory / relative, payload)
         model_assets[relative.as_posix()] = payload
@@ -238,10 +268,14 @@ def _native_rollout(
     obstacle_ids = getattr(sim.data.core, "obstacle_mocap_ids", None)
     if obstacle_ids is not None:
         if "obstacle_pos" not in trace:
-            raise KeyError("the replay model declares obstacles but the trace has no obstacle_pos")
+            raise KeyError(
+                "the replay model declares obstacles but the trace has no obstacle_pos"
+            )
         obstacle_pos = np.asarray(trace["obstacle_pos"])
         obstacle_ids = np.asarray(obstacle_ids).reshape(-1)
-        if obstacle_pos.shape[:2] != (steps, batch) or obstacle_pos.shape[2] != len(obstacle_ids):
+        if obstacle_pos.shape[:2] != (steps, batch) or obstacle_pos.shape[
+            2
+        ] != len(obstacle_ids):
             raise ValueError(
                 f"obstacle_pos must have shape {(steps, batch, len(obstacle_ids), 3)}, "
                 f"got {obstacle_pos.shape}"
@@ -272,10 +306,14 @@ def trim_episode(trace: dict[str, Any], case: int) -> dict[str, Any]:
     steps, batch = np.asarray(trace["pos"]).shape[:2]
     if not 0 <= case < batch:
         raise IndexError("Replay case index is out of range")
-    active = np.asarray(trace.get("active", np.ones((steps, batch), bool)))[:, case].astype(bool)
+    active = np.asarray(trace.get("active", np.ones((steps, batch), bool)))[
+        :, case
+    ].astype(bool)
     length = int(active.sum())
     if length < 1 or not np.array_equal(active, np.arange(steps) < length):
-        raise ValueError("Replay requires contiguous active frames including the terminal frame")
+        raise ValueError(
+            "Replay requires contiguous active frames including the terminal frame"
+        )
 
     def take(value):
         if isinstance(value, dict):
@@ -285,7 +323,9 @@ def trim_episode(trace: dict[str, Any], case: int) -> dict[str, Any]:
     return take(trace)
 
 
-def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualization=None) -> Path:
+def export_rollout(
+    sim: Any, directory: Path, trace: dict[str, Any], *, visualization=None
+) -> Path:
     """Export one rollout with rscope's native atomic writer and a self-contained model bundle.
 
     Args:
@@ -298,10 +338,18 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualiz
     """
     directory = Path(directory).resolve()
     layers = (
-        visualization if visualization is not None else getattr(sim, "replay_visualization", None)
+        visualization
+        if visualization is not None
+        else getattr(sim, "replay_visualization", None)
     )
-    if layers is not None and layers.planning and np.asarray(trace["pos"]).shape[1] != 1:
-        raise ValueError("Planner layers require one episode; export each case separately")
+    if (
+        layers is not None
+        and layers.planning
+        and np.asarray(trace["pos"]).shape[1] != 1
+    ):
+        raise ValueError(
+            "Planner layers require one episode; export each case separately"
+        )
     if "active" in trace:
         # A file contains complete trajectories with a single time dimension.
         # Split unequal episode lengths so padding never appears in a replay.
@@ -311,7 +359,9 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualiz
             single = trim_episode(trace, case)
             single.pop("active", None)
             target = directory if case == 0 else directory / f"case-{case:03d}"
-            path = export_rollout(sim, target, single, visualization=visualization)
+            path = export_rollout(
+                sim, target, single, visualization=visualization
+            )
             paths.append(
                 dict(
                     case=case,
@@ -321,7 +371,8 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualiz
                 )
             )
         _atomic_write_bytes(
-            directory / "episodes.json", (json.dumps(paths, indent=2) + "\n").encode()
+            directory / "episodes.json",
+            (json.dumps(paths, indent=2) + "\n").encode(),
         )
         return directory / paths[0]["file"]
     directory.mkdir(parents=True, exist_ok=True)
@@ -329,10 +380,24 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualiz
     if identity is not None:
         _atomic_write_bytes(
             directory / "components.json",
-            (json.dumps(identity, ensure_ascii=False, indent=2) + "\n").encode(),
+            (
+                json.dumps(identity, ensure_ascii=False, indent=2) + "\n"
+            ).encode(),
         )
     xml_path, model_assets = _model_bundle(sim, directory)
     native_trace, obs, reward = _native_rollout(sim, trace)
+    sensor_context = getattr(sim, "replay_sensor_context", None)
+    if (
+        sensor_context is not None
+        and layers is not None
+        and layers.point_cloud_sequence is None
+    ):
+        from drone_playground.visualization.sensor_hits import sensor_hit_sequence
+
+        cloud, cloud_metadata = sensor_hit_sequence(sensor_context, trace)
+        layers = copy.deepcopy(layers)
+        layers.point_cloud_sequence = cloud
+        layers.point_cloud_metadata = cloud_metadata
     if layers is not None:
         xml = ET.fromstring(xml_path.read_bytes())
         mocap_id = int(np.asarray(sim.data.core.drone_mocap_ids).reshape(-1)[0])
@@ -348,14 +413,18 @@ def export_rollout(sim: Any, directory: Path, trace: dict[str, Any], *, visualiz
             (json.dumps(metadata, indent=2) + "\n").encode(),
         )
 
-    return _write_native(directory, xml_path, model_assets, native_trace, obs, reward)
+    return _write_native(
+        directory, xml_path, model_assets, native_trace, obs, reward
+    )
 
 
 def _write_native(directory, xml_path, model_assets, native_trace, obs, reward):
     from rscope import rscope_utils
 
     with _exclusive_rscope():
-        stage_root = Path(tempfile.mkdtemp(prefix=".rscope-export-", dir=directory.parent))
+        stage_root = Path(
+            tempfile.mkdtemp(prefix=".rscope-export-", dir=directory.parent)
+        )
         stage_base = stage_root / "base"
         stage_temp = stage_root / "temp"
         try:
@@ -364,13 +433,19 @@ def _write_native(directory, xml_path, model_assets, native_trace, obs, reward):
                 rscope_utils.dump_eval(native_trace, obs, reward)
             unrolls = list(stage_base.glob("*.mj_unroll"))
             if len(unrolls) != 1:
-                raise RuntimeError(f"rscope writer produced {len(unrolls)} rollout files")
+                raise RuntimeError(
+                    f"rscope writer produced {len(unrolls)} rollout files"
+                )
             destination = directory / unrolls[0].name
             if destination.exists():
-                destination = directory / f"{unrolls[0].stem}-{uuid.uuid4().hex[:8]}.mj_unroll"
+                destination = (
+                    directory
+                    / f"{unrolls[0].stem}-{uuid.uuid4().hex[:8]}.mj_unroll"
+                )
             os.replace(unrolls[0], destination)
             _atomic_write_bytes(
-                directory / "rscope_meta.pkl", (stage_base / "rscope_meta.pkl").read_bytes()
+                directory / "rscope_meta.pkl",
+                (stage_base / "rscope_meta.pkl").read_bytes(),
             )
             return destination
         finally:
@@ -394,13 +469,17 @@ def _publication_files(directory: Path) -> list[Path]:
             files.append(identity)
     assets = directory / "assets"
     if assets.is_dir():
-        files.extend(sorted(path for path in assets.rglob("*") if path.is_file()))
+        files.extend(
+            sorted(path for path in assets.rglob("*") if path.is_file())
+        )
     return files
 
 
 def _validate_active_directory(active_dir: Path) -> None:
     existing = {
-        path.relative_to(active_dir).as_posix() for path in active_dir.rglob("*") if path.is_file()
+        path.relative_to(active_dir).as_posix()
+        for path in active_dir.rglob("*")
+        if path.is_file()
     }
     if not existing:
         return
@@ -414,7 +493,9 @@ def _validate_active_directory(active_dir: Path) -> None:
     managed = set(marker.get("files", [])) | {_PUBLISH_MARKER}
     unknown = sorted(existing - managed)
     if unknown:
-        raise RuntimeError(f"active rscope directory contains unknown files: {', '.join(unknown)}")
+        raise RuntimeError(
+            f"active rscope directory contains unknown files: {', '.join(unknown)}"
+        )
 
 
 def publish_run(
@@ -425,15 +506,23 @@ def publish_run(
     directory = Path(directory).resolve()
     active_dir = Path(active_dir).resolve()
     if directory == active_dir:
-        raise ValueError("source rollout directory and active directory must differ")
+        raise ValueError(
+            "source rollout directory and active directory must differ"
+        )
     files = _publication_files(directory)
 
     with _exclusive_rscope():
         active_dir.parent.mkdir(parents=True, exist_ok=True)
         if active_dir.exists():
             _validate_active_directory(active_dir)
-        stage = Path(tempfile.mkdtemp(prefix=f".{active_dir.name}.publish-", dir=active_dir.parent))
-        backup = active_dir.parent / f".{active_dir.name}.backup-{uuid.uuid4().hex}"
+        stage = Path(
+            tempfile.mkdtemp(
+                prefix=f".{active_dir.name}.publish-", dir=active_dir.parent
+            )
+        )
+        backup = (
+            active_dir.parent / f".{active_dir.name}.backup-{uuid.uuid4().hex}"
+        )
         try:
             published: list[str] = []
             for source in files:
@@ -447,7 +536,8 @@ def publish_run(
                 "files": sorted(published),
             }
             (stage / _PUBLISH_MARKER).write_text(
-                json.dumps(marker, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+                json.dumps(marker, indent=2, ensure_ascii=False, sort_keys=True)
+                + "\n"
             )
 
             had_active = active_dir.exists()
@@ -469,23 +559,37 @@ def publish_run(
                 shutil.rmtree(backup, ignore_errors=True)
 
 
-def append_rollout(directory: Path, active_dir: Path = Path("/tmp/rscope/active_run")) -> Path:
+def append_rollout(
+    directory: Path, active_dir: Path = Path("/tmp/rscope/active_run")
+) -> Path:
     """Append complete snapshots without replacing the directory watched by rscope.
 
     Native rscope 0.0.8 handles created events, not moved events. A hard link to
     a fully written temporary file emits creation only after the payload exists.
     """
-    directory, active_dir = Path(directory).resolve(), Path(active_dir).resolve()
+    directory, active_dir = (
+        Path(directory).resolve(),
+        Path(active_dir).resolve(),
+    )
     files = _publication_files(directory)
     with _exclusive_rscope():
         _validate_active_directory(active_dir)
-        if (directory / "scene.xml").read_bytes() != (active_dir / "scene.xml").read_bytes():
-            raise ValueError("Live snapshots must use the same model; select a new run explicitly")
+        if (directory / "scene.xml").read_bytes() != (
+            active_dir / "scene.xml"
+        ).read_bytes():
+            raise ValueError(
+                "Live snapshots must use the same model; select a new run explicitly"
+            )
         for source in files:
             if "assets" in source.relative_to(directory).parts:
                 target = active_dir / source.relative_to(directory)
-                if not target.exists() or source.read_bytes() != target.read_bytes():
-                    raise ValueError("Live snapshots must use identical model assets")
+                if (
+                    not target.exists()
+                    or source.read_bytes() != target.read_bytes()
+                ):
+                    raise ValueError(
+                        "Live snapshots must use identical model assets"
+                    )
         marker_path = active_dir / _PUBLISH_MARKER
         marker = json.loads(marker_path.read_text())
         names = set(marker["files"])
@@ -494,8 +598,13 @@ def append_rollout(directory: Path, active_dir: Path = Path("/tmp/rscope/active_
                 continue
             target = active_dir / source.name
             if target.exists():
-                target = active_dir / f"{source.stem}-{uuid.uuid4().hex[:8]}.mj_unroll"
-            fd, temporary_name = tempfile.mkstemp(prefix=".complete-", dir=active_dir)
+                target = (
+                    active_dir
+                    / f"{source.stem}-{uuid.uuid4().hex[:8]}.mj_unroll"
+                )
+            fd, temporary_name = tempfile.mkstemp(
+                prefix=".complete-", dir=active_dir
+            )
             os.close(fd)
             temporary = Path(temporary_name)
             try:
@@ -505,7 +614,9 @@ def append_rollout(directory: Path, active_dir: Path = Path("/tmp/rscope/active_
                 temporary.unlink(missing_ok=True)
             names.add(target.name)
         marker.update(files=sorted(names), latest_source=str(directory))
-        _atomic_write_bytes(marker_path, (json.dumps(marker, indent=2) + "\n").encode())
+        _atomic_write_bytes(
+            marker_path, (json.dumps(marker, indent=2) + "\n").encode()
+        )
     return active_dir
 
 
@@ -534,18 +645,34 @@ def publish_snapshot(
         if not first:
             marker_path = active_dir / _PUBLISH_MARKER
             if not marker_path.is_file():
-                return {"status": "not-selected", "reason": "no active owned selection"}
+                return {
+                    "status": "not-selected",
+                    "reason": "no active owned selection",
+                }
             marker = json.loads(marker_path.read_text())
             selected = Path(marker["source"]).resolve()
             if not selected.is_relative_to(run_directory):
-                return {"status": "not-selected", "selected_source": str(selected)}
+                return {
+                    "status": "not-selected",
+                    "selected_source": str(selected),
+                }
         (publish_run if first else append_rollout)(directory, active_dir)
-        return {"status": "published", "directory": str(directory), "active_dir": str(active_dir)}
+        return {
+            "status": "published",
+            "directory": str(directory),
+            "active_dir": str(active_dir),
+        }
     except Exception as error:
-        return {"status": "error", "error": repr(error), "directory": str(directory)}
+        return {
+            "status": "error",
+            "error": repr(error),
+            "directory": str(directory),
+        }
 
 
-def enhance_replay(source: Path, directory: Path, visualization, *, drone_mocap_id=0) -> Path:
+def enhance_replay(
+    source: Path, directory: Path, visualization, *, drone_mocap_id=0
+) -> Path:
     """Copy a trusted local RScope replay and add layers without reevaluating it."""
     import hashlib
     import pickle
@@ -561,7 +688,9 @@ def enhance_replay(source: Path, directory: Path, visualization, *, drone_mocap_
     assets = dict(meta["model_assets"])
     xml_name = Path(meta["xml_path"]).name
     xml = ET.fromstring(assets[xml_name])
-    model = mujoco.MjModel.from_xml_string(assets[xml_name].decode(), assets=assets)
+    model = mujoco.MjModel.from_xml_string(
+        assets[xml_name].decode(), assets=assets
+    )
     ids = np.flatnonzero(model.body_mocapid == drone_mocap_id)
     if len(ids) != 1:
         raise ValueError("Replay must identify one original drone mocap body")
@@ -585,8 +714,13 @@ def enhance_replay(source: Path, directory: Path, visualization, *, drone_mocap_
         _atomic_write_bytes(directory / relative, payload)
     _atomic_write_bytes(xml_path, ET.tostring(xml, encoding="utf-8"))
     _atomic_write_bytes(
-        directory / "replay-visualization.json", (json.dumps(metadata, indent=2) + "\n").encode()
+        directory / "replay-visualization.json",
+        (json.dumps(metadata, indent=2) + "\n").encode(),
     )
     if (source.parent / "components.json").is_file():
-        shutil.copy2(source.parent / "components.json", directory / "components.json")
-    return _write_native(directory, xml_path, assets, native_trace, recorded.obs, recorded.reward)
+        shutil.copy2(
+            source.parent / "components.json", directory / "components.json"
+        )
+    return _write_native(
+        directory, xml_path, assets, native_trace, recorded.obs, recorded.reward
+    )

@@ -1,0 +1,6 @@
+defaults:
+- sensor_fusion_mlp_64
+- _self_
+name: sensor_fusion_mlp_64_velocity_init
+mean_action_bias: [0.08, 0.0, 0.0, 0.0]
+init_noise_std: 0.02

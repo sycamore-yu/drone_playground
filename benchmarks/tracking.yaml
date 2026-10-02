@@ -1,0 +1,11 @@
+name: tracking
+version: 1
+episodes: 100
+seed_start: 30000
+reference: figure8
+metrics:
+  - completion_rate
+  - rmse_m
+success:
+  minimum_completion_rate: 0.95
+  maximum_completed_rmse_m: 0.25

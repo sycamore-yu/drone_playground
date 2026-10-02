@@ -1,8 +1,0 @@
-# @package _global_
-defaults:
-- /env/navigation/pointcloud_mixed
-- _self_
-env:
-  name: navigation/pointcloud_dynamic
-  scene:
-    scene_ids: [D01, D02, D03, D06]

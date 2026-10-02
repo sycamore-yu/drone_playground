@@ -1,6 +1,0 @@
-defaults:
-- trajectory_tracking
-- _self_
-# Component comparison: evaluate the actual polynomial at simulation time.
-# Original ROS execution samples (e.g. EGO lookahead) remain a separate recipe.
-reference_source: trajectory

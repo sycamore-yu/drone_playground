@@ -1,1 +1,0 @@
-"""Drone Playground domain components."""

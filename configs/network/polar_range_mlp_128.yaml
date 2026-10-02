@@ -1,0 +1,8 @@
+defaults:
+  - sensor_fusion_mlp_64_velocity_init
+  - _self_
+name: polar_range_mlp_128
+sensor_encoder: polar_range
+range_scale: 40.0
+init_noise_std: 0.08
+hidden_sizes: [128, 128]

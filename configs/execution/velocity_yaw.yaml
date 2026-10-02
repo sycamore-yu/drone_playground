@@ -1,8 +1,0 @@
-defaults:
-- /controller@controller: velocity_yaw
-- /dynamics@dynamics: crazyflow
-- _self_
-command: velocity_yaw
-tracker: null
-dynamics:
-  forward: first_principles

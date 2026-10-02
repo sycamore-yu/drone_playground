@@ -1,0 +1,4 @@
+_target_: drone_playground.dynamics.lotf.LOTFModel
+forward: lotf_high_fidelity
+drone: example_quad
+learned_residual: false

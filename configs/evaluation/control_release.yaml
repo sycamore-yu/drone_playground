@@ -1,7 +1,0 @@
-defaults:
-- default
-- _self_
-split: heldout
-episodes: 100
-seed_start: 30000
-release_validation: control-v1

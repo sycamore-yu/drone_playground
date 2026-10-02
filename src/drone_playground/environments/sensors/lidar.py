@@ -24,7 +24,7 @@ applies the real rotation rather than relabelling a frame.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
 
 import jax
@@ -32,7 +32,7 @@ import jax.numpy as jnp
 import numpy as np
 from flax import struct
 
-from drone_playground.environments.scenes.navigation import obstacle_positions
+from drone_playground.environments.scenes.geometry import obstacle_positions
 from drone_playground.environments.sensors.rays import cast_rays
 
 MID360_PATTERN = "mid360"
@@ -68,7 +68,9 @@ class LidarFrame:
 
 
 @lru_cache(maxsize=4)
-def scan_windows(pattern: str = MID360_PATTERN, downsample: int = 1) -> np.ndarray:
+def scan_windows(
+    pattern: str = MID360_PATTERN, downsample: int = 1
+) -> np.ndarray:
     """Static non-repetitive windows ``(W, P, 2)`` of ``(theta, phi)`` radians.
 
     The source generator only exposes a stateful cursor, so every window is
@@ -105,7 +107,9 @@ class Mid360Lidar:
 
     def __post_init__(self) -> None:
         if self.downsample < 1 or MID360_SAMPLES_PER_SCAN % self.downsample:
-            raise ValueError("downsample must divide the MID360 samples-per-scan")
+            raise ValueError(
+                "downsample must divide the MID360 samples-per-scan"
+            )
         if self.history < 1:
             raise ValueError("lidar history must contain at least one frame")
         if not 0.0 < self.range_m[0] < self.range_m[1]:
@@ -113,8 +117,13 @@ class Mid360Lidar:
         if self.normalise_far_m <= 0.0:
             raise ValueError("normalisation range must be positive")
         if self.state_gradient not in ("direct", "detached"):
-            raise ValueError("LiDAR state derivative must be direct or explicitly detached")
-        if not isinstance(self.obstacle_batch_size, int) or self.obstacle_batch_size < 1:
+            raise ValueError(
+                "LiDAR state derivative must be direct or explicitly detached"
+            )
+        if (
+            not isinstance(self.obstacle_batch_size, int)
+            or self.obstacle_batch_size < 1
+        ):
             raise ValueError("Obstacle batch size must be a positive integer")
 
     @property
@@ -168,7 +177,11 @@ class Mid360Lidar:
         theta = angles[:, 0]
         phi = angles[:, 1]
         return jnp.stack(
-            [jnp.cos(phi) * jnp.cos(theta), jnp.cos(phi) * jnp.sin(theta), jnp.sin(phi)],
+            [
+                jnp.cos(phi) * jnp.cos(theta),
+                jnp.cos(phi) * jnp.sin(theta),
+                jnp.sin(phi),
+            ],
             axis=-1,
         )
 
@@ -241,7 +254,9 @@ def cast_lidar(
         bank.world_low,
         bank.world_high,
         lidar.include_ground,
-        rotations=None if bank.rotations is None else bank.rotations[scenario_id],
+        rotations=None
+        if bank.rotations is None
+        else bank.rotations[scenario_id],
         obstacle_batch_size=lidar.obstacle_batch_size,
     )
     valid = (distance >= lidar.range_m[0]) & (distance <= lidar.range_m[1])
@@ -260,7 +275,9 @@ def cast_lidar(
     # The encoder's parameter gradients and the plant/reward derivatives remain
     # active; physical ranges and inference observations are bitwise identical.
     return (
-        jax.tree.map(jax.lax.stop_gradient, frame) if lidar.state_gradient == "detached" else frame
+        jax.tree.map(jax.lax.stop_gradient, frame)
+        if lidar.state_gradient == "detached"
+        else frame
     )
 
 
@@ -268,28 +285,29 @@ def body_rotation(quat):
     x, y, z, w = quat
     return jnp.stack(
         [
-            jnp.stack([1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)]),
-            jnp.stack([2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)]),
-            jnp.stack([2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]),
+            jnp.stack(
+                [
+                    1 - 2 * (y * y + z * z),
+                    2 * (x * y - z * w),
+                    2 * (x * z + y * w),
+                ]
+            ),
+            jnp.stack(
+                [
+                    2 * (x * y + z * w),
+                    1 - 2 * (x * x + z * z),
+                    2 * (y * z - x * w),
+                ]
+            ),
+            jnp.stack(
+                [
+                    2 * (x * z - y * w),
+                    2 * (y * z + x * w),
+                    1 - 2 * (x * x + y * y),
+                ]
+            ),
         ]
     )
-
-
-@dataclass
-class LidarObservationConfig:
-    """Point-wise LiDAR features with an explicit validity channel."""
-
-    name: str = "lidar"
-    channels_per_point: int = 5
-    metadata: dict = field(default_factory=dict)
-
-    def encode(self, frame: LidarFrame, lidar: Mid360Lidar) -> jax.Array:
-        """``(P * 5,)`` point coordinates, normalised range and validity."""
-        far = lidar.normalise_far_m
-        points = frame.points_sensor / far
-        distance = jnp.clip(frame.distance, 0.0, far)[:, None] / far
-        valid = frame.valid.astype(jnp.float32)[:, None]
-        return jnp.concatenate([points, distance, valid], axis=-1).reshape(-1)
 
 
 def point_cloud_message(frame: LidarFrame, lidar: Mid360Lidar) -> dict:
@@ -328,7 +346,9 @@ def angular_coverage(lidar: Mid360Lidar) -> dict:
         "elevation_deg": [float(phi.min()), float(phi.max())],
         "occupied_azimuth_bins_of_36": int(len(bins)),
         "mean_rays_per_10deg": float(theta.shape[0] / 36.0),
-        "expected_mean_rays_per_10deg": float(MID360_SAMPLES_PER_SCAN / lidar.downsample / 36.0),
+        "expected_mean_rays_per_10deg": float(
+            MID360_SAMPLES_PER_SCAN / lidar.downsample / 36.0
+        ),
         "sensor": lidar.calibration_id,
         "note": "uniform stride over the source window preserves azimuthal coverage",
         "declared_elevation_deg": list(MID360_ELEVATION_DEG),
@@ -346,5 +366,97 @@ def period_check(lidar: Mid360Lidar, policy_freq: int) -> dict:
         "realised_rate_hz": policy_freq / steps,
         "exact_divisor": policy_freq % lidar.source_rate_hz == 0,
         "source_period_s": lidar.scan_period_s,
-        "math_note": math.isclose(policy_freq / steps, lidar.source_rate_hz, rel_tol=1e-9),
+        "math_note": math.isclose(
+            policy_freq / steps, lidar.source_rate_hz, rel_tol=1e-9
+        ),
     }
+
+
+@dataclass(frozen=True)
+class UniformRayLidar:
+    policy_value_channels = 4
+    name: str = "uniform_lidar"
+    azimuth_count: int = 180
+    elevation_count: int = 30
+    elevation_start_deg: float = -7.2
+    elevation_span_deg: float = 60.0
+    range_m: tuple[float, float] = (0.1, 100.0)
+    source_rate_hz: float = 10.0
+    include_ground: bool = True
+    state_gradient: str = "detached"
+
+    def __post_init__(self):
+        if self.azimuth_count < 1 or self.elevation_count < 1:
+            raise ValueError("Ray counts must be positive")
+        if not 0 < self.range_m[0] < self.range_m[1]:
+            raise ValueError("Sensor range must be ordered and positive")
+        if self.state_gradient != "detached":
+            raise ValueError(
+                "This reconstruction qualifies detached ray measurements only"
+            )
+
+    @property
+    def points_per_frame(self):
+        return self.azimuth_count * self.elevation_count
+
+    def directions(self, window=0):
+        del window
+        theta = jnp.arange(self.azimuth_count) * (
+            2 * jnp.pi / self.azimuth_count
+        )
+        phi = jnp.deg2rad(
+            self.elevation_start_deg
+            + jnp.arange(self.elevation_count)
+            * self.elevation_span_deg
+            / self.elevation_count
+        )
+        theta, phi = jnp.meshgrid(theta, phi, indexing="ij")
+        return jnp.stack(
+            [
+                jnp.cos(phi) * jnp.cos(theta),
+                jnp.cos(phi) * jnp.sin(theta),
+                jnp.sin(phi),
+            ],
+            axis=-1,
+        ).reshape(-1, 3)
+
+    def sample(self, bank, scenario_id, position, rotation, time):
+        """Return body XYZ points and a validity mask; state derivatives stop here."""
+        position, rotation, time = jax.tree.map(
+            jax.lax.stop_gradient, (position, rotation, time)
+        )
+        directions = self.directions()
+        world_directions = directions @ rotation.T
+        centres = obstacle_positions(bank, scenario_id, time)
+        distance = cast_rays(
+            bank.kind[scenario_id],
+            bank.size[scenario_id],
+            centres,
+            bank.active[scenario_id],
+            position[None] + jnp.zeros_like(directions),
+            world_directions,
+            bank.world_low,
+            bank.world_high,
+            self.include_ground,
+            rotations=None
+            if bank.rotations is None
+            else bank.rotations[scenario_id],
+        )
+        valid = (distance >= self.range_m[0]) & (distance <= self.range_m[1])
+        points = directions * jnp.where(valid, distance, 0.0)[:, None]
+        return jax.lax.stop_gradient(points), valid
+
+    def calibration(self):
+        return dict(
+            name=self.name,
+            ray_count=self.points_per_frame,
+            azimuth_count=self.azimuth_count,
+            elevation_count=self.elevation_count,
+            elevation_start_deg=self.elevation_start_deg,
+            elevation_span_deg=self.elevation_span_deg,
+            range_m=list(self.range_m),
+            source_rate_hz=self.source_rate_hz,
+            state_gradient=self.state_gradient,
+            frame="body FLU; XYZ in metres",
+            acquisition="instantaneous regular-angle rays",
+        )

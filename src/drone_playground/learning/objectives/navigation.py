@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import jax
 import jax.numpy as jnp
 
-from drone_playground.environments.scenes.navigation import euclidean_norm
+from drone_playground.environments.scenes.geometry import euclidean_norm
 
 
 def smooth_error(value):
@@ -41,11 +41,20 @@ class MotionNavigationObjective:
     reward_scale: float = 1.0
 
     def __post_init__(self):
-        values = (self.target_speed, self.max_speed, self.clearance_radius, self.reward_scale)
+        values = (
+            self.target_speed,
+            self.max_speed,
+            self.clearance_radius,
+            self.reward_scale,
+        )
         if not all(math.isfinite(v) and v > 0 for v in values):
-            raise ValueError("Speeds and clearance radius must be finite and positive")
+            raise ValueError(
+                "Speeds and clearance radius must be finite and positive"
+            )
         if self.target_speed > self.max_speed:
-            raise ValueError("Commanded target speed cannot exceed the nominal speed maximum")
+            raise ValueError(
+                "Commanded target speed cannot exceed the nominal speed maximum"
+            )
 
     def __call__(
         self,
@@ -73,7 +82,9 @@ class MotionNavigationObjective:
         # derivative inside an obstacle and begins shaping before body contact.
         safety_cost = jnp.maximum(self.clearance_radius - clearance, 0.0) ** 2
         safety_cost += jax.nn.softplus(-8.0 * clearance) / 8.0
-        speed_cost = jnp.maximum(euclidean_norm(velocity) - self.max_speed, 0.0) ** 2
+        speed_cost = (
+            jnp.maximum(euclidean_norm(velocity) - self.max_speed, 0.0) ** 2
+        )
         action_rate_cost = jnp.sum(((action - previous_action) / dt) ** 2)
         cost = (
             self.time_cost

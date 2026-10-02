@@ -1,0 +1,28 @@
+# @package _global_
+defaults:
+- /env: tracking
+- /network: mlp_64
+- /algorithm: shac
+- _self_
+source: Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy
+  network; unchanged P2 task
+training:
+  num_envs: 64
+  policy_updates: 320
+  num_timesteps: null
+runtime:
+  action_delay_ms:
+  - 25.0
+  - 50.0
+evaluation:
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+method:
+  name: shac
+  output: ${env.action.command}
+  implementation: neural
+  trainable: true

@@ -18,13 +18,13 @@ query and differ only in their ray grids and framing.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 from flax import struct
 
-from drone_playground.environments.scenes.navigation import obstacle_positions
+from drone_playground.environments.scenes.geometry import obstacle_positions
 from drone_playground.environments.sensors.rays import cast_rays
 
 # SANDO urdf/_d435.urdf.xacro: base_link -> d435_bottom_screw_frame (0.05, 0, 0),
@@ -88,7 +88,9 @@ class DepthCamera:
         if self.width % self.stride or self.height % self.stride:
             raise ValueError("depth stride must divide the sensor resolution")
         if not 0.0 < self.horizontal_fov_deg < 180.0:
-            raise ValueError("horizontal field of view must be inside (0, 180) degrees")
+            raise ValueError(
+                "horizontal field of view must be inside (0, 180) degrees"
+            )
         if not 0.0 < self.near_m < self.far_m:
             raise ValueError("depth range must satisfy 0 < near < far")
         if self.history < 1:
@@ -99,7 +101,11 @@ class DepthCamera:
     @property
     def focal_px(self) -> float:
         """Focal length in pixels; the pixel grid is square, so fy == fx."""
-        return 0.5 * self.width / math.tan(math.radians(self.horizontal_fov_deg) / 2.0)
+        return (
+            0.5
+            * self.width
+            / math.tan(math.radians(self.horizontal_fov_deg) / 2.0)
+        )
 
     @property
     def vertical_fov_deg(self) -> float:
@@ -137,14 +143,19 @@ class DepthCamera:
                 "parent_frame": "body FLU",
                 "child_frame": "camera optical (x right, y down, z forward)",
                 "translation_m": list(self.mount_m),
-                "rotation_body_from_optical": [list(row) for row in BODY_FROM_OPTICAL],
+                "rotation_body_from_optical": [
+                    list(row) for row in BODY_FROM_OPTICAL
+                ],
             },
             "intrinsics": self.intrinsics(),
             "source_availability_hz": self.source_rate_hz,
             "policy_stride": self.stride,
             "policy_points_per_frame": self.rays_per_frame,
             "policy_channels": self.channels,
-            "policy_grid": [self.width // self.stride, self.height // self.stride],
+            "policy_grid": [
+                self.width // self.stride,
+                self.height // self.stride,
+            ],
             "policy_history_frames": self.history,
             "declared_latency_s": 0.0,
             "floor_extends_beyond_corridor_m": 100.0,
@@ -172,7 +183,8 @@ class DepthCamera:
         fx = self.focal_px
         cx, cy = self.principal_point_px
         return jnp.stack(
-            [(grid_u - cx) / fx, (grid_v - cy) / fx, jnp.ones_like(grid_u)], axis=-1
+            [(grid_u - cx) / fx, (grid_v - cy) / fx, jnp.ones_like(grid_u)],
+            axis=-1,
         ).reshape(-1, 3)
 
     @property
@@ -189,7 +201,9 @@ class DepthCamera:
 
     def frame_values(self, frame: DepthFrame) -> jax.Array:
         """``(P, 2)`` raw per-point channels consumed by the observation."""
-        return jnp.stack([frame.depth, frame.valid.astype(jnp.float32)], axis=-1)
+        return jnp.stack(
+            [frame.depth, frame.valid.astype(jnp.float32)], axis=-1
+        )
 
     # -- scheduling -------------------------------------------------------------------
 
@@ -216,7 +230,7 @@ def sensor_pose(camera: DepthCamera, position, quat):
         ``(origin (3,), rotation (3, 3))`` for the optical frame, where the
         rotation maps optical-frame vectors into world coordinates.
     """
-    from drone_playground.environments.scenes.navigation import rotate_body_offset
+    from drone_playground.environments.scenes.geometry import rotate_body_offset
 
     mount = jnp.asarray(camera.mount_m, jnp.float32)
     origin = position + rotate_body_offset(quat, mount)
@@ -225,9 +239,27 @@ def sensor_pose(camera: DepthCamera, position, quat):
     x, y, z, w = quat
     body = jnp.stack(
         [
-            jnp.stack([1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)]),
-            jnp.stack([2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)]),
-            jnp.stack([2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]),
+            jnp.stack(
+                [
+                    1 - 2 * (y * y + z * z),
+                    2 * (x * y - z * w),
+                    2 * (x * z + y * w),
+                ]
+            ),
+            jnp.stack(
+                [
+                    2 * (x * y + z * w),
+                    1 - 2 * (x * x + z * z),
+                    2 * (y * z - x * w),
+                ]
+            ),
+            jnp.stack(
+                [
+                    2 * (x * z - y * w),
+                    2 * (y * z + x * w),
+                    1 - 2 * (x * x + y * y),
+                ]
+            ),
         ]
     )
     return origin, body @ camera.body_from_optical
@@ -257,38 +289,150 @@ def cast_depth(
         bank.world_low,
         bank.world_high,
         camera.include_ground,
-        rotations=None if bank.rotations is None else bank.rotations[scenario_id],
+        rotations=None
+        if bank.rotations is None
+        else bank.rotations[scenario_id],
     )
     valid = (distance >= camera.near_m) & (distance <= camera.far_m)
     depth = jnp.where(valid, distance, 0.0)
-    return DepthFrame(depth=depth, valid=valid, time=jnp.asarray(time, jnp.float32))
+    return DepthFrame(
+        depth=depth, valid=valid, time=jnp.asarray(time, jnp.float32)
+    )
 
 
-@dataclass
-class DepthObservationConfig:
-    """Preprocessing frozen before the network encoder (spec section 8.1)."""
+@dataclass(frozen=True)
+class PinholeDepthCamera:
+    policy_value_channels = 1
+    name: str = "pinhole_depth"
+    source_rate_hz: float = 10.0
+    capture_rate_hz: float = 30.0
+    width: int = 64
+    height: int = 48
+    horizontal_fov_deg: float = 87.0
+    vertical_fov_deg: float = 58.0
+    pitch_degrees: float = 20.0
+    near_m: float = 0.2
+    far_m: float = 10.0
+    state_gradient: str = "detached"
 
-    name: str = "depth"
-    normalize: bool = True
-    unknown_depth_value: float = 0.0
-    minimum_depth_m: float = 0.1
-    metadata: dict = field(default_factory=dict)
-
-    def preprocess(self, frame: DepthFrame, camera: DepthCamera) -> jax.Array:
-        """Range clip, invalid mask and normalisation into the policy input.
-
-        Depth is converted to a bounded, monotone inverse-depth signal so that
-        far and invalid pixels are both representable without a discontinuity,
-        and the validity mask is appended so the encoder can distinguish a
-        missing return from a distant surface.
-        """
-        clipped = jnp.clip(
-            jnp.where(frame.valid, frame.depth, camera.far_m),
-            self.minimum_depth_m,
-            camera.far_m,
+    def __post_init__(self):
+        if (self.width, self.height) != (
+            64,
+            48,
+        ) or self.state_gradient != "detached":
+            raise ValueError(
+                "Depth-flight camera requires 64x48 and detached measurement gradients"
+            )
+        numbers = (
+            self.horizontal_fov_deg,
+            self.vertical_fov_deg,
+            self.pitch_degrees,
+            self.near_m,
+            self.far_m,
+            self.source_rate_hz,
+            self.capture_rate_hz,
         )
-        inverse = (1.0 / clipped - 1.0 / camera.far_m) / (
-            1.0 / self.minimum_depth_m - 1.0 / camera.far_m
+        if not all(math.isfinite(value) for value in numbers):
+            raise ValueError("Camera calibration must be finite")
+        if not all(0 < value < 180 for value in numbers[:2]):
+            raise ValueError(
+                "Camera fields of view must be inside (0, 180) degrees"
+            )
+        if (
+            not 0 < self.near_m < self.far_m
+            or not 0 < self.source_rate_hz <= self.capture_rate_hz
+        ):
+            raise ValueError(
+                "Require 0 < near < far and 0 < used rate <= capture rate"
+            )
+        if not math.isclose(
+            self.capture_rate_hz / self.source_rate_hz,
+            round(self.capture_rate_hz / self.source_rate_hz),
+        ):
+            raise ValueError(
+                "The used camera rate must divide the nominal capture rate"
+            )
+
+    @property
+    def focal_pixels(self):
+        # Independently resized axes preserve the HD sensor's full 87x58 FOV.
+        # The resulting 64x48 policy image does not have square focal pixels.
+        return (
+            self.width
+            / (2 * math.tan(math.radians(self.horizontal_fov_deg) / 2)),
+            self.height
+            / (2 * math.tan(math.radians(self.vertical_fov_deg) / 2)),
         )
-        signal = jnp.where(self.normalize, inverse, clipped)
-        return jnp.concatenate([signal, frame.valid.astype(jnp.float32)])
+
+    @property
+    def points_per_frame(self):
+        return self.width * self.height
+
+    def sample(self, bank, index, position, rotation, time):
+        position, rotation = jax.tree.map(
+            jax.lax.stop_gradient, (position, rotation)
+        )
+        fx, fy = self.focal_pixels
+        u = (jnp.arange(self.width) + 0.5 - self.width / 2) / fx
+        v = (jnp.arange(self.height) + 0.5 - self.height / 2) / fy
+        right, down = jnp.meshgrid(u, v)
+        rays = jnp.stack((jnp.ones_like(right), -right, -down), -1).reshape(
+            -1, 3
+        )
+        angle = math.radians(self.pitch_degrees)
+        camera = jnp.array(
+            [
+                [math.cos(angle), 0, -math.sin(angle)],
+                [0, 1, 0],
+                [math.sin(angle), 0, math.cos(angle)],
+            ]
+        )
+        directions = rays @ camera.T @ rotation.T
+        depth = cast_rays(
+            bank.kind[index],
+            bank.size[index],
+            obstacle_positions(bank, index, time),
+            bank.active[index],
+            jnp.broadcast_to(position, directions.shape),
+            directions,
+            bank.world_low,
+            bank.world_high,
+            True,
+            rotations=None if bank.rotations is None else bank.rotations[index],
+        )
+        valid = (
+            jnp.isfinite(depth) & (depth >= self.near_m) & (depth <= self.far_m)
+        )
+        depth = jnp.where(valid, depth, self.far_m)
+        return (
+            jax.lax.stop_gradient(depth.reshape(self.height, self.width)),
+            valid.reshape(self.height, self.width),
+        )
+
+    def calibration(self):
+        return dict(
+            sensor=self.name,
+            width=self.width,
+            height=self.height,
+            horizontal_fov_deg=self.horizontal_fov_deg,
+            vertical_fov_deg=self.vertical_fov_deg,
+            fx_px=self.focal_pixels[0],
+            fy_px=self.focal_pixels[1],
+            cx_px=self.width / 2,
+            cy_px=self.height / 2,
+            pitch_degrees=self.pitch_degrees,
+            source_rate_hz=self.source_rate_hz,
+            nominal_capture_rate_hz=self.capture_rate_hz,
+            frame_decimation=round(self.capture_rate_hz / self.source_rate_hz),
+            rendering="direct rays on resized 64x48 grid; skipped source frames are not rendered",
+            mount_translation_m=[0.0, 0.0, 0.0],
+            body_load="virtual sensor; no added camera mass",
+            depth_units="metres along optical forward axis",
+            near_m=self.near_m,
+            far_m=self.far_m,
+            invalid_value=self.far_m,
+            validity_mask=True,
+            noise="none; navigation component adaptation",
+            reference="RealSense D435i nominal depth FOV; 10m is the experiment cutoff",
+            state_gradient=self.state_gradient,
+        )

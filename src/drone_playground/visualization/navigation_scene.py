@@ -8,6 +8,7 @@ the obstacles are animated through mocap bodies by the rollout exporter.
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import jax
@@ -15,7 +16,7 @@ import jax.numpy as jnp
 import mujoco
 import numpy as np
 
-from drone_playground.environments.scenes.navigation import (
+from drone_playground.environments.scenes.geometry import (
     KIND_CAPSULE,
     KIND_CYLINDER,
     KIND_SPHERE,
@@ -27,6 +28,9 @@ from drone_playground.environments.scenes.navigation import (
 
 DRONE_MOTOR_RADIUS_M = 0.0325
 ROTOR_RADIUS_M = 0.02355
+ROBOT_ASSET_DIR = (
+    Path(__file__).resolve().parents[3] / "assets" / "robots" / "crazyflie2x"
+)
 
 
 def active_indices(bank: SceneBank, scenario_id: int) -> np.ndarray:
@@ -59,11 +63,13 @@ def instance_obstacles(bank: SceneBank, scenario_id: int) -> list[dict]:
     return obstacles
 
 
-def obstacle_track(bank: SceneBank, scenario_id: int, times: np.ndarray) -> np.ndarray:
+def obstacle_track(
+    bank: SceneBank, scenario_id: int, times: np.ndarray
+) -> np.ndarray:
     """Obstacle centres over time with shape ``[T, capacity, 3]``."""
-    positions = jax.vmap(lambda time: obstacle_positions(bank, jnp.int32(scenario_id), time))(
-        jnp.asarray(np.asarray(times, np.float32))
-    )
+    positions = jax.vmap(
+        lambda time: obstacle_positions(bank, jnp.int32(scenario_id), time)
+    )(jnp.asarray(np.asarray(times, np.float32)))
     return np.asarray(positions)
 
 
@@ -71,18 +77,24 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
     bodies = []
     for index, obstacle in enumerate(obstacles):
         x, y, z = (float(value) for value in obstacle["origin"])
-        rgba = "0.35 0.42 0.5 1" if obstacle["motion"] == MOTION_STATIC else "0.95 0.45 0.12 1"
+        rgba = (
+            "0.35 0.42 0.5 1"
+            if obstacle["motion"] == MOTION_STATIC
+            else "0.95 0.45 0.12 1"
+        )
         if obstacle["kind"] == KIND_CAPSULE:
-            radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
+            radius, height = float(obstacle["size"][0]), float(
+                obstacle["size"][1]
+            )
             geometry = f'<geom name="obstacle_geom_{index}" type="capsule" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
         elif obstacle["kind"] == KIND_CYLINDER:
-            radius, height = float(obstacle["size"][0]), float(obstacle["size"][1])
+            radius, height = float(obstacle["size"][0]), float(
+                obstacle["size"][1]
+            )
             geometry = f'<geom name="obstacle_geom_{index}" type="cylinder" size="{radius} {height / 2.0}" rgba="{rgba}"/>'
         elif obstacle["kind"] == KIND_SPHERE:
             radius = float(obstacle["size"][0])
-            geometry = (
-                f'<geom name="obstacle_geom_{index}" type="sphere" size="{radius}" rgba="{rgba}"/>'
-            )
+            geometry = f'<geom name="obstacle_geom_{index}" type="sphere" size="{radius}" rgba="{rgba}"/>'
         else:
             hx, hy, hz = (float(value) for value in obstacle["size"])
             geometry = f'<geom name="obstacle_geom_{index}" type="box" size="{hx} {hy} {hz}" rgba="{rgba}"/>'
@@ -90,30 +102,73 @@ def _obstacle_xml(obstacles: list[dict]) -> str:
             from scipy.spatial.transform import Rotation
 
             xyzw = Rotation.from_matrix(obstacle["rotation"]).as_quat()
-            quaternion = " ".join(str(float(value)) for value in xyzw[[3, 0, 1, 2]])
-            geometry = geometry.replace("<geom ", f'<geom quat="{quaternion}" ', 1)
+            quaternion = " ".join(
+                str(float(value)) for value in xyzw[[3, 0, 1, 2]]
+            )
+            geometry = geometry.replace(
+                "<geom ", f'<geom quat="{quaternion}" ', 1
+            )
         bodies.append(
             f'<body name="obstacle_{index}" mocap="true" pos="{x} {y} {z}">{geometry}</body>'
         )
     return "".join(bodies)
 
 
+def _drone_assets_xml() -> str:
+    """Crazyflow's pinned Crazyflie 2.x P250 visual assets for replay only."""
+    return """
+    <material name="cf_black" rgba="0.102 0.102 0.102 1"/>
+    <material name="cf_gray" rgba="0.3 0.3 0.3 1"/>
+    <material name="cf_light_gray" rgba="0.7 0.7 0.7 1"/>
+    <material name="cf_silver" rgba="0.898 0.898 0.898 1"/>
+    <material name="cf_white" rgba="1 1 1 0.3"/>
+    <material name="cf_gold" rgba="0.969 0.878 0.6 1"/>
+    <mesh name="cf_pcb" file="cf2x_pcb.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_motors" file="cf2xP_motors.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_motor_holder" file="cf2x_motor-holder.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_prop_l" file="cf2xP_PropL.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_prop_r" file="cf2xP_PropR.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_connectors" file="cf2x_connectors.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_connector_pins" file="cf2x_connector-pins.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_battery" file="cf2x_battery.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_battery_holder" file="cf2x_battery-holder.stl" scale="0.001 0.001 0.001"/>
+    """
+
+
 def _drone_xml() -> str:
-    geoms = [
-        '<geom name="body_sphere" type="sphere" size="0.07" rgba="0.85 0.25 0.25 0.55"/>',
-        '<geom name="board" type="box" size="0.03 0.03 0.006" rgba="0.2 0.25 0.3 1"/>',
+    """Replay mocap body with the real Crazyflie 2.x mesh hierarchy.
+
+    These geoms are visual-only. The 7 cm collision sphere remains the experiment
+    contract in the simulator and is kept here as a transparent named reference.
+    """
+    visual = [
+        '<geom name="cf_pcb" type="mesh" mesh="cf_pcb" material="cf_gray" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_motors" type="mesh" mesh="cf_motors" material="cf_silver" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_motor_holder" type="mesh" mesh="cf_motor_holder" material="cf_white" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_connectors" type="mesh" mesh="cf_connectors" material="cf_black" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_connector_pins" type="mesh" mesh="cf_connector_pins" material="cf_gold" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_battery" type="mesh" mesh="cf_battery" material="cf_light_gray" contype="0" conaffinity="0" group="2"/>',
+        '<geom name="cf_battery_holder" type="mesh" mesh="cf_battery_holder" material="cf_black" contype="0" conaffinity="0" group="2"/>',
     ]
-    for index, (x, y) in enumerate(((1, -1), (-1, -1), (-1, 1), (1, 1))):
+    propellers = (
+        ("cf_prop_0", "cf_prop_l", 1, -1, 45),
+        ("cf_prop_1", "cf_prop_r", -1, -1, 135),
+        ("cf_prop_2", "cf_prop_l", -1, 1, 225),
+        ("cf_prop_3", "cf_prop_r", 1, 1, 315),
+    )
+    for name, mesh, x, y, degrees in propellers:
         px, py = x * DRONE_MOTOR_RADIUS_M, y * DRONE_MOTOR_RADIUS_M
-        geoms.append(
-            f'<geom name="rotor{index}" type="cylinder" pos="{px} {py} 0.012" '
-            f'size="{ROTOR_RADIUS_M} 0.0015" rgba="0.2 0.5 0.8 0.75"/>'
+        yaw = np.deg2rad(degrees)
+        visual.append(
+            f'<geom name="{name}" type="mesh" mesh="{mesh}" material="cf_black" '
+            f'pos="{px} {py} 0.012" euler="0 0 {yaw}" '
+            'contype="0" conaffinity="0" group="2"/>'
         )
     return (
         '<body name="drone" mocap="true" pos="0 0 2">'
         '  <geom name="drone_collision" type="sphere" size="0.07" '
-        '        pos="0 0 0.005" rgba="0.9 0.4 0.2 0.25"/>'
-        f"  {''.join(geoms)}"
+        '        pos="0 0 0.005" rgba="0 0 0 0" contype="0" conaffinity="0" group="3"/>'
+        f"  {''.join(visual)}"
         "</body>"
     )
 
@@ -129,10 +184,16 @@ def create_replay_model(env, scenario_id: int):
     start = np.asarray(bank.start[scenario_id], float)
     goal = np.asarray(bank.goal[scenario_id], float)
     dt = env.dt
-    xml = f'''<mujoco model="navigation-replay">
-  <compiler angle="radian"/>
+    xml = f"""<mujoco model="navigation-replay">
+  <compiler angle="radian" meshdir="{ROBOT_ASSET_DIR.as_posix()}"/>
   <option timestep="{dt}" gravity="0 0 -9.81"/>
-  <visual><global offwidth="1600" offheight="1000"/></visual>
+  <visual>
+    <global offwidth="1600" offheight="1000"/>
+    <map znear="0.001"/>
+  </visual>
+  <asset>
+    {_drone_assets_xml()}
+  </asset>
   <worldbody>
     <light pos="8 0 9" dir="0 0 -1"/>
     <geom name="ground" type="plane" pos="0 0 {corridor_low[2]}" size="{half[0]} {half[1]} .1" rgba=".86 .88 .9 1"/>
@@ -142,7 +203,7 @@ def create_replay_model(env, scenario_id: int):
     {_drone_xml()}
     {_obstacle_xml(obstacles)}
   </worldbody>
-</mujoco>'''
+</mujoco>"""
     spec = mujoco.MjSpec.from_string(xml)
     model = spec.compile()
     data = mujoco.MjData(model)
@@ -150,11 +211,35 @@ def create_replay_model(env, scenario_id: int):
     from drone_playground.visualization.layers import ReplayLayers, sensor_view
 
     sensor = getattr(env, "sensor", None)
+    experiment_config = getattr(env, "experiment_config", {})
+    visualization = (
+        experiment_config.get("visualization", {})
+        if isinstance(experiment_config, dict)
+        else {}
+    )
+    from drone_playground.visualization.sensor_hits import ReplaySensorContext, supports_hit_overlay
+
+    replay_sensor_context = None
+    if (
+        sensor is not None
+        and supports_hit_overlay(sensor)
+        and visualization.get("sensor_hits", True)
+    ):
+        replay_sensor_context = ReplaySensorContext(
+            sensor=sensor,
+            bank=bank,
+            scenario_id=int(scenario_id),
+            max_points=int(visualization.get("max_sensor_points", 2400)),
+        )
     return SimpleNamespace(
         spec=spec,
         mj_model=model,
         replay_visualization=ReplayLayers(
-            sensor=sensor_view(sensor.calibration()) if sensor is not None else None),
+            sensor=sensor_view(sensor.calibration())
+            if sensor is not None
+            else None
+        ),
+        replay_sensor_context=replay_sensor_context,
         data=SimpleNamespace(
             core=SimpleNamespace(
                 drone_mocap_ids=np.array([0]),
@@ -169,9 +254,11 @@ def create_replay_model(env, scenario_id: int):
         ),
         component_identity={
             **getattr(env, "component_identity", {}),
-            "visual_geometry": "analytic scene primitives plus a schematic quadrotor",
+            "visual_geometry": "analytic scene primitives plus Crazyflow Crazyflie 2.x P250 visual meshes",
             "physics_engine": getattr(
-                env, "physics_engine", "Crazyflow JAX; MuJoCo is used only for replay"
+                env,
+                "physics_engine",
+                "Crazyflow JAX; MuJoCo is used only for replay",
             ),
             "scenario": env.scenario(scenario_id),
         },

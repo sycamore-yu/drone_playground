@@ -13,3 +13,4 @@ betas:
 - 0.95
 gradient:
   transition: direct
+trainer: drone_playground.learning.train.train_experiment

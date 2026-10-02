@@ -1,0 +1,141 @@
+# @package _global_
+defaults:
+- /sensor@env.sensor: pinhole_depth
+- /action@env.action: acceleration
+- /dynamics@env.dynamics: point_mass_lag
+- /network: depth_cnn_gru
+- _self_
+env:
+  scene:
+    _target_: drone_playground.environments.scenes.catalog.NavigationCatalogScene
+    name: navigation
+    scene_ids:
+    - S01
+    - S02
+    - S03
+    - S06
+    - D01
+    - D02
+    - D03
+    - D06
+    catalog_path: null
+    verification_path: null
+  task:
+    name: navigation
+    dynamic: false
+    freq: 10
+    physics_freq: 500
+    duration: 300.0
+    goal_radius: 0.5
+    reference_count: 32
+    numerical_guard: true
+    time_limit_kind: termination
+    policy_evaluator: drone_playground.evaluation.navigation.policy.NavigationEvaluator
+    command_distribution:
+      kind: goal_velocity
+      distribution: uniform
+      speed_range_mps:
+      - 2.0
+      - 4.0
+    adapter: recurrent_acceleration
+    adapter_identity: depth-flight-navigation-adaptation-v1
+    arrival_sampling: physics
+    body_radius: 0.07
+    max_speed: 20.0
+    _target_: drone_playground.environments.tasks.navigation.recurrent.RecurrentNavigationEnv
+    evaluation_entrypoint: drone_playground.evaluation.navigation.recurrent.evaluate
+  observation:
+    _target_: drone_playground.environments.observations.flight_state.FlightStateObservation
+    name: flight_body_state
+    proprioception_size: 10
+  name: navigation
+objective:
+  _target_: drone_playground.learning.objectives.navigation_acceleration.PointCloudNavigationObjective
+  velocity_weight: 1.0
+  position_weight: 0.1
+  altitude_weight: 0.2
+  clearance_weight: 8.0
+  clearance_margin: 1.0
+  acceleration_weight: 0.005
+  jerk_weight: 0.0005
+  overspeed_weight: 1.0
+  max_speed: 20.0
+runtime:
+  action_delay_ms:
+  - 25.0
+  - 50.0
+source: Independent JAX depth CNN/GRU and velocity-prediction adaptation of Learning vision-based agile
+  flight via differentiable physics; common navigation plant/objective, not original CUDA reproduction
+algorithm:
+  name: recurrent_navigation_bptt
+  horizon_length: 32
+  learning_rate: 0.001
+  betas:
+  - 0.9
+  - 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.01
+  gradient:
+    transition: exponential
+    decay_rate: 0.916290731874155
+  trainer: drone_playground.learning.algorithms.recurrent_navigation_bptt.train
+  max_grad_norm: 1.0
+  velocity_prediction_weight: 1.0
+training:
+  scene_distribution:
+    type: generated
+    scene:
+      _target_: drone_playground.environments.scenes.generated_navigation.GeneratedNavigationScene
+      name: navigation_training
+      seed: 81000
+      per_difficulty: 4
+  num_envs: 8
+  policy_updates: 1000
+  num_timesteps: null
+  checkpoint_eval_episodes: null
+  checkpoint_eval_seed_start: null
+  reset_randomization:
+    position:
+      distribution: mixture
+      mixture_weights:
+      - 0.25
+      - 0.25
+      - 0.5
+      stratified: true
+      goal_region_width_m:
+      - 4.0
+      - 4.0
+      - 1.0
+      candidates: 32
+      minimum_clearance_m: 0.15
+    scene_phase_s:
+    - 0.0
+    - 300.0
+    velocity_std_mps: 0.3
+  checkpoint_eval_metric: release-pilot-v1
+  checkpoint_eval_initial_conditions: null
+evaluation:
+  episodes: null
+  seed_start: null
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+  protocol: benchmarks/navigation.yaml
+  commanded_speed: 4.0
+  initial_conditions: null
+  recipe_identity: depth-flight-navigation-adaptation-v1
+method:
+  name: depth_flight_navigation_adaptation
+  output: world_acceleration
+  network_output_frame: body
+  command_units: m/s^2
+  implementation: depth_recurrent
+  trainable: true
+experiment:
+  name: depth_diffphysics
+  kind: paper
+  paper: Learning vision-based agile flight via differentiable physics
+  fidelity: navigation_adaptation

@@ -1,5 +1,0 @@
-name: attitude_mpc
-prediction: so_rpy
-horizon: 25
-prediction_seconds: 0.5
-delay_compensation_ms: 0.0

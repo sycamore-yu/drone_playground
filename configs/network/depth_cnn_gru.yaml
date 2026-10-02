@@ -1,0 +1,5 @@
+encoder:
+  type: depth_cnn
+memory: gru
+hidden_size: 192
+far_m: ${env.sensor.far_m}

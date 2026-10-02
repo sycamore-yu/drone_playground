@@ -26,88 +26,23 @@ from brax.training.agents.apg import networks as apg_networks
 from brax.training.agents.apg import train as apg_train
 from brax.training.agents.ppo import train as ppo_train
 
-from drone_playground.composition import build_environment, native_training_config
-from drone_playground.evaluation.evaluator import make_evaluator
-from drone_playground.evaluation.tracking import (
-    save_report,
-    select_replays,
-)
-from drone_playground.learning.env_adapter import wrap_for_training
-from drone_playground.networks.policies import network_factory
-from drone_playground.runs.checkpoints import (
+from drone_playground.artifacts.checkpoints import (
     load_policy,
     require_matching_physical_decoder,
     save_policy,
 )
-
-
-def development_score(task: str, report: dict, rule: str | None = None) -> tuple:
-    """Select only on development data; ties break on the declared secondary terms."""
-    if rule == "release-pilot-v1":
-        return (min(pilot_scene_rates(task, report).values()),)
-    if task == "racing":
-        return (report["completed"], report["gates_passed_mean"], -report["rmse_all_mean"])
-    if task == "navigation":
-        # Declared order: macro success rate, collision rate, constrained time.
-        score = (
-            report["success_rate"],
-            -report["collision_rate"],
-            -report["constrained_time_mean_s"],
-        )
-        if rule is None:
-            return score
-        if rule not in (
-            "navigation-convergence-v1",
-            "navigation-convergence-v2",
-            "navigation-convergence-v3",
-        ):
-            raise ValueError(f"Unknown development selection rule: {rule}")
-        rows = [row for cell in report["cells"].values() for row in cell["episodes"]]
-        if rule == "navigation-convergence-v3":
-            # Once arrival is established, sub-millimetre sampling differences
-            # within the goal radius have no task meaning. Compare actual times.
-            remaining = float(
-                np.mean(
-                    [
-                        0.0 if row.get("arrived", False) else row["final_goal_distance_m"]
-                        for row in rows
-                    ]
-                )
-            )
-            return (
-                report["success_rate"],
-                -report["failure_rate"],
-                -remaining,
-                -report["constrained_time_mean_s"],
-            )
-        if rule == "navigation-convergence-v2":
-            return (
-                report["success_rate"],
-                -report["failure_rate"],
-                -float(np.mean([row["final_goal_distance_m"] for row in rows])),
-                -report["constrained_time_mean_s"],
-            )
-        return (*score, -float(np.mean([row["final_goal_distance_m"] for row in rows])))
-    return (report["completed"], -report["rmse_all_mean"])
-
-
-def pilot_scene_rates(task: str, report: dict) -> dict:
-    """Frozen pilot objective: worst scenario group, with failures in the denominator."""
-    groups = {}
-    if task == "navigation":
-        for difficulty, cell in report["cells"].items():
-            for row in cell["episodes"]:
-                key = difficulty + "/" + row["subtype"]
-                groups.setdefault(key, []).append(bool(row["arrived"]))
-    else:
-        for row in report["episodes"]:
-            success = bool(row["completed"]) and not row["failed"]
-            if task != "racing":
-                success = success and np.isfinite(row["rmse_m"]) and row["rmse_m"] <= 0.25
-            groups.setdefault(task, []).append(success)
-    if not groups or any(not rows for rows in groups.values()):
-        raise ValueError("Pilot objective requires nonempty episode groups")
-    return {key: float(np.mean(rows)) for key, rows in groups.items()}
+from drone_playground.artifacts.reporting import save_report
+from drone_playground.composition import build_environment, native_training_config
+from drone_playground.benchmarks import (
+    apply_quality,
+    checkpoint_eval_score,
+    checkpoint_eval_seeds,
+    pilot_scene_rates,
+)
+from drone_playground.evaluation.run import make_evaluator
+from drone_playground.evaluation.tracking.metrics import select_replays
+from drone_playground.learning.wrappers import wrap_for_training
+from drone_playground.networks.factory import network_factory
 
 
 def evaluation_scalars(task: str, report: dict) -> dict:
@@ -128,19 +63,27 @@ def evaluation_scalars(task: str, report: dict) -> dict:
 
 
 def inherit_dva_selection(state_path: Path, destination: Path, task: str):
-    """Continue development selection without importing evaluations after the saved state."""
+    """Continue checkpoint_eval selection without importing evaluations after the saved state."""
     meta = json.loads(state_path.with_suffix(".json").read_text())
     saved = meta["config"]
-    cutoff = int(meta["updates"]) * int(saved["num_envs"]) * int(saved["horizon_length"])
+    cutoff = (
+        int(meta["updates"])
+        * int(saved["num_envs"])
+        * int(saved["horizon_length"])
+    )
     source = state_path.resolve().parent.parent
     candidates = []
     for path in sorted((source / "eval").glob("step-*.json")):
         report = json.loads(path.read_text())
-        if report.get("split") == "dev" and report["step"] <= cutoff:
+        if report.get("role") == "eval" and report["step"] <= cutoff:
             candidates.append(report)
     if not candidates:
-        raise ValueError("D.VA experiment resume requires its earlier development reports")
-    best = max(candidates, key=lambda report: development_score(task, report))
+        raise ValueError(
+            "D.VA experiment resume requires its earlier checkpoint_eval reports"
+        )
+    best = max(
+        candidates, key=lambda report: checkpoint_eval_score(task, report)
+    )
     policy = (source / best["checkpoint"]).resolve()
     if not policy.is_relative_to(source):
         raise ValueError("Inherited policy must belong to the source run")
@@ -149,10 +92,15 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
         raise ValueError("Inherited report and checkpoint step disagree")
     for path in (policy, policy.with_suffix(".json")):
         shutil.copyfile(path, destination / "checkpoints" / path.name)
-    score = development_score(task, best)
+    score = checkpoint_eval_score(task, best)
     save_report(
         destination / "checkpoints" / "best.json",
-        dict(path=policy.name, step=best["step"], score=list(score), selection_split="dev"),
+        dict(
+            path=policy.name,
+            step=best["step"],
+            score=list(score),
+            selection_role="eval",
+        ),
     )
     save_report(
         destination / "resume-selection.json",
@@ -172,13 +120,17 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
 def export_run_replays(env, trace, report, directory):
     """Export replays through the contract the selected task actually owns."""
     if env.task == "navigation":
-        from drone_playground.evaluation.navigation import (
+        from drone_playground.evaluation.navigation.policy import (
             export_navigation_replays,
             select_episodes,
         )
 
         return export_navigation_replays(
-            env, trace, directory, case_indices=select_episodes(report)
+            env,
+            trace,
+            directory,
+            case_indices=select_episodes(report),
+            scenario_groups=report["scenario_groups"],
         )
     from drone_playground.visualization.rscope_io import export_rollout as write_rollout
 
@@ -186,11 +138,15 @@ def export_run_replays(env, trace, report, directory):
 
 
 def train(
-    config: dict, root: Path, run_id: str, device: str = "gpu", warm_start: Path | None = None
+    config: dict,
+    root: Path,
+    run_id: str,
+    device: str = "gpu",
+    warm_start: Path | None = None,
 ) -> dict:
     """Train the declared complete budget and record real snapshots and evaluations."""
-    from drone_playground.runs.console import capture_console
-    from drone_playground.runs.record import RunRecorder
+    from drone_playground.artifacts.console import capture_console
+    from drone_playground.artifacts.record import RunRecorder
     from drone_playground.visualization.rscope_io import publish_snapshot
 
     config = dict(config)
@@ -199,31 +155,18 @@ def train(
         raise ValueError("Supported algorithms are PPO, APG, SHAC and D.VA")
     config.update(
         device=device,
-        snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
+        snapshot_schedule="initial-and-final"
+        if algorithm == "apg"
+        else "per-epoch",
         trainer=(
             f"drone_playground.learning.algorithms.{algorithm}"
             if algorithm in {"bptt", "shac", "dva"}
             else "brax.training.agents." + algorithm
         ),
         reset_contract="fresh-same-step-with-terminal-observation",
-        timeout_contract=(
-            "pre-reset terminal-value bootstrap; true termination masks value"
-            if algorithm in {"shac", "dva"}
-            else "native Brax GAE masks truncated transition; time_out bootstrap disabled"
-        ),
-        task_protocol={
-            "hovering": "fixed-target-hover-v1",
-            "figure8": "crazyflow-figure8-v1",
-            "random": "lsy-random-spline-v1",
-            "racing": "lsy-level0-reference-tracking-v1",
-            "navigation": "sando-style-navigation-40s-0.5m-body-collision-v1",
-        }[config["task"]],
+        timeout_contract=config["components"]["env"]["task"]["time_limit_kind"],
+        task_protocol=config["components"]["env"]["task"],
     )
-    if config["task"] == "navigation":
-        duration = config["components"]["env"]["task"]["duration"]
-        config["task_protocol"] = f"navigation-{duration:g}s-0.5m-body-collision"
-    if config.get("numerical_guard", False):
-        config["task_protocol"] += "+finite-square-v1"
     source_root = Path(crazyflow.__file__).resolve().parents[1]
     revision = subprocess.check_output(
         ["git", "-C", str(source_root), "rev-parse", "HEAD"], text=True
@@ -233,10 +176,16 @@ def train(
     )
     config["crazyflow_code"] = {
         "commit": revision,
-        "working_tree_patch_sha256": hashlib.sha256(dependency_patch).hexdigest(),
+        "working_tree_patch_sha256": hashlib.sha256(
+            dependency_patch
+        ).hexdigest(),
     }
     config["actual_devices"] = [str(device) for device in jax.devices()]
-    task_id = "07" if config["task"] == "racing" else ("04" if algorithm == "shac" else "05")
+    task_id = (
+        "07"
+        if config["task"] == "racing"
+        else ("04" if algorithm == "shac" else "05")
+    )
     resolved = dict(config["components"])
     resolved["provenance"] = {
         "crazyflow_code": config["crazyflow_code"],
@@ -257,63 +206,65 @@ def train(
     initial_params = None
     try:
         rec.phase("initializing", step=0)
-        if config.get('warm_start'):
-            metadata = json.loads(Path(config['warm_start']).with_suffix('.json').read_text())
-            require_matching_physical_decoder(metadata,config)
+        if config.get("warm_start"):
+            metadata = json.loads(
+                Path(config["warm_start"]).with_suffix(".json").read_text()
+            )
+            require_matching_physical_decoder(metadata, config)
         if algorithm == "dva" and config.get("resume"):
             best_score, best = inherit_dva_selection(
                 Path(config["resume"]), rec.path, config["task"]
             )
         env = build_environment(config["components"], device)
+        rec.record_environment(env)
         if config["task"] == "racing":
-            save_report(rec.path / "native-task-config.json", env.config.to_dict())
-        dev_count = int(config.get("development_episodes", 32))
-        if dev_count < 1:
-            raise ValueError("Development evaluation requires at least one episode")
-        evaluation_env = build_environment(config["components"], device, "dev", dev_count)
-        dev_seeds = list(range(20000, 20000 + dev_count))
+            save_report(
+                rec.path / "native-task-config.json", env.config.to_dict()
+            )
+        checkpoint_eval_count = int(config.get("checkpoint_eval_episodes", 32))
+        if checkpoint_eval_count < 1:
+            raise ValueError(
+                "CheckpointEval evaluation requires at least one episode"
+            )
+        evaluation_env = build_environment(
+            config["components"], device, "eval", checkpoint_eval_count
+        )
+        evaluation_seeds = checkpoint_eval_seeds(config, checkpoint_eval_count)
         if env.task == "navigation":
-            dev_case = {
-                "split": "dev",
-                "reset_seeds": dev_seeds,
-                "episodes_per_difficulty": evaluation_env.bank.num_instances // 3,
-                "scenario_groups": {
-                    difficulty: list(
-                        range(
-                            index * (evaluation_env.bank.num_instances // 3),
-                            (index + 1) * (evaluation_env.bank.num_instances // 3),
-                        )
-                    )
-                    for index, difficulty in enumerate(("easy", "medium", "hard"))
-                },
+            checkpoint_eval_case = {
+                "role": "eval",
+                "reset_seeds": evaluation_seeds,
+                "configured_repeats": checkpoint_eval_count,
                 "bank_digest": evaluation_env.bank.digest(),
-                "quality_rule": (
-                    "selection order: macro success rate, collision rate, constrained time; "
-                    "the acceptance threshold is pending the P5 protocol freeze"
+                "selection_rule": config.get("checkpoint_eval_metric"),
+                "acceptance": config["components"]["evaluation"].get(
+                    "acceptance"
                 ),
             }
-            if config.get("development_metric") in (
-                "navigation-convergence-v1",
-                "navigation-convergence-v2",
-                "navigation-convergence-v3",
-            ):
-                dev_case["quality_rule"] = (
-                    "macro arrival >=0.9 and every named scene >=0.8; selection "
-                    + config["development_metric"]
-                    + "; independent heldout verification is still required"
-                )
-            save_report(rec.path / "eval" / "dev-cases.json", dev_case)
+            save_report(
+                rec.path / "eval" / "checkpoint-eval-cases.json",
+                checkpoint_eval_case,
+            )
         else:
             save_report(
-                rec.path / "eval" / "dev-cases.json",
+                rec.path / "eval" / "checkpoint-eval-cases.json",
                 {
-                    "split": "dev",
-                    "reset_seeds": dev_seeds,
-                    "reference_seeds": dev_seeds if env.task == "random" else [20000],
-                    "quality_rule": (
-                        "at least29/32 complete all native gate passes"
-                        if env.task == "racing"
-                        else "at least29/32 complete, completed mean RMSE <=0.25m"
+                    "role": "eval",
+                    "reset_seeds": evaluation_seeds,
+                    "reference_seeds": (
+                        list(
+                            range(
+                                evaluation_env.reference_seed,
+                                evaluation_env.reference_seed
+                                + checkpoint_eval_count,
+                            )
+                        )
+                        if getattr(env, "reference_kind", None) == "random"
+                        else [evaluation_env.reference_seed]
+                    ),
+                    "selection_rule": config.get("checkpoint_eval_metric"),
+                    "acceptance": config["components"]["evaluation"].get(
+                        "acceptance"
                     ),
                 },
             )
@@ -322,43 +273,68 @@ def train(
             nonlocal evaluator, best_score, best, snapshot_count, initial_params
             step = int(step)
             if initial_params is None:
-                initial_params = jax.tree.map(lambda x: np.array(x, copy=True), params[1])
-            if not all(np.isfinite(np.asarray(x)).all() for x in jax.tree.leaves(params)):
+                initial_params = jax.tree.map(
+                    lambda x: np.array(x, copy=True), params[1]
+                )
+            if not all(
+                np.isfinite(np.asarray(x)).all()
+                for x in jax.tree.leaves(params)
+            ):
                 raise FloatingPointError("Non-finite learned parameters")
             rec.phase("evaluation", step=step)
-            checkpoint = save_policy(rec.path / "checkpoints", params, config, step)
+            checkpoint = save_policy(
+                rec.path / "checkpoints", params, config, step
+            )
             if evaluator is None:
-                evaluator = make_evaluator(evaluation_env, make_policy, dev_seeds)
+                evaluator = make_evaluator(
+                    evaluation_env, make_policy, evaluation_seeds
+                )
             t = time.monotonic()
             report, trace = evaluator.run(params)
-            report.update(step=step, checkpoint=str(checkpoint.relative_to(rec.path)), split="dev")
-            if config.get("development_metric") == "release-pilot-v1":
+            if snapshot_count == 0 and env.task == "navigation":
+                checkpoint_eval_case.update(
+                    scenario_groups=report["scenario_groups"],
+                    initial_conditions=report["initial_conditions"],
+                )
+                save_report(
+                    rec.path / "eval" / "checkpoint-eval-cases.json",
+                    checkpoint_eval_case,
+                )
+            apply_quality(report, config)
+            report.update(
+                step=step,
+                checkpoint=str(checkpoint.relative_to(rec.path)),
+                role="eval",
+            )
+            if config.get("checkpoint_eval_metric") == "release-pilot-v1":
                 report["selection_rule"] = "release-pilot-v1"
-                report["scene_success_rates"] = pilot_scene_rates(env.task, report)
-                report["pilot_objective"] = min(report["scene_success_rates"].values())
+                report["scene_success_rates"] = pilot_scene_rates(
+                    env.task, report
+                )
+                report["pilot_objective"] = min(
+                    report["scene_success_rates"].values()
+                )
                 report["quality_passed"] = None
-                report["quality_rule"] = "Development exploration; no formal release claim"
-            if config.get("development_metric") in (
+                report["quality_rule"] = (
+                    "CheckpointEval exploration; no formal release claim"
+                )
+            if config.get("checkpoint_eval_metric") in (
                 "navigation-convergence-v1",
                 "navigation-convergence-v2",
                 "navigation-convergence-v3",
             ):
-                report["selection_rule"] = config["development_metric"]
+                report["selection_rule"] = config["checkpoint_eval_metric"]
                 scene_outcomes = {}
                 for cell in report["cells"].values():
                     for row in cell["episodes"]:
-                        scene_outcomes.setdefault(row["subtype"], []).append(row["arrived"])
+                        scene_outcomes.setdefault(row["subtype"], []).append(
+                            row["arrived"]
+                        )
                 report["scene_success_rates"] = {
-                    name: float(np.mean(values)) for name, values in scene_outcomes.items()
+                    name: float(np.mean(values))
+                    for name, values in scene_outcomes.items()
                 }
-                report["quality_passed"] = bool(
-                    report["success_rate"] >= 0.9
-                    and all(value >= 0.8 for value in report["scene_success_rates"].values())
-                )
-                report["quality_rule"] = (
-                    config["development_metric"] + ": macro arrival >=0.9 and every scene >=0.8; "
-                    "a development pass is not independent heldout convergence"
-                )
+                apply_quality(report, config)
             save_report(rec.path / "eval" / f"step-{step:010d}.json", report)
             scalars = evaluation_scalars(env.task, report)
             scalars["eval/seconds"] = time.monotonic() - t
@@ -369,15 +345,24 @@ def train(
                 rec.log(
                     step,
                     {
-                        "eval/gates_passed_mean": report.get("gates_passed_mean", 0.0),
-                        "eval/collision_rate": report.get("collision_rate", 0.0),
+                        "eval/gates_passed_mean": report.get(
+                            "gates_passed_mean", 0.0
+                        ),
+                        "eval/collision_rate": report.get(
+                            "collision_rate", 0.0
+                        ),
                     },
                 )
-            t = time.monotonic()
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
-            export_run_replays(evaluation_env, trace, report, replay_directory)
-            rec.log(step, {"record/export_seconds": time.monotonic() - t})
-            score = development_score(env.task, report, config.get("development_metric"))
+            if config["components"]["evaluation"].get("record_replays", False) or config.get(
+                "publish_live", False
+            ):
+                t = time.monotonic()
+                export_run_replays(evaluation_env, trace, report, replay_directory)
+                rec.log(step, {"record/export_seconds": time.monotonic() - t})
+            score = checkpoint_eval_score(
+                env.task, report, config.get("checkpoint_eval_metric")
+            )
             if score > best_score:
                 best_score, best = score, report
                 save_report(
@@ -386,7 +371,7 @@ def train(
                         "path": checkpoint.name,
                         "step": step,
                         "score": list(score),
-                        "selection_split": "dev",
+                        "selection_role": "eval",
                     },
                 )
             if config.get("publish_live", False):
@@ -394,9 +379,17 @@ def train(
                     replay_directory, rec.path, first=snapshot_count == 0
                 )
                 live_publications.append({"step": step, **publication})
-                save_report(rec.path / "live-publications.json", {"snapshots": live_publications})
+                save_report(
+                    rec.path / "live-publications.json",
+                    {"snapshots": live_publications},
+                )
                 rec.log(
-                    step, {"record/live_publication_error": float(publication["status"] == "error")}
+                    step,
+                    {
+                        "record/live_publication_error": float(
+                            publication["status"] == "error"
+                        )
+                    },
                 )
                 if publication["status"] != "published":
                     print(
@@ -423,7 +416,9 @@ def train(
             )
             rec.phase("compiling" if step == 0 else "training", step=step)
             if time.monotonic() - start > config.get("max_wall_seconds", 3600):
-                raise TimeoutError("Declared wall-clock budget reached; snapshots preserved")
+                raise TimeoutError(
+                    "Declared wall-clock budget reached; snapshots preserved"
+                )
 
         def progress(step, metrics):
             actual_step = int(step)
@@ -436,13 +431,24 @@ def train(
                     * config["num_envs"]
                     * config["horizon_length"]
                 )
-            clean = {k: float(v) for k, v in metrics.items() if np.asarray(v).size == 1}
+            clean = {
+                k: float(v)
+                for k, v in metrics.items()
+                if np.asarray(v).size == 1
+            }
             if clean:
                 rec.log(actual_step, clean)
             rec.phase("training", step=actual_step)
-            print(json.dumps({"run_id": run_id, "step": actual_step, "metrics": clean}), flush=True)
+            print(
+                json.dumps(
+                    {"run_id": run_id, "step": actual_step, "metrics": clean}
+                ),
+                flush=True,
+            )
             if time.monotonic() - start > config.get("max_wall_seconds", 3600):
-                raise TimeoutError("Declared wall-clock budget reached at an epoch boundary")
+                raise TimeoutError(
+                    "Declared wall-clock budget reached at an epoch boundary"
+                )
 
         factory = network_factory(config)
         restore = None
@@ -479,7 +485,9 @@ def train(
                 gae_lambda=config.get("gae_lambda", 0.94),
                 clipping_epsilon=config.get("clipping_epsilon", 0.2),
                 max_grad_norm=config.get("max_grad_norm", 1.0),
-                normalize_observations=config.get("normalize_observations", False),
+                normalize_observations=config.get(
+                    "normalize_observations", False
+                ),
                 num_evals=config.get("num_evals", 9),
                 num_eval_envs=4,
                 run_evals=False,
@@ -488,16 +496,19 @@ def train(
                 policy_params_fn=snapshot,
                 progress_fn=progress,
                 restore_params=restore,
-                bootstrap_on_timeout=False,
+                bootstrap_on_timeout=env.time_limit_kind == "truncation",
                 log_training_metrics=False,
             )
             actual_steps = max(
-                int(p.stem.split("-")[-1]) for p in (rec.path / "checkpoints").glob("step-*.pkl")
+                int(p.stem.split("-")[-1])
+                for p in (rec.path / "checkpoints").glob("step-*.pkl")
             )
         elif algorithm == "apg":
             epochs = max(config.get("num_evals", 9) - 1, 1)
             if config["policy_updates"] % epochs:
-                raise ValueError("APG policy_updates must be divisible by evaluation epochs")
+                raise ValueError(
+                    "APG policy_updates must be divisible by evaluation epochs"
+                )
 
             def capture_factory(*args, **kwargs):
                 net = factory(*args, **kwargs)
@@ -508,11 +519,15 @@ def train(
                     normalizer = running_statistics.init_state(
                         specs.Array((env.observation_size,), jnp.float32)
                     )
-                    snapshot(0, apg_networks.make_inference_fn(net), (normalizer, p))
+                    snapshot(
+                        0, apg_networks.make_inference_fn(net), (normalizer, p)
+                    )
                     return p
 
                 return net.replace(
-                    policy_network=networks.FeedForwardNetwork(capture, net.policy_network.apply)
+                    policy_network=networks.FeedForwardNetwork(
+                        capture, net.policy_network.apply
+                    )
                 )
 
             maker, params, metrics = apg_train.train(
@@ -525,7 +540,9 @@ def train(
                 num_evals=config.get("num_evals", 9),
                 num_eval_envs=4,
                 learning_rate=config.get("learning_rate", 0.005),
-                normalize_observations=config.get("normalize_observations", False),
+                normalize_observations=config.get(
+                    "normalize_observations", False
+                ),
                 max_gradient_norm=config.get("max_grad_norm", 1.0),
                 use_schedule=config.get("use_schedule", True),
                 schedule_decay=config.get("schedule_decay", 0.997),
@@ -534,12 +551,17 @@ def train(
                 network_factory=capture_factory,
                 progress_fn=progress,
             )
-            actual_steps = config["policy_updates"] * config["num_envs"] * config["horizon_length"]
+            actual_steps = (
+                config["policy_updates"]
+                * config["num_envs"]
+                * config["horizon_length"]
+            )
             snapshot(actual_steps, maker, params)
 
         else:
             trainer = __import__(
-                f"drone_playground.learning.algorithms.{algorithm}", fromlist=["train"]
+                f"drone_playground.learning.algorithms.{algorithm}",
+                fromlist=["train"],
             )
             maker, params, metrics = trainer.train(
                 env,
@@ -547,7 +569,9 @@ def train(
                 policy_params_fn=snapshot,
                 progress_fn=progress,
                 state_directory=rec.path / "training-state",
-                restore_state=Path(config["resume"]) if config.get("resume") else None,
+                restore_state=Path(config["resume"])
+                if config.get("resume")
+                else None,
             )
             actual_steps = metrics["actual_steps"]
 
@@ -555,18 +579,23 @@ def train(
             np.sqrt(
                 sum(
                     float(np.sum((np.asarray(a) - np.asarray(b)) ** 2))
-                    for a, b in zip(jax.tree.leaves(initial_params), jax.tree.leaves(params[1]))
+                    for a, b in zip(
+                        jax.tree.leaves(initial_params),
+                        jax.tree.leaves(params[1]),
+                    )
                 )
             )
         )
         if not np.isfinite(delta) or delta == 0:
-            raise AssertionError("Training did not produce a finite, nonzero policy update")
+            raise AssertionError(
+                "Training did not produce a finite, nonzero policy update"
+            )
         result = {
             "algorithm": algorithm,
             "actual_steps": actual_steps,
             "actor_parameter_delta_l2": delta,
             "snapshots": snapshot_count,
-            "best_development_result": best,
+            "best_checkpoint_eval_result": best,
             "elapsed_seconds": time.monotonic() - start,
             "quality_passed": best.get("quality_passed") if best else None,
             "engineer_passed": True,
@@ -584,7 +613,11 @@ def train(
         return result
     except BaseException as error:
         traceback.print_exc()
-        rec.finish("failed", error=repr(error), elapsed_seconds=time.monotonic() - start)
+        rec.finish(
+            "failed",
+            error=repr(error),
+            elapsed_seconds=time.monotonic() - start,
+        )
         raise
     finally:
         if env is not None:
@@ -592,3 +625,13 @@ def train(
         if evaluation_env is not None:
             evaluation_env.close()
         console.__exit__(*sys.exc_info())
+
+
+def train_experiment(config, root, run_id):
+    return train(
+        native_training_config(config),
+        root,
+        run_id,
+        config["runtime"]["device"],
+        config["training"].get("warm_start"),
+    )

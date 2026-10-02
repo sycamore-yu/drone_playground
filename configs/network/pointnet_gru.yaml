@@ -1,0 +1,6 @@
+encoder:
+  type: pointnet
+  point_channels: [64, 128, 1024]
+  negative_slope: 0.01
+memory: gru
+hidden_size: 192

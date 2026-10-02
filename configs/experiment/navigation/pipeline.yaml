@@ -1,0 +1,41 @@
+# @package _global_
+defaults:
+- /env: navigation/static
+- /network: none
+- override /action@env.action: trajectory_tracking
+- override /dynamics@env.dynamics: crazyflow_so_rpy
+- _self_
+mode: eval
+source: Explicit physical module chain; default minimum-jerk path has no obstacle
+  avoidance
+algorithm:
+  name: none
+  gradient:
+    transition: direct
+runtime:
+  device: cpu
+  backend: host
+  action_delay_ms: null
+evaluation:
+  environment: config
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+method:
+  name: physical_pipeline
+  implementation: pipeline
+  trainable: false
+  output: trajectory
+  input_sensor: point_cloud
+  workers: 1
+  port: 0
+  stages:
+  - implementation: goal
+  - implementation: minimum_jerk
+    parameters:
+      cruise_speed: 2.0
+      acceleration_scale: 3.0
+      minimum_segment_seconds: 0.5

@@ -1,0 +1,31 @@
+# @package _global_
+defaults:
+- /env: navigation/static
+- /network: sensor_fusion_mlp_128
+- /algorithm: dva
+- override /sensor@env.sensor: d435
+- _self_
+source: P5 formal matrix unit 2; JAX D.VA port, detached D435 observation
+training:
+  num_envs: 128
+  policy_updates: 2048
+  num_timesteps: 8388608
+  max_wall_seconds: 7200
+evaluation:
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+env:
+  observation:
+    name: navigation_depth
+    points_per_frame: 300
+    channels: 2
+    far_m: 10.0
+method:
+  name: dva
+  output: attitude_thrust
+  implementation: neural
+  trainable: true

@@ -1,15 +1,46 @@
 # @package _global_
 defaults:
-- /scene@env.scene: lsy_racing
-- /task@env.task: racing
 - /sensor@env.sensor: none
-- /observation@env.observation: state_reference
-- /execution@env.execution: attitude_thrust
-- /objective: tracking_exp
+- /action@env.action: attitude_thrust
+- /dynamics@env.dynamics: crazyflow_first_principles_cf21b_500
 - _self_
 env:
+  scene:
+    _target_: drone_playground.environments.scenes.racing.RacingScene
+    name: lsy_level0
+  task:
+    name: racing
+    freq: 50
+    duration: 30.0
+    reference: lsy_course
+    reference_count: 256
+    numerical_guard: false
+    reference_generator:
+      _target_: drone_playground.environments.tasks.references.ReferenceGenerator
+      name: lsy_course
+      amplitude: 1.0
+    time_limit_kind: termination
+    policy_evaluator: drone_playground.evaluation.racing.RaceEvaluator
+    command_distribution:
+      kind: reference
+      distribution: reference_bank
+  observation:
+    _target_: drone_playground.environments.observations.state.TrackingObservation
+    name: state_reference
+    n_samples: 10
+    interval: 0.1
   name: racing
-  execution:
-    dynamics:
-      forward: first_principles
-      drone: cf21B_500
+objective:
+  _target_: drone_playground.environments.tasks.rewards.TrackingObjective
+  name: tracking_exp
+  scale: 1.0
+  distance_scale: 2.0
+training:
+  action_noise:
+    std_physical: 0.001
+  disturbance:
+    force_uniform_half_width_n:
+    - 0.1
+    - 0.1
+    - 0.1
+    gust_period_s: 0.002

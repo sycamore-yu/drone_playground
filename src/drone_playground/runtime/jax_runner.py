@@ -48,7 +48,9 @@ def rollout(env, policy, initial, length, project, *, early_exit=False):
     # of inactive iterations for a 300 s navigation deadline. Preserve the exact
     # old padded trace in one vectorized operation, without advancing physics.
     template = inactive((initial, jnp.zeros(batch, bool)), jnp.int32(0))[1]
-    buffers = jax.tree.map(lambda value: jnp.zeros((length, *value.shape), value.dtype), template)
+    buffers = jax.tree.map(
+        lambda value: jnp.zeros((length, *value.shape), value.dtype), template
+    )
 
     def condition(carry):
         current, index, _ = carry
@@ -57,14 +59,22 @@ def rollout(env, policy, initial, length, project, *, early_exit=False):
     def body(carry):
         current, index, archive = carry
         current, row = advance(current, index)
-        archive = jax.tree.map(lambda storage, value: storage.at[index].set(value), archive, row)
+        archive = jax.tree.map(
+            lambda storage, value: storage.at[index].set(value), archive, row
+        )
         return current, index + 1, archive
 
-    final, stop, archive = jax.lax.while_loop(condition, body, (start, jnp.int32(0), buffers))
-    padding = jax.vmap(lambda index: inactive(final, index)[1])(jnp.arange(length))
+    final, stop, archive = jax.lax.while_loop(
+        condition, body, (start, jnp.int32(0), buffers)
+    )
+    padding = jax.vmap(lambda index: inactive(final, index)[1])(
+        jnp.arange(length)
+    )
     return jax.tree.map(
         lambda prefix, tail: jnp.where(
-            (jnp.arange(length) < stop).reshape((length,) + (1,) * (prefix.ndim - 1)),
+            (jnp.arange(length) < stop).reshape(
+                (length,) + (1,) * (prefix.ndim - 1)
+            ),
             prefix,
             tail,
         ),
@@ -80,12 +90,24 @@ def recurrent_scan(step, initial, length, *, rematerialize=False):
     return jax.lax.scan(step, initial, jnp.arange(length))
 
 
-def policy_rollout(env, make_policy, parameters, keys, *, reference_ids=None, kind="tracking"):
-    initial = (
-        jax.vmap(env.reset)(keys)
-        if reference_ids is None
-        else jax.vmap(env.reset)(keys, reference_ids)
-    )
+def policy_rollout(
+    env,
+    make_policy,
+    parameters,
+    keys,
+    *,
+    reference_ids=None,
+    initial_states=None,
+    kind="tracking",
+):
+    if initial_states is not None:
+        initial = jax.vmap(env.reset)(keys, reference_ids, initial_states)
+    else:
+        initial = (
+            jax.vmap(env.reset)(keys)
+            if reference_ids is None
+            else jax.vmap(env.reset)(keys, reference_ids)
+        )
     policy = make_policy(parameters, deterministic=True)
 
     def project(old, new, action, alive, ended, index):
@@ -96,18 +118,31 @@ def policy_rollout(env, make_policy, parameters, keys, *, reference_ids=None, ki
             obs=old.obs if kind == "racing" else new.obs,
             time=jnp.full(alive.shape, (index + 1) * env.dt),
             actions=action,
-            reward=jnp.where(alive, new.reward, 0.0) if kind == "racing" else new.reward,
+            reward=jnp.where(alive, new.reward, 0.0)
+            if kind == "racing"
+            else new.reward,
             metrics=new.metrics,
             active=alive,
             failed=new.metrics["failure"] > 0 if kind == "racing" else ended,
         )
         if kind == "navigation":
-            row.update(done=new.done, outcome=new.info["outcome"])
+            row.update(
+                done=new.done,
+                outcome=new.info["outcome"],
+                observation_pos=old.pipeline_state.sim_data.states.pos[:, 0, 0],
+                sensor_capture_time=old.pipeline_state.sensor_time[:, -1],
+                observation_time=jnp.full(alive.shape, index * env.dt),
+            )
         if "applied_action" in new.info:
             row["requested_actions"] = action
             row["actions"] = new.info["applied_action"]
         return row
 
     return rollout(
-        env, policy, initial, env.episode_length, project, early_exit=kind == "navigation"
+        env,
+        policy,
+        initial,
+        env.episode_length,
+        project,
+        early_exit=kind == "navigation",
     )

@@ -1,0 +1,121 @@
+diff --git a/brax/training/agents/ppo/losses.py b/brax/training/agents/ppo/losses.py
+index 0ee462f..d87bb86 100644
+--- a/brax/training/agents/ppo/losses.py
++++ b/brax/training/agents/ppo/losses.py
+@@ -43,6 +43,7 @@ def compute_gae(
+     bootstrap_value: jnp.ndarray,
+     lambda_: float = 1.0,
+     discount: float = 0.99,
++    next_values: jnp.ndarray | None = None,
+ ):
+   """Calculates the Generalized Advantage Estimation (GAE).
+ 
+@@ -70,8 +71,11 @@ def compute_gae(
+   values_t_plus_1 = jnp.concatenate(
+       [values[1:], jnp.expand_dims(bootstrap_value, 0)], axis=0
+   )
+-  deltas = rewards + discount * (1 - termination) * values_t_plus_1 - values
+-  deltas *= truncation_mask
++  if next_values is not None:
++    values_t_plus_1 = next_values
++  deltas = rewards + discount * jnp.where(termination, 0.0, values_t_plus_1) - values
++  if next_values is None:
++    deltas *= truncation_mask
+ 
+   acc = jnp.zeros_like(bootstrap_value)
+ 
+@@ -94,9 +98,11 @@ def compute_gae(
+   vs_t_plus_1 = jnp.concatenate(
+       [vs[1:], jnp.expand_dims(bootstrap_value, 0)], axis=0
+   )
+-  advantages = (
+-      rewards + discount * (1 - termination) * vs_t_plus_1 - values
+-  ) * truncation_mask
++  if next_values is not None:
++    vs_t_plus_1 = jnp.where(truncation, next_values, vs_t_plus_1)
++  advantages = rewards + discount * jnp.where(termination, 0.0, vs_t_plus_1) - values
++  if next_values is None:
++    advantages *= truncation_mask
+   return jax.lax.stop_gradient(vs), jax.lax.stop_gradient(advantages)
+ 
+ 
+@@ -209,6 +215,17 @@ def compute_ppo_loss(
+     bootstrap_value = value_apply(normalizer_params, params.value, terminal_obs)
+     baseline_quantiles = None
+ 
++  next_values = None
++  if 'terminal_observation' in data.extras['state_extras']:
++    # Same-step autoreset stores the actual post-transition observation here.
++    next_values = value_apply(
++        normalizer_params, params.value,
++        data.extras['state_extras']['terminal_observation'],
++    )
++    if use_distributional_critic:
++      next_values, _ = next_values
++    bootstrap_value = next_values[-1]
++
+   rewards = data.reward * reward_scaling
+   truncation = data.extras['state_extras']['truncation']
+   termination = (1 - data.discount) * (1 - truncation)
+@@ -226,6 +243,7 @@ def compute_ppo_loss(
+       bootstrap_value=bootstrap_value,
+       lambda_=gae_lambda,
+       discount=discounting,
++      next_values=next_values,
+   )
+   # Do not normalize the gae_returns. The returns must remain in the same scale
+   # as your rewards so the value network learns the true physical scale of the
+diff --git a/brax/training/agents/ppo/train.py b/brax/training/agents/ppo/train.py
+index 9aec960..626fced 100644
+--- a/brax/training/agents/ppo/train.py
++++ b/brax/training/agents/ppo/train.py
+@@ -291,10 +291,8 @@ def train(
+     max_grad_norm: gradient clipping norm value. If None, no clipping is done
+     normalize_advantage: whether to normalize advantage estimate
+     vf_loss_coefficient: Coefficient for value function loss.
+-    bootstrap_on_timeout: if True, bootstrap value on time_out steps using
+-      reward += gamma * V(s) * time_out. Environments should set
+-      state.info['time_out'] = 1.0 and done=True for steps where the episode
+-      ends due to a time_out.
++    bootstrap_on_timeout: if True, retain truncation rewards and bootstrap from
++      state.info['terminal_observation'], the observation before same-step reset.
+     use_distributional_critic: whether to use a distributional critic
+     desired_kl: Desired KL divergence for adaptive KL divergence learning rate
+       schedule.
+@@ -444,7 +442,7 @@ def train(
+   )
+   make_policy = ppo_networks.make_inference_fn(
+       ppo_network,
+-      compute_value=bootstrap_on_timeout or clipping_epsilon_value is not None,
++      compute_value=clipping_epsilon_value is not None,
+       use_distributional_critic=use_distributional_critic,
+   )
+ 
+@@ -572,7 +570,7 @@ def train(
+       current_key, next_key = jax.random.split(current_key)
+       extra_fields = ['truncation', 'episode_metrics', 'episode_done']
+       if bootstrap_on_timeout:
+-        extra_fields.append('time_out')
++        extra_fields.append('terminal_observation')
+       next_state, data = acting.generate_unroll(
+           env,
+           current_state,
+@@ -596,18 +594,6 @@ def train(
+     )
+     assert data.discount.shape[1:] == (unroll_length,)
+ 
+-    if bootstrap_on_timeout:  # bootstrap reward on timeout
+-      time_out = data.extras['state_extras']['time_out']
+-      value = data.extras['policy_extras']['value']
+-      data = types.Transition(
+-          observation=data.observation,
+-          action=data.action,
+-          reward=data.reward + discounting * time_out * value,
+-          discount=data.discount,
+-          next_observation=data.next_observation,
+-          extras=data.extras,
+-      )
+-
+     normalizer_params = training_state.normalizer_params
+     if not lr_is_adaptive_kl:
+       # Update normalization params before SGD for backwards compatibility.

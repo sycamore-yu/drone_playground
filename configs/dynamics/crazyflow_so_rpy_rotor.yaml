@@ -1,0 +1,3 @@
+_target_: drone_playground.dynamics.crazyflow.CrazyflowModel
+forward: so_rpy_rotor
+drone: cf2x_L250

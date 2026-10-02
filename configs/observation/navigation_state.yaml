@@ -1,5 +1,0 @@
-_target_: drone_playground.environments.observations.NavigationObservation
-name: navigation_state
-include_goal: true
-include_previous_action: true
-action_size: 4

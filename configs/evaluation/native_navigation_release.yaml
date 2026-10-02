@@ -1,8 +1,0 @@
-defaults:
-- navigation_release
-- _self_
-# episodes is repetitions per scene: four scenes, 25 each, in this task view.
-per_scene: true
-release_validation: native-navigation-v1
-# Native planners select a trajectory speed under method.limits; no cruise target.
-commanded_speed: null

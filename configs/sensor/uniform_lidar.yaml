@@ -1,0 +1,12 @@
+_target_: drone_playground.environments.sensors.lidar.UniformRayLidar
+name: uniform_lidar
+azimuth_count: 180
+elevation_count: 30
+elevation_start_deg: -7.2
+elevation_span_deg: 60.0
+range_m:
+- 0.1
+- 100.0
+source_rate_hz: 10.0
+include_ground: true
+state_gradient: detached

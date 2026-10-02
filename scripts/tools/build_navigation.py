@@ -94,7 +94,10 @@ def sha256(path: Path) -> str:
 
 
 def _model_pose(model: ET.Element) -> list[float]:
-    return [float(value) for value in (model.findtext("pose") or "0 0 0 0 0 0").split()]
+    return [
+        float(value)
+        for value in (model.findtext("pose") or "0 0 0 0 0 0").split()
+    ]
 
 
 def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
@@ -131,11 +134,17 @@ def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
     }
 
 
-def _endpoint_safe_box(x: float, y: float, z: float, ex: float, ey: float, ez: float) -> bool:
+def _endpoint_safe_box(
+    x: float, y: float, z: float, ex: float, ey: float, ez: float
+) -> bool:
     # Conservative swept-AABB check around both endpoint safety spheres.
     margin = 0.42
     for px, py, pz in (WORLD["start"], WORLD["goal"]):
-        if abs(px - x) <= ex + margin and abs(py - y) <= ey + margin and abs(pz - z) <= ez + margin:
+        if (
+            abs(px - x) <= ex + margin
+            and abs(py - y) <= ey + margin
+            and abs(pz - z) <= ez + margin
+        ):
             return False
     return True
 
@@ -148,7 +157,9 @@ def _endpoint_safe_cylinder(x: float, y: float, radius: float) -> bool:
     )
 
 
-def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], dict]:
+def generate_sando_dynamic(
+    difficulty: str, seed: int = 0
+) -> tuple[list[dict], dict]:
     """Generate one bounded realization using SANDO's dynamic-scene semantics.
 
     The moving fraction remains SANDO's 0.8 m trefoil cubes.  To preserve some
@@ -179,7 +190,11 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
                 offset = rng.uniform(0.0, 3.0)
                 slower_raw = rng.uniform(4.0, 6.0)
                 slower = slower_raw * SANDO_GLOBAL_TIME_SCALE
-                ex, ey, ez = sx / 2.0 + 0.4, sy * 3.0 / 5.0 + 0.4, sz / 2.0 + 0.4
+                ex, ey, ez = (
+                    sx / 2.0 + 0.4,
+                    sy * 3.0 / 5.0 + 0.4,
+                    sz / 2.0 + 0.4,
+                )
                 bounded = (
                     x - ex >= 0.5
                     and x + ex <= 99.5
@@ -206,7 +221,11 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
                 static_index = index - dynamic_count
                 if static_index < static_box_count:
                     is_vertical = static_index < vertical_box_count
-                    half = SANDO_VERTICAL_BOX_HALF if is_vertical else SANDO_HORIZONTAL_BOX_HALF
+                    half = (
+                        SANDO_VERTICAL_BOX_HALF
+                        if is_vertical
+                        else SANDO_HORIZONTAL_BOX_HALF
+                    )
                     z = 2.0 if is_vertical else rng.uniform(0.7, 4.3)
                     bounded = (
                         x - half[0] >= 0.5
@@ -256,7 +275,9 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
                     )
             break
         else:
-            raise RuntimeError(f"unable to place dynamic obstacle {index} for {difficulty}")
+            raise RuntimeError(
+                f"unable to place dynamic obstacle {index} for {difficulty}"
+            )
     return obstacles, {
         "seed": seed,
         "total_obstacles": total,
@@ -322,7 +343,11 @@ def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
 
 def retained_extensions(catalog: dict) -> list[dict]:
     return [
-        copy.deepcopy(next(scene for scene in catalog["scenes"] if scene["id"] == scene_id))
+        copy.deepcopy(
+            next(
+                scene for scene in catalog["scenes"] if scene["id"] == scene_id
+            )
+        )
         for scene_id in ("S06", "D06")
     ]
 
@@ -338,7 +363,9 @@ def main() -> None:
             source = scene["source_provenance"]
             path = args.sando_worlds / Path(source["world_file"]).name
             if sha256(path) != source["world_sha256"]:
-                raise ValueError(f"SANDO source differs from the frozen catalog: {path.name}")
+                raise ValueError(
+                    f"SANDO source differs from the frozen catalog: {path.name}"
+                )
     scenes = []
     for difficulty in ("easy", "medium", "hard"):
         scenes.append(primary_scene("static", difficulty, args.sando_worlds))
@@ -347,8 +374,8 @@ def main() -> None:
     scenes.extend(retained_extensions(catalog))
 
     output = {
-        "name": "navigation8",
-        "version": "navigation8-v1",
+        "name": "navigation",
+        "version": "navigation-v1",
         "status": "accepted",
         "world": WORLD,
         "design_rules": [
@@ -366,7 +393,7 @@ def main() -> None:
         ],
         "references": {
             **catalog["references"],
-            "SANDO_navigation8_alignment": {
+            "SANDO_navigation_alignment": {
                 "repository": "research_dev/sando/docker/dev-workspace/upstream-93b2eed",
                 "snapshot": "93b2eed",
                 "static_worlds": SANDO_STATIC_WORLD,
@@ -381,11 +408,14 @@ def main() -> None:
         "boundary_obstacles": BOUNDARY,
         "scenes": scenes,
     }
-    args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
+    args.output.write_text(
+        json.dumps(output, ensure_ascii=False, indent=2) + "\n"
+    )
     print(args.output)
     for scene in scenes:
         moving = sum(
-            obstacle.get("motion", "static") != "static" for obstacle in scene["obstacles"]
+            obstacle.get("motion", "static") != "static"
+            for obstacle in scene["obstacles"]
         )
         print(
             scene["id"],

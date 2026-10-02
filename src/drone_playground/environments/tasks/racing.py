@@ -8,22 +8,21 @@ import jax.numpy as jnp
 import numpy as np
 from brax.envs.base import Env, State
 
-from drone_playground.environments.observations import TrackingObservation
-from drone_playground.environments.scenes import LSYScene
-from drone_playground.execution.controllers.crazyflow import AttitudeControl
-from drone_playground.execution.transition import ExecutionTransition
-from drone_playground.learning.objectives import TrackingObjective
-from drone_playground.methods.planners.reference import TrajectoryPlan
-from drone_playground.models.crazyflow import CrazyflowModel
-
-from .lsy_upstream import race_core
-from .lsy_upstream.utils import gate_passed as gate_passed
+from drone_playground.actions.controllers.crazyflow import AttitudeControl
+from drone_playground.actions.transition import ActionTransition
+from drone_playground.dynamics.crazyflow import CrazyflowModel
+from drone_playground.environments.observations.state import TrackingObservation
+from drone_playground.environments.scenes.racing import RacingScene
+from drone_playground.environments.tasks.lsy_upstream import race_core
+from drone_playground.environments.tasks.lsy_upstream.utils import gate_passed as gate_passed
+from drone_playground.environments.tasks.references import ReferenceGenerator
+from drone_playground.environments.tasks.rewards import TrackingObjective
 
 
 class RacingEnv(Env):
     """One race world; the existing Brax wrapper owns vectorization and reset.
 
-    Gate crossing, collision masks, action/dynamics disturbances and bounds come
+    Gate crossing, collision masks and bounds come
     from pinned LSY. Since this is one drone per world, terminal poses are retained
     rather than warped underground; completed worlds reset at the Brax boundary.
     Learning uses reference-tracking-v1, while success uses native gate events.
@@ -46,11 +45,13 @@ class RacingEnv(Env):
         objective=None,
     ):
         if task != "racing" or freq != 50:
-            raise ValueError("LSY Level0 protocol fixes task=racing and 50 Hz control")
+            raise ValueError(
+                "LSY Level0 protocol fixes task=racing and 50 Hz control"
+            )
         self.model = model or CrazyflowModel(dynamics, drone or "cf21B_500")
         self.controller = controller or AttitudeControl()
-        self.planner = planner or TrajectoryPlan("lsy_course")
-        self.scene = scene or LSYScene()
+        self.planner = planner or ReferenceGenerator("lsy_course")
+        self.scene = scene or RacingScene()
         self.observer = observation or TrackingObservation()
         self.objective = objective or TrackingObjective()
         cfg = self.scene.config(self.model)
@@ -90,17 +91,30 @@ class RacingEnv(Env):
         self.substeps = self.sim.freq // freq
         start = np.asarray(self.sim.default_data.states.pos[0, 0])
         self.trajectories = jnp.asarray(
-            self.planner.build(reference_seed, reference_count, self.duration, freq, start)
+            self.planner.build(
+                reference_seed, reference_count, self.duration, freq, start
+            )
         )
-        self.offsets = jnp.arange(self.observer.n_samples, dtype=jnp.int32) * int(
-            freq * self.observer.interval
+        self.offsets = jnp.arange(
+            self.observer.n_samples, dtype=jnp.int32
+        ) * int(freq * self.observer.interval)
+        action_space = race_core.build_action_space("attitude", cfg.sim.drone)
+        self.low, self.high = jnp.asarray(action_space.low), jnp.asarray(
+            action_space.high
         )
-        action_space = race_core.build_action_space("attitude", self.drone)
-        self.low, self.high = jnp.asarray(action_space.low), jnp.asarray(action_space.high)
         self.controller.bind(self.low, self.high)
-        self.execution = ExecutionTransition(
-            lambda data, physical: self.apply_action_fn(physical[None, None], data),
-            lambda data, steps: data.replace(sim_data=self.model.advance(data.sim_data, steps)),
+        self.low, self.high = self.controller.low, self.controller.high
+        if self.controller.input_kind != "attitude_thrust":
+            self.apply_action_fn = lambda physical, data: data.replace(
+                sim_data=self.controller.apply(data.sim_data, physical[0, 0])
+            )
+        self.transition = ActionTransition(
+            lambda data, physical: self.apply_action_fn(
+                physical[None, None], data
+            ),
+            lambda data, steps: data.replace(
+                sim_data=self.model.advance(data.sim_data, steps)
+            ),
             self.substeps,
         )
         hover = jnp.array(
@@ -108,9 +122,14 @@ class RacingEnv(Env):
                 0.0,
                 0.0,
                 0.0,
-                float(np.asarray(self.sim.default_data.params.mass).reshape(-1)[0]) * 9.81,
+                float(
+                    np.asarray(self.sim.default_data.params.mass).reshape(-1)[0]
+                )
+                * 9.81,
             ]
         )
+        if hasattr(self.controller, "hover"):
+            hover = self.controller.hover(self.sim.default_data)
         self.hover_action = (hover - self.low) / (self.high - self.low) * 2 - 1
         self.required_gates = len(cfg.env.track.gate_order)
         # Initialize scene mocap buffers for export; static course stays identical.
@@ -129,7 +148,7 @@ class RacingEnv(Env):
 
     @property
     def backend(self):
-        return "crazyflow"
+        return type(self.model).__name__
 
     @property
     def dt(self):
@@ -140,7 +159,8 @@ class RacingEnv(Env):
 
     def observation(self, data):
         refs = self.trajectories[
-            0, jnp.clip(data.steps[0] + self.offsets, 0, self.episode_length - 1)
+            0,
+            jnp.clip(data.steps[0] + self.offsets, 0, self.episode_length - 1),
         ]
         return self.observer(data.sim_data.states, refs)
 
@@ -153,6 +173,11 @@ class RacingEnv(Env):
             )
         )
         data, _ = self.reset_fn(initial)
+        data = data.replace(
+            sim_data=self.model.randomize(
+                data.sim_data, jax.random.fold_in(rng, 101)
+            )
+        )
         zero = jnp.float32(0)
         metrics = {
             name: zero
@@ -177,7 +202,12 @@ class RacingEnv(Env):
             reward=zero,
             done=zero,
             metrics=metrics,
-            info={"terminated": zero},
+            info={
+                "terminated": zero,
+                "physical_parameters": self.model.physical_parameters(
+                    data.sim_data
+                ),
+            },
         )
 
     def physical_action(self, action):
@@ -191,22 +221,9 @@ class RacingEnv(Env):
 
     def _transition(self, state, physical, commands=None):
         if commands is None:
-            data = self.execution.step(state.pipeline_state, physical)
+            data = self.transition.step(state.pipeline_state, physical)
         else:
-            from crazyflow.sim import functional
-
-            # The source action disturbance is sampled once per control decision.
-            # Reuse that sample across actuator ticks, preserving its native rate.
-            data = self.apply_action_fn(commands[0][None, None], state.pipeline_state)
-            noise = data.sim_data.controls.attitude.staged_cmd[0, 0] - commands[0]
-            scheduled = ExecutionTransition(
-                lambda d, u: d.replace(
-                    sim_data=functional.attitude_control(d.sim_data, u[None, None])
-                ),
-                self.execution.advance,
-                self.substeps,
-            )
-            data = scheduled.step_schedule(data, commands + noise)
+            data = self.transition.step_schedule(state.pipeline_state, commands)
         contacts = self.contact_fn(jax.tree.map(jax.lax.stop_gradient, data))
         data = race_core._update_disabled_drones(data, contacts)
         # Original core warps dead drones to -1 to avoid multi-drone interference.
@@ -226,8 +243,12 @@ class RacingEnv(Env):
             **state.metrics,
             "tracking_error": error,
             "squared_error": error**2,
-            "action_saturation": jnp.mean((jnp.abs(normalized) >= 0.99).astype(jnp.float32)),
-            "physical_thrust": physical[3],
+            "action_saturation": jnp.mean(
+                (jnp.abs(normalized) >= 0.99).astype(jnp.float32)
+            ),
+            "physical_thrust": physical[0]
+            if self.controller.input_kind == "thrust_bodyrates"
+            else physical[3],
             "failure": failed.astype(jnp.float32),
             "collision": contacts[0, 0].astype(jnp.float32),
             "success": success.astype(jnp.float32),

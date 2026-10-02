@@ -1,0 +1,66 @@
+{
+  "crazyflow": {
+    "repository": "https://github.com/learnsyslab/crazyflow.git",
+    "revision": "36f584d114d9d331f0cee0fe4b9066f821c0fbfd",
+    "checkout": "tmp/sources/crazyflow",
+    "patch": "patches/upstream/crazyflow-mujoco-version.patch"
+  },
+  "lotf": {
+    "repository": "https://github.com/uzh-rpg/learning_on_the_fly",
+    "revision": "cba6e5370773ace8a08107f02810eecabf16c793",
+    "checkout": "tmp/sources/lotf",
+    "patch": "patches/upstream/lotf-package-metadata.patch"
+  },
+  "brax": {
+    "repository": "https://github.com/google/brax.git",
+    "revision": "f489566dcc44abb7aefa5a1b2d3b64246c54eb9d",
+    "checkout": "tmp/sources/brax",
+    "patch": "patches/upstream/brax-terminal-bootstrap.patch"
+  },
+  "pointcloud_flight": {
+    "title": "Learning to Fly from Point Clouds via Differentiable Simulation",
+    "integration": "public-paper-reconstruction",
+    "reference_branch": "research/pointcloud-paper-navigation8",
+    "reference_revision": "dbb660c",
+    "reference_document": "notes/research/pointcloud.md",
+    "qualification": "author's undisclosed settings remain explicit reconstruction assumptions"
+  },
+  "ego_planner": {
+    "title": "EGO-Planner",
+    "integration": "isolated-native-ros-worker",
+    "lock": "native/ros1/versions.env"
+  },
+  "super": {
+    "title": "SUPER",
+    "integration": "isolated-native-ros-worker",
+    "lock": "native/ros1/versions.env"
+  },
+  "attitude_mpc": {
+    "title": "LSY AttitudeMPC",
+    "integration": "native-acados-problem-adapter",
+    "lock": "src/drone_playground/actions/controllers/mpc/lsy_upstream/provenance.json"
+  },
+  "sampling_mpc": {
+    "title": "Crazyflow elite-sampling MPC",
+    "integration": "native-jax-sampling-adapter",
+    "qualification": "elite-mean sampling; distinct from AERO-MPPI"
+  },
+  "loong": {
+    "title": "LOONG: Online Time-Optimal Autonomous Flight for MAVs in Cluttered Environments",
+    "source": "https://arxiv.org/abs/2601.07434",
+    "integration": "planned-jax-native",
+    "executable": false
+  },
+  "aero_mppi": {
+    "title": "AERO-MPPI",
+    "source": "https://arxiv.org/abs/2509.17340",
+    "integration": "planned-jax-native",
+    "executable": false
+  },
+  "ac_mpc": {
+    "title": "Actor-Critic Model Predictive Control",
+    "repository": "https://github.com/uzh-rpg/acmpc_public",
+    "integration": "planned-jax-native",
+    "executable": false
+  }
+}

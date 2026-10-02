@@ -43,9 +43,16 @@ drone-experiment = "drone_playground.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"drone_playground.native.proto" = ["*.proto"]
-"drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "level0.toml", "LICENSE", "*.json", "*.patch"]
-"drone_playground.methods.optimal_control.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
+"drone_playground.rpc.proto" = ["*.proto"]
+"drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "LICENSE", "*.json", "*.patch"]
+"drone_playground.actions.controllers.mpc.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
+
+[tool.setuptools.data-files]
+"share/drone_playground/assets/scenes/racing" = [
+    "assets/scenes/racing/lsy_level0.toml",
+    "assets/scenes/racing/SOURCE.md",
+    "src/drone_playground/environments/tasks/lsy_upstream/LICENSE",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -53,16 +60,32 @@ addopts = "-ra"
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py310"
 extend-exclude = [
-    "src/drone_playground/native/proto/algorithm_pb2.py",
+    "src/drone_playground/rpc/proto/algorithm_pb2.py",
     "src/drone_playground/environments/tasks/lsy_upstream",
-    "src/drone_playground/methods/optimal_control/lsy_upstream",
+    "src/drone_playground/actions/controllers/mpc/lsy_upstream",
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "N",
+    "D",
+    "RUF",
+]
 ignore = ["E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D100", "D101", "D102", "D103", "D104"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -78,6 +101,7 @@ ruff = "*"
 drone-playground = { path = ".", editable = true }
 crazyflow = { path = "tmp/sources/crazyflow", editable = true }
 lotf = { path = "tmp/sources/lotf", editable = true }
+brax = { path = "tmp/sources/brax", editable = true }
 
 [tool.pixi.activation.env]
 SCIPY_ARRAY_API = "1"
@@ -95,3 +119,5 @@ demo = "python -m drone_playground.cli demo"
 replay = "python -m drone_playground.cli replay"
 metrics = "python -m drone_playground.cli metrics"
 status = "python -m drone_playground.cli status"
+setup-sources = "python scripts/tools/setup.py sources"
+setup-acados = "python scripts/tools/setup.py acados"

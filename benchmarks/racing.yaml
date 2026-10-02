@@ -1,0 +1,13 @@
+name: racing
+version: 1
+episodes: 100
+seed_start: 30000
+course: lsy_level0
+metrics:
+  - completion_rate
+  - collision_rate
+  - completion_time_s
+  - gates_passed
+success:
+  minimum_completion_rate: 0.90
+  completion_rule: ordered directed gate passages [1,2,3,4,2] with no failure

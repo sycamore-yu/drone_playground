@@ -23,7 +23,7 @@ from brax.training.acme import running_statistics, specs
 from brax.training.agents.apg import networks as apg_networks
 from flax import linen, struct
 
-from drone_playground.learning.env_adapter import wrap_for_training
+from drone_playground.learning.wrappers import wrap_for_training
 
 
 def bootstrap_value(value_fn, weights, observation, terminated):
@@ -39,11 +39,15 @@ def lambda_returns(rewards, next_values, done, terminated, discount, lam):
 
     def backward(carry, row):
         reward, value, boundary = row
-        continuation = jnp.where(boundary, value, (1 - lam) * value + lam * carry)
+        continuation = jnp.where(
+            boundary, value, (1 - lam) * value + lam * carry
+        )
         target = reward + discount * continuation
         return target, target
 
-    _, target = jax.lax.scan(backward, boot[-1], (rewards, boot, done), reverse=True)
+    _, target = jax.lax.scan(
+        backward, boot[-1], (rewards, boot, done), reverse=True
+    )
     return jax.lax.stop_gradient(target)
 
 
@@ -53,7 +57,9 @@ def segment_objective(rewards, bootstrap, done, discount):
 
     def forward(weight, row):
         reward, value, ended, close = row
-        result = weight * reward + jnp.where(close, weight * discount * value, 0.0)
+        result = weight * reward + jnp.where(
+            close, weight * discount * value, 0.0
+        )
         weight = jnp.where(ended, 1.0, weight * discount)
         return weight, result
 
@@ -81,7 +87,9 @@ def save_training_state(path: Path, state: TrainingState, config: dict) -> None:
     typed_paths = []
 
     def to_host(keypath, leaf):
-        if hasattr(leaf, "dtype") and jax.dtypes.issubdtype(leaf.dtype, jax.dtypes.prng_key):
+        if hasattr(leaf, "dtype") and jax.dtypes.issubdtype(
+            leaf.dtype, jax.dtypes.prng_key
+        ):
             typed_paths.append(jax.tree_util.keystr(keypath))
             return np.asarray(jax.random.key_data(leaf))
         return np.asarray(leaf)
@@ -137,7 +145,9 @@ def train(
     horizon = int(config["horizon_length"])
     updates = int(config["policy_updates"])
     if min(count, horizon, updates) < 1:
-        raise ValueError("SHAC requires positive environment, horizon and update counts")
+        raise ValueError(
+            "SHAC requires positive environment, horizon and update counts"
+        )
     gamma, lam = config.get("discounting", 0.99), config.get("td_lambda", 0.95)
     if not (0 <= gamma <= 1 and 0 <= lam <= 1):
         raise ValueError("discounting and td_lambda must be in [0,1]")
@@ -151,9 +161,11 @@ def train(
         else types.identity_observation_preprocessor
     )
     sizes = tuple(config.get("hidden_sizes", [64, 64]))
-    from drone_playground.networks.policies import network_factory
+    from drone_playground.networks.factory import network_factory
 
-    actor = network_factory({**config, "algorithm": config.get("algorithm", "shac")})(
+    actor = network_factory(
+        {**config, "algorithm": config.get("algorithm", "shac")}
+    )(
         environment.observation_size,
         environment.action_size,
         preprocess_observations_fn=preprocess,
@@ -175,23 +187,31 @@ def train(
         lr = optax.exponential_decay(lr, 1, config.get("schedule_decay", 0.997))
     actor_opt = optax.chain(
         optax.clip_by_global_norm(config.get("max_grad_norm", 1.0)),
-        optax.adam(lr, b1=config.get("actor_adam_b1", 0.7), b2=config.get("actor_adam_b2", 0.95)),
+        optax.adam(
+            lr,
+            b1=config.get("actor_adam_b1", 0.7),
+            b2=config.get("actor_adam_b2", 0.95),
+        ),
     )
     critic_opt = optax.chain(
         optax.clip_by_global_norm(config.get("critic_max_grad_norm", 10.0)),
         optax.adam(config.get("critic_learning_rate", 0.002)),
     )
-    key, ak, ck, ek = jax.random.split(jax.random.PRNGKey(config.get("seed", 0)), 4)
+    key, ak, ck, ek = jax.random.split(
+        jax.random.PRNGKey(config.get("seed", 0)), 4
+    )
     policy, value = actor.policy_network.init(ak), critic.init(ck)
     normalizer = running_statistics.init_state(
         specs.Array((environment.observation_size,), jnp.float32)
     )
     if config.get("warm_start"):
+        from drone_playground.artifacts.checkpoints import load_policy
         from drone_playground.composition import native_training_config
-        from drone_playground.runs.checkpoints import load_policy
 
         if restore_state is not None:
-            raise ValueError("Select either actor warm start or full-state continuation")
+            raise ValueError(
+                "Select either actor warm start or full-state continuation"
+            )
         _, previous, metadata = load_policy(config["warm_start"])
         source = native_training_config(metadata["config"])
         if source["algorithm"] not in ("apg", "bptt", "shac"):
@@ -211,13 +231,22 @@ def train(
             "sensor_layout",
         ):
             if source.get(field) != config.get(field):
-                raise ValueError(f"SHAC warm-start configuration differs: {field}")
+                raise ValueError(
+                    f"SHAC warm-start configuration differs: {field}"
+                )
         if config.get("components"):
             for field in ("sensor", "observation"):
-                if metadata["config"]["env"][field] != config["components"]["env"][field]:
-                    raise ValueError(f"SHAC warm-start input semantics differ: {field}")
+                if (
+                    metadata["config"]["env"][field]
+                    != config["components"]["env"][field]
+                ):
+                    raise ValueError(
+                        f"SHAC warm-start input semantics differ: {field}"
+                    )
         normalizer, policy = jax.tree.map(jnp.asarray, previous)
-        actor.policy_network.apply(normalizer, policy, jnp.zeros(environment.observation_size))
+        actor.policy_network.apply(
+            normalizer, policy, jnp.zeros(environment.observation_size)
+        )
     state = TrainingState(
         policy,
         value,
@@ -242,7 +271,6 @@ def train(
             "learning_rate",
             "critic_learning_rate",
             "resample_window_initials",
-            "navigation_initialization",
         ):
             if meta["config"].get(name) != config.get(name):
                 raise ValueError(f"Restore configuration differs: {name}")
@@ -262,7 +290,9 @@ def train(
             action = policy_fn(current.obs, sample)[0]
             nxt = env.step(current, action)
             terminal = nxt.info["terminated"].astype(bool)
-            value = bootstrap_value(value_fn, target, nxt.info["terminal_observation"], terminal)
+            value = bootstrap_value(
+                value_fn, target, nxt.info["terminal_observation"], terminal
+            )
             row = (
                 current.obs,
                 nxt.reward,
@@ -273,7 +303,9 @@ def train(
             )
             return (nxt, key), row
 
-        (end, key), rows = jax.lax.scan(step, (start, key), None, length=horizon)
+        (end, key), rows = jax.lax.scan(
+            step, (start, key), None, length=horizon
+        )
         obs, rewards, values, done, terminal, last_obs = rows
         loss = segment_objective(rewards, values, done, gamma)
         return loss, (end, key, obs, rewards, values, done, terminal, last_obs)
@@ -293,7 +325,9 @@ def train(
             jax.lax.stop_gradient, aux
         )
         targets = lambda_returns(rewards, values, done, terminal, gamma, lam)
-        actor_change, actor_os = actor_opt.update(grad, state.actor_optimizer, state.policy)
+        actor_change, actor_os = actor_opt.update(
+            grad, state.actor_optimizer, state.policy
+        )
         policy = optax.apply_updates(state.policy, actor_change)
         flat_obs = obs.reshape((-1, environment.observation_size))
         flat_target = targets.reshape(-1)
@@ -307,13 +341,21 @@ def train(
 
             vl, vg = jax.value_and_grad(value_loss)(weights)
             delta, os = critic_opt.update(vg, os, weights)
-            return (optax.apply_updates(weights, delta), os), (vl, optax.global_norm(vg))
+            return (optax.apply_updates(weights, delta), os), (
+                vl,
+                optax.global_norm(vg),
+            )
 
         (value, critic_os), (vl, vg) = jax.lax.scan(
-            fit, (state.critic, state.critic_optimizer), None, length=value_iterations
+            fit,
+            (state.critic, state.critic_optimizer),
+            None,
+            length=value_iterations,
         )
         target = jax.tree.map(
-            lambda old, new: alpha * old + (1 - alpha) * new, state.target_critic, value
+            lambda old, new: alpha * old + (1 - alpha) * new,
+            state.target_critic,
+            value,
         )
         normalizer = running_statistics.update(state.normalizer, obs)
         return state.replace(
@@ -339,8 +381,13 @@ def train(
 
     start_clock = time.monotonic()
     initial_step = int(state.updates) * count * horizon
-    policy_params_fn(initial_step, make_policy, (state.normalizer, state.policy))
-    milestones = set(int(x) for x in np.linspace(0, updates, max(config.get("num_evals", 9), 2)))
+    policy_params_fn(
+        initial_step, make_policy, (state.normalizer, state.policy)
+    )
+    milestones = set(
+        int(x)
+        for x in np.linspace(0, updates, max(config.get("num_evals", 9), 2))
+    )
     total_update_seconds = 0.0
     compile_seconds = 0.0
     metrics = {}
@@ -355,7 +402,9 @@ def train(
         else:
             total_update_seconds += duration
         if not all(np.isfinite(v) for v in metrics.values()):
-            raise FloatingPointError(f"Non-finite SHAC update {iteration}: {metrics}")
+            raise FloatingPointError(
+                f"Non-finite SHAC update {iteration}: {metrics}"
+            )
         step = iteration * count * horizon
         if iteration in milestones or iteration % 10 == 0:
             progress_fn(
@@ -370,12 +419,22 @@ def train(
         if iteration in milestones:
             if state_directory is not None:
                 save_training_state(
-                    Path(state_directory) / f"update-{iteration:07d}.pkl", state, config
+                    Path(state_directory) / f"update-{iteration:07d}.pkl",
+                    state,
+                    config,
                 )
-            policy_params_fn(step, make_policy, (state.normalizer, state.policy))
-        if time.monotonic() - start_clock > config.get("max_wall_seconds", 3600):
+            policy_params_fn(
+                step, make_policy, (state.normalizer, state.policy)
+            )
+        if time.monotonic() - start_clock > config.get(
+            "max_wall_seconds", 3600
+        ):
             if state_directory is not None:
-                save_training_state(Path(state_directory) / "budget-exhausted.pkl", state, config)
+                save_training_state(
+                    Path(state_directory) / "budget-exhausted.pkl",
+                    state,
+                    config,
+                )
             raise TimeoutError("SHAC wall-clock budget reached")
 
     def delta(old, new):

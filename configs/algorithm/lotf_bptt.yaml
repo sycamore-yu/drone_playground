@@ -1,7 +1,0 @@
-name: lotf_bptt
-learning_rate: 0.005
-schedule: cosine
-rollout: full_episode
-source: upstream_bptt
-gradient:
-  transition: lotf_analytical

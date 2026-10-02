@@ -1,6 +1,0 @@
-defaults:
-- /controller@controller: acceleration_passthrough
-- /dynamics@dynamics: paper_point_mass
-- _self_
-command: world_acceleration
-tracker: null
