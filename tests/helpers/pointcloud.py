@@ -3,12 +3,13 @@
 import jax
 import jax.numpy as jnp
 
-from drone_playground.composition import build_environment, compose_experiment
+from drone_playground.composition import compose_experiment
+from drone_playground.environments.environment import build_environment
 
 
 def task_and_bank():
     config = compose_experiment(
-        'papers/differentiable_pointcloud',
+        "papers/differentiable_pointcloud",
         overrides=[
             "runtime.device=cpu",
             "training.num_envs=1",
@@ -18,17 +19,13 @@ def task_and_bank():
             "env.task.duration=0.3",
         ],
     )
-    task = build_environment(config, "cpu")
+    task = build_environment(config, "cpu").task
     bank = task.scene.sample(jax.random.PRNGKey(1), 1)
     bank = bank.replace(
         active=jnp.array([[True, False, False]]),
         kind=jnp.array([[2, 2, 2]]),
-        size=jnp.array(
-            [[[0.02, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]
-        ),
-        origin=jnp.array(
-            [[[2.0, 0.0, 3.0], [30.0, 0.0, 3.0], [32.0, 0.0, 3.0]]]
-        ),
+        size=jnp.array([[[0.02, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]),
+        origin=jnp.array([[[2.0, 0.0, 3.0], [30.0, 0.0, 3.0], [32.0, 0.0, 3.0]]]),
         start=jnp.array([[0.5, 0.0, 3.0]]),
         goal=jnp.array([[40.0, 0.0, 3.0]]),
         subtype_names=("fixture",),

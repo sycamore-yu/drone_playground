@@ -24,7 +24,6 @@ from __future__ import annotations
 import hashlib
 import math
 from dataclasses import dataclass
-from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -100,13 +99,9 @@ DYNAMIC_FAMILIES = ("dynamic_forest", "crossers")
 FAMILIES = STATIC_FAMILIES + DYNAMIC_FAMILIES
 
 
-def trefoil_speed_bound(
-    sx: float, sy: float, sz: float, slower: float
-) -> float:
+def trefoil_speed_bound(sx: float, sy: float, sz: float, slower: float) -> float:
     """SANDO's analytical upper bound on trefoil speed (paper_dynamic_scene.py:41)."""
-    return (
-        2.0 * math.sqrt((5 * sx / 6) ** 2 + sy**2 + (3 * sz / 2) ** 2) / slower
-    )
+    return 2.0 * math.sqrt((5 * sx / 6) ** 2 + sy**2 + (3 * sz / 2) ** 2) / slower
 
 
 # --------------------------------------------------------------------------------------
@@ -211,6 +206,7 @@ class SceneBank:
     world_high: jax.Array
     subtype_names: tuple = struct.field(pytree_node=False, default=())
     rotations: jax.Array | None = None
+    asset_paths: tuple[str, ...] = struct.field(pytree_node=False, default=())
 
     @property
     def num_instances(self) -> int:
@@ -271,6 +267,16 @@ class SceneBank:
             "subtype": str(self.subtype_names[int(self.subtype[index])]),
         }
 
+    def describe(self, index: int) -> dict:
+        """Describe the actual instance used by sensing, execution and replay."""
+        return dict(
+            scenario_id=int(index),
+            **self.labels(index),
+            obstacles=self.active_count(index),
+            start=np.asarray(self.start[index]).tolist(),
+            goal=np.asarray(self.goal[index]).tolist(),
+        )
+
     def active_count(self, index: int) -> int:
         return int(np.asarray(self.active[index]).sum())
 
@@ -280,16 +286,12 @@ class SceneBank:
 # --------------------------------------------------------------------------------------
 
 
-def obstacle_positions(
-    bank: SceneBank, scenario_id: jax.Array, time: jax.Array
-) -> jax.Array:
+def obstacle_positions(bank: SceneBank, scenario_id: jax.Array, time: jax.Array) -> jax.Array:
     """Obstacle centres ``[capacity, 3]`` for one instance at one simulation time."""
     origin = bank.origin[scenario_id]
     motion = bank.motion[scenario_id]
     params = bank.params[scenario_id]
-    sx, sy, sz, offset, slower = (
-        params[:, index] for index in range(MOTION_PARAMS)
-    )
+    sx, sy, sz, offset, slower = (params[:, index] for index in range(MOTION_PARAMS))
 
     safe_slower = jnp.where(motion == MOTION_TREFOIL, slower, 1.0)
     tt = 2.0 * time / safe_slower + offset
@@ -302,9 +304,7 @@ def obstacle_positions(
         axis=-1,
     )
 
-    ax, ay, az, period, phase = (
-        params[:, index] for index in range(MOTION_PARAMS)
-    )
+    ax, ay, az, period, phase = (params[:, index] for index in range(MOTION_PARAMS))
     safe_period = jnp.where(motion == MOTION_BOUNCE, period, 1.0)
     u = time / safe_period + phase
     tri = 2.0 * jnp.abs(2.0 * (u - jnp.floor(u + 0.5))) - 1.0
@@ -324,15 +324,11 @@ def euclidean_norm(value):
 def _euclidean_norm_jvp(primals, tangents):
     (value,), (tangent,) = primals, tangents
     norm = euclidean_norm(value)
-    derivative = jnp.sum(value * tangent, axis=-1) / jnp.where(
-        norm > 0, norm, 1.0
-    )
+    derivative = jnp.sum(value * tangent, axis=-1) / jnp.where(norm > 0, norm, 1.0)
     return norm, derivative
 
 
-def signed_distance(
-    kind: jax.Array, size: jax.Array, centre: jax.Array, point: jax.Array
-):
+def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: jax.Array):
     """Exact signed distance from a point to an analytic primitive.
 
     Cylinder and box forms follow SANDO's ``signed_distance_point_cylinder``
@@ -342,19 +338,14 @@ def signed_distance(
     radial = euclidean_norm(delta[..., :2]) - size[..., 0]
     vertical = jnp.abs(delta[..., 2]) - size[..., 1] / 2.0
     cylinder = euclidean_norm(
-        jnp.stack(
-            [jnp.maximum(radial, 0.0), jnp.maximum(vertical, 0.0)], axis=-1
-        )
+        jnp.stack([jnp.maximum(radial, 0.0), jnp.maximum(vertical, 0.0)], axis=-1)
     ) + jnp.minimum(jnp.maximum(radial, vertical), 0.0)
 
     q = jnp.abs(delta) - size
-    box = euclidean_norm(jnp.maximum(q, 0.0)) + jnp.minimum(
-        jnp.max(q, axis=-1), 0.0
-    )
+    box = euclidean_norm(jnp.maximum(q, 0.0)) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
     sphere = euclidean_norm(delta) - size[..., 0]
     axis_delta = delta.at[..., 2].set(
-        delta[..., 2]
-        - jnp.clip(delta[..., 2], -size[..., 1] / 2, size[..., 1] / 2)
+        delta[..., 2] - jnp.clip(delta[..., 2], -size[..., 1] / 2, size[..., 1] / 2)
     )
     capsule = euclidean_norm(axis_delta) - size[..., 0]
     return jnp.where(
@@ -389,9 +380,7 @@ def clearance_and_collision(
             bank.kind[scenario_id], bank.size[scenario_id], centre, body_centre
         )
     else:
-        local = jnp.einsum(
-            "nji,nj->ni", bank.rotations[scenario_id], body_centre - centre
-        )
+        local = jnp.einsum("nji,nj->ni", bank.rotations[scenario_id], body_centre - centre)
         distance = signed_distance(
             bank.kind[scenario_id],
             bank.size[scenario_id],
@@ -454,13 +443,9 @@ def body_centre_from_state(pos: jax.Array, quat: jax.Array) -> jax.Array:
 # --------------------------------------------------------------------------------------
 
 
-def _pack_instance(
-    obstacles: list[Obstacle], capacity: int
-) -> dict[str, np.ndarray]:
+def _pack_instance(obstacles: list[Obstacle], capacity: int) -> dict[str, np.ndarray]:
     if len(obstacles) > capacity:
-        raise ValueError(
-            f"instance has {len(obstacles)} obstacles, capacity is {capacity}"
-        )
+        raise ValueError(f"instance has {len(obstacles)} obstacles, capacity is {capacity}")
     instance = {
         "kind": np.zeros(capacity, np.int32),
         "size": np.zeros((capacity, 3), np.float32),

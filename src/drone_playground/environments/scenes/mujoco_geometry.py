@@ -40,10 +40,7 @@ def bank_from_environment(env):
         while body:
             ancestors.append(model.body(body).name or "")
             body = int(model.body_parentid[body])
-        if any(
-            "drone" in name.lower() or "prop" in name.lower()
-            for name in ancestors
-        ):
+        if any("drone" in name.lower() or "prop" in name.lower() for name in ancestors):
             continue
         kind = model.geom_type[index]
         if kind == mujoco.mjtGeom.mjGEOM_PLANE:
@@ -66,9 +63,7 @@ def bank_from_environment(env):
                 f"Unsupported physical course geometry {model.geom(index).name}: {kind}"
             )
         ids.append(index)
-        names.append(
-            model.geom(index).name or "/".join(ancestors) + f"/geom-{index}"
-        )
+        names.append(model.geom(index).name or "/".join(ancestors) + f"/geom-{index}")
         sizes.append(size)
     capacity = max(1, len(ids))
     start = np.asarray(env.sim.default_data.states.pos[0, 0], np.float32)
@@ -86,7 +81,7 @@ def bank_from_environment(env):
         )
         rotation[: len(ids)] = data.geom_xmat[ids].reshape(-1, 3, 3)
         active[: len(ids)] = True
-    if env.task == "racing":
+    if env.task.name == "racing":
         limits = env.config.env.track.safety_limits
         lower = np.array(limits.pos_limit_low, np.float32)
         lower[2] = max(0.0, lower[2])
@@ -111,7 +106,7 @@ def bank_from_environment(env):
         jnp.zeros(1, jnp.int32),
         jnp.array(lower),
         jnp.array(upper),
-        (env.task,),
+        (env.task.name,),
         jnp.array(rotation[None], jnp.float32),
     )
     return bank, dict(
@@ -121,5 +116,5 @@ def bank_from_environment(env):
         gate_order=order,
         bank_digest=bank.digest(),
         geometry_rotations="world-from-local",
-        task=env.task,
+        task=env.task.name,
     )

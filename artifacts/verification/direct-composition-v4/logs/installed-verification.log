@@ -1,0 +1,28 @@
+Failed to import warp: No module named 'warp'
+Failed to import mujoco_warp: No module named 'warp'
+{"run_id": "installed-training", "step": 0, "eval/completion_rate": 1.0, "eval/rmse_all_m": 0.5008080033462602, "eval/return": 0.7345715761184692, "eval/seconds": 3.701905851252377, "eval/quality_passed": 0.0, "quality_passed": false}
+{"run_id": "installed-training", "step": 2, "metrics": {"training/actor_grad_norm": 0.01885800063610077, "training/actor_loss": -0.36745089292526245, "training/updates": 1.0, "training/net_update_seconds": 0.0, "training/compile_and_first_update_s": 14.92548580514267}}
+{"run_id": "installed-training", "step": 2, "eval/completion_rate": 1.0, "eval/rmse_all_m": 0.5007324813924574, "eval/return": 0.7346824407577515, "eval/seconds": 0.18997581116855145, "eval/quality_passed": 0.0, "quality_passed": false}
+{
+  "packages": {
+    "drone_playground": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/drone_playground/__init__.py",
+    "crazyflow": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/crazyflow/__init__.py",
+    "brax": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/brax/__init__.py"
+  },
+  "hovering": {
+    "observation_size": 43,
+    "physics_steps": 10
+  },
+  "racing": {
+    "observation_size": 43,
+    "physics_steps": 10
+  },
+  "navigation/static": {
+    "observation_size": 2420,
+    "physics_steps": 10
+  },
+  "training_steps": 2,
+  "replay_written": true,
+  "crazyflow_has_git_checkout": false,
+  "source_checkout_required": false
+}

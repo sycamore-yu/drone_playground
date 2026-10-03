@@ -13,19 +13,6 @@ from drone_playground.artifacts.layout import resolve_artifact
 from drone_playground.artifacts.reporting import save_report, tree_digest
 
 
-class _TrainingStateUnpickler(pickle.Unpickler):
-    """Resolve the one moved state class in authenticated existing Brax pickles."""
-
-    def find_class(self, module, name):
-        if (module, name) == (
-            "drone_playground.learning.algorithms.pointcloud_bptt", "TrainingState"
-        ):
-            from drone_playground.learning.algorithms.recurrent_bptt import TrainingState
-
-            return TrainingState
-        return super().find_class(module, name)
-
-
 def save_training_state(path, state, config, selection=None, *, selection_report=None):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -35,7 +22,7 @@ def save_training_state(path, state, config, selection=None, *, selection_report
     save_report(
         path.with_suffix(".json"),
         dict(
-            family="pointcloud_gru",
+            family="recurrent_policy",
             kind="complete-training-state",
             config=config,
             updates=int(state.updates),
@@ -53,15 +40,12 @@ def load_training_state(path):
     from drone_playground.artifacts.schema import require_current
 
     metadata["config"] = require_current(metadata["config"])
-    # Frozen artifact provenance tag stored in existing checkpoint metadata; not a public name.
-    if metadata.get("family") not in ("pointcloud_gru", "paper_pointcloud_gru"):
+    if metadata.get("family") != "recurrent_policy":
         raise ValueError("Wrong checkpoint family")
     if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["sha256"]:
         raise ValueError("Checkpoint bytes differ from the recorded digest")
     with path.open("rb") as stream:
-        state = jax.tree.map(jax.numpy.asarray, _TrainingStateUnpickler(stream).load())
+        state = jax.tree.map(jax.numpy.asarray, pickle.load(stream))
     if tree_digest(state.params) != metadata["parameter_sha256"]:
-        raise ValueError(
-            "Checkpoint parameters differ from the recorded digest"
-        )
+        raise ValueError("Checkpoint parameters differ from the recorded digest")
     return state, metadata

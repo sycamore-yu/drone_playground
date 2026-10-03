@@ -1,5 +1,0 @@
-defaults:
-- /action/controller@controller: crazyflow_attitude
-- _self_
-command: attitude_thrust
-tracker: null

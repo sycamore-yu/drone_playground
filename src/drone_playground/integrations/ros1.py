@@ -10,8 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
-from drone_playground.actions.commands import Waypoint
 from drone_playground.integrations.grpc_service import packet_measurement
+from drone_playground.references import Waypoint
 from drone_playground.rpc.client import NativeClient
 
 DEFAULT_CONTAINER = "drone-playground-ros1"
@@ -21,9 +21,7 @@ RUNTIME_ROOT = "/opt/drone_playground"
 def runtime_setup(method):
     if method not in ("ego", "super"):
         raise ValueError("Unknown ROS adapter")
-    return (
-        "source " + RUNTIME_ROOT + "/planners/" + method + "/devel/setup.bash"
-    )
+    return "source " + RUNTIME_ROOT + "/planners/" + method + "/devel/setup.bash"
 
 
 class NativePlanner:
@@ -33,15 +31,17 @@ class NativePlanner:
     def install_worker(source, directory, container):
         """Freeze the adapter AND protocol once; later edits cannot affect a run."""
         source = Path(source)
-        root = source.parents[3]
         files = {"worker.py": source.read_bytes()}
-        package = root / "src/drone_playground"
+        package = Path(__file__).resolve().parents[1]
         for path in [
             package / "__init__.py",
-            package / "actions/__init__.py",
-            package / "actions/commands.py",
+            package / "references.py",
+            package / "control/__init__.py",
+            package / "control/setpoints.py",
+            package / "runtime/__init__.py",
+            package / "runtime/decision.py",
             package / "planning/__init__.py",
-            package / "planning/geometry.py",
+            package / "planning/corridors.py",
             package / "planning/waypoints.py",
             package / "integrations/__init__.py",
             package / "integrations/ros_trajectory.py",
@@ -49,9 +49,7 @@ class NativePlanner:
             *(package / "rpc").rglob("*.py"),
             *(package / "rpc/proto").glob("*.proto"),
         ]:
-            files[str(Path("drone_playground") / path.relative_to(package))] = (
-                path.read_bytes()
-            )
+            files[str(Path("drone_playground") / path.relative_to(package))] = path.read_bytes()
         digest = hashlib.sha256()
         snapshot = Path(directory) / "native-service"
         snapshot.mkdir(parents=True, exist_ok=True)
@@ -62,9 +60,7 @@ class NativePlanner:
             target.write_bytes(data)
         sha = digest.hexdigest()
         remote = RUNTIME_ROOT + "/bridge/bundle-" + sha
-        subprocess.run(
-            ["docker", "exec", container, "mkdir", "-p", remote], check=True
-        )
+        subprocess.run(["docker", "exec", container, "mkdir", "-p", remote], check=True)
         subprocess.run(
             ["docker", "cp", str(snapshot) + "/.", container + ":" + remote],
             check=True,
@@ -82,9 +78,7 @@ class NativePlanner:
         parameters=None,
     ):
         self.method, self.container, self.port = method, container, int(port)
-        runtime_setup(
-            method
-        )  # Validate before constructing any process command.
+        runtime_setup(method)  # Validate before constructing any process command.
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.worker_path, self.client = worker_path, None
@@ -96,20 +90,12 @@ class NativePlanner:
     def request(self, payload, timeout=10.0):
         if payload["op"] == "start":
             if self.client is not None:
-                raise RuntimeError(
-                    "Use a fresh adapter for each evaluation episode"
-                )
-            info = json.loads(
-                subprocess.check_output(["docker", "inspect", self.container])
-            )[0]
+                raise RuntimeError("Use a fresh adapter for each evaluation episode")
+            info = json.loads(subprocess.check_output(["docker", "inspect", self.container]))[0]
             networks = info["NetworkSettings"]["Networks"]
-            addresses = [
-                v["IPAddress"] for v in networks.values() if v.get("IPAddress")
-            ]
+            addresses = [v["IPAddress"] for v in networks.values() if v.get("IPAddress")]
             if len(addresses) != 1:
-                raise RuntimeError(
-                    "ROS runtime requires one private container network"
-                )
+                raise RuntimeError("ROS runtime requires one private container network")
             rpc_port = self.port + 20000
             if not 1024 <= rpc_port <= 65535:
                 raise ValueError("Native RPC port is out of range")
@@ -153,18 +139,18 @@ class NativePlanner:
             time=payload["time"],
             state=payload,
             measurement=packet_measurement(payload),
-            goal=Waypoint([payload["goal"]], 0.5)
-            if "goal" in payload
-            else None,
+            goal=Waypoint([payload["goal"]], 0.5) if "goal" in payload else None,
             timeout=timeout,
         )
         return dict(
+            output=result.output,
             reference=result.sampled_reference,
             trajectory=result.output,
             plan_id=result.plan_id,
             generated_at=result.generated_at,
             valid_until=result.valid_until,
-            planner_geometry=result.planner_geometry,
+            corridors=result.corridors,
+            trajectory_previews=result.trajectory_previews,
             decision_status=result.status,
             **result.diagnostics,
         )
@@ -175,9 +161,7 @@ class NativePlanner:
             "max_acceleration_mps2": 3.0,
             "planning_horizon_m": 7.5,
         }
-        if any(
-            not np.isfinite(value) or value <= 0 for value in limits.values()
-        ):
+        if any(not np.isfinite(value) or value <= 0 for value in limits.values()):
             raise ValueError("Planner limits must be finite and positive")
         reply = self.request(
             {

@@ -1,18 +1,13 @@
 """Compatibility at the native rscope UI and remote/local filesystem interfaces."""
 
-import importlib.util
 from types import SimpleNamespace
 
 import numpy as np
 
-from tests.helpers.paths import REPO_ROOT
-
 
 def client_module():
-    path = REPO_ROOT / "scripts/tools/rscope_client.py"
-    spec = importlib.util.spec_from_file_location("rscope_client_test", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    from drone_playground.visualization import rscope_client as module
+
     return module
 
 

@@ -1,6 +1,6 @@
 """Observation encoders are shared by training and frozen evaluation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import jax
 import jax.numpy as jnp
@@ -12,11 +12,32 @@ class TrackingObservation:
     n_samples: int = 10
     interval: float = 0.1
 
+    def specification(self):
+        """Declare the ordered array fields consumed by the existing network."""
+        fields = [
+            dict(name=name, shape=[size], units=units, frame=frame)
+            for name, size, units, frame in (
+                ("position", 3, "m", "world"),
+                ("quaternion_xyzw", 4, "unit quaternion", "world-from-body"),
+                ("velocity", 3, "m/s", "world"),
+                ("angular_velocity", 3, "rad/s", "body"),
+            )
+        ]
+        if self.name == "state_reference":
+            fields.append(
+                dict(
+                    name="reference_position_delta",
+                    shape=[self.n_samples, 3],
+                    units="m",
+                    frame="world",
+                    interval_s=self.interval,
+                )
+            )
+        return dict(encoding="ordered_vector", fields=fields, shape=[self.size])
+
     @property
     def size(self):
-        return 13 + (
-            3 * self.n_samples if self.name == "state_reference" else 0
-        )
+        return 13 + (3 * self.n_samples if self.name == "state_reference" else 0)
 
     def __call__(self, state, references):
         parts = [
@@ -38,9 +59,7 @@ class TrackingObservation:
             or self.n_samples < 1
             or observation.shape[-1] != self.size
         ):
-            raise ValueError(
-                "Physical goal decoding requires a state_reference observation"
-            )
+            raise ValueError("Physical goal decoding requires a state_reference observation")
         return observation[..., :3] + observation[..., 13:16]
 
 
@@ -58,6 +77,21 @@ class NavigationObservation:
     include_goal: bool = True
     include_previous_action: bool = True
     action_size: int = 4
+
+    def specification(self):
+        fields = TrackingObservation(name="state").specification()["fields"]
+        if self.include_goal:
+            fields.append(dict(name="goal_position_delta", shape=[3], units="m", frame="world"))
+        if self.include_previous_action:
+            fields.append(
+                dict(
+                    name="previous_action",
+                    shape=[self.action_size],
+                    units="normalized",
+                    frame="controller",
+                )
+            )
+        return dict(encoding="ordered_vector", fields=fields, shape=[self.size])
 
     @property
     def size(self) -> int:
@@ -107,13 +141,50 @@ class NavigationSensorObservation:
     near_m: float = 0.1
     far_m: float = 10.0
 
+    def specification(self):
+        """Use named blocks while preserving the frozen encoder's vector layout."""
+        fields = NavigationObservation(
+            include_goal=self.include_goal,
+            include_previous_action=self.include_previous_action,
+            action_size=self.action_size,
+        ).specification()["fields"]
+        fields.append(
+            dict(
+                name="sensor_history",
+                shape=[self.history, self.points_per_frame, self.channels],
+                channels=["inverse_depth", "valid"]
+                if self.channels == 2
+                else ["x", "y", "z", "range", "valid"],
+                units="normalized",
+                frame="sensor",
+                near_m=self.near_m,
+                far_m=self.far_m,
+            )
+        )
+        return dict(encoding="ordered_vector", fields=fields, shape=[self.size])
+
     def __post_init__(self) -> None:
         if self.name not in ("navigation_depth", "navigation_lidar"):
             raise ValueError(f"Unknown sensor observation: {self.name}")
         if self.channels not in (2, 5):
-            raise ValueError(
-                "sensor channels must be 2 (depth) or 5 (point cloud)"
-            )
+            raise ValueError("sensor channels must be 2 (depth) or 5 (point cloud)")
+
+    def bind_sensor(self, sensor):
+        """Resolve the sensor block from its one physical calibration source."""
+        if sensor is None:
+            raise ValueError("A perception observation requires an actual sensor")
+        if self.name == "navigation_depth":
+            near, far = sensor.near_m, sensor.far_m
+        else:
+            near, far = sensor.range_m[0], sensor.normalise_far_m
+        return replace(
+            self,
+            history=sensor.history,
+            points_per_frame=sensor.points_per_frame,
+            channels=sensor.channels,
+            near_m=near,
+            far_m=far,
+        )
 
     @property
     def proprioception_size(self) -> int:
@@ -141,19 +212,13 @@ class NavigationSensorObservation:
         if self.channels == 2:
             depth = values[..., 0]
             valid = values[..., 1] > 0.5
-            clipped = jnp.clip(
-                jnp.where(valid, depth, self.far_m), self.near_m, self.far_m
-            )
-            signal = (1.0 / clipped - 1.0 / self.far_m) / (
-                1.0 / self.near_m - 1.0 / self.far_m
-            )
+            clipped = jnp.clip(jnp.where(valid, depth, self.far_m), self.near_m, self.far_m)
+            signal = (1.0 / clipped - 1.0 / self.far_m) / (1.0 / self.near_m - 1.0 / self.far_m)
             return jnp.stack([signal, valid.astype(jnp.float32)], axis=-1)
         points = values[..., :3] / self.far_m
         distance = jnp.clip(values[..., 3], 0.0, self.far_m) / self.far_m
         valid = (values[..., 4] > 0.5).astype(jnp.float32)
-        return jnp.concatenate(
-            [points, distance[..., None], valid[..., None]], axis=-1
-        )
+        return jnp.concatenate([points, distance[..., None], valid[..., None]], axis=-1)
 
     def __call__(self, states, goal, previous_action, extra=None):
         parts = [
@@ -167,15 +232,11 @@ class NavigationSensorObservation:
         if self.include_previous_action:
             parts.append(previous_action)
         if extra is None:
-            raise ValueError(
-                "a perception observation requires a sensor history"
-            )
+            raise ValueError("a perception observation requires a sensor history")
         parts.append(self.encode_sensor(extra["values"]).reshape(-1))
         return jnp.concatenate(parts)
 
 
 def numerically_valid_observation(observation: jax.Array) -> jax.Array:
     """Require representable finite second moments, not just finite scalar entries."""
-    return jnp.all(jnp.isfinite(observation)) & jnp.isfinite(
-        jnp.sum(observation**2)
-    )
+    return jnp.all(jnp.isfinite(observation)) & jnp.isfinite(jnp.sum(observation**2))

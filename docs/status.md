@@ -1,5 +1,11 @@
 # 现役状态
 
+## 2026-10-03：无 registry 的环境重构
+
+本轮已完成六组件环境、统一 Dynamics.step、Reference/Setpoint、MJCF 资产和回放、公共训练与冻结评测、完整恢复、RPC v2、MPC/ROS 短闭环及安装包验证。没有运行全量回归。交付清单和实际验证日志见 [14项核对](../artifacts/verification/direct-composition-v4/README.md)。
+
+632 个受保护文件及四个原始基准文件保持不变。旧结果仍对应其原始配置；v3 检查点通过显式复制迁移后用于 v4 运行。工程验证不修改以下既有任务质量状态。
+
 更新日期：2026-10-02。唯一开发仓库为 `main`；当前为研究预览。
 
 第一版18格中，14格按现行质量标准通过（12格原标准、深度2格修订标准），EGO两格由用户接受交付，共16/18格满足当前交付要求；剩余点云静态／动态两格继续开发与独立验收。权威进度见 [release-progress](../artifacts/verification/release-progress.json)。

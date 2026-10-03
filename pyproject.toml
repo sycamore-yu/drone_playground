@@ -41,18 +41,13 @@ drone-experiment = "drone_playground.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+namespaces = false
 
 [tool.setuptools.package-data]
+"drone_playground" = ["assets/**/*", "configs/**/*.yaml", "configs/*.yaml", "benchmarks/*"]
 "drone_playground.rpc.proto" = ["*.proto"]
 "drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "LICENSE", "*.json", "*.patch"]
-"drone_playground.actions.controllers.mpc.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
-
-[tool.setuptools.data-files]
-"share/drone_playground/assets/scenes/racing" = [
-    "assets/scenes/racing/lsy_level0.toml",
-    "assets/scenes/racing/SOURCE.md",
-    "src/drone_playground/environments/tasks/lsy_upstream/LICENSE",
-]
+"drone_playground.control.controllers.mpc.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -64,7 +59,7 @@ target-version = "py310"
 extend-exclude = [
     "src/drone_playground/rpc/proto/algorithm_pb2.py",
     "src/drone_playground/environments/tasks/lsy_upstream",
-    "src/drone_playground/actions/controllers/mpc/lsy_upstream",
+    "src/drone_playground/control/controllers/mpc/lsy_upstream",
 ]
 
 [tool.ruff.lint]

@@ -1,0 +1,217 @@
+.FF......................................................                [100%]
+=================================== FAILURES ===================================
+_ CompositionTests.test_domain_randomization_never_leaks_to_unsupported_dynamics _
+
+    def _call_target(
+        _target_: Callable[..., Any],
+        _partial_: bool,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+        full_key: str,
+    ) -> Any:
+        """Call target (type) with args and kwargs."""
+        try:
+            args, kwargs = _extract_pos_args(args, kwargs)
+            # detaching configs from parent.
+            # At this time, everything is resolved and the parent link can cause
+            # issues when serializing objects in some scenarios.
+            for arg in args:
+                if OmegaConf.is_config(arg):
+                    arg._set_parent(None)
+            for v in kwargs.values():
+                if OmegaConf.is_config(v):
+                    v._set_parent(None)
+        except Exception as e:
+            msg = (
+                f"Error in collecting args and kwargs for '{_convert_target_to_string(_target_)}':"
+                + f"\n{repr(e)}"
+            )
+            if full_key:
+                msg += f"\nfull_key: {full_key}"
+
+            raise InstantiationException(msg) from e
+
+        resolved_target_name = _get_resolved_target_name_for_check(_target_)
+        effective_target, effective_args, effective_kwargs = _authorize_target_invocation(
+            _target_,
+            args,
+            kwargs,
+            full_key,
+            allow_incomplete_partial=_partial_,
+        )
+        discovery_path = _authorize_discovery_path(
+            effective_target, effective_args, effective_kwargs, full_key
+        )
+
+        try:
+            if _partial_:
+                deferred = _DeferredTarget(_target_, *args, **kwargs)
+                deferred._hydra_resolved_from = discovery_path or resolved_target_name
+                deferred._hydra_full_key = full_key
+                return deferred
+>           result = _target_(*args, **kwargs)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:129:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/drone_playground/dynamics/point_mass.py:118: in __post_init__
+    self._parameter_ranges()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PointMassLag(time_constant=0.08333333333333333, backward='exponential', decay_rate=0.916290731874155, gravity=9.80665,...0.9, 1.1], 'inertia': None, 'motor_strength': [0.95, 1.05], 'drag': None}}, parameter_overrides=None, disturbance=None)
+
+    def _parameter_ranges(self):
+        settings = self.domain_randomization or {"enabled": False}
+        if set(settings) - {"enabled", "dynamics"} or not isinstance(
+            settings.get("enabled"), bool
+        ):
+            raise ValueError("Unsupported domain_randomization settings")
+        declared = settings.get("dynamics", {})
+        if not isinstance(declared, dict) or set(declared) - {
+            "mass",
+            "inertia",
+            "motor_strength",
+            "lag",
+            "drag",
+        }:
+            raise ValueError("Unknown dynamics randomization fields")
+        ranges = (
+            {
+                k: v
+                for k, v in settings.get("dynamics", {}).items()
+                if v is not None
+            }
+            if settings["enabled"]
+            else {}
+        )
+        ranges.update(
+            {k: [v, v] for k, v in (self.parameter_overrides or {}).items()}
+        )
+        if set(ranges) - {"motor_strength", "lag"}:
+>           raise ValueError(
+                "Point mass domain_randomization supports motor_strength and lag; mass/inertia are absent from acceleration-driven equations"
+            )
+E           ValueError: Point mass domain_randomization supports motor_strength and lag; mass/inertia are absent from acceleration-driven equations
+
+src/drone_playground/dynamics/point_mass.py:156: ValueError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.integration.configuration.test_composition.CompositionTests testMethod=test_domain_randomization_never_leaks_to_unsupported_dynamics>
+
+    def test_domain_randomization_never_leaks_to_unsupported_dynamics(self):
+        from drone_playground.environments.environment import build_dynamics
+
+        m = self.module()
+        # PointMassLag supports only its declared motor/lag parameters; the
+        # default mass/inertia randomization must fail instead of being ignored.
+        for method in ("papers/differentiable_pointcloud",):
+            cfg = m.compose_experiment(method)
+            cfg["training"]["domain_randomization"]["enabled"] = True
+            with self.assertRaisesRegex(ValueError, "domain_randomization"):
+>               build_dynamics(cfg, cfg["training"])
+
+tests/integration/configuration/test_composition.py:59:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/drone_playground/environments/environment.py:64: in build_dynamics
+    model = instantiate(spec, _convert_="all")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:251: in instantiate
+    return _instantiate_impl(config, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:299: in _instantiate_impl
+    return instantiate_node(
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:420: in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _call_target(
+        _target_: Callable[..., Any],
+        _partial_: bool,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+        full_key: str,
+    ) -> Any:
+        """Call target (type) with args and kwargs."""
+        try:
+            args, kwargs = _extract_pos_args(args, kwargs)
+            # detaching configs from parent.
+            # At this time, everything is resolved and the parent link can cause
+            # issues when serializing objects in some scenarios.
+            for arg in args:
+                if OmegaConf.is_config(arg):
+                    arg._set_parent(None)
+            for v in kwargs.values():
+                if OmegaConf.is_config(v):
+                    v._set_parent(None)
+        except Exception as e:
+            msg = (
+                f"Error in collecting args and kwargs for '{_convert_target_to_string(_target_)}':"
+                + f"\n{repr(e)}"
+            )
+            if full_key:
+                msg += f"\nfull_key: {full_key}"
+
+            raise InstantiationException(msg) from e
+
+        resolved_target_name = _get_resolved_target_name_for_check(_target_)
+        effective_target, effective_args, effective_kwargs = _authorize_target_invocation(
+            _target_,
+            args,
+            kwargs,
+            full_key,
+            allow_incomplete_partial=_partial_,
+        )
+        discovery_path = _authorize_discovery_path(
+            effective_target, effective_args, effective_kwargs, full_key
+        )
+
+        try:
+            if _partial_:
+                deferred = _DeferredTarget(_target_, *args, **kwargs)
+                deferred._hydra_resolved_from = discovery_path or resolved_target_name
+                deferred._hydra_full_key = full_key
+                return deferred
+            result = _target_(*args, **kwargs)
+        except Exception as e:
+            if _partial_:
+                msg = (
+                    f"Error in creating partial({_convert_target_to_string(_target_)}, ...) object:"
+                    + f"\n{repr(e)}"
+                )
+            else:
+                msg = f"Error in call to target '{_convert_target_to_string(_target_)}':\n{repr(e)}"
+>           raise InstantiationException(_with_full_key(msg, full_key)) from e
+E           hydra.errors.InstantiationException: Error in call to target 'drone_playground.dynamics.point_mass.PointMassLag':
+E           ValueError('Point mass domain_randomization supports motor_strength and lag; mass/inertia are absent from acceleration-driven equations')
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:138: InstantiationException
+_____ CompositionTests.test_incompatible_action_and_gradient_are_rejected ______
+ValueError: LOTF execution requires collective-thrust/body-rate control
+
+During handling of the above exception, another exception occurred:
+
+self = <tests.integration.configuration.test_composition.CompositionTests testMethod=test_incompatible_action_and_gradient_are_rejected>
+
+    def test_incompatible_action_and_gradient_are_rejected(self):
+        m = self.module()
+        from tests.helpers.configs import bodyrates_config
+
+        cfg = bodyrates_config()
+        cfg["env"]["controller"] = {"_target_": "drone_playground.control.controllers.crazyflow.AttitudeControl"}
+>       with self.assertRaisesRegex(ValueError, "controller|控制|接口"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: "controller|控制|接口" does not match "LOTF execution requires collective-thrust/body-rate control"
+
+tests/integration/configuration/test_composition.py:42: AssertionError
+=============================== warnings summary ===============================
+tests/integration/configuration/test_composition.py::CompositionTests::test_actual_step_and_selected_objective
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/configuration/test_composition.py::CompositionTests::test_domain_randomization_never_leaks_to_unsupported_dynamics
+FAILED tests/integration/configuration/test_composition.py::CompositionTests::test_incompatible_action_and_gradient_are_rejected
+2 failed, 55 passed, 1 warning in 29.41s

@@ -10,16 +10,16 @@ import numpy as np
 
 class TrackingContractTests(unittest.TestCase):
     def make_env(self, **kwargs):
-        from drone_playground.environments.tasks.tracking.rigid_body import TrackingEnv
+        from tests.helpers.environments import tracking_environment
 
-        env = TrackingEnv(device="cpu", **kwargs)
+        env = tracking_environment(device="cpu", **kwargs)
         self.addCleanup(env.close)
         return env
 
     def test_matches_upstream_figure_eight_before_terminal(self):
         env = self.make_env()
         s = env.reset(jax.random.PRNGKey(7))
-        original = env.reference
+        original = env.simulation
         original.sim.data = s.pipeline_state.sim_data
         original._marked_for_reset = jnp.zeros(1, dtype=bool)
         step = jax.jit(env.step)
@@ -90,7 +90,7 @@ class TrackingContractTests(unittest.TestCase):
     def test_random_reference_matches_lsy_scipy_construction(self):
         from scipy.interpolate import CubicSpline
 
-        from drone_playground.environments.tasks.references import random_trajectory
+        from drone_playground.references import random_trajectory
 
         seed, duration, freq = 21, 15.0, 50
         takeoff = np.array([-1.5, 1.0, 0.07])

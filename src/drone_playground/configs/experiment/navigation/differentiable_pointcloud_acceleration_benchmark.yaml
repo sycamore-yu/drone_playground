@@ -1,0 +1,146 @@
+# @package _global_
+defaults:
+- /sensor@env.sensor: uniform_lidar
+- /controller@env.controller: acceleration
+- /dynamics@env.dynamics: point_mass_lag
+- /network: pointnet_gru
+- _self_
+env:
+  scene:
+    _target_: drone_playground.environments.scenes.catalog.NavigationCatalogScene
+    name: navigation
+    scene_ids:
+    - S01
+    - S02
+    - S03
+    - S06
+    - D01
+    - D02
+    - D03
+    - D06
+    catalog_path: null
+    verification_path: null
+  task:
+    name: navigation
+    freq: 10
+    physics_freq: 500
+    duration: 300.0
+    goal_radius: 0.5
+    reference_count: 32
+    numerical_guard: true
+    time_limit_kind: termination
+    command_distribution:
+      kind: goal_velocity
+      distribution: uniform
+      speed_range_mps:
+      - 2.0
+      - 6.0
+    body_radius: 0.07
+    _target_: drone_playground.environments.tasks.navigation.acceleration.AccelerationNavigationTask
+    arrival_sampling: physics
+    observation:
+      _target_: drone_playground.environments.observations.flight_state.FlightStateObservation
+      name: flight_state
+      proprioception_size: 10
+    loss:
+      _target_: drone_playground.learning.objectives.acceleration_flight.VelocityTrackingAvoidanceObjective
+      name: acceleration_flight_loss
+      velocity_weight: 1.0
+      collision_weight: 1.5
+      acceleration_weight: 0.01
+      jerk_weight: 0.001
+      velocity_norm_weight: 0.8
+      velocity_component_weight: 0.6
+      velocity_window: 30
+      huber_delta: 1.0
+      collision_beta1: 1.3333333333333333
+      collision_beta2: 32.0
+      jerk_mean_weight: 1.0
+      jerk_variance_weight: 0.1
+  name: navigation
+  _target_: drone_playground.environments.base.DroneEnvironment
+  reference: null
+mode: eval
+source: Learning to Fly from Point Clouds via Differentiable Simulation; public-paper
+  reconstruction
+evaluation:
+  environment: config
+  episodes: null
+  training_run: null
+  speeds:
+  - 4.0
+  - 6.0
+  - 8.0
+  - 20.0
+  scene_ids:
+  - S01
+  - S02
+  - S03
+  - S06
+  - D01
+  - D02
+  - D03
+  - D06
+  duration: 300.0
+  protocol: benchmarks/navigation.yaml
+  entrypoint: drone_playground.evaluation.navigation.acceleration.evaluate_pointcloud
+  policy_evaluator: drone_playground.evaluation.navigation.policy.NavigationEvaluator
+algorithm:
+  name: bptt
+  horizon_length: 160
+  learning_rate: 0.0001
+  betas:
+  - 0.9
+  - 0.999
+  epsilon: 1.0e-08
+  weight_decay: 0.01
+  gradient:
+    transition: exponential
+    decay_rate: 0.916290731874155
+  trainer: drone_playground.learning.algorithms.recurrent_bptt.train
+training:
+  num_envs: 32
+  policy_updates: 50000
+  num_timesteps: null
+  num_evals: 11
+  max_wall_seconds: 172800
+  scene_distribution:
+    type: procedural
+  checkpoint_eval_envs: 32
+  stop_after_updates: null
+method:
+  name: differentiable_pointcloud
+  output: state
+  network_output_frame: body
+  command_units: m/s^2
+  implementation: pointcloud_recurrent
+  trainable: true
+reproduction:
+  identity: paper-public-information-reconstruction-v1
+  paper: Learning to Fly from Point Clouds via Differentiable Simulation
+  source_url: https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf
+  predecessor: HenryHuYu/DiffPhysDrone@271936190b5c2a5e760230e718fa6b167718a5bf
+  author_code_status: no confirmed repository found in exact-title searches on 2026-09-28
+  assumptions_document: notes/research/pointcloud.md
+  assumptions:
+  - The paper specifies point mass and lag; lag constant and trapezoidal integration
+    follow the predecessor.
+  - Eq9 whole-state exponential Jacobian is distinct from the predecessor partial-diagonal
+    CUDA rule.
+  - Sensor state gradients are detached; the paper does not specify a differentiable
+    ray-casting implementation.
+  - Ten proprioceptive fields, elevation offset, range limits, activation slope, and
+    invalid-ray masking are explicit reconstruction choices.
+  - Undisclosed loss weights, jerk averaging, optimizer defaults, primitive distribution,
+    and speed distribution are explicitly configured.
+  - 50000 updates follows the training figure extent and predecessor default, not
+    a text-specified update budget.
+  - Navigation8 uses its 0.07m body radius, task boundaries, and terminal rules; the
+    policy is trained only on independent static primitives.
+  transfer_protocol: navigation-v2; 300s, 4/6/8/20mps requested speeds, first-terminal-event
+    recording
+experiment:
+  name: differentiable_pointcloud
+  kind: paper
+  paper: Learning to Fly from Point Clouds via Differentiable Simulation
+  fidelity: public_information_reconstruction

@@ -12,16 +12,12 @@ class TaskEpisode(EpisodeWrapper):
     def __init__(self, env, episode_length, action_repeat, time_limit_kind):
         super().__init__(env, episode_length, action_repeat)
         if time_limit_kind not in ("termination", "truncation"):
-            raise ValueError(
-                "Task time_limit_kind must be termination or truncation"
-            )
+            raise ValueError("Task time_limit_kind must be termination or truncation")
         # A shorter collection window is an artificial cut, even for a task
         # whose full deadline is terminal (e.g. navigation at 300 seconds).
         task_length = getattr(env, "episode_length", episode_length)
         self.time_limit_kind = (
-            time_limit_kind
-            if episode_length * action_repeat >= task_length
-            else "truncation"
+            time_limit_kind if episode_length * action_repeat >= task_length else "truncation"
         )
 
     def step(self, state, action):
@@ -31,9 +27,7 @@ class TaskEpisode(EpisodeWrapper):
             result = result.replace(
                 info={
                     **result.info,
-                    "terminated": jnp.maximum(
-                        result.info["terminated"], timeout
-                    ),
+                    "terminated": jnp.maximum(result.info["terminated"], timeout),
                     "truncation": jnp.zeros_like(timeout),
                 }
             )
@@ -79,10 +73,8 @@ class FreshAutoReset(Wrapper):
 
         def reset_done(_):
             fresh = self.env.reset(keys[:, 1])
-            data = jax.tree.map(
-                choose, fresh.pipeline_state, terminal.pipeline_state
-            )
-            obs = choose(fresh.obs, terminal.obs)
+            data = jax.tree.map(choose, fresh.pipeline_state, terminal.pipeline_state)
+            obs = jax.tree.map(choose, fresh.obs, terminal.obs)
             memory = {
                 key: jax.tree.map(choose, fresh.info[key], terminal.info[key])
                 for key in self.reset_info_fields
@@ -104,9 +96,7 @@ class FreshAutoReset(Wrapper):
             **memory,
             "terminal_observation": terminal.obs,
             "time_out": terminal.info["truncation"],
-            "reset_key": jnp.where(
-                done[:, None], keys[:, 0], terminal.info["reset_key"]
-            ),
+            "reset_key": jnp.where(done[:, None], keys[:, 0], terminal.info["reset_key"]),
         }
         return terminal.replace(pipeline_state=data, obs=obs, info=info)
 
@@ -116,13 +106,9 @@ def wrap_for_training(
 ) -> FreshAutoReset:
     """Compose native Brax batching/statistics with the task's fresh-reset contract."""
     if randomization_fn is not None:
-        raise ValueError(
-            "Randomization belongs to this Crazyflow task's reset, not a Brax System"
-        )
+        raise ValueError("Randomization belongs to this Crazyflow task's reset, not a Brax System")
     if action_repeat != 1:
-        raise ValueError(
-            "Action repeat is fixed at one; task frequency owns physical substeps"
-        )
+        raise ValueError("Action repeat is fixed at one; task frequency owns physical substeps")
     return FreshAutoReset(
         TaskEpisode(
             VmapWrapper(env),

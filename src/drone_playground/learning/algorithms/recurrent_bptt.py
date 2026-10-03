@@ -4,7 +4,6 @@ This trainer uses the existing JAX/Flax/Optax/Brax stack and run recorder. Its
 complete recipe and reconstruction assumptions live in the experiment config.
 """
 
-import copy
 import json
 import time
 from pathlib import Path
@@ -14,18 +13,16 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 from flax import struct
-from hydra.utils import instantiate
-
-from drone_playground.networks.factory import build_network
 
 from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
-from drone_playground.artifacts.reporting import save_report, tree_digest
-from drone_playground.artifacts.training_state import load_training_state, save_training_state
+from drone_playground.artifacts.reporting import save_report
+from drone_playground.artifacts.training_state import save_training_state
 from drone_playground.environments.scenes.geometry import euclidean_norm
 from drone_playground.environments.scenes.procedural_navigation import make_bank
-from drone_playground.runtime.jax_runner import recurrent_scan
 from drone_playground.learning.checkpointing import restore_recurrent_state, save_recurrent_snapshot
+from drone_playground.networks.factory import build_network
+from drone_playground.runtime.jax_runner import recurrent_scan
 
 
 @struct.dataclass
@@ -38,9 +35,7 @@ class TrainingState:
 
 def initialize(task, config):
     network = build_network(config["network"])
-    key, init_key = jax.random.split(
-        jax.random.PRNGKey(config["training"]["seed"])
-    )
+    key, init_key = jax.random.split(jax.random.PRNGKey(config["training"]["seed"]))
     image_shape = getattr(network, "input_shape", None)
     params = network.init(
         init_key,
@@ -64,23 +59,19 @@ def initialize(task, config):
     )
 
 
-def rollout_objective(
-    task, network, params, bank, speeds, horizon, reset_key=None
-):
+def rollout_objective(task, network, params, bank, speeds, horizon, reset_key=None):
     state = task.initial_state(bank, reset_key)
     memory = jnp.zeros((bank.num_instances, network.hidden_size))
 
     def step(carry, index):
         physical, hidden = carry
         timestamp = index * task.dt
-        points, valid, proprio, target = task.observation(
-            bank, physical, timestamp, speeds
+        points, valid, proprio, target = task.measure(
+            bank, physical, jnp.full((bank.num_instances,), timestamp), speeds
         )
-        body_action, hidden = network.apply(
-            params, points, valid, proprio, hidden
-        )
+        body_action, hidden = network.apply(params, points, valid, proprio, hidden)
         command = task.command(body_action, physical)
-        nxt = task.model.step(physical, command, task.dt)
+        nxt = task.dynamics.step(physical, task.controller.apply(physical, command), task.dt)
         clearance, approaching = task.proximity(bank, nxt, timestamp + task.dt)
         row = dict(
             velocity=nxt.vel,
@@ -91,18 +82,14 @@ def rollout_objective(
         )
         return (nxt, hidden), row
 
-    _, trace = recurrent_scan(
-        step, (state, memory), horizon, rematerialize=True
-    )
-    loss, parts = task.objective(trace, task.dt)
+    _, trace = recurrent_scan(step, (state, memory), horizon, rematerialize=True)
+    loss, parts = task.loss(trace, task.dt)
     metrics = {
         **parts,
         "loss": loss,
         "mean_speed": jnp.mean(euclidean_norm(trace["velocity"])),
         "min_clearance": jnp.min(trace["clearance"]),
-        "step_collision_fraction": jnp.mean(
-            (trace["clearance"] < 0).astype(jnp.float32)
-        ),
+        "step_collision_fraction": jnp.mean((trace["clearance"] < 0).astype(jnp.float32)),
     }
     return loss, metrics
 
@@ -118,19 +105,13 @@ def make_update(task, network, optimizer, config):
         "speed_range_mps",
         config["env"]["task"]["command_distribution"]["speed_range_mps"],
     )
-    distribution = config["training"].get("scene_distribution") or {
-        "type": "procedural"
-    }
+    distribution = config["training"].get("scene_distribution") or {"type": "procedural"}
     fixed_bank = None
     if distribution["type"] != "procedural":
         if hasattr(task.scene, "build"):
-            fixed_bank, _ = make_bank(
-                task.scene, config["training"]["seed"], count
-            )
+            fixed_bank, _ = make_bank(task.scene, config["training"]["seed"], count)
         elif distribution["type"] == "generated":
-            fixed_bank = task.scene.sample(
-                jax.random.PRNGKey(config["training"]["seed"]), count
-            )
+            fixed_bank = task.scene.sample(jax.random.PRNGKey(config["training"]["seed"]), count)
         else:
             raise ValueError(
                 "Fixed training distribution requires a scene bank; use generated or procedural for primitive sampling"
@@ -143,36 +124,24 @@ def make_update(task, network, optimizer, config):
             task.scene.sample(scene_key, count)
             if fixed_bank is None
             else fixed_bank.select(
-                jax.random.randint(
-                    scene_key, (count,), 0, fixed_bank.num_instances
-                )
+                jax.random.randint(scene_key, (count,), 0, fixed_bank.num_instances)
             )
         )
         if command_distribution["kind"] == "position":
             from drone_playground.environments.randomization import sample_command
 
             bank = bank.replace(
-                goal=jax.vmap(
-                    lambda goal, rng: sample_command(
-                        goal, rng, command_distribution
-                    )
-                )(bank.goal, jax.random.split(speed_key, count))
+                goal=jax.vmap(lambda goal, rng: sample_command(goal, rng, command_distribution))(
+                    bank.goal, jax.random.split(speed_key, count)
+                )
             )
-        speeds = jax.random.uniform(
-            speed_key, (count,), minval=lower, maxval=upper
-        )
+        speeds = jax.random.uniform(speed_key, (count,), minval=lower, maxval=upper)
 
         def objective(params):
-            return rollout_objective(
-                task, network, params, bank, speeds, horizon, reset_key
-            )
+            return rollout_objective(task, network, params, bank, speeds, horizon, reset_key)
 
-        (_, metrics), gradient = jax.value_and_grad(objective, has_aux=True)(
-            state.params
-        )
-        delta, opt_state = optimizer.update(
-            gradient, state.opt_state, state.params
-        )
+        (_, metrics), gradient = jax.value_and_grad(objective, has_aux=True)(state.params)
+        delta, opt_state = optimizer.update(gradient, state.opt_state, state.params)
         params = optax.apply_updates(state.params, delta)
         return TrainingState(params, opt_state, key, state.updates + 1), {
             **metrics,
@@ -184,17 +153,14 @@ def make_update(task, network, optimizer, config):
 
 
 def make_checkpoint_eval_evaluator(task, network, config):
-    from drone_playground.composition import build_environment
+    from drone_playground.environments.environment import build_environment
 
     count = config["training"]["checkpoint_eval_envs"]
-    evaluation_task = build_environment(
-        config, config["runtime"]["device"], "eval", count
-    )
+    evaluation_env = build_environment(config, config["runtime"]["device"], "eval", count)
+    evaluation_task = evaluation_env.task
     seed = config["training"]["checkpoint_eval_seed_start"]
     bank = evaluation_task.scene.sample(jax.random.PRNGKey(seed), count)
-    speeds = jnp.linspace(
-        *config["env"]["task"]["command_distribution"]["speed_range_mps"], count
-    )
+    speeds = jnp.linspace(*config["env"]["task"]["command_distribution"]["speed_range_mps"], count)
     horizon = config["algorithm"]["horizon_length"]
     return (
         jax.jit(
@@ -213,9 +179,12 @@ def make_checkpoint_eval_evaluator(task, network, config):
 
 
 def train(config, root: Path, run_id: str):
-    from drone_playground.composition import build_environment
+    from drone_playground.environments.environment import build_environment
 
-    task = build_environment(config, config["runtime"]["device"])
+    env = build_environment(
+        config, config["runtime"]["device"], role="train", count=config["training"]["num_envs"]
+    )
+    task = env.task
     state, network, optimizer = initialize(task, config)
     state, restored = restore_recurrent_state(state, config)
     selected = restored.get("selection")
@@ -226,23 +195,17 @@ def train(config, root: Path, run_id: str):
     if int(state.updates) >= stop:
         raise ValueError("Requested training stage is already complete")
     update = make_update(task, network, optimizer, config)
-    checkpoint_eval, checkpoint_eval_bank = make_checkpoint_eval_evaluator(
-        task, network, config
-    )
+    checkpoint_eval, checkpoint_eval_bank = make_checkpoint_eval_evaluator(task, network, config)
     count = config["training"]["num_envs"]
     per_update = count * config["algorithm"]["horizon_length"]
     milestone = max(1, updates // max(1, config["training"]["num_evals"] - 1))
     start_update = int(state.updates)
     start_params = state.params
-    with RunRecorder(
-        root, run_id, config, task_id="DP-005-pointcloud-paper"
-    ) as rec:
-        rec.record_environment(task)
+    with RunRecorder(root, run_id, config, task_id="DP-005-pointcloud-paper") as rec:
+        rec.record_environment(env)
         with capture_console(rec.path / "console.log"):
-            save_report(rec.path / "components.json", task.component_identity)
-            save_report(
-                rec.path / "sensor-calibration.json", task.sensor_calibration
-            )
+            save_report(rec.path / "components.json", env.component_identity)
+            save_report(rec.path / "sensor-calibration.json", task.sensor_calibration)
             save_report(
                 rec.path / "checkpoint-eval-scene.json",
                 dict(
@@ -258,22 +221,21 @@ def train(config, root: Path, run_id: str):
 
             def snapshot(current):
                 nonlocal selected, selected_report
-                metrics = {
-                    k: float(v)
-                    for k, v in checkpoint_eval(current.params).items()
-                }
+                metrics = {k: float(v) for k, v in checkpoint_eval(current.params).items()}
                 if not all(np.isfinite(list(metrics.values()))):
-                    raise FloatingPointError(
-                        "Nonfinite checkpoint_eval evaluation"
-                    )
-                path = (
-                    rec.path
-                    / "training-state"
-                    / f"update-{int(current.updates):07d}.pkl"
-                )
+                    raise FloatingPointError("Nonfinite checkpoint_eval evaluation")
+                path = rec.path / "training-state" / f"update-{int(current.updates):07d}.pkl"
                 selected, selected_report = save_recurrent_snapshot(
-                    path, current, config, metrics, (-metrics["loss"],), selected, selected_report,
-                    report_path=rec.path / "eval" / f"checkpoint_eval-{int(current.updates):07d}.json",
+                    path,
+                    current,
+                    config,
+                    metrics,
+                    (-metrics["loss"],),
+                    selected,
+                    selected_report,
+                    report_path=rec.path
+                    / "eval"
+                    / f"checkpoint_eval-{int(current.updates):07d}.json",
                     fields={"checkpoint_eval_loss": metrics["loss"]},
                 )
                 rec.log(
@@ -296,9 +258,7 @@ def train(config, root: Path, run_id: str):
                         config,
                         selected,
                     )
-                    raise FloatingPointError(
-                        f"Nonfinite update {index}: {metrics}"
-                    )
+                    raise FloatingPointError(f"Nonfinite update {index}: {metrics}")
                 if index == start_update + 1 or index % 10 == 0:
                     average = float(np.mean(durations[-20:]))
                     rec.phase(
@@ -330,8 +290,7 @@ def train(config, root: Path, run_id: str):
                         flush=True,
                     )
                 wall_exhausted = (
-                    time.monotonic() - start_clock
-                    >= config["training"]["max_wall_seconds"]
+                    time.monotonic() - start_clock >= config["training"]["max_wall_seconds"]
                 )
                 if index % milestone == 0 or index == stop or wall_exhausted:
                     last_path = snapshot(state)
@@ -361,9 +320,7 @@ def train(config, root: Path, run_id: str):
                 selected=selected,
                 parameter_delta_l2=parameter_delta,
                 first_update_seconds=durations[0],
-                steady_update_seconds=float(
-                    np.mean(durations[1:] or durations)
-                ),
+                steady_update_seconds=float(np.mean(durations[1:] or durations)),
                 training_scene="independent static primitives",
                 navigation_benchmark_evaluated=False,
             )

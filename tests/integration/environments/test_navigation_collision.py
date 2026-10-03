@@ -6,10 +6,11 @@ import numpy as np
 
 
 def test_public_eval_always_keeps_hard_collision_termination():
-    from drone_playground.composition import build_environment, compose_experiment
+    from drone_playground.composition import compose_experiment
+    from drone_playground.environments.environment import build_environment
 
     config = compose_experiment(
-        'navigation/bptt',
+        "navigation/bptt",
         "navigation/static",
         ["+training.navigation_collision_mode=continuous_loss"],
     )

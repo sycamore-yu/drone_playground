@@ -5,7 +5,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from drone_playground.actions.commands import MotionCommand, Trajectory, Waypoint
+from drone_playground.control.setpoints import AttitudeSetpoint, StateSetpoint, validate_setpoint
+from drone_playground.references import Trajectory, Waypoint
 
 
 def test_polynomial_reference_keeps_time_origin_and_exact_derivatives():
@@ -40,15 +41,15 @@ def test_invalid_trajectory_duration_cannot_enter_execution(durations):
         Trajectory(0.0, durations, np.zeros((1, 4, 2)))
 
 
-def test_waypoint_and_motion_command_are_distinct_physical_interfaces():
+def test_waypoint_and_setpoint_are_distinct_physical_interfaces():
     waypoint = Waypoint([[1, 2, 3]], tolerance=0.5)
     assert waypoint.positions.shape == (1, 3)
-    command = MotionCommand("velocity_yaw", [1, 2, 3, 0])
-    np.testing.assert_array_equal(command.values, [1, 2, 3, 0])
+    command = StateSetpoint(velocity=np.array([1, 2, 3]), yaw=0)
+    np.testing.assert_array_equal(command.velocity, [1, 2, 3])
     with pytest.raises(ValueError):
-        MotionCommand("attitude_thrust", [0, 0, 1])
+        validate_setpoint(AttitudeSetpoint(rpy=[0, 0], thrust=1))
     with pytest.raises(ValueError):
-        MotionCommand("trajectory", [1, 2, 3])
+        validate_setpoint(StateSetpoint())
     with pytest.raises(ValueError):
         Waypoint([[1, 2, np.nan]], tolerance=0.5)
 
@@ -113,7 +114,7 @@ def test_ego_does_not_invent_a_future_yaw_trajectory():
 
 
 def test_mpc_horizon_needs_real_future_and_explicit_missing_yaw():
-    from drone_playground.actions.commands import reference_horizon
+    from drone_playground.references import reference_horizon
 
     curve = Trajectory(0, [2], np.array([[[0, 1], [0, 0], [1, 0], [0, 0]]]), yaw_defined=False)
     with pytest.raises(ValueError, match=r"yaw"):

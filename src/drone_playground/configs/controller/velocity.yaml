@@ -1,0 +1,13 @@
+_target_: drone_playground.control.controllers.velocity.VelocityControl
+max_speed: 20.0
+velocity_gain:
+- 3.0
+- 3.0
+- 5.0
+acceleration_limit:
+- 6.0
+- 6.0
+- 6.0
+tilt_limit: 0.55
+gravity: 9.81
+input_kind: state

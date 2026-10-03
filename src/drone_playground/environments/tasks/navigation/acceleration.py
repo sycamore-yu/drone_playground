@@ -1,66 +1,34 @@
-"""Composition boundary for the paper's point-cloud/acceleration flight task."""
+"""Acceleration-driven navigation with shared first-event and sensing kernels."""
 
 import jax
 import jax.numpy as jnp
-from hydra.utils import instantiate
 
-from drone_playground.dynamics.point_mass import PointMassState
+from drone_playground.dynamics.point_mass import PointMassState, acceleration_attitude
 from drone_playground.environments.scenes.geometry import clearance_and_collision
+from drone_playground.environments.scenes.procedural_navigation import make_bank
+from drone_playground.environments.tasks.point_mass import PointMassTask
 
 
-class AccelerationNavigationEnv:
-    """Native point-mass state, sharing geometry and protocol utilities with navigation."""
+def _select(mask, new, old):
+    return jax.tree.map(
+        lambda a, b: jnp.where(mask.reshape(mask.shape + (1,) * (a.ndim - mask.ndim)), a, b),
+        new,
+        old,
+    )
 
-    action_size = 3
-    physics_engine = "paper PointMassLag JAX; MuJoCo is used only for replay"
 
-    def __init__(self, config):
-        from drone_playground.environments.environment import build_dynamics, component_identity
+class AccelerationNavigationTask(PointMassTask):
+    """Use one navigation task with configurable sensing, reset and integration."""
 
-        self.config = config
-        self.observation_noise = (
-            (config["training"].get("observation_noise") or {})
-            if config.get("mode", "train") == "train"
-            else {}
-        )
-        self.model = build_dynamics(config)
-        self.controller = instantiate(
-            config["env"]["action"]["controller"], _convert_="all"
-        )
-        self.sensor = instantiate(config["env"]["sensor"], _convert_="all")
-        self.observer = instantiate(
-            {
-                k: v
-                for k, v in config["env"]["observation"].items()
-                if k != "sensor"
-            }
-        )
-        self.scene = instantiate(config["env"]["scene"], _convert_="all")
-        self.objective = instantiate(config["objective"], _convert_="all")
-        self.freq = int(config["env"]["task"]["freq"])
-        self.dt = 1.0 / self.freq
-        self.duration = float(config["env"]["task"]["duration"])
-        self.episode_length = round(self.duration * self.freq)
-        self.body_radius = float(config["env"]["task"]["body_radius"])
-        self.goal_radius = float(config["env"]["task"]["goal_radius"])
-        from drone_playground.environments.tasks.navigation.rigid_body import NavigationTask
-
-        self.task_definition = NavigationTask(
-            self.goal_radius, self.body_radius
-        )
-        self.arrival_sampling = config["env"]["task"].get(
-            "arrival_sampling", "policy"
-        )
-        self.physics_freq = int(config["env"]["task"]["physics_freq"])
-        self.task = config["env"]["task"]["name"]
-        self.dynamics = self.model.forward
-        self.drone = self.model.drone
-        self.component_identity = component_identity(config)
-        self.sensor_calibration = self.sensor.calibration()
-        self.observation_size = (
-            self.sensor.points_per_frame * self.sensor.policy_value_channels
-            + self.observer.proprioception_size
-        )
+    def bind(self, env):
+        super().bind(env)
+        if hasattr(self.scene, "build"):
+            self.bank, self.manifest = make_bank(self.scene, env.reference_seed, env.count)
+        else:
+            self.bank = self.scene.sample(jax.random.PRNGKey(env.reference_seed), env.count)
+            self.manifest = dict(source=self.scene.name, bank_digest=self.bank.digest())
+        self.training_bank, self.training_manifest = self.bank, self.manifest
+        env.bank, env.scene_manifest = self.bank, self.manifest
 
     def initial_state(self, bank, key=None):
         key = jax.random.PRNGKey(0) if key is None else key
@@ -73,110 +41,155 @@ class AccelerationNavigationEnv:
             state = reset_point_mass_state(
                 state,
                 jax.random.fold_in(key, 1),
-                self.config["training"].get("reset_randomization") or {},
+                self.conditions.get("reset_randomization") or {},
             )
-        return self.model.randomize(state, jax.random.fold_in(key, 2))
-
-    def observation(self, bank, state, time, speeds):
-        ids = jnp.arange(bank.num_instances)
-        points, valid = jax.vmap(
-            lambda i, p, r: self.sensor.sample(bank, i, p, r, time)
-        )(ids, state.pos, state.rotation)
-        from drone_playground.environments.randomization import noisy_point_mass_state
-
-        measured = noisy_point_mass_state(
-            state, time, self.dt, self.observation_noise
-        )
-        proprio, _ = self.observer.proprioception(
-            measured, bank.goal, speeds, self.body_radius
-        )
-        # Corrupt the actor input without changing the ground-truth loss target.
-        _, target = self.observer.proprioception(
-            state, bank.goal, speeds, self.body_radius
-        )
-        points, valid = self.measurement(points, valid, state, time)
-        return points, valid, proprio, target
-
-    def measurement(self, points, valid, state, time):
-        """Seeded noise in physical sensor units, shared by train and frozen eval."""
-        noise = self.observation_noise
-        std, dropout = noise.get("sensor_std_m", 0.0), noise.get(
-            "sensor_dropout_probability", 0.0
-        )
-        if not std and not dropout:
-            return points, valid
-        from drone_playground.environments.randomization import point_measurement_noise
-
-        keys = jax.vmap(jax.random.fold_in)(
-            state.measurement_key,
-            jnp.broadcast_to(
-                jnp.floor(jnp.asarray(time) / self.dt).astype(jnp.int32),
-                state.pos.shape[:-1],
-            ),
-        )
-        if self.sensor.policy_value_channels == 1:
-            noisy, mask = jax.vmap(
-                lambda x, v, k: point_measurement_noise(
-                    x[..., None], v, k, std, dropout
-                )
-            )(points, valid, keys)
-            return noisy[..., 0], mask
-        noisy, mask = jax.vmap(
-            lambda x, v, k: point_measurement_noise(x, v, k, std, dropout)
-        )(points, valid, keys)
-        return noisy, mask
+        return self.dynamics.randomize(state, jax.random.fold_in(key, 2))
 
     def command(self, body_action, state):
         body_action = self.uncertain_action(body_action, state)
         world = jnp.einsum("...ij,...j->...i", state.rotation, body_action)
         return self.controller.physical_action(world)
 
-    def uncertain_action(self, action, state):
-        noise = (
-            getattr(self, "environment_effects", {}).get("action_noise") or {}
-        )
-        if not noise:
-            return action
-        if set(noise) - {"std_physical", "bias_physical"}:
-            raise ValueError(
-                "Acceleration action uncertainty uses physical m/s^2 units"
-            )
-        keys = jax.vmap(jax.random.fold_in)(
-            state.measurement_key,
-            jnp.floor(state.elapsed_time / self.dt).astype(jnp.int32),
-        )
-        draws = jax.vmap(lambda key: jax.random.normal(key, (3,)))(keys)
-        return (
-            action
-            + draws * jnp.asarray(noise.get("std_physical", 0.0))
-            + jnp.asarray(noise.get("bias_physical", 0.0))
-        )
-
     def proximity(self, bank, state, time):
         """Continuous signed clearance and approaching speed for the training objective."""
-        offset = jnp.einsum(
-            "...ij,j->...i", state.rotation, jnp.array([0.0, 0.0, 0.005])
-        )
+        offset = jnp.einsum("...ij,j->...i", state.rotation, jnp.array([0.0, 0.0, 0.005]))
         centre = state.pos + offset
 
         def measure(i, p, v):
             def distance(query):
-                return clearance_and_collision(
-                    bank, i, time, query, self.body_radius
-                )[0]
+                return clearance_and_collision(bank, i, time, query, self.body_radius)[0]
 
             clearance, normal = jax.value_and_grad(distance)(p)
-            approaching = jax.lax.stop_gradient(
-                jnp.maximum(-jnp.sum(normal * v), 0.0)
-            )
+            approaching = jax.lax.stop_gradient(jnp.maximum(-jnp.sum(normal * v), 0.0))
             return clearance, approaching
 
-        return jax.vmap(measure)(
-            jnp.arange(bank.num_instances), centre, state.vel
-        )
+        return jax.vmap(measure)(jnp.arange(bank.num_instances), centre, state.vel)
 
     def scenario(self, index):
         return {"scenario_id": int(index), **self.bank.labels(int(index))}
 
-    def close(self):
-        pass
+    def select_bank(self, indices, *, source=None):
+        source = self.bank if source is None else source
+        return source.select(indices)
+
+    def clearance(self, bank, state, time):
+        centre = state.pos + jnp.einsum("...ij,j->...i", state.rotation, jnp.array([0, 0, 0.005]))
+        return jax.vmap(lambda i, p, t: self.events.clearance(bank, i, p, t)[0])(
+            jnp.arange(bank.num_instances),
+            centre,
+            jnp.broadcast_to(time, (bank.num_instances,)),
+        )
+
+    def measure(self, bank, state, time, speeds):
+        points, valid = jax.vmap(lambda i, p, r, t: self.sensor.sample(bank, i, p, r, t))(
+            jnp.arange(bank.num_instances),
+            state.pos,
+            state.rotation,
+            jnp.broadcast_to(time, (bank.num_instances,)),
+        )
+        from drone_playground.environments.randomization import noisy_point_mass_state
+
+        measured = noisy_point_mass_state(state, time, self.dt, self.observation_noise)
+        proprio, _ = self.observation.proprioception(measured, bank.goal, speeds, self.body_radius)
+        # Corrupt the actor input without changing the ground-truth loss target.
+        _, target = self.observation.proprioception(state, bank.goal, speeds, self.body_radius)
+        points, valid = self.measurement(points, valid, state, time)
+        return points, valid, proprio, target
+
+    def delays(self, key, count):
+        if self.conditions["action_delay_ms"] is None:
+            return jnp.zeros(count, jnp.int32)
+        low, high = self.conditions["action_delay_ms"]
+        milliseconds = jax.random.uniform(key, (count,), minval=low, maxval=high)
+        return jnp.ceil(milliseconds / (1000 * self.physics_dt) - 1e-6).astype(jnp.int32)
+
+    def training_initial(self, key, count):
+        ik, pk, tk, sk, vk, dk = jax.random.split(key, 6)
+        ids = jax.random.randint(ik, (count,), 0, self.training_bank.num_instances)
+        bank = self.select_bank(ids, source=self.training_bank)
+        distribution = (
+            self.conditions.get("command_distribution") or self.settings["command_distribution"]
+        )
+        speed_range = distribution.get(
+            "speed_range_mps",
+            self.settings["command_distribution"]["speed_range_mps"],
+        )
+        speeds = jax.random.uniform(sk, (count,), minval=speed_range[0], maxval=speed_range[1])
+        if distribution.get("kind") == "position":
+            from drone_playground.environments.randomization import sample_command
+
+            goals = jax.vmap(lambda goal, rng: sample_command(goal, rng, distribution))(
+                bank.goal, jax.random.split(tk, count)
+            )
+            bank = bank.replace(goal=goals)
+        from drone_playground.environments.tasks.navigation.initialization import (
+            sample_initial_state,
+        )
+
+        reset = self.conditions.get("reset_randomization") or {}
+        strata = (jnp.arange(count) + 0.5) / count
+        keys = jax.random.split(pk, count)
+        if (reset.get("position") or {}).get("stratified", False):
+            pos, velocity, clocks = jax.vmap(
+                lambda i, rng, speed, category: sample_initial_state(
+                    bank, i, rng, self.body_radius, speed, reset, category
+                )
+            )(jnp.arange(count), keys, speeds, strata)
+        else:
+            pos, velocity, clocks = jax.vmap(
+                lambda i, rng, speed: sample_initial_state(
+                    bank, i, rng, self.body_radius, speed, reset
+                )
+            )(jnp.arange(count), keys, speeds)
+        state = self.dynamics.randomize(
+            PointMassState.create(pos).replace(
+                vel=velocity, measurement_key=jax.random.split(vk, count)
+            ),
+            dk,
+        )
+        rotation = acceleration_attitude(state.acc, state.vel, state.rotation)
+        from drone_playground.environments.randomization import reset_point_mass_state
+
+        state = reset_point_mass_state(
+            state.replace(rotation=rotation),
+            tk,
+            reset,
+            position_and_velocity=False,
+        )
+        return bank, state, clocks, speeds, self.delays(dk, count)
+
+    def advance_checked(self, bank, state, command, previous, ticks, timestamp, outcome):
+        """Use the training integration clock, with exact first-event freezing."""
+        initial_time = timestamp
+
+        def step(carry, tick):
+            physical, clock, result, minimum = carry
+            active = result == 0
+            due = jnp.where((tick < ticks)[:, None], previous, command)
+            candidate = self.dynamics.step(
+                physical, self.controller.apply(physical, due), self.physics_dt
+            )
+            now = initial_time + (tick + 1) * self.physics_dt
+            finite = jnp.all(jnp.isfinite(candidate.vector()), axis=-1)
+            clearance = self.clearance(bank, candidate, now)
+            collision = clearance < 0
+            _, _, _, ended = self.events.events(bank, candidate.pos, bank.goal, collision, ~finite)
+            return (
+                _select(active & finite, candidate, physical),
+                jnp.where(active, now, clock),
+                jnp.where(active, ended, result),
+                jnp.where(active & finite, jnp.minimum(minimum, clearance), minimum),
+            ), None
+
+        end, _ = jax.lax.scan(
+            step,
+            (state, timestamp, outcome, jnp.full_like(timestamp, jnp.inf)),
+            jnp.arange(self.substeps),
+        )
+        physical, clock, result, minimum = end
+        return (
+            physical,
+            clock,
+            result,
+            jnp.where(jnp.isfinite(minimum), minimum, 0.0),
+        )

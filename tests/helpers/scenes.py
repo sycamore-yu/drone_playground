@@ -9,7 +9,6 @@ from drone_playground.environments.scenes.geometry import (
     MOTION_STATIC,
     SceneBank,
 )
-from drone_playground.environments.tasks.navigation.rigid_body import NavigationEnv
 
 WORLD_LOW = np.array([0.0, -5.0, 0.0], np.float32)
 WORLD_HIGH = np.array([20.0, 5.0, 5.0], np.float32)
@@ -68,9 +67,7 @@ def mujoco_scene(obstacles):
         '<geom name="ground" type="plane" size="110 105 .1" pos="10 0 0"/>'
         '<body name="mjx_dummy" pos="500 500 500"><freejoint/>'
         '<geom name="mjx_dummy_geom" type="sphere" size="0.01" mass="0.001"/>'
-        "</body>"
-        + "".join(bodies)
-        + "</worldbody></mujoco>"
+        "</body>" + "".join(bodies) + "</worldbody></mujoco>"
     )
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
@@ -79,15 +76,33 @@ def mujoco_scene(obstacles):
 
 
 def synthetic_navigation_env(obstacles, duration=2.0, **kwargs):
-    return NavigationEnv(
-        scene_bank=synthetic_bank(obstacles),
-        dynamics=kwargs.pop("dynamics", "first_principles"),
-        drone=kwargs.pop("drone", "cf2x_L250"),
-        freq=kwargs.pop("freq", 50),
-        duration=duration,
-        device="cpu",
-        **kwargs,
+    from dataclasses import asdict
+    from types import SimpleNamespace
+
+    from drone_playground.configuration import load_config
+    from drone_playground.environments.environment import build_environment
+
+    config = load_config("environment", ["env=navigation/static"])
+    config["env"]["sensor"] = None
+    config["env"]["task"]["observation"] = {
+        "_target_": "drone_playground.environments.observations.state.NavigationObservation"
+    }
+    config["env"]["dynamics"].update(
+        forward=kwargs.pop("dynamics", "first_principles"), drone=kwargs.pop("drone", "cf2x_L250")
     )
+    config["env"]["task"].update(duration=duration, freq=kwargs.pop("freq", 50))
+    collision = kwargs.pop("training_collision_mode", "terminate")
+    objective = kwargs.pop("objective", None)
+    if objective is not None:
+        config["env"]["task"]["reward"] = {
+            "_target_": type(objective).__module__ + "." + type(objective).__name__,
+            **asdict(objective),
+        }
+    config["env"]["task"].update(kwargs)
+    config["training"] = {"navigation_collision_mode": collision}
+    bank = synthetic_bank(obstacles)
+    scene = SimpleNamespace(build=lambda: (bank, {"source": "synthetic test scene"}))
+    return build_environment(config, "cpu", role="train", scene=scene)
 
 
 def place(state, env, position, velocity=(0.0, 0.0, 0.0)):
@@ -98,6 +113,4 @@ def place(state, env, position, velocity=(0.0, 0.0, 0.0)):
         quat=jnp.broadcast_to(env.identity_quat, data.sim_data.states.quat.shape),
         ang_vel=jnp.zeros_like(data.sim_data.states.ang_vel),
     )
-    return state.replace(
-        pipeline_state=data.replace(sim_data=data.sim_data.replace(states=states))
-    )
+    return state.replace(pipeline_state=data.replace(sim_data=data.sim_data.replace(states=states)))

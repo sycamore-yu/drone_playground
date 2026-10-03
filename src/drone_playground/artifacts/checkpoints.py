@@ -23,7 +23,7 @@ from drone_playground.networks.factory import network_factory
 
 def require_matching_physical_decoder(metadata, config):
     """Parameter transfer cannot silently reinterpret a geometric head's units."""
-    from drone_playground.actions.decoders import PhysicalActionDecoder
+    from drone_playground.control.decoders import PhysicalActionDecoder
 
     current = require_current(config)
     expected = current["method"].get("physical_decoder")
@@ -42,25 +42,28 @@ def require_matching_physical_decoder(metadata, config):
         )
 
 
-def save_policy(
-    directory: Path, params, config: dict, step: int, *, physical_decoder=None
-) -> Path:
+def save_policy(directory: Path, params, config: dict, step: int, *, physical_decoder=None) -> Path:
     current = require_current(config)
     component_only = (
-        physical_decoder is not None
-        and current["method"].get("physical_decoder") is None
+        physical_decoder is not None and current["method"].get("physical_decoder") is None
     )
     if physical_decoder is None:
         physical_decoder = current["method"].get("physical_decoder")
-    action_size = 4
+    from drone_playground.environments.environment import (
+        build_controller,
+        build_observer,
+        build_sensor,
+    )
+
+    controller = build_controller(current["env"]["controller"])
+    observer = build_observer(current, build_sensor(current))
+    action_size = len(controller.input_fields)
     if physical_decoder is not None:
-        from drone_playground.actions.decoders import PhysicalActionDecoder
+        from drone_playground.control.decoders import PhysicalActionDecoder
 
         decoder = PhysicalActionDecoder(**physical_decoder)
         if decoder.kind != current["method"]["output"]:
-            raise ValueError(
-                "Checkpoint method output differs from its physical decoder"
-            )
+            raise ValueError("Checkpoint method output differs from its physical decoder")
         action_size = decoder.action_size
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"step-{int(step):010d}.pkl"
@@ -68,10 +71,11 @@ def save_policy(
     model.save_params(str(temp), jax.tree.map(np.asarray, params))
     temp.replace(path)
     metadata = dict(
-        config_version=3,
+        config_version=4,
         step=int(step),
         config=current,
-        observation_size=config.get("observation_size", 43),
+        observation_size=observer.size,
+        observation_spec=observer.specification(),
         action_size=action_size,
         policy_family="brax",
         checkpoint_kind="component-inference-parameters"
@@ -85,7 +89,7 @@ def save_policy(
             "shac": "full continuation is stored in training-state/",
             "bptt": "full continuation is stored in training-state/",
             "dva": "full continuation is stored in training-state/",
-        }[config["algorithm"]],
+        }[current["algorithm"]["name"]],
     )
     if physical_decoder is not None:
         # Persist every physical default so future decoder defaults cannot
@@ -105,7 +109,17 @@ def load_policy(path):
     if hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]:
         raise ValueError("Checkpoint digest does not match its metadata")
     config = require_current(meta["config"])
-    from drone_playground.composition import native_training_config
+    from drone_playground.environments.environment import build_observer, build_sensor
+
+    observer = build_observer(config, build_sensor(config))
+    if (
+        observer.specification() != meta["observation_spec"]
+        or observer.size != meta["observation_size"]
+    ):
+        raise ValueError(
+            "Saved observation fields or dimensions differ from the reconstructed component"
+        )
+    from drone_playground.learning.brax_configuration import native_training_config
 
     native = native_training_config(config)
     preprocess = (

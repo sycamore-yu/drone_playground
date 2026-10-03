@@ -1,0 +1,8 @@
+device: gpu
+backend: jax
+timing: synchronous
+action_delay_steps: 0
+action_delay_ms: ${oc.select:env.task.action_delay_ms,null}
+scene_seed_train: 10000
+scene_seed_eval: 20000
+output_root: .

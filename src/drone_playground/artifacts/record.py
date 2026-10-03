@@ -52,14 +52,10 @@ def _atomic_write_text(path: Path, text: str) -> None:
 
 
 def _json_text(value: Any) -> str:
-    return (
-        json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
-    )
+    return json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
 
-def _run_command(
-    command: list[str], cwd: Path
-) -> subprocess.CompletedProcess[str] | None:
+def _run_command(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str] | None:
     try:
         return subprocess.run(
             command,
@@ -76,31 +72,17 @@ def _run_command(
 def _git_snapshot(root: Path) -> dict[str, Any]:
     """Capture the current commit, full worktree patch, and status before run files exist."""
     top = _run_command(["git", "rev-parse", "--show-toplevel"], root)
-    if (
-        top is None
-        or top.returncode != 0
-        or Path(top.stdout.strip()).resolve() != root.resolve()
-    ):
+    if top is None or top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
         return {"commit": None, "dirty": None, "status": "", "patch": ""}
     head = _run_command(["git", "rev-parse", "HEAD"], root)
     if head is None or head.returncode != 0:
         return {"commit": None, "dirty": None, "status": "", "patch": ""}
 
-    status = _run_command(
-        ["git", "status", "--porcelain=v1", "--untracked-files=all"], root
-    )
-    patch = _run_command(
-        ["git", "diff", "--binary", "--no-ext-diff", "HEAD", "--"], root
-    )
-    untracked = _run_command(
-        ["git", "ls-files", "--others", "--exclude-standard", "-z"], root
-    )
-    status_text = (
-        status.stdout if status is not None and status.returncode == 0 else ""
-    )
-    patch_text = (
-        patch.stdout if patch is not None and patch.returncode == 0 else ""
-    )
+    status = _run_command(["git", "status", "--porcelain=v1", "--untracked-files=all"], root)
+    patch = _run_command(["git", "diff", "--binary", "--no-ext-diff", "HEAD", "--"], root)
+    untracked = _run_command(["git", "ls-files", "--others", "--exclude-standard", "-z"], root)
+    status_text = status.stdout if status is not None and status.returncode == 0 else ""
+    patch_text = patch.stdout if patch is not None and patch.returncode == 0 else ""
     if untracked is not None and untracked.returncode == 0:
         for relative_path in filter(None, untracked.stdout.split("\0")):
             added = _run_command(
@@ -130,8 +112,7 @@ def _process_command() -> str:
     proc_cmdline = Path("/proc/self/cmdline")
     try:
         args = [
-            arg.decode(errors="surrogateescape")
-            for arg in proc_cmdline.read_bytes().split(b"\0")
+            arg.decode(errors="surrogateescape") for arg in proc_cmdline.read_bytes().split(b"\0")
         ]
         args = [arg for arg in args if arg]
         if args:
@@ -200,7 +181,7 @@ class RunRecorder:
         canonical = config.get("components", config)
         self.conditions = None
         if "env" in canonical:
-            from drone_playground.composition import experiment_conditions
+            from drone_playground.artifacts.conditions import experiment_conditions
 
             self.conditions = experiment_conditions(canonical)
         if canonical.get("evaluation", {}).get("protocol"):
@@ -224,9 +205,7 @@ class RunRecorder:
         _atomic_write_text(self.path / "git-status.txt", git["status"])
 
         dependencies = _dependencies()
-        _atomic_write_text(
-            self.path / "dependencies.json", _json_text(dependencies)
-        )
+        _atomic_write_text(self.path / "dependencies.json", _json_text(dependencies))
         patch_hash = hashlib.sha256(git["patch"].encode()).hexdigest()
         config_hash = hashlib.sha256(config_text.encode()).hexdigest()
         manifest = {
@@ -277,9 +256,7 @@ class RunRecorder:
         self._metric_stream = (self.path / "metrics" / "metrics.jsonl").open(
             "a", encoding="utf-8", buffering=1
         )
-        self._writer = SummaryWriter(
-            logdir=str(self.path / "metrics"), flush_secs=10
-        )
+        self._writer = SummaryWriter(logdir=str(self.path / "metrics"), flush_secs=10)
         self._heartbeat_thread = threading.Thread(
             target=self._heartbeat_loop,
             name=f"run-heartbeat-{run_id}",
@@ -311,9 +288,7 @@ class RunRecorder:
         row = {"step": step, "metrics": values}
         with self._lock:
             self._ensure_open()
-            self._metric_stream.write(
-                json.dumps(row, ensure_ascii=False) + "\n"
-            )
+            self._metric_stream.write(json.dumps(row, ensure_ascii=False) + "\n")
             self._metric_stream.flush()
             for name, value in values.items():
                 self._writer.add_scalar(name, value, global_step=step)
@@ -356,9 +331,7 @@ class RunRecorder:
             self._state["updated_at"] = finished_at
             self._state["finished_at"] = finished_at
             self._write_state()
-            _atomic_write_text(
-                self.path / "result.json", _json_text(result_payload)
-            )
+            _atomic_write_text(self.path / "result.json", _json_text(result_payload))
             self._writer.flush()
             self._writer.close()
             self._metric_stream.flush()
@@ -377,19 +350,13 @@ class RunRecorder:
             environment_effects=getattr(env, "environment_effects", {}),
             command_distribution=getattr(env, "command_distribution", {}),
         )
-        self.conditions["scene_distribution"] = getattr(
-            env, "scene_distribution", None
-        )
+        self.conditions["scene_distribution"] = getattr(env, "scene_distribution", None)
         self.conditions["scene"] = env.component_identity["scene"]
         if getattr(env, "sim", None) is not None:
             self.conditions["physics_frequency_hz"] = env.sim.freq
-        self.conditions["safety_margin"]["body_radius_m"] = getattr(
-            env, "body_radius", None
-        )
+        self.conditions["safety_margin"]["body_radius_m"] = getattr(env, "body_radius", None)
         fixed = {
-            key: value
-            for key, value in self.conditions.items()
-            if key not in ("method", "study")
+            key: value for key, value in self.conditions.items() if key not in ("method", "study")
         }
         self.conditions["conditions_sha256"] = hashlib.sha256(
             _json_text(fixed).encode()
@@ -414,9 +381,7 @@ class RunRecorder:
             self.finish("completed")
             return False
         exception = {
-            "type": exc_type.__name__
-            if exc_type is not None
-            else type(exc).__name__,
+            "type": exc_type.__name__ if exc_type is not None else type(exc).__name__,
             "message": str(exc),
             "traceback": "".join(traceback.format_exception(exc_type, exc, tb)),
         }

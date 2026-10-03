@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
-
 import numpy as np
 
-from drone_playground.actions.commands import Decision, MotionCommand, Trajectory, Waypoint
-from drone_playground.planning.geometry import (
+from drone_playground.control.setpoints import (
+    AttitudeSetpoint,
+    ForceTorque,
+    MotorRPM,
+    RateSetpoint,
+    StateSetpoint,
+    validate_setpoint,
+)
+from drone_playground.planning.corridors import (
     ConvexPolytope,
-    PlannerGeometry,
     SafeFlightCorridor,
     TrajectoryPreview,
 )
+from drone_playground.references import Trajectory, Waypoint
 from drone_playground.rpc.proto import algorithm_pb2 as pb
+from drone_playground.runtime.decision import Decision
 
 
 def vec3(value):
@@ -64,10 +71,7 @@ def validate_step(request, capabilities=None):
                 state.angular_velocity.z,
             ]
         )
-    if (
-        not np.isfinite(request.solve_budget_seconds)
-        or request.solve_budget_seconds <= 0
-    ):
+    if not np.isfinite(request.solve_budget_seconds) or request.solve_budget_seconds <= 0:
         raise ValueError("Solve budget must be positive and finite")
     if request.HasField("goal"):
         decode_output(request.goal)
@@ -78,15 +82,12 @@ def validate_step(request, capabilities=None):
         if isinstance(value, Trajectory):
             value.sample(now)
         elif isinstance(value, Waypoint) and (
-            value.generated_at > now + 1e-9
-            or (value.valid_until and value.valid_until < now)
+            value.generated_at > now + 1e-9 or (value.valid_until and value.valid_until < now)
         ):
             # An upstream goal outside its own window is stale input, not a
             # usable setpoint; the caller must resend a current decision. A zero
             # valid_until means the producer declared no horizon.
-            raise ValueError(
-                "Upstream waypoint is outside its declared time window"
-            )
+            raise ValueError("Upstream waypoint is outside its declared time window")
     if capabilities is not None:
         available = {"state"}
         if state.HasField("angular_velocity"):
@@ -96,36 +97,19 @@ def validate_step(request, capabilities=None):
         if request.HasField("measurement"):
             available.add(request.measurement.WhichOneof("data"))
         if upstream:
-            kind = (
-                value.kind
-                if isinstance(value, MotionCommand)
-                else (
-                    "trajectory"
-                    if isinstance(value, Trajectory)
-                    else "waypoint"
-                )
-            )
+            kind = value.kind
             accepted = set(capabilities.accepted_upstream)
-            if not accepted and "reference" in capabilities.required_inputs:
-                accepted = {"trajectory"}
             if kind not in accepted:
                 raise ValueError("Unsupported upstream physical interface")
             available.update(("upstream", upstream))
         missing = set(capabilities.required_inputs) - available
         if missing:
-            raise ValueError(
-                f"Native algorithm requires inputs: {sorted(missing)}"
-            )
+            raise ValueError(f"Native algorithm requires inputs: {sorted(missing)}")
     if not request.HasField("measurement"):
         return
     m = request.measurement
-    if (
-        not np.isfinite(m.time)
-        or not 0 <= m.time <= request.header.simulation_time + 1e-9
-    ):
-        raise ValueError(
-            "Measurement time must be a past/current simulation time"
-        )
+    if not np.isfinite(m.time) or not 0 <= m.time <= request.header.simulation_time + 1e-9:
+        raise ValueError("Measurement time must be a past/current simulation time")
     kind = m.WhichOneof("data")
     if kind == "point_cloud":
         if m.frame not in ("world", "body") or m.point_cloud.channels not in (
@@ -135,11 +119,7 @@ def validate_step(request, capabilities=None):
             raise ValueError("Invalid point cloud frame/channel count")
         count = m.point_cloud.count * m.point_cloud.channels
     elif kind == "depth":
-        if (
-            m.frame != "camera_optical"
-            or not m.depth.height
-            or not m.depth.width
-        ):
+        if m.frame != "camera_optical" or not m.depth.height or not m.depth.width:
             raise ValueError("Invalid depth frame/shape")
         count = m.depth.height * m.depth.width
         p = m.depth.camera_position
@@ -156,9 +136,7 @@ def validate_step(request, capabilities=None):
     if len(data) != count * 4:
         raise ValueError("Measurement byte count does not match its shape")
     values = np.frombuffer(data, dtype="<f4")
-    if not np.isfinite(values).all() or (
-        kind == "depth" and np.any(values < 0)
-    ):
+    if not np.isfinite(values).all() or (kind == "depth" and np.any(values < 0)):
         raise ValueError("Measurement must be finite (depth nonnegative)")
 
 
@@ -174,9 +152,7 @@ def encode_output(value):
                     coefficient_count=coefficients.shape[-1],
                     coefficients=coefficients.ravel(),
                 )
-                for duration, coefficients in zip(
-                    value.durations, value.coefficients
-                )
+                for duration, coefficients in zip(value.durations, value.coefficients)
             ],
         )
     if isinstance(value, Waypoint):
@@ -186,9 +162,40 @@ def encode_output(value):
             generated_at=value.generated_at,
             valid_until=value.valid_until,
         )
-    if isinstance(value, MotionCommand):
-        return pb.MotionCommand(kind=value.kind, values=value.values)
-    raise TypeError("Expected Trajectory, Waypoint or MotionCommand")
+    validate_setpoint(value)
+    if isinstance(value, StateSetpoint):
+        result = pb.StateSetpoint()
+        for name in ("position", "velocity", "acceleration"):
+            field = getattr(value, name)
+            if field is not None:
+                getattr(result, name).CopyFrom(vec3(field))
+        for name in ("yaw", "yaw_rate"):
+            field = getattr(value, name)
+            if field is not None:
+                setattr(result, name, float(field))
+        return result
+    if isinstance(value, AttitudeSetpoint):
+        return pb.AttitudeSetpoint(rpy=vec3(value.rpy), thrust=float(value.thrust))
+    if isinstance(value, RateSetpoint):
+        return pb.RateSetpoint(thrust=float(value.thrust), body_rates=vec3(value.body_rates))
+    if isinstance(value, ForceTorque):
+        return pb.ForceTorque(thrust=float(value.thrust), torque=vec3(value.torque))
+    if isinstance(value, MotorRPM):
+        return pb.MotorRPM(rpm=np.asarray(value.rpm))
+    raise TypeError("Expected a typed Reference, Setpoint or Actuation")
+
+
+def output_field(value):
+    """Map physical type to its protobuf oneof field, without an action registry."""
+    return "state_setpoint" if isinstance(value, StateSetpoint) else value.kind
+
+
+def output_kinds():
+    """Read supported transport kinds from the generated schema itself."""
+    return {
+        "state" if field.name == "state_setpoint" else field.name
+        for field in pb.Decision.DESCRIPTOR.oneofs_by_name["output"].fields
+    }
 
 
 def decode_output(value):
@@ -213,7 +220,7 @@ def decode_output(value):
             [segment.duration for segment in value.segments],
             coefficients,
             yaw_defined=value.yaw_defined,
-            frame=value.frame or "world",
+            frame=value.frame,
         )
     if isinstance(value, pb.Waypoint):
         return Waypoint(
@@ -222,74 +229,93 @@ def decode_output(value):
             generated_at=value.generated_at,
             valid_until=value.valid_until,
         )
-    if isinstance(value, pb.MotionCommand):
-        return MotionCommand(value.kind, value.values)
-    raise TypeError("Unsupported native physical output")
+
+    def read_vector(name):
+        if not value.HasField(name):
+            raise ValueError(f"Physical output requires {name}")
+        field = getattr(value, name)
+        return np.array([field.x, field.y, field.z])
+
+    if isinstance(value, pb.StateSetpoint):
+        result = StateSetpoint(
+            **{
+                name: read_vector(name)
+                for name in ("position", "velocity", "acceleration")
+                if value.HasField(name)
+            },
+            **{name: getattr(value, name) for name in ("yaw", "yaw_rate") if value.HasField(name)},
+        )
+    elif isinstance(value, pb.AttitudeSetpoint):
+        result = AttitudeSetpoint(rpy=read_vector("rpy"), thrust=value.thrust)
+    elif isinstance(value, pb.RateSetpoint):
+        result = RateSetpoint(thrust=value.thrust, body_rates=read_vector("body_rates"))
+    elif isinstance(value, pb.ForceTorque):
+        result = ForceTorque(thrust=value.thrust, torque=read_vector("torque"))
+    elif isinstance(value, pb.MotorRPM):
+        result = MotorRPM(rpm=np.array(value.rpm))
+    else:
+        raise TypeError("Unsupported native physical output")
+    validate_setpoint(result)
+    return result
 
 
-def encode_geometry(value):
-    result = pb.PlannerGeometry(
+def encode_corridor(value):
+    result = pb.SafeFlightCorridor(
+        name=value.name,
         frame=value.frame,
         generated_at=value.generated_at,
         valid_until=value.valid_until,
     )
-    for corridor in value.corridors:
-        wire = result.corridors.add(name=corridor.name)
-        for polytope in corridor.polytopes:
-            poly = wire.polytopes.add()
-            if polytope.vertices is not None:
-                poly.vertices.extend(vec3(v) for v in polytope.vertices)
-            else:
-                poly.halfspaces.extend(polytope.halfspaces.ravel())
-    for preview in value.trajectories:
-        result.trajectories.add(
-            name=preview.name, trajectory=encode_output(preview.trajectory)
-        )
+    for polytope in value.polytopes:
+        poly = result.polytopes.add()
+        if polytope.vertices is not None:
+            poly.vertices.extend(vec3(v) for v in polytope.vertices)
+        else:
+            poly.halfspaces.extend(polytope.halfspaces.ravel())
     return result
 
 
-def decode_geometry(value):
-    corridors = []
-    for corridor in value.corridors:
-        polytopes = []
-        for poly in corridor.polytopes:
-            if bool(poly.vertices) == bool(poly.halfspaces):
-                raise ValueError("Polytope requires exactly one representation")
-            if poly.vertices:
-                polytopes.append(
-                    ConvexPolytope(
-                        vertices=[[v.x, v.y, v.z] for v in poly.vertices]
-                    )
-                )
-            else:
-                if len(poly.halfspaces) % 4:
-                    raise ValueError(
-                        "Halfspace planes must have four coefficients"
-                    )
-                polytopes.append(
-                    ConvexPolytope(
-                        halfspaces=np.asarray(poly.halfspaces).reshape(-1, 4)
-                    )
-                )
-        corridors.append(SafeFlightCorridor(corridor.name, tuple(polytopes)))
-    return PlannerGeometry(
+def decode_corridor(value):
+    polytopes = []
+    for poly in value.polytopes:
+        if bool(poly.vertices) == bool(poly.halfspaces):
+            raise ValueError("Polytope requires exactly one representation")
+        if poly.vertices:
+            polytopes.append(ConvexPolytope(vertices=[[v.x, v.y, v.z] for v in poly.vertices]))
+        else:
+            if len(poly.halfspaces) % 4:
+                raise ValueError("Halfspace planes must have four coefficients")
+            polytopes.append(ConvexPolytope(halfspaces=np.asarray(poly.halfspaces).reshape(-1, 4)))
+    return SafeFlightCorridor(
+        value.name, tuple(polytopes), value.generated_at, value.valid_until, value.frame
+    )
+
+
+def encode_preview(value):
+    return pb.TrajectoryPreview(
+        name=value.name,
+        trajectory=encode_output(value.trajectory),
+        generated_at=value.generated_at,
+        valid_until=value.valid_until,
+        frame=value.frame,
+    )
+
+
+def decode_preview(value):
+    return TrajectoryPreview(
+        value.name,
+        decode_output(value.trajectory),
         value.generated_at,
         value.valid_until,
-        tuple(corridors),
-        tuple(
-            TrajectoryPreview(v.name, decode_output(v.trajectory))
-            for v in value.trajectories
-        ),
         value.frame,
     )
 
 
 def decode_decision(response, time, capabilities):
-    geometry = None
-    if response.HasField("planner_geometry"):
-        geometry = decode_geometry(response.planner_geometry)
-        if geometry.generated_at > time + 1e-9:
-            raise ValueError("Planner geometry has a future origin")
+    corridors = tuple(decode_corridor(value) for value in response.corridors)
+    previews = tuple(decode_preview(value) for value in response.trajectory_previews)
+    if any(value.generated_at > time + 1e-9 for value in (*corridors, *previews)):
+        raise ValueError("Planning inspection has a future origin")
     decision = response.decision
     if decision.status not in (
         pb.VALID,
@@ -302,18 +328,14 @@ def decode_decision(response, time, capabilities):
     output = None
     if decision.status == pb.VALID:
         if field is None or not decision.plan_id:
-            raise ValueError(
-                "A valid decision requires an actual output and plan identity"
-            )
+            raise ValueError("A valid decision requires an actual output and plan identity")
         if (
             not np.isfinite([decision.generated_at, decision.valid_until]).all()
             or decision.generated_at < 0
             or decision.generated_at > time + 1e-9
             or decision.valid_until < time
         ):
-            raise ValueError(
-                "Native decision has a future origin or expired validity"
-            )
+            raise ValueError("Native decision has a future origin or expired validity")
         output = decode_output(getattr(decision, field))
         if isinstance(output, Waypoint):
             # Decision is the authoritative output envelope. Mirror it into a
@@ -325,22 +347,15 @@ def decode_decision(response, time, capabilities):
                 generated_at=decision.generated_at,
                 valid_until=decision.valid_until,
             )
-        kind = output.kind if isinstance(output, MotionCommand) else field
+        kind = output.kind
         if kind not in capabilities.outputs:
-            raise ValueError(
-                "Native output violates its advertised capabilities"
-            )
+            raise ValueError("Native output violates its advertised capabilities")
         if isinstance(output, Trajectory) and (
-            output.start_time > time + 1e-9
-            or decision.valid_until > output.end_time + 1e-9
+            output.start_time > time + 1e-9 or decision.valid_until > output.end_time + 1e-9
         ):
-            raise ValueError(
-                "Native trajectory does not cover its declared valid interval"
-            )
+            raise ValueError("Native trajectory does not cover its declared valid interval")
     elif field is not None:
-        raise ValueError(
-            "An unsuccessful decision cannot carry an executable output"
-        )
+        raise ValueError("An unsuccessful decision cannot carry an executable output")
     diagnostics = dict(response.diagnostics)
     if not all(np.isfinite(value) for value in diagnostics.values()):
         raise ValueError("Native diagnostics must be finite")
@@ -378,5 +393,6 @@ def decode_decision(response, time, capabilities):
         diagnostics,
         decision.explanation,
         sampled,
-        geometry,
+        corridors,
+        previews,
     )

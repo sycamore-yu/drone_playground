@@ -88,13 +88,10 @@ def load_state(path, config):
             "method",
             "algorithm",
             "network",
-            "objective",
             "runtime",
         ):
             if old[group] != new[group]:
-                raise ValueError(
-                    f"BPTT continuation differs on component {group}"
-                )
+                raise ValueError(f"BPTT continuation differs on component {group}")
     paths = set(meta["typed_key_paths"])
     return jax.tree_util.tree_map_with_path(
         lambda p, x: (
@@ -149,15 +146,11 @@ def train(
 
         _, previous, meta = load_policy(config["warm_start"])
         if meta["config"]["algorithm"]["name"] not in ("apg", "bptt", "shac"):
-            raise ValueError(
-                "BPTT warm start requires the same APG-family policy parameterization"
-            )
+            raise ValueError("BPTT warm start requires the same APG-family policy parameterization")
         if meta["observation_size"] != environment.observation_size:
             raise ValueError("Warm-start observation contract differs")
         normalizer, params = jax.tree.map(jnp.asarray, previous)
-        net.policy_network.apply(
-            normalizer, params, jnp.zeros((environment.observation_size,))
-        )
+        net.policy_network.apply(normalizer, params, jnp.zeros((environment.observation_size,)))
     state = TrainingState(
         params,
         optimizer.init(params),
@@ -180,9 +173,7 @@ def train(
             nxt = env.step(current, action)
             return (nxt, key), (nxt.reward, current.obs)
 
-        (end, key), (rewards, obs) = jax.lax.scan(
-            step, (current, key), None, length=horizon
-        )
+        (end, key), (rewards, obs) = jax.lax.scan(step, (current, key), None, length=horizon)
         return -jnp.mean(rewards), (end, key, obs)
 
     @jax.jit
@@ -192,9 +183,7 @@ def train(
         if config.get("resample_window_initials", False):
             key, reset_key = jax.random.split(key)
             start = env.reset(jax.random.split(reset_key, count))
-        (loss, (end, key, obs)), grad = jax.value_and_grad(
-            objective, has_aux=True
-        )(
+        (loss, (end, key, obs)), grad = jax.value_and_grad(objective, has_aux=True)(
             state.policy,
             state.normalizer,
             start,
@@ -213,10 +202,7 @@ def train(
             "training/actor_grad_norm": optax.global_norm(grad),
         }
 
-    milestones = {
-        int(v)
-        for v in np.linspace(0, updates, max(config.get("num_evals", 9), 2))
-    }
+    milestones = {int(v) for v in np.linspace(0, updates, max(config.get("num_evals", 9), 2))}
     start, net_seconds, compile_seconds = time.monotonic(), 0.0, 0.0
     policy_params_fn(
         int(state.updates) * count * horizon,
@@ -234,9 +220,7 @@ def train(
         else:
             net_seconds += elapsed
         if not all(np.isfinite(value) for value in metrics.values()):
-            raise FloatingPointError(
-                f"Non-finite BPTT update {iteration}: {metrics}"
-            )
+            raise FloatingPointError(f"Non-finite BPTT update {iteration}: {metrics}")
         if iteration % 10 == 0 or iteration in milestones:
             progress_fn(
                 iteration * count * horizon,

@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from drone_playground.actions.commands import Trajectory
-from drone_playground.planning.geometry import ConvexPolytope
+from drone_playground.planning.corridors import ConvexPolytope
+from drone_playground.references import Trajectory
 
 
 @dataclass(frozen=True)
@@ -37,18 +37,12 @@ class SensorView:
             or not np.allclose(rotation @ rotation.T, np.eye(3), atol=1e-6)
             or not np.isclose(np.linalg.det(rotation), 1.0, atol=1e-6)
         ):
-            raise ValueError(
-                "Sensor view requires finite rigid body extrinsics and angles"
-            )
+            raise ValueError("Sensor view requires finite rigid body extrinsics and angles")
         if (
-            not np.isfinite(
-                [self.near_m, self.far_m, self.display_range_m]
-            ).all()
+            not np.isfinite([self.near_m, self.far_m, self.display_range_m]).all()
             or not 0 <= self.near_m < self.display_range_m <= self.far_m
         ):
-            raise ValueError(
-                "Sensor display range must lie inside the physical range"
-            )
+            raise ValueError("Sensor display range must lie inside the physical range")
         if self.kind == "depth":
             valid = np.all((angles > 0) & (angles < 180))
         else:
@@ -61,9 +55,7 @@ class SensorView:
     def line_segments(self):
         if self.kind == "depth":
             hx, hy = np.tan(np.deg2rad(self.angles_deg) / 2)
-            corners = np.array(
-                [[-hx, -hy, 1], [hx, -hy, 1], [hx, hy, 1], [-hx, hy, 1]]
-            )
+            corners = np.array([[-hx, -hy, 1], [hx, -hy, 1], [hx, hy, 1], [-hx, hy, 1]])
             near, far = corners * self.near_m, corners * self.display_range_m
             lines = [np.array([near[i], near[(i + 1) % 4]]) for i in range(4)]
             lines += [np.array([near[i], far[i]]) for i in range(4)]
@@ -94,11 +86,7 @@ class SensorView:
                 )
                 lines.extend(np.stack([arc[:-1], arc[1:]], axis=1))
                 for end in (arc[0], arc[-1]):
-                    lines.append(
-                        np.array(
-                            [end * self.near_m / self.display_range_m, end]
-                        )
-                    )
+                    lines.append(np.array([end * self.near_m / self.display_range_m, end]))
         else:
             raise ValueError("Unknown sensor view kind")
         return np.asarray(lines) @ self.rotation.T + self.translation
@@ -204,9 +192,7 @@ def polytope_edges(polytope: ConvexPolytope):
         if not interior.success or interior.x[3] <= 1e-8:
             raise ValueError("SFC must have a bounded nonempty 3D interior")
         try:
-            vertices = HalfspaceIntersection(
-                planes, interior.x[:3]
-            ).intersections
+            vertices = HalfspaceIntersection(planes, interior.x[:3]).intersections
         except QhullError as exc:
             raise ValueError("Cannot enumerate SFC interior") from exc
     hull = ConvexHull(vertices)
@@ -217,8 +203,7 @@ def polytope_edges(polytope: ConvexPolytope):
     indices = [
         edge
         for edge, normals in edges.items()
-        if len(normals) < 2
-        or not np.allclose(normals[0], normals[1], atol=1e-7, rtol=0)
+        if len(normals) < 2 or not np.allclose(normals[0], normals[1], atol=1e-7, rtol=0)
     ]
     return vertices[np.asarray(indices)]
 
@@ -232,14 +217,8 @@ class PlanningFrame:
     polytopes: tuple[ConvexPolytope, ...] = ()
 
     def __post_init__(self):
-        if (
-            not self.layer
-            or not np.isfinite([self.time, self.valid_until]).all()
-            or self.time < 0
-        ):
-            raise ValueError(
-                "Planning frames require a name and finite simulation times"
-            )
+        if not self.layer or not np.isfinite([self.time, self.valid_until]).all() or self.time < 0:
+            raise ValueError("Planning frames require a name and finite simulation times")
         object.__setattr__(self, "polytopes", tuple(self.polytopes))
 
 
@@ -255,19 +234,12 @@ class ReplayLayers:
     def __post_init__(self):
         if not 2 <= self.trajectory_samples <= 512:
             raise ValueError("Trajectory rendering needs 2..512 samples")
-        if (
-            self.point_cloud is not None
-            and self.point_cloud_sequence is not None
-        ):
-            raise ValueError(
-                "Choose either a static point cloud or a point-cloud sequence"
-            )
+        if self.point_cloud is not None and self.point_cloud_sequence is not None:
+            raise ValueError("Choose either a static point cloud or a point-cloud sequence")
 
     def add_to_model(self, xml, native_trace, drone_body):
         """Add nonphysical geometry and animate endpoints in the native file."""
-        metadata = dict(
-            schema_version=1, frame="world", units="m", sensor=None, layers=[]
-        )
+        metadata = dict(schema_version=1, frame="world", units="m", sensor=None, layers=[])
         if self.sensor is not None:
             sensor = self.sensor
             metadata["sensor"] = dict(
@@ -295,9 +267,7 @@ class ReplayLayers:
                 rgba=".1 .75 1 .92",
                 emission="1",
             )
-            for index, (point, size) in enumerate(
-                sensor_hit_markers(self.point_cloud)
-            ):
+            for index, (point, size) in enumerate(sensor_hit_markers(self.point_cloud)):
                 ET.SubElement(
                     world,
                     "geom",
@@ -319,9 +289,7 @@ class ReplayLayers:
         if self.point_cloud_sequence is not None:
             points = np.asarray(self.point_cloud_sequence, dtype=float)
             if points.ndim != 3 or points.shape[-1] != 3:
-                raise ValueError(
-                    "point_cloud_sequence requires [T, N, 3] world-frame points"
-                )
+                raise ValueError("point_cloud_sequence requires [T, N, 3] world-frame points")
             world = xml.find("worldbody")
             if world is None:
                 raise ValueError("Replay model has no worldbody")
@@ -360,18 +328,12 @@ class ReplayLayers:
             steps, count = points.shape[:2]
             replay_steps, batch = native_trace["mocap_pos"].shape[:2]
             if steps != replay_steps:
-                raise ValueError(
-                    "point cloud sequence length differs from replay"
-                )
+                raise ValueError("point cloud sequence length differs from replay")
             if batch != 1:
-                raise ValueError(
-                    "Point-cloud replay requires one episode per file"
-                )
+                raise ValueError("Point-cloud replay requires one episode per file")
             extra = np.full((steps, batch, count, 3), -1000.0, dtype=float)
             extra[:, 0] = np.where(valid[..., None], points, -1000.0)
-            native_trace["mocap_pos"] = np.concatenate(
-                [native_trace["mocap_pos"], extra], axis=2
-            )
+            native_trace["mocap_pos"] = np.concatenate([native_trace["mocap_pos"], extra], axis=2)
             native_trace["mocap_quat"] = np.concatenate(
                 [
                     native_trace["mocap_quat"],
@@ -388,9 +350,7 @@ class ReplayLayers:
                 "points_per_frame": count,
                 "frames": steps,
                 "frame": "world",
-                "valid_points_per_frame": [
-                    int(value) for value in valid.sum(axis=1)
-                ],
+                "valid_points_per_frame": [int(value) for value in valid.sum(axis=1)],
             }
         if not self.planning:
             return metadata
@@ -403,9 +363,7 @@ class ReplayLayers:
         if batch != 1:
             raise ValueError("Planner layers require one episode per replay")
         coordinates = []
-        layer_names = list(
-            dict.fromkeys(frame.layer for frame in self.planning)
-        )
+        layer_names = list(dict.fromkeys(frame.layer for frame in self.planning))
         for layer_index, name in enumerate(layer_names):
             frames = sorted(
                 (f for f in self.planning if f.layer == name),
@@ -419,12 +377,7 @@ class ReplayLayers:
             ]
             has_curve = any(f.trajectory is not None for f in frames)
             capacity = max(
-                len(g)
-                + (
-                    self.trajectory_samples - 1
-                    if f.trajectory is not None
-                    else 0
-                )
+                len(g) + (self.trajectory_samples - 1 if f.trajectory is not None else 0)
                 for f, g in zip(frames, geometries)
             )
             if not capacity:
@@ -453,9 +406,7 @@ class ReplayLayers:
                                 self.trajectory_samples,
                             )
                             points = curve.sample_many(samples)["position"]
-                            segments.extend(
-                                np.stack([points[:-1], points[1:]], axis=1)
-                            )
+                            segments.extend(np.stack([points[:-1], points[1:]], axis=1))
                     segments.extend(geometries[index])
                     if segments:
                         endpoints[t, case, : len(segments)] = segments
@@ -472,9 +423,7 @@ class ReplayLayers:
                     )
                     site = f"{prefix}_site_{end}"
                     sites.append(site)
-                    ET.SubElement(
-                        body, "site", name=site, size=".001", rgba="0 0 0 0"
-                    )
+                    ET.SubElement(body, "site", name=site, size=".001", rgba="0 0 0 0")
                 line = ET.SubElement(
                     tendon,
                     "spatial",
@@ -496,14 +445,10 @@ class ReplayLayers:
             )
         if coordinates:
             extra = np.concatenate(coordinates, axis=2)
-            native_trace["mocap_pos"] = np.concatenate(
-                [native_trace["mocap_pos"], extra], axis=2
-            )
+            native_trace["mocap_pos"] = np.concatenate([native_trace["mocap_pos"], extra], axis=2)
             quat = np.zeros((*extra.shape[:-1], 4))
             quat[..., 0] = 1
-            native_trace["mocap_quat"] = np.concatenate(
-                [native_trace["mocap_quat"], quat], axis=2
-            )
+            native_trace["mocap_quat"] = np.concatenate([native_trace["mocap_quat"], quat], axis=2)
         return metadata
 
 
@@ -518,9 +463,7 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
     def emit(frame):
         data = dict(
             valid_until=frame.valid_until,
-            trajectory=None
-            if frame.trajectory is None
-            else asdict(frame.trajectory),
+            trajectory=None if frame.trajectory is None else asdict(frame.trajectory),
             polytopes=[asdict(p) for p in frame.polytopes],
         )
         digest = hashlib.sha256(
@@ -557,25 +500,24 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
                     )
                 )
                 present.add(name)
-            geometry = stage.get("planner_geometry")
-            if geometry is not None:
-                for corridor in geometry.corridors:
+            if stage.get("corridors") or stage.get("trajectory_previews"):
+                for corridor in stage.get("corridors", ()):
                     name = prefix + "/sfc/" + corridor.name
                     emit(
                         PlanningFrame(
                             now,
-                            geometry.valid_until,
+                            corridor.valid_until,
                             name,
                             polytopes=corridor.polytopes,
                         )
                     )
                     present.add(name)
-                for preview in geometry.trajectories:
+                for preview in stage.get("trajectory_previews", ()):
                     name = prefix + "/preview/" + preview.name
                     emit(
                         PlanningFrame(
                             now,
-                            geometry.valid_until,
+                            preview.valid_until,
                             name,
                             trajectory=preview.trajectory,
                         )
@@ -584,6 +526,4 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
         for name in known - present:
             emit(PlanningFrame(now, now, name))
         known = present
-    return ReplayLayers(
-        sensor=sensor, planning=frames, trajectory_samples=trajectory_samples
-    )
+    return ReplayLayers(sensor=sensor, planning=frames, trajectory_samples=trajectory_samples)

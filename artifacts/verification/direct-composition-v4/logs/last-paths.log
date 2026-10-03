@@ -1,0 +1,12 @@
+............                                                             [100%]
+=============================== warnings summary ===============================
+tests/integration/configuration/test_composition.py::CompositionTests::test_actual_step_and_selected_objective
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+tests/integration/test_cli.py::test_train_eval_and_play_respect_replay_storage
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/optax/_src/linear_algebra.py:44: DeprecationWarning: optax.global_norm is deprecated in favor of optax.tree.norm
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+12 passed, 2 warnings in 113.01s (0:01:53)

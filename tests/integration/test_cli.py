@@ -39,19 +39,17 @@ class CommandTests(unittest.TestCase):
             self.assertIn(command, parser.format_help())
 
     def test_real_control_demo_records_measured_states(self):
-        from runpy import run_path
-
-        run_demo = run_path(str(REPO_ROOT / "scripts/demo.py"))["run_demo"]
         from drone_playground.artifacts.layout import find_experiment
+        from drone_playground.runtime.demo import run_demo
 
         with tempfile.TemporaryDirectory() as tmp:
             report = run_demo(Path(tmp), "native-flight", duration=0.2)
             self.assertEqual(report["frames"], 10)
             self.assertTrue(report["finite_states"])
-            run = find_experiment(Path(tmp), 'native-flight')
-            self.assertTrue((run / 'result.json').is_file())
+            run = find_experiment(Path(tmp), "native-flight")
+            self.assertTrue((run / "result.json").is_file())
             self.assertEqual(
-                len(list((run / 'rollouts').rglob('*.mj_unroll'))),
+                len(list((run / "rollouts").rglob("*.mj_unroll"))),
                 1,
             )
 
@@ -63,12 +61,19 @@ def test_train_eval_and_play_respect_replay_storage(tmp_path):
     from drone_playground.visualization.viewer import replay
 
     config = compose_experiment(
-        "control/bptt", "hovering", [
-            "runtime.device=cpu", "runtime.action_delay_ms=null",
-            "env.task.duration=0.04", "network.hidden_sizes=[8]",
-            "training.num_envs=2", "training.policy_updates=1",
-            "algorithm.horizon_length=2", "training.num_evals=2",
-            "training.checkpoint_eval_episodes=1", "evaluation.episodes=1",
+        "control/bptt",
+        "hovering",
+        [
+            "runtime.device=cpu",
+            "runtime.action_delay_ms=null",
+            "env.task.duration=0.04",
+            "network.hidden_sizes=[8]",
+            "training.num_envs=2",
+            "training.policy_updates=1",
+            "algorithm.horizon_length=2",
+            "training.num_evals=2",
+            "training.checkpoint_eval_episodes=1",
+            "evaluation.episodes=1",
             "visualization.publish=false",
         ],
     )

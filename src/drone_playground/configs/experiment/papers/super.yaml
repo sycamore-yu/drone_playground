@@ -1,0 +1,45 @@
+# @package _global_
+defaults:
+- /env: navigation/static
+- /network: none
+- override /controller@env.controller: trajectory
+- override /dynamics@env.dynamics: crazyflow_so_rpy
+- _self_
+mode: eval
+source: Native super through ROS1; shared P5 geometry and dynamics
+algorithm:
+  name: none
+  gradient:
+    transition: direct
+runtime:
+  device: cpu
+  backend: host
+  action_delay_ms: null
+evaluation:
+  environment: config
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+  entrypoint: drone_playground.evaluation.run.evaluate_external
+method:
+  name: super
+  method: super
+  output: trajectory
+  container: drone-playground-ros1
+  port: 11325
+  workers: 4
+  implementation: native_super
+  trainable: false
+  limits:
+    max_velocity_mps: 20.0
+    max_acceleration_mps2: 3.0
+    planning_horizon_m: 7.5
+  _target_: drone_playground.integrations.grpc_service.build_ros_method
+experiment:
+  name: super
+  kind: paper
+  paper: Safety-assured high-speed navigation for MAVs
+  fidelity: native_upstream

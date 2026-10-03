@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from drone_playground.integrations.sensors import pack_array
-from drone_playground.integrations.sensors import sensor_packet
-
-import base64
 import hashlib
 import json
 import time
@@ -15,14 +11,13 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-from scipy.spatial.transform import Rotation
 
-from drone_playground.actions.external_tracking import ExternalTracking
 from drone_playground.artifacts.decisions import NativeDecisionRecorder
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
 from drone_playground.artifacts.traces import record_native_case
-from drone_playground.composition import build_environment
+from drone_playground.control.external_tracking import ExternalTracking
+from drone_playground.environments.environment import build_environment
 from drone_playground.environments.scenes.geometry import DIFFICULTIES
 from drone_playground.environments.sensors.depth import cast_depth, sensor_pose
 from drone_playground.environments.sensors.lidar import cast_lidar
@@ -30,10 +25,8 @@ from drone_playground.evaluation.navigation.cases import navigation_cases, navig
 from drone_playground.evaluation.navigation.metrics import combine_cells, summarize_cell
 from drone_playground.evaluation.navigation.policy import export_navigation_replays
 from drone_playground.integrations.grpc_service import create_native_planner
-from drone_playground.integrations.ros1 import NativePlanner
+from drone_playground.integrations.sensors import sensor_packet
 from drone_playground.runtime.host_runner import run_steps
-
-
 
 
 def sensor_function(env, method):
@@ -53,9 +46,7 @@ def sensor_function(env, method):
                 data.step_index * env.dt,
                 1,
             )
-            pos, rotation = sensor_pose(
-                env.sensor, state.pos[0, 0], state.quat[0, 0]
-            )
+            pos, rotation = sensor_pose(env.sensor, state.pos[0, 0], state.quat[0, 0])
             return frame.depth, pos, rotation
 
         return sample
@@ -77,8 +68,6 @@ def sensor_function(env, method):
         )
 
     return sample
-
-
 
 
 def evaluate_native(config, root: Path, run_id: str):
@@ -109,14 +98,9 @@ def evaluate_native(config, root: Path, run_id: str):
             if config["evaluation"].get("protocol")
             else None
         )
-        cases = navigation_cases(
-            env.bank, count, seed_start, per_scene, protocol=protocol
-        )
+        cases = navigation_cases(env.bank, count, seed_start, per_scene, protocol=protocol)
         ordered = [case for group in cases.values() for case in group]
-        scenario_groups = {
-            name: [c["scenario_id"] for c in group]
-            for name, group in cases.items()
-        }
+        scenario_groups = {name: [c["scenario_id"] for c in group] for name, group in cases.items()}
         initials = None
         if config["evaluation"].get("initial_conditions"):
             initials = navigation_resets(
@@ -126,27 +110,16 @@ def evaluate_native(config, root: Path, run_id: str):
                 config["evaluation"]["initial_conditions"],
                 env.body_radius,
             )
-            save_report(
-                rec.path / "initial-conditions.json", initials["record"]
-            )
+            save_report(rec.path / "initial-conditions.json", initials["record"])
         for index, case in enumerate(ordered):
             case["reset_index"] = index
         worker_path = None
-        if settings["implementation"] not in ("native_service", "pipeline"):
-            worker_path = NativePlanner.install_worker(
-                Path(__file__).resolve().parents[4]
-                / "ros_integrations/ros1/bridge/worker.py",
-                rec.path,
-                settings["container"],
-            )
         sample = sensor_function(env, method)
         advance = jax.jit(env.step_physical)
         reset = jax.jit(env.reset)
         # Compile all physics/sensing before starting /clock or native timeout accounting.
         warm = reset(jax.random.PRNGKey(0), jnp.int32(0))
-        jax.block_until_ready(
-            advance(warm, env.physical_action(env.hover_action))
-        )
+        jax.block_until_ready(advance(warm, env.physical_action(env.hover_action)))
         jax.block_until_ready(sample(warm.pipeline_state))
         cells = {}
         total_trajectories = total_commands = 0
@@ -190,9 +163,7 @@ def evaluate_native(config, root: Path, run_id: str):
                 initial_quaternion_xyzw=actual["quat"].tolist(),
             )
             if "delay_effective_ms" in state.info:
-                reset_evidence["delay_effective_ms"] = float(
-                    state.info["delay_effective_ms"]
-                )
+                reset_evidence["delay_effective_ms"] = float(state.info["delay_effective_ms"])
             case_directory = rec.path / "native" / difficulty / str(case)
             identity = dict(
                 difficulty=difficulty,
@@ -203,15 +174,13 @@ def evaluate_native(config, root: Path, run_id: str):
             with (
                 record_native_case(env, case_directory, identity) as rows,
                 NativeDecisionRecorder(
-                    case_directory / "decision-trace", env.controller.input_kind
+                    case_directory / "decision-trace", env.controller.contract()
                 ) as decisions,
             ):
                 worker = controller = None
                 unavailable = rejected = 0
                 commands = trajectories = 0
-                hold = np.asarray(
-                    state.pipeline_state.sim_data.states.pos[0, 0]
-                )
+                hold = np.asarray(state.pipeline_state.sim_data.states.pos[0, 0])
                 latencies = []
                 tic = time.monotonic()
                 try:
@@ -223,7 +192,6 @@ def evaluate_native(config, root: Path, run_id: str):
                         env=env,
                     )
                     controller = ExternalTracking(
-                        config["env"]["action"].get("tracker"),
                         env,
                         state,
                         worker.directory,
@@ -235,9 +203,9 @@ def evaluate_native(config, root: Path, run_id: str):
                         task_adapter=dict(
                             world_low=np.asarray(env.bank.world_low).tolist(),
                             world_high=np.asarray(env.bank.world_high).tolist(),
-                            record_planner_visualization=config[
-                                "evaluation"
-                            ].get("record_planner_visualization", True),
+                            record_planner_visualization=config["evaluation"].get(
+                                "record_planner_visualization", True
+                            ),
                         ),
                     )
 
@@ -249,13 +217,10 @@ def evaluate_native(config, root: Path, run_id: str):
                         packet = sensor_packet(env, method, sample, current)
                         if case == 0 and tick in (0, 150):
                             save_report(
-                                worker.directory
-                                / f"sensor-packet-{tick:04d}.json",
+                                worker.directory / f"sensor-packet-{tick:04d}.json",
                                 packet,
                             )
-                        observation_seconds = (
-                            time.perf_counter() - observation_start
-                        )
+                        observation_seconds = time.perf_counter() - observation_start
                         reply = worker.step(packet)
                         reference = reply.get("reference")
                         commands, trajectories = (
@@ -264,9 +229,7 @@ def evaluate_native(config, root: Path, run_id: str):
                         )
                         if reference is None and reply.get("output") is None:
                             unavailable += 1
-                            rejected += int(
-                                reply.get("rejected_reference", False)
-                            )
+                            rejected += int(reply.get("rejected_reference", False))
                             reference = dict(
                                 position=hold,
                                 velocity=[0.0, 0.0, 0.0],
@@ -274,9 +237,7 @@ def evaluate_native(config, root: Path, run_id: str):
                                 yaw=0.0,
                             )
                         else:
-                            hold = np.asarray(
-                                env.controller_observation(current)["pos"]
-                            )
+                            hold = np.asarray(env.controller_observation(current)["pos"])
                         physical = None
                         try:
                             physical = controller.command(reply, current, tick)
@@ -293,8 +254,7 @@ def evaluate_native(config, root: Path, run_id: str):
                             commands=commands,
                             trajectories=trajectories,
                             observation_seconds=observation_seconds,
-                            recording_seconds=time.perf_counter()
-                            - recording_start,
+                            recording_seconds=time.perf_counter() - recording_start,
                         )
 
                     for tick, transition, _ in run_steps(
@@ -302,19 +262,13 @@ def evaluate_native(config, root: Path, run_id: str):
                     ):
                         state, physical = transition.after, transition.command
                         action = (
-                            2
-                            * (physical - np.asarray(env.low))
-                            / np.asarray(env.high - env.low)
+                            2 * (physical - np.asarray(env.low)) / np.asarray(env.high - env.low)
                             - 1
                         )
-                        latencies.append(
-                            transition.diagnostics["decision_seconds"]
-                        )
+                        latencies.append(transition.diagnostics["decision_seconds"])
                         row = dict(
                             pos=state.pipeline_state.sim_data.states.pos[0, 0],
-                            quat=state.pipeline_state.sim_data.states.quat[
-                                0, 0
-                            ],
+                            quat=state.pipeline_state.sim_data.states.quat[0, 0],
                             obs=state.info["terminal_proprioception"],
                             time=(tick + 1) * env.dt,
                             actions=action,
@@ -376,12 +330,9 @@ def evaluate_native(config, root: Path, run_id: str):
                     size = len(cases[difficulty])
                     traces, labels = [None] * size, [None] * size
                     futures = {
-                        pool.submit(run_slot, difficulty, case): case
-                        for case in range(size)
+                        pool.submit(run_slot, difficulty, case): case for case in range(size)
                     }
-                    rec.phase(
-                        "evaluating", difficulty=difficulty, completed_cases=0
-                    )
+                    rec.phase("evaluating", difficulty=difficulty, completed_cases=0)
                     for finished, future in enumerate(as_completed(futures), 1):
                         case = futures[future]
                         trace, label, diag = future.result()
@@ -389,9 +340,7 @@ def evaluate_native(config, root: Path, run_id: str):
                         diagnostics.append(diag)
                         total_trajectories += diag["trajectories"]
                         total_commands += diag["executed_native_steps"]
-                        save_report(
-                            rec.path / "native-progress.json", diagnostics
-                        )
+                        save_report(rec.path / "native-progress.json", diagnostics)
                         rec.phase(
                             "evaluating",
                             difficulty=difficulty,
@@ -404,19 +353,13 @@ def evaluate_native(config, root: Path, run_id: str):
                     for item in traces:
                         n = item["pos"].shape[0]
                         padded_item = jax.tree.map(
-                            lambda x: np.concatenate(
-                                [x, np.repeat(x[-1:], length - n, axis=0)]
-                            ),
+                            lambda x: np.concatenate([x, np.repeat(x[-1:], length - n, axis=0)]),
                             item,
                         )
                         padded_item["active"][n:] = False
                         padded.append(padded_item)
-                    trace = jax.tree.map(
-                        lambda *values: np.stack(values, axis=1), *padded
-                    )
-                    cells[difficulty] = summarize_cell(
-                        trace, labels, env.dt, env.duration
-                    )
+                    trace = jax.tree.map(lambda *values: np.stack(values, axis=1), *padded)
+                    cells[difficulty] = summarize_cell(trace, labels, env.dt, env.duration)
                     from drone_playground.artifacts.traces import save_navigation_traces
 
                     save_navigation_traces(
@@ -427,9 +370,7 @@ def evaluate_native(config, root: Path, run_id: str):
                     )
                     from drone_playground.evaluation.navigation.policy import select_episodes
 
-                    selection = select_episodes(
-                        {"cells": {difficulty: cells[difficulty]}}
-                    )
+                    selection = select_episodes({"cells": {difficulty: cells[difficulty]}})
                     export_navigation_replays(
                         env,
                         {difficulty: trace},
@@ -450,17 +391,13 @@ def evaluate_native(config, root: Path, run_id: str):
         report = combine_cells(cells)
         runtime_identities = [
             json.loads(path.read_text())
-            for path in sorted(
-                (rec.path / "native").glob("*/*/runtime-identity.json")
-            )
+            for path in sorted((rec.path / "native").glob("*/*/runtime-identity.json"))
         ]
         report.update(
             role=role,
             episodes_per_difficulty=None if per_scene else count,
             episodes_per_scene=count if per_scene else None,
-            episodes=[
-                row for cell in cells.values() for row in cell["episodes"]
-            ],
+            episodes=[row for cell in cells.values() for row in cell["episodes"]],
             initial_conditions=None if initials is None else initials["record"],
             scenario_groups=scenario_groups,
             config=config,
@@ -482,19 +419,13 @@ def evaluate_native(config, root: Path, run_id: str):
         )
         from drone_playground.runtime.timing import decision_statistics
 
-        stable = [
-            value
-            for case in diagnostics
-            for value in case["decision_seconds"][1:]
-        ]
+        stable = [value for case in diagnostics for value in case["decision_seconds"][1:]]
         report.update(decision_statistics(stable, env.dt, warmup=0))
         report["warmup_decisions"] = len(diagnostics)
         report["sensor_timing"] = getattr(env, "sensor_timing", None)
         save_report(rec.path / "eval" / "report.json", report)
         if total_commands == 0:
-            raise RuntimeError(
-                "Native process produced no executable physical commands"
-            )
+            raise RuntimeError("Native process produced no executable physical commands")
         from drone_playground.benchmarks import benchmark_id
 
         benchmark = benchmark_id(config)
@@ -507,10 +438,7 @@ def evaluate_native(config, root: Path, run_id: str):
             if (
                 len(runtime_identities) != len(ordered)
                 or not runtime_identities[0]
-                or any(
-                    identity != runtime_identities[0]
-                    for identity in runtime_identities
-                )
+                or any(identity != runtime_identities[0] for identity in runtime_identities)
             ):
                 raise ValueError(
                     "Every native benchmark episode requires the same authenticated runtime"
@@ -520,12 +448,9 @@ def evaluate_native(config, root: Path, run_id: str):
                 for cell in cells.values()
                 for row in cell["episodes"]
                 for diag in diagnostics
-                if (diag["difficulty"], diag["case"])
-                == (row["difficulty"], row["case"])
+                if (diag["difficulty"], diag["case"]) == (row["difficulty"], row["case"])
             ):
-                raise ValueError(
-                    "A fallback-only arrival cannot certify the native algorithm"
-                )
+                raise ValueError("A fallback-only arrival cannot certify the native algorithm")
             task = "dynamic" if config["env"]["task"]["dynamic"] else "static"
             criterion = (
                 "navigation-primary-v1"

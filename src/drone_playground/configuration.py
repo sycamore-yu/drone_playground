@@ -7,7 +7,9 @@ from hydra import compose, initialize_config_dir
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf import OmegaConf
 
-CONFIG_ROOT = Path(__file__).resolve().parents[2] / "configs"
+from drone_playground.resources import resource_path
+
+CONFIG_ROOT = resource_path("configs")
 
 
 def load_config(name="config", overrides=()):

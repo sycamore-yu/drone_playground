@@ -15,9 +15,26 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.environments.scenes.geometry import BODY_RADIUS_M, DIFFICULTIES, DYNAMIC_FAMILIES, KIND_BOX, KIND_CYLINDER, MOTION_BOUNCE, MOTION_STATIC, MOTION_TREFOIL, SANDO_DENSITY, STATIC_FAMILIES, body_centre_from_state, clearance_and_collision, obstacle_positions
-from drone_playground.environments.scenes.procedural_navigation import ProceduralNavigationScene, make_bank
-from drone_playground.environments.tasks.navigation.rigid_body import (
+from drone_playground.environments.scenes.geometry import (
+    BODY_RADIUS_M,
+    DIFFICULTIES,
+    DYNAMIC_FAMILIES,
+    KIND_BOX,
+    KIND_CYLINDER,
+    MOTION_BOUNCE,
+    MOTION_STATIC,
+    MOTION_TREFOIL,
+    STATIC_FAMILIES,
+    body_centre_from_state,
+    clearance_and_collision,
+    obstacle_positions,
+)
+from drone_playground.environments.scenes.procedural_navigation import (
+    SANDO_DENSITY,
+    ProceduralNavigationScene,
+    make_bank,
+)
+from drone_playground.environments.tasks.navigation.events import (
     OUTCOME_ARRIVED,
     OUTCOME_COLLISION,
     OUTCOME_NUMERICAL,
@@ -254,7 +271,7 @@ def test_collision_wins_over_arrival_in_the_same_step():
     safe_result = safe.step(safe_state, safe.hover_action)
     assert int(safe_result.info["outcome"]) == OUTCOME_ARRIVED
     gap = float(safe_result.reward) - float(result.reward)
-    expected = env.objective.arrival_bonus - env.objective.failure_penalty
+    expected = env.task.reward.arrival_bonus - env.task.reward.failure_penalty
     assert gap == pytest.approx(expected, abs=0.2), gap
     env.close()
     safe.close()
@@ -391,18 +408,23 @@ def test_scene_clock_tracks_the_physics_step_counter():
 def test_explicit_initial_state_reaches_physics_observation_and_progress_origin():
     env = synthetic_env([], duration=1.0)
     try:
-        initial = dict(position=jnp.array([0.7, 0.1, 2.1]),
-                       velocity=jnp.array([0.1, -0.05, 0.03]),
-                       quaternion=jnp.array([0., 0., np.sin(.03), np.cos(.03)]))
+        initial = dict(
+            position=jnp.array([0.7, 0.1, 2.1]),
+            velocity=jnp.array([0.1, -0.05, 0.03]),
+            quaternion=jnp.array([0.0, 0.0, np.sin(0.03), np.cos(0.03)]),
+        )
         state = jax.jit(env.reset)(jax.random.PRNGKey(7), jnp.int32(0), initial)
         data = state.pipeline_state
-        np.testing.assert_allclose(data.sim_data.states.pos[0, 0], initial['position'])
-        np.testing.assert_allclose(data.sim_data.states.vel[0, 0], initial['velocity'])
-        np.testing.assert_allclose(data.sim_data.states.quat[0, 0], initial['quaternion'])
+        np.testing.assert_allclose(data.sim_data.states.pos[0, 0], initial["position"])
+        np.testing.assert_allclose(data.sim_data.states.vel[0, 0], initial["velocity"])
+        np.testing.assert_allclose(data.sim_data.states.quat[0, 0], initial["quaternion"])
         assert float(data.previous_distance) == pytest.approx(
-            float(jnp.linalg.norm(initial['position'] - env.bank.goal[0])))
+            float(jnp.linalg.norm(initial["position"] - env.bank.goal[0]))
+        )
         np.testing.assert_array_equal(state.obs, env.observation(data))
-        np.testing.assert_array_equal(state.info['terminal_proprioception'], env.proprioception(data))
+        np.testing.assert_array_equal(
+            state.info["terminal_proprioception"], env.proprioception(data)
+        )
         assert int(data.step_index) == 0
     finally:
         env.close()
@@ -412,7 +434,7 @@ def test_observation_and_action_contract_sizes():
     env = synthetic_env([], duration=1.0)
     assert env.action_size == 4
     assert env.observation_size == 20
-    assert env.observer.name == "navigation_state"
+    assert env.task.observation.name == "navigation_state"
     assert env.hover_action.shape == (4,)
     assert bool(jnp.all(env.hover_action >= -1.0)) and bool(jnp.all(env.hover_action <= 1.0))
     env.close()

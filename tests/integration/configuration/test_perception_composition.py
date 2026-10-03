@@ -1,15 +1,12 @@
 """Perception contracts derived from current experiment composition."""
 
-from drone_playground.composition import (
-    compose_experiment,
-    native_training_config,
-    sensor_layout,
-)
+from drone_playground.composition import compose_experiment
+from drone_playground.learning.brax_configuration import native_training_config, sensor_layout
 
 
 def test_depth_and_lidar_keep_sensor_identity_with_equal_input_width():
-    depth = native_training_config(compose_experiment('papers/dva'))
-    lidar = native_training_config(compose_experiment('navigation/ppo'))
+    depth = native_training_config(compose_experiment("papers/dva"))
+    lidar = native_training_config(compose_experiment("navigation/ppo"))
     assert depth["observation_size"] == lidar["observation_size"] == 2420
     assert depth["sensor_layout"]["kind"] == "depth"
     assert depth["sensor_layout"]["grid"] == [20, 15]
@@ -28,6 +25,6 @@ def test_dynamic_presets_keep_the_same_perception_contract():
         dynamic_config = compose_experiment(experiment, dynamic)
         assert sensor_layout(static_config) == sensor_layout(dynamic_config)
         assert static_config["network"] == dynamic_config["network"]
-        assert static_config["objective"] == dynamic_config["objective"]
+        assert static_config["env"]["task"]["reward"] == dynamic_config["env"]["task"]["reward"]
         assert static_config["method"] == dynamic_config["method"]
-        assert static_config["env"]["action"] == dynamic_config["env"]["action"]
+        assert static_config["env"]["controller"] == dynamic_config["env"]["controller"]

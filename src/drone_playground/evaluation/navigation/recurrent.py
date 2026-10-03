@@ -7,17 +7,14 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hydra.utils import instantiate
-
-from drone_playground.networks.factory import build_network
 
 from drone_playground.artifacts.reporting import save_report, tree_digest
 from drone_playground.environments.scenes.geometry import euclidean_norm
 from drone_playground.evaluation.navigation.acceleration import export_case, summarize_trace
+from drone_playground.networks.factory import build_network
 
 
 class RecurrentNavigationEvaluator:
-
     def __init__(
         self,
         task,
@@ -28,9 +25,7 @@ class RecurrentNavigationEvaluator:
         initial_conditions=None,
     ):
         if repeats < 1 or not 0 < commanded_speed <= task.settings["max_speed"]:
-            raise ValueError(
-                "Choose positive repeats and an admissible commanded cruise speed"
-            )
+            raise ValueError("Choose positive repeats and an admissible commanded cruise speed")
         self.task = copy.copy(task)
         indices = jnp.tile(jnp.arange(task.bank.num_instances), repeats)
         self.task.bank = task.select_bank(indices)
@@ -41,9 +36,7 @@ class RecurrentNavigationEvaluator:
         self.network = network
         self.initial_conditions = None
         self.initial_velocity = jnp.zeros((len(self.ids), 3))
-        self.initial_rotation = jnp.broadcast_to(
-            jnp.eye(3), (len(self.ids), 3, 3)
-        )
+        self.initial_rotation = jnp.broadcast_to(jnp.eye(3), (len(self.ids), 3, 3))
         if initial_conditions:
             from drone_playground.evaluation.navigation.cases import navigation_resets
 
@@ -54,9 +47,7 @@ class RecurrentNavigationEvaluator:
                 initial_conditions,
                 task.body_radius,
             )
-            self.task.bank = self.task.bank.replace(
-                start=jnp.asarray(reset["position"])
-            )
+            self.task.bank = self.task.bank.replace(start=jnp.asarray(reset["position"]))
             self.initial_velocity = jnp.asarray(reset["velocity"])
             self.initial_rotation = jnp.asarray(reset["rotation"])
             self.initial_conditions = reset["record"]
@@ -68,9 +59,7 @@ class RecurrentNavigationEvaluator:
         physical = task.initial_state(bank).replace(
             vel=self.initial_velocity,
             rotation=self.initial_rotation,
-            measurement_key=jnp.asarray(
-                [jax.random.PRNGKey(seed) for seed in self.seeds]
-            ),
+            measurement_key=jnp.asarray([jax.random.PRNGKey(seed) for seed in self.seeds]),
         )
         hidden = jnp.zeros((count, network.hidden_size))
         last = jnp.zeros((count, 3))
@@ -91,8 +80,7 @@ class RecurrentNavigationEvaluator:
                 actions=jnp.where(active[:, None], command, 0.0),
                 reward=jnp.where(
                     active,
-                    euclidean_norm(bank.goal - old[0].pos)
-                    - euclidean_norm(bank.goal - state.pos),
+                    euclidean_norm(bank.goal - old[0].pos) - euclidean_norm(bank.goal - state.pos),
                     0.0,
                 ),
                 active=active,
@@ -106,9 +94,7 @@ class RecurrentNavigationEvaluator:
             )
 
         initial = (physical, hidden, last, clock, outcome)
-        proprio, _ = task.observer.proprioception(
-            physical, bank.goal, speeds, task.body_radius
-        )
+        proprio, _ = task.observation.proprioception(physical, bank.goal, speeds, task.body_radius)
         template = row(
             initial,
             initial,
@@ -118,20 +104,14 @@ class RecurrentNavigationEvaluator:
             jnp.zeros(count),
             0,
         )
-        archive = jax.tree.map(
-            lambda v: jnp.zeros((length, *v.shape), v.dtype), template
-        )
+        archive = jax.tree.map(lambda v: jnp.zeros((length, *v.shape), v.dtype), template)
 
         def advance(carry):
             current, index, buffers = carry
             state, memory, previous, timestamp, result = current
             active = result == 0
-            points, valid, proprio, _ = task.observation(
-                bank, state, timestamp, speeds
-            )
-            action, next_memory = network.apply(
-                params, points, valid, proprio, memory
-            )
+            points, valid, proprio, _ = task.measure(bank, state, timestamp, speeds)
+            action, next_memory = network.apply(params, points, valid, proprio, memory)
             command = task.command(action, state)
             nxt, now, status, minimum = task.advance_checked(
                 bank, state, command, previous, delays, timestamp, result
@@ -157,9 +137,7 @@ class RecurrentNavigationEvaluator:
             advance,
             (initial, jnp.int32(0), archive),
         )
-        proprio, _ = task.observer.proprioception(
-            final[0], bank.goal, speeds, task.body_radius
-        )
+        proprio, _ = task.observation.proprioception(final[0], bank.goal, speeds, task.body_radius)
         padding = row(
             final,
             final,
@@ -178,9 +156,7 @@ class RecurrentNavigationEvaluator:
         )
         return jax.tree.map(
             lambda a, b: jnp.where(
-                (jnp.arange(length) < stop).reshape(
-                    (length,) + (1,) * (a.ndim - 1)
-                ),
+                (jnp.arange(length) < stop).reshape((length,) + (1,) * (a.ndim - 1)),
                 a,
                 b,
             ),
@@ -189,28 +165,19 @@ class RecurrentNavigationEvaluator:
         )
 
     def run(self, parameters, *, commanded_speed=None, delay_ticks=None):
-        speed = (
-            self.speed if commanded_speed is None else float(commanded_speed)
-        )
-        if (
-            not np.isfinite(speed)
-            or not 0 < speed <= self.task.settings["max_speed"]
-        ):
-            raise ValueError(
-                "Commanded speed must be positive and within the nominal maximum"
-            )
+        speed = self.speed if commanded_speed is None else float(commanded_speed)
+        if not np.isfinite(speed) or not 0 < speed <= self.task.settings["max_speed"]:
+            raise ValueError("Commanded speed must be positive and within the nominal maximum")
         count = self.task.bank.num_instances
         explicit = delay_ticks is not None
         if delay_ticks is None:
-            delays = jax.vmap(
-                lambda seed: self.task.delays(jax.random.PRNGKey(seed), 1)[0]
-            )(jnp.asarray(self.seeds, jnp.int32))
+            delays = jax.vmap(lambda seed: self.task.delays(jax.random.PRNGKey(seed), 1)[0])(
+                jnp.asarray(self.seeds, jnp.int32)
+            )
         else:
             values = np.asarray(delay_ticks)
-            low, high = self.task.config["runtime"]["action_delay_ms"]
-            bounds = np.ceil(
-                np.array([low, high]) / (1000 * self.task.physics_dt) - 1e-6
-            )
+            low, high = self.task.conditions["action_delay_ms"]
+            bounds = np.ceil(np.array([low, high]) / (1000 * self.task.physics_dt) - 1e-6)
             if (
                 values.shape != (count,)
                 or not np.issubdtype(values.dtype, np.integer)
@@ -225,37 +192,21 @@ class RecurrentNavigationEvaluator:
         started = time.monotonic()
         trace = jax.tree.map(
             np.asarray,
-            self._run(
-                parameters, jnp.full((count,), speed, jnp.float32), delays
-            ),
+            self._run(parameters, jnp.full((count,), speed, jnp.float32), delays),
         )
-        report = summarize_trace(
-            trace, self.ids, speed, self.task.duration, self.task.bank.start
-        )
+        report = summarize_trace(trace, self.ids, speed, self.task.duration, self.task.bank.start)
         rates = {
-            name: np.mean(
-                [
-                    r["arrived"]
-                    for r in report["episodes"]
-                    if r["scene_id"] == name
-                ]
-            )
+            name: np.mean([r["arrived"] for r in report["episodes"] if r["scene_id"] == name])
             for name in sorted(set(self.ids))
         }
         after = tree_digest(parameters)
         if before != after:
-            raise RuntimeError(
-                "Frozen navigation evaluation modified the policy"
-            )
+            raise RuntimeError("Frozen navigation evaluation modified the policy")
         report.update(
-            scene_success_rates={
-                name: float(value) for name, value in rates.items()
-            },
+            scene_success_rates={name: float(value) for name, value in rates.items()},
             collision_rate=report["collision"] / report["num_trials"],
             failure_rate=(
-                report["collision"]
-                + report["out_of_bounds"]
-                + report["numerical_failure"]
+                report["collision"] + report["out_of_bounds"] + report["numerical_failure"]
             )
             / report["num_trials"],
             parameters_frozen=True,
@@ -271,7 +222,7 @@ class RecurrentNavigationEvaluator:
             initial_conditions=self.initial_conditions,
             dynamics_transition_hz=self.task.physics_freq,
             policy_hz=self.task.freq,
-            action_delay_ms=self.task.config["runtime"]["action_delay_ms"],
+            action_delay_ms=self.task.conditions["action_delay_ms"],
             nominal_max_speed_m_s=self.task.settings["max_speed"],
             delay_ticks=np.asarray(delays).tolist(),
             delay_source="explicit checkpoint_eval grid"
@@ -282,18 +233,14 @@ class RecurrentNavigationEvaluator:
             episode.update(
                 seed=self.seeds[index],
                 delay_ticks=int(delays[index]),
-                initial_position_m=np.asarray(
-                    self.task.bank.start[index]
-                ).tolist(),
-                initial_velocity_mps=np.asarray(
-                    self.initial_velocity[index]
-                ).tolist(),
+                initial_position_m=np.asarray(self.task.bank.start[index]).tolist(),
+                initial_velocity_mps=np.asarray(self.initial_velocity[index]).tolist(),
             )
         from drone_playground.runtime.timing import measure_decision, sensor_schedule
 
         bank = self.task.select_bank(jnp.array([0]))
         physical = self.task.initial_state(bank)
-        points, valid, proprio, _ = self.task.observation(
+        points, valid, proprio, _ = self.task.measure(
             bank, physical, jnp.zeros(1), jnp.full((1,), speed)
         )
         memory = jnp.zeros((1, self.network.hidden_size))
@@ -304,15 +251,11 @@ class RecurrentNavigationEvaluator:
         )
         report.update(
             measure_decision(
-                lambda: decide(
-                    parameters, points, valid, proprio, memory, physical
-                ),
+                lambda: decide(parameters, points, valid, proprio, memory, physical),
                 self.task.dt,
             )
         )
-        report["sensor_timing"] = sensor_schedule(
-            self.task.sensor, self.task.freq
-        )
+        report["sensor_timing"] = sensor_schedule(self.task.sensor, self.task.freq)
         return report, trace
 
     def export(self, trace, directory, all_repeats=False):
@@ -338,21 +281,18 @@ class RecurrentNavigationEvaluator:
 def evaluate(config, root, run_id):
     from drone_playground.artifacts.record import RunRecorder
     from drone_playground.artifacts.training_state import load_training_state
-    from drone_playground.composition import build_environment
+    from drone_playground.environments.environment import build_environment
 
     state, metadata = load_training_state(config["checkpoint"])
     trained = metadata["config"]
-    if trained["env"]["task"].get("adapter") != "recurrent_acceleration":
-        raise ValueError(
-            "Use parameter warm start to adapt a source-paper checkpoint, not a relabeled evaluation"
-        )
+    if trained["env"]["task"]["name"] != "navigation":
+        raise ValueError("This evaluator requires a navigation task checkpoint")
     cfg = copy.deepcopy(trained)
     cfg["mode"] = "eval"
     cfg["evaluation"] = copy.deepcopy(config["evaluation"])
     cfg["runtime"]["device"] = config["runtime"]["device"]
-    task = build_environment(
-        cfg, cfg["runtime"]["device"], role=cfg["evaluation"]["role"]
-    )
+    env = build_environment(cfg, cfg["runtime"]["device"], role=cfg["evaluation"]["role"])
+    task = env.task
     network = build_network(cfg["network"])
     start = cfg["evaluation"].get("seed_start")
     start = start if start is not None else 30000
@@ -370,7 +310,7 @@ def evaluate(config, root, run_id):
         cfg,
         task_id="navigation-convergence/pointcloud-evaluation",
     ) as rec:
-        rec.record_environment(task)
+        rec.record_environment(env)
         report, trace = evaluator.run(state.params)
         from drone_playground.benchmarks import apply_quality
 
@@ -399,19 +339,13 @@ def evaluate(config, root, run_id):
             report["quality_passed"] = validation["passed"]
             report["quality_rule"] = validation["protocol"]
             save_report(rec.path / "eval/report.json", report)
-        arrays = {
-            name: value for name, value in trace.items() if name != "metrics"
-        }
-        arrays.update(
-            {
-                "metric_" + name: value
-                for name, value in trace["metrics"].items()
-            }
-        )
+        arrays = {name: value for name, value in trace.items() if name != "metrics"}
+        arrays.update({"metric_" + name: value for name, value in trace["metrics"].items()})
         (rec.path / "traces").mkdir(exist_ok=True)
         np.savez_compressed(rec.path / "traces/navigation.npz", **arrays)
-        paths = evaluator.export(trace, rec.path / "rollouts", all_repeats=True)
-        save_report(rec.path / "rollouts/index.json", {"paths": paths})
+        if cfg["evaluation"].get("record_replays", False):
+            paths = evaluator.export(trace, rec.path / "rollouts", all_repeats=True)
+            save_report(rec.path / "rollouts/index.json", {"paths": paths})
         rec.finish(
             "completed",
             quality_passed=report["quality_passed"],
@@ -419,5 +353,5 @@ def evaluate(config, root, run_id):
             arrived=report["arrived"],
             parameters_frozen=True,
         )
-    task.close()
+    env.close()
     return report

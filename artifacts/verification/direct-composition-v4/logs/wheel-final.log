@@ -1,0 +1,10 @@
+Looking in indexes: https://mirrors.ustc.edu.cn/pypi/simple
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: drone-playground
+  Building wheel for drone-playground (pyproject.toml): started
+  Building wheel for drone-playground (pyproject.toml): finished with status 'done'
+  Created wheel for drone-playground: filename=drone_playground-0.3.0-py3-none-any.whl size=973717 sha256=7c0c35565c039c32ee632bcbc14323e9782a7b7ac1d9af0d091fc0b4a05b56f0
+  Stored in directory: /tmp/pip-ephem-wheel-cache-7bprdlx6/wheels/62/c6/62/0f067ff558dd09000ea477af7da3c4b2f6eb9a4fd592b722aa
+Successfully built drone-playground

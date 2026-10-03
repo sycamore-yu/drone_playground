@@ -42,9 +42,6 @@ def save_recurrent_snapshot(
     previous = None
     if selected is not None:
         previous = selected.get("score")
-        if previous is None and "checkpoint_eval_loss" in selected:
-            # Original paper checkpoints stored the minimized loss, not its score.
-            previous = (-selected["checkpoint_eval_loss"],)
         if previous is None:
             raise ValueError("Recorded recurrent selection has no comparison score")
     if previous is None or score > tuple(previous):

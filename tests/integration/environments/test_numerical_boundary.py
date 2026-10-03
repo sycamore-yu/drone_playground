@@ -11,9 +11,9 @@ import numpy as np
 
 class NumericalBoundaryTests(unittest.TestCase):
     def make_env(self):
-        from drone_playground.environments.tasks.tracking.rigid_body import TrackingEnv
+        from tests.helpers.environments import tracking_environment
 
-        env = TrackingEnv(
+        env = tracking_environment(
             task="tracking",
             reference="random",
             dynamics="so_rpy_rotor_drag",

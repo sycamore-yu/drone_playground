@@ -10,12 +10,13 @@ from brax.training.acme import running_statistics, specs
 from brax.training.agents.ppo import networks as ppo_networks
 
 from drone_playground.artifacts.checkpoints import load_policy, save_policy
-from drone_playground.composition import compose_experiment, native_training_config
+from drone_playground.composition import compose_experiment
+from drone_playground.learning.brax_configuration import native_training_config
 from drone_playground.networks.factory import network_factory
 
 
 def test_saved_brax_policy_reproduces_actions_and_normalization():
-    composed = compose_experiment('control/ppo', "tracking")
+    composed = compose_experiment("control/ppo", "tracking")
     composed["network"].update(
         normalize_observations=False,
         hidden_sizes=[32, 32],
@@ -36,9 +37,7 @@ def test_saved_brax_policy_reproduces_actions_and_normalization():
     with tempfile.TemporaryDirectory() as tmp:
         path = save_policy(Path(tmp), params, config, step=123)
         make_policy, loaded, metadata = load_policy(path)
-        actual = make_policy(loaded, deterministic=True)(
-            obs, jax.random.PRNGKey(0)
-        )[0]
+        actual = make_policy(loaded, deterministic=True)(obs, jax.random.PRNGKey(0))[0]
     np.testing.assert_array_equal(actual, expected)
     assert metadata["step"] == 123
     assert metadata["checkpoint_kind"] == "inference-parameters"

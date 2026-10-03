@@ -5,7 +5,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.composition import build_environment, compose_experiment
+from drone_playground.composition import compose_experiment
+from drone_playground.environments.environment import build_environment
 from tests.helpers.configs import bodyrates_config
 
 
@@ -30,7 +31,7 @@ def test_lotf_is_a_backend_of_the_same_training_and_evaluation_task(forward):
         evaluation.close()
 
 
-@pytest.mark.parametrize("backward", ["direct", "analytical_surrogate"])
+@pytest.mark.parametrize("backward", ["direct", "simplified_dynamics_jacobian"])
 def test_lotf_forward_and_backward_are_selected_independently(backward):
     from drone_playground.environments.environment import build_dynamics
 
@@ -54,7 +55,7 @@ def test_crazyflow_forward_models_are_parallel_dynamics_presets(preset, forward)
     from drone_playground.environments.environment import build_dynamics
 
     cfg = compose_experiment(
-        'control/bptt',
+        "control/bptt",
         "tracking",
         [f"dynamics@env.dynamics={preset}", "runtime.action_delay_ms=null"],
     )
@@ -63,7 +64,9 @@ def test_crazyflow_forward_models_are_parallel_dynamics_presets(preset, forward)
 
 
 def test_measurement_noise_changes_policy_input_without_changing_physics_or_reward():
-    cfg = compose_experiment('control/bptt', "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"])
+    cfg = compose_experiment(
+        "control/bptt", "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"]
+    )
     cfg["training"]["observation_noise"] = {"position_std_m": 0.1, "velocity_std_mps": 0.2}
     env = build_environment(cfg, "cpu", "train", 2)
     try:
@@ -72,8 +75,9 @@ def test_measurement_noise_changes_policy_input_without_changing_physics_or_rewa
         assert not np.array_equal(state.obs, ideal)
         physical = env.env.step(state, env.hover_action)
         measured = jax.jit(env.step)(state, env.hover_action)
-        np.testing.assert_array_equal(measured.pipeline_state.sim_data.states.pos,
-                                      physical.pipeline_state.sim_data.states.pos)
+        np.testing.assert_array_equal(
+            measured.pipeline_state.sim_data.states.pos, physical.pipeline_state.sim_data.states.pos
+        )
         np.testing.assert_array_equal(measured.reward, physical.reward)
         np.testing.assert_array_equal(env.reset(jax.random.key(5)).obs, state.obs)
     finally:
@@ -82,8 +86,13 @@ def test_measurement_noise_changes_policy_input_without_changing_physics_or_rewa
 
 @pytest.mark.parametrize("forward", ["so_rpy", "lotf_high_fidelity", "lotf_simplified"])
 def test_wind_is_a_runtime_force_with_a_real_velocity_response(forward):
-    cfg = (bodyrates_config(forward=forward) if forward.startswith("lotf_") else
-           compose_experiment('control/bptt', "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"]))
+    cfg = (
+        bodyrates_config(forward=forward)
+        if forward.startswith("lotf_")
+        else compose_experiment(
+            "control/bptt", "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"]
+        )
+    )
     cfg["training"]["disturbance"] = {"force_world_n": [0.1, 0, 0]}
     env = build_environment(cfg, "cpu", "train", 2)
     try:
@@ -96,7 +105,9 @@ def test_wind_is_a_runtime_force_with_a_real_velocity_response(forward):
 
 
 def test_eval_role_disables_training_randomization_noise_and_disturbance():
-    cfg = compose_experiment('control/bptt', "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"])
+    cfg = compose_experiment(
+        "control/bptt", "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"]
+    )
     cfg["training"]["domain_randomization"] = {
         "enabled": True,
         "dynamics": {"mass": [1.2, 1.2], "motor_strength": [0.9, 0.9]},
@@ -107,7 +118,9 @@ def test_eval_role_disables_training_randomization_noise_and_disturbance():
     env = build_environment(cfg, "cpu", "eval", 2)
     try:
         state = env.reset(jax.random.key(5))
-        np.testing.assert_allclose(state.pipeline_state.sim_data.params.mass, env.default.params.mass)
+        np.testing.assert_allclose(
+            state.pipeline_state.sim_data.params.mass, env.default.params.mass
+        )
         assert env.role == "eval"
         assert not env.experiment_config["training"]["domain_randomization"]["enabled"]
         assert not any(env.environment_effects.values())
@@ -116,8 +129,15 @@ def test_eval_role_disables_training_randomization_noise_and_disturbance():
 
 
 def test_training_position_goals_are_separate_from_the_scene_and_nominal_goals():
-    cfg = compose_experiment('control/bptt', "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"])
-    cfg["training"]["command_distribution"] = {"kind": "position", "distribution": "uniform", "low": [-1, -1, 1], "high": [1, 1, 2]}
+    cfg = compose_experiment(
+        "control/bptt", "hovering", ["runtime.action_delay_ms=null", "runtime.device=cpu"]
+    )
+    cfg["training"]["command_distribution"] = {
+        "kind": "position",
+        "distribution": "uniform",
+        "low": [-1, -1, 1],
+        "high": [1, 1, 2],
+    }
     train = build_environment(cfg, "cpu", "train", 2)
     nominal = build_environment(cfg, "cpu", "eval", 2)
     try:
@@ -131,17 +151,28 @@ def test_training_position_goals_are_separate_from_the_scene_and_nominal_goals()
 
 
 def test_action_uncertainty_reaches_delayed_execution_and_nominal_racing_is_clean():
-    cfg = compose_experiment('control/bptt', "hovering", ["runtime.action_delay_ms=[0,0]", "runtime.device=cpu"])
+    cfg = compose_experiment(
+        "control/bptt", "hovering", ["runtime.action_delay_ms=[0,0]", "runtime.device=cpu"]
+    )
     cfg["training"]["action_noise"] = {"bias_normalized": [0.2, 0, 0, 0]}
     env = build_environment(cfg, "cpu", "train", 1)
     try:
         state = env.reset(jax.random.key(3))
         result = jax.jit(env.step)(state, env.hover_action)
         expected = env.physical_action(env.hover_action + jnp.array([0.2, 0, 0, 0]))
-        np.testing.assert_allclose(result.pipeline_state.sim_data.controls.attitude.staged_cmd[0, 0], expected, atol=1e-6)
+        np.testing.assert_allclose(
+            result.pipeline_state.sim_data.controls.attitude.staged_cmd[0, 0], expected, atol=1e-6
+        )
     finally:
         env.close()
-    race = build_environment(compose_experiment('control/bptt', "racing", ["runtime.device=cpu", "runtime.action_delay_ms=null"]), "cpu", "eval", 1)
+    race = build_environment(
+        compose_experiment(
+            "control/bptt", "racing", ["runtime.device=cpu", "runtime.action_delay_ms=null"]
+        ),
+        "cpu",
+        "eval",
+        1,
+    )
     try:
         assert race.core.settings.disturbances == {}
         assert not any(race.environment_effects.values())
@@ -156,34 +187,69 @@ def test_point_mass_randomization_reset_and_measurement_have_real_effects():
         reset_point_mass_state,
     )
 
-    initial = PointMassState.create(jnp.zeros((2, 3))).replace(measurement_key=jax.random.split(jax.random.PRNGKey(1), 2))
-    model = PointMassLag(domain_randomization={"enabled": True, "dynamics": {"motor_strength": [0.5, 0.5], "lag": [2, 2]}})
+    initial = PointMassState.create(jnp.zeros((2, 3))).replace(
+        measurement_key=jax.random.split(jax.random.PRNGKey(1), 2)
+    )
+    model = PointMassLag(
+        domain_randomization={
+            "enabled": True,
+            "dynamics": {"motor_strength": [0.5, 0.5], "lag": [2, 2]},
+        }
+    )
     randomized = model.randomize(initial, jax.random.PRNGKey(2))
-    nominal = PointMassLag().step(initial, jnp.ones((2, 3)), 0.1)
-    changed = model.step(randomized, jnp.ones((2, 3)), 0.1)
+    from drone_playground.control.setpoints import StateSetpoint
+
+    control = StateSetpoint(acceleration=jnp.ones((2, 3)))
+    nominal = PointMassLag().step(initial, control, 0.1)
+    changed = model.step(randomized, control, 0.1)
     assert np.max(np.asarray(changed.acc)) < np.min(np.asarray(nominal.acc))
-    reset = reset_point_mass_state(initial, jax.random.PRNGKey(3), {"position_std_m": 0.1, "orientation_half_width_rad": 0.2, "velocity_std_mps": 0.2})
+    reset = reset_point_mass_state(
+        initial,
+        jax.random.PRNGKey(3),
+        {"position_std_m": 0.1, "orientation_half_width_rad": 0.2, "velocity_std_mps": 0.2},
+    )
     assert np.linalg.norm(reset.pos) > 0 and not np.array_equal(reset.rotation, initial.rotation)
     measured = noisy_point_mass_state(reset, jnp.zeros(2), 0.1, {"position_std_m": 0.1})
     assert not np.array_equal(measured.pos, reset.pos)
-    np.testing.assert_array_equal(reset_point_mass_state(initial, jax.random.PRNGKey(3), {"position_std_m": 0.1, "orientation_half_width_rad": 0.2, "velocity_std_mps": 0.2}).pos, reset.pos)
+    np.testing.assert_array_equal(
+        reset_point_mass_state(
+            initial,
+            jax.random.PRNGKey(3),
+            {"position_std_m": 0.1, "orientation_half_width_rad": 0.2, "velocity_std_mps": 0.2},
+        ).pos,
+        reset.pos,
+    )
     with pytest.raises(ValueError, match=r"mass/inertia"):
         PointMassLag(domain_randomization={"enabled": True, "dynamics": {"mass": [0.9, 1.1]}})
 
 
 def test_lotf_full_mass_and_inertia_randomization_change_physical_response():
     cfg = bodyrates_config(forward="lotf_high_fidelity")
-    cfg["training"]["domain_randomization"] = {"enabled": True, "dynamics": {"mass": [1.2, 1.2], "inertia": [1.5, 1.5]}}
+    cfg["training"]["domain_randomization"] = {
+        "enabled": True,
+        "dynamics": {"mass": [1.2, 1.2], "inertia": [1.5, 1.5]},
+    }
     env = build_environment(cfg, "cpu", "train", 1)
     try:
         randomized = env.reset(jax.random.key(3))
-        nominal = randomized.replace(pipeline_state=randomized.pipeline_state.replace(sim_data=randomized.pipeline_state.sim_data.replace(params=env.default.params)))
-        np.testing.assert_allclose(randomized.pipeline_state.sim_data.params.J, 1.5 * env.default.params.J)
+        nominal = randomized.replace(
+            pipeline_state=randomized.pipeline_state.replace(
+                sim_data=randomized.pipeline_state.sim_data.replace(params=env.default.params)
+            )
+        )
+        np.testing.assert_allclose(
+            randomized.pipeline_state.sim_data.params.J, 1.5 * env.default.params.J
+        )
         command = env.hover_action + jnp.array([0, 0.2, 0, 0])
         advance = jax.jit(env.step)
         first, second = advance(randomized, command), advance(nominal, command)
-        assert not np.allclose(first.pipeline_state.sim_data.states.vel, second.pipeline_state.sim_data.states.vel)
-        assert not np.allclose(first.pipeline_state.sim_data.states.ang_vel, second.pipeline_state.sim_data.states.ang_vel)
+        assert not np.allclose(
+            first.pipeline_state.sim_data.states.vel, second.pipeline_state.sim_data.states.vel
+        )
+        assert not np.allclose(
+            first.pipeline_state.sim_data.states.ang_vel,
+            second.pipeline_state.sim_data.states.ang_vel,
+        )
     finally:
         env.close()
 
@@ -196,13 +262,24 @@ def test_training_internal_pointcloud_evaluation_uses_nominal_conditions():
         make_checkpoint_eval_evaluator,
     )
 
-    cfg = compose_experiment('papers/differentiable_pointcloud', overrides=[
-        "runtime.device=cpu", "training.num_envs=2", "training.checkpoint_eval_envs=2",
-        "algorithm.horizon_length=2", "env.sensor.azimuth_count=6", "env.sensor.elevation_count=2",
-        "env.scene.obstacles_per_kind=1", "objective.velocity_window=2",
-    ])
+    cfg = compose_experiment(
+        "papers/differentiable_pointcloud",
+        overrides=[
+            "runtime.device=cpu",
+            "training.num_envs=2",
+            "training.checkpoint_eval_envs=2",
+            "algorithm.horizon_length=2",
+            "env.sensor.azimuth_count=6",
+            "env.sensor.elevation_count=2",
+            "env.scene.obstacles_per_kind=1",
+            "objective.velocity_window=2",
+        ],
+    )
     randomized = copy.deepcopy(cfg)
-    randomized["training"]["domain_randomization"] = {"enabled": True, "dynamics": {"motor_strength": [0.5, 0.5]}}
+    randomized["training"]["domain_randomization"] = {
+        "enabled": True,
+        "dynamics": {"motor_strength": [0.5, 0.5]},
+    }
     randomized["training"]["observation_noise"] = {"position_std_m": 0.2, "sensor_std_m": 0.1}
     randomized["training"]["action_noise"] = {"std_physical": 0.3}
     results = []
@@ -221,13 +298,23 @@ def test_training_internal_pointcloud_evaluation_uses_nominal_conditions():
 def test_pointcloud_fixed_scene_distribution_is_consumed_and_reproducible():
     from drone_playground.learning.algorithms.recurrent_bptt import initialize, make_update
 
-    cfg = compose_experiment('papers/differentiable_pointcloud', overrides=[
-        "runtime.device=cpu", "training.num_envs=2", "algorithm.horizon_length=2",
-        "env.sensor.azimuth_count=6", "env.sensor.elevation_count=2", "objective.velocity_window=2",
-    ])
+    cfg = compose_experiment(
+        "papers/differentiable_pointcloud",
+        overrides=[
+            "runtime.device=cpu",
+            "training.num_envs=2",
+            "algorithm.horizon_length=2",
+            "env.sensor.azimuth_count=6",
+            "env.sensor.elevation_count=2",
+            "objective.velocity_window=2",
+        ],
+    )
     cfg["training"]["scene_distribution"] = {
         "type": "fixed",
-        "scene": {"_target_": "drone_playground.environments.scenes.catalog.NavigationCatalogScene", "scene_ids": ["S01"]},
+        "scene": {
+            "_target_": "drone_playground.environments.scenes.catalog.NavigationCatalogScene",
+            "scene_ids": ["S01"],
+        },
     }
     cfg["env"]["task"]["command_distribution"]["speed_range_mps"] = [4.0, 4.0]
     task = build_environment(cfg, "cpu", "train", 2)
@@ -244,7 +331,10 @@ def test_pointcloud_fixed_scene_distribution_is_consumed_and_reproducible():
 
 
 def test_source_rollout_rejects_an_unconsumed_integer_action_delay():
-    cfg = compose_experiment('papers/differentiable_pointcloud', overrides=["runtime.device=cpu", "runtime.action_delay_steps=1"])
+    cfg = compose_experiment(
+        "papers/differentiable_pointcloud",
+        overrides=["runtime.device=cpu", "runtime.action_delay_steps=1"],
+    )
     with pytest.raises(ValueError, match=r"delay"):
         build_environment(cfg, "cpu", "train", 1)
 
@@ -254,13 +344,21 @@ def test_source_rollout_rejects_an_unconsumed_integer_action_delay():
 def test_source_dynamics_reuses_tracking_racing_and_navigation(environment, forward):
     cfg = bodyrates_config(environment, forward)
     if environment.startswith("navigation/"):
-        cfg = compose_experiment('control/bptt', environment, [
-            "dynamics@env.dynamics=" + forward, "action/controller@env.action.controller=bodyrates",
-            "env.action.command=thrust_bodyrates", "sensor@env.sensor=none",
-            "env.task.physics_freq=1000", "env.task.duration=0.04",
-            "runtime.action_delay_ms=null", "runtime.device=cpu",
-        ])
-        cfg["env"]["observation"] = {
+        cfg = compose_experiment(
+            "control/bptt",
+            environment,
+            [
+                "dynamics@env.dynamics=" + forward,
+                "controller@env.controller=rates",
+                "env.controller.input_kind=rates",
+                "sensor@env.sensor=none",
+                "env.task.physics_freq=1000",
+                "env.task.duration=0.04",
+                "runtime.action_delay_ms=null",
+                "runtime.device=cpu",
+            ],
+        )
+        cfg["env"]["task"]["observation"] = {
             "_target_": "drone_playground.environments.observations.state.NavigationObservation",
             "name": "navigation_state",
             "include_goal": True,

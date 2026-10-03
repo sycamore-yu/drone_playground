@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from drone_playground.planning.geometry import ConvexPolytope, SafeFlightCorridor
+from drone_playground.planning.corridors import ConvexPolytope, SafeFlightCorridor
 
 
 def corridor_from_markers(markers, name):
@@ -49,8 +49,6 @@ def corridor_from_markers(markers, name):
         points = np.array([[p.x, p.y, p.z] for p in marker.points], float)
         scale = np.array([marker.scale.x, marker.scale.y, marker.scale.z])
         p = marker.pose.position
-        vertices = np.unique(
-            points * scale @ rotation.T + [p.x, p.y, p.z], axis=0
-        )
+        vertices = np.unique(points * scale @ rotation.T + [p.x, p.y, p.z], axis=0)
         meshes[key] = ConvexPolytope(vertices=vertices)
     return SafeFlightCorridor(name, tuple(meshes.values()))

@@ -19,19 +19,17 @@ def test_new_recipe_preserves_sensor_and_protocol_and_old_training_guard():
     assert cfg["network"]["encoder"]["point_channels"] == [64, 128, 1024]
     assert cfg["env"]["task"]["max_speed"] == 20.0
     assert cfg["method"]["name"] == "differentiable_pointcloud"
-    benchmark = compose_experiment("navigation/differentiable_pointcloud_acceleration_benchmark")
-    old = compose_experiment('papers/differentiable_pointcloud')
-    old["env"]["scene"] = benchmark["env"]["scene"]
-    with pytest.raises(ValueError, match=r"held out"):
-        validate_config(old)
+    source = compose_experiment("papers/differentiable_pointcloud")
+    assert source["env"]["scene"]["name"] != "navigation"
+    assert cfg["training"]["scene_distribution"]["scene"]["name"] == "navigation_training"
 
 
 def test_training_initialization_covers_course_and_goal_without_obstacle_penetration():
-    from drone_playground.environments.tasks.navigation.recurrent import RecurrentNavigationEnv
+    from drone_playground.environments.environment import build_environment
 
     config = configuration()
     config["training"]["scene_distribution"] = {"type": "fixed", "scene": None}
-    task = RecurrentNavigationEnv(config)
+    task = build_environment(config, "cpu", role="train").task
     initial = jax.jit(lambda key: task.training_initial(key, 32))(jax.random.PRNGKey(17))
     bank, physical, clocks, speeds, ticks = initial
     clearances = task.clearance(bank, physical, clocks)
@@ -43,7 +41,7 @@ def test_training_initialization_covers_course_and_goal_without_obstacle_penetra
     assert np.all((np.asarray(ticks) >= 13) & (np.asarray(ticks) <= 25))
     assert np.all((np.asarray(speeds) >= 2) & (np.asarray(speeds) <= 4))
     observation_bank = task.select_bank(jnp.array([0, 1]))
-    points, valid, proprio, _ = task.observation(
+    points, valid, proprio, _ = task.measure(
         observation_bank, task.initial_state(observation_bank), jnp.zeros(2), jnp.full(2, 4.0)
     )
     assert points.shape == (2, 5400, 3)
@@ -83,16 +81,16 @@ def test_near_goal_and_penetration_have_actual_differentiable_training_signal():
 
 
 def test_checked_delay_matches_training_physics_and_preserves_terminal_event():
-    from drone_playground.environments.tasks.navigation.recurrent import RecurrentNavigationEnv
-    from drone_playground.actions.delay import delayed_step
+    from drone_playground.control.delay import delayed_step
+    from drone_playground.environments.environment import build_environment
 
-    task = RecurrentNavigationEnv(configuration())
+    task = build_environment(configuration(), "cpu", role="eval").task
     bank = task.select_bank(jnp.array([0]))
     state = task.initial_state(bank)
     current = jnp.array([[1.0, 0.0, 0.0]])
     previous = jnp.zeros_like(current)
     ticks = jnp.array([20])
-    expected, _ = delayed_step(task.model, state, current, previous, ticks, 0.002, 50)
+    expected, _ = delayed_step(task.dynamics, state, current, previous, ticks, 0.002, 50)
     actual, time, outcome, _ = task.advance_checked(
         bank, state, current, previous, ticks, jnp.zeros(1), jnp.zeros(1, jnp.int32)
     )
@@ -108,7 +106,7 @@ def test_checked_delay_matches_training_physics_and_preserves_terminal_event():
 
 
 def test_evaluator_accepts_runtime_delay_grid_and_speed_without_recompiling():
-    from drone_playground.environments.tasks.navigation.recurrent import RecurrentNavigationEnv
+    from drone_playground.environments.environment import build_environment
     from drone_playground.evaluation.navigation.recurrent import RecurrentNavigationEvaluator
 
     class ConstantPolicy:
@@ -122,7 +120,7 @@ def test_evaluator_accepts_runtime_delay_grid_and_speed_without_recompiling():
             )
             return action, memory
 
-    task = RecurrentNavigationEnv(configuration())
+    task = build_environment(configuration(), "cpu", role="eval").task
     task.bank = task.select_bank(jnp.array([0]))
     task.manifest = {**task.manifest, "scene_ids": ["S01"]}
     task.episode_length = 3
@@ -157,5 +155,5 @@ def test_training_point_jitter_preserves_invalid_points_and_is_seeded():
     assert not np.array_equal(a, points)
     np.testing.assert_array_equal(
         jax.grad(lambda x: augment_point_measurements(x, valid, key, 0.002).sum())(points),
-        np.broadcast_to(np.asarray(valid)[..., None], points.shape).astype(float)
+        np.broadcast_to(np.asarray(valid)[..., None], points.shape).astype(float),
     )

@@ -12,11 +12,8 @@ import numpy as np
 import pytest
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.composition import (
-    build_environment,
-    compose_experiment,
-    native_training_config,
-)
+from drone_playground.composition import compose_experiment
+from drone_playground.environments.environment import build_environment
 from drone_playground.learning.algorithms.dva import (
     critic_observation_from_pipeline,
     detached_policy_action,
@@ -25,30 +22,31 @@ from drone_playground.learning.algorithms.dva import (
     train,
 )
 from drone_playground.learning.algorithms.shac import lambda_returns
+from drone_playground.learning.brax_configuration import native_training_config
 from drone_playground.networks.factory import network_factory
 
 
 def small_config(sensor: str) -> tuple[dict, dict]:
     overrides = [
-            "runtime.device=cpu",
-            "training.num_envs=2",
-            "training.policy_updates=1",
-            "training.num_timesteps=4",
-            "training.num_evals=2",
-            "algorithm.horizon_length=2",
-            "algorithm.critic_updates=1",
-            "training.max_wall_seconds=600",
+        "runtime.device=cpu",
+        "training.num_envs=2",
+        "training.policy_updates=1",
+        "training.num_timesteps=4",
+        "training.num_evals=2",
+        "algorithm.horizon_length=2",
+        "algorithm.critic_updates=1",
+        "training.max_wall_seconds=600",
     ]
     if sensor == "lidar":
         overrides.extend(
             [
                 "sensor@env.sensor=mid360",
-                "observation@env.observation=navigation_lidar",
+                "observation@env.task.observation=navigation_lidar",
             ]
         )
     elif sensor != "depth":
         raise ValueError(f"Unknown D.VA sensor fixture: {sensor}")
-    resolved = compose_experiment('papers/dva', overrides=overrides)
+    resolved = compose_experiment("papers/dva", overrides=overrides)
     return resolved, native_training_config(resolved)
 
 

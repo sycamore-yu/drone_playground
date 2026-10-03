@@ -3,15 +3,18 @@
 from dataclasses import dataclass
 
 import jax.numpy as jnp
-from crazyflow.envs import FigureEightEnv
-from crazyflow.envs.drone_env import DroneEnv
-from crazyflow.utils import leaf_replace
 
-from drone_playground.dynamics.parameters import parameter_ranges, physical_parameters, randomize_parameters
+from drone_playground.control.setpoints import AttitudeSetpoint, ForceTorque, MotorRPM, RateSetpoint
+from drone_playground.dynamics.base import DynamicsBackend, physics_steps
+from drone_playground.dynamics.parameters import (
+    parameter_ranges,
+    physical_parameters,
+    randomize_parameters,
+)
 
 
 @dataclass
-class CrazyflowModel:
+class CrazyflowModel(DynamicsBackend):
     forward: str = "so_rpy"
     drone: str = "cf2x_L250"
     backward: str = "direct"
@@ -36,10 +39,8 @@ class CrazyflowModel:
             "mass": hasattr(params, "mass"),
             # Fitted RPY dynamics use identified attitude coefficients. Their J
             # fields only affect an external torque disturbance, absent here.
-            "inertia": self.forward == "first_principles"
-            and hasattr(params, "J_inv"),
-            "motor_strength": hasattr(params, "cmd_f_coef")
-            or hasattr(params, "rpm2thrust"),
+            "inertia": self.forward == "first_principles" and hasattr(params, "J_inv"),
+            "motor_strength": hasattr(params, "cmd_f_coef") or hasattr(params, "rpm2thrust"),
             "drag": hasattr(params, "drag_matrix"),
         }
         unavailable = [name for name in ranges if not supported[name]]
@@ -56,64 +57,51 @@ class CrazyflowModel:
 
     physical_parameters = staticmethod(physical_parameters)
 
-    def _drone_reference(self, duration, freq, device, start):
-        """Single-drone Crazyflow reference whose initial pose the caller owns."""
-
-        def reset(data, default, mask):
-            del default
-            speed = 10000.0 if self.forward == "first_principles" else 0.05
-            rotor = jnp.full_like(data.states.rotor_vel, speed)
-            return data.replace(
-                states=leaf_replace(data.states, mask, rotor_vel=rotor)
-            )
-
-        reference = DroneEnv(
-            num_envs=1,
-            freq=freq,
-            max_episode_time=duration,
-            dynamics=self.forward,
-            drone=self.drone,
-            device=device,
-            reset_randomization=reset,
-        )
-        reference.sim.data = reference.sim.data.replace(
-            states=reference.sim.data.states.replace(
-                pos=reference.sim.data.states.pos.at[0, 0].set(
-                    jnp.asarray(start)
-                )
-            )
-        )
-        reference.sim.build_default_data()
-        return reference
-
-    def create_navigation(self, duration, freq, device, start):
-        """Reference simulation for the navigation task; the scene owns the pose."""
-        reference = self._drone_reference(duration, freq, device, start)
-        self.bind(reference.sim)
-        return reference
-
-    def create_tracking(self, reference, duration, freq, device, scene):
-        if reference == "figure8":
-            reference = FigureEightEnv(
-                num_envs=1,
-                freq=freq,
-                dynamics=self.forward,
-                drone=self.drone,
-                device=device,
-                trajectory_time=duration,
-                max_episode_time=duration,
-            )
-        else:
-            reference = self._drone_reference(
-                duration, freq, device, scene.takeoff
-            )
-        self.bind(reference.sim)
-        return reference
-
-    def bind(self, sim):
+    def bind(self, sim, control_mode=None):
         from crazyflow.sim.pipeline import insert_fn_before
         from jax.scipy.spatial.transform import Rotation
 
+        if control_mode is not None:
+            from collections import OrderedDict
+
+            from crazyflow.control import Control
+            from crazyflow.sim.data import SimControls
+            from crazyflow.sim.sim import build_control_fns
+
+            mode = Control(control_mode)
+            if mode != sim.control:
+                if self.forward != "first_principles":
+                    raise ValueError(
+                        "Body-rate and actuator inputs require first-principles Crazyflow dynamics"
+                    )
+                old = sim.data.controls
+                cadence = old.attitude.freq if old.attitude is not None else sim.freq
+                force_cadence = old.force_torque.freq if old.force_torque is not None else cadence
+                controls = SimControls.create(
+                    sim.n_worlds,
+                    sim.n_drones,
+                    mode,
+                    sim.drone,
+                    None,
+                    cadence,
+                    cadence,
+                    force_cadence,
+                    sim.device,
+                )
+                old_stages = {name for name, _ in build_control_fns(sim.control, sim.dynamics)}
+                sim.step_pipeline = OrderedDict(
+                    [
+                        *build_control_fns(mode, sim.dynamics),
+                        *(
+                            (name, fn)
+                            for name, fn in sim.step_pipeline.items()
+                            if name not in old_stages
+                        ),
+                    ]
+                )
+                sim.control = mode
+                sim.data = sim.data.replace(controls=controls)
+                sim.build_default_data()
         self.sim = sim
         self._validate_randomization(sim.default_data.params)
 
@@ -124,9 +112,7 @@ class CrazyflowModel:
 
             force, body_torque = external_wrench(data)
             # The source integrator consumes world-frame force and torque.
-            torque = Rotation.from_quat(data.states.quat[0, 0]).apply(
-                body_torque
-            )
+            torque = Rotation.from_quat(data.states.quat[0, 0]).apply(body_torque)
             return data.replace(
                 states=data.states.replace(
                     force=jnp.broadcast_to(force, data.states.force.shape),
@@ -134,11 +120,31 @@ class CrazyflowModel:
                 )
             )
 
-        insert_fn_before(
-            sim.step_pipeline, "integration", apply_external_wrench
-        )
+        insert_fn_before(sim.step_pipeline, "integration", apply_external_wrench)
         self.step_fn = sim.build_step_fn()
         return self
 
-    def advance(self, data, substeps):
-        return self.step_fn(data, substeps)
+    def step(self, state, control, dt):
+        """Stage a physical control and call Crazyflow's public step pipeline."""
+        from crazyflow.control import Control
+        from crazyflow.sim import functional
+
+        count = physics_steps(dt, self.sim.freq)
+        mode = state.controls.mode
+        if isinstance(control, AttitudeSetpoint) and mode == Control.attitude:
+            state = functional.attitude_control(state, control.as_array()[None, None])
+        elif isinstance(control, RateSetpoint) and mode == Control.body_rate:
+            # Crazyflow uses [wx, wy, wz, T]; LOTF uses [T, wx, wy, wz].
+            native = jnp.concatenate(
+                (jnp.asarray(control.body_rates), jnp.asarray(control.thrust)[..., None]), axis=-1
+            )
+            state = functional.body_rate_control(state, native[None, None])
+        elif isinstance(control, ForceTorque) and mode == Control.force_torque:
+            state = functional.force_torque_control(state, control.as_array()[None, None])
+        elif isinstance(control, MotorRPM) and mode == Control.rotor_vel:
+            state = functional.rotor_vel_control(state, control.as_array()[None, None])
+        else:
+            raise TypeError(
+                f"Crazyflow control mode {mode} cannot execute {type(control).__name__}"
+            )
+        return self.step_fn(state, count)

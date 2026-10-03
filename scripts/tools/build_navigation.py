@@ -18,15 +18,15 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
-import json
 import math
 import random
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "src"))
 SANDO_SOURCE_ID = "research_dev/sando/docker/dev-workspace/upstream-93b2eed"
-OUTPUT = REPO / "assets/scenes/navigation/catalog.json"
 
 WORLD = {
     "length_m": 100.0,
@@ -94,10 +94,7 @@ def sha256(path: Path) -> str:
 
 
 def _model_pose(model: ET.Element) -> list[float]:
-    return [
-        float(value)
-        for value in (model.findtext("pose") or "0 0 0 0 0 0").split()
-    ]
+    return [float(value) for value in (model.findtext("pose") or "0 0 0 0 0 0").split()]
 
 
 def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
@@ -134,17 +131,11 @@ def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
     }
 
 
-def _endpoint_safe_box(
-    x: float, y: float, z: float, ex: float, ey: float, ez: float
-) -> bool:
+def _endpoint_safe_box(x: float, y: float, z: float, ex: float, ey: float, ez: float) -> bool:
     # Conservative swept-AABB check around both endpoint safety spheres.
     margin = 0.42
     for px, py, pz in (WORLD["start"], WORLD["goal"]):
-        if (
-            abs(px - x) <= ex + margin
-            and abs(py - y) <= ey + margin
-            and abs(pz - z) <= ez + margin
-        ):
+        if abs(px - x) <= ex + margin and abs(py - y) <= ey + margin and abs(pz - z) <= ez + margin:
             return False
     return True
 
@@ -157,9 +148,7 @@ def _endpoint_safe_cylinder(x: float, y: float, radius: float) -> bool:
     )
 
 
-def generate_sando_dynamic(
-    difficulty: str, seed: int = 0
-) -> tuple[list[dict], dict]:
+def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], dict]:
     """Generate one bounded realization using SANDO's dynamic-scene semantics.
 
     The moving fraction remains SANDO's 0.8 m trefoil cubes.  To preserve some
@@ -221,11 +210,7 @@ def generate_sando_dynamic(
                 static_index = index - dynamic_count
                 if static_index < static_box_count:
                     is_vertical = static_index < vertical_box_count
-                    half = (
-                        SANDO_VERTICAL_BOX_HALF
-                        if is_vertical
-                        else SANDO_HORIZONTAL_BOX_HALF
-                    )
+                    half = SANDO_VERTICAL_BOX_HALF if is_vertical else SANDO_HORIZONTAL_BOX_HALF
                     z = 2.0 if is_vertical else rng.uniform(0.7, 4.3)
                     bounded = (
                         x - half[0] >= 0.5
@@ -275,9 +260,7 @@ def generate_sando_dynamic(
                     )
             break
         else:
-            raise RuntimeError(
-                f"unable to place dynamic obstacle {index} for {difficulty}"
-            )
+            raise RuntimeError(f"unable to place dynamic obstacle {index} for {difficulty}")
     return obstacles, {
         "seed": seed,
         "total_obstacles": total,
@@ -343,11 +326,7 @@ def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
 
 def retained_extensions(catalog: dict) -> list[dict]:
     return [
-        copy.deepcopy(
-            next(
-                scene for scene in catalog["scenes"] if scene["id"] == scene_id
-            )
-        )
+        copy.deepcopy(next(scene for scene in catalog["scenes"] if scene["id"] == scene_id))
         for scene_id in ("S06", "D06")
     ]
 
@@ -355,17 +334,18 @@ def retained_extensions(catalog: dict) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sando-worlds", type=Path, required=True)
-    parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--output", type=Path, required=True, help="New candidate MJCF directory")
     args = parser.parse_args()
-    catalog = json.loads(OUTPUT.read_text())
+    from drone_playground.environments.scenes.catalog import load_fixed_catalog
+    from drone_playground.environments.scenes.mjcf import write_catalog
+
+    catalog = load_fixed_catalog()
     for scene in catalog["scenes"]:
         if scene["benchmark_role"] == "primary" and not scene["dynamic"]:
             source = scene["source_provenance"]
             path = args.sando_worlds / Path(source["world_file"]).name
             if sha256(path) != source["world_sha256"]:
-                raise ValueError(
-                    f"SANDO source differs from the frozen catalog: {path.name}"
-                )
+                raise ValueError(f"SANDO source differs from the frozen catalog: {path.name}")
     scenes = []
     for difficulty in ("easy", "medium", "hard"):
         scenes.append(primary_scene("static", difficulty, args.sando_worlds))
@@ -376,7 +356,7 @@ def main() -> None:
     output = {
         "name": "navigation",
         "version": "navigation-v1",
-        "status": "accepted",
+        "status": "candidate",
         "world": WORLD,
         "design_rules": [
             "Primary benchmark is exactly six scenes: static/dynamic x easy/medium/hard.",
@@ -408,14 +388,10 @@ def main() -> None:
         "boundary_obstacles": BOUNDARY,
         "scenes": scenes,
     }
-    args.output.write_text(
-        json.dumps(output, ensure_ascii=False, indent=2) + "\n"
-    )
-    print(args.output)
+    print(write_catalog(output, args.output))
     for scene in scenes:
         moving = sum(
-            obstacle.get("motion", "static") != "static"
-            for obstacle in scene["obstacles"]
+            obstacle.get("motion", "static") != "static" for obstacle in scene["obstacles"]
         )
         print(
             scene["id"],

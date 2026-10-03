@@ -13,7 +13,9 @@ from drone_playground.composition import compose_experiment, validate_config
 def test_navigation_v2_limits_reach_the_worker_request(method, tmp_path):
     from drone_playground.integrations.ros1 import NativePlanner
 
-    cfg = compose_experiment(method, "navigation/static", ["+evaluation.protocol=benchmarks/navigation.yaml"])
+    cfg = compose_experiment(
+        method, "navigation/static", ["+evaluation.protocol=benchmarks/navigation.yaml"]
+    )
     validate_config(cfg)
     assert cfg["env"]["task"]["duration"] == 300.0
     assert cfg["method"]["limits"]["max_velocity_mps"] == 20.0
@@ -49,7 +51,7 @@ class Integrator:
 
 
 def test_fractional_delay_uses_physics_clock_and_propagates_past_action_gradient():
-    from drone_playground.actions.delay import RandomActionDelay
+    from drone_playground.control.delay import RandomActionDelay
 
     env = RandomActionDelay(Integrator(), [30.0, 30.0])
     state = env.reset(jax.random.PRNGKey(0))
@@ -67,7 +69,7 @@ def test_fractional_delay_uses_physics_clock_and_propagates_past_action_gradient
 
 
 def test_random_delays_are_reproducible_independent_and_stay_in_declared_range():
-    from drone_playground.actions.delay import RandomActionDelay
+    from drone_playground.control.delay import RandomActionDelay
 
     env = RandomActionDelay(Integrator(), [25.0, 50.0])
     keys = jax.random.split(jax.random.PRNGKey(42), 1024)
@@ -101,14 +103,14 @@ def test_export_trims_each_episode_after_terminal_transition(tmp_path):
     "task", ["hovering", "tracking", "racing", "navigation/static", "navigation/dynamic"]
 )
 def test_bptt_is_a_real_trainable_composed_method(task):
-    cfg = compose_experiment('control/bptt', task)
+    cfg = compose_experiment("control/bptt", task)
     validate_config(cfg)
     assert cfg["algorithm"]["name"] == "bptt"
     assert cfg["runtime"]["action_delay_ms"] == [25.0, 50.0]
 
 
 def test_autoreset_resamples_delay_and_clears_only_finished_world():
-    from drone_playground.actions.delay import RandomActionDelay
+    from drone_playground.control.delay import RandomActionDelay
     from drone_playground.learning.wrappers import wrap_for_training
 
     class DoneIntegrator(Integrator):

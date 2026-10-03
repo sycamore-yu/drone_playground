@@ -1,6 +1,6 @@
 # 操作手册
 
-所有命令从项目根目录执行。当前工作位置为 `simulation_dev/drone_playground`，代码、依赖缓存和正式产物各自拥有明确目录。
+开发命令从项目根目录执行。安装后的 `drone-playground` 可在其他目录运行；`runtime.output_root` 指定产物根目录，默认当前目录。配置、资产和基准从安装包读取。
 
 ## 环境准备
 
@@ -32,6 +32,22 @@ pixi run train experiment=control/shac env=racing runtime.device=gpu run_id=shac
 ```
 
 正式训练采用 GPU，并按显存与预算排队。先核对已有 `state.json`、`result.json` 和进程身份，再确定新运行或恢复。`training.warm_start` 表示参数热启动；具备完整状态恢复能力的训练器使用 `training.resume`。恢复时保持所记录的模型、网络、优化器及输入合同。
+
+单独创建环境不需要训练配方：
+
+```python
+import jax
+import drone_playground
+
+env = drone_playground.load("hovering", overrides=["runtime.device=cpu"])
+try:
+    state = env.reset(jax.random.key(0))
+    state = env.step(state, env.hover_action)
+finally:
+    env.close()
+```
+
+`load()` 直接调用 Hydra。`algorithm` 选择训练更新规则；训练所得 Policy 与运行方法分开。没有 registry。
 
 新运行自动写入`results/runs/<task>/<method>/<run_id>/`。Task／Method 来自解析配置，默认 `run_id` 为UTC时间戳加训练 seed；读取状态可用`pixi run status --run-id=<标识>`。检查点和评测报告属于该 run，选定结果由`results/selected/`引用，不再复制成另一棵目录。
 
@@ -69,9 +85,8 @@ pixi run train experiment=control/bptt env=hovering \
 # LOTF 是 dynamics source；任务、网络和训练器保持通用。
 pixi run train experiment=control/bptt env=tracking \
   dynamics@env.dynamics=lotf_high_fidelity \
-  action/controller@env.action.controller=bodyrates \
-  env.action.command=thrust_bodyrates \
-  algorithm.gradient.transition=analytical_surrogate \
+  controller@env.controller=rates \
+  algorithm.gradient.transition=simplified_dynamics_jacobian \
   runtime.device=gpu run_id=lotf-tracking
 ```
 
@@ -94,6 +109,18 @@ pixi run play replay=results/runs/tracking/bptt/recheck-bptt-tracking/rollouts \
 
 数值报告和选模记录始终保存；普通 train/eval 的完整 RScope/MuJoCo replay 默认关闭，设置 `evaluation.record_replays=true` 才写入 `rollouts/`。Brax 训练显式启用 `training.publish_live=true` 时也会记录回放供实时查看。`play checkpoint=...` 自动记录本次执行轨迹；查看已有轨迹直接选择 `replay`。正式 Benchmark 由对应 `benchmarks/` specification 固定 cases、种子、预算与指标，不通过额外 Environment role 区分。
 
+### 历史检查点
+
+当前运行只接受配置 v4。历史 v3 权重、sidecar 和正式报告保持不变。先准备经过核对的完整 v4 解析配置，再显式创建新副本：
+
+```bash
+pixi run python -m drone_playground.artifacts.migration \
+  results/runs/<task>/<method>/<old-run>/checkpoints/<old>.pkl \
+  tmp/migrated/<new>.pkl --config tmp/reviewed-v4-config.json
+```
+
+工具核对输入、网络和物理合同，保留来源配置及参数摘要。目标必须不存在。普通 Brax 推理权重保持字节不变；旧循环状态的类路径只在该显式工具内转换。含旧环境结构的 BPTT/SHAC 完整状态不能直接当作新架构续训状态，应选择其推理检查点做参数热启动。新架构产生的完整状态使用正常 `training.resume`。
+
 ## 原生规划器与 MPC
 
 ```bash
@@ -107,7 +134,7 @@ pixi run eval experiment=papers/super env=navigation/static \
 
 原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `ros_integrations/ros1/versions.env`、`ros_integrations/ros1/patches/` 及[原生集成说明](../ros_integrations/ros1/README.md)。
 
-新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际收到的完整物理输出、执行参考、有效期和控制器生成的命令。相同Trajectory／Waypoint／Motion Cmd按内容摘要共用存储，`index.json`记录两个压缩文件的摘要、命令字段和SI单位；中断时也保留已收到的决策。
+新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际物理输出、执行参考、有效期和控制命令。Reference、Setpoint、SFC 和轨迹预览按内容摘要保存，走廊及预览各自保留有效期。RPC 使用 v2；旧外部服务需用 v2 SDK 重建，历史冻结运行包不改写。
 
 原生与`pipeline`的悬停／跟踪／竞速评测使用`evaluation.seed_start`作为首个重置种子，显式的0也有效；留空时训练内 `checkpoint_eval` 从20000、最终 `benchmark` 从30000开始。新的`eval/report.json`逐回合保存实际初始位置、速度、xyzw姿态，以及启用相应延迟模型时的`delay_requested_ms`和`delay_effective_ms`。旧版曾忽略自定义首种子，回归及已完成报告的影响检查见[重置合同凭据](../artifacts/verification/native-control-reset-contract.json)。
 
@@ -130,15 +157,14 @@ acados v0.5.1 可通过 `ACADOS_SOURCE_DIR` 指向已经验证的构建。默认
 
 ## 场景维护
 
-现役场景直接从 `assets/scenes/navigation/catalog.json` 加载。确需重建六张 SANDO 来源主场景时，显式提供固定来源的 worlds 目录：
+现役场景从安装资源 `assets/scenes/navigation/catalog.xml` 及对应场景 MJCF 加载。确需重建六张 SANDO 来源主场景时，显式提供固定来源的 worlds 目录和新的候选输出目录：
 
 ```bash
 python3 scripts/tools/build_navigation.py --sando-worlds /path/to/pinned-sando/worlds \
-  --output tmp/navigation-catalog.json
-cmp assets/scenes/navigation/catalog.json tmp/navigation-catalog.json
+  --output tmp/navigation-candidate
 ```
 
-脚本先校验来源 world 文件摘要，再重建主场景，并从现役目录保留 S06／D06 两张固定3D扩展。它不依赖历史场景 v1–v4，也不从本机目录结构猜测依赖位置。改变几何须另立协议与校验记录。
+脚本保留原生成数学，先核对源 world 摘要，再生成候选 MJCF，并从现役资产保留 S06／D06。候选输出不覆盖正式资产。修改几何后需要新的协议与校验记录。当前导航 XML 的摘要及原目录身份在 `benchmarks/navigation-mjcf-verification.json`。
 
 ## 维护检查
 

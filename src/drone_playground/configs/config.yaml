@@ -1,0 +1,67 @@
+defaults:
+- _self_
+- runtime: default
+- experiment: control/ppo
+config_version: 4
+mode: train
+run_id: null
+checkpoint: null
+source: ''
+study:
+  type: method_reproduction
+  conditions_id: null
+replay:
+  directory: null
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: tmp/hydra/${now:%Y%m%d-%H%M%S}
+  sweep:
+    dir: tmp/hydra/multirun-${now:%Y%m%d-%H%M%S}
+    subdir: ${hydra.job.num}
+training:
+  seed: 0
+  num_envs: 1024
+  policy_updates: 1024
+  num_timesteps: 2097152
+  num_evals: 9
+  publish_live: false
+  max_wall_seconds: 3600
+  resume: null
+  warm_start: null
+  checkpoint_eval_episodes: 32
+  checkpoint_eval_seed_start: 20000
+  reset_randomization: null
+  observation_noise: null
+  action_noise: null
+  disturbance: null
+  command_distribution: null
+  scene_distribution:
+    type: fixed
+    scene: null
+  domain_randomization:
+    enabled: false
+    dynamics:
+      mass:
+      - 0.9
+      - 1.1
+      inertia: null
+      motor_strength:
+      - 0.95
+      - 1.05
+      drag: null
+evaluation:
+  environment: checkpoint
+  role: eval
+  episodes: 128
+  seed_start: null
+  output: null
+  record_replays: false
+  entrypoint: drone_playground.evaluation.run.evaluate_experiment
+  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator
+visualization:
+  mode: rscope
+  publish: true
+  sensor_hits: true
+  max_sensor_points: 2400

@@ -1,0 +1,18 @@
+{
+  "navigation.yaml": {
+    "sha256": "7bacad5183107485cd752895c3d037638c0901bd435b1814f02d84b82b3d40c1",
+    "unchanged": true
+  },
+  "tracking.yaml": {
+    "sha256": "1d9d4a74c4d54255ddb67b7eeb69692f0c39e400876d7be8a69ce8fde303811e",
+    "unchanged": true
+  },
+  "racing.yaml": {
+    "sha256": "e1c7ab808d563b148ed2fb7556523029a067c254e3ec97c1926c24f70817c1a8",
+    "unchanged": true
+  },
+  "navigation-geometry-verification.json": {
+    "sha256": "2f7dfafc0d701f3bb0fa2a3b51d8e8f1a74e79272985ecd413a5367ca2f9216f",
+    "unchanged": true
+  }
+}

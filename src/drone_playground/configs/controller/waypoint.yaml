@@ -1,0 +1,5 @@
+kp: 4.0
+kv: 3.0
+max_acceleration: 5.0
+_target_: drone_playground.control.controllers.trajectory.TrajectoryTracking
+input_kind: waypoint

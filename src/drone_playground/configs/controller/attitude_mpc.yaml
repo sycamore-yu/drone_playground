@@ -1,0 +1,2 @@
+_target_: drone_playground.control.controllers.mpc.trajectory.AttitudeMPCTracking
+input_kind: trajectory

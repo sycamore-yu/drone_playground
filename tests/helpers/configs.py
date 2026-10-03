@@ -5,12 +5,12 @@ from drone_playground.composition import compose_experiment
 
 def bodyrates_config(environment="hovering", forward="lotf_simplified"):
     return compose_experiment(
-        'control/bptt',
+        "control/bptt",
         environment,
         [
             "dynamics@env.dynamics=" + forward,
-            "action/controller@env.action.controller=bodyrates",
-            "env.action.command=thrust_bodyrates",
+            "controller@env.controller=rates",
+            "env.controller.input_kind=rates",
             "runtime.action_delay_ms=null",
             "runtime.device=cpu",
             "env.task.duration=0.04",

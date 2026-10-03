@@ -13,59 +13,15 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from drone_playground.artifacts.layout import resolve_artifact
-
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def _checkpoint_experiment(config):
-    implementation = config["method"]["implementation"]
-    if implementation == "depth_recurrent":
-        return "papers/depth_diffphysics"
-    if implementation == "pointcloud_recurrent":
-        task = config["env"]["task"]
-        if task["name"] in ("hovering", "tracking", "racing"):
-            return "control/differentiable_pointcloud_" + task["name"]
-        if task.get("adapter") == "recurrent_acceleration" or config["algorithm"]["name"] == "recurrent_navigation_bptt":
-            return "navigation/differentiable_pointcloud"
-        return "papers/differentiable_pointcloud"
-    if config["method"].get("physical_decoder"):
-        return "control/geometric"
-    if config["algorithm"]["name"] == "dva":
-        return "papers/dva"
-    if (
-        implementation == "neural"
-        and config["method"]["output"] == "velocity_yaw"
-    ):
-        return "navigation/" + config["algorithm"]["name"]
-    return "control/" + config["algorithm"]["name"]
+from drone_playground.resources import resource_path
 
 
 def script_main(mode):
     """Prepare a Hydra invocation without importing a simulation or training engine."""
     arguments = sys.argv[1:]
-    checkpoint = next(
-        (
-            arg.split("=", 1)[1]
-            for arg in arguments
-            if arg.startswith("checkpoint=")
-        ),
-        None,
-    )
-    if checkpoint:
-        from drone_playground.artifacts.schema import require_current
-
-        saved = require_current(
-            json.loads(
-                resolve_artifact(checkpoint).with_suffix(".json").read_text()
-            )["config"]
-        )
-        if not any(arg.startswith("experiment=") for arg in arguments):
-            arguments.insert(0, "experiment=" + _checkpoint_experiment(saved))
     arguments = [arg for arg in arguments if not arg.startswith("mode=")]
     generated = ["mode=" + mode]
-    if mode == "play" and not any(
-        arg.startswith("evaluation.episodes=") for arg in arguments
-    ):
+    if mode == "play" and not any(arg.startswith("evaluation.episodes=") for arg in arguments):
         generated.append("evaluation.episodes=1")
     # Hydra's argument parser expects positional overrides before display flags.
     position = next(
@@ -105,54 +61,44 @@ def resolve_checkpoint_execution(config, arguments):
     from drone_playground.artifacts.schema import require_current
 
     saved = require_current(
-        json.loads(
-            resolve_artifact(config["checkpoint"])
-            .with_suffix(".json")
-            .read_text()
-        )["config"]
+        json.loads(resolve_artifact(config["checkpoint"]).with_suffix(".json").read_text())[
+            "config"
+        ]
     )
-    if any(
-        config["method"][key] != saved["method"][key]
-        for key in ("name", "implementation")
-    ):
-        raise ValueError(
-            "Selected method and frozen checkpoint identity differ"
-        )
     immutable = ("network.", "method.", "algorithm.", "network=", "algorithm=")
+    if any(arg.lstrip("+").startswith("experiment=") for arg in arguments):
+        if any(config[name] != saved[name] for name in ("method", "network", "algorithm")):
+            raise ValueError("Explicit experiment changes the frozen policy identity")
     if any(arg.lstrip("+").startswith(immutable) for arg in arguments):
-        raise ValueError(
-            "Checkpoint inference freezes method, network and update identity"
-        )
+        raise ValueError("Checkpoint inference freezes method, network and update identity")
     resolved = copy.deepcopy(saved)
     resolved["env"] = _selected_component(saved, config, arguments, "env")
-    resolved["runtime"] = _selected_component(
-        saved, config, arguments, "runtime"
-    )
-    for slot in ("sensor", "observation"):
-        if resolved["env"][slot] != saved["env"][slot]:
-            raise ValueError(f"Frozen input contract differs on env.{slot}")
-    if any(arg.lstrip("+").startswith("env=") for arg in arguments):
-        resolved["objective"] = copy.deepcopy(config["objective"])
+    resolved["runtime"] = _selected_component(saved, config, arguments, "runtime")
+    if resolved["env"]["sensor"] != saved["env"]["sensor"]:
+        raise ValueError("Frozen sensor input contract differs")
+    if resolved["env"]["task"]["observation"] != saved["env"]["task"]["observation"]:
+        raise ValueError("Frozen observation input contract differs")
     for group in ("method", "network", "algorithm", "training"):
         resolved[group] = copy.deepcopy(saved[group])
     for group in (
         "mode",
         "checkpoint",
         "run_id",
-        "evaluation",
         "visualization",
         "replay",
     ):
         resolved[group] = copy.deepcopy(config[group])
+    resolved["evaluation"] = _selected_component(saved, config, arguments, "evaluation")
     resolved["evaluation"]["environment"] = "config"
     return resolved
 
 
-@hydra.main(
-    version_base="1.3", config_path=str(ROOT / "configs"), config_name="config"
-)
+@hydra.main(version_base="1.3", config_path=str(resource_path("configs")), config_name="config")
 def main(cfg: DictConfig):
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    from drone_playground.benchmarks import resolve_protocol_settings
+
+    resolve_protocol_settings(config)
     if isinstance(config.get("replay"), str):
         config["replay"] = {"directory": config["replay"]}
     if config.get("checkpoint") and config["mode"] in ("eval", "play"):
@@ -162,9 +108,7 @@ def main(cfg: DictConfig):
         config["method"]["implementation"] == "sampling_mpc"
         and config["method"]["decision"]["prediction_device"] != device
     )
-    os.environ["JAX_PLATFORMS"] = (
-        "cuda,cpu" if mixed else ("cpu" if device == "cpu" else "cuda")
-    )
+    os.environ["JAX_PLATFORMS"] = "cuda,cpu" if mixed else ("cpu" if device == "cpu" else "cuda")
     os.environ.setdefault("SCIPY_ARRAY_API", "1")
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
     from drone_playground.composition import run_experiment
@@ -175,7 +119,7 @@ def main(cfg: DictConfig):
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         seed = config.get("training", {}).get("seed")
         run_id = stamp + (f"-s{seed}" if isinstance(seed, int) else "")
-    result = run_experiment(config, ROOT, run_id)
+    result = run_experiment(config, Path(config["runtime"]["output_root"]).resolve(), run_id)
     if config["mode"] == "play" and result.get("replay_directory"):
         from drone_playground.visualization.viewer import replay
 

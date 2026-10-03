@@ -1,4 +1,4 @@
-"""Native LOTF forward equations and intentional surrogate derivatives."""
+"""Native LOTF forward equations and intentional simplified-dynamics Jacobians."""
 
 import importlib
 import importlib.util
@@ -8,6 +8,12 @@ import crazyflow  # noqa: F401
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+from drone_playground.control.setpoints import RateSetpoint
+
+
+def rates(value):
+    return RateSetpoint(thrust=value[0], body_rates=value[1:])
 
 
 class LOTFModelTests(unittest.TestCase):
@@ -28,7 +34,7 @@ class LOTFModelTests(unittest.TestCase):
         command = jnp.array([0.192 * 9.81, 0.05, -0.02, 0.01])
         state, reference = initial, initial
         for _ in range(6):
-            state = model.step(state, command, 0.02)
+            state = model.step(state, rates(command), 0.02)
             reference = native.step(reference, command[0], command[1:], None, 0.02)
         for key in ("p", "R", "v", "omega", "domega", "motor_omega", "acc"):
             np.testing.assert_allclose(
@@ -40,7 +46,7 @@ class LOTFModelTests(unittest.TestCase):
         model = m.LOTFModel()
         state = model.native.default_state()
         command = jnp.array([0.192 * 9.81, 0.05, -0.02, 0.01])
-        actual = jax.jacfwd(lambda u: model.step(state, u, 0.02).v)(command)
+        actual = jax.jacfwd(lambda u: model.step(state, rates(u), 0.02).v)(command)
         from lotf.objects.quadrotor_obj import simplified_dyn
 
         expected = jax.jacfwd(
@@ -48,7 +54,7 @@ class LOTFModelTests(unittest.TestCase):
         )(command)
         np.testing.assert_allclose(actual, expected, atol=1e-6)
         self.assertTrue(np.isfinite(actual).all())
-        grad = jax.grad(lambda u: jnp.sum(model.step(state, u, 0.02).p ** 2))(command)
+        grad = jax.grad(lambda u: jnp.sum(model.step(state, rates(u), 0.02).p ** 2))(command)
         self.assertTrue(np.isfinite(grad).all())
 
     def test_selected_direct_rule_has_same_forward_and_distinct_derivative(self):
@@ -59,14 +65,14 @@ class LOTFModelTests(unittest.TestCase):
         # derivative is undefined at zero horizontal speed. Use an ordinary state.
         state = hybrid.native.default_state().replace(v=jnp.array([0.1, 0.2, 0.01]))
         u = jnp.array([0.192 * 9.81, 0.3, -0.2, 0.1])
-        a = hybrid.step(state, u, 0.02)
-        b = direct.step(state, u, 0.02)
+        a = hybrid.step(state, rates(u), 0.02)
+        b = direct.step(state, rates(u), 0.02)
         np.testing.assert_allclose(a.v, b.v, atol=1e-6)
-        ja = jax.jacfwd(lambda x: hybrid.step(state, x, 0.02).v)(u)
-        jb = jax.jacfwd(lambda x: direct.step(state, x, 0.02).v)(u)
+        ja = jax.jacfwd(lambda x: hybrid.step(state, rates(x), 0.02).v)(u)
+        jb = jax.jacfwd(lambda x: direct.step(state, rates(x), 0.02).v)(u)
         self.assertGreater(float(jnp.linalg.norm(ja - jb)), 1e-5)
 
-    def test_full_prv_state_and_action_surrogate_jacobian(self):
+    def test_full_prv_state_and_action_simplified_dynamics_jacobian(self):
         m = self.module()
         model = m.LOTFModel()
         state = model.native.default_state().replace(v=jnp.array([0.1, 0.2, 0.01]))
@@ -76,7 +82,7 @@ class LOTFModelTests(unittest.TestCase):
 
         def actual(z):
             initial = state.replace(p=z[:3], R=z[3:12].reshape(3, 3), v=z[12:15])
-            out = model.step(initial, z[15:], 0.02)
+            out = model.step(initial, rates(z[15:]), 0.02)
             return jnp.concatenate([out.p, out.R.reshape(-1), out.v])
 
         def expected(z):

@@ -1,0 +1,252 @@
+<mujoco model="S02">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <custom>
+    <text name="scene_metadata" data="{&quot;id&quot;: &quot;S02&quot;, &quot;difficulty&quot;: &quot;medium&quot;, &quot;title&quot;: &quot;SANDO medium static forest&quot;, &quot;source&quot;: &quot;SANDO&quot;, &quot;dynamic&quot;: false, &quot;benchmark_role&quot;: &quot;primary&quot;, &quot;review_duration_s&quot;: 3.0, &quot;layout_policy&quot;: &quot;direct conversion of pinned SANDO forest geometry; no route reservation&quot;, &quot;source_provenance&quot;: {&quot;world_file&quot;: &quot;research_dev/sando/docker/dev-workspace/upstream-93b2eed/worlds/medium_forest.world&quot;, &quot;world_sha256&quot;: &quot;e6e0fffdd9a7d8694fc80690a59021df07ca7d9ad56307871bdc0fa023aa25c1&quot;, &quot;x_translation_m&quot;: -3.0, &quot;published_density&quot;: 0.1, &quot;cylinder_count&quot;: 81}, &quot;topology_acceptance&quot;: {&quot;require_direct_route_blocked&quot;: true, &quot;require_reachable&quot;: true, &quot;max_full_length_straight_lanes&quot;: 0, &quot;max_clear_straight_run_m&quot;: null}, &quot;obstacle_metadata&quot;: [{&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;0&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;1&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;2&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;3&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;4&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;5&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;6&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;7&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;8&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;9&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;10&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;11&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;12&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;13&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;14&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;15&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;16&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;17&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;18&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;19&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;20&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;21&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;22&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;23&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;24&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;25&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;26&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;27&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;28&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;29&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;30&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;31&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;32&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;33&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;34&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;35&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;36&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;37&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;38&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;39&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;40&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;41&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;42&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;43&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;44&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;45&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;46&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;47&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;48&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;49&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;50&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;51&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;52&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;53&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;54&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;55&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;56&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;57&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;58&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;59&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;60&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;61&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;62&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;63&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;64&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;65&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;66&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;67&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;68&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;69&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;70&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;71&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;72&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;73&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;74&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;75&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;76&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;77&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;78&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;79&quot;}, {&quot;role&quot;: &quot;sando_static_forest&quot;, &quot;source_name&quot;: &quot;80&quot;}]}" />
+  </custom>
+  <worldbody>
+    <body name="obstacle_4" mocap="true" pos="42.276200000000003 -8.9784299999999995 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_4" type="cylinder" size="1.3789800000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_5" mocap="true" pos="77.697299999999998 -7.3944700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_5" type="cylinder" size="1.2024699999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_6" mocap="true" pos="89.757000000000005 0.17536599999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_6" type="cylinder" size="1.29169 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_7" mocap="true" pos="61.5107 -9.2921899999999997 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_7" type="cylinder" size="1.3778999999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_8" mocap="true" pos="80.096400000000003 14.8871 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_8" type="cylinder" size="1.49139 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_9" mocap="true" pos="88.795100000000005 6.8571099999999996 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_9" type="cylinder" size="1.3649199999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_10" mocap="true" pos="43.555500000000002 4.2025399999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_10" type="cylinder" size="1.0503499999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_11" mocap="true" pos="47.769199999999998 13.528700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_11" type="cylinder" size="1.4833000000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_12" mocap="true" pos="54.7333 -18.075199999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_12" type="cylinder" size="1.4025099999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_13" mocap="true" pos="81.705299999999994 6.3227599999999997 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_13" type="cylinder" size="1.1994100000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_14" mocap="true" pos="85.843599999999995 -9.6049900000000008 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_14" type="cylinder" size="1.2467900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_15" mocap="true" pos="19.993500000000001 2.50664 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_15" type="cylinder" size="1.4352400000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_16" mocap="true" pos="79.418300000000002 -1.9268099999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_16" type="cylinder" size="1.48377 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_17" mocap="true" pos="11.812799999999999 1.9317500000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_17" type="cylinder" size="1.1600299999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_18" mocap="true" pos="95.202299999999994 3.8645700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_18" type="cylinder" size="1.27372 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_19" mocap="true" pos="59.393300000000004 -4.32254 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_19" type="cylinder" size="1.2224900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_20" mocap="true" pos="19.650500000000001 -11.8133 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_20" type="cylinder" size="1.14516 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_21" mocap="true" pos="47.715400000000002 -15.317299999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_21" type="cylinder" size="1.32833 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_22" mocap="true" pos="91.120099999999994 12.713200000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_22" type="cylinder" size="1.4383900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_23" mocap="true" pos="53.941299999999998 -4.0304099999999998 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_23" type="cylinder" size="1.4615400000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_24" mocap="true" pos="98.495999999999995 15.7288 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_24" type="cylinder" size="1.1378200000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_25" mocap="true" pos="61.043499999999995 -0.51400400000000002 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_25" type="cylinder" size="1.0411900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_26" mocap="true" pos="25.034600000000001 8.6009600000000006 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_26" type="cylinder" size="1.4225399999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_27" mocap="true" pos="80.889799999999994 -15.088900000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_27" type="cylinder" size="1.1102300000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_28" mocap="true" pos="5.7502200000000006 2.7553700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_28" type="cylinder" size="1.34884 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_29" mocap="true" pos="67.601299999999995 -17.732700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_29" type="cylinder" size="1.2670999999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_30" mocap="true" pos="37.352499999999999 17.968299999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_30" type="cylinder" size="1.3031699999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_31" mocap="true" pos="95.171099999999996 -11.9642 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_31" type="cylinder" size="1.0108200000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_32" mocap="true" pos="3.3331799999999996 -2.8108200000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_32" type="cylinder" size="1.1052900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_33" mocap="true" pos="35.367699999999999 -12.0648 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_33" type="cylinder" size="1.1299600000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_34" mocap="true" pos="10.906000000000001 18.5337 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_34" type="cylinder" size="1.01969 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_35" mocap="true" pos="72.613600000000005 12.735099999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_35" type="cylinder" size="1.1792800000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_36" mocap="true" pos="66.889499999999998 17.649799999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_36" type="cylinder" size="1.0847100000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_37" mocap="true" pos="83.617999999999995 -5.8854899999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_37" type="cylinder" size="1.3381000000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_38" mocap="true" pos="47.236199999999997 -3.3698299999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_38" type="cylinder" size="1.2984 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_39" mocap="true" pos="31.617600000000003 -5.3555799999999998 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_39" type="cylinder" size="1.2543 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_40" mocap="true" pos="73.613699999999994 -6.194 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_40" type="cylinder" size="1.12547 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_41" mocap="true" pos="24.605799999999999 17.0916 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_41" type="cylinder" size="1.1404399999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_42" mocap="true" pos="63.068799999999996 4.5660699999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_42" type="cylinder" size="1.14394 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_43" mocap="true" pos="1.3427899999999999 -11.572800000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_43" type="cylinder" size="1.19401 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_44" mocap="true" pos="63.432199999999995 -4.5823200000000002 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_44" type="cylinder" size="1.11971 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_45" mocap="true" pos="41.660499999999999 -3.6583199999999998 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_45" type="cylinder" size="1.2840800000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_46" mocap="true" pos="48.757399999999997 2.3077100000000002 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_46" type="cylinder" size="1.2091099999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_47" mocap="true" pos="49.4739 -6.97567 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_47" type="cylinder" size="1.44194 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_48" mocap="true" pos="86.4482 11.619 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_48" type="cylinder" size="1.40452 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_49" mocap="true" pos="62.909700000000001 -15.412000000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_49" type="cylinder" size="1.4997100000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_50" mocap="true" pos="10.979799999999999 -14.105600000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_50" type="cylinder" size="1.4934099999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_51" mocap="true" pos="28.630500000000001 17.765499999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_51" type="cylinder" size="1.4368300000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_52" mocap="true" pos="39.964399999999998 -15.551399999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_52" type="cylinder" size="1.4269700000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_53" mocap="true" pos="3.0383599999999999 -17.246700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_53" type="cylinder" size="1.2264900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_54" mocap="true" pos="93.507900000000006 16.415900000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_54" type="cylinder" size="1.27918 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_55" mocap="true" pos="74.404700000000005 7.6418900000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_55" type="cylinder" size="1.0209999999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_56" mocap="true" pos="37.590899999999998 1.4142699999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_56" type="cylinder" size="1.3561799999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_57" mocap="true" pos="33.771799999999999 10.835599999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_57" type="cylinder" size="1.29356 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_58" mocap="true" pos="17.172000000000001 18.149699999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_58" type="cylinder" size="1.16913 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_59" mocap="true" pos="5.90747 -12.049200000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_59" type="cylinder" size="1.1974 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_60" mocap="true" pos="83.379000000000005 18.062999999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_60" type="cylinder" size="1.0354300000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_61" mocap="true" pos="69.464699999999993 -2.7564600000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_61" type="cylinder" size="1.2395400000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_62" mocap="true" pos="74.303600000000003 -16.3536 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_62" type="cylinder" size="1.36738 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_63" mocap="true" pos="7.4298000000000002 13.672800000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_63" type="cylinder" size="1.1969000000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_64" mocap="true" pos="12.997299999999999 -3.7856100000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_64" type="cylinder" size="1.4515100000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_65" mocap="true" pos="15.357600000000001 -11.464399999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_65" type="cylinder" size="1.02105 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_66" mocap="true" pos="90.642700000000005 -6.6494999999999997 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_66" type="cylinder" size="1.2732000000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_67" mocap="true" pos="66.581900000000005 -11.175700000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_67" type="cylinder" size="1.24932 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_68" mocap="true" pos="86.070999999999998 -17.401399999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_68" type="cylinder" size="1.1093900000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_69" mocap="true" pos="2.5176400000000001 13.0563 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_69" type="cylinder" size="1.0203199999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_70" mocap="true" pos="15.640699999999999 5.9061000000000003 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_70" type="cylinder" size="1.0803499999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_71" mocap="true" pos="57.202199999999998 6.6955299999999998 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_71" type="cylinder" size="1.2524999999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_72" mocap="true" pos="97.700000000000003 9.1975200000000008 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_72" type="cylinder" size="1.3789199999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_73" mocap="true" pos="53.463500000000003 3.72702 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_73" type="cylinder" size="1.1030500000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_74" mocap="true" pos="58.424399999999999 13.1806 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_74" type="cylinder" size="1.2411099999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_75" mocap="true" pos="41.051600000000001 11.5777 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_75" type="cylinder" size="1.3284899999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_76" mocap="true" pos="61.881399999999999 10.7806 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_76" type="cylinder" size="1.3204899999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_77" mocap="true" pos="74.914400000000001 -1.6515299999999999 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_77" type="cylinder" size="1.4558899999999999 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_78" mocap="true" pos="57.030700000000003 -10.7714 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_78" type="cylinder" size="1.0376700000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_79" mocap="true" pos="31.080100000000002 -14.372400000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_79" type="cylinder" size="1.4097 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_80" mocap="true" pos="8.1355000000000004 -5.2687099999999996 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_80" type="cylinder" size="1.28301 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_81" mocap="true" pos="2.1469699999999996 17.859300000000001 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_81" type="cylinder" size="1.17394 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_82" mocap="true" pos="21.090299999999999 6.5905899999999997 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_82" type="cylinder" size="1.0352600000000001 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_83" mocap="true" pos="95.6614 -5.2179099999999998 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_83" type="cylinder" size="1.06159 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_84" mocap="true" pos="98.165000000000006 -14.9856 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_84" type="cylinder" size="1.14632 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+  </worldbody>
+</mujoco>

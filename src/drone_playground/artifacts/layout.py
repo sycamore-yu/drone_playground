@@ -31,6 +31,8 @@ def experiment_scope(config):
         method_name = method
     else:
         method_name = method.get("name")
+    if method_name == "policy":
+        method_name = (config.get("algorithm") or {}).get("name")
     method_name = method_name or (config.get("algorithm") or {}).get("name")
     return _slug(task_name, "misc"), _slug(method_name, "run")
 

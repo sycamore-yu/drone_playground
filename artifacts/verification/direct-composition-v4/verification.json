@@ -1,0 +1,326 @@
+{
+  "date": "2026-10-03",
+  "base_commit": "9bc706415e3794c71e36cab55b2a82755f7d06bc",
+  "full_regression_run": false,
+  "scope": "Affected behavior tests, real small updates, native loops and installed-package checks",
+  "requirements": [
+    {
+      "id": "reset",
+      "requirement": "固定延迟、随机键与观测 pytree 的按实例重置",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "reset-green.log",
+        "replay-migration.log"
+      ]
+    },
+    {
+      "id": "composition",
+      "requirement": "六组件环境，Brax State，环境独立 load，无 registry",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "last-paths.log",
+        "configuration-completion.log"
+      ]
+    },
+    {
+      "id": "dynamics",
+      "requirement": "统一 Dynamics.step；原生积分和控制时钟保持",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "rate-mode-test.log",
+        "mjcf-physical-baseline.log"
+      ]
+    },
+    {
+      "id": "setpoints",
+      "requirement": "明确 Reference/Setpoint/Actuation 类型、单位与原生顺序",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "portable-types.log",
+        "native-service-test.log"
+      ]
+    },
+    {
+      "id": "references",
+      "requirement": "公共时间轨迹，JAX 梯度，几何策略真实物理推进",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "pipeline-completion.log",
+        "last-paths.log"
+      ]
+    },
+    {
+      "id": "observations",
+      "requirement": "观测规格贯通网络、检查点、冻结推理",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "public-training.log",
+        "public-dva.log",
+        "pipeline-completion.log"
+      ]
+    },
+    {
+      "id": "learning",
+      "requirement": "四个通用和四个循环训练入口执行真实参数更新",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "public-training.log",
+        "public-dva.log",
+        "recurrent-entry-mpc.log",
+        "depth-entry-final.log"
+      ]
+    },
+    {
+      "id": "resume",
+      "requirement": "完整恢复、参数热启动边界与显式复制迁移",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "resume-client.log",
+        "replay-migration.log"
+      ]
+    },
+    {
+      "id": "geometry",
+      "requirement": "固定 MJCF 同源、运行动态位姿、保持原基准数据",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "mjcf-physical-baseline.log",
+        "last-paths.log",
+        "replay-migration.log"
+      ]
+    },
+    {
+      "id": "replay",
+      "requirement": "实际回放读回、SFC/预览独立有效期、记录开关",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "planner-replay-final.log",
+        "last-paths.log",
+        "replay-pointmass-final.log"
+      ]
+    },
+    {
+      "id": "pipeline",
+      "requirement": "模块构造、频率、缓存、重置、过期输出拒绝",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "pipeline-completion.log",
+        "native-service-test.log"
+      ]
+    },
+    {
+      "id": "mpc_native",
+      "requirement": "两类真实 MPC 与 EGO/SUPER 实际短闭环",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "recurrent-entry-mpc.log",
+        "native-service-test.log"
+      ]
+    },
+    {
+      "id": "installation",
+      "requirement": "wheel 安装后脱离源码/Git运行、训练与播放",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "installed-verification.log",
+        "wheel-final.log"
+      ]
+    },
+    {
+      "id": "delivery",
+      "requirement": "文档/ADR、静态检查、测试收集、632文件保持",
+      "implementation": true,
+      "callers_connected": true,
+      "validation": "passed",
+      "logs": [
+        "pointcloud-protocol-final.log",
+        "collection-final.log",
+        "ruff-mechanical-final.log"
+      ]
+    }
+  ],
+  "historical_files": {
+    "checked_files": 632,
+    "missing": [],
+    "changed": [],
+    "passed": true
+  },
+  "logs": {
+    "reset-green.log": {
+      "path": "logs/reset-green.log",
+      "sha256": "992ef7a538d5059b689e545f2882dbaef0cbe16f651135029c45153539af9fb8",
+      "source_sha256": "992ef7a538d5059b689e545f2882dbaef0cbe16f651135029c45153539af9fb8",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "portable-types.log": {
+      "path": "logs/portable-types.log",
+      "sha256": "0816d7fe9d6089d9e51de246697bdba96ab9936635d2965e4576780ceeeb9935",
+      "source_sha256": "0816d7fe9d6089d9e51de246697bdba96ab9936635d2965e4576780ceeeb9935",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "rate-mode-test.log": {
+      "path": "logs/rate-mode-test.log",
+      "sha256": "b35248754b3bd05576387bdc8e7d5a79980e2301f23582a49e46d280ac0040be",
+      "source_sha256": "b35248754b3bd05576387bdc8e7d5a79980e2301f23582a49e46d280ac0040be",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "mjcf-physical-baseline.log": {
+      "path": "logs/mjcf-physical-baseline.log",
+      "sha256": "f69e64c41a6c4d8bd73b314fa7184cb8e26aca227744b737bd733a76dda24b24",
+      "source_sha256": "f69e64c41a6c4d8bd73b314fa7184cb8e26aca227744b737bd733a76dda24b24",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "native-service-test.log": {
+      "path": "logs/native-service-test.log",
+      "sha256": "a10d004eef10dadd193bcd651712cddca08098141c967fecca04a9197d86f557",
+      "source_sha256": "a10d004eef10dadd193bcd651712cddca08098141c967fecca04a9197d86f557",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "pipeline-completion.log": {
+      "path": "logs/pipeline-completion.log",
+      "sha256": "091c0a08b12dc3033c2c0358557c49b14d2cce83e85133af9385d75001eb11d1",
+      "source_sha256": "091c0a08b12dc3033c2c0358557c49b14d2cce83e85133af9385d75001eb11d1",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "public-training.log": {
+      "path": "logs/public-training.log",
+      "sha256": "4a5b4afcf7f6a0fd7e1eeae342c100f71b8d0b2d833fc813ab7b4bd48154f5ef",
+      "source_sha256": "9ee8e78b6250ba8622b25045589e46432f5b65ba41e0a69fb6a2198dc3fc37e3",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "public-dva.log": {
+      "path": "logs/public-dva.log",
+      "sha256": "b0f0cc127dbec7eb6ab289b995a76715cb79932d37872355173e50684b63a984",
+      "source_sha256": "b0f0cc127dbec7eb6ab289b995a76715cb79932d37872355173e50684b63a984",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "recurrent-entry-mpc.log": {
+      "path": "logs/recurrent-entry-mpc.log",
+      "sha256": "d620babb689c36cc75470bb92c519ce70058b517a2ecc4ed202ae4f2615e1ef6",
+      "source_sha256": "2844b953c1c6798a9c69dac3f92c47c8d554f5cd24230dabde349479c82be72c",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "depth-entry-final.log": {
+      "path": "logs/depth-entry-final.log",
+      "sha256": "29074860ed0aca782b7aabeb9ebbc1c7767f99ba8ae53f9e8395da51ad110908",
+      "source_sha256": "29074860ed0aca782b7aabeb9ebbc1c7767f99ba8ae53f9e8395da51ad110908",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "resume-client.log": {
+      "path": "logs/resume-client.log",
+      "sha256": "5c35fd6b74a62c43da72ea498979878b6d2806539f54934719e76a1128e71d31",
+      "source_sha256": "5c35fd6b74a62c43da72ea498979878b6d2806539f54934719e76a1128e71d31",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "last-paths.log": {
+      "path": "logs/last-paths.log",
+      "sha256": "01a3a96ec6fa96c9de132ca246efd54a9c6ed035bd454cef318bd5db1626808e",
+      "source_sha256": "01a3a96ec6fa96c9de132ca246efd54a9c6ed035bd454cef318bd5db1626808e",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "replay-migration.log": {
+      "path": "logs/replay-migration.log",
+      "sha256": "72f2d338d11d0440f539b100983107492f054d5270601143e59584fe4ce4c86a",
+      "source_sha256": "72f2d338d11d0440f539b100983107492f054d5270601143e59584fe4ce4c86a",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "planner-replay-final.log": {
+      "path": "logs/planner-replay-final.log",
+      "sha256": "1a3c6159c7cce21536f7c4b4f36eec02e693c74317a45c23b270e3ae8bc86909",
+      "source_sha256": "1a3c6159c7cce21536f7c4b4f36eec02e693c74317a45c23b270e3ae8bc86909",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "pointcloud-protocol-final.log": {
+      "path": "logs/pointcloud-protocol-final.log",
+      "sha256": "790510c8298971d0201f44a649d27a13d4561c8a6cfa7bc21df95897d80f230c",
+      "source_sha256": "790510c8298971d0201f44a649d27a13d4561c8a6cfa7bc21df95897d80f230c",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "installed-verification.log": {
+      "path": "logs/installed-verification.log",
+      "sha256": "0cce7ed5f65cc301df179e592aad4def87010aa1c993c32ec74cdb963b3aa8ca",
+      "source_sha256": "0cce7ed5f65cc301df179e592aad4def87010aa1c993c32ec74cdb963b3aa8ca",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "wheel-final.log": {
+      "path": "logs/wheel-final.log",
+      "sha256": "0c5c3cbf7c48b7ed7929bfbbef8d27d531607233223a57303f30d5519fc15176",
+      "source_sha256": "0c5c3cbf7c48b7ed7929bfbbef8d27d531607233223a57303f30d5519fc15176",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "collection-final.log": {
+      "path": "logs/collection-final.log",
+      "sha256": "55ad2afcbc7da03de059fb9cbeab53ff477f374676076b0d377bf878fc0b00c3",
+      "source_sha256": "55ad2afcbc7da03de059fb9cbeab53ff477f374676076b0d377bf878fc0b00c3",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "configuration-completion.log": {
+      "path": "logs/configuration-completion.log",
+      "sha256": "807e228b9ec63bded93c193e6cc4d9594763f24c874a7247af150cb160b11bb3",
+      "source_sha256": "fd4ca962baa98993aa0a1f00b35731048682116395f1b6c2530a7f61d2c38471",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "remaining-contracts.log": {
+      "path": "logs/remaining-contracts.log",
+      "sha256": "40e6cc4b8f433d3828043b9c84d87730ad831d829fdac76b4b0c9112ce61ddf5",
+      "source_sha256": "26af326b6b9fd15d51ad862b8a9fec14e30d75f14e9b56da507e88a16e7a181d",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "replay-pointmass-final.log": {
+      "path": "logs/replay-pointmass-final.log",
+      "sha256": "7913fa480f814051a02901953871068463a24a04c6d5e8514402ba8563745ee7",
+      "source_sha256": "5fbfc86e45850235520dc0ec47ec07802708e96fd1a09e9d999a103edc81085f",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    },
+    "ruff-mechanical-final.log": {
+      "path": "logs/ruff-mechanical-final.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "source_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "normalization": "trailing whitespace removed; original scratch log preserved"
+    }
+  },
+  "resolved_failures": {
+    "public-training.log": "Three cases passed; the DVA fixture stride was corrected and the remaining case passed in public-dva.log.",
+    "recurrent-entry-mpc.log": "Seven cases passed; the depth test override was corrected and its case passed in depth-entry-final.log.",
+    "configuration-completion.log": "Two exception-expectation fixtures were migrated; test_composition.py then passed in last-paths.log.",
+    "remaining-contracts.log": "Twelve cases passed; the planner replay case was fixed and passed in planner-replay-final.log.",
+    "replay-pointmass-final.log": "Eight cases passed; the planner replay case was fixed and passed in planner-replay-final.log."
+  },
+  "static_checks": {
+    "compileall": "passed",
+    "ruff_E_F": "passed",
+    "full_style_baseline": 637,
+    "full_style_current": 571,
+    "full_style_clean": false
+  },
+  "review": {
+    "standards": "No repeated registry or default configuration source; native physics and task/method ownership retained.",
+    "specification": "Fourteen delivery checks complete; research quality thresholds and original results preserved."
+  }
+}

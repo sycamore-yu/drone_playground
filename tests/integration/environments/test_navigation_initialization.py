@@ -7,10 +7,11 @@ import pytest
 
 
 def make_env(role):
-    from drone_playground.composition import build_environment, compose_experiment
+    from drone_playground.composition import compose_experiment
+    from drone_playground.environments.environment import build_environment
 
     config = compose_experiment(
-        'navigation/bptt',
+        "navigation/bptt",
         "navigation/dynamic",
         [
             "+training.reset_randomization.position.distribution=mixture",

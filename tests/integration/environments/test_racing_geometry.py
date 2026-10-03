@@ -4,10 +4,11 @@ import numpy as np
 
 
 def test_control_course_keeps_gate_geometry_and_excludes_robot():
-    from drone_playground.composition import build_environment, compose_experiment
+    from drone_playground.composition import compose_experiment
+    from drone_playground.environments.environment import build_environment
     from drone_playground.environments.scenes.mujoco_geometry import bank_from_environment
 
-    env = build_environment(compose_experiment('control/apg', "racing"), "cpu", "eval", 1)
+    env = build_environment(compose_experiment("control/apg", "racing"), "cpu", "eval", 1)
     try:
         bank, identity = bank_from_environment(env)
         assert bank.rotations.shape[-2:] == (3, 3)

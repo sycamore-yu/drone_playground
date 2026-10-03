@@ -40,11 +40,7 @@ def summarize_race(trace, seeds, dt):
                 duration_s=steps * dt,
                 completion_time_s=steps * dt if completed[case] else None,
                 rmse_m=rmse,
-                **{
-                    "return": float(
-                        np.asarray(trace["reward"])[:, case][valid].sum()
-                    )
-                },
+                **{"return": float(np.asarray(trace["reward"])[:, case][valid].sum())},
             )
         )
     n = len(rows)
@@ -60,9 +56,7 @@ def summarize_race(trace, seeds, dt):
         gates_passed_mean=float(gates.mean()),
         rmse_all_mean=float(np.mean([x["rmse_m"] for x in rows])),
         return_mean=float(np.mean([x["return"] for x in rows])),
-        completion_time_mean_s=float(np.mean(completion_times))
-        if completion_times
-        else None,
+        completion_time_mean_s=float(np.mean(completion_times)) if completion_times else None,
         episodes=rows,
         completion_rule="LSY Level0 ordered directed gate passages [1,2,3,4,2], no failure",
         course_split="fixed Level0 geometry; independent disturbance seeds",
@@ -77,17 +71,13 @@ def merge_race_reports(reports: list[dict], expected_seeds: list[int]) -> dict:
             raise ValueError("Shard trial count differs from its episode rows")
         episodes.extend(dict(row) for row in report["episodes"])
     observed = [row["seed"] for row in episodes]
-    if len(set(observed)) != len(observed) or sorted(observed) != sorted(
-        expected_seeds
-    ):
+    if len(set(observed)) != len(observed) or sorted(observed) != sorted(expected_seeds):
         raise ValueError("Shards must cover every requested seed exactly once")
     episodes.sort(key=lambda row: row["seed"])
     for case, row in enumerate(episodes):
         row["case"] = case
         if row["completed"] and (row["gates_passed"] < 5 or row["failed"]):
-            raise ValueError(
-                "A completed race must pass all five gates without failure"
-            )
+            raise ValueError("A completed race must pass all five gates without failure")
     n = len(episodes)
     completed = sum(row["completed"] for row in episodes)
     times = [row["completion_time_s"] for row in episodes if row["completed"]]
@@ -100,9 +90,7 @@ def merge_race_reports(reports: list[dict], expected_seeds: list[int]) -> dict:
         collisions=collisions,
         collision_rate=collisions / n,
         timeouts=sum(row["time_out"] for row in episodes),
-        gates_passed_mean=float(
-            np.mean([row["gates_passed"] for row in episodes])
-        ),
+        gates_passed_mean=float(np.mean([row["gates_passed"] for row in episodes])),
         rmse_all_mean=float(np.mean([row["rmse_m"] for row in episodes])),
         return_mean=float(np.mean([row["return"] for row in episodes])),
         completion_time_mean_s=float(np.mean(times)) if times else None,
@@ -114,7 +102,6 @@ def merge_race_reports(reports: list[dict], expected_seeds: list[int]) -> dict:
 
 
 class RaceEvaluator:
-
     def __init__(self, env, make_policy, seeds):
         self.env, self.make_policy, self.seeds = env, make_policy, seeds
         self._run = jax.jit(self._rollout)
@@ -122,12 +109,8 @@ class RaceEvaluator:
     def _rollout(self, params):
         from drone_playground.runtime.jax_runner import policy_rollout
 
-        keys = jax.vmap(jax.random.PRNGKey)(
-            jnp.array(self.seeds, dtype=jnp.uint32)
-        )
-        return policy_rollout(
-            self.env, self.make_policy, params, keys, kind="racing"
-        )
+        keys = jax.vmap(jax.random.PRNGKey)(jnp.array(self.seeds, dtype=jnp.uint32))
+        return policy_rollout(self.env, self.make_policy, params, keys, kind="racing")
 
     def run(self, params):
         before = tree_digest(params)
@@ -141,7 +124,7 @@ class RaceEvaluator:
             parameter_sha256=before,
             parameters_frozen=True,
             task="racing",
-            dynamics=self.env.dynamics,
+            dynamics=self.env.dynamics.forward,
             drone=self.env.drone,
             elapsed_seconds=time.monotonic() - tic,
             reference_seed=self.env.reference_seed,
@@ -152,10 +135,6 @@ class RaceEvaluator:
         from drone_playground.runtime.timing import measure_policy
 
         initial = self.env.reset(jax.random.PRNGKey(self.seeds[0]))
-        report.update(
-            measure_policy(
-                self.env, self.make_policy, params, initial.obs, initial
-            )
-        )
+        report.update(measure_policy(self.env, self.make_policy, params, initial.obs, initial))
         report["sensor_timing"] = getattr(self.env, "sensor_timing", None)
         return report, trace

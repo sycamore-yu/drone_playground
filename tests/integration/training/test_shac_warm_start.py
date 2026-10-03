@@ -6,14 +6,15 @@ import numpy as np
 from brax.training.acme import running_statistics, specs
 
 from drone_playground.artifacts.checkpoints import save_policy
-from drone_playground.composition import compose_experiment, native_training_config
-from drone_playground.environments.tasks.tracking.rigid_body import TrackingEnv
+from drone_playground.composition import compose_experiment
 from drone_playground.learning.algorithms.shac import train
+from drone_playground.learning.brax_configuration import native_training_config
 from drone_playground.networks.factory import network_factory
+from tests.helpers.environments import tracking_environment
 
 
 def test_shac_initial_snapshot_matches_requested_actor_and_then_updates(tmp_path):
-    source = compose_experiment('control/bptt', "tracking")
+    source = compose_experiment("control/bptt", "tracking")
     source["network"].update(hidden_sizes=[8], normalize_observations=False)
     native = native_training_config(source)
     net = network_factory(native)(43, 4)
@@ -35,7 +36,7 @@ def test_shac_initial_snapshot_matches_requested_actor_and_then_updates(tmp_path
         use_schedule=False,
     )
     snapshots = []
-    env = TrackingEnv(device="cpu")
+    env = tracking_environment(device="cpu")
     try:
         _, _, metrics = train(
             env, config, policy_params_fn=lambda step, maker, params: snapshots.append(params)

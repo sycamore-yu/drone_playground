@@ -6,8 +6,8 @@ from pathlib import Path
 import jax
 import numpy as np
 
-from drone_playground.environments.tasks.tracking.rigid_body import TrackingEnv
 from drone_playground.learning.algorithms import shac
+from tests.helpers.environments import tracking_environment
 
 
 def training_config():
@@ -29,7 +29,7 @@ def training_config():
 
 
 def test_real_actor_critic_updates_and_snapshot_budget():
-    env = TrackingEnv(device="cpu")
+    env = tracking_environment(device="cpu")
     snapshots = []
     try:
         make_policy, params, result = shac.train(
@@ -51,20 +51,16 @@ def test_real_actor_critic_updates_and_snapshot_budget():
 
 
 def test_full_state_resume_matches_continuous_updates():
-    env = TrackingEnv(device="cpu")
+    env = tracking_environment(device="cpu")
     try:
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
-            _, continuous, _ = shac.train(
-                env, training_config(), state_directory=directory
-            )
+            _, continuous, _ = shac.train(env, training_config(), state_directory=directory)
             saved = directory / "update-0000001.pkl"
             loaded, metadata = shac.load_training_state(saved)
             assert int(loaded.updates) == 1
             assert metadata["typed_key_paths"]
-            _, resumed, result = shac.train(
-                env, training_config(), restore_state=saved
-            )
+            _, resumed, result = shac.train(env, training_config(), restore_state=saved)
             assert result["actual_steps"] == 16
             for expected, actual in zip(
                 jax.tree.leaves(continuous), jax.tree.leaves(resumed), strict=True

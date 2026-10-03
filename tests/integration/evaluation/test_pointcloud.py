@@ -111,7 +111,7 @@ def test_collision_free_evaluation_keeps_the_reconstruction_training_transition(
     bank = bank.replace(active=jnp.zeros_like(bank.active))
     state = task.initial_state(bank).replace(vel=jnp.array([[1.0, 0.2, 0.0]]))
     command = jnp.array([[2.0, -1.0, 0.3]])
-    expected = task.model.step(state, command, task.dt)
+    expected = task.dynamics.step(state, task.controller.apply(state, command), task.dt)
     actual = ev.advance_checked(task, bank, state, command, jnp.zeros(1), jnp.zeros(1, jnp.int32))
     np.testing.assert_allclose(actual[0].vector(), expected.vector(), atol=1e-6, rtol=1e-6)
 

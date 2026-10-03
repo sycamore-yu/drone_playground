@@ -1,4 +1,0 @@
-defaults:
-- trajectory_tracking
-- _self_
-reference_source: trajectory

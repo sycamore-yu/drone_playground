@@ -5,27 +5,25 @@ import jax.numpy as jnp
 import numpy as np
 from brax.envs.base import State
 
-from drone_playground.actions.delay import ActionDelay
-from drone_playground.actions.transition import ActionTransition
+from drone_playground.control.delay import ActionDelay
+from drone_playground.control.transition import ActionTransition
 from drone_playground.runtime.host_runner import run_steps
 
 
 def test_complete_interval_applies_control_once_and_probes_every_physics_step():
     def apply(state, command):
-        return state + command
+        return command
 
-    def advance(state, steps):
-        return state + steps
+    def advance(state, control, dt):
+        return state + control * dt
 
-    execution = ActionTransition(apply, advance, 4)
-    assert int(execution.step(jnp.int32(0), jnp.int32(10))) == 14
+    execution = ActionTransition(apply, advance, 4, 1.0)
+    assert float(execution.step(jnp.float32(0), jnp.float32(10))) == 40
     final, clearance, collided = execution.step_with_evidence(
-        jnp.int32(0), jnp.int32(10), lambda state, index: (jnp.float32(12 - state), state == 12)
+        jnp.float32(0), jnp.float32(10), lambda state, index: (jnp.float32(12 - state), state == 20)
     )
-    assert int(final) == 14 and float(clearance) == -2 and bool(collided)
-    assert (
-        float(jax.grad(lambda u: ActionTransition(apply, advance, 4).step(0.0, u))(2.0)) == 1.0
-    )
+    assert float(final) == 40 and float(clearance) == -28 and bool(collided)
+    assert float(jax.grad(lambda u: execution.step(0.0, u))(2.0)) == 4.0
 
 
 class Toy:

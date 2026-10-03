@@ -10,24 +10,20 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hydra.utils import instantiate
 from scipy.spatial.transform import Rotation
-
-from drone_playground.networks.factory import build_network
 
 from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report, tree_digest
 from drone_playground.artifacts.training_state import load_training_state
 from drone_playground.environments.scenes.geometry import clearance_and_collision, euclidean_norm
-from drone_playground.environments.tasks.navigation.rigid_body import OUTCOME_NAMES
+from drone_playground.environments.tasks.navigation.events import OUTCOME_NAMES
+from drone_playground.networks.factory import build_network
 
 
 def _select(mask, new, old):
     return jax.tree.map(
-        lambda n, o: jnp.where(
-            mask.reshape(mask.shape + (1,) * (n.ndim - mask.ndim)), n, o
-        ),
+        lambda n, o: jnp.where(mask.reshape(mask.shape + (1,) * (n.ndim - mask.ndim)), n, o),
         new,
         old,
     )
@@ -48,27 +44,25 @@ def advance_checked(task, bank, state, command, timestamp, outcome):
         physical, clock, result, minimum = carry
         active = result == 0
         elapsed = (offset + 1) * (task.dt / substeps)
-        proposed = task.model.step(base_state, command, elapsed)
+        proposed = task.dynamics.step(
+            base_state, task.controller.apply(base_state, command), elapsed
+        )
         next_time = base_time + elapsed
         finite = jnp.all(jnp.isfinite(proposed.vector()), axis=-1)
         centre = proposed.pos + jnp.einsum(
             "...ij,j->...i", proposed.rotation, jnp.array([0.0, 0.0, 0.005])
         )
-        clearance, collision = jax.vmap(
-            lambda i, t, p: task.task_definition.clearance(bank, i, p, t)
-        )(jnp.arange(bank.num_instances), next_time, centre)
-        _, _, _, result_next = task.task_definition.events(
-            bank, proposed.pos, bank.goal, collision, ~finite
+        clearance, collision = jax.vmap(lambda i, t, p: task.events.clearance(bank, i, p, t))(
+            jnp.arange(bank.num_instances), next_time, centre
         )
+        _, _, _, result_next = task.events.events(bank, proposed.pos, bank.goal, collision, ~finite)
         if getattr(task, "arrival_sampling", "policy") != "physics":
             result_next = jnp.where(result_next == 1, 0, result_next)
         physical = _select(active & finite, proposed, physical)
         clock = jnp.where(active, next_time, clock)
         result = jnp.where(active, result_next, result)
         # Keep finite geometry evidence when the proposed state itself is invalid.
-        minimum = jnp.where(
-            active & finite, jnp.minimum(minimum, clearance), minimum
-        )
+        minimum = jnp.where(active & finite, jnp.minimum(minimum, clearance), minimum)
         return (physical, clock, result, minimum), None
 
     initial_minimum = jnp.full((bank.num_instances,), jnp.inf)
@@ -88,9 +82,7 @@ def make_rollout(task, network, bank, initial_state=None):
 
     @jax.jit
     def run(params, speeds):
-        state = (
-            task.initial_state(bank) if initial_state is None else initial_state
-        )
+        state = task.initial_state(bank) if initial_state is None else initial_state
         hidden = jnp.zeros((count, network.hidden_size))
         clock = jnp.zeros(count)
         outcome = jnp.zeros(count, jnp.int32)
@@ -99,12 +91,10 @@ def make_rollout(task, network, bank, initial_state=None):
             physical, memory, timestamp, result = carry
             active = result == 0
             # Scene time is physical episode time. Each still-running case has this tick's time.
-            points, valid, proprio, _ = task.observation(
-                bank, physical, index * task.dt, speeds
+            points, valid, proprio, _ = task.measure(
+                bank, physical, jnp.full((count,), index * task.dt), speeds
             )
-            body_action, next_memory = network.apply(
-                params, points, valid, proprio, memory
-            )
+            body_action, next_memory = network.apply(params, points, valid, proprio, memory)
             command = task.command(body_action, physical)
             call_time = jnp.where(active, index * task.dt, timestamp)
             nxt, new_time, new_result, clearance = advance_checked(
@@ -143,7 +133,7 @@ def make_rollout(task, network, bank, initial_state=None):
 
         def inactive(carry, index):
             physical, memory, timestamp, result = carry
-            proprio, _ = task.observer.proprioception(
+            proprio, _ = task.observation.proprioception(
                 physical, bank.goal, speeds, task.body_radius
             )
             zeros = jnp.zeros(count)
@@ -171,9 +161,7 @@ def make_rollout(task, network, bank, initial_state=None):
             return (physical, memory, timestamp, result), row
 
         def step(carry, index):
-            return jax.lax.cond(
-                jnp.any(carry[3] == 0), advance, inactive, carry, index
-            )
+            return jax.lax.cond(jnp.any(carry[3] == 0), advance, inactive, carry, index)
 
         _, trace = jax.lax.scan(
             step,
@@ -190,14 +178,10 @@ def summarize_trace(trace, scene_ids, speed, duration, start):
     for case, scene_id in enumerate(scene_ids):
         length = int(np.asarray(trace["active"])[:, case].sum())
         if length < 1:
-            raise ValueError(
-                "Every evaluation case must contain an actual transition"
-            )
+            raise ValueError("Every evaluation case must contain an actual transition")
         result = int(np.asarray(trace["outcome"])[length - 1, case])
         result = 5 if result == 0 else result
-        positions = np.vstack(
-            [np.asarray(start)[case], np.asarray(trace["pos"])[:length, case]]
-        )
+        positions = np.vstack([np.asarray(start)[case], np.asarray(trace["pos"])[:length, case]])
         speed_values = np.asarray(trace["metrics"]["speed"])[:length, case]
         elapsed = float(np.asarray(trace["time"])[length - 1, case])
         episodes.append(
@@ -213,20 +197,14 @@ def summarize_trace(trace, scene_ids, speed, duration, start):
                 steps=length,
                 elapsed_s=elapsed,
                 arrival_time_s=elapsed if result == 1 else None,
-                path_length_m=float(
-                    np.linalg.norm(np.diff(positions, axis=0), axis=-1).sum()
-                ),
+                path_length_m=float(np.linalg.norm(np.diff(positions, axis=0), axis=-1).sum()),
                 peak_speed_m_s=float(speed_values.max()),
                 mean_speed_m_s=float(speed_values.mean()),
                 min_clearance_m=float(
-                    np.asarray(trace["metrics"]["clearance"])[
-                        :length, case
-                    ].min()
+                    np.asarray(trace["metrics"]["clearance"])[:length, case].min()
                 ),
                 final_goal_distance_m=float(
-                    np.asarray(trace["metrics"]["goal_distance"])[
-                        length - 1, case
-                    ]
+                    np.asarray(trace["metrics"]["goal_distance"])[length - 1, case]
                 ),
             )
         )
@@ -245,12 +223,7 @@ def summarize_trace(trace, scene_ids, speed, duration, start):
         **counts,
         success_rate=counts["arrived"] / len(episodes),
         constrained_time_mean_s=float(
-            np.mean(
-                [
-                    row["elapsed_s"] if row["arrived"] else duration
-                    for row in episodes
-                ]
-            )
+            np.mean([row["elapsed_s"] if row["arrived"] else duration for row in episodes])
         ),
         episodes=episodes,
     )
@@ -272,29 +245,20 @@ def export_case(task, trace, case, directory):
     matrices = np.asarray(trace["rotation"])[:length, case]
     single["quat"] = Rotation.from_matrix(matrices).as_quat()[:, None]
     single["metrics"] = {
-        k: np.asarray(v)[:length, case : case + 1]
-        for k, v in trace["metrics"].items()
+        k: np.asarray(v)[:length, case : case + 1] for k, v in trace["metrics"].items()
     }
     # Include the real pre-action state. RScope needs two timestamps even when
     # the first transition terminates; frame count and transition count differ.
     initial_position = np.asarray(trace["observation_pos"])[0, case]
     initial_rotation = np.asarray(trace["observation_rotation"])[0, case]
-    initial_centre = initial_position + initial_rotation @ np.array(
-        [0.0, 0.0, 0.005]
-    )
+    initial_centre = initial_position + initial_rotation @ np.array([0.0, 0.0, 0.005])
     initial_clearance = float(
-        clearance_and_collision(
-            task.bank, case, 0.0, initial_centre, task.body_radius
-        )[0]
+        clearance_and_collision(task.bank, case, 0.0, initial_centre, task.body_radius)[0]
     )
     initial_metrics = {
         "clearance": initial_clearance,
-        "goal_distance": float(
-            np.linalg.norm(np.asarray(task.bank.goal[case]) - initial_position)
-        ),
-        "speed": float(
-            np.linalg.norm(np.asarray(trace["observation_velocity"])[0, case])
-        ),
+        "goal_distance": float(np.linalg.norm(np.asarray(task.bank.goal[case]) - initial_position)),
+        "speed": float(np.linalg.norm(np.asarray(trace["observation_velocity"])[0, case])),
     }
     initial_fields = {
         "pos": initial_position[None, None],
@@ -307,15 +271,13 @@ def export_case(task, trace, case, directory):
     for name, initial in initial_fields.items():
         single[name] = np.concatenate([initial, single[name]], axis=0)
     single["metrics"] = {
-        name: np.concatenate(
-            [np.full_like(values[:1], initial_metrics[name]), values], axis=0
-        )
+        name: np.concatenate([np.full_like(values[:1], initial_metrics[name]), values], axis=0)
         for name, values in single["metrics"].items()
     }
     active = active_indices(task.bank, case)
-    single["obstacle_pos"] = obstacle_track(
-        task.bank, case, single["time"][:, 0]
-    )[:, active, None, :].swapaxes(1, 2)
+    single["obstacle_pos"] = obstacle_track(task.bank, case, single["time"][:, 0])[
+        :, active, None, :
+    ].swapaxes(1, 2)
     model = create_replay_model(task, case)
     directory = Path(directory)
     path = export_rollout(model, directory, single)
@@ -326,9 +288,7 @@ def export_case(task, trace, case, directory):
     rollout.num_evals = 0
     rollout.append_unroll(path)
     restored = rollout.rollouts[-1]
-    np.testing.assert_allclose(
-        restored.mocap_pos[:, 0, 0], single["pos"][:, 0], atol=1e-6
-    )
+    np.testing.assert_allclose(restored.mocap_pos[:, 0, 0], single["pos"][:, 0], atol=1e-6)
     for axis in range(single["actions"].shape[-1]):
         np.testing.assert_allclose(
             restored.metrics[f"action/{axis}"],
@@ -424,9 +384,7 @@ def write_summary(report, directory):
             f"{evidence['actual_steps']}/{evidence['target_steps']} 次交互。"
         )
     else:
-        lines.append(
-            "完整训练运行预算以独立运行结果为准；本表记录当前冻结权重的迭代数。"
-        )
+        lines.append("完整训练运行预算以独立运行结果为准；本表记录当前冻结权重的迭代数。")
     lines += [
         f"到达 {report['arrived']}/{report['num_trials']}，碰撞 {report['collision']}，"
         f"越界 {report['out_of_bounds']}，超时 {report['timeout']}，数值失败 {report['numerical_failure']}。",
@@ -450,7 +408,7 @@ def write_summary(report, directory):
 
 
 def evaluate_pointcloud(config, root: Path, run_id: str):
-    from drone_playground.composition import build_environment
+    from drone_playground.environments.environment import build_environment
 
     state, metadata = load_training_state(config["checkpoint"])
     trained = metadata["config"]
@@ -459,31 +417,26 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
             raise ValueError(
                 f"Frozen-policy evaluation changed the {slot} slot; declare a separate ablation"
             )
-    for slot in ("sensor", "observation", "action", "dynamics"):
+    for slot in ("sensor", "controller", "dynamics"):
         if config["env"][slot] != trained["env"][slot]:
             raise ValueError(f"Frozen-policy evaluation changed env.{slot}")
     if config["algorithm"]["gradient"] != trained["algorithm"]["gradient"]:
-        raise ValueError(
-            "Frozen-policy evaluation changed its derivative identity"
-        )
+        raise ValueError("Frozen-policy evaluation changed its derivative identity")
     if config["env"]["task"]["freq"] != trained["env"]["task"]["freq"]:
-        raise ValueError(
-            "The recurrent policy tick must match its training time semantics"
-        )
+        raise ValueError("The recurrent policy tick must match its training time semantics")
     if config["env"]["scene"]["name"] != "navigation":
         raise ValueError(
             "Choose experiment=navigation/differentiable_pointcloud_acceleration_benchmark for the transfer benchmark"
         )
     repeats = config["evaluation"]["episodes"]
     if not isinstance(repeats, int) or repeats < 1:
-        raise ValueError(
-            "Evaluation episodes per scene must be a positive integer"
-        )
+        raise ValueError("Evaluation episodes per scene must be a positive integer")
     cfg = copy.deepcopy(config)
     cfg["env"]["task"]["duration"] = float(cfg["evaluation"]["duration"])
     cfg["mode"] = "eval"
     role = cfg["evaluation"]["role"]
-    task = build_environment(cfg, cfg["runtime"]["device"], role, repeats)
+    env = build_environment(cfg, cfg["runtime"]["device"], role, repeats)
+    task = env.task
     network = build_network(cfg["network"])
     bank, manifest = task.scene.build()
     ids = list(manifest["scene_ids"])
@@ -492,34 +445,28 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
     indices = jnp.tile(jnp.arange(bank.num_instances), repeats)
     bank = bank.select(indices)
     ids *= repeats
-    from drone_playground.environments.environment import ROLE_SEEDS
 
     seed_start = cfg["evaluation"].get("seed_start")
     seeds = list(
         range(
-            ROLE_SEEDS[role] if seed_start is None else seed_start,
-            (ROLE_SEEDS[role] if seed_start is None else seed_start) + len(ids),
+            config["runtime"]["scene_seed_" + role] if seed_start is None else seed_start,
+            (config["runtime"]["scene_seed_" + role] if seed_start is None else seed_start)
+            + len(ids),
         )
     )
     initial = task.initial_state(bank).replace(
-        measurement_key=jnp.asarray(
-            [jax.random.PRNGKey(seed) for seed in seeds]
-        )
+        measurement_key=jnp.asarray([jax.random.PRNGKey(seed) for seed in seeds])
     )
     initial_record = None
     from drone_playground.benchmarks import load_protocol
 
     initial_spec = cfg["evaluation"].get("initial_conditions")
     if not initial_spec and cfg["evaluation"].get("protocol"):
-        initial_spec = load_protocol(cfg["evaluation"]["protocol"])[
-            "initial_conditions"
-        ]
+        initial_spec = load_protocol(cfg["evaluation"]["protocol"])["initial_conditions"]
     if initial_spec:
         from drone_playground.evaluation.navigation.cases import navigation_resets
 
-        reset = navigation_resets(
-            bank, np.arange(len(ids)), seeds, initial_spec, task.body_radius
-        )
+        reset = navigation_resets(bank, np.arange(len(ids)), seeds, initial_spec, task.body_radius)
         initial = initial.replace(
             pos=jnp.asarray(reset["position"]),
             vel=jnp.asarray(reset["velocity"]),
@@ -531,27 +478,19 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
     before = tree_digest(state.params)
     source_run = cfg["evaluation"].get("training_run")
     provenance = (
-        training_provenance(
-            source_run, cfg["checkpoint"], int(state.updates), before
-        )
+        training_provenance(source_run, cfg["checkpoint"], int(state.updates), before)
         if source_run
         else None
     )
-    selected_is_final = (
-        int(state.updates) == trained["training"]["policy_updates"]
-    )
+    selected_is_final = int(state.updates) == trained["training"]["policy_updates"]
     run = make_rollout(task, network, bank, initial)
     started = time.monotonic()
-    with RunRecorder(
-        root, run_id, cfg, task_id="DP-005-navigation-transfer"
-    ) as rec:
-        rec.record_environment(task)
+    with RunRecorder(root, run_id, cfg, task_id="DP-005-navigation-transfer") as rec:
+        rec.record_environment(env)
         with capture_console(rec.path / "console.log"):
-            save_report(rec.path / "components.json", task.component_identity)
+            save_report(rec.path / "components.json", env.component_identity)
             save_report(rec.path / "scene-manifest.json", manifest)
-            save_report(
-                rec.path / "sensor-calibration.json", task.sensor_calibration
-            )
+            save_report(rec.path / "sensor-calibration.json", task.sensor_calibration)
             cells = {}
             replays = []
             for speed in cfg["evaluation"]["speeds"]:
@@ -561,34 +500,20 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                     np.asarray,
                     run(state.params, jnp.full((len(ids),), float(speed))),
                 )
-                report = summarize_trace(
-                    trace, ids, speed, task.duration, bank.start
-                )
-                for episode, seed in zip(
-                    report["episodes"], seeds, strict=True
-                ):
+                report = summarize_trace(trace, ids, speed, task.duration, bank.start)
+                for episode, seed in zip(report["episodes"], seeds, strict=True):
                     episode["seed"] = seed
                 cells[label] = report
                 archive = rec.path / "traces" / f"{label}.npz"
                 archive.parent.mkdir(parents=True, exist_ok=True)
                 arrays = {k: v for k, v in trace.items() if k != "metrics"}
-                arrays.update(
-                    {f"metric_{k}": v for k, v in trace["metrics"].items()}
-                )
+                arrays.update({f"metric_{k}": v for k, v in trace["metrics"].items()})
                 np.savez_compressed(archive, **arrays)
-                report["trace_sha256"] = hashlib.sha256(
-                    archive.read_bytes()
-                ).hexdigest()
+                report["trace_sha256"] = hashlib.sha256(archive.read_bytes()).hexdigest()
                 save_report(rec.path / "eval" / f"{label}.json", report)
                 if cfg["evaluation"].get("record_replays", False):
                     for case, scene_id in enumerate(ids):
-                        directory = (
-                            rec.path
-                            / "rollouts"
-                            / label
-                            / scene_id
-                            / f"seed-{seeds[case]}"
-                        )
+                        directory = rec.path / "rollouts" / label / scene_id / f"seed-{seeds[case]}"
                         path = export_case(task, trace, case, directory)
                         replays.append(
                             dict(
@@ -598,9 +523,7 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                                 frames=report["episodes"][case]["steps"] + 1,
                                 transitions=report["episodes"][case]["steps"],
                                 initial_frame_included=True,
-                                sha256=hashlib.sha256(
-                                    path.read_bytes()
-                                ).hexdigest(),
+                                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                                 readback_verified=True,
                             )
                         )
@@ -617,9 +540,7 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
             after = tree_digest(state.params)
             if before != after:
                 raise RuntimeError("Evaluation changed frozen parameters")
-            episodes = [
-                row for cell in cells.values() for row in cell["episodes"]
-            ]
+            episodes = [row for cell in cells.values() for row in cell["episodes"]]
             counts = {
                 key: sum(int(row[key]) for row in episodes)
                 for key in (
@@ -660,22 +581,21 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                 duration_s=task.duration,
                 body_radius_m=task.body_radius,
                 goal_radius_m=task.goal_radius,
-                dynamics=task.model.forward,
+                dynamics=task.dynamics.forward,
                 elapsed_s=time.monotonic() - started,
                 reward_semantics="distance progress for replay only; training uses trajectory losses",
                 evaluation_scope="fixed navigation geometry transfer; deterministic cells; protocol identity below",
                 protocol=cfg["evaluation"].get("protocol"),
                 arrival_sampling=task.arrival_sampling,
-                training_action_delay_ms=trained.get("runtime", {}).get(
-                    "action_delay_ms"
-                ),
+                training_action_delay_ms=trained.get("runtime", {}).get("action_delay_ms"),
             )
             from drone_playground.runtime.timing import measure_decision
 
-            single_bank, physical = bank.select(jnp.array([0])), jax.tree.map(
-                lambda value: value[:1], initial
+            single_bank, physical = (
+                bank.select(jnp.array([0])),
+                jax.tree.map(lambda value: value[:1], initial),
             )
-            points, valid, proprio, _ = task.observation(
+            points, valid, proprio, _ = task.measure(
                 single_bank,
                 physical,
                 0.0,
@@ -688,10 +608,8 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                     physical,
                 )
             )
-            report.update(
-                measure_decision(lambda: decide(state.params), task.dt)
-            )
-            report["sensor_timing"] = task.sensor_timing
+            report.update(measure_decision(lambda: decide(state.params), task.dt))
+            report["sensor_timing"] = env.sensor_timing
             save_report(rec.path / "eval/report.json", report)
             write_summary(report, rec.path / "eval")
             save_report(rec.path / "rollouts/index.json", dict(replays=replays))

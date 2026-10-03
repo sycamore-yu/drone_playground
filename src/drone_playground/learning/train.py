@@ -7,10 +7,8 @@ its optimizer loop. This distinction is recorded in each run configuration.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
-import subprocess
 import sys
 import time
 import traceback
@@ -32,15 +30,16 @@ from drone_playground.artifacts.checkpoints import (
     save_policy,
 )
 from drone_playground.artifacts.reporting import save_report
-from drone_playground.composition import build_environment, native_training_config
 from drone_playground.benchmarks import (
     apply_quality,
     checkpoint_eval_score,
     checkpoint_eval_seeds,
     pilot_scene_rates,
 )
+from drone_playground.environments.environment import build_environment
 from drone_playground.evaluation.run import make_evaluator
 from drone_playground.evaluation.tracking.metrics import select_replays
+from drone_playground.learning.brax_configuration import native_training_config
 from drone_playground.learning.wrappers import wrap_for_training
 from drone_playground.networks.factory import network_factory
 
@@ -66,11 +65,7 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
     """Continue checkpoint_eval selection without importing evaluations after the saved state."""
     meta = json.loads(state_path.with_suffix(".json").read_text())
     saved = meta["config"]
-    cutoff = (
-        int(meta["updates"])
-        * int(saved["num_envs"])
-        * int(saved["horizon_length"])
-    )
+    cutoff = int(meta["updates"]) * int(saved["num_envs"]) * int(saved["horizon_length"])
     source = state_path.resolve().parent.parent
     candidates = []
     for path in sorted((source / "eval").glob("step-*.json")):
@@ -78,12 +73,8 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
         if report.get("role") == "eval" and report["step"] <= cutoff:
             candidates.append(report)
     if not candidates:
-        raise ValueError(
-            "D.VA experiment resume requires its earlier checkpoint_eval reports"
-        )
-    best = max(
-        candidates, key=lambda report: checkpoint_eval_score(task, report)
-    )
+        raise ValueError("D.VA experiment resume requires its earlier checkpoint_eval reports")
+    best = max(candidates, key=lambda report: checkpoint_eval_score(task, report))
     policy = (source / best["checkpoint"]).resolve()
     if not policy.is_relative_to(source):
         raise ValueError("Inherited policy must belong to the source run")
@@ -119,7 +110,7 @@ def inherit_dva_selection(state_path: Path, destination: Path, task: str):
 
 def export_run_replays(env, trace, report, directory):
     """Export replays through the contract the selected task actually owns."""
-    if env.task == "navigation":
+    if env.task.name == "navigation":
         from drone_playground.evaluation.navigation.policy import (
             export_navigation_replays,
             select_episodes,
@@ -155,9 +146,7 @@ def train(
         raise ValueError("Supported algorithms are PPO, APG, SHAC and D.VA")
     config.update(
         device=device,
-        snapshot_schedule="initial-and-final"
-        if algorithm == "apg"
-        else "per-epoch",
+        snapshot_schedule="initial-and-final" if algorithm == "apg" else "per-epoch",
         trainer=(
             f"drone_playground.learning.algorithms.{algorithm}"
             if algorithm in {"bptt", "shac", "dva"}
@@ -167,25 +156,11 @@ def train(
         timeout_contract=config["components"]["env"]["task"]["time_limit_kind"],
         task_protocol=config["components"]["env"]["task"],
     )
-    source_root = Path(crazyflow.__file__).resolve().parents[1]
-    revision = subprocess.check_output(
-        ["git", "-C", str(source_root), "rev-parse", "HEAD"], text=True
-    ).strip()
-    dependency_patch = subprocess.check_output(
-        ["git", "-C", str(source_root), "diff", "HEAD", "--"]
-    )
-    config["crazyflow_code"] = {
-        "commit": revision,
-        "working_tree_patch_sha256": hashlib.sha256(
-            dependency_patch
-        ).hexdigest(),
-    }
+    from drone_playground.artifacts.provenance import package_provenance
+
+    config["crazyflow_code"], dependency_patch = package_provenance(crazyflow)
     config["actual_devices"] = [str(device) for device in jax.devices()]
-    task_id = (
-        "07"
-        if config["task"] == "racing"
-        else ("04" if algorithm == "shac" else "05")
-    )
+    task_id = "07" if config["task"] == "racing" else ("04" if algorithm == "shac" else "05")
     resolved = dict(config["components"])
     resolved["provenance"] = {
         "crazyflow_code": config["crazyflow_code"],
@@ -207,39 +182,33 @@ def train(
     try:
         rec.phase("initializing", step=0)
         if config.get("warm_start"):
-            metadata = json.loads(
-                Path(config["warm_start"]).with_suffix(".json").read_text()
-            )
+            metadata = json.loads(Path(config["warm_start"]).with_suffix(".json").read_text())
             require_matching_physical_decoder(metadata, config)
         if algorithm == "dva" and config.get("resume"):
             best_score, best = inherit_dva_selection(
                 Path(config["resume"]), rec.path, config["task"]
             )
-        env = build_environment(config["components"], device)
+        env = build_environment(
+            config["components"], device, role="train", count=config["num_envs"]
+        )
         rec.record_environment(env)
         if config["task"] == "racing":
-            save_report(
-                rec.path / "native-task-config.json", env.config.to_dict()
-            )
+            save_report(rec.path / "native-task-config.json", env.config.to_dict())
         checkpoint_eval_count = int(config.get("checkpoint_eval_episodes", 32))
         if checkpoint_eval_count < 1:
-            raise ValueError(
-                "CheckpointEval evaluation requires at least one episode"
-            )
+            raise ValueError("CheckpointEval evaluation requires at least one episode")
         evaluation_env = build_environment(
             config["components"], device, "eval", checkpoint_eval_count
         )
         evaluation_seeds = checkpoint_eval_seeds(config, checkpoint_eval_count)
-        if env.task == "navigation":
+        if env.task.name == "navigation":
             checkpoint_eval_case = {
                 "role": "eval",
                 "reset_seeds": evaluation_seeds,
                 "configured_repeats": checkpoint_eval_count,
                 "bank_digest": evaluation_env.bank.digest(),
                 "selection_rule": config.get("checkpoint_eval_metric"),
-                "acceptance": config["components"]["evaluation"].get(
-                    "acceptance"
-                ),
+                "acceptance": config["components"]["evaluation"].get("acceptance"),
             }
             save_report(
                 rec.path / "eval" / "checkpoint-eval-cases.json",
@@ -255,17 +224,14 @@ def train(
                         list(
                             range(
                                 evaluation_env.reference_seed,
-                                evaluation_env.reference_seed
-                                + checkpoint_eval_count,
+                                evaluation_env.reference_seed + checkpoint_eval_count,
                             )
                         )
                         if getattr(env, "reference_kind", None) == "random"
                         else [evaluation_env.reference_seed]
                     ),
                     "selection_rule": config.get("checkpoint_eval_metric"),
-                    "acceptance": config["components"]["evaluation"].get(
-                        "acceptance"
-                    ),
+                    "acceptance": config["components"]["evaluation"].get("acceptance"),
                 },
             )
 
@@ -273,25 +239,16 @@ def train(
             nonlocal evaluator, best_score, best, snapshot_count, initial_params
             step = int(step)
             if initial_params is None:
-                initial_params = jax.tree.map(
-                    lambda x: np.array(x, copy=True), params[1]
-                )
-            if not all(
-                np.isfinite(np.asarray(x)).all()
-                for x in jax.tree.leaves(params)
-            ):
+                initial_params = jax.tree.map(lambda x: np.array(x, copy=True), params[1])
+            if not all(np.isfinite(np.asarray(x)).all() for x in jax.tree.leaves(params)):
                 raise FloatingPointError("Non-finite learned parameters")
             rec.phase("evaluation", step=step)
-            checkpoint = save_policy(
-                rec.path / "checkpoints", params, config, step
-            )
+            checkpoint = save_policy(rec.path / "checkpoints", params, config, step)
             if evaluator is None:
-                evaluator = make_evaluator(
-                    evaluation_env, make_policy, evaluation_seeds
-                )
+                evaluator = make_evaluator(evaluation_env, make_policy, evaluation_seeds)
             t = time.monotonic()
             report, trace = evaluator.run(params)
-            if snapshot_count == 0 and env.task == "navigation":
+            if snapshot_count == 0 and env.task.name == "navigation":
                 checkpoint_eval_case.update(
                     scenario_groups=report["scenario_groups"],
                     initial_conditions=report["initial_conditions"],
@@ -308,16 +265,10 @@ def train(
             )
             if config.get("checkpoint_eval_metric") == "release-pilot-v1":
                 report["selection_rule"] = "release-pilot-v1"
-                report["scene_success_rates"] = pilot_scene_rates(
-                    env.task, report
-                )
-                report["pilot_objective"] = min(
-                    report["scene_success_rates"].values()
-                )
+                report["scene_success_rates"] = pilot_scene_rates(env.task.name, report)
+                report["pilot_objective"] = min(report["scene_success_rates"].values())
                 report["quality_passed"] = None
-                report["quality_rule"] = (
-                    "CheckpointEval exploration; no formal release claim"
-                )
+                report["quality_rule"] = "CheckpointEval exploration; no formal release claim"
             if config.get("checkpoint_eval_metric") in (
                 "navigation-convergence-v1",
                 "navigation-convergence-v2",
@@ -327,30 +278,23 @@ def train(
                 scene_outcomes = {}
                 for cell in report["cells"].values():
                     for row in cell["episodes"]:
-                        scene_outcomes.setdefault(row["subtype"], []).append(
-                            row["arrived"]
-                        )
+                        scene_outcomes.setdefault(row["subtype"], []).append(row["arrived"])
                 report["scene_success_rates"] = {
-                    name: float(np.mean(values))
-                    for name, values in scene_outcomes.items()
+                    name: float(np.mean(values)) for name, values in scene_outcomes.items()
                 }
                 apply_quality(report, config)
             save_report(rec.path / "eval" / f"step-{step:010d}.json", report)
-            scalars = evaluation_scalars(env.task, report)
+            scalars = evaluation_scalars(env.task.name, report)
             scalars["eval/seconds"] = time.monotonic() - t
             if report.get("quality_passed") is not None:
                 scalars["eval/quality_passed"] = float(report["quality_passed"])
             rec.log(step, scalars)
-            if env.task == "racing":
+            if env.task.name == "racing":
                 rec.log(
                     step,
                     {
-                        "eval/gates_passed_mean": report.get(
-                            "gates_passed_mean", 0.0
-                        ),
-                        "eval/collision_rate": report.get(
-                            "collision_rate", 0.0
-                        ),
+                        "eval/gates_passed_mean": report.get("gates_passed_mean", 0.0),
+                        "eval/collision_rate": report.get("collision_rate", 0.0),
                     },
                 )
             replay_directory = rec.path / "rollouts" / f"step-{step:010d}"
@@ -361,7 +305,7 @@ def train(
                 export_run_replays(evaluation_env, trace, report, replay_directory)
                 rec.log(step, {"record/export_seconds": time.monotonic() - t})
             score = checkpoint_eval_score(
-                env.task, report, config.get("checkpoint_eval_metric")
+                env.task.name, report, config.get("checkpoint_eval_metric")
             )
             if score > best_score:
                 best_score, best = score, report
@@ -385,11 +329,7 @@ def train(
                 )
                 rec.log(
                     step,
-                    {
-                        "record/live_publication_error": float(
-                            publication["status"] == "error"
-                        )
-                    },
+                    {"record/live_publication_error": float(publication["status"] == "error")},
                 )
                 if publication["status"] != "published":
                     print(
@@ -416,9 +356,7 @@ def train(
             )
             rec.phase("compiling" if step == 0 else "training", step=step)
             if time.monotonic() - start > config.get("max_wall_seconds", 3600):
-                raise TimeoutError(
-                    "Declared wall-clock budget reached; snapshots preserved"
-                )
+                raise TimeoutError("Declared wall-clock budget reached; snapshots preserved")
 
         def progress(step, metrics):
             actual_step = int(step)
@@ -431,24 +369,16 @@ def train(
                     * config["num_envs"]
                     * config["horizon_length"]
                 )
-            clean = {
-                k: float(v)
-                for k, v in metrics.items()
-                if np.asarray(v).size == 1
-            }
+            clean = {k: float(v) for k, v in metrics.items() if np.asarray(v).size == 1}
             if clean:
                 rec.log(actual_step, clean)
             rec.phase("training", step=actual_step)
             print(
-                json.dumps(
-                    {"run_id": run_id, "step": actual_step, "metrics": clean}
-                ),
+                json.dumps({"run_id": run_id, "step": actual_step, "metrics": clean}),
                 flush=True,
             )
             if time.monotonic() - start > config.get("max_wall_seconds", 3600):
-                raise TimeoutError(
-                    "Declared wall-clock budget reached at an epoch boundary"
-                )
+                raise TimeoutError("Declared wall-clock budget reached at an epoch boundary")
 
         factory = network_factory(config)
         restore = None
@@ -485,9 +415,7 @@ def train(
                 gae_lambda=config.get("gae_lambda", 0.94),
                 clipping_epsilon=config.get("clipping_epsilon", 0.2),
                 max_grad_norm=config.get("max_grad_norm", 1.0),
-                normalize_observations=config.get(
-                    "normalize_observations", False
-                ),
+                normalize_observations=config.get("normalize_observations", False),
                 num_evals=config.get("num_evals", 9),
                 num_eval_envs=4,
                 run_evals=False,
@@ -500,15 +428,12 @@ def train(
                 log_training_metrics=False,
             )
             actual_steps = max(
-                int(p.stem.split("-")[-1])
-                for p in (rec.path / "checkpoints").glob("step-*.pkl")
+                int(p.stem.split("-")[-1]) for p in (rec.path / "checkpoints").glob("step-*.pkl")
             )
         elif algorithm == "apg":
             epochs = max(config.get("num_evals", 9) - 1, 1)
             if config["policy_updates"] % epochs:
-                raise ValueError(
-                    "APG policy_updates must be divisible by evaluation epochs"
-                )
+                raise ValueError("APG policy_updates must be divisible by evaluation epochs")
 
             def capture_factory(*args, **kwargs):
                 net = factory(*args, **kwargs)
@@ -519,15 +444,11 @@ def train(
                     normalizer = running_statistics.init_state(
                         specs.Array((env.observation_size,), jnp.float32)
                     )
-                    snapshot(
-                        0, apg_networks.make_inference_fn(net), (normalizer, p)
-                    )
+                    snapshot(0, apg_networks.make_inference_fn(net), (normalizer, p))
                     return p
 
                 return net.replace(
-                    policy_network=networks.FeedForwardNetwork(
-                        capture, net.policy_network.apply
-                    )
+                    policy_network=networks.FeedForwardNetwork(capture, net.policy_network.apply)
                 )
 
             maker, params, metrics = apg_train.train(
@@ -540,9 +461,7 @@ def train(
                 num_evals=config.get("num_evals", 9),
                 num_eval_envs=4,
                 learning_rate=config.get("learning_rate", 0.005),
-                normalize_observations=config.get(
-                    "normalize_observations", False
-                ),
+                normalize_observations=config.get("normalize_observations", False),
                 max_gradient_norm=config.get("max_grad_norm", 1.0),
                 use_schedule=config.get("use_schedule", True),
                 schedule_decay=config.get("schedule_decay", 0.997),
@@ -551,11 +470,7 @@ def train(
                 network_factory=capture_factory,
                 progress_fn=progress,
             )
-            actual_steps = (
-                config["policy_updates"]
-                * config["num_envs"]
-                * config["horizon_length"]
-            )
+            actual_steps = config["policy_updates"] * config["num_envs"] * config["horizon_length"]
             snapshot(actual_steps, maker, params)
 
         else:
@@ -569,9 +484,7 @@ def train(
                 policy_params_fn=snapshot,
                 progress_fn=progress,
                 state_directory=rec.path / "training-state",
-                restore_state=Path(config["resume"])
-                if config.get("resume")
-                else None,
+                restore_state=Path(config["resume"]) if config.get("resume") else None,
             )
             actual_steps = metrics["actual_steps"]
 
@@ -587,9 +500,7 @@ def train(
             )
         )
         if not np.isfinite(delta) or delta == 0:
-            raise AssertionError(
-                "Training did not produce a finite, nonzero policy update"
-            )
+            raise AssertionError("Training did not produce a finite, nonzero policy update")
         result = {
             "algorithm": algorithm,
             "actual_steps": actual_steps,

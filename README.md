@@ -4,7 +4,7 @@
 
 学习方法使用 JAX、Brax 和 Crazyflow；SUPER 与 EGO-Planner 通过项目独立管理的 ROS 容器接入。PointNet/GRU 点云方法保留论文来源与训练配方；LOTF 只提供 high-fidelity 和 simplified 两种可组合动力学。
 
-处理链的组织方式 inspired by [FlightBench 表Ⅲ与图4](https://arxiv.org/abs/2406.05687)：不同方法可覆盖不同区段，在轨迹、航点或运动命令处接入后续执行系统。本项目研究 JAX 仿真、可微强化学习与 MPC 的组合。当前为研究预览；[第一版交付规格](docs/notes/archive/release-plan.md)定义18个组合；EGO两格由用户接受交付，其余16格继续质量验收，当前14格按现行规则质量通过（其中深度两格按六个主要场景的新规则），共16/18格满足交付要求。
+处理链的组织方式 inspired by [FlightBench 表Ⅲ与图4](https://arxiv.org/abs/2406.05687)：不同方法可覆盖不同区段，通过 Reference、Setpoint 或执行器输入接入后续执行系统。本项目研究 JAX 仿真、可微强化学习与 MPC 的组合。当前为研究预览；[第一版交付规格](docs/notes/archive/release-plan.md)定义18个组合；EGO两格由用户接受交付，其余16格继续质量验收，当前14格按现行规则质量通过（其中深度两格按六个主要场景的新规则），共16/18格满足交付要求。
 
 ## 安装与运行
 
@@ -21,7 +21,7 @@ pixi run train experiment=control/ppo env=hovering --cfg job
 pixi run train experiment=control/ppo env=hovering runtime.device=gpu run_id=ppo-hover-example
 ```
 
-`experiment` 选择完整实验组合，`env` 选择完整环境。`train` 负责学习，`eval` 使用冻结参数，`play` 执行或查看物理轨迹。已有运行目录受到覆盖保护；新的试验使用新的 `run_id`，已有训练通过检查点恢复。
+`experiment` 选择完整实验组合，`env` 选择完整环境。`drone_playground.load()` 直接使用 Hydra 加载环境，不创建 registry，也不隐式选择训练算法。`train` 负责学习，`eval` 使用冻结参数，`play` 执行或查看物理轨迹。已有运行目录受到覆盖保护；新的试验使用新的 `run_id`，已有训练通过检查点恢复。
 
 ```bash
 # 查看当前选定结果及其原始 run / checkpoint 引用。
@@ -36,6 +36,8 @@ pixi run eval \
 # 查看这次评测保存的回放。
 pixi run play replay=results/runs/racing/ppo/recheck-racing/rollouts
 ```
+
+当前配置为 v4，原生 RPC 为 v2。历史 v3 检查点需按[显式迁移步骤](docs/runbook.md#历史检查点)创建新副本；原始权重和历史结果不改写。
 
 权重、轨迹和依赖缓存由本地结果包管理，Git 保存源码、配置、协议和精简证据。新的源码克隆需要自行训练或取得相应结果包。原生规划器的容器准备及完整命令见[操作手册](docs/runbook.md)。
 
@@ -60,7 +62,7 @@ pixi run play replay=results/runs/racing/ppo/recheck-racing/rollouts
 
 `experiment=control/ppo`、`control/bptt`、`control/shac` 和 `control/apg` 提供控制学习基线；导航学习使用 `experiment=navigation/ppo|bptt|shac`。点云原始重建为 `experiment=papers/differentiable_pointcloud`，导航适配为 `experiment=navigation/differentiable_pointcloud`；SUPER、EGO-Planner 与 MPC 分别使用 `papers/super`、`papers/ego_planner`、`control/attitude_mpc` 和 `control/sampling_mpc`。LOTF 只作为动力学来源，通过 `dynamics@env.dynamics=lotf_high_fidelity` 或 `lotf_simplified` 组合；diffRL 的反向规则由 `algorithm.gradient.transition` 选择。训练分布与 benchmark 协议属于对应 experiment，不再另设 training/evaluation preset 组；质量状态见[待办](docs/status.md)。
 
-[项目主表与评测分类](docs/architecture.md)按FlightBench的接口组织方式增加传感器和任务列：核心任务族为悬停、跟踪、竞速和导航（静态／动态），着陆与集群协同作为专项扩展，走廊轨迹生成作为组件评测。论文原始任务与项目迁移分别标记。
+[架构与接口](docs/architecture.md)说明六个环境组件、Reference/Setpoint、训练与运行方法、场景资产和评测的职责。悬停、跟踪、竞速和导航分别使用现有任务配置；Navigation 的静态与动态变化由场景集合表达。论文原始任务与项目迁移分别标记。
 
 核心环境为 `hovering`、`tracking`、`racing`、`navigation/static` 和 `navigation/dynamic`。Navigation 的八张固定场景包括 S01/S02/S03/S06 与 D01/D02/D03/D06，共用100×40米几何、96米起终点距离、0.5米到达半径，以及导航第二版的300秒时限和20米/秒名义速度上限。实际命令速度与达到的速度另行记录。
 
@@ -69,7 +71,7 @@ pixi run play replay=results/runs/racing/ppo/recheck-racing/rollouts
 [架构与数据流](docs/architecture.md)说明组件职责；[操作手册](docs/runbook.md)提供安装、训练、评测与回放命令；[评测协议](docs/architecture.md)定义指标和信息边界；[完整目录](docs/notes/archive/project-tree.md)用于定位文件；[开发约定](docs/development.md)统一测试、设备选择和产物管理；[状态](docs/status.md)只保留现役状态。
 
 ```bash
-JAX_PLATFORMS=cpu pixi run test
+JAX_PLATFORMS=cpu pixi run test tests/integration/configuration/test_direct_hydra_environment.py
 pixi run lint
 ```
 

@@ -4,7 +4,7 @@ from math import comb
 
 import numpy as np
 
-from drone_playground.actions.commands import Trajectory
+from drone_playground.references import Trajectory
 
 
 def ego_trajectory(message):
@@ -15,9 +15,7 @@ def ego_trajectory(message):
         message.order,
     )
     # Upstream traj_server calculates yaw causally; yaw_pts is not consumed.
-    return Trajectory(
-        curve.start_time, curve.durations, curve.coefficients, yaw_defined=False
-    )
+    return Trajectory(curve.start_time, curve.durations, curve.coefficients, yaw_defined=False)
 
 
 def super_trajectory(message):
@@ -26,34 +24,21 @@ def super_trajectory(message):
         raise ValueError("SUPER position trajectory has invalid shape")
     coefficients = np.zeros((n, 4, k))
     for axis, name in enumerate(("coef_pos_x", "coef_pos_y", "coef_pos_z")):
-        coefficients[:, axis] = np.asarray(getattr(message, name)).reshape(
-            n, k
-        )[:, ::-1]
+        coefficients[:, axis] = np.asarray(getattr(message, name)).reshape(n, k)[:, ::-1]
     start = message.start_WT_pos.to_sec() - 1.0
-    position = Trajectory(
-        start, message.time_pos, coefficients, yaw_defined=False
-    )
+    position = Trajectory(start, message.time_pos, coefficients, yaw_defined=False)
     if not message.type & message.YAW_TRAJ:
         return position
     ny, ky = message.piece_num_yaw, message.order_yaw + 1
     yaw_coefficients = np.zeros((ny, 4, ky))
-    yaw_coefficients[:, 3] = np.asarray(message.coef_yaw).reshape(ny, ky)[
-        :, ::-1
-    ]
-    yaw = Trajectory(
-        message.start_WT_yaw.to_sec() - 1.0, message.time_yaw, yaw_coefficients
-    )
+    yaw_coefficients[:, 3] = np.asarray(message.coef_yaw).reshape(ny, ky)[:, ::-1]
+    yaw = Trajectory(message.start_WT_yaw.to_sec() - 1.0, message.time_yaw, yaw_coefficients)
     # Different knot partitions are split analytically at their union. Polynomial
     # shifting uses the binomial theorem, so derivatives and future values survive.
-    left, right = max(position.start_time, yaw.start_time), min(
-        position.end_time, yaw.end_time
-    )
+    left, right = max(position.start_time, yaw.start_time), min(position.end_time, yaw.end_time)
     if right <= left:
         raise ValueError("SUPER position/yaw time intervals do not overlap")
-    edges = [
-        p.start_time + np.r_[0.0, np.cumsum(p.durations)]
-        for p in (position, yaw)
-    ]
+    edges = [p.start_time + np.r_[0.0, np.cumsum(p.durations)] for p in (position, yaw)]
     breaks = np.unique(np.concatenate(([left, right], *edges)))
     breaks = breaks[(breaks >= left) & (breaks <= right)]
     result = np.zeros((len(breaks) - 1, 4, max(k, ky)))

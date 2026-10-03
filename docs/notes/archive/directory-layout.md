@@ -38,7 +38,7 @@ pixi run eval experiment=papers/super env=navigation/static
 
 ## 前向与反向
 
-`dynamics@env.execution.dynamics` 选择前向模型；`algorithm.gradient.transition` 选择导数规则。`direct` 对选中的前向函数自动求导；`lotf_analytical` 保留真实前向值，使用上游简化模型的解析导数；点质量的 `exponential` 规则仍由点质量实现拥有。模型参数、积分、网络权重结构不因文件移动而改变。
+`dynamics@env.execution.dynamics` 选择前向模型；`algorithm.gradient.transition` 选择导数规则。`direct` 对选中的前向函数自动求导；`simplified_dynamics_jacobian` 保留真实前向值，反向 Jacobian 来自上游简化动力学；点质量的 `exponential` 规则仍由点质量实现拥有。模型参数、积分、网络权重结构不因文件移动而改变。
 
 ## Scene 与资产
 

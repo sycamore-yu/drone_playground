@@ -1,0 +1,23 @@
+{
+  "packages": {
+    "drone_playground": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/drone_playground/__init__.py",
+    "crazyflow": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/crazyflow/__init__.py",
+    "brax": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/direct-composition-refactor/installed-site/brax/__init__.py"
+  },
+  "hovering": {
+    "observation_size": 43,
+    "physics_steps": 10
+  },
+  "racing": {
+    "observation_size": 43,
+    "physics_steps": 10
+  },
+  "navigation/static": {
+    "observation_size": 2420,
+    "physics_steps": 10
+  },
+  "training_steps": 2,
+  "replay_written": true,
+  "crazyflow_has_git_checkout": false,
+  "source_checkout_required": false
+}

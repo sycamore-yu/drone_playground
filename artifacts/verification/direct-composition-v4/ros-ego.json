@@ -1,0 +1,8 @@
+{
+  "method": "ego",
+  "received_typed_trajectories": 3,
+  "executed_planner_controls": 3,
+  "steps": 108,
+  "corridors_received": 0,
+  "displacement_m": 0.06199868395924568
+}

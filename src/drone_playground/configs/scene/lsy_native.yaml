@@ -1,0 +1,35 @@
+controller:
+  file: state_controller.py
+deploy:
+  check_race_track: true
+  check_drone_start_pos: true
+  real_track_objects: true
+  drones:
+  - id: 10
+    channel: 100
+    drone: cf21B_500
+sim:
+  dynamics: first_principles
+  drone: cf21B_500
+  freq: 500
+  attitude_freq: 500
+  render: true
+  camera: -1
+  cam_config:
+  - distance: 5.0
+    azimuth: 180.0
+    elevation: -25.0
+    lookat:
+    - 0.0
+    - 0.0
+    - 0.0
+env:
+  id: DroneRacing-v0
+  seed: -1
+  freq: 50
+  sensor_range: 0.7
+  control_mode: state
+  track:
+    randomize: false
+  disturbances: {}
+  randomizations: {}

@@ -9,7 +9,7 @@ from pathlib import Path
 from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
-from drone_playground.composition import build_environment
+from drone_playground.environments.environment import build_environment
 from drone_playground.evaluation.tracking.metrics import select_replays
 from drone_playground.networks.policies import NeuralPolicy
 from drone_playground.visualization.rscope_io import export_rollout
@@ -18,11 +18,9 @@ from drone_playground.visualization.rscope_io import export_rollout
 def make_evaluator(env, make_policy, seeds):
     from hydra.utils import get_class
 
-    target = env.experiment_config["env"]["task"]["policy_evaluator"]
+    target = env.experiment_config["evaluation"]["policy_evaluator"]
     arguments = {}
-    if env.task == "navigation" and env.experiment_config["evaluation"].get(
-        "protocol"
-    ):
+    if env.task.name == "navigation" and env.experiment_config["evaluation"].get("protocol"):
         import jax.numpy as jnp
 
         from drone_playground.benchmarks import load_protocol
@@ -30,9 +28,7 @@ def make_evaluator(env, make_policy, seeds):
 
         config = env.experiment_config
         protocol = load_protocol(config["evaluation"]["protocol"])
-        cases = navigation_cases(
-            env.bank, len(seeds), seeds[0], True, protocol=protocol
-        )
+        cases = navigation_cases(env.bank, len(seeds), seeds[0], True, protocol=protocol)
         ordered = [case for group in cases.values() for case in group]
         initial_spec = (
             config["training"].get("checkpoint_eval_initial_conditions")
@@ -64,13 +60,8 @@ def resolve_evaluation_config(config, metadata):
         resolved = copy.deepcopy(metadata["config"])
     elif selection == "config":
         resolved = copy.deepcopy(config)
-        if (
-            resolved["method"]["output"]
-            != metadata["config"]["method"]["output"]
-        ):
-            raise ValueError(
-                "Frozen policy output and requested execution command contract differ"
-            )
+        if resolved["method"]["output"] != metadata["config"]["method"]["output"]:
+            raise ValueError("Frozen policy output and requested execution command contract differ")
         # Network and training algorithm identify the loaded policy, while
         # task/controller/model/scene/observations identify the selected evaluation.
         for group in ("network", "algorithm", "method"):
@@ -84,30 +75,6 @@ def resolve_evaluation_config(config, metadata):
 
 
 def evaluate_experiment(config, root, run_id):
-    if config["method"]["implementation"] in (
-        "native_ego",
-        "native_super",
-        "native_service",
-        "pipeline",
-    ):
-        if config["env"]["task"]["name"] != "navigation":
-            from drone_playground.evaluation.tracking.external import evaluate_native_control
-
-            return evaluate_native_control(config, root, run_id)
-        from drone_playground.evaluation.navigation.external import evaluate_native
-
-        return evaluate_native(config, root, run_id)
-    if config["env"]["task"]["name"] == "navigation":
-        from drone_playground.evaluation.navigation.policy import evaluate_navigation
-
-        return evaluate_navigation(config, root, run_id)
-    if config["method"]["implementation"] in (
-        "attitude_mpc",
-        "sampling_mpc",
-    ) and not config.get("checkpoint"):
-        from drone_playground.evaluation.mpc import evaluate_optimization
-
-        return evaluate_optimization(config, root, run_id)
     if not config.get("checkpoint"):
         raise ValueError("Frozen neural execution requires checkpoint=<path>")
     policy = NeuralPolicy.load(config["checkpoint"])
@@ -117,9 +84,7 @@ def evaluate_experiment(config, root, run_id):
         policy.metadata,
     )
     resolved = resolve_evaluation_config(config, metadata)
-    rec = RunRecorder(
-        root, run_id, resolved, task_id="composable-flight/05-task-evaluation"
-    )
+    rec = RunRecorder(root, run_id, resolved, task_id="composable-flight/05-task-evaluation")
     env = None
     with capture_console(rec.path / "console.log"):
         try:
@@ -128,9 +93,7 @@ def evaluate_experiment(config, root, run_id):
             count = resolved["evaluation"]["episodes"]
             start = resolved["evaluation"].get("seed_start")
             start = start if start is not None else 30000
-            env = build_environment(
-                resolved, resolved["runtime"]["device"], role, count
-            )
+            env = build_environment(resolved, resolved["runtime"]["device"], role, count)
             rec.record_environment(env)
             if (
                 env.observation_size != metadata["observation_size"]
@@ -139,9 +102,7 @@ def evaluate_experiment(config, root, run_id):
                 raise ValueError(
                     "Selected environment dimensions differ from the frozen policy contract"
                 )
-            evaluator = make_evaluator(
-                env, maker, list(range(start, start + count))
-            )
+            evaluator = make_evaluator(env, maker, list(range(start, start + count)))
             rec.phase("evaluating")
             tic = time.monotonic()
             report, trace = evaluator.run(params)
@@ -158,19 +119,15 @@ def evaluate_experiment(config, root, run_id):
             if benchmark_id(resolved) in ("tracking-v1", "racing-v1"):
                 from drone_playground.benchmarks import validate_control_report
 
-                validation = validate_control_report(report, env.task)
-                save_report(
-                    rec.path / "eval/benchmark-validation.json", validation
-                )
+                validation = validate_control_report(report, env.task.name)
+                save_report(rec.path / "eval/benchmark-validation.json", validation)
                 report.update(
                     quality_passed=validation["passed"],
                     quality_rule=validation["protocol"],
                 )
             save_report(rec.path / "eval/report.json", report)
             if resolved["evaluation"].get("record_replays", False):
-                export_rollout(
-                    env.sim, rec.path / "rollouts", select_replays(trace, report)
-                )
+                export_rollout(env.sim, rec.path / "rollouts", select_replays(trace, report))
             rec.log(
                 0,
                 {
@@ -192,3 +149,14 @@ def evaluate_experiment(config, root, run_id):
         finally:
             if env is not None:
                 env.close()
+
+
+def evaluate_external(config, root, run_id):
+    """Use task-specific statistics with an arbitrary external runtime method."""
+    if config["env"]["task"]["name"] == "navigation":
+        from drone_playground.evaluation.navigation.external import evaluate_native
+
+        return evaluate_native(config, root, run_id)
+    from drone_playground.evaluation.tracking.external import evaluate_native_control
+
+    return evaluate_native_control(config, root, run_id)

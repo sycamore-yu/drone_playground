@@ -5,7 +5,7 @@ import math
 import jax.numpy as jnp
 from flax import linen as nn
 
-from drone_playground.actions.decoders import decode_acceleration_velocity
+from drone_playground.control.decoders import decode_acceleration_velocity
 
 
 class PointNetGruPolicy(nn.Module):
@@ -28,7 +28,8 @@ class PointNetGruPolicy(nn.Module):
         self.state_projection = nn.Dense(self.hidden_size, name="state_projection")
         self.memory = nn.GRUCell(features=self.hidden_size, name="memory")
         self.action_head = nn.Dense(
-            3, name="acceleration",
+            3,
+            name="acceleration",
             kernel_init=nn.initializers.variance_scaling(
                 self.output_init_scale, "fan_in", "truncated_normal"
             ),

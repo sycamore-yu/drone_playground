@@ -3,11 +3,12 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 #include <grpcpp/grpcpp.h>
 #include "algorithm.grpc.pb.h"
 
 namespace drone_native {
-namespace wire = ::drone::native::v1;
+namespace wire = ::drone::native::v2;
 
 // Implement this class in the algorithm's own dependency environment. The SDK
 // owns transport, lifecycle and request ordering; the algorithm owns its state.
@@ -18,7 +19,8 @@ class Algorithm {
   virtual void Reset(const wire::ResetRequest&) = 0;
   virtual wire::Decision Step(const wire::StepRequest&) = 0;
   // Optional inspection in world metres. Existing algorithms need no override.
-  virtual wire::PlannerGeometry Geometry(const wire::StepRequest&) { return {}; }
+  virtual std::vector<wire::SafeFlightCorridor> Corridors(const wire::StepRequest&) { return {}; }
+  virtual std::vector<wire::TrajectoryPreview> TrajectoryPreviews(const wire::StepRequest&) { return {}; }
   virtual void Close() {}
 };
 

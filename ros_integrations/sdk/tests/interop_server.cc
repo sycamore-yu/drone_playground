@@ -16,16 +16,14 @@ class Fixture final : public drone_native::Algorithm {
     capabilities.add_required_inputs("state");
     if (mode_ == "echo") {
       capabilities.add_required_inputs("upstream");
-      for (auto kind : {"trajectory", "waypoint", "attitude_thrust", "velocity_yaw", "world_acceleration"}) {
+      for (auto kind : {"trajectory", "waypoint", "state", "attitude", "rates", "force_torque", "motor_rpm"}) {
         capabilities.add_accepted_upstream(kind);
         capabilities.add_outputs(kind);
       }
       capabilities.set_derivatives("none");
       return capabilities;
     }
-    capabilities.add_outputs(mode_ == "motion" ? "velocity_yaw" :
-                             mode_ == "attitude" ? "attitude_thrust" :
-                             (mode_ == "no_plan" || mode_ == "visualized") ? "trajectory" : mode_);
+    capabilities.add_outputs((mode_ == "no_plan" || mode_ == "visualized") ? "trajectory" : mode_);
     capabilities.set_derivatives("none");
     return capabilities;
   }
@@ -38,15 +36,23 @@ class Fixture final : public drone_native::Algorithm {
     result.set_generated_at(request.header().simulation_time());
     result.set_valid_until(request.header().simulation_time() + 2.0);
     if (mode_ == "echo") {
-      if (request.has_reference()) {
-        *result.mutable_trajectory() = request.reference();
-        double end = request.reference().start_time();
-        for (const auto& segment : request.reference().segments()) end += segment.duration();
+      if (request.has_trajectory()) {
+        *result.mutable_trajectory() = request.trajectory();
+        double end = request.trajectory().start_time();
+        for (const auto& segment : request.trajectory().segments()) end += segment.duration();
         result.set_valid_until(end);
-      } else if (request.has_waypoints()) {
-        *result.mutable_waypoint() = request.waypoints();
-      } else if (request.has_motion_command()) {
-        *result.mutable_motion_command() = request.motion_command();
+      } else if (request.has_waypoint()) {
+        *result.mutable_waypoint() = request.waypoint();
+      } else if (request.has_state_setpoint()) {
+        *result.mutable_state_setpoint() = request.state_setpoint();
+      } else if (request.has_attitude()) {
+        *result.mutable_attitude() = request.attitude();
+      } else if (request.has_rates()) {
+        *result.mutable_rates() = request.rates();
+      } else if (request.has_force_torque()) {
+        *result.mutable_force_torque() = request.force_torque();
+      } else if (request.has_motor_rpm()) {
+        *result.mutable_motor_rpm() = request.motor_rpm();
       } else {
         result.set_status(wire::NO_PLAN);
       }
@@ -68,29 +74,33 @@ class Fixture final : public drone_native::Algorithm {
       waypoint->set_generated_at(request.header().simulation_time());
       waypoint->set_valid_until(request.header().simulation_time() + 2.0);
     } else if (mode_ == "attitude") {
-      auto* command = result.mutable_motion_command();
-      command->set_kind("attitude_thrust");
-      for (double value : {0.0, 0.0, 0.0, 0.35}) command->add_values(value);
-    } else if (mode_ == "motion") {
-      auto* command = result.mutable_motion_command();
-      command->set_kind("velocity_yaw");
-      for (double value : {1.0, 2.0, 3.0, 0.0}) command->add_values(value);
+      auto* command = result.mutable_attitude();
+      command->mutable_rpy();
+      command->set_thrust(0.35);
+    } else if (mode_ == "rates") {
+      auto* command = result.mutable_rates();
+      command->mutable_body_rates();
+      command->set_thrust(0.35);
+    } else if (mode_ == "state") {
+      auto* command = result.mutable_state_setpoint();
+      auto* velocity = command->mutable_velocity();
+      velocity->set_x(1.0); velocity->set_y(2.0); velocity->set_z(3.0);
+      command->set_yaw(0.0);
     }
     return result;
   }
-  wire::PlannerGeometry Geometry(const wire::StepRequest& request) override {
-    wire::PlannerGeometry result;
-    if (mode_ != "visualized") return result;
-    result.set_frame("world");
-    result.set_generated_at(request.header().simulation_time());
-    result.set_valid_until(request.header().simulation_time() + 2.0);
-    auto* corridor = result.add_corridors();
-    corridor->set_name("candidate");
-    auto* poly = corridor->add_polytopes();
+  std::vector<wire::SafeFlightCorridor> Corridors(const wire::StepRequest& request) override {
+    if (mode_ != "visualized") return {};
+    wire::SafeFlightCorridor corridor;
+    corridor.set_name("candidate");
+    corridor.set_frame("world");
+    corridor.set_generated_at(request.header().simulation_time());
+    corridor.set_valid_until(request.header().simulation_time() + 2.0);
+    auto* poly = corridor.add_polytopes();
     for (double value : {1.,0.,0.,-1., -1.,0.,0.,-1., 0.,1.,0.,-1.,
                          0.,-1.,0.,-1., 0.,0.,1.,-1., 0.,0.,-1.,-1.})
       poly->add_halfspaces(value);
-    return result;
+    return {corridor};
   }
  private:
   std::string mode_;

@@ -1,5 +1,0 @@
-defaults:
-- /action/controller@controller: acceleration_passthrough
-- _self_
-command: world_acceleration
-tracker: null

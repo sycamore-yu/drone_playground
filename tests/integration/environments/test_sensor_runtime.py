@@ -5,12 +5,13 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.composition import build_environment, compose_experiment, validate_config
+from drone_playground.composition import compose_experiment, validate_config
+from drone_playground.environments.environment import build_environment
 from drone_playground.environments.observations.state import NavigationSensorObservation
 
 
 def test_depth_environment_closed_loop_and_frame_timestamps():
-    config = compose_experiment('papers/dva')
+    config = compose_experiment("papers/dva")
     validate_config(config)
     env = build_environment(config, "cpu", "train", 1)
     observation = NavigationSensorObservation(
@@ -37,9 +38,7 @@ def test_depth_environment_closed_loop_and_frame_timestamps():
         nxt = env.step(carry, env.hover_action)
         return nxt, (nxt.pipeline_state.sensor_time, nxt.pipeline_state.sensor_sequence)
 
-    final, (times, sequences) = jax.jit(
-        lambda s: jax.lax.scan(body, s, None, length=8)
-    )(state)
+    final, (times, sequences) = jax.jit(lambda s: jax.lax.scan(body, s, None, length=8))(state)
     assert list(np.asarray(sequences).reshape(-1)) == [1, 2, 2, 3, 3, 4, 4, 5]
     last_times = np.asarray(times[-1])
     assert last_times[-1] == pytest.approx(8 * env.dt, abs=1e-6)
@@ -50,7 +49,7 @@ def test_depth_environment_closed_loop_and_frame_timestamps():
 
 
 def test_lidar_batch_environment_resets_sensor_phase():
-    config = compose_experiment('navigation/ppo')
+    config = compose_experiment("navigation/ppo")
     validate_config(config)
     env = build_environment(config, "cpu", "train", 1)
     assert env.sensor.channels == 5
@@ -65,14 +64,10 @@ def test_lidar_batch_environment_resets_sensor_phase():
 
     cursor = states
     for _ in range(5):
-        cursor = jax.vmap(env.step)(
-            cursor, jnp.broadcast_to(env.hover_action, (2, 4))
-        )
+        cursor = jax.vmap(env.step)(cursor, jnp.broadcast_to(env.hover_action, (2, 4)))
     assert list(np.asarray(cursor.pipeline_state.sensor_sequence)) == [2, 2]
 
     fresh = jax.vmap(env.reset)(keys, ids)
     assert list(np.asarray(fresh.pipeline_state.sensor_sequence)) == [1, 1]
-    np.testing.assert_allclose(
-        fresh.pipeline_state.sensor_time, states.pipeline_state.sensor_time
-    )
+    np.testing.assert_allclose(fresh.pipeline_state.sensor_time, states.pipeline_state.sensor_time)
     env.close()

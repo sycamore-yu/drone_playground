@@ -3,14 +3,13 @@
 import jax
 import numpy as np
 
-from drone_playground.actions.commands import Trajectory
-from drone_playground.actions.controllers.mpc.sampling import SamplingMPC
-from drone_playground.environments.tasks.references import race_reference
-from drone_playground.environments.tasks.tracking.rigid_body import TrackingEnv
+from drone_playground.control.controllers.mpc.sampling import SamplingMPC
+from drone_playground.references import Trajectory, race_reference
+from tests.helpers.environments import tracking_environment
 
 
 def test_actual_sampling_decision_and_warm_start():
-    env = TrackingEnv(
+    env = tracking_environment(
         task="tracking",
         reference="random",
         dynamics="first_principles",

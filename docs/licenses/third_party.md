@@ -2,7 +2,7 @@
 
 This document records third-party source code, algorithm adaptations, runtime dependencies, and external planner integrations used by Drone Playground. Each upstream component retains its original copyright and license terms. A project-level root license does not replace the licenses attached to third-party files or submodules.
 
-Drone Playground is distributed under **GPL-3.0-only** at the project level. The LOTF integration is a key reason for this choice: `tmp/sources/lotf` is GPLv3, and the current dynamics backend imports its quadrotor model directly and retains an explicitly selected analytical surrogate derivative. LOTF does not define a separate task or learning algorithm in this project. Third-party components listed below continue to retain their own copyright and license terms.
+Drone Playground is distributed under **GPL-3.0-only** at the project level. The LOTF integration is a key reason for this choice: `tmp/sources/lotf` is GPLv3, and the current dynamics backend imports its quadrotor model directly and retains an explicitly selected simplified-dynamics Jacobian. LOTF does not define a separate task or learning algorithm in this project. Third-party components listed below continue to retain their own copyright and license terms.
 
 | Component | How it is used here | Pinned identity | Upstream license |
 |---|---|---|---|
@@ -89,7 +89,7 @@ and source files are retained. Declared packaging-only changes are stored in `pa
 
 `dynamics/lotf.py` imports the pinned upstream quadrotor equations and exposes only the
 high-fidelity and simplified dynamics through Drone Playground's shared Task interfaces.
-`dynamics/lotf.py` implements the upstream analytical surrogate derivative with compatibility
+`dynamics/lotf.py` implements the upstream simplified-dynamics Jacobian rule with compatibility
 changes required by modern JAX tangent handling. Drone Playground does not expose LOTF-specific
 tasks, methods, evaluation presets, networks, or training algorithms. Permissive licenses used
 elsewhere in Drone Playground do not replace the GPLv3 terms that apply to the LOTF source

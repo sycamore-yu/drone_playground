@@ -45,8 +45,12 @@ class RacingTests(unittest.TestCase):
         self.assertEqual(score("figure8", short), (0, -0.1))
 
     def test_physical_disturbance_seeds_and_actual_short_shac_update(self):
-        from drone_playground.composition import build_environment, compose_experiment
-        config = compose_experiment('control/shac', "racing", ["runtime.device=cpu", "runtime.action_delay_ms=null"])
+        from drone_playground.composition import compose_experiment
+        from drone_playground.environments.environment import build_environment
+
+        config = compose_experiment(
+            "control/shac", "racing", ["runtime.device=cpu", "runtime.action_delay_ms=null"]
+        )
         env = build_environment(config, "cpu", "train", 2)
         self.addCleanup(env.close)
 

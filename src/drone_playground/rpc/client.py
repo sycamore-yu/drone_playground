@@ -14,13 +14,18 @@ from pathlib import Path
 import grpc
 import numpy as np
 
-from drone_playground.actions.commands import COMMANDS
 from drone_playground.rpc.proto import algorithm_pb2 as pb
-from drone_playground.rpc.wire import body_state, decode_decision, encode_output, validate_step
+from drone_playground.rpc.wire import (
+    body_state,
+    decode_decision,
+    encode_output,
+    output_field,
+    output_kinds,
+    validate_step,
+)
 
 
 class NativeClient(contextlib.AbstractContextManager):
-
     def __init__(
         self,
         algorithm,
@@ -32,9 +37,7 @@ class NativeClient(contextlib.AbstractContextManager):
         startup_timeout=30.0,
     ):
         if command is None and address is None:
-            raise ValueError(
-                "Specify an owned process command or an existing service address"
-            )
+            raise ValueError("Specify an owned process command or an existing service address")
         self._temporary = tempfile.TemporaryDirectory(prefix="drone-native-")
         self.directory = Path(directory or self._temporary.name)
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -47,17 +50,12 @@ class NativeClient(contextlib.AbstractContextManager):
         self._closed = False
         self._initialized = False
         self.latencies = []
-        self.address = address or "unix:" + str(
-            Path(self._temporary.name) / "service.sock"
-        )
+        self.address = address or "unix:" + str(Path(self._temporary.name) / "service.sock")
         try:
             if command is not None:
                 self._log = (self.directory / "service.log").open("w")
                 self.process = subprocess.Popen(
-                    [
-                        str(arg).replace("{address}", self.address)
-                        for arg in command
-                    ],
+                    [str(arg).replace("{address}", self.address) for arg in command],
                     stdout=self._log,
                     stderr=self._log,
                     start_new_session=True,
@@ -79,28 +77,15 @@ class NativeClient(contextlib.AbstractContextManager):
                 if clock.monotonic() >= deadline:
                     raise TimeoutError("Native service did not become ready")
                 clock.sleep(0.02)
-            request = pb.InitializeRequest(
-                header=self._header(), algorithm=algorithm
-            )
+            request = pb.InitializeRequest(header=self._header(), algorithm=algorithm)
             request.parameters.update(parameters or {})
-            reply = self._rpc(
-                "Initialize", request, pb.InitializeResponse, startup_timeout
-            )
+            reply = self._rpc("Initialize", request, pb.InitializeResponse, startup_timeout)
             self._initialized = True
             self.capabilities = reply.capabilities
-            if (
-                self.capabilities.algorithm != algorithm
-                or not self.capabilities.outputs
-            ):
-                raise ValueError(
-                    "Native service returned the wrong algorithm capabilities"
-                )
-            if not set(self.capabilities.outputs) <= (
-                set(COMMANDS) | {"waypoint"}
-            ):
-                raise ValueError(
-                    "Native service advertises unsupported physical outputs"
-                )
+            if self.capabilities.algorithm != algorithm or not self.capabilities.outputs:
+                raise ValueError("Native service returned the wrong algorithm capabilities")
+            if not set(self.capabilities.outputs) <= output_kinds():
+                raise ValueError("Native service advertises unsupported physical outputs")
             self.provenance = dict(reply.provenance)
         except BaseException:
             self.close()
@@ -109,7 +94,7 @@ class NativeClient(contextlib.AbstractContextManager):
     def _header(self, time=None):
         self._sequence += 1
         return pb.Header(
-            protocol_version=1,
+            protocol_version=2,
             session_id=self._session,
             episode_id=self._episode,
             sequence=self._sequence,
@@ -120,7 +105,7 @@ class NativeClient(contextlib.AbstractContextManager):
         if self._closed:
             raise RuntimeError("Native client is closed")
         call = self.channel.unary_unary(
-            "/drone.native.v1.Algorithm/" + name,
+            "/drone.native.v2.Algorithm/" + name,
             request_serializer=type(request).SerializeToString,
             response_deserializer=response_class.FromString,
         )
@@ -149,9 +134,7 @@ class NativeClient(contextlib.AbstractContextManager):
         timeout=110.0,
     ):
         if self._faulted:
-            raise RuntimeError(
-                "Native session is faulted; close it and create a new instance"
-            )
+            raise RuntimeError("Native session is faulted; close it and create a new instance")
         if not np.isfinite(time) or time < 0:
             raise ValueError("Reset time must be finite and nonnegative")
         request = pb.ResetRequest(header=self._header(time))
@@ -174,31 +157,19 @@ class NativeClient(contextlib.AbstractContextManager):
         state,
         measurement=None,
         goal=None,
-        reference=None,
         upstream=None,
         timeout=10.0,
         solve_budget_seconds=None,
     ):
         if self._faulted:
-            raise RuntimeError(
-                "Native session is faulted; close it and create a new instance"
-            )
+            raise RuntimeError("Native session is faulted; close it and create a new instance")
         if not self._episode:
-            raise RuntimeError(
-                "Native client must reset an episode before step"
-            )
+            raise RuntimeError("Native client must reset an episode before step")
         if not np.isfinite(time) or time < self._time:
             raise ValueError("Simulation time must be finite and monotone")
-        budget = (
-            timeout if solve_budget_seconds is None else solve_budget_seconds
-        )
-        if (
-            not np.isfinite([budget, timeout]).all()
-            or min(budget, timeout) <= 0
-        ):
-            raise ValueError(
-                "Native solve/RPC budgets must be finite and positive"
-            )
+        budget = timeout if solve_budget_seconds is None else solve_budget_seconds
+        if not np.isfinite([budget, timeout]).all() or min(budget, timeout) <= 0:
+            raise ValueError("Native solve/RPC budgets must be finite and positive")
         request = pb.StepRequest(
             header=self._header(time),
             state=body_state(state),
@@ -213,44 +184,17 @@ class NativeClient(contextlib.AbstractContextManager):
         if goal is not None:
             request.goal.CopyFrom(encode_output(goal))
             available.add("goal")
-        if reference is not None and upstream is not None:
-            raise ValueError(
-                "Specify upstream or the legacy Trajectory reference, not both"
-            )
-        if reference is not None:
-            upstream = reference
         if upstream is not None:
-            from drone_playground.actions.commands import MotionCommand, Trajectory
-
-            kind = (
-                upstream.kind
-                if isinstance(upstream, MotionCommand)
-                else (
-                    "trajectory"
-                    if isinstance(upstream, Trajectory)
-                    else "waypoint"
-                )
-            )
+            kind = upstream.kind
             accepted = set(self.capabilities.accepted_upstream)
-            if (
-                not accepted
-                and "reference" in self.capabilities.required_inputs
-            ):
-                accepted = {"trajectory"}
             if kind not in accepted:
-                raise ValueError(
-                    "Native service does not accept this upstream physical interface"
-                )
-            field = {"trajectory": "reference", "waypoint": "waypoints"}.get(
-                kind, "motion_command"
-            )
+                raise ValueError("Native service does not accept this upstream physical interface")
+            field = output_field(upstream)
             getattr(request, field).CopyFrom(encode_output(upstream))
             available.update(("upstream", field))
         missing = set(self.capabilities.required_inputs) - available
         if missing:
-            raise ValueError(
-                f"Native algorithm requires inputs: {sorted(missing)}"
-            )
+            raise ValueError(f"Native algorithm requires inputs: {sorted(missing)}")
         validate_step(request)
         response = self._rpc("Step", request, pb.StepResponse, timeout)
         try:

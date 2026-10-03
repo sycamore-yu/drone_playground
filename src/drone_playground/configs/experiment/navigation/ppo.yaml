@@ -1,0 +1,60 @@
+# @package _global_
+defaults:
+- /env: navigation/static
+- /network: sensor_fusion_mlp_64_velocity_init
+- /algorithm: ppo
+- override /controller@env.controller: velocity
+- _self_
+source: PPO with explicit velocity tracking inner loop, inspired by NavRL action decomposition;
+  no dynamic-object oracle or safety shield
+algorithm:
+  unroll_length: 32
+  batch_size: 128
+  num_minibatches: 8
+  num_updates_per_batch: 4
+  learning_rate: 0.0005
+  discounting: 0.995
+  clipping_epsilon: 0.1
+  entropy_cost: 0.001
+training:
+  num_envs: 128
+  policy_updates: 256
+  num_evals: 5
+  max_wall_seconds: 900
+  checkpoint_eval_episodes: 2
+  checkpoint_eval_metric: navigation-convergence-v2
+runtime:
+  action_delay_ms:
+  - 25.0
+  - 50.0
+evaluation:
+  environment: config
+  episodes: null
+  protocol: benchmarks/navigation.yaml
+  per_scene: true
+  commanded_speed: 4.0
+  entrypoint: drone_playground.evaluation.navigation.policy.evaluate_navigation
+method:
+  name: policy
+  output: state
+  implementation: neural
+  trainable: true
+env:
+  task:
+    reward:
+      _target_: drone_playground.learning.objectives.navigation.MotionNavigationObjective
+      name: navigation
+      recipe: motion-aware-v2
+      progress_scale: 0.2
+      time_cost: 0.1
+      target_speed: 2.0
+      max_speed: 20.0
+      velocity_scale: 1.0
+      altitude_scale: 2.0
+      clearance_scale: 4.0
+      clearance_radius: 1.2
+      smoothness_scale: 0.0001
+      overspeed_scale: 1.0
+      arrival_bonus: 100.0
+      failure_penalty: -1000.0
+      reward_scale: 0.01

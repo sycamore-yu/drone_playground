@@ -3,14 +3,15 @@
 from hydra import initialize_config_dir
 from hydra.core.global_hydra import GlobalHydra
 
-from drone_playground.composition import CONFIG_ROOT, compose_experiment
+from drone_playground.composition import compose_experiment
+from drone_playground.configuration import CONFIG_ROOT
 
 
 def test_reference_composition_reuses_cli_hydra_without_clearing_it():
     with initialize_config_dir(version_base="1.3", config_dir=str(CONFIG_ROOT)):
         outer = GlobalHydra.instance().hydra
-        config = compose_experiment('control/apg', "hovering")
+        config = compose_experiment("control/apg", "hovering")
         assert config["env"]["task"]["name"] == "hovering"
         assert GlobalHydra.instance().hydra is outer
-        assert compose_experiment('control/ppo', "tracking")["algorithm"]["name"] == "ppo"
+        assert compose_experiment("control/ppo", "tracking")["algorithm"]["name"] == "ppo"
     assert not GlobalHydra.instance().is_initialized()

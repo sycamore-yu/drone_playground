@@ -1,5 +1,0 @@
-defaults:
-- /action/controller@controller: velocity_yaw
-- _self_
-command: velocity_yaw
-tracker: null

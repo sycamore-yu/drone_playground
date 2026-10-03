@@ -1,60 +1,47 @@
 # 领域术语
 
-本文件维护稳定术语；代码位置见 `docs/architecture.md`，当前活动见 `docs/status.md`。
+稳定术语在此维护。实现位置见 `docs/architecture.md`，当前活动见 `docs/status.md`。
 
-| 术语 | 在本项目中的含义 |
+| 术语 | 项目中的含义 |
 |---|---|
-| 方法配方 `method` | 完整决策方法及其网络或优化问题、输出合同和更新方式 |
-| 规划模块 `planning module` | 通过显式优化问题生成路径、轨迹或任务决策的模块；本项目用此术语特指基于优化的方法 |
-| 训练算法 | 更新网络参数的规则；PPO、SHAC、BPTT 属于训练算法，其名称本身不确定网络覆盖的飞行环节 |
-| 模块覆盖范围 | 一个运行时模块承担的连续飞行处理环节；覆盖某层不意味着对外提供该层的中间表示 |
-| 输出接口 | 模块实际向下游交付的数据及物理含义，与其内部覆盖范围分别声明 |
-| 轨迹 `Traj.` | 带时间参数的期望运动，给出明确的状态量及有效时域 |
-| 航点 `Waypoint` | 空间目标或有序目标序列；时标、容差和插值规则须明确，不能直接等同于轨迹 |
-| 运动命令 `Motion Cmd` | 交给执行系统的控制目标，具体类型可以是速度、加速度、姿态与推力或总推力与机体系角速度 |
-| 求导边界 | 一个组合中梯度可传播、被截断或由明确替代导数定义的边界；接入 JAX 仿真本身不代表组件可微 |
-| 原生方法接口 | 宿主调用 C++ 等外部方法的公共数据与生命周期合同；声明输入能力和 Traj.／Waypoint／Motion Cmd 输出，与容器或本地进程的部署方式分开 |
-| 方法适配器 | 将某个原生方法的参数、消息、时间和输出转换到公共接口的实现；保留该方法真实的信息需求、状态和求导能力 |
-| 完整环境 `env` | 场景、任务、传感器、观测和实际执行系统的组合 |
-| 场景 `scene` | 几何、运动、实例身份及默认起终点；采样的任务指令独立保存 |
-| 任务 `task` | 成功、失败、时限和任务进度 |
-| 传感器 `sensor` | 在明确物理时刻生成测量的组件 |
-| 观测 `observation` | 策略或规划器实际接收的输入及历史 |
-| 执行 `execution` | 命令应用、延迟、控制与完整物理推进 |
-| 实际前向模型 | 真正产生本次实验状态与轨迹的动力学 |
-| 预测模型 | 方法内部用于规划、优化或预测的模型 |
-| 导数规则 | `algorithm.gradient` 所声明的反向传播边界与变换 |
-| 热启动 | 从已有参数初始化新的训练，单独记录来源及预算 |
-| 完整恢复 | 恢复参数、优化器、随机状态、计数及必要环境状态 |
-| 冻结评测 | 使用固定参数执行任务，并核对参数摘要 |
-| 工程通过 | 配置、执行、记录或恢复接口完成相应验证 |
-| 质量通过 | 达到协议中明确的任务完成率及误差等标准 |
-| 正式结果 | 由选定运行清单及其原始报告确定的发布基线 |
-| 生成时间 | 模块在仿真时钟上产出该决策的物理时刻，不是墙钟时间 |
-| 有效时域 | 一个物理输出仍可执行的最晚仿真时刻；轨迹取自身区间终点，航点按声明 |
-| 坐标系 | 物理输出声明的坐标参考系；当前可执行的轨迹系数与航点均为世界系 |
-| 时间合同 | `Decision` 统一声明输出的生成时间与有效期；轨迹另有自身起止时域，航点在裸跨模块传输时镜像同一时间窗；过期输出由执行层拒绝 |
-| 时限 `duration` | 单个回合的最大仿真秒数；区别于每次更新展开的 `horizon_length` 步数 |
-| 任务截止 `termination` | 到达截止即任务结束，末态价值为零 |
-| 人工截断 `truncation` | 继续任务为采样而重置，带 critic 的算法从重置前末态 bootstrap |
-| 方法复现 `method_reproduction` | 保留各完整方法的观测、模型、控制接口及声明的适配条件 |
-| 受控比较 `controlled_comparison` | 固定环境、观测、执行和 actor 条件，只替换更新算法；记录固定条件身份及摘要 |
+| 实验配方 `experiment` | 使用 Hydra 组合环境、方法、训练算法、网络和运行设置 |
+| 运行方法 `method` | 实际执行的 Policy、Planner、Controller 或已配置模块链 |
+| 训练算法 `algorithm` | 更新参数的规则；PPO、BPTT、SHAC、DVA 属于训练算法 |
+| 策略 `Policy` | 从观测产生已声明输出的可执行策略；循环记忆属于策略实例 |
+| 规划器 `Planner` | 产生航点或时间轨迹的运行模块 |
+| 控制器 `Controller` | 将输入参考或设定值变成其下游支持的物理控制量 |
+| 环境 `Environment` | 直接组合 Dynamics、Controller、Reference、Scene、Sensor、Task |
+| 任务 `Task` | 初始化、观测、成功/失败事件、时限、奖励或损失 |
+| 场景 `Scene` | 物理资产、实例、运动参数及默认起终点；采样指令另行保存 |
+| 传感器 `Sensor` | 在明确仿真时刻产生测量 |
+| 观测 `Observation` | 输入字段、形状、单位、坐标和历史的规格及编码 |
+| 参考 `Reference` | Waypoint 或 Trajectory；用于描述期望运动 |
+| 航点 `Waypoint` | 有序空间目标，明确容差和有效期；不自带到达时间轨迹 |
+| 轨迹 `Trajectory` | 带时间参数的分段期望运动，包含真实有效区间 |
+| 状态设定值 `StateSetpoint` | 显式位置、速度、净加速度、yaw 或 yaw-rate 字段 |
+| 姿态设定值 `AttitudeSetpoint` | 姿态弧度和总推力牛顿 |
+| 角速度设定值 `RateSetpoint` | 机体系角速度弧度/秒和总推力牛顿 |
+| 执行器输入 `Actuation` | ForceTorque 或 MotorRPM 原生物理输入 |
+| 动力学 `Dynamics` | 通过 `step(state, control, dt)` 推进原生物理状态 |
+| 预测模型 | 规划器或控制器内部使用的模型，与实际前向动力学分别声明 |
+| 求导边界 | 梯度可传播、被截断或被显式替代导数定义的位置 |
+| 安全飞行走廊 `SFC` | SafeFlightCorridor 规划检查数据，具有自身有效期 |
+| 轨迹预览 `TrajectoryPreview` | 非执行轨迹的检查数据，具有自身有效期 |
+| 人工截断 `truncation` | 为采样而停止；带 critic 的算法可使用重置前末态价值 |
+| 任务终止 `termination` | 成功、失败或任务截止；不继续 bootstrap |
+| 参数热启动 `warm start` | 从已有参数开始新训练，优化器与随机状态按新运行初始化 |
+| 完整恢复 `resume` | 恢复参数、优化器、随机状态、计数及必要环境状态 |
+| 冻结评测 `evaluation` | 固定参数与归一化统计执行任务并核对摘要 |
+| 基准 `benchmark` | 版本化 cases、种子、预算、指标和判定规则 |
+| 工程通过 | 对应实现、调用链和定向验证通过 |
+| 质量通过 | 达到基准规定的成功率、误差或时间要求 |
 
-| 动力学随机化 `domain_randomization` | 训练 reset 采样真实模型参数，如质量、惯量、电机能力；不同于运行时外力 |
-| 初态随机化 `reset_randomization` | 初始位置、姿态、速度与场景／参考相位的分布 |
-| 测量噪声 `observation_noise` | 传感器及状态估计测量的误差、丢测；影响输入，不改真实状态和奖励 |
-| 探索噪声 `policy exploration` | 训练算法的策略采样分布；不同于测量误差和执行误差 |
-| 动作不确定性 `action_noise` | 已产生的控制命令在执行时的偏差，声明归一化或物理单位 |
-| 扰动 `disturbance` | 运行时外力、力矩、阵风；点质量使用显式加速度扰动 |
-| 指令分布 `command_distribution` | position goal、velocity command 或 reference 的采样，与障碍几何分离 |
-| 场景分布 `scene_distribution` | fixed 固定库、generated 一次生成库、procedural 每次采样几何 |
-| 课程 `curriculum` | 按训练进度或表现实际调整难度；固定库和固定范围不是课程 |
-| 名义评测 `nominal evaluation` | 冻结策略，在标准模型、标准传感器条件及固定种子下评测 |
+运行角色只有 `train` 和 `eval`。训练内选模与正式 Benchmark 都使用 `eval`，由评测设置和协议区分。Figure-8、随机样条是 Tracking 的 reference presets；Static/Dynamic 是 Navigation 的场景集合。
 
-Navigation 是到达目标并避免碰撞的任务；Navigation8 是当前固定场景 benchmark，不限定通用任务的训练场景或目标分布。
+Hydra/YAML 是唯一配置组合系统。`load()` 直接组合环境。项目不增加重复 registry、通用 DroneState、EnvironmentState 或 Manager。外层状态继续使用 Brax `State`，其内部保留后端和任务的原生数据。
 
-Environment 运行角色只有 `train`／`eval`。训练内 eval 用于监控和 checkpoint selection；正式 Benchmark 也使用 `eval` 环境语义，由版本化 benchmark specification 区分。历史证据中的旧 split/role 字段按原文留存。
+动力学随机化在 reset 采样物理参数；测量噪声只改输入；动作误差改执行命令；外力/力矩属于运行扰动。初态、场景和指令分布分别声明。固定分布不称为 curriculum。
 
-现役公开配方统一由 `experiment=...` 选择；点云可微重建使用 `differentiable_pointcloud`。论文标题、来源与重建假设只保存在 reproduction/source metadata 中，不形成新的 Method、Task 或配置命名空间。
+LOTF 只表示动力学来源。其 high-fidelity 与 simplified 实现不形成另一套 Task、Policy、Algorithm 或 Evaluation。物理数组顺序只在后端边界转换。
 
-LOTF 是动力学来源，公开为并列的 `lotf_high_fidelity` 与 `lotf_simplified` 两个 Dynamics；不定义 Task、Environment、Method、Evaluation 或运行角色。点云论文公开信息重建、控制任务迁移和导航域适配共享一个 Method 身份，但分别记录真实适配配置与来源。前向 Dynamics 与 diffRL 的 `algorithm.gradient.transition` 独立选择，结果按真实执行配置解释。
+固定几何来自 MJCF。动态障碍当前位置保存在运行态。SFC、轨迹预览和可视化标记不作为传感输入或安全保证。配置、软件接口和工程测试迁移不修改历史权重、原始结果或正式质量结论。

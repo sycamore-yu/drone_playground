@@ -9,10 +9,11 @@ decision is rejected rather than silently executed.
 import numpy as np
 import pytest
 
-from drone_playground.actions.commands import Trajectory, Waypoint
-from drone_playground.runtime.pipeline import GoalWaypoints, PipelinePlanner
+from drone_playground.planning.goal import GoalWaypoints
+from drone_playground.references import Trajectory, Waypoint
 from drone_playground.rpc.proto import algorithm_pb2 as pb
 from drone_playground.rpc.wire import body_state, decode_output, encode_output, validate_step
+from drone_playground.runtime.pipeline import Pipeline
 
 
 def _curve(start=1.0, duration=2.0):
@@ -68,9 +69,7 @@ def test_wire_reports_an_untimed_waypoint_as_open_ended():
 def _step_with_upstream(waypoint, now, goal=None):
     request = pb.StepRequest(
         header=pb.Header(simulation_time=now),
-        state=body_state(
-            dict(position=[0, 0, 1], velocity=[0, 0, 0], quaternion=[0, 0, 0, 1])
-        ),
+        state=body_state(dict(position=[0, 0, 1], velocity=[0, 0, 0], quaternion=[0, 0, 0, 1])),
         solve_budget_seconds=0.05,
     )
     request.waypoints.CopyFrom(encode_output(waypoint))
@@ -89,8 +88,9 @@ def test_stale_or_future_upstream_waypoint_is_rejected_before_execution():
 
 
 def test_untimed_task_goal_is_accepted_as_a_plain_setpoint():
-    validate_step(_step_with_upstream(Waypoint([[1, 0, 1]], 0.5), 3.0,
-                                      goal=Waypoint([[1, 0, 1]], 0.5)))
+    validate_step(
+        _step_with_upstream(Waypoint([[1, 0, 1]], 0.5), 3.0, goal=Waypoint([[1, 0, 1]], 0.5))
+    )
 
 
 def test_goal_module_restamps_only_a_changed_target():
@@ -122,8 +122,9 @@ def test_ten_hertz_source_stays_cached_across_fifty_hertz_execution(monkeypatch,
             # the cache must expire rather than silently reuse a stale goal. The
             # module stamps only the output; the stage envelope mirrors it.
             return dict(
-                output=Waypoint([[3, 0, 1]], 0.1, generated_at=packet["time"],
-                                valid_until=packet["time"] + 0.05),
+                output=Waypoint(
+                    [[3, 0, 1]], 0.1, generated_at=packet["time"], valid_until=packet["time"] + 0.05
+                ),
                 plan_id=str(len(self.calls)),
                 decision_status="valid",
             )
@@ -133,7 +134,7 @@ def test_ten_hertz_source_stays_cached_across_fifty_hertz_execution(monkeypatch,
 
     source = Source()
     monkeypatch.setattr(pipeline, "instantiate", lambda _: source)
-    planner = PipelinePlanner(
+    planner = Pipeline(
         dict(output="waypoint", stages=[dict(implementation="python", frequency_hz=10)]),
         tmp_path,
         SimpleNamespace(freq=50),
@@ -145,7 +146,12 @@ def test_ten_hertz_source_stays_cached_across_fifty_hertz_execution(monkeypatch,
     # two cached ticks inside its window; past that it expires instead of being
     # handed downstream, until the next production tick refreshes it.
     assert [reply["output"] is not None for reply in replies] == [
-        True, True, True, False, False, True,
+        True,
+        True,
+        True,
+        False,
+        False,
+        True,
     ]
     # Expiry is attributed to the cached stage, and the surviving cached output
     # keeps its original producing time rather than looking freshly generated.
@@ -157,7 +163,7 @@ def test_ten_hertz_source_stays_cached_across_fifty_hertz_execution(monkeypatch,
 def test_reset_clears_the_waypoint_time_state(tmp_path):
     from types import SimpleNamespace
 
-    planner = PipelinePlanner(
+    planner = Pipeline(
         dict(output="waypoint", stages=[dict(implementation="goal")]),
         tmp_path,
         SimpleNamespace(freq=50),

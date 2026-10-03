@@ -34,22 +34,55 @@ void ValidateTimed(const wire::Waypoint& path, double now) {
   Require(std::isfinite(path.generated_at()) && path.generated_at() >= 0 &&
           path.generated_at() <= now + 1e-9,
           "Upstream waypoint has a future generation time");
-  Require(path.valid_until() <= 0 || path.valid_until() >= now,
+  Require(std::isfinite(path.valid_until()) && path.valid_until() >= 0 &&
+          (path.valid_until() == 0 || path.valid_until() >= now),
           "Upstream waypoint is expired");
 }
-void Validate(const wire::MotionCommand& command) {
-  const auto& kind = command.kind();
-  const bool four = kind == "attitude_thrust" || kind == "thrust_bodyrates" ||
-                    kind == "motor_rpm" || kind == "velocity_yaw";
-  Require(four || kind == "world_acceleration", "Unknown motion command");
-  Require(command.values_size() == (four ? 4 : 3), "Incorrect motion command width");
-  for (double v : command.values()) Require(std::isfinite(v), "Nonfinite motion command");
+template <class Output>
+std::string ValidateControl(const Output& output) {
+  if (output.has_state_setpoint()) {
+    const auto& value = output.state_setpoint();
+    Require(value.has_position() || value.has_velocity() || value.has_acceleration() ||
+            value.has_yaw() || value.has_yaw_rate(), "State setpoint requires a controlled field");
+    Require((!value.has_position() || Finite(value.position())) &&
+            (!value.has_velocity() || Finite(value.velocity())) &&
+            (!value.has_acceleration() || Finite(value.acceleration())) &&
+            (!value.has_yaw() || std::isfinite(value.yaw())) &&
+            (!value.has_yaw_rate() || std::isfinite(value.yaw_rate())),
+            "Nonfinite state setpoint");
+    return "state";
+  }
+  if (output.has_attitude()) {
+    const auto& value = output.attitude();
+    Require(value.has_rpy() && Finite(value.rpy()) && std::isfinite(value.thrust()),
+            "Attitude requires finite rpy and collective thrust");
+    return "attitude";
+  }
+  if (output.has_rates()) {
+    const auto& value = output.rates();
+    Require(value.has_body_rates() && Finite(value.body_rates()) && std::isfinite(value.thrust()),
+            "Rates require finite body_rates and collective thrust");
+    return "rates";
+  }
+  if (output.has_force_torque()) {
+    const auto& value = output.force_torque();
+    Require(value.has_torque() && Finite(value.torque()) && std::isfinite(value.thrust()),
+            "Force/torque requires finite body torque and collective thrust");
+    return "force_torque";
+  }
+  if (output.has_motor_rpm()) {
+    const auto& value = output.motor_rpm();
+    Require(value.rpm_size() == 4, "MotorRPM requires four rotor speeds");
+    for (double speed : value.rpm()) Require(std::isfinite(speed), "Nonfinite motor speed");
+    return "motor_rpm";
+  }
+  return {};
 }
 double Validate(const wire::Trajectory& curve, double now) {
   double end = curve.start_time();
-  Require(curve.frame().empty() || curve.frame() == "world",
+  Require(curve.frame() == "world",
           "Trajectory coefficients must use the world frame");
-  Require(std::isfinite(end) && end <= now + 1e-9 && !curve.segments().empty(),
+  Require(std::isfinite(end) && end >= 0 && end <= now + 1e-9 && !curve.segments().empty(),
           "Trajectory must cover the current time");
   for (const auto& segment : curve.segments()) {
     Require(std::isfinite(segment.duration()) && segment.duration() > 0,
@@ -108,21 +141,20 @@ void ValidateInputs(const wire::StepRequest& request, const wire::Capabilities& 
     } else throw std::invalid_argument("Missing measurement payload");
   }
   std::string kind;
-  if (request.has_reference()) {
-    Validate(request.reference(), request.header().simulation_time());
-    kind = "trajectory"; available.insert("reference");
-  } else if (request.has_waypoints()) {
-    ValidateTimed(request.waypoints(), request.header().simulation_time());
-    kind = "waypoint"; available.insert("waypoints");
-  } else if (request.has_motion_command()) {
-    Validate(request.motion_command()); kind = request.motion_command().kind();
-    available.insert("motion_command");
+  if (request.has_trajectory()) {
+    Validate(request.trajectory(), request.header().simulation_time());
+    kind = "trajectory"; available.insert("trajectory");
+  } else if (request.has_waypoint()) {
+    ValidateTimed(request.waypoint(), request.header().simulation_time());
+    kind = "waypoint"; available.insert("waypoint");
+  } else {
+    kind = ValidateControl(request);
+    if (!kind.empty()) available.insert(kind == "state" ? "state_setpoint" : kind);
   }
   std::set<std::string> accepted(capabilities.accepted_upstream().begin(),
                                  capabilities.accepted_upstream().end());
   const std::set<std::string> required(capabilities.required_inputs().begin(),
                                       capabilities.required_inputs().end());
-  if (accepted.empty() && required.count("reference")) accepted.insert("trajectory");
   if (!kind.empty()) {
     Require(accepted.count(kind), "Unsupported upstream physical interface");
     available.insert("upstream");
@@ -138,8 +170,7 @@ void ValidateDecision(const wire::Decision& decision, double now,
     Require(status == wire::NO_PLAN || status == wire::INFEASIBLE ||
                 status == wire::BUDGET_EXHAUSTED,
             "Unsupported decision status");
-    Require(!decision.has_trajectory() && !decision.has_waypoint() &&
-                !decision.has_motion_command(),
+    Require(decision.output_case() == wire::Decision::OUTPUT_NOT_SET,
             "Unsuccessful decision cannot carry executable output");
     return;
   }
@@ -159,11 +190,9 @@ void ValidateDecision(const wire::Decision& decision, double now,
   } else if (decision.has_waypoint()) {
     Validate(decision.waypoint());
     kind = "waypoint";
-  } else if (decision.has_motion_command()) {
-    Validate(decision.motion_command());
-    kind = decision.motion_command().kind();
   } else {
-    throw std::invalid_argument("Valid decision requires an executable output");
+    kind = ValidateControl(decision);
+    Require(!kind.empty(), "Valid decision requires an executable output");
   }
 
   const std::set<std::string> outputs(capabilities.outputs().begin(), capabilities.outputs().end());
@@ -176,7 +205,7 @@ Service::Service(std::unique_ptr<Algorithm> algorithm) : algorithm_(std::move(al
 grpc::Status Service::Check(const wire::Header& header, bool reset) {
   if (!initialized_ || header.session_id() != session_)
     return Failed("Initialize a matching session first");
-  if (header.protocol_version() != 1 || header.sequence() <= sequence_)
+  if (header.protocol_version() != 2 || header.sequence() <= sequence_)
     return Invalid("Unsupported protocol or stale request sequence");
   if (!std::isfinite(header.simulation_time()) || header.simulation_time() < 0)
     return Invalid("Simulation time must be finite and nonnegative");
@@ -198,8 +227,8 @@ grpc::Status Service::Initialize(grpc::ServerContext*, const wire::InitializeReq
   std::lock_guard<std::mutex> lock(mutex_);
   if (initialized_) return Failed("Session already initialized; close it first");
   const auto& header = request->header();
-  if (header.protocol_version() != 1 || header.session_id().empty() || header.sequence() == 0)
-    return Invalid("Initialize requires version 1 and a session/request identity");
+  if (header.protocol_version() != 2 || header.session_id().empty() || header.sequence() == 0)
+    return Invalid("Initialize requires version 2 and a session/request identity");
   try {
     auto capabilities = algorithm_->Initialize(*request);
     if (capabilities.algorithm() != request->algorithm() || capabilities.outputs().empty())
@@ -207,7 +236,7 @@ grpc::Status Service::Initialize(grpc::ServerContext*, const wire::InitializeReq
     capabilities_ = capabilities;
     *response->mutable_capabilities() = capabilities;
     *response->mutable_header() = header;
-    (*response->mutable_provenance())["service"] = "drone-native-cpp-v1";
+    (*response->mutable_provenance())["service"] = "drone-native-cpp-v2";
     session_ = header.session_id();
     sequence_ = header.sequence();
     episode_.clear();
@@ -257,14 +286,27 @@ grpc::Status Service::Step(grpc::ServerContext* context, const wire::StepRequest
   try {
     const auto start = std::chrono::steady_clock::now();
     *response->mutable_decision() = algorithm_->Step(*request);
-    auto geometry = algorithm_->Geometry(*request);
-    if (!geometry.corridors().empty() || !geometry.trajectories().empty())
-      *response->mutable_planner_geometry() = std::move(geometry);
+    const double now = request->header().simulation_time();
+    for (auto& corridor : algorithm_->Corridors(*request)) {
+      Require(corridor.frame() == "world" && std::isfinite(corridor.generated_at()) &&
+              std::isfinite(corridor.valid_until()) && corridor.generated_at() >= 0 &&
+              corridor.generated_at() <= now + 1e-9 && corridor.valid_until() >= corridor.generated_at(),
+              "Invalid corridor frame or validity");
+      *response->add_corridors() = std::move(corridor);
+    }
+    for (auto& preview : algorithm_->TrajectoryPreviews(*request)) {
+      Require(preview.frame() == "world" && std::isfinite(preview.generated_at()) &&
+              std::isfinite(preview.valid_until()) && preview.generated_at() >= 0 &&
+              preview.generated_at() <= now + 1e-9 && preview.valid_until() >= preview.generated_at(),
+              "Invalid trajectory preview validity");
+      *response->add_trajectory_previews() = std::move(preview);
+    }
     const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start);
     (*response->mutable_diagnostics())["algorithm_seconds"] = elapsed.count();
     if (elapsed.count() > request->solve_budget_seconds()) {
       response->mutable_decision()->Clear();
-      response->clear_planner_geometry();
+      response->clear_corridors();
+      response->clear_trajectory_previews();
       response->mutable_decision()->set_status(wire::BUDGET_EXHAUSTED);
       response->mutable_decision()->set_explanation("Algorithm exceeded its wall-clock solve budget");
     }
@@ -288,7 +330,7 @@ grpc::Status Service::Close(grpc::ServerContext*, const wire::CloseRequest* requ
   // Close must remain available after initialization/reset/step failures.
   if (!initialized_ || request->header().session_id() != session_)
     return Failed("Cannot close another session");
-  if (request->header().protocol_version() != 1 || request->header().sequence() <= sequence_)
+  if (request->header().protocol_version() != 2 || request->header().sequence() <= sequence_)
     return Invalid("Unsupported protocol or stale close request");
   try { algorithm_->Close(); }
   catch (const std::exception& error) {

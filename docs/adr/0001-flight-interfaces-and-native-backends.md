@@ -1,5 +1,22 @@
-# 以物理接口组合飞行方法，独立声明求导能力
+# ADR 0001：以物理接口组合飞行方法，独立声明求导能力
 
-项目借鉴 FlightBench 的分段处理链，采用 Traj.、Waypoint、Motion Cmd 作为公共组合边界；模块覆盖范围与实际输出分别声明。PPO／SHAC／BPTT 属于训练算法，不能据算法名称推断网络接口。此选择支持保持其他环节不变的组件对照，同时避免把没有固定物理意义的网络内部特征当作通用交换格式。
+## Status
 
-第一版允许 JAX 仿真与 C++ 规划器共存，逐组合声明求导边界。SUPER／EGO 暂沿用固定 ROS 容器作为原版基线，C++ 核心抽取列为后续优化；去容器与可微性是不同问题。原方法复现与统一条件下的组件对照分别报告，改写动力学、接口或导数的结果保留独立身份。具体范围及依据见[交付规格](../notes/archive/release-plan.md)。
+Superseded by [ADR 0004](0004-reference-setpoint-and-native-dynamics.md).
+
+## Context
+
+早期宿主需要让学习方法、C++ 规划器和 MPC 共用一条执行链，同时避免把网络内部特征当作跨模块接口。
+
+## Decision
+
+项目最初采用 Traj.、Waypoint、Motion Cmd 作为公共组合边界，并让每个组合独立声明求导边界。PPO、SHAC、BPTT 只表示训练算法，不据算法名称推断网络输出接口。
+
+第一版允许 JAX 仿真与 C++ 规划器共存。SUPER 和 EGO 保留固定 ROS 容器作为原版基线。去容器与可微性分开处理。
+
+## Consequences
+
+- 学习方法和原生规划方法可以通过显式物理数据组合。
+- 方法复现与统一条件下的组件比较保持独立身份。
+- `Motion Cmd` 作为总括类型后来证明过宽，Reference 与 Setpoint 的语义也需要拆开，因此该接口模型由 ADR 0004 取代。
+- 历史交付范围与依据保留在[交付规格](../notes/archive/release-plan.md)。

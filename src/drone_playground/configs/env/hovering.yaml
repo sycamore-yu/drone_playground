@@ -1,0 +1,47 @@
+# @package _global_
+defaults:
+- /sensor@env.sensor: none
+- /controller@env.controller: attitude
+- /dynamics@env.dynamics: crazyflow_so_rpy
+- _self_
+env:
+  scene:
+    _target_: drone_playground.environments.scenes.empty.EmptyScene
+    name: empty
+    takeoff:
+    - 0.0
+    - 0.0
+    - 1.0
+  task:
+    name: hovering
+    freq: 50
+    duration: 3.0
+    reference_count: 256
+    numerical_guard: true
+    time_limit_kind: truncation
+    command_distribution:
+      kind: reference
+      distribution: reference_bank
+    observation:
+      _target_: drone_playground.environments.observations.state.TrackingObservation
+      name: state_reference
+      n_samples: 10
+      interval: 0.1
+    reward:
+      _target_: drone_playground.environments.tasks.rewards.TrackingObjective
+      name: tracking_exp
+      scale: 1.0
+      distance_scale: 2.0
+    _target_: drone_playground.environments.tasks.tracking.task.TrackingTask
+  name: hovering
+  reference:
+    _target_: drone_playground.references.ReferenceGenerator
+    name: hover
+    amplitude: 1.0
+    target:
+    - 0.0
+    - 0.0
+    - 1.5
+  _target_: drone_playground.environments.base.DroneEnvironment
+evaluation:
+  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator

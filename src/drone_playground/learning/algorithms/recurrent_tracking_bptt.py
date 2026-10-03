@@ -10,25 +10,25 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
-from drone_playground.actions.delay import delayed_step
-from drone_playground.runtime.jax_runner import recurrent_scan
+from drone_playground.control.delay import delayed_step
 from drone_playground.learning.checkpointing import restore_recurrent_state, save_recurrent_snapshot
+from drone_playground.runtime.jax_runner import recurrent_scan
 
 
 def loss_function(task, network, params, key, count, horizon):
     physical, times, delay = task.training_initial(key, count, horizon)
     hidden = jnp.zeros((count, network.hidden_size))
     previous = jnp.zeros((count, 3))
-    settings = task.objective
+    settings = task.loss
 
     def step(carry, index):
         state, memory, last = carry
         timestamp = times + index * task.dt
-        points, valid, proprio = task.observation(state, timestamp)
+        points, valid, proprio = task.measure(state, timestamp)
         action, memory = network.apply(params, points, valid, proprio, memory)
         command = task.command(action, state)
         nxt, positions = delayed_step(
-            task.model,
+            task.dynamics,
             state,
             command,
             last,
@@ -39,29 +39,17 @@ def loss_function(task, network, params, key, count, horizon):
         target_position, target_velocity = task.reference(timestamp + task.dt)
         clearance = jax.vmap(task.clearance)(positions)
         parts = dict(
-            position=jnp.mean(
-                jnp.sum((nxt.pos - target_position) ** 2, axis=-1)
-            ),
-            velocity=jnp.mean(
-                jnp.sum((nxt.vel - target_velocity) ** 2, axis=-1)
-            ),
+            position=jnp.mean(jnp.sum((nxt.pos - target_position) ** 2, axis=-1)),
+            velocity=jnp.mean(jnp.sum((nxt.vel - target_velocity) ** 2, axis=-1)),
             acceleration=jnp.mean(jnp.sum(command**2, axis=-1)),
             jerk=jnp.mean(jnp.sum(((command - last) / task.dt) ** 2, axis=-1)),
-            collision=jnp.mean(
-                jnp.square(
-                    jax.nn.relu(settings["collision_margin_m"] - clearance)
-                )
-            ),
+            collision=jnp.mean(jnp.square(jax.nn.relu(settings["collision_margin_m"] - clearance))),
         )
         return (nxt, memory, command), parts
 
-    _, parts = recurrent_scan(
-        step, (physical, hidden, previous), horizon, rematerialize=True
-    )
+    _, parts = recurrent_scan(step, (physical, hidden, previous), horizon, rematerialize=True)
     metrics = {name: jnp.mean(value) for name, value in parts.items()}
-    loss = sum(
-        settings[name + "_loss"] * value for name, value in metrics.items()
-    )
+    loss = sum(settings[name + "_loss"] * value for name, value in metrics.items())
     return loss, {**metrics, "loss": loss}
 
 
@@ -72,9 +60,9 @@ def train(config, root, run_id):
 
     from drone_playground.artifacts.console import capture_console
     from drone_playground.artifacts.record import RunRecorder
-    from drone_playground.artifacts.reporting import save_report, tree_digest
-    from drone_playground.artifacts.training_state import load_training_state, save_training_state
-    from drone_playground.composition import build_environment
+    from drone_playground.artifacts.reporting import save_report
+    from drone_playground.artifacts.training_state import load_training_state
+    from drone_playground.environments.environment import build_environment
     from drone_playground.evaluation.tracking.acceleration import ControlEvaluator, export_replays
     from drone_playground.learning.algorithms.recurrent_bptt import (
         initialize,
@@ -84,10 +72,7 @@ def train(config, root, run_id):
     count, horizon = int(settings["num_envs"]), int(algorithm["horizon_length"])
     target = int(settings["policy_updates"])
     stop = int(settings.get("stop_after_updates") or target)
-    milestones = {
-        int(value)
-        for value in np.linspace(0, target, max(2, settings["num_evals"]))
-    }
+    milestones = {int(value) for value in np.linspace(0, target, max(2, settings["num_evals"]))}
     milestones.add(stop)
     task = None
     with RunRecorder(
@@ -99,37 +84,23 @@ def train(config, root, run_id):
         with capture_console(rec.path / "console.log"):
             try:
                 rec.phase("initializing")
-                task = build_environment(
-                    config, config["runtime"]["device"], "train", count
-                )
-                rec.record_environment(task)
+                env = build_environment(config, config["runtime"]["device"], "train", count)
+                task = env.task
+                rec.record_environment(env)
                 state, network, optimizer = initialize(task, config)
                 clip = algorithm.get("max_grad_norm")
                 if clip is not None:
-                    optimizer = optax.chain(
-                        optax.clip_by_global_norm(float(clip)), optimizer
-                    )
-                    state = state.replace(
-                        opt_state=optimizer.init(state.params)
-                    )
+                    optimizer = optax.chain(optax.clip_by_global_norm(float(clip)), optimizer)
+                    state = state.replace(opt_state=optimizer.init(state.params))
                 warm_provenance = None
                 if settings.get("warm_start"):
-                    source, metadata = load_training_state(
-                        settings["warm_start"]
-                    )
+                    source, metadata = load_training_state(settings["warm_start"])
                     for field in ("method", "network"):
                         if metadata["config"][field] != config[field]:
-                            raise ValueError(
-                                f"Point-cloud warm-start contract differs: {field}"
-                            )
-                    for field in ("sensor", "observation", "action", "dynamics"):
-                        if (
-                            metadata["config"]["env"][field]
-                            != config["env"][field]
-                        ):
-                            raise ValueError(
-                                f"Point-cloud warm-start input/plant differs: {field}"
-                            )
+                            raise ValueError(f"Point-cloud warm-start contract differs: {field}")
+                    for field in ("sensor", "controller", "dynamics"):
+                        if metadata["config"]["env"][field] != config["env"][field]:
+                            raise ValueError(f"Point-cloud warm-start input/plant differs: {field}")
                     state = state.replace(
                         params=source.params,
                         opt_state=optimizer.init(source.params),
@@ -143,29 +114,24 @@ def train(config, root, run_id):
                 state, restored = restore_recurrent_state(state, config)
                 start_updates = int(state.updates)
                 if start_updates >= stop:
-                    raise ValueError(
-                        "Continuation must perform at least one additional update"
-                    )
+                    raise ValueError("Continuation must perform at least one additional update")
                 initial = jax.tree.map(np.asarray, state.params)
-                checkpoint_eval_count = int(
-                    settings["checkpoint_eval_episodes"]
-                )
+                checkpoint_eval_count = int(settings["checkpoint_eval_episodes"])
                 from drone_playground.benchmarks import checkpoint_eval_seeds
 
-                evaluation_task = build_environment(
+                evaluation_env = build_environment(
                     config,
                     config["runtime"]["device"],
                     "eval",
                     checkpoint_eval_count,
                 )
+                evaluation_task = evaluation_env.task
                 evaluator = ControlEvaluator(
                     evaluation_task,
                     network,
                     checkpoint_eval_seeds(settings, checkpoint_eval_count),
                 )
-                save_report(
-                    rec.path / "components.json", task.component_identity
-                )
+                save_report(rec.path / "components.json", env.component_identity)
                 save_report(rec.path / "geometry.json", task.geometry_identity)
                 save_report(
                     rec.path / "sensor-calibration.json",
@@ -174,13 +140,11 @@ def train(config, root, run_id):
                 save_report(
                     rec.path / "training-identity.json",
                     dict(
-                        adapter=task.settings["adapter_identity"],
+                        provenance=task.settings["provenance"],
                         warm_start=warm_provenance,
                         policy_hz=task.freq,
                         physics_hz=task.physics_freq,
-                        randomized_delay_ms=config["runtime"][
-                            "action_delay_ms"
-                        ],
+                        randomized_delay_ms=config["runtime"]["action_delay_ms"],
                         initialization="random reference phases and perturbed task initial states",
                         gradient="BPTT through delayed commands and declared lag dynamics",
                         sensor_state_gradient="detached",
@@ -214,11 +178,7 @@ def train(config, root, run_id):
                     nonlocal best, best_report
                     updates = int(current.updates)
                     step = updates * count * horizon
-                    checkpoint = (
-                        rec.path
-                        / "training-state"
-                        / f"update-{updates:07d}.pkl"
-                    )
+                    checkpoint = rec.path / "training-state" / f"update-{updates:07d}.pkl"
                     rec.phase("checkpoint_eval", step, updates=updates)
                     report, trace = evaluator.run(current.params)
                     from drone_playground.benchmarks import apply_quality
@@ -236,7 +196,13 @@ def train(config, root, run_id):
                         -report["rmse_all_mean"],
                     )
                     best, best_report = save_recurrent_snapshot(
-                        checkpoint, current, config, report, score, best, best_report,
+                        checkpoint,
+                        current,
+                        config,
+                        report,
+                        score,
+                        best,
+                        best_report,
                         report_path=rec.path / "eval" / f"step-{step:010d}.json",
                         fields={"step": step},
                     )
@@ -271,17 +237,13 @@ def train(config, root, run_id):
                     )
                     before = time.monotonic()
                     state, raw = update(state)
-                    latest_metrics = {
-                        name: float(value) for name, value in raw.items()
-                    }
+                    latest_metrics = {name: float(value) for name, value in raw.items()}
                     elapsed = time.monotonic() - before
                     if iteration == start_updates + 1:
                         first_seconds = elapsed
                     else:
                         net_seconds += elapsed
-                    if not all(
-                        np.isfinite(value) for value in latest_metrics.values()
-                    ):
+                    if not all(np.isfinite(value) for value in latest_metrics.values()):
                         raise FloatingPointError(
                             f"Non-finite control update {iteration}: {latest_metrics}"
                         )
@@ -290,9 +252,7 @@ def train(config, root, run_id):
                     if iteration in milestones:
                         snapshot(state)
                         last_snapshot = iteration
-                    if time.monotonic() - started > float(
-                        settings["max_wall_seconds"]
-                    ):
+                    if time.monotonic() - started > float(settings["max_wall_seconds"]):
                         break
                 if last_snapshot != int(state.updates):
                     snapshot(state)
@@ -309,24 +269,19 @@ def train(config, root, run_id):
                     )
                 )
                 if not np.isfinite(delta) or delta <= 0:
-                    raise RuntimeError(
-                        "Control training did not change finite actor parameters"
-                    )
+                    raise RuntimeError("Control training did not change finite actor parameters")
                 full = int(state.updates) == target
                 result = dict(
                     actual_updates=int(state.updates),
                     target_updates=target,
                     actual_steps=int(state.updates) * count * horizon,
-                    session_steps=(int(state.updates) - start_updates)
-                    * count
-                    * horizon,
+                    session_steps=(int(state.updates) - start_updates) * count * horizon,
                     target_steps=target * count * horizon,
                     full_budget_completed=full,
                     actor_parameter_delta_l2=delta,
                     selected=best,
                     best_checkpoint_eval_result=best_report,
-                    selected_checkpoint_has_new_updates=best["updates"]
-                    > start_updates,
+                    selected_checkpoint_has_new_updates=best["updates"] > start_updates,
                     quality_passed=best_report["quality_passed"],
                     engineer_passed=True,
                     warm_start=warm_provenance,
@@ -335,10 +290,10 @@ def train(config, root, run_id):
                         compile_and_first_update_seconds=first_seconds,
                         net_update_seconds=net_seconds,
                     ),
-                    recipe_identity=task.settings["adapter_identity"],
+                    recipe_identity=task.settings["provenance"],
                 )
                 rec.finish("completed" if full else "paused", **result)
                 return result
             finally:
                 if task is not None:
-                    task.close()
+                    env.close()

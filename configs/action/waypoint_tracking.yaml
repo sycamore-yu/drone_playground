@@ -1,5 +1,0 @@
-defaults:
-- /action/controller@controller: crazyflow_attitude
-- /action/controller@tracker: waypoint_tracking
-- _self_
-command: waypoint

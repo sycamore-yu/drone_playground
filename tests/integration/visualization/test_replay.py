@@ -76,8 +76,8 @@ def test_mid360_draws_full_azimuth_and_keeps_display_clip_distinct_from_range():
 def test_timed_planning_and_sfc_render_in_standard_rscope_without_changing_physics(tmp_path):
     from rscope import rollout
 
-    from drone_playground.actions.commands import Trajectory
-    from drone_playground.planning.geometry import ConvexPolytope
+    from drone_playground.planning.corridors import ConvexPolytope
+    from drone_playground.references import Trajectory
     from drone_playground.visualization.layers import PlanningFrame, ReplayLayers
     from drone_playground.visualization.rscope_io import export_rollout
 
@@ -132,7 +132,7 @@ def test_timed_planning_and_sfc_render_in_standard_rscope_without_changing_physi
 
 
 def test_polytope_rejects_unbounded_or_empty_halfspaces():
-    from drone_playground.planning.geometry import ConvexPolytope
+    from drone_playground.planning.corridors import ConvexPolytope
     from drone_playground.visualization.layers import polytope_edges
 
     for planes in [
@@ -146,7 +146,7 @@ def test_polytope_rejects_unbounded_or_empty_halfspaces():
 def test_received_future_trajectory_preview_is_visible_before_execution(tmp_path):
     import pickle
 
-    from drone_playground.actions.commands import Trajectory
+    from drone_playground.references import Trajectory
     from drone_playground.visualization.layers import PlanningFrame, ReplayLayers
     from drone_playground.visualization.rscope_io import export_rollout
 
@@ -230,19 +230,9 @@ def test_d435_context_automatically_adds_world_hit_points(tmp_path):
 
 
 def test_navigation_replay_uses_real_crazyflie_mesh_geometry():
-    from drone_playground.visualization.navigation_scene import (
-        ROBOT_ASSET_DIR,
-        _drone_assets_xml,
-        _drone_xml,
-    )
+    from drone_playground.resources import resource_path
 
-    spec = mujoco.MjSpec.from_string(
-        f'''<mujoco>
-        <compiler angle="radian" meshdir="{ROBOT_ASSET_DIR.as_posix()}"/>
-        <asset>{_drone_assets_xml()}</asset>
-        <worldbody>{_drone_xml()}</worldbody>
-        </mujoco>'''
-    )
+    spec = mujoco.MjSpec.from_file(str(resource_path("assets/robots/crazyflie2x/replay.xml")))
     model = spec.compile()
     ids = [i for i in range(model.ngeom) if model.geom(i).name.startswith("cf_")]
     assert len(ids) == 11
@@ -356,7 +346,7 @@ def test_rpc_geometry_survives_recording_and_does_not_become_an_output(tmp_path)
 
 
 def test_decision_layers_keep_intermediate_curve_and_clear_it_causally():
-    from drone_playground.actions.commands import Trajectory
+    from drone_playground.references import Trajectory
     from drone_playground.visualization.layers import layers_from_decisions
 
     curve = Trajectory(0.0, [1.0], np.array([[[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 0.0]]]))

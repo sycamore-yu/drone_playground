@@ -1,0 +1,6 @@
+_target_: drone_playground.control.controllers.mpc.trajectory.SamplingMPCTracking
+input_kind: trajectory
+samples: 2000
+horizon: 25
+prediction_seconds: 1.0
+prediction_device: cpu

@@ -1,0 +1,8 @@
+{
+  "method": "super",
+  "received_typed_trajectories": 3,
+  "executed_planner_controls": 3,
+  "steps": 15,
+  "corridors_received": 7,
+  "displacement_m": 0.008310580626130104
+}

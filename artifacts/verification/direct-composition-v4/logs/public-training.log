@@ -1,0 +1,207 @@
+...F
+=================================== FAILURES ===================================
+__________ test_public_train_checkpoint_evaluate_without_replays[dva] __________
+
+_target_ = <class 'drone_playground.environments.sensors.depth.DepthCamera'>
+_partial_ = False, args = ()
+kwargs = {'name': 'd435_depth', 'width': 120, 'height': 90, 'horizontal_fov_deg': 85.2, ...}
+full_key = ''
+
+    def _call_target(
+        _target_: Callable[..., Any],
+        _partial_: bool,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+        full_key: str,
+    ) -> Any:
+        """Call target (type) with args and kwargs."""
+        try:
+            args, kwargs = _extract_pos_args(args, kwargs)
+            # detaching configs from parent.
+            # At this time, everything is resolved and the parent link can cause
+            # issues when serializing objects in some scenarios.
+            for arg in args:
+                if OmegaConf.is_config(arg):
+                    arg._set_parent(None)
+            for v in kwargs.values():
+                if OmegaConf.is_config(v):
+                    v._set_parent(None)
+        except Exception as e:
+            msg = (
+                f"Error in collecting args and kwargs for '{_convert_target_to_string(_target_)}':"
+                + f"\n{repr(e)}"
+            )
+            if full_key:
+                msg += f"\nfull_key: {full_key}"
+
+            raise InstantiationException(msg) from e
+
+        resolved_target_name = _get_resolved_target_name_for_check(_target_)
+        effective_target, effective_args, effective_kwargs = _authorize_target_invocation(
+            _target_,
+            args,
+            kwargs,
+            full_key,
+            allow_incomplete_partial=_partial_,
+        )
+        discovery_path = _authorize_discovery_path(
+            effective_target, effective_args, effective_kwargs, full_key
+        )
+
+        try:
+            if _partial_:
+                deferred = _DeferredTarget(_target_, *args, **kwargs)
+                deferred._hydra_resolved_from = discovery_path or resolved_target_name
+                deferred._hydra_full_key = full_key
+                return deferred
+>           result = _target_(*args, **kwargs)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:129:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = DepthCamera(name='d435_depth', width=120, height=90, horizontal_fov_deg=85.2, near_m=0.1, far_m=10.0, source_rate_hz=3...m=(0.05, 0.0175, 0.0125), stride=80, history=4, calibration_id='p5-d435-ideal-120x90-hfov85.2-v1', include_ground=True)
+
+    def __post_init__(self) -> None:
+        if self.width % self.stride or self.height % self.stride:
+>           raise ValueError("depth stride must divide the sensor resolution")
+E           ValueError: depth stride must divide the sensor resolution
+
+src/drone_playground/environments/sensors/depth.py:89: ValueError
+
+The above exception was the direct cause of the following exception:
+
+algorithm = 'dva'
+tmp_path = PosixPath('/tmp/pytest-of-tong/pytest-899/test_public_train_checkpoint_e3')
+
+    @pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac", "dva"])
+    def test_public_train_checkpoint_evaluate_without_replays(algorithm, tmp_path):
+        recipe = "papers/dva" if algorithm == "dva" else "control/" + algorithm
+        overrides = ["runtime.device=cpu", "runtime.action_delay_ms=null", "training.num_envs=2",
+                     "training.num_evals=2", "training.policy_updates=1", "training.num_timesteps=4",
+                     "training.checkpoint_eval_episodes=2", "env.task.duration=0.08",
+                     "network.hidden_sizes=[8,8]", "evaluation.record_replays=false",
+                     "training.publish_live=false"]
+        if algorithm == "ppo":
+            overrides += ["algorithm.unroll_length=2", "algorithm.batch_size=2",
+                          "algorithm.num_minibatches=1", "algorithm.num_updates_per_batch=1"]
+        else:
+            overrides += ["algorithm.horizon_length=2"]
+        if algorithm in ("shac", "dva"):
+            overrides += ["algorithm.critic_updates=1"]
+        if algorithm == "dva":
+            overrides += ["env.sensor.stride=80"]
+        config = compose_experiment(recipe, overrides=overrides)
+>       result = run_experiment(config, tmp_path, "train")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/integration/training/test_public_training_entry.py:30:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/drone_playground/composition.py:81: in run_experiment
+    return get_method(config["algorithm"]["trainer"])(config, root, run_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/drone_playground/learning/train.py:623: in train_experiment
+    native_training_config(config),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/drone_playground/learning/brax_configuration.py:41: in native_training_config
+    observation_size=build_observer(config, build_sensor(config)).size,
+                                            ^^^^^^^^^^^^^^^^^^^^
+src/drone_playground/environments/environment.py:27: in build_sensor
+    return None if spec is None or spec.get("name") == "none" else instantiate(spec, _convert_="all")
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:251: in instantiate
+    return _instantiate_impl(config, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:299: in _instantiate_impl
+    return instantiate_node(
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:420: in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+_target_ = <class 'drone_playground.environments.sensors.depth.DepthCamera'>
+_partial_ = False, args = ()
+kwargs = {'name': 'd435_depth', 'width': 120, 'height': 90, 'horizontal_fov_deg': 85.2, ...}
+full_key = ''
+
+    def _call_target(
+        _target_: Callable[..., Any],
+        _partial_: bool,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+        full_key: str,
+    ) -> Any:
+        """Call target (type) with args and kwargs."""
+        try:
+            args, kwargs = _extract_pos_args(args, kwargs)
+            # detaching configs from parent.
+            # At this time, everything is resolved and the parent link can cause
+            # issues when serializing objects in some scenarios.
+            for arg in args:
+                if OmegaConf.is_config(arg):
+                    arg._set_parent(None)
+            for v in kwargs.values():
+                if OmegaConf.is_config(v):
+                    v._set_parent(None)
+        except Exception as e:
+            msg = (
+                f"Error in collecting args and kwargs for '{_convert_target_to_string(_target_)}':"
+                + f"\n{repr(e)}"
+            )
+            if full_key:
+                msg += f"\nfull_key: {full_key}"
+
+            raise InstantiationException(msg) from e
+
+        resolved_target_name = _get_resolved_target_name_for_check(_target_)
+        effective_target, effective_args, effective_kwargs = _authorize_target_invocation(
+            _target_,
+            args,
+            kwargs,
+            full_key,
+            allow_incomplete_partial=_partial_,
+        )
+        discovery_path = _authorize_discovery_path(
+            effective_target, effective_args, effective_kwargs, full_key
+        )
+
+        try:
+            if _partial_:
+                deferred = _DeferredTarget(_target_, *args, **kwargs)
+                deferred._hydra_resolved_from = discovery_path or resolved_target_name
+                deferred._hydra_full_key = full_key
+                return deferred
+            result = _target_(*args, **kwargs)
+        except Exception as e:
+            if _partial_:
+                msg = (
+                    f"Error in creating partial({_convert_target_to_string(_target_)}, ...) object:"
+                    + f"\n{repr(e)}"
+                )
+            else:
+                msg = f"Error in call to target '{_convert_target_to_string(_target_)}':\n{repr(e)}"
+>           raise InstantiationException(_with_full_key(msg, full_key)) from e
+E           hydra.errors.InstantiationException: Error in call to target 'drone_playground.environments.sensors.depth.DepthCamera':
+E           ValueError('depth stride must divide the sensor resolution')
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/instantiate/_instantiate2.py:138: InstantiationException
+=============================== warnings summary ===============================
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[ppo]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[ppo]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/tmp/sources/brax/brax/training/agents/ppo/train.py:742: DeprecationWarning: jax.device_put_replicated is deprecated; use jax.device_put instead.
+    training_state = jax.device_put_replicated(
+
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[bptt]
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[shac]
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[shac]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/optax/_src/linear_algebra.py:44: DeprecationWarning: optax.global_norm is deprecated in favor of optax.tree.norm
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[dva]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 passed, 5 warnings in 89.31s (0:01:29)

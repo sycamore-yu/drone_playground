@@ -1,4 +1,4 @@
-"""Pinned LOTF model reuse with selectable native or surrogate differentiation."""
+"""Pinned LOTF model reuse with selectable native or simplified-dynamics Jacobian differentiation."""
 
 from __future__ import annotations
 
@@ -11,9 +11,13 @@ import numpy as np
 from jax.scipy.spatial.transform import Rotation
 from lotf.objects.quadrotor_obj import Quadrotor, simplified_dyn
 
-from drone_playground.dynamics.base import DynamicsBackend
-from drone_playground.dynamics.crazyflow import CrazyflowModel
-from drone_playground.dynamics.parameters import parameter_ranges, physical_parameters, randomize_parameters
+from drone_playground.control.setpoints import RateSetpoint
+from drone_playground.dynamics.base import DynamicsBackend, physics_steps
+from drone_playground.dynamics.parameters import (
+    parameter_ranges,
+    physical_parameters,
+    randomize_parameters,
+)
 
 
 class LOTFModel(DynamicsBackend):
@@ -31,7 +35,7 @@ class LOTFModel(DynamicsBackend):
     def __init__(
         self,
         forward="lotf_high_fidelity",
-        backward="analytical_surrogate",
+        backward="simplified_dynamics_jacobian",
         drone="example_quad",
         learned_residual=False,
         domain_randomization=None,
@@ -43,7 +47,7 @@ class LOTFModel(DynamicsBackend):
             )
         if forward not in ("lotf_high_fidelity", "lotf_simplified"):
             raise ValueError(f"Unknown LOTF forward model: {forward}")
-        if backward not in ("direct", "analytical_surrogate"):
+        if backward not in ("direct", "simplified_dynamics_jacobian"):
             raise ValueError(f"Unknown LOTF gradient rule: {backward}")
         self.forward, self.backward, self.drone = forward, backward, drone
         self.native = Quadrotor.from_name(
@@ -53,7 +57,9 @@ class LOTFModel(DynamicsBackend):
                 use_forward_residual=False,
             ),
         )
-        self.domain_randomization = {"enabled": False} if domain_randomization is None else domain_randomization
+        self.domain_randomization = (
+            {"enabled": False} if domain_randomization is None else domain_randomization
+        )
         self.parameter_overrides = parameter_overrides
         parameter_ranges(domain_randomization, parameter_overrides)
         native = self.native
@@ -93,8 +99,8 @@ class LOTFModel(DynamicsBackend):
 
         self.forward_step = advance
         self._step = (
-            lotf_surrogate_step(advance, native._mass)
-            if backward == "analytical_surrogate"
+            lotf_simplified_dynamics_jacobian_step(advance, native._mass)
+            if backward == "simplified_dynamics_jacobian"
             else advance
         )
 
@@ -107,9 +113,7 @@ class LOTFModel(DynamicsBackend):
             state, command, params, wrench = primals
             state_tan, command_tan, _, _ = tangents
             actual = parameter_step(state, command, params, wrench, dt)
-            strength = params.rpm2thrust / (
-                self.native._thrust_map[0] * (2 * np.pi / 60) ** 2
-            )
+            strength = params.rpm2thrust / (self.native._thrust_map[0] * (2 * np.pi / 60) ** 2)
             _, (dp, dR, dv) = jax.jvp(
                 simplified_dyn,
                 (
@@ -133,11 +137,25 @@ class LOTFModel(DynamicsBackend):
 
         self.parameter_step = (
             parameter_step
-            if backward == "analytical_surrogate"
+            if backward == "simplified_dynamics_jacobian"
             else self._parameter_forward
         )
 
-    def step(self, state, command, dt=0.02):
+    def step(self, state, control, dt):
+        """Execute thrust/body rates with LOTF's native inner loop and integrator.
+
+        The native state is used for model analysis; the bound SimData container
+        additionally carries randomized parameters, disturbances and replay state.
+        Both paths use the same physical RateSetpoint contract.
+        """
+        from crazyflow.sim.data import SimData
+
+        if not isinstance(control, RateSetpoint):
+            raise TypeError("LOTF control requires RateSetpoint in newtons and radians/s")
+        count = physics_steps(dt, round(1 / self.native._dt_low_level))
+        command = control.as_array()
+        if isinstance(state, SimData):
+            return self._step_container(state, command, count)
         return self._step(state, command, float(dt))
 
     def randomize(self, data, key):
@@ -158,20 +176,18 @@ class LOTFModel(DynamicsBackend):
                 f"{self.forward} has no effective randomization for {sorted(unsupported)}"
             )
 
-    def bind(self, sim):
+    def bind(self, sim, control_mode=None):
+        if control_mode not in (None, "body_rate"):
+            raise ValueError("LOTF execution requires collective-thrust/body-rate control")
         self.sim = sim
         sim.freq = round(1 / self.native._dt_low_level)
         params = sim.data.params.replace(
             mass=jnp.asarray([self.native._mass], jnp.float32),
             J=self.native.inertial_matrix(),
             J_inv=jnp.linalg.inv(self.native.inertial_matrix()),
-            rpm2thrust=jnp.asarray(
-                self.native._thrust_map[0] * (2 * np.pi / 60) ** 2
-            ),
+            rpm2thrust=jnp.asarray(self.native._thrust_map[0] * (2 * np.pi / 60) ** 2),
             rpm2torque=jnp.asarray(
-                self.native._thrust_map[0]
-                * self.native._kappa
-                * (2 * np.pi / 60) ** 2
+                self.native._thrust_map[0] * self.native._kappa * (2 * np.pi / 60) ** 2
             ),
         )
         states = sim.data.states.replace(
@@ -192,23 +208,6 @@ class LOTFModel(DynamicsBackend):
         self._validate_randomization(params)
         return self
 
-    def create_tracking(self, task, duration, freq, device, scene):
-        return self.create_navigation(duration, freq, device, scene.takeoff)
-
-    def create_navigation(self, duration, freq, device, start):
-        renderer = CrazyflowModel(
-            self.scene_reference_dynamics, self.scene_reference_drone
-        )
-        reference = renderer._drone_reference(duration, freq, device, start)
-        self.bind(reference.sim)
-        if self.sim.freq % freq:
-            reference.close()
-            raise ValueError(
-                "Task frequency must divide LOTF's 1000 Hz physics clock"
-            )
-        reference.n_substeps = self.sim.freq // freq
-        return reference
-
     def _parameter_forward(self, state, command, params, wrench, dt):
         native = copy(self.native)
         native._mass = params.mass[0]
@@ -219,20 +218,14 @@ class LOTFModel(DynamicsBackend):
         if native.use_high_fidelity:
 
             def substep(s, _):
-                motors = native._llc_betaflight(
-                    s, command[0], command[1:], native._dt_low_level
-                )
+                motors = native._llc_betaflight(s, command[0], command[1:], native._dt_low_level)
                 return (
                     native._full_dyn(s, motors, native._dt_low_level, *wrench),
                     None,
                 )
 
-            return jax.lax.scan(
-                substep, state, None, length=round(dt / native._dt_low_level)
-            )[0]
-        strength = params.rpm2thrust / (
-            self.native._thrust_map[0] * (2 * np.pi / 60) ** 2
-        )
+            return jax.lax.scan(substep, state, None, length=round(dt / native._dt_low_level))[0]
+        strength = params.rpm2thrust / (self.native._thrust_map[0] * (2 * np.pi / 60) ** 2)
         p, R, v = simplified_dyn(
             state.p,
             state.R,
@@ -244,7 +237,7 @@ class LOTFModel(DynamicsBackend):
         )
         return state.replace(p=p, R=R, v=v, omega=command[1:])
 
-    def advance(self, data, substeps):
+    def _step_container(self, data, command, substeps):
         state = self.native.create_state(
             data.states.pos[0, 0],
             Rotation.from_quat(data.states.quat[0, 0]).as_matrix(),
@@ -254,14 +247,11 @@ class LOTFModel(DynamicsBackend):
             acc=data.states_deriv.acc[0, 0],
             motor_omega=data.states.rotor_vel[0, 0] * (2 * np.pi / 60),
         )
-        command = data.controls.attitude.staged_cmd[0, 0]
         if "external_force_world_n" in data.plugins:
             from drone_playground.environments.randomization import external_wrench
 
             def tick(native_state, index):
-                clock = data.replace(
-                    core=data.core.replace(steps=data.core.steps + index)
-                )
+                clock = data.replace(core=data.core.replace(steps=data.core.steps + index))
                 return (
                     self.parameter_step(
                         native_state,
@@ -295,14 +285,12 @@ class LOTFModel(DynamicsBackend):
         return data.replace(
             states=states,
             states_deriv=derivatives,
-            core=data.core.replace(
-                steps=data.core.steps + substeps, mjx_synced=jnp.array(False)
-            ),
+            core=data.core.replace(steps=data.core.steps + substeps, mjx_synced=jnp.array(False)),
         )
 
 
-def lotf_surrogate_step(forward, mass):
-    """LOTF's p/R/v analytical derivative, with valid zero tangents for PRNG data.
+def lotf_simplified_dynamics_jacobian_step(forward, mass):
+    """LOTF's simplified-dynamics Jacobian for p/R/v, with valid zero tangents for PRNG data.
 
     Other floating-point state tangents follow the upstream identity rule.
     PRNG and discrete state tangents retain JAX's zero (float0) dtype instead of
@@ -334,9 +322,7 @@ def lotf_surrogate_step(forward, mass):
             command_tan[1:],
             0.0,
         )
-        _, (dp, dR, dv) = jax.jvp(
-            simplified_dyn, simple_inputs, simple_tangents
-        )
+        _, (dp, dR, dv) = jax.jvp(simplified_dyn, simple_inputs, simple_tangents)
         return actual, state_tan.replace(p=dp, R=dR, v=dv)
 
     return step

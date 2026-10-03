@@ -1,0 +1,230 @@
+..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_recurrent_training_entry_completes_one_real_update[papers/depth_diffphysics] _
+
+overrides = [Override(type=<OverrideType.CHANGE: 1>, key_or_group='runtime.device', value_type=<ValueType.ELEMENT: 1>, _value='cpu...alue_type=<ValueType.ELEMENT: 1>, _value=8, package=None, input_line='network.hidden_size=8', config_loader=None), ...]
+cfg = {'hydra': {'run': {'dir': 'tmp/hydra/${now:%Y%m%d-%H%M%S}'}, 'sweep': {'dir': 'tmp/hydra/multirun-${now:%Y%m%d-%H%M%S}...paper', 'paper': 'Learning vision-based agile flight via differentiable physics', 'fidelity': 'navigation_adaptation'}}
+
+    @staticmethod
+    def _apply_overrides_to_config(overrides: List[Override], cfg: DictConfig) -> None:
+        for override in overrides:
+            if override.package is not None:
+                raise ConfigCompositionException(
+                    f"Override {override.input_line} looks like a config group"
+                    f" override, but config group '{override.key_or_group}' does not"
+                    " exist."
+                )
+
+            key = override.key_or_group
+            value = override.value()
+            try:
+                if override.is_delete():
+                    config_val = OmegaConf.select(cfg, key, throw_on_missing=False)
+                    if config_val is None:
+                        raise ConfigCompositionException(
+                            f"Could not delete from config. '{override.key_or_group}'"
+                            " does not exist."
+                        )
+                    elif value is not None and value != config_val:
+                        raise ConfigCompositionException(
+                            "Could not delete from config. The value of"
+                            f" '{override.key_or_group}' is {config_val} and not"
+                            f" {value}."
+                        )
+
+                    last_dot = key.rfind(".")
+                    with open_dict(cfg):
+                        if last_dot == -1:
+                            del cfg[key]
+                        else:
+                            node = OmegaConf.select(cfg, key[0:last_dot])
+                            del node[key[last_dot + 1 :]]
+
+                elif override.is_add():
+                    if OmegaConf.select(
+                        cfg, key, throw_on_missing=False
+                    ) is None or isinstance(value, (dict, list)):
+                        OmegaConf.update(cfg, key, value, merge=True, force_add=True)
+                    else:
+                        assert override.input_line is not None
+                        raise ConfigCompositionException(
+                            dedent(
+                                f"""\
+                        Could not append to config. An item is already at '{override.key_or_group}'.
+                        Either remove + prefix: '{override.input_line[1:]}'
+                        Or add a second + to add or override '{override.key_or_group}': '+{override.input_line}'
+                        """
+                            )
+                        )
+                elif override.is_force_add():
+                    OmegaConf.update(cfg, key, value, merge=True, force_add=True)
+                else:
+                    try:
+>                       OmegaConf.update(cfg, key, value, merge=True)
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/config_loader_impl.py:390:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/omegaconf.py:741: in update
+    root.__setattr__(last_key, value)
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:337: in __setattr__
+    raise e
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:334: in __setattr__
+    self.__set_impl(key, value)
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:318: in __set_impl
+    self._set_item_impl(key, value)
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/basecontainer.py:549: in _set_item_impl
+    self._validate_set(key, value)
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:180: in _validate_set
+    target = self._get_node(key) if key is not None else self
+             ^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:475: in _get_node
+    self._validate_get(key)
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/dictconfig.py:164: in _validate_get
+    self._format_and_raise(
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/base.py:231: in _format_and_raise
+    format_and_raise(
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/_utils.py:899: in format_and_raise
+    _raise(ex, cause)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ex = ConfigAttributeError("Key 'checkpoint_eval_envs' is not in struct\n    full_key: training.checkpoint_eval_envs\n    object_type=dict")
+cause = ConfigAttributeError("Key 'checkpoint_eval_envs' is not in struct")
+
+    def _raise(ex: Exception, cause: Exception) -> None:
+        # Set the environment variable OC_CAUSE=1 to get a stacktrace that includes the
+        # causing exception.
+        env_var = os.environ["OC_CAUSE"] if "OC_CAUSE" in os.environ else None
+        debugging = sys.gettrace() is not None
+        full_backtrace = (debugging and not env_var == "0") or (env_var == "1")
+        if full_backtrace:
+            ex.__cause__ = cause
+        else:
+            ex.__cause__ = None
+>       raise ex.with_traceback(sys.exc_info()[2])  # set env var OC_CAUSE=1 for full trace
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       omegaconf.errors.ConfigAttributeError: Key 'checkpoint_eval_envs' is not in struct
+E           full_key: training.checkpoint_eval_envs
+E           object_type=dict
+
+.pixi/envs/default/lib/python3.13/site-packages/omegaconf/_utils.py:797: ConfigAttributeError
+
+The above exception was the direct cause of the following exception:
+
+recipe = 'papers/depth_diffphysics'
+tmp_path = PosixPath('/tmp/pytest-of-tong/pytest-905/test_recurrent_training_entry_2')
+
+    @pytest.mark.parametrize("recipe", ["papers/differentiable_pointcloud",
+        "navigation/differentiable_pointcloud", "papers/depth_diffphysics",
+        "control/differentiable_pointcloud_hovering"])
+    def test_recurrent_training_entry_completes_one_real_update(recipe, tmp_path):
+        overrides = ["runtime.device=cpu", "training.num_envs=1", "training.policy_updates=1",
+                     "algorithm.horizon_length=2", "training.num_evals=2", "network.hidden_size=8",
+                     "training.checkpoint_eval_episodes=1", "training.checkpoint_eval_envs=1",
+                     "training.checkpoint_eval_seed_start=20000", "env.task.duration=0.2",
+                     "evaluation.record_replays=false"]
+        if recipe != "papers/depth_diffphysics":
+            overrides += ["env.sensor.azimuth_count=8", "env.sensor.elevation_count=3",
+                          "network.encoder.point_channels=[8,8]"]
+>       config = compose_experiment(recipe, overrides=overrides)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/integration/training/test_recurrent_entry.py:22:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/drone_playground/composition.py:19: in compose_experiment
+    config = load_config(overrides=[*choices, *(overrides or [])])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/drone_playground/configuration.py:31: in load_config
+    compose(config_name=name, overrides=list(overrides)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/compose.py:38: in compose
+    cfg = gh.hydra.compose_config(
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/hydra.py:594: in compose_config
+    cfg = self.config_loader.load_configuration(
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/config_loader_impl.py:142: in load_configuration
+    return self._load_configuration_impl(
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/config_loader_impl.py:276: in _load_configuration_impl
+    ConfigLoaderImpl._apply_overrides_to_config(config_overrides, cfg)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+overrides = [Override(type=<OverrideType.CHANGE: 1>, key_or_group='runtime.device', value_type=<ValueType.ELEMENT: 1>, _value='cpu...alue_type=<ValueType.ELEMENT: 1>, _value=8, package=None, input_line='network.hidden_size=8', config_loader=None), ...]
+cfg = {'hydra': {'run': {'dir': 'tmp/hydra/${now:%Y%m%d-%H%M%S}'}, 'sweep': {'dir': 'tmp/hydra/multirun-${now:%Y%m%d-%H%M%S}...paper', 'paper': 'Learning vision-based agile flight via differentiable physics', 'fidelity': 'navigation_adaptation'}}
+
+    @staticmethod
+    def _apply_overrides_to_config(overrides: List[Override], cfg: DictConfig) -> None:
+        for override in overrides:
+            if override.package is not None:
+                raise ConfigCompositionException(
+                    f"Override {override.input_line} looks like a config group"
+                    f" override, but config group '{override.key_or_group}' does not"
+                    " exist."
+                )
+
+            key = override.key_or_group
+            value = override.value()
+            try:
+                if override.is_delete():
+                    config_val = OmegaConf.select(cfg, key, throw_on_missing=False)
+                    if config_val is None:
+                        raise ConfigCompositionException(
+                            f"Could not delete from config. '{override.key_or_group}'"
+                            " does not exist."
+                        )
+                    elif value is not None and value != config_val:
+                        raise ConfigCompositionException(
+                            "Could not delete from config. The value of"
+                            f" '{override.key_or_group}' is {config_val} and not"
+                            f" {value}."
+                        )
+
+                    last_dot = key.rfind(".")
+                    with open_dict(cfg):
+                        if last_dot == -1:
+                            del cfg[key]
+                        else:
+                            node = OmegaConf.select(cfg, key[0:last_dot])
+                            del node[key[last_dot + 1 :]]
+
+                elif override.is_add():
+                    if OmegaConf.select(
+                        cfg, key, throw_on_missing=False
+                    ) is None or isinstance(value, (dict, list)):
+                        OmegaConf.update(cfg, key, value, merge=True, force_add=True)
+                    else:
+                        assert override.input_line is not None
+                        raise ConfigCompositionException(
+                            dedent(
+                                f"""\
+                        Could not append to config. An item is already at '{override.key_or_group}'.
+                        Either remove + prefix: '{override.input_line[1:]}'
+                        Or add a second + to add or override '{override.key_or_group}': '+{override.input_line}'
+                        """
+                            )
+                        )
+                elif override.is_force_add():
+                    OmegaConf.update(cfg, key, value, merge=True, force_add=True)
+                else:
+                    try:
+                        OmegaConf.update(cfg, key, value, merge=True)
+                    except (ConfigAttributeError, ConfigKeyError) as ex:
+>                       raise ConfigCompositionException(
+                            f"Could not override '{override.key_or_group}'."
+                            f"\nTo append to your config use +{override.input_line}"
+                        ) from ex
+E                       hydra.errors.ConfigCompositionException: Could not override 'training.checkpoint_eval_envs'.
+E                       To append to your config use +training.checkpoint_eval_envs=1
+
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/config_loader_impl.py:392: ConfigCompositionException
+=============================== warnings summary ===============================
+tests/integration/training/test_recurrent_entry.py::test_recurrent_training_entry_completes_one_real_update[papers/differentiable_pointcloud]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+tests/integration/training/test_recurrent_entry.py::test_recurrent_training_entry_completes_one_real_update[navigation/differentiable_pointcloud]
+tests/integration/training/test_recurrent_entry.py::test_recurrent_training_entry_completes_one_real_update[control/differentiable_pointcloud_hovering]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/optax/_src/linear_algebra.py:44: DeprecationWarning: optax.global_norm is deprecated in favor of optax.tree.norm
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/training/test_recurrent_entry.py::test_recurrent_training_entry_completes_one_real_update[papers/depth_diffphysics]
+1 failed, 7 passed, 3 warnings in 92.23s (0:01:32)

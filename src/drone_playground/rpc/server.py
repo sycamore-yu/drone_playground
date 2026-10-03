@@ -19,7 +19,6 @@ from drone_playground.rpc.wire import decode_decision, validate_step
 
 
 class Service:
-
     def __init__(self, algorithm):
         self.algorithm = algorithm
         self.lock = threading.Lock()
@@ -35,7 +34,7 @@ class Service:
             self.last_activity = time.monotonic()
             h = request.header
             if (
-                h.protocol_version != 1
+                h.protocol_version != 2
                 or not h.session_id
                 or h.sequence <= self.sequence
                 or not np.isfinite(h.simulation_time)
@@ -55,17 +54,13 @@ class Service:
                     grpc.StatusCode.FAILED_PRECONDITION,
                     "Session already initialized",
                 )
-            if method == "Reset" and (
-                not h.episode_id or h.episode_id == self.episode
-            ):
+            if method == "Reset" and (not h.episode_id or h.episode_id == self.episode):
                 context.abort(
                     grpc.StatusCode.INVALID_ARGUMENT,
                     "Reset requires a fresh episode",
                 )
             if method == "Step" and (
-                not self.episode
-                or h.episode_id != self.episode
-                or h.simulation_time < self.time
+                not self.episode or h.episode_id != self.episode or h.simulation_time < self.time
             ):
                 context.abort(
                     grpc.StatusCode.FAILED_PRECONDITION,
@@ -78,38 +73,28 @@ class Service:
                     self.capabilities = response.capabilities
                     self.session = h.session_id
                 elif method == "Reset":
-                    response = pb.Acknowledgement(
-                        artifacts=self.algorithm.reset(request)
-                    )
+                    response = pb.Acknowledgement(artifacts=self.algorithm.reset(request))
                     self.episode, self.time = h.episode_id, h.simulation_time
                 elif method == "Step":
                     validate_step(request, self.capabilities)
                     if not context.is_active():
-                        context.abort(
-                            grpc.StatusCode.CANCELLED, "Request cancelled"
-                        )
+                        context.abort(grpc.StatusCode.CANCELLED, "Request cancelled")
                     started = time.monotonic()
                     response = self.algorithm.step(request)
-                    response.diagnostics["algorithm_seconds"] = (
-                        time.monotonic() - started
-                    )
-                    if (
-                        response.diagnostics["algorithm_seconds"]
-                        > request.solve_budget_seconds
-                    ):
+                    response.diagnostics["algorithm_seconds"] = time.monotonic() - started
+                    if response.diagnostics["algorithm_seconds"] > request.solve_budget_seconds:
                         response.decision.Clear()
                         response.decision.status = pb.BUDGET_EXHAUSTED
                         response.decision.explanation = (
                             "Algorithm exceeded its wall-clock solve budget"
                         )
                         response.ClearField("sampled_reference")
-                        response.ClearField("planner_geometry")
+                        response.ClearField("corridors")
+                        response.ClearField("trajectory_previews")
                     # Validate algorithm output before it crosses the service boundary.
                     # This mirrors the client-side decoder and prevents a foreign
                     # runtime from emitting future, stale, or horizon-inconsistent plans.
-                    decode_decision(
-                        response, h.simulation_time, self.capabilities
-                    )
+                    decode_decision(response, h.simulation_time, self.capabilities)
                     self.time = h.simulation_time
                     if not context.is_active():
                         self.episode = ""
@@ -150,18 +135,12 @@ def serve(algorithm, address, idle_timeout=120.0):
         ("Close", pb.CloseRequest),
     ):
         methods[name] = grpc.unary_unary_rpc_method_handler(
-            lambda request, context, name=name: service.call(
-                name, request, context
-            ),
+            lambda request, context, name=name: service.call(name, request, context),
             request_deserializer=request.FromString,
             response_serializer=lambda response: response.SerializeToString(),
         )
     server.add_generic_rpc_handlers(
-        (
-            grpc.method_handlers_generic_handler(
-                "drone.native.v1.Algorithm", methods
-            ),
-        )
+        (grpc.method_handlers_generic_handler("drone.native.v2.Algorithm", methods),)
     )
     if not server.add_insecure_port(address):
         raise RuntimeError("Cannot bind native service address")
@@ -171,9 +150,8 @@ def serve(algorithm, address, idle_timeout=120.0):
     try:
         while not service.closed.wait(0.2):
             # A dead owner must not leave ROS/C++ processes resident indefinitely.
-            if (
-                time.monotonic() - service.last_activity > idle_timeout
-                and service.lock.acquire(False)
+            if time.monotonic() - service.last_activity > idle_timeout and service.lock.acquire(
+                False
             ):
                 service.lock.release()
                 break

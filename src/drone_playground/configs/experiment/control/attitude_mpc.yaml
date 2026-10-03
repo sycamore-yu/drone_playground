@@ -1,0 +1,36 @@
+# @package _global_
+defaults:
+- /env: racing
+- /network: none
+- _self_
+mode: eval
+source: Frozen P4 native optimization controller
+algorithm:
+  name: none
+  gradient:
+    transition: direct
+runtime:
+  device: cpu
+  backend: host
+  action_delay_ms: null
+evaluation:
+  environment: config
+  acceptance:
+    completion_rate: 0.9
+    tracking_rmse_m: 0.25
+    navigation_success_rate: 0.9
+    navigation_scene_success_rate: 0.8
+  record_planner_visualization: true
+  entrypoint: drone_playground.evaluation.mpc.evaluate_optimization
+method:
+  decision:
+    name: attitude_mpc
+    prediction: so_rpy
+    horizon: 25
+    prediction_seconds: 0.5
+    delay_compensation_ms: 0.0
+    _target_: drone_playground.control.controllers.mpc.factory.build_attitude
+  name: attitude_mpc
+  output: attitude
+  implementation: attitude_mpc
+  trainable: false

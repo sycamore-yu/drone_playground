@@ -9,82 +9,13 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hydra.utils import instantiate
 from scipy.spatial.transform import Rotation
 
-from drone_playground.networks.factory import build_network
-
 from drone_playground.artifacts.reporting import save_report, tree_digest
+from drone_playground.environments.tasks.tracking.events import _select, advance_checked
 from drone_playground.evaluation.racing import summarize_race
 from drone_playground.evaluation.tracking.metrics import summarize_trials
-
-
-def _select(mask, new, old):
-    return jax.tree.map(
-        lambda n, o: jnp.where(
-            mask.reshape(mask.shape + (1,) * (n.ndim - mask.ndim)), n, o
-        ),
-        new,
-        old,
-    )
-
-
-def advance_checked(
-    task, state, command, previous, delay, timestamp, outcome, gates
-):
-    """Integrate a delayed command and stop at the first actual 2ms terminal event."""
-
-    def step(carry, tick):
-        physical, clock, result, passed, minimum = carry
-        active = result == 0
-        due = jnp.where((tick < delay)[:, None], previous, command)
-        proposed = task.model.step(physical, due, task.physics_dt)
-        finite = jnp.all(jnp.isfinite(proposed.vector()), axis=-1)
-        clearance = task.clearance(proposed.pos)
-        outside = jnp.any(
-            (proposed.pos < task.bounds_low)
-            | (proposed.pos > task.bounds_high),
-            axis=-1,
-        )
-        event = jnp.where(
-            ~finite, 4, jnp.where(clearance < 0, 2, jnp.where(outside, 3, 0))
-        ).astype(jnp.int32)
-        if task.task == "racing":
-            from drone_playground.environments.tasks.lsy_upstream.utils import gate_passed
-
-            order = jnp.minimum(passed, len(task.gate_order) - 1)
-            gate_id = task.gate_order[order]
-            crossed = gate_passed(
-                proposed.pos,
-                physical.pos,
-                task.gate_positions[gate_id],
-                task.gate_quaternions[gate_id],
-                task.gate_reverse[order],
-                (0.45, 0.45),
-            )
-            passed = passed + (active & (event == 0) & crossed).astype(
-                jnp.int32
-            )
-            event = jnp.where(
-                (event == 0) & (passed >= len(task.gate_order)), 1, event
-            )
-        physical = _select(active & finite, proposed, physical)
-        clock = jnp.where(active, clock + task.physics_dt, clock)
-        result = jnp.where(active, event, result)
-        minimum = jnp.where(
-            active & finite, jnp.minimum(minimum, clearance), minimum
-        )
-        return (physical, clock, result, passed, minimum), None
-
-    initial = (
-        state,
-        timestamp,
-        outcome,
-        gates,
-        jnp.full(timestamp.shape, jnp.inf),
-    )
-    result, _ = jax.lax.scan(step, initial, jnp.arange(task.substeps))
-    return (*result[:4], jnp.where(jnp.isfinite(result[4]), result[4], 0.0))
+from drone_playground.networks.factory import build_network
 
 
 class ControlEvaluator:
@@ -94,10 +25,7 @@ class ControlEvaluator:
         self.task, self.network, self.seeds = task, network, list(seeds)
         self.keys = jax.vmap(jax.random.PRNGKey)(jnp.asarray(seeds, jnp.uint32))
         self.delay, self.requested = jax.vmap(
-            lambda key: tuple(
-                value[0]
-                for value in task.delays(jax.random.fold_in(key, 73), 1)
-            )
+            lambda key: tuple(value[0] for value in task.delays(jax.random.fold_in(key, 73), 1))
         )(self.keys)
         self._run = jax.jit(self._rollout)
 
@@ -114,25 +42,21 @@ class ControlEvaluator:
         def step(carry, index):
             state, memory, last, timestamp, result, passed = carry
             active = result == 0
-            points, valid, proprio = task.observation(state, timestamp)
-            action, next_memory = network.apply(
-                params, points, valid, proprio, memory
-            )
+            points, valid, proprio = task.measure(state, timestamp)
+            action, next_memory = network.apply(params, points, valid, proprio, memory)
             command = task.command(action, state)
-            nxt, next_time, next_result, next_gates, clearance = (
-                advance_checked(
-                    task,
-                    state,
-                    command,
-                    last,
-                    self.delay,
-                    timestamp,
-                    result,
-                    passed,
-                )
+            nxt, next_time, next_result, next_gates, clearance = advance_checked(
+                task,
+                state,
+                command,
+                last,
+                self.delay,
+                timestamp,
+                result,
+                passed,
             )
             # Hover/tracking require their full prescribed duration; racing requires gates.
-            terminal = 5 if task.task == "racing" else 1
+            terminal = 5 if task.name == "racing" else 1
             next_result = jnp.where(
                 (index == task.episode_length - 1) & (next_result == 0),
                 terminal,
@@ -187,12 +111,8 @@ class ControlEvaluator:
         before = tree_digest(params)
         trace = jax.tree.map(np.asarray, self._run(params))
         if before != tree_digest(params):
-            raise RuntimeError(
-                "Frozen point-cloud control evaluation changed parameters"
-            )
-        summarize = (
-            summarize_race if self.task.task == "racing" else summarize_trials
-        )
+            raise RuntimeError("Frozen point-cloud control evaluation changed parameters")
+        summarize = summarize_race if self.task.name == "racing" else summarize_trials
         report = summarize(trace, self.seeds, self.task.dt)
         for case, row in enumerate(report["episodes"]):
             length = row["steps"]
@@ -201,44 +121,32 @@ class ControlEvaluator:
                 duration_s=duration,
                 outcome=int(trace["outcome"][length - 1, case]),
                 requested_delay_ms=float(self.requested[case]),
-                effective_delay_ms=float(
-                    self.delay[case] * self.task.physics_dt * 1000
-                ),
+                effective_delay_ms=float(self.delay[case] * self.task.physics_dt * 1000),
             )
-            if self.task.task == "racing":
-                row["completion_time_s"] = (
-                    duration if row["completed"] else None
-                )
-        if self.task.task == "racing":
-            times = [
-                r["duration_s"] for r in report["episodes"] if r["completed"]
-            ]
-            report["completion_time_mean_s"] = (
-                float(np.mean(times)) if times else None
-            )
+            if self.task.name == "racing":
+                row["completion_time_s"] = duration if row["completed"] else None
+        if self.task.name == "racing":
+            times = [r["duration_s"] for r in report["episodes"] if r["completed"]]
+            report["completion_time_mean_s"] = float(np.mean(times)) if times else None
         report.update(
             parameters_frozen=True,
             parameter_sha256=before,
-            task=self.task.task,
-            adapter_identity=self.task.settings["adapter_identity"],
+            task=self.task.name,
+            recipe_identity=self.task.settings["provenance"],
             plant="point_mass_lag; not the Crazyflow rigid-body plant",
             policy_hz=self.task.freq,
             physics_hz=self.task.physics_freq,
             requested_delay_ms=np.asarray(self.requested).tolist(),
-            effective_delay_ms=(
-                np.asarray(self.delay) * self.task.physics_dt * 1000
-            ).tolist(),
+            effective_delay_ms=(np.asarray(self.delay) * self.task.physics_dt * 1000).tolist(),
             geometry=self.task.geometry_identity,
-            reference_sha256=hashlib.sha256(
-                np.asarray(self.task.references).tobytes()
-            ).hexdigest(),
+            reference_sha256=hashlib.sha256(np.asarray(self.task.references).tobytes()).hexdigest(),
             sensor_calibration=self.task.sensor_calibration,
             evaluation_scope="fixed canonical reference/geometry, independent initial-state and delay seeds",
         )
         from drone_playground.runtime.timing import measure_decision, sensor_schedule
 
         physical = self.task.initial(self.keys[:1])
-        points, valid, proprio = self.task.observation(physical, jnp.zeros(1))
+        points, valid, proprio = self.task.measure(physical, jnp.zeros(1))
         memory = jnp.zeros((1, self.network.hidden_size))
         decide = jax.jit(
             lambda p, x, mask, obs, hidden, state: self.task.command(
@@ -247,15 +155,11 @@ class ControlEvaluator:
         )
         report.update(
             measure_decision(
-                lambda: decide(
-                    params, points, valid, proprio, memory, physical
-                ),
+                lambda: decide(params, points, valid, proprio, memory, physical),
                 self.task.dt,
             )
         )
-        report["sensor_timing"] = sensor_schedule(
-            self.task.sensor, self.task.freq
-        )
+        report["sensor_timing"] = sensor_schedule(self.task.sensor, self.task.freq)
         return report, trace
 
 
@@ -294,9 +198,7 @@ def export_replays(task, trace, report, directory):
             single[name] = np.concatenate([first, single[name]], axis=0)
         single["quat"] = Rotation.from_matrix(matrices).as_quat()[:, None]
         target, _ = task.reference(jnp.array(0.0))
-        first_error = float(
-            np.linalg.norm(initial_position - np.asarray(target))
-        )
+        first_error = float(np.linalg.norm(initial_position - np.asarray(target)))
         single["metrics"] = {}
         for name, values in trace["metrics"].items():
             selected = values[:length, case : case + 1]
@@ -304,17 +206,13 @@ def export_replays(task, trace, report, directory):
             if name == "tracking_error":
                 first[...] = first_error
             elif name == "clearance":
-                first[...] = float(
-                    task.clearance(jnp.asarray(initial_position[None]))[0]
-                )
+                first[...] = float(task.clearance(jnp.asarray(initial_position[None]))[0])
             elif name.startswith("reference_"):
                 first[...] = float(target["xyz".index(name[-1])])
             else:
                 first[...] = 0
             single["metrics"][name] = np.concatenate([first, selected], axis=0)
-        single["obstacle_pos"] = np.broadcast_to(
-            obstacles, (length + 1, 1, *obstacles.shape)
-        )
+        single["obstacle_pos"] = np.broadcast_to(obstacles, (length + 1, 1, *obstacles.shape))
         case_dir = directory / f"case-{case:03d}"
         path = export_rollout(model, case_dir, single)
         rollout.rollouts.clear()
@@ -322,9 +220,7 @@ def export_replays(task, trace, report, directory):
         try:
             rollout.append_unroll(path)
             restored = rollout.rollouts[-1]
-            np.testing.assert_allclose(
-                restored.mocap_pos[:, 0, 0], single["pos"][:, 0], atol=1e-6
-            )
+            np.testing.assert_allclose(restored.mocap_pos[:, 0, 0], single["pos"][:, 0], atol=1e-6)
             for axis in range(3):
                 np.testing.assert_allclose(
                     restored.metrics[f"action/{axis}"],
@@ -355,35 +251,29 @@ def export_replays(task, trace, report, directory):
 def evaluate_pointcloud_control(config, root, run_id):
     from drone_playground.artifacts.record import RunRecorder
     from drone_playground.artifacts.training_state import load_training_state
-    from drone_playground.composition import build_environment
-    from drone_playground.environments.environment import ROLE_SEEDS
+    from drone_playground.environments.environment import build_environment
 
     state, metadata = load_training_state(config["checkpoint"])
     source = metadata["config"]
     for field in ("method", "network", "algorithm", "env"):
         if config[field] != source[field]:
-            raise ValueError(
-                f"Frozen point-cloud control contract differs: {field}"
-            )
+            raise ValueError(f"Frozen point-cloud control contract differs: {field}")
     role = config["evaluation"]["role"]
     count = int(config["evaluation"]["episodes"])
-    if role not in ROLE_SEEDS or count < 1:
-        raise ValueError(
-            "Select a valid evaluation role and positive episode count"
-        )
+    if role not in ("train", "eval") or count < 1:
+        raise ValueError("Select a valid evaluation role and positive episode count")
     seed = config["evaluation"].get("seed_start")
-    seed = ROLE_SEEDS[role] if seed is None else int(seed)
-    task = build_environment(config, config["runtime"]["device"], role, count)
+    seed = config["runtime"]["scene_seed_" + role] if seed is None else int(seed)
+    env = build_environment(config, config["runtime"]["device"], role, count)
+    task = env.task
     network = build_network(config["network"])
     started = time.monotonic()
     try:
         with RunRecorder(
             root, run_id, config, task_id="final-acceptance/pointcloud-control"
         ) as rec:
-            rec.record_environment(task)
-            evaluator = ControlEvaluator(
-                task, network, range(seed, seed + count)
-            )
+            rec.record_environment(env)
+            evaluator = ControlEvaluator(task, network, range(seed, seed + count))
             report, trace = evaluator.run(state.params)
             from drone_playground.benchmarks import apply_quality
 
@@ -394,20 +284,11 @@ def evaluate_pointcloud_control(config, root, run_id):
                 trained_updates=int(state.updates),
                 elapsed_seconds=time.monotonic() - started,
             )
-            save_report(rec.path / "components.json", task.component_identity)
+            save_report(rec.path / "components.json", env.component_identity)
             save_report(rec.path / "geometry.json", task.geometry_identity)
             save_report(rec.path / "eval/report.json", report)
-            arrays = {
-                name: value
-                for name, value in trace.items()
-                if name != "metrics"
-            }
-            arrays.update(
-                {
-                    "metric_" + name: value
-                    for name, value in trace["metrics"].items()
-                }
-            )
+            arrays = {name: value for name, value in trace.items() if name != "metrics"}
+            arrays.update({"metric_" + name: value for name, value in trace["metrics"].items()})
             np.savez_compressed(rec.path / "eval/trace.npz", **arrays)
             if config["evaluation"].get("record_replays", False):
                 export_replays(task, trace, report, rec.path / "rollouts")
@@ -422,4 +303,4 @@ def evaluate_pointcloud_control(config, root, run_id):
             )
             return report
     finally:
-        task.close()
+        env.close()
