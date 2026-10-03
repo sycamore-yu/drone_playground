@@ -1,7 +1,5 @@
 """Fixed numbered P5 scene catalog: feasibility and provenance."""
 
-from pathlib import Path
-
 import numpy as np
 
 from drone_playground.environments.scenes.catalog import (
@@ -73,15 +71,19 @@ def test_static_and_dynamic_motion_identity_is_explicit():
 
 
 def test_default_catalog_is_a_committed_route_free_human_readable_file():
-    path = Path("assets/scenes/navigation/catalog.json")
+    from drone_playground.environments.scenes.catalog import DEFAULT_CATALOG, load_fixed_catalog
+
+    path = DEFAULT_CATALOG
     assert path.is_file()
     text = path.read_text()
     assert '"inspection_path"' not in text
-    assert '"P2M"' in text and '"NavRL"' in text
+    catalog = load_fixed_catalog(path)
+    references = catalog["references"]
+    assert "P2M" in references and "NavRL" in references
 
 
 def test_navigation_benchmark_primary_scenes_match_sando_difficulty_protocol():
-    catalog = load_fixed_catalog("assets/scenes/navigation/catalog.json")
+    catalog = load_fixed_catalog()
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert [len(by_id[scene_id]["obstacles"]) for scene_id in ("S01", "S02", "S03")] == [
         41,
@@ -134,7 +136,7 @@ def test_navigation_benchmark_primary_scenes_match_sando_difficulty_protocol():
 
 
 def test_navigation_benchmark_retains_3d_extensions_and_moves_d06_crossbars():
-    catalog = load_fixed_catalog("assets/scenes/navigation/catalog.json")
+    catalog = load_fixed_catalog()
     by_id = {scene["id"]: scene for scene in catalog["scenes"]}
     assert by_id["S06"]["benchmark_role"] == "3d-extension"
     assert by_id["D06"]["benchmark_role"] == "3d-extension"

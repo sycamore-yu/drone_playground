@@ -13,10 +13,11 @@ SafeFlightCorridor and TrajectoryPreview are optional inspection outputs. Each h
 Build the SDK and fixture with the installed SDK environment:
 
 ```bash
-prefix="$PWD/ros_integrations/sdk/.pixi/envs/default"
+pixi install --manifest-path native/sdk/pixi.toml
+prefix="$PWD/native/sdk/.pixi/envs/default"
 export PATH="$prefix/bin:$PATH"
 export LD_LIBRARY_PATH="$prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-cmake -S ros_integrations/sdk -B tmp/native-sdk -G Ninja \
+cmake -S native/sdk -B tmp/native-sdk -G Ninja \
   -DCMAKE_PREFIX_PATH="$prefix" -DDRONE_NATIVE_BUILD_TESTS=ON
 cmake --build tmp/native-sdk -j 2
 ```

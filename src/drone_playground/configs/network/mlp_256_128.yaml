@@ -1,5 +1,0 @@
-# Widths from DiffAero 291ea14 cfg/network/mlp.yaml; independent Brax decoder.
-name: mlp_256_128
-normalize_observations: false
-hidden_sizes: [256, 128]
-layer_norm: true

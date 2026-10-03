@@ -8,7 +8,7 @@ This directory packages the pinned EGO-Planner and SUPER integration. It contain
 | `setup.sh` | Fetch source and explicitly rebuild the ROS1 container |
 | `docker/Dockerfile.ros1` | ROS Noetic build/runtime environment |
 | `patches/` | Separate documented upstream corrections |
-| `bridge/worker.py` | Thin launcher; the installed service is `drone_playground.integrations.ros1_worker` |
+| `src/drone_playground/integrations/ros1_worker.py` | Installed worker implementation snapshotted into each run bundle |
 
 The current container is `drone-playground-ros1`. Its source and executables are:
 
@@ -19,9 +19,12 @@ The current container is `drone-playground-ros1`. Its source and executables are
 /opt/drone_playground/planners/super/devel/lib/super_planner/fsm_node
 ```
 
-`planners/super` is a catkin workspace; `src/SUPER` is the upstream repository inside it. They are not two algorithms. The optional host source cache is `ros_integrations/ros1/sources/`; the present deployment is already built inside the container.
+`planners/super` is a catkin workspace; `src/SUPER` is the upstream repository inside it. They are not two algorithms. The optional host source cache is `native/ros1/sources/`; the present deployment is already built inside the container.
 
 The host integration is `src/drone_playground/integrations/ros1.py`. Each new run snapshots the worker, command types and RPC implementation into its own container bundle, then connects via the shared Python gRPC client. Observations flow to the planner; the returned trajectory flows to the configured controller and the same simulation.
 
-Experiment presets live in `configs/experiment/papers/ego_planner.yaml` and `super.yaml`. New run bundles use RPC v2 and typed trajectories, with separately timed SFC inspection data.
+Experiment presets live in
+`src/drone_playground/configs/experiment/papers/ego_planner.yaml` and `super.yaml`.
+New run bundles use RPC v2 and typed trajectories, with separately timed SFC
+inspection data.
 The naming migration does not invoke `setup.sh`, restart Docker, alter planner source, or rebuild binaries. `setup.sh` replaces the configured container and is reserved for an explicitly requested rebuild.

@@ -1,6 +1,6 @@
 # 来源索引
 
-实际依赖及固定提交以 [`patches/sources.json`](../../patches/sources.json) 和 [`pixi.lock`](../../pixi.lock) 为准，复制或移植代码的版权及许可证见[第三方声明](../../THIRD_PARTY_NOTICES.md)。下列入口便于查阅，版本锁由上述文件拥有。
+实际依赖及固定提交以 [`third_party/sources.json`](../../../third_party/sources.json) 和 [`pixi.lock`](../../../pixi.lock) 为准，复制或移植代码的版权及许可证见[第三方声明](../../licenses/third_party.md)。下列入口便于查阅，版本锁由上述文件拥有。
 
 | 项目 | 本平台使用范围 |
 |---|---|
@@ -18,4 +18,4 @@
 
 点云论文的公开内容、重建假设及三类实验边界统一记录在[点云方法说明](pointcloud.md)。
 
-文档维护借鉴 [Matt Pocock 的工程技能](https://github.com/mattpocock/skills/tree/c55ee46073ed923f86ce59a5eb3b6d895095d1b7) 对术语、机制和任务状态的分工，以及 [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) 的知识与工作区收尾方式。本项目的实际授权、测试和产物规则见[开发约定](../../docs/development.md)。
+文档维护借鉴 [Matt Pocock 的工程技能](https://github.com/mattpocock/skills/tree/c55ee46073ed923f86ce59a5eb3b6d895095d1b7) 对术语、机制和任务状态的分工，以及 [neat-freak](https://github.com/KKKKhazix/khazix-skills/tree/main/neat-freak) 的知识与工作区收尾方式。本项目的实际授权、测试和产物规则见[开发约定](../../development.md)。

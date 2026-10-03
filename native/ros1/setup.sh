@@ -2,10 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ROS1_ROOT="$ROOT/ros_integrations/ros1"
+ROS1_ROOT="$ROOT/native/ros1"
 source "$ROS1_ROOT/versions.env"
 
-mkdir -p "$ROS1_ROOT/sources" "$ROS1_ROOT/.build" "$ROOT/tmp/ros-integrations"
+mkdir -p "$ROS1_ROOT/sources" "$ROS1_ROOT/.build" "$ROOT/tmp/native/ros1"
 
 ensure_source() {
     local name="$1" repository="$2" revision="$3"
@@ -83,4 +83,4 @@ catkin_make -j3 \
     printf 'image_id=%s\n' "$(docker image inspect "$ROS_IMAGE" --format '{{.Id}}')"
     printf 'ego=%s\n' "$EGO_REVISION"
     printf 'super=%s\n' "$SUPER_REVISION"
-} | tee "$ROOT/tmp/ros-integrations/runtime.txt"
+} | tee "$ROOT/tmp/native/ros1/runtime.txt"

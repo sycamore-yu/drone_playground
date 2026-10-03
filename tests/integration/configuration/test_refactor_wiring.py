@@ -29,13 +29,7 @@ RECIPES = sorted(
 
 @pytest.mark.parametrize("recipe", RECIPES)
 def test_every_recipe_resolves_to_real_implementations(recipe):
-    overrides = ["runtime.device=cpu"]
-    if recipe == "navigation/native":
-        overrides += [
-            "method.algorithm=configuration_test",
-            "method.deployment.address=127.0.0.1:50051",
-        ]
-    cfg = compose_experiment(recipe, overrides=overrides)
+    cfg = compose_experiment(recipe, overrides=["runtime.device=cpu"])
     validate_config(cfg)
     for target in _targets(cfg):
         assert callable(get_object(target)), target
@@ -114,6 +108,7 @@ def test_point_mass_native_step_keeps_its_own_state_type():
 
 def test_reference_adapter_does_not_compose_a_learning_experiment(monkeypatch):
     from drone_playground import composition
+    from drone_playground.environments.environment import build_environment
 
     cfg = compose_experiment(
         "control/differentiable_pointcloud_hovering", overrides=["runtime.device=cpu"]
@@ -123,7 +118,7 @@ def test_reference_adapter_does_not_compose_a_learning_experiment(monkeypatch):
         raise AssertionError("Environment construction called experiment composition")
 
     monkeypatch.setattr(composition, "compose_experiment", unexpected)
-    task = composition.build_environment(cfg, "cpu", "eval", 1)
+    task = build_environment(cfg, "cpu", "eval", 1)
     try:
         assert task.task.name == "hovering"
         assert task.action_size == 3

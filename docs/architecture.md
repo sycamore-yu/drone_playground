@@ -65,6 +65,14 @@ PPO、BPTT、SHAC 和 DVA 是训练算法。训练得到的 Policy 是运行方�
 
 `runtime/pipeline.py` 只构造已配置模块并处理调用频率、缓存、有效期和重置。目标航点在 `planning/goal.py`，最小 jerk 轨迹在 `planning/minimum_jerk.py`，冻结策略在 `learning/inference.py`，原生服务在 `integrations/`。MPC 数值实现保留在 `control/controllers/mpc/`。
 
+外部方法分为三层：`rpc/` 只定义 transport 和 wire contract；
+`integrations/` 是随 Python 包安装的进程/ROS 适配器；仓库根目录
+`native/` 保存 C++ SDK、Docker、ROS 补丁等非 Python 构建与部署文件。
+这里所说的 native bridge 是后两层把独立进程的生命周期、状态/传感输入和
+Reference/Setpoint 输出接回公共 Pipeline 的适配边界，不是另一套 Planner API。
+进程内 JAX/Flax 方法（例如未来直接实现为 Policy 的 AllocateNet）不经过 bridge；
+只有选择独立 C++/ROS/其他运行时版本时才需要对应 adapter。
+
 低频输出只能在其原有效期内复用。缓存命中不刷新生成时间。无解或过期结果不再传给下游。重置清空模块缓存、调用计数、循环记忆和求解器历史。一次失败不会重置批次中仍在运行的其他实例。
 
 ## 观测与训练
@@ -97,6 +105,6 @@ Python/C++ 共用 `rpc/proto/algorithm.proto` 的 v2 协议。初始化、重置
 
 配置版本为 4，原生 RPC 版本为 2。旧检查点不会在运行时隐式迁移。`artifacts/migration.py` 需要调用者提供审核后的 v4 解析配置，写入新文件并保留原始权重和元数据；输入或物理语义不匹配时拒绝迁移。
 
-包内 `configs/`、`assets/`、`benchmarks/` 是唯一物理副本。源码根目录的同名链接便于开发；安装代码使用 `importlib.resources`。输出由 `runtime.output_root` 指定，默认当前工作目录。训练可记录已安装依赖的版本和源码摘要，不要求依赖来自 Git 工作树。
+包内 `configs/`、`assets/`、`benchmarks/` 是唯一物理副本；源码根目录不再保留同名镜像或符号链接。安装代码使用 `importlib.resources`。输出由 `runtime.output_root` 指定，默认当前工作目录。训练可记录已安装依赖的版本和源码摘要，不要求依赖来自 Git 工作树。
 
 普通 train/eval 不写完整回放；`evaluation.record_replays=true` 或 `play checkpoint=...` 才记录。工程接口验证与正式任务质量验证分开。正式选择和历史结果继续由原清单及原始报告确定，当前状态见 [status](status.md)，操作见 [runbook](runbook.md)。

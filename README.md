@@ -8,7 +8,7 @@
 
 ## 安装与运行
 
-开发环境为 Linux、Python 3.13 和 Pixi。GPU 训练使用 NVIDIA CUDA；依赖版本、源码提交及必要补丁分别固定在 `pixi.lock` 和 `patches/sources.json`，由 `scripts/tools/setup.py` 负责准备本地源码缓存。
+开发环境为 Linux、Python 3.13 和 Pixi。GPU 训练使用 NVIDIA CUDA；依赖版本、源码提交及必要补丁分别固定在 `pixi.lock` 和 `third_party/sources.json`，由 `scripts/tools/setup.py` 负责准备本地源码缓存。
 
 ```bash
 git clone https://github.com/sycamore-yu/drone_playground.git
@@ -68,7 +68,7 @@ pixi run play replay=results/runs/racing/ppo/recheck-racing/rollouts
 
 ## 文档与开发
 
-[架构与数据流](docs/architecture.md)说明组件职责；[操作手册](docs/runbook.md)提供安装、训练、评测与回放命令；[评测协议](docs/architecture.md)定义指标和信息边界；[完整目录](docs/notes/archive/project-tree.md)用于定位文件；[开发约定](docs/development.md)统一测试、设备选择和产物管理；[状态](docs/status.md)只保留现役状态。
+[架构与数据流](docs/architecture.md)说明组件职责；[操作手册](docs/runbook.md)提供安装、训练、评测与回放命令；[目录职责](docs/directory-layout.md)用于定位现役源码与原生部署；[开发约定](docs/development.md)统一测试、设备选择和产物管理；[状态](docs/status.md)只保留现役状态。
 
 ```bash
 JAX_PLATFORMS=cpu pixi run test tests/integration/configuration/test_direct_hydra_environment.py
@@ -79,6 +79,6 @@ pixi run lint
 
 ## 许可与来源
 
-项目使用 [GPL-3.0-only](LICENSE)。各上游代码、移植实现、补丁与外部进程的来源见[第三方声明](docs/licenses/third_party.md)；固定来源由 `patches/sources.json` 声明，并由 `scripts/tools/setup.py` 准备本地缓存。公开源代码与研究结果的适用范围，以具体方法配置和评测协议为准。
+项目使用 [GPL-3.0-only](LICENSE)。各上游代码、移植实现、补丁与外部进程的来源见[第三方声明](docs/licenses/third_party.md)；固定来源由 `third_party/sources.json` 声明，并由 `scripts/tools/setup.py` 准备本地缓存。公开源代码与研究结果的适用范围，以具体方法配置和评测协议为准。
 
-当前职责与命名见[目录说明](docs/notes/archive/directory-layout.md)；完整源码目录见[项目目录](docs/notes/archive/project-tree.md)。完整组合统一使用 `experiment=...`，旧 `method=...` 入口已迁移。
+当前职责与命名见[目录说明](docs/directory-layout.md)。`docs/notes/archive/` 只保存历史设计与交付快照，不作为现役源码地图。完整组合统一使用 `experiment=...`，旧 `method=...` 入口已迁移。

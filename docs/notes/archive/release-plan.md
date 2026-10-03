@@ -1,6 +1,6 @@
 # 第一版交付与组合设计
 
-清理与设计阶段已结束；用户随后授权实现通用gRPC接口、补齐方法并推进首轮训练，进度见[实现计划](implementation-plan.md)和[开发集训练合同](training-pilot.md)。现役机制见[架构](../../docs/architecture.md)，长期方法覆盖见[方法主表](../../docs/architecture.md)，历史数值见[冻结验收](../../artifacts/verification/final-acceptance/README.md)。目标与验收条件不表示已实现或已达标。
+清理与设计阶段已结束；用户随后授权实现通用gRPC接口、补齐方法并推进首轮训练，进度见[实现计划](implementation-plan.md)和[开发集训练合同](training-pilot.md)。现役机制见[架构](../../architecture.md)，长期方法覆盖见[方法主表](../../architecture.md)，历史数值见[冻结验收](../../../artifacts/verification/final-acceptance/README.md)。目标与验收条件不表示已实现或已达标。
 
 ## 第一版范围
 
@@ -107,7 +107,7 @@ JAX 负责已有可微仿真、批量执行、网络与训练。第一版允许 
 
 用户进一步明确：后续 MIGHTY 等 C++ 方法应复用同一套宿主接口。**公共接口的实现纳入第一版阶段 B，去 ROS 核心抽取仍在第一版之后。** 这两项工作有独立的完成条件；保留容器不妨碍先统一接口。协议、客户端、真实ROS适配及三类接口的通用宿主组合执行已实现；完整代表链与质量验收仍未完成。
 
-当前实现与缺口以[架构说明](../../docs/architecture.md)和[组合验收](implementation-plan.md#三类物理接口的组合验收)为准。完整未来轨迹已暴露给宿主，通用服务评测接受三类物理输出；专用神经Waypoint／Trajectory解码及经原生规划器到MPC的代表链已有工程验证，JAX几何头与PD组合已有训练入口；完整组合质量仍需逐项验证。
+当前实现与缺口以[架构说明](../../architecture.md)和[组合验收](implementation-plan.md#三类物理接口的组合验收)为准。完整未来轨迹已暴露给宿主，通用服务评测接受三类物理输出；专用神经Waypoint／Trajectory解码及经原生规划器到MPC的代表链已有工程验证，JAX几何头与PD组合已有训练入口；完整组合质量仍需逐项验证。
 
 目标分工如下；实际协议字段与序列化格式在首批适配实现时冻结：
 
@@ -140,13 +140,13 @@ MIGHTY 是后续接入的目标，不因此加入首版18格，也不宣称已�
 | D：收敛与18格验收 | 训练前冻结条件；多种子、开发选模与留出评测 | 满足本页阈值的逐回合数据、曲线、冻结权重、回放、运行与源码摘要 |
 | E：开源材料 | 从确认源码快照制作发布包，含安装与最小运行、证据入口、贡献与来源界线 | 新位置安装和必要复现验证；对外文字仅声明已达到的能力 |
 
-公共物理合同现在包括完整多项式 Trajectory、Waypoint 和具名 MotionCommand；Python客户端及C++服务SDK使用同一gRPC协议。SUPER／EGO适配器保留ROS1容器，执行层已可配置原轨迹跟踪器或两个MPC。通用 `experiment=navigation/native` 评测入口现可执行三类物理输出，`experiment=navigation/pipeline`可配置宿主模块链；仍不能默认视作已完成所有任务中的任意组合。每个组合仍须实际闭环和质量验收，见[原生SDK](../../native/ros1/README.md)。
+公共物理合同现在包括完整多项式 Trajectory、Waypoint 和具名 MotionCommand；Python客户端及C++服务SDK使用同一gRPC协议。SUPER／EGO适配器保留ROS1容器，执行层已可配置原轨迹跟踪器或两个MPC。通用 `experiment=navigation/native` 评测入口现可执行三类物理输出，`experiment=navigation/pipeline`可配置宿主模块链；仍不能默认视作已完成所有任务中的任意组合。每个组合仍须实际闭环和质量验收，见[原生SDK](../../../native/ros1/README.md)。
 
 下一阶段先完成 B 的最小闭环，再按方法补齐 C。每组在接口稳定、短程闭环及指标检查通过后冻结训练和评测条件，进入 D；成熟的跟踪／竞速组可以先开展多种子训练，无需等待全部方法补齐。SUPER、EGO 和两种 MPC 主要需要调试、开发集调参与冻结评测，不存在统一的“继续训练到收敛”步骤。点云已有45000次检查点可作为有来源的候选或热启动，先检查输入、动力学、执行链和导航失败原因，再决定新预算；原50000次任务保持已结束状态。
 
 历史控制学习结果有32回合样本，但种子、热启动与新验收条件仍需补齐；点云与 EGO 的历史正式导航未通过。两个 MPC 有真实代码，但不在历史六方法正式矩阵内。深度可微飞行已有独立JAX导航适配及梯度检查，上游全配方复现和收敛仍未完成。这些事实决定后续工作顺序，不能用旧“工程验收完成”替代第一版质量交付。
 
-长期范围仍是[主表](../../docs/architecture.md)的全部方法，包括 D.VA、NavRL、Fast-Planner、SANDO、MIGHTY、AllocNet、ABPT、MPCC、AC-MPC、AERO-MPPI、LOONG 等；超出首版者逐项建立真实组件与评测。
+长期范围仍是[主表](../../architecture.md)的全部方法，包括 D.VA、NavRL、Fast-Planner、SANDO、MIGHTY、AllocNet、ABPT、MPCC、AC-MPC、AERO-MPPI、LOONG 等；超出首版者逐项建立真实组件与评测。
 
 ## 清理与工作树处置
 

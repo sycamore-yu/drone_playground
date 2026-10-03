@@ -8,7 +8,7 @@
 |---|---|
 | 动力学 DR 缺乏实际行为保证 | Crazyflow 在训练 reset 采样质量、电机能力及支持的阻力参数；刚体模型可采样惯量，拟合姿态模型拒绝无响应的惯量 DR。保存实际参数；不支持的组合拒绝启动。行为测试验证质量改变运动、刚体惯量改变角速度，以及随机键的可重复性。名义选模和 benchmark 关闭训练随机化；鲁棒性评测显式选固定条件。 |
 | 配置频率与真实时钟可能分离 | `env.task.freq` 唯一决定控制步长，删除 `execution.frequency_hz`。25Hz 测试实际推进20个500Hz物理步。宿主模块自己的调用频率仍保留。 |
-| 通用代码嵌入 Navigation8 的实验限制 | 通用层检查动作、观测、动力学及频率兼容性。50Hz／10Hz、0.5m、300秒、场景角色与阈值由唯一的 [navigation protocol](../../benchmarks/navigation.yaml) 校验。普通自定义导航可以使用25Hz、0.3m和其他时限。 |
+| 通用代码嵌入 Navigation8 的实验限制 | 通用层检查动作、观测、动力学及频率兼容性。50Hz／10Hz、0.5m、300秒、场景角色与阈值由唯一的 [navigation protocol](../../../src/drone_playground/benchmarks/navigation.yaml) 校验。普通自定义导航可以使用25Hz、0.3m和其他时限。 |
 | 固定64回合、后缀06决定场景角色 | 回合、种子、主要场景和验收规则读取协议及显式覆盖。测试使用不同场景名称和每场景3回合，验证选模无编号约定；通用导航实际执行每场景2回合的八个独立初态。 |
 | 测量、选模、交付混在 Evaluator | Evaluator 返回原始统计；`evaluation/protocols.py` 应用选模和验收规则。修改配置阈值可改变判定，无需修改指标计算。 |
 | 旧 split、字段、迁移和报告回退继续存在 | 现役只接受 Environment role `train`／`eval` 和 config version 3；checkpoint evaluation 是训练内选模活动，Benchmark 是正式评测规格。删除旧产物迁移、旧评测别名、历史目录猜测及无消费者汇总器。冻结证据留存原文。 |
@@ -84,4 +84,4 @@ DiffAero 的 [BaseEnv](https://github.com/flyingbitac/diffaero/blob/291ea14196ae
 
 针对性验证覆盖本轮39项行为检查，均已有通过记录；另有点云训练、评测、固定场景采样和回放的15项检查通过。固定场景按实际实例数采样到声明的训练并行数，回放初帧速度读取真实执行初态。lint、差异格式与当前文档链接检查通过；固定源码获取与锁定安装通过。存在多个会话同时编辑，按用户要求停止完整回归，后续合并后统一执行。
 
-验证与当前运行状态统一记录在 [status](../../docs/status.md)；机制见 [architecture](../../docs/architecture.md)，操作见 [runbook](../../docs/runbook.md)。工程短训练验证执行路径，不增加既有18格策略质量通过数。
+验证与当前运行状态统一记录在 [status](../../status.md)；机制见 [architecture](../../architecture.md)，操作见 [runbook](../../runbook.md)。工程短训练验证执行路径，不增加既有18格策略质量通过数。

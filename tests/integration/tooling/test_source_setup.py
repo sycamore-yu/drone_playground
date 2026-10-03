@@ -29,15 +29,15 @@ def source_project(tmp_path):
         'commit', '-qm', 'fixture')
     revision = git(upstream, 'rev-parse', 'HEAD')
     root = tmp_path / 'project'
-    patches = root / 'patches'
+    patches = root / 'third_party'
     patches.mkdir(parents=True)
-    patch = SCRIPT.parents[2] / 'patches/upstream/lotf-package-metadata.patch'
+    patch = SCRIPT.parents[2] / 'third_party/patches/lotf-package-metadata.patch'
     # This isolated fixture exercises added packaging files, without copying the
     # physical dependency. Its model patch is covered against the real source.
     (patches / 'metadata.patch').write_text(patch.read_text().split('diff --git a/lotf/objects/')[0])
     (patches / 'sources.json').write_text(json.dumps({'lotf': {
         'repository': str(upstream), 'revision': revision,
-        'checkout': 'tmp/sources/lotf', 'patch': 'patches/metadata.patch',
+        'checkout': 'tmp/sources/lotf', 'patch': 'third_party/metadata.patch',
     }}))
     return root
 

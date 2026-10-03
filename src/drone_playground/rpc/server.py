@@ -1,6 +1,6 @@
 """Small Python service adapter for existing runtimes such as ROS.
 
-Pure C++ algorithms use ros_integrations/sdk/include/drone_native/algorithm.h. Both services
+Pure C++ algorithms use native/sdk/include/drone_native/algorithm.h. Both services
 implement the same wire protocol and own one serialized algorithm instance.
 """
 

@@ -283,19 +283,17 @@ def protocol_identity(config):
         raise ValueError("Benchmark protocol differs on time-limit interpretation")
     if task["name"] != "navigation":
         raise ValueError("Navigation protocol requires a navigation task")
-    import json
-
     from drone_playground.environments.scenes.catalog import (
         DEFAULT_CATALOG,
-        DEFAULT_VERIFICATION,
         verified_geometry,
     )
 
     catalog = _path(scene["catalog_path"]) if scene.get("catalog_path") else DEFAULT_CATALOG
+    if hashlib.sha256(catalog.read_bytes()).hexdigest() != specification["catalog_sha256"]:
+        raise ValueError("Benchmark catalog differs from the locked MJCF identity")
     _, asset_digest = verified_geometry(catalog)
-    migration = json.loads(DEFAULT_VERIFICATION.read_text())
-    if migration["source_catalog_sha256"] != specification["catalog_sha256"]:
-        raise ValueError("Benchmark geometry differs from the locked source identity")
+    if asset_digest != specification["geometry_sha256"]:
+        raise ValueError("Benchmark geometry differs from the locked MJCF asset set")
     for field, expected in (
         ("duration", "timeout"),
         ("goal_radius", "goal_radius_m"),

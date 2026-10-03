@@ -3,7 +3,7 @@ defaults:
 - /env: tracking
 - /network: mlp_32
 - /algorithm: bptt
-- override /controller@env.controller: trajectory
+- override /controller@env.controller: jax_trajectory
 - _self_
 source: JAX neural geometric output with explicit PD lookahead; component training,
   not a paper baseline
@@ -23,9 +23,6 @@ evaluation:
   record_planner_visualization: true
 env:
   task: {}
-  controller:
-    _target_: drone_playground.control.controllers.trajectory_jax.JaxTrajectoryTracking
-    lead_seconds: 0.1
 method:
   name: policy
   output: trajectory

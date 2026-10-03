@@ -11,6 +11,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from drone_playground.environments.scenes.catalog import (
+    DEFAULT_CATALOG,
     build_fixed_bank,
     load_fixed_catalog,
     scene_by_id,
@@ -49,7 +50,7 @@ def main():
     parser.add_argument(
         "--catalog",
         type=Path,
-        default=Path("assets/scenes/navigation/catalog.json"),
+        default=DEFAULT_CATALOG,
     )
     parser.add_argument(
         "--output",

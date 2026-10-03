@@ -1,10 +1,10 @@
 <mujoco model="lsy-level0">
   <compiler angle="degree" />
   <asset>
-    <texture name="gate_texture_top" type="2d" file="gate_top.png" />
-    <texture name="gate_texture_bottom" type="2d" file="gate_bottom.png" />
-    <texture name="gate_texture_left" type="2d" file="gate_left.png" />
-    <texture name="gate_texture_right" type="2d" file="gate_right.png" />
+    <texture name="gate_texture_top" type="2d" file="../../../environments/tasks/lsy_upstream/assets/gate_top.png" />
+    <texture name="gate_texture_bottom" type="2d" file="../../../environments/tasks/lsy_upstream/assets/gate_bottom.png" />
+    <texture name="gate_texture_left" type="2d" file="../../../environments/tasks/lsy_upstream/assets/gate_left.png" />
+    <texture name="gate_texture_right" type="2d" file="../../../environments/tasks/lsy_upstream/assets/gate_right.png" />
     <material name="gate_mat_top" texture="gate_texture_top" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
     <material name="gate_mat_bottom" texture="gate_texture_bottom" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
     <material name="gate_mat_left" texture="gate_texture_left" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />

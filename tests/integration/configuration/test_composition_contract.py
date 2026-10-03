@@ -87,7 +87,7 @@ def test_source_dynamics_does_not_create_a_private_method():
 
 def test_aero_mppi_identity_does_not_claim_a_sampling_mpc_implementation():
     root = REPO_ROOT
-    path = root / "patches/sources.json"
+    path = root / "third_party/sources.json"
     assert path.is_file(), "Source identities must be independent from executable implementations"
     import yaml
 

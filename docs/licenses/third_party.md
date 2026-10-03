@@ -57,13 +57,13 @@ SOFTWARE.
 ## P3/P4 additions
 
 `environments/tasks/lsy_upstream/` preserves `race_core.py`, `randomize.py`, `utils.py`, the Level 0
-configuration, and gate/obstacle assets from the same LSY commit. `actions/controllers/mpc/lsy_upstream/`
+configuration, and gate/obstacle assets from the same LSY commit. `control/controllers/mpc/lsy_upstream/`
 preserves its `attitude_mpc.py` and Controller implementation. Both directories keep the original
 LICENSE, source commit, source-file SHA256 records, and minimal compatibility patches. Compatibility
 changes are limited to Crazyflow parameter imports and an isolated acados generation directory;
 the optimization matrices, horizon, and original thrust coefficients are preserved.
 
-`actions/controllers/mpc/sampling.py` is based on the elite-mean sampling controller in Crazyflow
+`control/controllers/mpc/sampling.py` is based on the elite-mean sampling controller in Crazyflow
 `examples/control/sampling.py` at the pinned Crazyflow identity above. It retains candidate noise,
 elite-mean updates, warm starts, and the thrust estimator. Task references and pole obstacles come
 from the LSY race task, and the sample count is an explicit run parameter. This integration is
@@ -85,7 +85,7 @@ this repository.
 The upstream repository https://github.com/uzh-rpg/learning_on_the_fly is pinned at
 `cba6e5370773ace8a08107f02810eecabf16c793` and obtained as a verified source-cache dependency at
 `tmp/sources/lotf`. Its original GPLv3 license, authorship, configurations, CSV data,
-and source files are retained. Declared packaging-only changes are stored in `patches/upstream/lotf-package-metadata.patch`; numerical source implementations retain the pinned identity.
+and source files are retained. Declared packaging-only changes are stored in `third_party/patches/lotf-package-metadata.patch`; numerical source implementations retain the pinned identity.
 
 `dynamics/lotf.py` imports the pinned upstream quadrotor equations and exposes only the
 high-fidelity and simplified dynamics through Drone Playground's shared Task interfaces.
@@ -110,7 +110,7 @@ source code is not copied into this package. The SUPER repository root does not 
 file at the pinned identity, while the planner source headers used by this project state
 LGPLv3-or-later; those original headers remain in the external build tree. Build scripts select
 upstream ROS1 templates and run targets, then apply the explicitly documented control-transfer
-patches under `ros_integrations/ros1/patches/`. The package stores the process bridge, message adaptation,
+patches under `native/ros1/patches/`. The package stores the process bridge, message adaptation,
 and those patches; full planner source trees remain external dependencies.
 
 MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. The active scene
@@ -120,14 +120,14 @@ The shared scene, sensor and collision contracts are described in `docs/architec
 
 ## 版本 3 来源管理
 
-固定来源由 `patches/sources.json` 声明，`scripts/tools/setup.py` 管理源码缓存；许可副本保存在 docs/licenses。Crazyflow 的 MuJoCo 依赖范围沿用既有本地修正；Crazyflow 与 LOTF 的静态打包元数据补丁解决 Pixi 对本地依赖版本识别的差异。LOTF 补丁还移除源码 full dynamics 中无开关的隐式推力随机化，并暴露外力／力矩输入；随机化由现役 reset 参数与条件配置显式控制。Brax 补丁修正 PPO 的截断奖励与末态 bootstrap；原生模型方程和网络结构沿用固定来源。
+固定来源由 `third_party/sources.json` 声明，`scripts/tools/setup.py` 管理源码缓存；许可副本保存在 docs/licenses。Crazyflow 的 MuJoCo 依赖范围沿用既有本地修正；Crazyflow 与 LOTF 的静态打包元数据补丁解决 Pixi 对本地依赖版本识别的差异。LOTF 补丁还移除源码 full dynamics 中无开关的隐式推力随机化，并暴露外力／力矩输入；随机化由现役 reset 参数与条件配置显式控制。Brax 补丁修正 PPO 的截断奖励与末态 bootstrap；原生模型方程和网络结构沿用固定来源。
 
 
 ## Point-cloud paper reconstruction
 
-`learning/algorithms/recurrent_bptt.py`, `networks/pointnet.py`, `dynamics/point_mass.py` and the corresponding sensor/task modules were integrated from this project's archived research snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity and source pointers are recorded in `patches/sources.json`; inferred settings and the source audit are consolidated in `notes/research/pointcloud.md`. This work is recorded separately from Learning on the Fly.
+`learning/algorithms/recurrent_bptt.py`, `networks/pointnet.py`, `dynamics/point_mass.py` and the corresponding sensor/task modules were integrated from this project's archived research snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity and source pointers are recorded in `third_party/sources.json`; inferred settings and the source audit are consolidated in `notes/research/pointcloud.md`. This work is recorded separately from Learning on the Fly.
 
 
 ### 原生控制迁移补丁（2026-09-29）
 
-EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`ros_integrations/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`artifacts/verification/final-acceptance/`与`ros_integrations/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。
+EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`native/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`artifacts/verification/final-acceptance/`与`native/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。

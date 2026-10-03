@@ -1,12 +1,26 @@
 # 现役状态
 
+## 2026-10-03：release 结构清理
+
+发布树只保留包内 `src/drone_playground/{assets,benchmarks,configs}` 一份运行资源；
+根目录同名 symlink、setuptools `build/`、重复 demo launcher 和空源码目录已清理。
+第三方源码锁与通用补丁归入 `third_party/`，非 Python C++/ROS 构建与部署归入
+`native/`。Navigation benchmark 的当前资产身份直接锁定 `catalog.xml` 和
+MJCF asset digest；旧 JSON catalog 的摘要只保留在迁移验证元数据中。
+
+现役文档已同步到 Reference/Setpoint、RPC v2、MJCF 与上述目录职责。历史
+`docs/notes/archive/` 和既有运行产物不按新路径重写。
+
 ## 2026-10-03：无 registry 的环境重构
 
 本轮已完成六组件环境、统一 Dynamics.step、Reference/Setpoint、MJCF 资产和回放、公共训练与冻结评测、完整恢复、RPC v2、MPC/ROS 短闭环及安装包验证。没有运行全量回归。交付清单和实际验证日志见 [14项核对](../artifacts/verification/direct-composition-v4/README.md)。
 
-632 个受保护文件及四个原始基准文件保持不变。旧结果仍对应其原始配置；v3 检查点通过显式复制迁移后用于 v4 运行。工程验证不修改以下既有任务质量状态。
+该轮验证当时确认 632 个受保护文件及四个原始基准文件保持不变；这是
+`direct-composition-v4` 交付时点的证据。随后本次 release 清理只更新当前发布树
+的资源表示与路径，不回写旧运行、权重或原质量结论。v3 检查点通过显式复制迁移后
+用于 v4 运行。
 
-更新日期：2026-10-02。唯一开发仓库为 `main`；当前为研究预览。
+更新日期：2026-10-03。唯一开发仓库为 `main`；当前为研究预览。
 
 第一版18格中，14格按现行质量标准通过（12格原标准、深度2格修订标准），EGO两格由用户接受交付，共16/18格满足当前交付要求；剩余点云静态／动态两格继续开发与独立验收。权威进度见 [release-progress](../artifacts/verification/release-progress.json)。
 

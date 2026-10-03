@@ -14,7 +14,7 @@ def load_lsy_config():
     """Adapt actual MJCF geometry and explicit YAML values to the upstream API."""
     config = ConfigDict(
         OmegaConf.to_container(
-            OmegaConf.load(resource_path("configs/scene/lsy_native.yaml")), resolve=True
+            OmegaConf.load(resource_path("assets/scenes/racing/lsy_native.yaml")), resolve=True
         )
     )
     model = mujoco.MjModel.from_xml_path(str(resource_path("assets/scenes/racing/lsy_level0.xml")))

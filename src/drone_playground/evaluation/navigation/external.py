@@ -415,7 +415,7 @@ def evaluate_native(config, root: Path, run_id: str):
             quality_passed=None,
             quality_rule="benchmark validation pending",
             diagnostics=diagnostics,
-            native_modification="pinned upstream with declared ros_integrations/ros1/patches; runtime hashes identify deployed build; gRPC/ROS adapters",
+            native_modification="pinned upstream with declared native/ros1/patches; runtime hashes identify deployed build; gRPC/ROS adapters",
         )
         from drone_playground.runtime.timing import decision_statistics
 

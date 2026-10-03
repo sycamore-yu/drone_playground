@@ -60,7 +60,7 @@ def verify_checkout(directory, revision, patch, name):
 def fetch(root=ROOT):
     """Materialize pinned editable source dependencies into tmp/sources."""
     root = Path(root).resolve()
-    sources = json.loads((root / "patches/sources.json").read_text())
+    sources = json.loads((root / "third_party/sources.json").read_text())
     results = {}
     for name, specification in sources.items():
         relative = specification.get("checkout")

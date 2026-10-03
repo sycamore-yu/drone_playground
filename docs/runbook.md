@@ -10,7 +10,7 @@ pixi install --locked
 pixi run python -c "import jax; print(jax.devices())"
 ```
 
-固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow、LOTF 和 Brax。源码提交与补丁由 `patches/sources.json` 声明，`scripts/tools/setup.py` 负责准备和校验缓存，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
+固定源码缓存位于 `tmp/sources/`，其中包含 Crazyflow、LOTF 和 Brax。源码提交与补丁由 `third_party/sources.json` 声明，`scripts/tools/setup.py` 负责准备和校验缓存，数值包版本由 `pixi.lock` 固定。依赖校验使用临时Git索引比较“固定提交＋声明补丁”，包含补丁新增文件；不会重置缓存工作树或改写其暂存区。迁移项目目录后重新执行锁定安装，使解释器、可编辑包及脚本入口指向新路径。
 
 `pixi run`会在Python启动前设置`SCIPY_ARRAY_API=1`。直接调用锁定解释器时也设置该变量，避免SciPy先导入后造成JAX姿态计算的Tracer转换错误。
 
@@ -125,14 +125,14 @@ pixi run python -m drone_playground.artifacts.migration \
 
 ```bash
 # 初次准备或明确重建 ROS 容器时执行。
-bash ros_integrations/ros1/setup.sh
+bash native/ros1/setup.sh
 
 pixi run eval experiment=papers/super env=navigation/static \
   +evaluation.protocol=benchmarks/navigation.yaml evaluation.episodes=2 runtime.device=cpu \
   run_id=super-static-new
 ```
 
-原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `ros_integrations/ros1/versions.env`、`ros_integrations/ros1/patches/` 及[原生集成说明](../ros_integrations/ros1/README.md)。
+原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `native/ros1/versions.env`、`native/ros1/patches/` 及[原生集成说明](../native/ros1/README.md)。
 
 新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际物理输出、执行参考、有效期和控制命令。Reference、Setpoint、SFC 和轨迹预览按内容摘要保存，走廊及预览各自保留有效期。RPC 使用 v2；旧外部服务需用 v2 SDK 重建，历史冻结运行包不改写。
 
@@ -164,7 +164,7 @@ python3 scripts/tools/build_navigation.py --sando-worlds /path/to/pinned-sando/w
   --output tmp/navigation-candidate
 ```
 
-脚本保留原生成数学，先核对源 world 摘要，再生成候选 MJCF，并从现役资产保留 S06／D06。候选输出不覆盖正式资产。修改几何后需要新的协议与校验记录。当前导航 XML 的摘要及原目录身份在 `benchmarks/navigation-mjcf-verification.json`。
+脚本保留原生成数学，先核对源 world 摘要，再生成候选 MJCF，并从现役资产保留 S06／D06。候选输出不覆盖正式资产。修改几何后需要新的协议与校验记录。当前导航 XML 的摘要及旧 JSON→MJCF 迁移身份保存在包资源 `src/drone_playground/benchmarks/navigation-mjcf-verification.json`。
 
 ## 维护检查
 

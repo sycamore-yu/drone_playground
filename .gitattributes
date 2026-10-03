@@ -1,7 +1,6 @@
 # Preserve unified-diff context markers and byte-identical pinned upstream data.
-src/drone_playground/methods/optimal_control/lsy_upstream/compatibility.patch -whitespace
+src/drone_playground/control/controllers/mpc/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/assets/obstacle.xml -whitespace
-assets/scenes/racing/lsy_level0.toml -whitespace
 native/ros1/patches/*.patch -whitespace
-patches/upstream/*.patch -whitespace
+third_party/patches/*.patch -whitespace

@@ -36,7 +36,7 @@
 
 2026-09-29，用户结束原50000次更新任务：已校验并独立备份45000次完整状态，包含参数、优化器及随机状态；最后训练日志为49760次，之后未落盘的更新不计作可恢复状态。训练与协调器均已停止，最终评测未启动，原预算未完成。保留原始预算与停止原因，后续训练按新的质量目标另定预算，不自动续跑此任务。
 
-正式矩阵的点云导航使用第30000次更新冻结参数，通过 `env=paper/pointcloud_navigation_v2` 在4/6/8/20米每秒、300秒时限下评测，共32回合。静态和动态各16回合，完整失败分母见[正式结果](../../artifacts/verification/final-acceptance/README.md)。这一历史参数选择与原50000次目标运行分开报告。
+正式矩阵的点云导航使用第30000次更新冻结参数，通过 `env=paper/pointcloud_navigation_v2` 在4/6/8/20米每秒、300秒时限下评测，共32回合。静态和动态各16回合，完整失败分母见[正式结果](../../../artifacts/verification/final-acceptance/README.md)。这一历史参数选择与原50000次目标运行分开报告。
 
 正式矩阵的悬停、跟踪、竞速使用 `paper/control/hovering`、`paper/control/tracking` 和 `paper/control/racing`。它们保留完整点云编码与循环结构，使用 `paper_pointnet_gru_conditioned` 的0.02点坐标尺度，并执行各自1024次控制迁移更新。三项控制结果分别属于具名任务适配。
 
