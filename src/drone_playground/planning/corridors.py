@@ -17,6 +17,7 @@ class ConvexPolytope:
     halfspaces: np.ndarray | None = None
 
     def __post_init__(self):
+        """Validate and prepare the ConvexPolytope instance after initialization."""
         if (self.vertices is None) == (self.halfspaces is None):
             raise ValueError("A polytope requires exactly one geometry representation")
         field = "vertices" if self.vertices is not None else "halfspaces"
@@ -40,6 +41,7 @@ class SafeFlightCorridor:
     frame: str = "world"
 
     def __post_init__(self):
+        """Validate and prepare the SafeFlightCorridor instance after initialization."""
         _validate_interval(self)
         if not self.name:
             raise ValueError("A corridor needs a layer name")
@@ -61,6 +63,7 @@ class TrajectoryPreview:
     frame: str = "world"
 
     def __post_init__(self):
+        """Validate and prepare the TrajectoryPreview instance after initialization."""
         _validate_interval(self)
         if not self.name:
             raise ValueError("A trajectory preview needs a name")

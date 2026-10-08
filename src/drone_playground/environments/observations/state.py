@@ -127,7 +127,7 @@ class NavigationSensorObservation:
     inputs, which keeps the network shape identical across the comparison.
 
     The sensor block is ``history * points_per_frame * channels`` and each
-    channel is normalised into a bounded range with an explicit validity
+    channel is normalized into a bounded range with an explicit validity
     channel, so a missing return is distinguishable from a distant surface.
     """
 
@@ -164,6 +164,7 @@ class NavigationSensorObservation:
         return dict(encoding="ordered_vector", fields=fields, shape=[self.size])
 
     def __post_init__(self) -> None:
+        """Validate and prepare the NavigationSensorObservation instance after initialization."""
         if self.name not in ("navigation_depth", "navigation_lidar"):
             raise ValueError(f"Unknown sensor observation: {self.name}")
         if self.channels not in (2, 5):
@@ -203,10 +204,10 @@ class NavigationSensorObservation:
         return self.proprioception_size + self.sensor_size
 
     def encode_sensor(self, values: jax.Array) -> jax.Array:
-        """Normalise one frame's channels into the policy input.
+        """Normalize one frame's channels into the policy input.
 
         Depth uses inverse depth so that distance is monotone and bounded;
-        LiDAR uses sensor-frame point coordinates, a normalised range and the
+        LiDAR uses sensor-frame point coordinates, a normalized range and the
         validity mask. Both keep validity as an explicit channel.
         """
         if self.channels == 2:

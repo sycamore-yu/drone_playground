@@ -11,6 +11,6 @@ __version__ = "0.3.0"
 
 def load(env_name, *, overrides=(), role="eval", count=1):
     """Load one Hydra environment preset without selecting a learning method."""
-    from drone_playground.environments.environment import load as load_environment
+    from drone_playground.environments.factory import load as load_environment
 
     return load_environment(env_name, overrides=overrides, role=role, count=count)

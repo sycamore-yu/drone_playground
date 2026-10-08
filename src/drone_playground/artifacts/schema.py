@@ -13,4 +13,6 @@ def require_current(config: dict) -> dict:
         raise ValueError("Saved environment does not declare all six components")
     if {"action", "execution", "observation"} & env.keys():
         raise ValueError("Saved environment contains retired component fields")
+    if "freq" not in env or {"freq", "physics_freq"} & env["task"].keys():
+        raise ValueError("Saved clocks must belong to env; migrate older metadata explicitly")
     return copy.deepcopy(value)

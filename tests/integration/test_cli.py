@@ -56,8 +56,9 @@ class CommandTests(unittest.TestCase):
 
 def test_train_eval_and_play_respect_replay_storage(tmp_path):
     """Keep ordinary runs compact while making frozen-policy play viewable."""
+    from drone_playground.app import run_experiment
     from drone_playground.artifacts.layout import find_experiment
-    from drone_playground.composition import compose_experiment, run_experiment
+    from drone_playground.configuration import compose_experiment
     from drone_playground.visualization.viewer import replay
 
     config = compose_experiment(

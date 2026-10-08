@@ -6,6 +6,12 @@ from drone_playground.control.setpoints import StateSetpoint
 
 
 class AccelerationControl:
+    """Pass world-frame net acceleration to the point-mass dynamics.
+
+    Args:
+        input_kind: Must be ``state``; only the acceleration field is accepted.
+    """
+
     name = "acceleration_passthrough"
     input_kind = "state"
     differentiable = True

@@ -1,46 +1,35 @@
-"""Frozen-policy evaluation configuration selection."""
+"""The public entry resolves checkpoints once; evaluators consume resolved settings."""
 
-from copy import deepcopy
+import json
 
-from drone_playground.evaluation.run import resolve_evaluation_config
-
-
-def config_fixture():
-    return {
-        "mode": "train",
-        "evaluation": {"environment": "checkpoint", "role": "eval"},
-        "runtime": {"device": "gpu"},
-        "method": {"name": "saved", "output": "attitude_thrust"},
-        "network": {"name": "saved-network"},
-        "algorithm": {"name": "ppo"},
-        "env": {"dynamics": {"forward": "lotf_high_fidelity"}},
-    }
+from drone_playground.configuration import compose_experiment, resolve_checkpoint_execution
 
 
-def test_checkpoint_environment_is_the_default_execution_config():
-    saved = config_fixture()
-    requested = deepcopy(saved)
-    requested["mode"] = "eval"
+def checkpoint(tmp_path):
+    config = compose_experiment("control/ppo")
+    config["env"]["dynamics"]["forward"] = "lotf_high_fidelity"
+    path = tmp_path / "policy.pkl"
+    path.with_suffix(".json").write_text(json.dumps({"config": config}))
+    requested = compose_experiment("control/ppo")
+    requested.update(mode="eval", checkpoint=str(path))
     requested["runtime"]["device"] = "cpu"
-    result = resolve_evaluation_config(requested, {"config": saved})
+    return config, requested
+
+
+def test_checkpoint_environment_is_the_default_execution_config(tmp_path):
+    _saved, requested = checkpoint(tmp_path)
+    result = resolve_checkpoint_execution(requested, ["runtime.device=cpu"])
     assert result["env"]["dynamics"]["forward"] == "lotf_high_fidelity"
-    assert result["runtime"]["device"] == "cpu"
-    assert result["mode"] == "eval"
+    assert result["runtime"]["device"] == "cpu" and result["mode"] == "eval"
 
 
-def test_explicit_execution_environment_keeps_frozen_policy_identity():
-    saved = config_fixture()
-    requested = deepcopy(saved)
-    requested["mode"] = "eval"
-    requested["evaluation"]["environment"] = "config"
-    requested["runtime"]["device"] = "cpu"
+def test_explicit_execution_environment_keeps_frozen_policy_identity(tmp_path):
+    saved, requested = checkpoint(tmp_path)
     requested["env"]["dynamics"]["forward"] = "first_principles"
-    requested["network"] = {"name": "requested-network"}
-    requested["algorithm"] = {"name": "apg"}
-    requested["method"] = {"name": "requested", "output": "attitude_thrust"}
-
-    result = resolve_evaluation_config(requested, {"config": saved})
+    requested["network"] = {"name": "unselected-default"}
+    result = resolve_checkpoint_execution(
+        requested, ["runtime.device=cpu", "env.dynamics.forward=first_principles"]
+    )
     assert result["env"]["dynamics"]["forward"] == "first_principles"
-    assert result["network"] == saved["network"]
-    assert result["algorithm"] == saved["algorithm"]
-    assert result["method"] == saved["method"]
+    for name in ("network", "algorithm", "method"):
+        assert result[name] == saved[name]

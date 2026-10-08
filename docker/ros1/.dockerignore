@@ -1,0 +1,4 @@
+sources/
+.build/
+__pycache__/
+.git/

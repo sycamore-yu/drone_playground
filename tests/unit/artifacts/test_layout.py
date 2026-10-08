@@ -1,3 +1,4 @@
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -6,7 +7,6 @@ from drone_playground.artifacts.layout import (
     experiment_directory,
     find_experiment,
     iter_experiments,
-    resolve_artifact,
 )
 
 
@@ -46,10 +46,10 @@ def test_artifact_reader_uses_the_exact_supplied_path(tmp_path):
     moved.parent.mkdir(parents=True)
     moved.write_bytes(b"original checkpoint")
     old = tmp_path / "results/run-a/training-state/model.pkl"
-    assert resolve_artifact(old) == old
-    assert resolve_artifact(moved) == moved
+    assert Path(old) == old
+    assert Path(moved) == moved
     unrelated = tmp_path / "some-other-data/missing.pkl"
-    assert resolve_artifact(unrelated) == unrelated
+    assert Path(unrelated) == unrelated
 
 
 def test_listing_excludes_selected_and_scratch(tmp_path):
@@ -74,7 +74,7 @@ def test_run_identifiers_cannot_escape_or_collide_with_layout_names(tmp_path, ru
 
 def test_cli_status_reads_scoped_runs(tmp_path, monkeypatch, capsys):
     import json
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from drone_playground import cli
 
@@ -88,7 +88,7 @@ def test_cli_status_reads_scoped_runs(tmp_path, monkeypatch, capsys):
             json.dumps(
                 dict(
                     status="completed",
-                    updated_at=datetime.now(timezone.utc).isoformat(),
+                    updated_at=datetime.now(UTC).isoformat(),
                 )
             )
         )
@@ -100,24 +100,27 @@ def test_cli_status_reads_scoped_runs(tmp_path, monkeypatch, capsys):
 
 def test_cli_replay_uses_explicit_scratch_rollout(tmp_path, monkeypatch, capsys):
     from drone_playground import cli
-    from drone_playground.visualization import rscope_io
+    from drone_playground.visualization import rscope_publish
 
     replay = tmp_path / "results/scratch/replays/replay-run"
     replay.mkdir(parents=True)
     observed = []
-    monkeypatch.setattr(rscope_io, "publish_run", lambda path: observed.append(path) or path)
+    monkeypatch.setattr(rscope_publish, "publish_run", lambda path: observed.append(path) or path)
     cli.main(["replay", "--directory", str(replay)])
     assert observed == [replay]
 
 
 def test_play_resolves_explicit_replay_before_dispatch(tmp_path, monkeypatch):
-    from drone_playground import composition
+    from drone_playground.app import run_experiment
+    from drone_playground.configuration import compose_experiment
+    from drone_playground.visualization import viewer
 
     replay = tmp_path / "results/scratch/replays/replay-run"
     replay.mkdir(parents=True)
     original = str(replay)
-    config = dict(mode="play", replay=dict(directory=original))
-    monkeypatch.setattr(composition, "_run_experiment", lambda config, root, run_id: config)
-    result = composition.run_experiment(config, tmp_path, "view")
-    assert result["replay"]["directory"] == str(replay)
+    config = compose_experiment(overrides=["mode=play", "runtime.device=cpu"])
+    config["replay"]["directory"] = original
+    monkeypatch.setattr(viewer, "replay", lambda path, **kwargs: {"directory": str(path)})
+    result = run_experiment(config, tmp_path, "view")
+    assert result["directory"] == str(replay)
     assert config["replay"]["directory"] == original

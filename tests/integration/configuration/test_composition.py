@@ -9,10 +9,12 @@ import jax
 import numpy as np
 from hydra.errors import ConfigCompositionException, InstantiationException
 
+from drone_playground.environments.factory import build_environment
+
 
 class CompositionTests(unittest.TestCase):
     def module(self):
-        name = "drone_playground.composition"
+        name = "drone_playground.configuration"
         self.assertIsNotNone(
             importlib.util.find_spec(name), "Composed environment entry is missing"
         )
@@ -39,17 +41,17 @@ class CompositionTests(unittest.TestCase):
 
         cfg = bodyrates_config()
         cfg["env"]["controller"] = {
-            "_target_": "drone_playground.control.controllers.crazyflow.AttitudeControl"
+            "_target_": "drone_playground.control.controllers.attitude.AttitudeControl"
         }
         with self.assertRaisesRegex(ValueError, "control"):
-            m.build_environment(cfg, device="cpu")
+            build_environment(cfg, device="cpu")
         cfg = m.compose_experiment("control/attitude_mpc")
         cfg["mode"] = "train"
         with self.assertRaisesRegex(ValueError, "training"):
             m.validate_config(cfg)
 
     def test_domain_randomization_never_leaks_to_unsupported_dynamics(self):
-        from drone_playground.environments.environment import build_dynamics
+        from drone_playground.environments.factory import build_dynamics
 
         m = self.module()
         # PointMassLag supports only its declared motor/lag parameters; the
@@ -68,7 +70,7 @@ class CompositionTests(unittest.TestCase):
             "motor_strength": [1.0, 1.0],
             "drag": None,
         }
-        env = m.build_environment(cfg, device="cpu", role="train", count=1)
+        env = build_environment(cfg, device="cpu", role="train", count=1)
         self.addCleanup(env.close)
         nominal_mass = np.asarray(env.default.params.mass)
         state = env.reset(jax.random.PRNGKey(11))
@@ -83,7 +85,7 @@ class CompositionTests(unittest.TestCase):
             "motor_strength": [1.0, 1.0],
             "drag": None,
         }
-        race = m.build_environment(race_cfg, device="cpu", role="train", count=1)
+        race = build_environment(race_cfg, device="cpu", role="train", count=1)
         self.addCleanup(race.close)
         race_state = race.reset(jax.random.PRNGKey(11))
         np.testing.assert_allclose(
@@ -92,7 +94,7 @@ class CompositionTests(unittest.TestCase):
             rtol=1e-6,
         )
         # Checkpoint selection and final benchmark use the frozen nominal plant.
-        evaluation = m.build_environment(cfg, device="cpu", role="eval", count=1)
+        evaluation = build_environment(cfg, device="cpu", role="eval", count=1)
         self.addCleanup(evaluation.close)
         evaluated = evaluation.reset(jax.random.PRNGKey(11))
         np.testing.assert_allclose(
@@ -107,7 +109,7 @@ class CompositionTests(unittest.TestCase):
     def test_actual_step_and_selected_objective(self):
         m = self.module()
         cfg = m.compose_experiment("control/ppo", "tracking")
-        env = m.build_environment(cfg, device="cpu", role="eval", count=2)
+        env = build_environment(cfg, device="cpu", role="eval", count=2)
         self.addCleanup(env.close)
         state = env.reset(jax.random.PRNGKey(3))
         out = jax.jit(env.step)(state, env.hover_action)
@@ -116,7 +118,7 @@ class CompositionTests(unittest.TestCase):
         self.assertEqual(env.component_identity["dynamics"]["forward"], "so_rpy")
         self.assertEqual(env.component_identity["controller"]["input_kind"], "attitude")
         cfg["env"]["task"]["reward"]["scale"] = 2.0
-        other = m.build_environment(cfg, device="cpu", role="eval", count=2)
+        other = build_environment(cfg, device="cpu", role="eval", count=2)
         self.addCleanup(other.close)
         s = other.reset(jax.random.PRNGKey(3))
         scaled = jax.jit(other.step)(s, other.hover_action)

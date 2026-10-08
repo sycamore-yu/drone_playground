@@ -13,6 +13,7 @@ from drone_playground.artifacts.reporting import tree_digest
 
 
 def summarize_race(trace, seeds, dt):
+    """Summarize gate completion, failure, and race duration by episode."""
     active = np.asarray(trace["active"], bool)
     metrics = trace["metrics"]
     success = np.any(np.asarray(metrics["success"]) > 0, axis=0)

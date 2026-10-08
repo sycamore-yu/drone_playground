@@ -15,10 +15,7 @@ import numpy as np
 import pytest
 
 from drone_playground.environments.observations.state import NavigationSensorObservation
-from drone_playground.environments.scenes.geometry import (
-    KIND_BOX,
-    obstacle_positions,
-)
+from drone_playground.environments.scenes.geometry import KIND_BOX, obstacle_positions
 from drone_playground.environments.sensors.depth import (
     BODY_FROM_OPTICAL,
     DepthCamera,
@@ -150,7 +147,7 @@ def test_depth_rays_match_native_mujoco(pose, quat):
         f"{int((~hit_analytic & hit_native).sum())} native-only rays"
     )
     assert hit_analytic.sum() > 20
-    # mj_ray does not normalise its direction, so the parameters are comparable.
+    # mj_ray does not normalize its direction, so the parameters are comparable.
     assert np.max(np.abs(analytic[hit_analytic] - native[hit_analytic])) < 1e-4
 
 
@@ -197,15 +194,12 @@ def test_range_clipping_marks_far_and_missing_pixels_invalid():
     assert float(jnp.max(frame.depth)) <= 5.0
     assert float(jnp.min(jnp.where(frame.valid, frame.depth, 1e9))) >= 0.1
     assert float(jnp.max(jnp.where(frame.valid, 0.0, frame.depth))) == 0.0
-    # Straight ahead there is nothing within range, so the centre pixel is empty.
+    # Straight ahead there is nothing within range, so the center pixel is empty.
     assert not bool(frame.valid.reshape(20, 15)[10, 7])
 
 
 def test_moving_obstacle_is_rendered_where_it_actually_is():
-    from drone_playground.environments.scenes.geometry import (
-        MOTION_BOUNCE,
-        obstacle_positions,
-    )
+    from drone_playground.environments.scenes.geometry import MOTION_BOUNCE, obstacle_positions
 
     # The cube slides along the optical axis, so the same pixel must report a
     # depth that differs by exactly the travelled distance.

@@ -12,8 +12,8 @@ import numpy as np
 import pytest
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.composition import compose_experiment
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment
+from drone_playground.environments.factory import build_environment
 from drone_playground.learning.algorithms.dva import (
     critic_observation_from_pipeline,
     detached_policy_action,

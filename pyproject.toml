@@ -7,7 +7,7 @@ name = "drone-playground"
 version = "0.3.0"
 description = "Composable JAX drone learning, planning, control and task evaluation"
 license = {file = "LICENSE"}
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.11"
 dependencies = [
     "crazyflow==0.3.2",
     "brax==0.14.2",
@@ -45,7 +45,7 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "drone_playground" = ["assets/**/*", "configs/**/*.yaml", "configs/*.yaml", "benchmarks/*"]
-"drone_playground.rpc.proto" = ["*.proto"]
+"drone_playground.integrations.rpc.proto" = ["*.proto"]
 "drone_playground.environments.tasks.lsy_upstream" = ["assets/*", "LICENSE", "*.json", "*.patch"]
 "drone_playground.control.controllers.mpc.lsy_upstream" = ["LICENSE", "*.json", "*.patch"]
 
@@ -55,9 +55,9 @@ addopts = "-ra"
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 extend-exclude = [
-    "src/drone_playground/rpc/proto/algorithm_pb2.py",
+    "src/drone_playground/integrations/rpc/proto/algorithm_pb2.py",
     "src/drone_playground/environments/tasks/lsy_upstream",
     "src/drone_playground/control/controllers/mpc/lsy_upstream",
 ]
@@ -74,13 +74,25 @@ select = [
     "D",
     "RUF",
 ]
-ignore = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["D100", "D101", "D102", "D103", "D104"]
+# Crazyflow does not require boilerplate docstrings on every class and method.
+# Public functions and actual interface contracts still require documentation.
+"src/drone_playground/**/*.py" = ["D100", "D101", "D102", "D104", "D107"]
+# Rotation matrices are conventionally written R and their differentials dR.
+"src/drone_playground/dynamics/lotf.py" = ["N806"]
+# These files intentionally generate Chinese-language reports or CLI messages.
+"src/drone_playground/evaluation/navigation/acceleration.py" = ["RUF001"]
+"src/drone_playground/visualization/rscope_client.py" = ["RUF001"]
+# The multiplication sign documents a mathematical sampling dimension.
+"src/drone_playground/visualization/sensor_hits.py" = ["RUF001"]
+"scripts/tools/build_navigation.py" = ["RUF002"]
+# Crazyflow itself uses this established alias for its functional simulator.
+"src/drone_playground/runtime/demo.py" = ["N812"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -105,7 +117,7 @@ OMP_NUM_THREADS = "4"
 
 [tool.pixi.tasks]
 test = "env PYTHONPATH=src PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest"
-lint = "ruff check src scripts tests"
+lint = "ruff check . && ruff format --check ."
 train = "python scripts/train.py"
 eval = "python scripts/eval.py"
 play = "python scripts/play.py"

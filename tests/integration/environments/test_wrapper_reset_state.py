@@ -19,6 +19,7 @@ class CountingEnv(Env):
     hover_action = jnp.zeros(1)
 
     def __init__(self, structured=False):
+        """Initialize the test fixture with the requested observation structure."""
         self.structured = structured
 
     def reset(self, rng):

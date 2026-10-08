@@ -17,9 +17,9 @@ results/*
 .env.*
 secrets/
 *.pem
-native/ros1/sources/
-native/ros1/workspaces/
-native/ros1/.build/
+docker/ros1/sources/
+docker/ros1/workspaces/
+docker/ros1/.build/
 .optim-agent-runs/
 .scratch/
 .DS_Store

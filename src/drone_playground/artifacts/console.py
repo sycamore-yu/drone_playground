@@ -13,7 +13,6 @@ def capture_console(path: Path):
     with Path(path).open("a", buffering=1) as handle:
 
         class Tee:
-
             def __init__(self, original):
                 self.original = original
 

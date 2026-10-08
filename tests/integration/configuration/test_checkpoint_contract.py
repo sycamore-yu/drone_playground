@@ -4,8 +4,11 @@ import json
 
 import pytest
 
-from drone_playground.app import resolve_checkpoint_execution
-from drone_playground.composition import compose_experiment, validate_config
+from drone_playground.configuration import (
+    compose_experiment,
+    resolve_checkpoint_execution,
+    validate_config,
+)
 
 
 def metadata(tmp_path, config):
@@ -20,6 +23,19 @@ def test_method_name_conflict_is_rejected_even_when_both_are_neural(tmp_path):
     requested.update(mode="eval", checkpoint=metadata(tmp_path, saved))
     with pytest.raises(ValueError, match=r"identity"):
         resolve_checkpoint_execution(requested, ["experiment=control/apg"])
+
+
+def test_explicit_evaluation_recipe_restores_saved_network_parameters(tmp_path):
+    saved = compose_experiment("control/ppo", "tracking", ["network.hidden_sizes=[8,8]"])
+    requested = compose_experiment("control/ppo", "tracking")
+    requested["env"]["scene"]["name"] = "requested-evaluation-scene"
+    requested.update(mode="eval", checkpoint=metadata(tmp_path, saved))
+    assert requested["network"] != saved["network"]
+    resolved = resolve_checkpoint_execution(requested, ["experiment=control/ppo"])
+    assert resolved["network"] == saved["network"]
+    assert resolved["algorithm"] == saved["algorithm"]
+    assert resolved["method"] == saved["method"]
+    assert resolved["env"]["scene"]["name"] == "requested-evaluation-scene"
 
 
 def test_mounted_sensor_override_is_seen_and_input_semantics_are_checked(tmp_path):

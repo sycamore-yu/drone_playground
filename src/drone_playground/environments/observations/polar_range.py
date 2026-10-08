@@ -11,17 +11,10 @@ import jax
 import jax.numpy as jnp
 
 
-def polar_range_features(
-    frames, azimuth_bins=24, elevation_bins=3, range_scale=40.0
-):
-    if (
-        min(azimuth_bins, elevation_bins) < 1
-        or not math.isfinite(range_scale)
-        or range_scale <= 0
-    ):
-        raise ValueError(
-            "Range encoding requires positive bin counts and physical range scale"
-        )
+def polar_range_features(frames, azimuth_bins=24, elevation_bins=3, range_scale=40.0):
+    """Bin valid ray returns into azimuth and elevation range features."""
+    if min(azimuth_bins, elevation_bins) < 1 or not math.isfinite(range_scale) or range_scale <= 0:
+        raise ValueError("Range encoding requires positive bin counts and physical range scale")
     if frames.shape[-1] != 5:
         raise ValueError("Range encoding consumes XYZ, range and validity")
     leading, points = frames.shape[:-2], frames.shape[-2]
@@ -37,10 +30,7 @@ def polar_range_features(
         jnp.sqrt(jnp.maximum(jnp.sum(xyz[..., :2] ** 2, axis=-1), 1e-12)),
     )
     ai = (
-        jnp.floor((azimuth + jnp.pi) / (2 * jnp.pi) * azimuth_bins).astype(
-            jnp.int32
-        )
-        % azimuth_bins
+        jnp.floor((azimuth + jnp.pi) / (2 * jnp.pi) * azimuth_bins).astype(jnp.int32) % azimuth_bins
     )
     ei = jnp.clip(
         jnp.floor((elevation + jnp.pi / 2) / jnp.pi * elevation_bins),

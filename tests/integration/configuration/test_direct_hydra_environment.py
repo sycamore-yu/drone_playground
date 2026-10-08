@@ -21,9 +21,12 @@ def test_environment_only_configuration_does_not_load_a_training_recipe():
         "scene",
         "sensor",
         "task",
+        "freq",
     }
     assert "reward" in config["env"]["task"]
     assert "observation" in config["env"]["task"]
+    assert "freq" not in config["env"]["task"]
+    assert "physics_freq" not in config["env"]["task"]
     assert (
         not {"adapter", "trainer", "evaluation_entrypoint", "policy_evaluator"}
         & config["env"]["task"].keys()

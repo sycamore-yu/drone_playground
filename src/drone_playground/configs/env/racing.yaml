@@ -10,7 +10,6 @@ env:
     name: lsy_level0
   task:
     name: racing
-    freq: 50
     duration: 30.0
     reference_count: 256
     time_limit_kind: termination
@@ -34,6 +33,7 @@ env:
     name: lsy_course
     amplitude: 1.0
   _target_: drone_playground.environments.base.DroneEnvironment
+  freq: 50
 training:
   action_noise:
     std_physical: 0.001

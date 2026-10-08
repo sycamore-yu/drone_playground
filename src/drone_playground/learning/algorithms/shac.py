@@ -8,8 +8,6 @@ in the graph. This is an independent JAX implementation, not copied Torch code.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import time
 from pathlib import Path
 
@@ -17,7 +15,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
-from brax.io import model
 from brax.training import networks, types
 from brax.training.acme import running_statistics, specs
 from brax.training.agents.apg import networks as apg_networks
@@ -76,52 +73,18 @@ class TrainingState:
     updates: jax.Array
 
 
-def save_training_state(path: Path, state: TrainingState, config: dict) -> None:
-    """Store all continuation state and identify typed PRNG leaves explicitly."""
-    typed_paths = []
+def save_training_state(path, state, config):
+    """Persist the SHAC continuation tree through the shared store."""
+    from drone_playground.artifacts.training_state import save_learner_state
 
-    def to_host(keypath, leaf):
-        if hasattr(leaf, "dtype") and jax.dtypes.issubdtype(leaf.dtype, jax.dtypes.prng_key):
-            typed_paths.append(jax.tree_util.keystr(keypath))
-            return np.asarray(jax.random.key_data(leaf))
-        return np.asarray(leaf)
-
-    host = jax.tree_util.tree_map_with_path(to_host, state)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    model.save_params(str(temporary), host)
-    temporary.replace(path)
-    path.with_suffix(".json").write_text(
-        json.dumps(
-            {
-                "kind": "shac-full-training-state",
-                "config": config,
-                "typed_key_paths": typed_paths,
-                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-                "updates": int(state.updates),
-            },
-            indent=2,
-        )
-        + "\n"
-    )
+    return save_learner_state(path, state, config, kind="shac-full-training-state")
 
 
-def load_training_state(path: Path) -> tuple[TrainingState, dict]:
-    """Load a trusted local continuation snapshot and restore typed RNG keys."""
-    meta = json.loads(path.with_suffix(".json").read_text())
-    if hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]:
-        raise ValueError("SHAC training-state digest mismatch")
-    keypaths = set(meta["typed_key_paths"])
-    state = model.load_params(str(path))
-    state = jax.tree_util.tree_map_with_path(
-        lambda p, x: (
-            jax.random.wrap_key_data(jnp.asarray(x))
-            if jax.tree_util.keystr(p) in keypaths
-            else jnp.asarray(x)
-        ),
-        state,
-    )
-    return state, meta
+def load_training_state(path):
+    """Read SHAC state; its trainer retains algorithm-specific restore checks."""
+    from drone_playground.artifacts.training_state import load_learner_state
+
+    return load_learner_state(path, kind="shac-full-training-state")
 
 
 def train(
@@ -191,8 +154,8 @@ def train(
         specs.Array((environment.observation_size,), jnp.float32)
     )
     if config.get("warm_start"):
-        from drone_playground.artifacts.checkpoints import load_policy
         from drone_playground.learning.brax_configuration import native_training_config
+        from drone_playground.learning.inference import load_policy
 
         if restore_state is not None:
             raise ValueError("Select either actor warm start or full-state continuation")
@@ -295,7 +258,7 @@ def train(
         (loss, aux), grad = jax.value_and_grad(objective, has_aux=True)(
             state.policy, state.normalizer, state.target_critic, start, key
         )
-        end, key, obs, rewards, values, done, terminal, last_obs = jax.tree.map(
+        end, key, obs, rewards, values, done, terminal, _last_obs = jax.tree.map(
             jax.lax.stop_gradient, aux
         )
         targets = lambda_returns(rewards, values, done, terminal, gamma, lam)
@@ -403,7 +366,7 @@ def train(
             np.sqrt(
                 sum(
                     float(np.square(np.asarray(a) - np.asarray(b)).sum())
-                    for a, b in zip(jax.tree.leaves(old), jax.tree.leaves(new))
+                    for a, b in zip(jax.tree.leaves(old), jax.tree.leaves(new), strict=True)
                 )
             )
         )

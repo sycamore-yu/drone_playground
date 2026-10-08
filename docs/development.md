@@ -1,15 +1,21 @@
 # 开发与维护
 
-`main` 是现役入口。任务开始时读取 `docs/status.md` 和 `docs/backlog.md`，核对工作树、未提交改动及运行进程，然后直接读取相关模块。已有任务继续使用原会话和恢复状态。
+`main` 是现役入口。任务开始时读取 `docs/status.md`，核对工作树、未提交改动及运行进程，然后直接读取相关模块。已有任务继续使用原会话和恢复状态。
 
 ## 验证
 
-正式测试位于 `tests/`，临时探针和调试输出位于 `tmp/`。修改共享执行、配置、传感器、检查点或回放时，覆盖相关调用链并执行完整回归。算法变更先提供可失败的反例，再验证实际梯度、参数更新和保存／恢复一致性。
+正式测试位于 `tests/`，临时探针和调试输出位于 `tmp/`。修改共享执行、配置、传感器、检查点或回放时，先验证相关调用链；出现新失败或尚未覆盖的风险时才扩大范围。算法变更先提供可失败的反例，再验证实际梯度、参数更新和保存／恢复一致性。
 
 ```bash
 pixi run lint
 JAX_PLATFORMS=cpu pixi run test
 ```
+
+`pixi run lint` runs both `ruff check .` and `ruff format --check .`. GitHub Actions
+enforces the same checks for the repository. Ruff follows the
+Google Python Style Guide, uses Crazyflow's Python 3.12 syntax target, and
+checks the 100-character line length. The locked Pixi environment stays on
+Python 3.13, which satisfies Crazyflow's Python >=3.11 requirement.
 
 完整 MPC 测试依赖 acados；设置方式见[操作手册](runbook.md)。测试通过、预算完成和策略收敛分别给出证据。保存失败的测试名及原因，避免用短探针的成功覆盖任务质量问题。
 
@@ -29,7 +35,7 @@ JAX_PLATFORMS=cpu pixi run test
 
 完整 RScope/MuJoCo replay 默认关闭；需要可视化证据时显式设置`evaluation.record_replays=true`。数值报告、失败回合和必要 trace 与 replay 开关独立保存。清理前核对运行进程和`selected/`引用关系，将唯一成功权重、正式回放和唯一未提交源码备份到项目外并验证摘要。
 
-稳定术语放 `CONTEXT.md`，组件职责放 `architecture.md`，命令放 `runbook.md`，当前状态放 `status.md`，尚未完成事项放 `backlog.md`。已经结束的计划、控制台转录和阶段复盘归入Git历史与独立备份。
+稳定术语放 `CONTEXT.md`，组件职责放 `architecture.md`，命令放 `runbook.md`，当前状态与尚未完成事项放 `status.md`。已经结束的计划、控制台转录和阶段复盘归入 Git 历史与独立备份。
 
 ## 公开交付
 

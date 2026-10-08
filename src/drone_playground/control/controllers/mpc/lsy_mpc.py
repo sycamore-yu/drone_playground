@@ -13,6 +13,7 @@ from ml_collections import ConfigDict
 
 
 def acados_directory() -> Path:
+    """Locate the installed acados runtime required by the MPC controller."""
     default = Path.cwd() / "tmp/p3p4/optimization/acados"
     root = Path(os.environ.get("ACADOS_SOURCE_DIR", default)).resolve()
     if not (root / "lib/libacados.so").is_file():

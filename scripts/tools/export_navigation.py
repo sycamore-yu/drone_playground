@@ -15,8 +15,8 @@ from drone_playground.environments.scenes.catalog import (
     build_fixed_bank,
     load_fixed_catalog,
     scene_by_id,
-    validate_fixed_catalog,
 )
+from drone_playground.environments.scenes.catalog_validation import validate_fixed_catalog
 from drone_playground.environments.scenes.geometry import clearance_and_collision
 from drone_playground.environments.sensors.lidar import Mid360Lidar
 from drone_playground.visualization.navigation_scene import (
@@ -28,6 +28,7 @@ from drone_playground.visualization.rscope_io import export_rollout
 
 
 def review_env(bank, scene_id, dt, manifest):
+    """Construct the minimal environment adapter used for scene replay inspection."""
     return SimpleNamespace(
         bank=bank,
         dt=dt,
@@ -46,6 +47,7 @@ def review_env(bank, scene_id, dt, manifest):
 
 
 def main():
+    """Export navigation scene review videos and their validation summary."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--catalog",
@@ -61,13 +63,7 @@ def main():
     args = parser.parse_args()
 
     if args.output is None:
-        args.output = (
-            Path.cwd()
-            / "results"
-            / "scratch"
-            / "previews"
-            / "navigation-review"
-        )
+        args.output = Path.cwd() / "results" / "scratch" / "previews" / "navigation-review"
 
     catalog = load_fixed_catalog(args.catalog)
     review = {row["scene_id"]: row for row in validate_fixed_catalog(catalog)}
@@ -76,11 +72,9 @@ def main():
     index = []
     for scene in catalog["scenes"]:
         scene_id = scene["id"]
-        bank, manifest = build_fixed_bank(
-            catalog, [scene_id], validated_reports=review
-        )
+        bank, manifest = build_fixed_bank(catalog, [scene_id], validated_reports=review)
         duration = float(scene.get("review_duration_s", 40.0))
-        frames = max(2, int(round(duration * args.fps)) + 1)
+        frames = max(2, round(duration * args.fps) + 1)
         times = np.linspace(0.0, duration, frames, dtype=np.float32)
         start = np.asarray(catalog["world"]["start"], np.float32)
         positions = np.repeat(start[None, :], frames, axis=0)
@@ -107,12 +101,8 @@ def main():
             "reward": np.zeros((frames, 1), np.float32),
             "actions": np.zeros((frames, 1, 4), np.float32),
             "metrics": {
-                f"{metric_prefix}/clearance_m": np.asarray(
-                    clearance, np.float32
-                )[:, None],
-                f"{metric_prefix}/collision": np.asarray(collision, np.float32)[
-                    :, None
-                ],
+                f"{metric_prefix}/clearance_m": np.asarray(clearance, np.float32)[:, None],
+                f"{metric_prefix}/collision": np.asarray(collision, np.float32)[:, None],
             },
             "obstacle_pos": obstacle_positions,
         }
@@ -158,10 +148,16 @@ def main():
     lines = [
         "# Navigation8 scene review",
         "",
-        "These are the accepted Navigation8 fixed scenes. Route-free catalogs hold the drone at the",
+        (
+            "These are the accepted Navigation8 fixed scenes. Route-free catalogs "
+            "hold the drone at the"
+        ),
         "start pose and animate only scene dynamics: no reference/oracle trajectory is exported.",
         "",
-        "| ID | type | difficulty | field | boundary | total | direct blocked | A* reachable | max straight run | source |",
+        (
+            "| ID | type | difficulty | field | boundary | total | direct blocked | "
+            "A* reachable | max straight run | source |"
+        ),
         "|---|---|---|---:|---:|---:|---|---|---:|---|",
     ]
     for row in index:

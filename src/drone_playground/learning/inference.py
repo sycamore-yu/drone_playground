@@ -1,12 +1,14 @@
 """Frozen policy inference at a physical reference or setpoint boundary."""
 
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
+import jax
 import numpy as np
 
 from drone_playground.references import Trajectory
-from drone_playground.runtime.decision import output_reply
+from drone_playground.runtime.decision import Decision, output_reply
 
 
 class FrozenNeuralCommand:
@@ -23,8 +25,6 @@ class FrozenNeuralCommand:
         del directory
         checkpoint, frequency_hz, input_kind = self.checkpoint, self.frequency_hz, self.input_kind
         import jax
-
-        from drone_playground.networks.policies import NeuralPolicy
 
         self.policy, self.env = NeuralPolicy.load(checkpoint), env
         if input_kind not in (None, "trajectory"):
@@ -57,7 +57,7 @@ class FrozenNeuralCommand:
                 "Frozen neural observation/command decoder differs from this environment"
             )
         source = metadata["config"]["env"]
-        from drone_playground.environments.environment import build_observer, build_sensor
+        from drone_playground.environments.factory import build_observer, build_sensor
 
         self.observer = observer = build_observer(
             metadata["config"], build_sensor(metadata["config"])
@@ -72,7 +72,7 @@ class FrozenNeuralCommand:
             raise ValueError("Frozen geometric goal requires the recorded reference observation")
         dynamics = source["dynamics"]
         if (
-            source["task"]["freq"] != self.frequency
+            source["freq"] != self.frequency
             or dynamics["drone"] != env.drone
             or dynamics["forward"] != env.dynamics.forward
         ):
@@ -139,11 +139,16 @@ class FrozenNeuralCommand:
                 raise ValueError("Frozen neural tracker requires upstream Trajectory")
             times = packet["time"] + self.reference_offsets
             if times[0] < upstream.start_time - 1e-9 or times[-1] > upstream.end_time + 1e-9:
-                return dict(
+                return Decision(
+                    status="no_plan",
                     output=None,
-                    decision_status="no_plan",
-                    reason="insufficient_reference_horizon",
-                    required_reference_until=float(times[-1]),
+                    plan_id=str(self.count),
+                    generated_at=float(packet["time"]),
+                    valid_until=float(packet["time"]),
+                    diagnostics={
+                        "reason": "insufficient_reference_horizon",
+                        "required_reference_until": float(times[-1]),
+                    },
                 )
             reference = upstream.sample_many(times)
             fields = dict(
@@ -185,3 +190,71 @@ class FrozenNeuralCommand:
 
     def close(self):
         pass
+
+
+@dataclass
+class NeuralPolicy:
+    make_policy: object
+    parameters: object
+    metadata: dict
+
+    @classmethod
+    def load(cls, path):
+
+        return cls(*load_policy(path))
+
+    def act(self, observation):
+        return self.make_policy(self.parameters, deterministic=True)(
+            observation, jax.random.PRNGKey(0)
+        )[0]
+
+
+def load_policy(path):
+    """Rebuild inference from verified parameters and the saved environment contract."""
+    from brax.training import types
+    from brax.training.acme import running_statistics
+    from brax.training.agents.apg import networks as apg_networks
+    from brax.training.agents.ppo import networks as ppo_networks
+
+    from drone_playground.artifacts.checkpoints import load_checkpoint
+    from drone_playground.artifacts.reporting import tree_digest
+    from drone_playground.artifacts.schema import require_current
+    from drone_playground.networks.factory import network_factory
+
+    params, meta = load_checkpoint(path)
+    config = require_current(meta["config"])
+    from drone_playground.environments.factory import build_observer, build_sensor
+
+    observer = build_observer(config, build_sensor(config))
+    if (
+        observer.specification() != meta["observation_spec"]
+        or observer.size != meta["observation_size"]
+    ):
+        raise ValueError(
+            "Saved observation fields or dimensions differ from the reconstructed component"
+        )
+    from drone_playground.learning.brax_configuration import native_training_config
+
+    native = native_training_config(config)
+    preprocess = (
+        running_statistics.normalize
+        if native.get("normalize_observations", False)
+        else types.identity_observation_preprocessor
+    )
+    network = network_factory(native)(
+        meta["observation_size"],
+        meta["action_size"],
+        preprocess_observations_fn=preprocess,
+    )
+    maker = (
+        ppo_networks.make_inference_fn
+        if native["algorithm"] in ("ppo", "dva")
+        else apg_networks.make_inference_fn
+    )
+    if tree_digest(params) != meta["parameter_sha256"]:
+        raise ValueError("Loaded parameter content changed")
+    return (
+        maker(network),
+        params,
+        {**meta, "config": config},
+    )

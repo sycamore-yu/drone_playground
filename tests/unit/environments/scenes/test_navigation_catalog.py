@@ -35,17 +35,14 @@ def test_fixed_catalog_has_numbered_static_and_dynamic_candidates():
 
 def validation_stub(catalog):
     return {
-        scene["id"]: {"scene_id": scene["id"], "validated": True}
-        for scene in catalog["scenes"]
+        scene["id"]: {"scene_id": scene["id"], "validated": True} for scene in catalog["scenes"]
     }
 
 
 def test_fixed_bank_is_exact_and_does_not_generate_extra_obstacles():
     catalog = load_fixed_catalog()
     ids = ["S01", "S03", "D01", "D03"]
-    bank, manifest = build_fixed_bank(
-        catalog, ids, validated_reports=validation_stub(catalog)
-    )
+    bank, manifest = build_fixed_bank(catalog, ids, validated_reports=validation_stub(catalog))
     assert bank.num_instances == len(ids)
     assert tuple(bank.subtype_names) == tuple(ids)
     declared = [

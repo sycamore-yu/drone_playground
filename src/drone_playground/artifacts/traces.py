@@ -32,9 +32,7 @@ def record_native_case(env, directory, identity):
     finally:
         archive = None
         if rows:
-            trace = jax.tree.map(
-                lambda *values: np.stack(values)[:, None], *rows
-            )
+            trace = jax.tree.map(lambda *values: np.stack(values)[:, None], *rows)
             archive = save_navigation_traces(
                 env,
                 {identity["difficulty"]: trace},
@@ -50,9 +48,7 @@ def record_native_case(env, directory, identity):
         )
         target = directory / "case-record.json"
         temporary = target.with_suffix(".tmp")
-        temporary.write_text(
-            json.dumps(record, indent=2, allow_nan=False) + "\n"
-        )
+        temporary.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n")
         temporary.replace(target)
 
 
@@ -73,7 +69,10 @@ def save_navigation_traces(
         else {
             "schema_version": 1,
             "timing": "post-transition; includes terminal transition",
-            "sensor_storage": "20-D proprioception; reconstruct ideal measurements from recorded poses, initial reset seed, scene and calibration",
+            "sensor_storage": (
+                "20-D proprioception; reconstruct ideal measurements from recorded poses, "
+                "initial reset seed, scene and calibration"
+            ),
             "cells": {},
         }
     )
@@ -85,9 +84,7 @@ def save_navigation_traces(
         if np.any(lengths == 0) or not np.array_equal(
             active, np.arange(active.shape[0])[:, None] < lengths[None, :]
         ):
-            raise ValueError(
-                "Navigation archive requires contiguous active frames per episode"
-            )
+            raise ValueError("Navigation archive requires contiguous active frames per episode")
         offsets = np.r_[0, np.cumsum(lengths)]
         fields = {
             key: np.asarray(trace[key])
@@ -106,30 +103,20 @@ def save_navigation_traces(
             if key in trace:
                 fields[key] = np.asarray(trace[key])
         fields.update(
-            {
-                "metric_" + key: np.asarray(value)
-                for key, value in trace["metrics"].items()
-            }
+            {"metric_" + key: np.asarray(value) for key, value in trace["metrics"].items()}
         )
         arrays = {
-            key: np.concatenate(
-                [value[: lengths[case], case] for case in range(count)]
-            )
+            key: np.concatenate([value[: lengths[case], case] for case in range(count)])
             for key, value in fields.items()
         }
         scenarios = (
             np.asarray(scenario_groups[difficulty], dtype=np.int32)
             if scenario_groups is not None
-            else DIFFICULTIES.index(difficulty) * per_difficulty
-            + np.arange(count)
+            else DIFFICULTIES.index(difficulty) * per_difficulty + np.arange(count)
         )
         if scenarios.shape != (count,):
-            raise ValueError(
-                "Each navigation trace requires its actual scenario identity"
-            )
-        arrays.update(
-            offsets=offsets, case_ids=np.arange(count), scenario_ids=scenarios
-        )
+            raise ValueError("Each navigation trace requires its actual scenario identity")
+        arrays.update(offsets=offsets, case_ids=np.arange(count), scenario_ids=scenarios)
         target = directory / (difficulty + ".npz")
         temporary = target.with_suffix(".npz.tmp")
         with temporary.open("wb") as handle:
@@ -149,9 +136,7 @@ def save_navigation_traces(
     return index
 
 
-def load_navigation_case(
-    directory: Path, difficulty: str, case: int
-) -> tuple[dict, int]:
+def load_navigation_case(directory: Path, difficulty: str, case: int) -> tuple[dict, int]:
     """Read one exact recorded episode, checking archive integrity first."""
     directory = Path(directory)
     index = json.loads((directory / "index.json").read_text())
@@ -160,10 +145,7 @@ def load_navigation_case(
     if hashlib.sha256(path.read_bytes()).hexdigest() != cell["sha256"]:
         raise ValueError("Navigation archive digest mismatch")
     with np.load(path, allow_pickle=False) as archive:
-        if (
-            not 0 <= case < len(archive["case_ids"])
-            or archive["case_ids"][case] != case
-        ):
+        if not 0 <= case < len(archive["case_ids"]) or archive["case_ids"][case] != case:
             raise IndexError("Navigation archive case does not exist")
         start, stop = archive["offsets"][case : case + 2]
         trace = {

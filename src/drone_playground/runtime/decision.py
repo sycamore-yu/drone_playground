@@ -26,9 +26,11 @@ class Decision:
     sampled_reference: dict | None = None
     corridors: tuple[SafeFlightCorridor, ...] = ()
     trajectory_previews: tuple[TrajectoryPreview, ...] = ()
+    stages: tuple[Decision, ...] = ()
 
 
 def output_kind(value):
+    """Classify an execution method output by its reference or setpoint type."""
     if isinstance(value, (*get_args(Reference), *get_args(Setpoint), *get_args(Actuation))):
         return value.kind
     raise TypeError("Pipeline output must have a physical interface")
@@ -54,18 +56,20 @@ def output_reply(value, generated_at, identity, valid_until):
             generated_at=generated_at,
             valid_until=valid_until,
         )
-    return dict(
+    return Decision(
         output=value,
         plan_id=identity,
         generated_at=generated_at,
         valid_until=valid_until,
-        decision_status="valid" if value is not None else "no_plan",
+        status="valid" if value is not None else "no_plan",
+        diagnostics={},
     )
 
 
-def validate_reply_time(reply, value, now):
+def validate_decision(reply, now):
     """Reject stale/future module outputs before forwarding them downstream."""
-    generated_at, valid_until = reply.get("generated_at"), reply.get("valid_until")
+    value = reply.output
+    generated_at, valid_until = reply.generated_at, reply.valid_until
     if generated_at is None or valid_until is None:
         raise ValueError("Physical output requires generated_at and valid_until")
     generated_at, valid_until, now = (

@@ -41,7 +41,7 @@ method:
 env:
   task:
     reward:
-      _target_: drone_playground.learning.objectives.navigation.MotionNavigationObjective
+      _target_: drone_playground.environments.tasks.rewards.MotionNavigationReward
       name: navigation
       recipe: motion-aware-v2
       progress_scale: 0.2

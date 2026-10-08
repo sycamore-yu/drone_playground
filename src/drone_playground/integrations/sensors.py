@@ -1,18 +1,20 @@
 """Physical sensor packets shared by native tracking and navigation execution."""
 
 import base64
-import jax
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 
 def pack_array(value):
-    return base64.b64encode(np.asarray(value, dtype="<f4").tobytes()).decode(
-        "ascii"
-    )
+    """Pack a numeric sensor array for external method transport."""
+    return base64.b64encode(np.asarray(value, dtype="<f4").tobytes()).decode("ascii")
 
 
 def sensor_packet(env, method, sample, state):
+    """Build a timestamped sensor observation packet for the selected method."""
+    import jax
+
     data = state.pipeline_state
     body = env.controller_observation(state)
     packet = {
@@ -42,3 +44,35 @@ def sensor_packet(env, method, sample, state):
         points = np.c_[points, np.ones(len(points), dtype=np.float32)]
         packet.update(points=pack_array(points), point_count=len(points))
     return packet
+
+
+def packet_measurement(packet):
+    """Convert one captured sensor packet to the shared protobuf measurement."""
+    import base64
+
+    from drone_playground.integrations.rpc.proto import algorithm_pb2 as pb
+    from drone_playground.integrations.rpc.wire import vec3
+
+    if "depth" in packet:
+        return pb.Measurement(
+            time=packet["time"],
+            frame="camera_optical",
+            depth=pb.DepthImage(
+                float32_le=base64.b64decode(packet["depth"], validate=True),
+                width=packet["width"],
+                height=packet["height"],
+                camera_position=vec3(packet["camera_position"]),
+                camera_quaternion_xyzw=packet["camera_quaternion"],
+            ),
+        )
+    if "points" in packet:
+        return pb.Measurement(
+            time=packet["time"],
+            frame="world",
+            point_cloud=pb.PointCloud(
+                float32_le=base64.b64decode(packet["points"], validate=True),
+                count=packet["point_count"],
+                channels=4,
+            ),
+        )
+    return None

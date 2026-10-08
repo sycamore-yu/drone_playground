@@ -71,14 +71,14 @@ def load_catalog(path):
         goal=model.site("goal").pos.tolist(),
     )
     boundaries = compiled_obstacles(path.parent / "boundary.xml")
-    for obstacle, extra in zip(boundaries, metadata.pop("boundary_metadata")):
+    for obstacle, extra in zip(boundaries, metadata.pop("boundary_metadata"), strict=True):
         obstacle.update(extra)
     scenes = []
     for filename in custom_text(path, "scene_files").split():
         source = path.parent / filename
         scene = json.loads(custom_text(source, "scene_metadata"))
         obstacles = compiled_obstacles(source)[len(boundaries) :]
-        for obstacle, extra in zip(obstacles, scene.pop("obstacle_metadata")):
+        for obstacle, extra in zip(obstacles, scene.pop("obstacle_metadata"), strict=True):
             obstacle.update(extra)
         scene.update(obstacles=obstacles, asset_path=str(source))
         scenes.append(scene)

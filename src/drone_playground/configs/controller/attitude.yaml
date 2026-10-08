@@ -1,2 +1,2 @@
-_target_: drone_playground.control.controllers.crazyflow.AttitudeControl
+_target_: drone_playground.control.controllers.attitude.AttitudeControl
 input_kind: attitude

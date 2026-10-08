@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_experiment, validate_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment, validate_config
+from drone_playground.environments.factory import build_environment
 from drone_playground.evaluation.navigation.cases import navigation_resets
 
 
@@ -51,7 +51,7 @@ def test_evaluator_starts_from_frozen_physical_state_and_records_values(setup):
 
     original, spec = setup
     task = copy.copy(original)
-    task.duration, task.episode_length = 0.1, 1
+    task.duration = task.dt
     evaluator = RecurrentNavigationEvaluator(task, ZeroPolicy(), repeats=1, initial_conditions=spec)
     report, trace = evaluator.run({})
     np.testing.assert_allclose(

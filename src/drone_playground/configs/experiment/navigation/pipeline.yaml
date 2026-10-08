@@ -6,6 +6,9 @@ defaults:
 - override /dynamics@env.dynamics: crazyflow_so_rpy
 - _self_
 mode: eval
+env:
+  controller:
+    reference_source: trajectory
 source: Explicit physical module chain; default minimum-jerk path has no obstacle
   avoidance
 algorithm:
@@ -30,13 +33,13 @@ method:
   implementation: pipeline
   trainable: false
   output: trajectory
-  input_sensor: point_cloud
+  input_sensor: none
   workers: 1
   port: 0
   stages:
   - _target_: drone_playground.planning.goal.GoalWaypoints
-  - _target_: drone_playground.planning.minimum_jerk.MinimumJerkPlanning
+  - _target_: drone_playground.planning.minimum_jerk.MinimumJerkPlanner
     cruise_speed: 2.0
     acceleration_scale: 3.0
     minimum_segment_seconds: 0.5
-  _target_: drone_playground.integrations.grpc_service.build_pipeline_method
+  _target_: drone_playground.runtime.pipeline.Pipeline

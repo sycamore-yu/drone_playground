@@ -2,7 +2,8 @@
 
 import pytest
 
-from drone_playground.composition import compose_experiment, run_experiment
+from drone_playground.app import run_experiment
+from drone_playground.configuration import compose_experiment
 
 
 @pytest.mark.parametrize(

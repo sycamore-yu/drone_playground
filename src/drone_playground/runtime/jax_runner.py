@@ -48,9 +48,7 @@ def rollout(env, policy, initial, length, project, *, early_exit=False):
     # of inactive iterations for a 300 s navigation deadline. Preserve the exact
     # old padded trace in one vectorized operation, without advancing physics.
     template = inactive((initial, jnp.zeros(batch, bool)), jnp.int32(0))[1]
-    buffers = jax.tree.map(
-        lambda value: jnp.zeros((length, *value.shape), value.dtype), template
-    )
+    buffers = jax.tree.map(lambda value: jnp.zeros((length, *value.shape), value.dtype), template)
 
     def condition(carry):
         current, index, _ = carry
@@ -59,22 +57,14 @@ def rollout(env, policy, initial, length, project, *, early_exit=False):
     def body(carry):
         current, index, archive = carry
         current, row = advance(current, index)
-        archive = jax.tree.map(
-            lambda storage, value: storage.at[index].set(value), archive, row
-        )
+        archive = jax.tree.map(lambda storage, value: storage.at[index].set(value), archive, row)
         return current, index + 1, archive
 
-    final, stop, archive = jax.lax.while_loop(
-        condition, body, (start, jnp.int32(0), buffers)
-    )
-    padding = jax.vmap(lambda index: inactive(final, index)[1])(
-        jnp.arange(length)
-    )
+    final, stop, archive = jax.lax.while_loop(condition, body, (start, jnp.int32(0), buffers))
+    padding = jax.vmap(lambda index: inactive(final, index)[1])(jnp.arange(length))
     return jax.tree.map(
         lambda prefix, tail: jnp.where(
-            (jnp.arange(length) < stop).reshape(
-                (length,) + (1,) * (prefix.ndim - 1)
-            ),
+            (jnp.arange(length) < stop).reshape((length,) + (1,) * (prefix.ndim - 1)),
             prefix,
             tail,
         ),
@@ -100,6 +90,7 @@ def policy_rollout(
     initial_states=None,
     kind="tracking",
 ):
+    """Roll out a JAX policy over fixed environment initial conditions."""
     if initial_states is not None:
         initial = jax.vmap(env.reset)(keys, reference_ids, initial_states)
     else:
@@ -118,9 +109,7 @@ def policy_rollout(
             obs=old.obs if kind == "racing" else new.obs,
             time=jnp.full(alive.shape, (index + 1) * env.dt),
             actions=action,
-            reward=jnp.where(alive, new.reward, 0.0)
-            if kind == "racing"
-            else new.reward,
+            reward=jnp.where(alive, new.reward, 0.0) if kind == "racing" else new.reward,
             metrics=new.metrics,
             active=alive,
             failed=new.metrics["failure"] > 0 if kind == "racing" else ended,

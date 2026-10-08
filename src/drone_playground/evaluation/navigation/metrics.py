@@ -95,3 +95,60 @@ def combine_cells(cells: dict[str, dict]) -> dict:
         "return_mean": float(np.mean([cell["return_mean"] for cell in cells.values()])),
         "cells": cells,
     }
+
+
+def summarize_trace(trace, scene_ids, speed, duration, start):
+    """Summarize success, collision, and timing outcomes of navigation episodes."""
+    episodes = []
+    for case, scene_id in enumerate(scene_ids):
+        length = int(np.asarray(trace["active"])[:, case].sum())
+        if length < 1:
+            raise ValueError("Every evaluation case must contain an actual transition")
+        result = int(np.asarray(trace["outcome"])[length - 1, case])
+        result = 5 if result == 0 else result
+        positions = np.vstack([np.asarray(start)[case], np.asarray(trace["pos"])[:length, case]])
+        speed_values = np.asarray(trace["metrics"]["speed"])[:length, case]
+        elapsed = float(np.asarray(trace["time"])[length - 1, case])
+        episodes.append(
+            dict(
+                scene_id=scene_id,
+                command_speed_m_s=float(speed),
+                outcome=OUTCOME_NAMES[result],
+                arrived=result == 1,
+                collision=result == 2,
+                out_of_bounds=result == 3,
+                numerical_failure=result == 4,
+                timeout=result == 5,
+                steps=length,
+                elapsed_s=elapsed,
+                arrival_time_s=elapsed if result == 1 else None,
+                path_length_m=float(np.linalg.norm(np.diff(positions, axis=0), axis=-1).sum()),
+                peak_speed_m_s=float(speed_values.max()),
+                mean_speed_m_s=float(speed_values.mean()),
+                min_clearance_m=float(
+                    np.asarray(trace["metrics"]["clearance"])[:length, case].min()
+                ),
+                final_goal_distance_m=float(
+                    np.asarray(trace["metrics"]["goal_distance"])[length - 1, case]
+                ),
+            )
+        )
+    counts = {
+        key: sum(int(row[key]) for row in episodes)
+        for key in (
+            "arrived",
+            "collision",
+            "out_of_bounds",
+            "numerical_failure",
+            "timeout",
+        )
+    }
+    return dict(
+        num_trials=len(episodes),
+        **counts,
+        success_rate=counts["arrived"] / len(episodes),
+        constrained_time_mean_s=float(
+            np.mean([row["elapsed_s"] if row["arrived"] else duration for row in episodes])
+        ),
+        episodes=episodes,
+    )

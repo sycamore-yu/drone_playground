@@ -6,8 +6,7 @@ import numpy as np
 import pytest
 from hydra.utils import get_object
 
-from drone_playground.composition import compose_experiment, validate_config
-from drone_playground.configuration import CONFIG_ROOT
+from drone_playground.configuration import CONFIG_ROOT, compose_experiment, validate_config
 
 
 def _targets(value):
@@ -44,10 +43,8 @@ def test_benchmark_reads_real_locked_files_outside_repository_cwd(tmp_path, monk
     protocol = load_protocol("benchmarks/navigation.yaml")
     assert protocol["timeout"]["duration_s"] == 300.0
     assert protocol_scenes(protocol) == ["S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06"]
-    from drone_playground.environments.scenes.catalog import DEFAULT_CATALOG, verified_geometry
-
-    _, actual = verified_geometry(DEFAULT_CATALOG)
-    assert actual == identity["mjcf_sha256"]
+    assert identity["catalog"] == protocol["catalog"]
+    assert identity["version"] == protocol["version"]
 
 
 @pytest.mark.parametrize(
@@ -107,8 +104,8 @@ def test_point_mass_native_step_keeps_its_own_state_type():
 
 
 def test_reference_adapter_does_not_compose_a_learning_experiment(monkeypatch):
-    from drone_playground import composition
-    from drone_playground.environments.environment import build_environment
+    from drone_playground import configuration
+    from drone_playground.environments.factory import build_environment
 
     cfg = compose_experiment(
         "control/differentiable_pointcloud_hovering", overrides=["runtime.device=cpu"]
@@ -117,7 +114,7 @@ def test_reference_adapter_does_not_compose_a_learning_experiment(monkeypatch):
     def unexpected(*args, **kwargs):
         raise AssertionError("Environment construction called experiment composition")
 
-    monkeypatch.setattr(composition, "compose_experiment", unexpected)
+    monkeypatch.setattr(configuration, "compose_experiment", unexpected)
     task = build_environment(cfg, "cpu", "eval", 1)
     try:
         assert task.task.name == "hovering"

@@ -7,7 +7,8 @@ import pytest
 
 def replay_sim():
     spec = mujoco.MjSpec.from_string(
-        '<mujoco><worldbody><body name="drone" mocap="true"><geom type="sphere" size=".07"/></body></worldbody></mujoco>'
+        '<mujoco><worldbody><body name="drone" mocap="true"><geom type="sphere" '
+        'size=".07"/></body></worldbody></mujoco>'
     )
     model = spec.compile()
     data = mujoco.MjData(model)
@@ -114,7 +115,7 @@ def test_timed_planning_and_sfc_render_in_standard_rscope_without_changing_physi
     np.testing.assert_array_equal(restored.mocap_pos[:, :, :original_n], values["pos"][:, :, None])
     np.testing.assert_array_equal(restored.reward, values["reward"])
     np.testing.assert_array_equal(restored.metrics["speed"], values["metrics"]["speed"])
-    model = mujoco.MjModel.from_xml_path(str(tmp_path / "env.scene.xml"))
+    model = mujoco.MjModel.from_xml_path(str(tmp_path / "scene.xml"))
     data = mujoco.MjData(model)
     assert model.ntendon == 7 + 12
     assert (restored.mocap_pos[0, 0, original_n:, 2] < -100).all()
@@ -174,7 +175,7 @@ def test_sensor_descriptors_do_not_draw_field_of_view_envelopes(tmp_path):
         trace(),
         visualization=ReplayLayers(sensor=sensor_view(PinholeDepthCamera().calibration())),
     )
-    model = mujoco.MjModel.from_xml_path(str(tmp_path / "env.scene.xml"))
+    model = mujoco.MjModel.from_xml_path(str(tmp_path / "scene.xml"))
     assert model.ngeom == sim.mj_model.ngeom and model.nmocap == sim.mj_model.nmocap
     ids = [i for i in range(model.ngeom) if model.geom(i).name.startswith("viz_sensor_")]
     assert ids == []
@@ -215,7 +216,7 @@ def test_d435_context_automatically_adds_world_hit_points(tmp_path):
     sim.replay_visualization = ReplayLayers(sensor=sensor_view(camera.calibration()))
     sim.replay_sensor_context = ReplaySensorContext(camera, bank, 0, max_points=300)
     path = export_rollout(sim, tmp_path, trace())
-    model = mujoco.MjModel.from_xml_path(str(tmp_path / "env.scene.xml"))
+    model = mujoco.MjModel.from_xml_path(str(tmp_path / "scene.xml"))
     assert not [i for i in range(model.ngeom) if model.geom(i).name.startswith("viz_sensor_")]
     metadata = json.loads((tmp_path / "replay-visualization.json").read_text())
     cloud = metadata["point_cloud_sequence"]
@@ -270,7 +271,7 @@ def test_mid360_replay_uses_only_dynamic_world_point_markers(tmp_path):
             point_cloud_sequence=points,
         ),
     )
-    model = mujoco.MjModel.from_xml_path(str(tmp_path / "env.scene.xml"))
+    model = mujoco.MjModel.from_xml_path(str(tmp_path / "scene.xml"))
     assert model.nmocap == original_n + 2
     assert not [i for i in range(model.ngeom) if model.geom(i).name.startswith("viz_sensor_")]
     with path.open("rb") as handle:
@@ -304,15 +305,13 @@ def test_rpc_geometry_survives_recording_and_does_not_become_an_output(tmp_path)
         NativeDecisionRecorder,
         load_native_decisions,
     )
-    from drone_playground.rpc.proto import algorithm_pb2 as pb
-    from drone_playground.rpc.wire import decode_decision
+    from drone_playground.integrations.rpc.proto import algorithm_pb2 as pb
+    from drone_playground.integrations.rpc.wire import decode_decision
 
     response = pb.StepResponse(decision=pb.Decision(status=pb.NO_PLAN))
-    geometry = response.planner_geometry
-    geometry.frame = "world"
-    geometry.generated_at = 0.1
-    geometry.valid_until = 0.5
-    corridor = geometry.corridors.add(name="candidate")
+    corridor = response.corridors.add(
+        name="candidate", frame="world", generated_at=0.1, valid_until=0.5
+    )
     corridor.polytopes.add(
         halfspaces=[1, 0, 0, -1, -1, 0, 0, -1, 0, 1, 0, -1, 0, -1, 0, -1, 0, 0, 1, -1, 0, 0, -1, -1]
     )
@@ -322,11 +321,19 @@ def test_rpc_geometry_survives_recording_and_does_not_become_an_output(tmp_path)
         pb.Capabilities(algorithm="fixture", outputs=["trajectory"], derivatives="none"),
     )
     assert decision.output is None
-    with NativeDecisionRecorder(tmp_path / "decisions", "attitude_thrust") as recorder:
-        recorder.record(0, 0.2, {}, dict(planner_geometry=decision.planner_geometry), None)
+    with NativeDecisionRecorder(
+        tmp_path / "decisions",
+        {
+            "kind": "attitude",
+            "fields": ["roll", "pitch", "yaw", "thrust"],
+            "units": ["rad", "rad", "rad", "N"],
+            "frame": "world",
+        },
+    ) as recorder:
+        recorder.record(0, 0.2, {}, decision, None)
     row = next(load_native_decisions(tmp_path / "decisions"))
     np.testing.assert_array_equal(
-        row["reply"]["planner_geometry"].corridors[0].polytopes[0].halfspaces,
+        row["reply"].corridors[0].polytopes[0].halfspaces,
         [
             [1, 0, 0, -1],
             [-1, 0, 0, -1],
@@ -336,7 +343,7 @@ def test_rpc_geometry_survives_recording_and_does_not_become_an_output(tmp_path)
             [0, 0, -1, -1],
         ],
     )
-    geometry.generated_at = 0.3
+    corridor.generated_at = 0.3
     with pytest.raises(ValueError, match=r"future"):
         decode_decision(
             response,
@@ -350,11 +357,17 @@ def test_decision_layers_keep_intermediate_curve_and_clear_it_causally():
     from drone_playground.visualization.layers import layers_from_decisions
 
     curve = Trajectory(0.0, [1.0], np.array([[[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 0.0]]]))
-    reply = dict(stages=[dict(stage=0, output=curve, valid_until=1.0)], output=None)
+    from dataclasses import replace
+
+    from drone_playground.runtime.decision import Decision, output_reply
+
+    reply = Decision(
+        "no_plan", None, "", 0.0, 0.0, {}, stages=(output_reply(curve, 0.0, "plan", 1.0),)
+    )
     rows = [
         dict(time=0.1, reply=reply),
         dict(time=0.2, reply=reply),
-        dict(time=0.3, reply=dict(stages=[dict(stage=0, output=None)], output=None)),
+        dict(time=0.3, reply=replace(reply, stages=(Decision("no_plan", None, "", 0.3, 0.3, {}),))),
     ]
     layers = layers_from_decisions(rows)
     assert len(layers.planning) == 2
@@ -386,7 +399,7 @@ def test_shared_planner_layers_cannot_be_drawn_on_multiple_episodes(tmp_path):
 
 
 def test_ros_corridor_mesh_uses_marker_pose_and_clears_deleted_geometry():
-    from drone_playground.integrations.ros_visualization import corridor_from_markers
+    from drone_playground.integrations.ros1.visualization import corridor_from_markers
 
     def xyz(x, y, z):
         return SimpleNamespace(x=x, y=y, z=z)

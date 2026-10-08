@@ -6,6 +6,7 @@ import pytest
 from drone_playground.control.setpoints import StateSetpoint
 from drone_playground.planning.minimum_jerk import minimum_jerk_path
 from drone_playground.references import Trajectory, Waypoint
+from drone_playground.runtime.decision import Decision
 from drone_playground.runtime.pipeline import Pipeline
 from tests.helpers.paths import REPO_ROOT
 
@@ -26,7 +27,7 @@ def test_configured_waypoint_planning_chain_preserves_curve_and_resets(tmp_path)
             output="trajectory",
             stages=[
                 dict(_target_="drone_playground.planning.goal.GoalWaypoints"),
-                dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanning"),
+                dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanner"),
             ],
         ),
         tmp_path,
@@ -37,16 +38,16 @@ def test_configured_waypoint_planning_chain_preserves_curve_and_resets(tmp_path)
         planner.start({}, [2, 0, 1])
         first = planner.step(packet)
         second = planner.step(dict(packet, time=0.02, position=[0.001, 0, 1]))
-        assert first["output"] is second["output"]
-        assert first["generated_at"] == second["generated_at"] == 0.0
-        assert second["reference"]["position"][0] > 0
-        assert second["plans"] == 1 and second["commands"] == 2
+        assert first.output is second.output
+        assert first.generated_at == second.generated_at == 0.0
+        assert second.output.sample(0.02)["position"][0] > 0
+        assert second.diagnostics["plans"] == 1 and second.diagnostics["commands"] == 2
         planner.start({}, [4, 0, 1])
         restarted = planner.step(packet)
         np.testing.assert_allclose(
-            restarted["output"].sample(restarted["output"].end_time)["position"], [4, 0, 1]
+            restarted.output.sample(restarted.output.end_time)["position"], [4, 0, 1]
         )
-        assert restarted["plans"] == 1
+        assert restarted.diagnostics["plans"] == 1
     finally:
         planner.close()
 
@@ -56,9 +57,7 @@ def test_pipeline_rejects_missing_physical_adapter_before_running(tmp_path):
         Pipeline(
             dict(
                 output="trajectory",
-                stages=[
-                    dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanning")
-                ],
+                stages=[dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanner")],
             ),
             tmp_path,
             SimpleNamespace(freq=50),
@@ -77,9 +76,9 @@ def test_pipeline_rejects_missing_physical_adapter_before_running(tmp_path):
     ],
 )
 def test_cpp_downstream_receives_exact_upstream_physical_value(kind, value):
-    from drone_playground.rpc.client import NativeClient
+    from drone_playground.integrations.rpc.client import NativeClient
 
-    binary = REPO_ROOT / "tmp/direct-composition-refactor/native-sdk-v2/interop_server"
+    binary = REPO_ROOT / "tmp/native-interop/interop_server"
     if not binary.is_file():
         pytest.skip("Build C++ SDK fixture")
     with NativeClient("echo", command=[str(binary), "{address}"]) as client:
@@ -100,27 +99,27 @@ def test_cpp_downstream_receives_exact_upstream_physical_value(kind, value):
 
 
 def test_real_cpp_stages_chain_without_algorithm_specific_host_changes(tmp_path):
-    binary = REPO_ROOT / "tmp/direct-composition-refactor/native-sdk-v2/interop_server"
+    binary = REPO_ROOT / "tmp/native-interop/interop_server"
     if not binary.is_file():
         pytest.skip("Build C++ SDK fixture")
     settings = dict(output="waypoint", deployment=dict(command=[str(binary), "{address}"]))
     stages = [
         dict(
-            _target_="drone_playground.integrations.grpc_service.NativeServicePlanner",
+            _target_="drone_playground.integrations.service.NativeServicePlanner",
             settings=dict(settings, algorithm=algorithm, **extra),
         )
         for algorithm, extra in [("waypoint", {}), ("echo", {"input": "waypoint"})]
     ]
-    stages.append(dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanning"))
+    stages.append(dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanner"))
     planner = Pipeline(dict(output="trajectory", stages=stages), tmp_path, SimpleNamespace(freq=50))
     try:
         planner.start({}, [4, 0, 1])
         reply = planner.step(
             dict(time=0.0, position=[0, 0, 1], velocity=[0, 0, 0], quaternion=[0, 0, 0, 1])
         )
-        curve = reply["output"]
+        curve = reply.output
         np.testing.assert_allclose(curve.sample(curve.end_time)["position"], [3, 0, 1])
-        assert reply["commands"] == 1
+        assert reply.diagnostics["commands"] == 1
     finally:
         planner.close()
 
@@ -135,7 +134,7 @@ def test_no_plan_stops_downstream_and_close_visits_all_modules(monkeypatch, tmp_
             pass
 
         def step(self, packet, upstream):
-            return dict(output=None, decision_status="no_plan")
+            return Decision("no_plan", None, "", 0.0, 0.0, {})
 
         def close(self):
             closed.append("source")
@@ -165,7 +164,11 @@ def test_no_plan_stops_downstream_and_close_visits_all_modules(monkeypatch, tmp_
     )
     planner.start({}, [1, 0, 1])
     reply = planner.step(dict(time=0.0))
-    assert reply["output"] is None and reply["commands"] == 0 and reply["plans"] == 0
+    assert (
+        reply.output is None
+        and reply.diagnostics["commands"] == 0
+        and reply.diagnostics["plans"] == 0
+    )
     with pytest.raises(RuntimeError, match=r"cleanup"):
         planner.close()
     assert closed == ["downstream", "source"]
@@ -178,10 +181,10 @@ def test_saved_neural_module_preserves_decoder_and_rejects_same_width_wrong_fiel
     import jax.numpy as jnp
     from brax.training.acme import running_statistics, specs
 
-    from drone_playground.artifacts.checkpoints import save_policy
-    from drone_playground.composition import compose_experiment
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.configuration import compose_experiment
+    from drone_playground.environments.factory import build_environment
     from drone_playground.learning.brax_configuration import native_training_config
+    from drone_playground.learning.checkpointing import save_policy
     from drone_playground.learning.inference import FrozenNeuralCommand
     from drone_playground.networks.factory import network_factory
 
@@ -201,7 +204,7 @@ def test_saved_neural_module_preserves_decoder_and_rejects_same_width_wrong_fiel
         state = env.reset(jax.random.key(2))
         reply = module.step(dict(time=0.0, policy_observation=np.asarray(state.obs).tolist()), None)
         expected = env.physical_action(module.policy.act(state.obs))
-        np.testing.assert_allclose(reply["output"].as_array(), expected, atol=1e-6)
+        np.testing.assert_allclose(reply.output.as_array(), expected, atol=1e-6)
         assert module.provenance["sha256"] == module.policy.metadata["sha256"]
         env.task.observation = replace(env.task.observation, interval=0.2)
         with pytest.raises(ValueError, match=r"semantics"):
@@ -223,7 +226,7 @@ def test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions(monke
             self.calls.append(packet["time"])
             generated_at = packet["time"]
             valid_until = generated_at + 0.05
-            return dict(
+            return Decision(
                 output=Waypoint(
                     [[3, 0, 1]],
                     0.1,
@@ -233,7 +236,8 @@ def test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions(monke
                 plan_id=str(len(self.calls)),
                 generated_at=generated_at,
                 valid_until=valid_until,
-                decision_status="valid",
+                status="valid",
+                diagnostics={},
             )
 
         def close(self):
@@ -249,7 +253,7 @@ def test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions(monke
     planner.start({}, [3, 0, 1])
     replies = [planner.step(dict(time=t)) for t in [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]]
     assert source.calls == [0.0, 0.10]
-    assert [reply["output"] is not None for reply in replies] == [
+    assert [reply.output is not None for reply in replies] == [
         True,
         True,
         True,
@@ -257,9 +261,9 @@ def test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions(monke
         False,
         True,
     ]
-    assert [reply["generated_at"] for reply in replies[:5]] == [0.0, 0.0, 0.0, 0.0, 0.0]
-    assert replies[-1]["generated_at"] == 0.10
-    assert replies[3]["decision_status"] == "no_plan"
+    assert [reply.generated_at for reply in replies[:5]] == [0.0, 0.0, 0.0, 0.0, 0.0]
+    assert replies[-1].generated_at == 0.10
+    assert replies[3].status == "no_plan"
     assert planner.contracts[0]["frequency_hz"] == 10
     with pytest.raises(ValueError, match=r"clock"):
         planner.step(dict(time=0.09))
@@ -281,7 +285,7 @@ def test_pipeline_rejects_future_generated_output(monkeypatch, tmp_path):
         def step(self, packet, upstream):
             generated_at = packet["time"] + 0.1
             valid_until = generated_at + 1.0
-            return dict(
+            return Decision(
                 output=Waypoint(
                     [[3, 0, 1]],
                     0.1,
@@ -291,7 +295,8 @@ def test_pipeline_rejects_future_generated_output(monkeypatch, tmp_path):
                 plan_id="future",
                 generated_at=generated_at,
                 valid_until=valid_until,
-                decision_status="valid",
+                status="valid",
+                diagnostics={},
             )
 
         def close(self):

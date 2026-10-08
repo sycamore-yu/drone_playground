@@ -40,6 +40,8 @@
 
 Hydra/YAML 是唯一配置组合系统。`load()` 直接组合环境。项目不增加重复 registry、通用 DroneState、EnvironmentState 或 Manager。外层状态继续使用 Brax `State`，其内部保留后端和任务的原生数据。
 
+环境统一持有 `env.freq` 和实际物理时钟；Task 不配置另一套频率。共享执行器管理动作到达、物理子步、检测结果累计和首次终止冻结，Task 定义事件规则。具体任务初始化、原生赛车判定和论文离散映射保持其已有语义。
+
 动力学随机化在 reset 采样物理参数；测量噪声只改输入；动作误差改执行命令；外力/力矩属于运行扰动。初态、场景和指令分布分别声明。固定分布不称为 curriculum。
 
 LOTF 只表示动力学来源。其 high-fidelity 与 simplified 实现不形成另一套 Task、Policy、Algorithm 或 Evaluation。物理数组顺序只在后端边界转换。

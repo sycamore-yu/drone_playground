@@ -14,7 +14,7 @@ import time
 import traceback
 from pathlib import Path
 
-import crazyflow  # noqa: F401
+import crazyflow
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -24,11 +24,6 @@ from brax.training.agents.apg import networks as apg_networks
 from brax.training.agents.apg import train as apg_train
 from brax.training.agents.ppo import train as ppo_train
 
-from drone_playground.artifacts.checkpoints import (
-    load_policy,
-    require_matching_physical_decoder,
-    save_policy,
-)
 from drone_playground.artifacts.reporting import save_report
 from drone_playground.benchmarks import (
     apply_quality,
@@ -36,10 +31,12 @@ from drone_playground.benchmarks import (
     checkpoint_eval_seeds,
     pilot_scene_rates,
 )
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 from drone_playground.evaluation.run import make_evaluator
 from drone_playground.evaluation.tracking.metrics import select_replays
 from drone_playground.learning.brax_configuration import native_training_config
+from drone_playground.learning.checkpointing import require_matching_physical_decoder, save_policy
+from drone_playground.learning.inference import load_policy
 from drone_playground.learning.wrappers import wrap_for_training
 from drone_playground.networks.factory import network_factory
 
@@ -138,7 +135,7 @@ def train(
     """Train the declared complete budget and record real snapshots and evaluations."""
     from drone_playground.artifacts.console import capture_console
     from drone_playground.artifacts.record import RunRecorder
-    from drone_playground.visualization.rscope_io import publish_snapshot
+    from drone_playground.visualization.rscope_publish import publish_snapshot
 
     config = dict(config)
     algorithm = config["algorithm"]
@@ -193,7 +190,10 @@ def train(
         )
         rec.record_environment(env)
         if config["task"] == "racing":
-            save_report(rec.path / "native-task-config.json", env.config.to_dict())
+            save_report(
+                rec.path / "native-task-config.json",
+                json.loads(env.config.to_json()),
+            )
         checkpoint_eval_count = int(config.get("checkpoint_eval_episodes", 32))
         if checkpoint_eval_count < 1:
             raise ValueError("CheckpointEval evaluation requires at least one episode")
@@ -493,8 +493,7 @@ def train(
                 sum(
                     float(np.sum((np.asarray(a) - np.asarray(b)) ** 2))
                     for a, b in zip(
-                        jax.tree.leaves(initial_params),
-                        jax.tree.leaves(params[1]),
+                        jax.tree.leaves(initial_params), jax.tree.leaves(params[1]), strict=True
                     )
                 )
             )
@@ -539,6 +538,7 @@ def train(
 
 
 def train_experiment(config, root, run_id):
+    """Select the requested learning algorithm and execute its training run."""
     return train(
         native_training_config(config),
         root,

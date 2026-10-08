@@ -7,15 +7,15 @@ import numpy as np
 import pytest
 
 from drone_playground.control.setpoints import AttitudeSetpoint, RateSetpoint, StateSetpoint
+from drone_playground.integrations.rpc.client import NativeClient
 from drone_playground.references import Trajectory, Waypoint
-from drone_playground.rpc.client import NativeClient
 
 
 def native_binary():
     path = Path(
         os.environ.get(
             "DRONE_NATIVE_TEST_BINARY",
-            "tmp/direct-composition-refactor/native-sdk-v2/interop_server",
+            "tmp/native-interop/interop_server",
         )
     )
     if not path.is_file():
@@ -53,7 +53,7 @@ def test_native_echo_and_reset_preserve_physical_type(value, tmp_path):
 
 def test_native_corridor_is_recorded_and_rendered_as_independent_evidence(tmp_path):
     from drone_playground.artifacts.decisions import NativeDecisionRecorder, load_native_decisions
-    from drone_playground.control.controllers.crazyflow import AttitudeControl
+    from drone_playground.control.controllers.attitude import AttitudeControl
 
     with NativeClient(
         "visualized", command=[native_binary(), "{address}"], directory=tmp_path / "native"
@@ -62,17 +62,12 @@ def test_native_corridor_is_recorded_and_rendered_as_independent_evidence(tmp_pa
         decision = client.step(time=0.2, state=physical_state())
     assert len(decision.corridors) == 1
     assert decision.corridors[0].generated_at == pytest.approx(0.2)
-    reply = dict(
-        output=decision.output,
-        corridors=decision.corridors,
-        generated_at=decision.generated_at,
-        valid_until=decision.valid_until,
-    )
+    reply = decision
     with NativeDecisionRecorder(tmp_path / "decisions", AttitudeControl().contract()) as recorder:
         recorder.record(0, 0.2, physical_state(), reply, None)
-    restored = list(load_native_decisions(tmp_path / "decisions"))[0]
+    restored = next(iter(load_native_decisions(tmp_path / "decisions")))
     np.testing.assert_array_equal(
-        restored["reply"]["corridors"][0].polytopes[0].halfspaces,
+        restored["reply"].corridors[0].polytopes[0].halfspaces,
         decision.corridors[0].polytopes[0].halfspaces,
     )
 

@@ -3,7 +3,8 @@
 import jax
 import jax.numpy as jnp
 
-from drone_playground.environments.scenes.geometry import clearance_and_collision, euclidean_norm
+from drone_playground.environments.scenes.geometry import clearance_and_collision
+from drone_playground.numerics import euclidean_norm
 
 
 class NavigationEvents:

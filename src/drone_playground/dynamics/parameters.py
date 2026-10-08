@@ -31,7 +31,9 @@ def parameter_ranges(randomization, overrides=None):
             raise ValueError(f"domain_randomization.dynamics.{name} requires [low, high]")
         low, high = map(float, bounds)
         if not all(map(math.isfinite, (low, high))) or low <= 0 or high < low:
-            raise ValueError(f"domain_randomization.dynamics.{name} requires finite 0 < low <= high")
+            raise ValueError(
+                f"domain_randomization.dynamics.{name} requires finite 0 < low <= high"
+            )
         ranges[name] = (low, high)
     if settings["enabled"] and not ranges:
         raise ValueError("Enabled domain_randomization requires physical parameter ranges")

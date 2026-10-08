@@ -201,7 +201,10 @@ def export_navigation_replays(
                 # Include the terminal transition; omit the batch rollout's
                 # padding so dynamic geometry cannot move after the episode.
                 stop = int(live[-1]) + 1
-            single = jax.tree.map(lambda value: np.asarray(value)[:stop, case : case + 1], trace)
+            single = jax.tree.map(
+                lambda value, stop=stop, case=case: np.asarray(value)[:stop, case : case + 1],
+                trace,
+            )
             times = np.asarray(single["time"])[:, 0]
             active = active_indices(env.bank, scenario_id)
             single["obstacle_pos"] = obstacle_track(env.bank, scenario_id, times)[:, active][
@@ -239,14 +242,14 @@ def export_navigation_replays(
 
 def evaluate_navigation(config: dict, root: Path, run_id: str):
     """Independent evaluation entry for a frozen navigation policy."""
+    import copy
     import time
 
     from drone_playground.artifacts.console import capture_console
     from drone_playground.artifacts.record import RunRecorder
     from drone_playground.artifacts.reporting import save_report
-    from drone_playground.environments.environment import build_environment
-    from drone_playground.evaluation.run import resolve_evaluation_config
-    from drone_playground.networks.policies import NeuralPolicy
+    from drone_playground.environments.factory import build_environment
+    from drone_playground.learning.inference import NeuralPolicy
 
     policy = NeuralPolicy.load(config["checkpoint"])
     maker, params, metadata = (
@@ -254,7 +257,9 @@ def evaluate_navigation(config: dict, root: Path, run_id: str):
         policy.parameters,
         policy.metadata,
     )
-    resolved = resolve_evaluation_config(config, metadata)
+    resolved = copy.deepcopy(config)
+    if resolved["method"]["output"] != metadata["config"]["method"]["output"]:
+        raise ValueError("Frozen policy output and selected control input differ")
     role = resolved["evaluation"]["role"]
     per_difficulty = int(resolved["evaluation"]["episodes"])
     rec = RunRecorder(root, run_id, resolved, task_id="p5-navigation-evaluation")

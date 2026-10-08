@@ -6,8 +6,8 @@ import numpy as np
 
 
 def test_public_eval_always_keeps_hard_collision_termination():
-    from drone_playground.composition import compose_experiment
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.configuration import compose_experiment
+    from drone_playground.environments.factory import build_environment
 
     config = compose_experiment(
         "navigation/bptt",
@@ -25,7 +25,7 @@ def test_public_eval_always_keeps_hard_collision_termination():
 
 def test_continuous_collision_training_retains_penetration_and_escape_gradient():
     from drone_playground.environments.scenes.geometry import KIND_BOX
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
     from tests.helpers.scenes import place
     from tests.helpers.scenes import synthetic_navigation_env as synthetic_env
 
@@ -33,7 +33,7 @@ def test_continuous_collision_training_retains_penetration_and_escape_gradient()
     env = synthetic_env(
         [obstacle],
         training_collision_mode="continuous_loss",
-        objective=MotionNavigationObjective(
+        objective=MotionNavigationReward(
             failure_penalty=0.0,
             progress_scale=0.05,
             velocity_scale=0.2,

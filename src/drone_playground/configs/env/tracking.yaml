@@ -14,7 +14,6 @@ env:
     - 0.07
   task:
     name: tracking
-    freq: 50
     duration: 10.0
     reference_count: 256
     numerical_guard: false
@@ -39,5 +38,6 @@ env:
     name: figure8
     amplitude: 1.0
   _target_: drone_playground.environments.base.DroneEnvironment
+  freq: 50
 evaluation:
-  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator
+  policy_evaluator: drone_playground.evaluation.tracking.policy.TrackingEvaluator

@@ -14,7 +14,6 @@ env:
     - 1.0
   task:
     name: hovering
-    freq: 50
     duration: 3.0
     reference_count: 256
     numerical_guard: true
@@ -43,5 +42,6 @@ env:
     - 0.0
     - 1.5
   _target_: drone_playground.environments.base.DroneEnvironment
+  freq: 50
 evaluation:
-  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator
+  policy_evaluator: drone_playground.evaluation.tracking.policy.TrackingEvaluator

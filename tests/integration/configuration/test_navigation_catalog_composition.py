@@ -2,7 +2,7 @@
 
 from hydra.utils import instantiate
 
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 
 
 def test_navigation_benchmark_entries_expand_the_accepted_scenes():
@@ -17,7 +17,7 @@ def test_navigation_benchmark_entries_expand_the_accepted_scenes():
         ),
     }
     for environment, (dynamic, scene_ids) in expected.items():
-        config = compose_experiment('control/ppo', environment)
+        config = compose_experiment("control/ppo", environment)
         assert config["env"]["scene"]["name"] == "navigation"
         assert config["env"]["scene"]["dynamic"] is dynamic
         assert config["env"]["scene"]["_target_"].endswith("catalog.CatalogNavigationScene")
@@ -26,15 +26,20 @@ def test_navigation_benchmark_entries_expand_the_accepted_scenes():
         assert bank.num_instances == 12
         assert list(bank.subtype_names) == scene_ids
         assert manifest["catalog"] == "navigation"
-        assert manifest["accepted_scene_ids"] == list(
-            config["env"]["scene"]["scene_ids"]
-        )
+        assert manifest["accepted_scene_ids"] == list(config["env"]["scene"]["scene_ids"])
 
 
 def test_navigation_experiments_share_catalog_task_identity():
     experiments = [
         (method, environment)
-        for method in ("control/ppo", "control/apg", "control/shac", "papers/dva", "papers/ego_planner", "papers/super")
+        for method in (
+            "control/ppo",
+            "control/apg",
+            "control/shac",
+            "papers/dva",
+            "papers/ego_planner",
+            "papers/super",
+        )
         for environment in ("navigation/static", "navigation/dynamic")
     ]
     checked = []
@@ -45,5 +50,7 @@ def test_navigation_experiments_share_catalog_task_identity():
         checked.append((method, environment))
         assert config["env"]["scene"]["name"] == "navigation"
         assert config["env"]["scene"]["_target_"].endswith("catalog.CatalogNavigationScene")
-        assert config["env"]["scene"]["dynamic"] is config["env"]["task"]["dynamic"]
+        assert config["env"]["scene"]["dynamic"] is environment.endswith("/dynamic")
+        assert "dynamic" not in config["env"]["task"]
+        assert config["env"]["task"]["_target_"].endswith("navigation.task.NavigationTask")
     assert checked

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from drone_playground.control.controllers.crazyflow import AttitudeControl
+from drone_playground.control.controllers.attitude import AttitudeControl
 
 
 class TrajectoryTracking(AttitudeControl):

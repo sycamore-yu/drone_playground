@@ -13,13 +13,13 @@ from drone_playground.environments.sensors.lidar import (
     MID360_SAMPLES_PER_SCAN,
     Mid360Lidar,
     angular_coverage,
-    body_rotation,
     cast_lidar,
     period_check,
     point_cloud_message,
     scan_windows,
 )
 from drone_playground.environments.sensors.rays import cast_rays
+from drone_playground.numerics import quat_to_matrix_xyzw
 from tests.helpers.scenes import mujoco_scene, synthetic_bank
 
 CYLINDER = {"kind": 1, "size": (1.2, 5.0, 0.0), "origin": (6.0, 0.6, 2.5)}
@@ -146,7 +146,7 @@ def test_mid360_rays_match_mujoco_lidar_and_mj_ray(position, quat):
         0,
     )
     directions = np.asarray(lidar.directions(0))
-    rotation = np.asarray(body_rotation(jnp.asarray(quat)))
+    rotation = np.asarray(quat_to_matrix_xyzw(jnp.asarray(quat)))
     world = directions @ rotation.T
     centres = np.asarray(obstacle_positions(bank, jnp.int32(0), jnp.float32(0.0)))
     analytic = np.asarray(
@@ -237,7 +237,7 @@ def test_world_points_actually_apply_the_world_transform():
     world = all_world[valid]
     # Rotating the body by 90 degrees about z must change the world points even
     # though the sensor-frame points are unchanged, and the relation must hold.
-    rotation = np.asarray(body_rotation(quat))
+    rotation = np.asarray(quat_to_matrix_xyzw(quat))
     # The declared relation must hold: world = body position + R * sensor point.
     offset = world - np.asarray(position)[None, :]
     expected_offset = sensor @ rotation.T
@@ -261,8 +261,6 @@ def test_world_points_actually_apply_the_world_transform():
         int(np.asarray(frames[0].valid).sum()),
         3,
     )
-
-
 
 
 def test_sensor_range_and_validity_conventions():

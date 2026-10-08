@@ -28,12 +28,12 @@
   "ego_planner": {
     "title": "EGO-Planner",
     "integration": "isolated-native-ros-worker",
-    "lock": "native/ros1/versions.env"
+    "lock": "docker/ros1/versions.env"
   },
   "super": {
     "title": "SUPER",
     "integration": "isolated-native-ros-worker",
-    "lock": "native/ros1/versions.env"
+    "lock": "docker/ros1/versions.env"
   },
   "attitude_mpc": {
     "title": "LSY AttitudeMPC",

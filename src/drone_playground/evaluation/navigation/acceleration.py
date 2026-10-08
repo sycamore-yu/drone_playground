@@ -10,15 +10,15 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-from scipy.spatial.transform import Rotation
 
 from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report, tree_digest
 from drone_playground.artifacts.training_state import load_training_state
-from drone_playground.environments.scenes.geometry import clearance_and_collision, euclidean_norm
-from drone_playground.environments.tasks.navigation.events import OUTCOME_NAMES
+from drone_playground.evaluation.navigation.metrics import summarize_trace
 from drone_playground.networks.factory import build_network
+from drone_playground.numerics import euclidean_norm
+from drone_playground.visualization.navigation_replay import export_case
 
 
 def _select(mask, new, old):
@@ -29,55 +29,24 @@ def _select(mask, new, old):
     )
 
 
-def advance_checked(task, bank, state, command, timestamp, outcome):
-    """Preserve the training step while sampling its dense path for collisions.
-
-    Each sample evaluates the same tick-start state at an intermediate elapsed
-    time. The last sample therefore equals the 0.1-second training transition;
-    collision sampling never silently changes the integration discretization.
-    """
-    substeps = task.physics_freq // task.freq
-    base_state = state
-    base_time = timestamp
-
-    def substep(carry, offset):
-        physical, clock, result, minimum = carry
-        active = result == 0
-        elapsed = (offset + 1) * (task.dt / substeps)
-        proposed = task.dynamics.step(
-            base_state, task.controller.apply(base_state, command), elapsed
-        )
-        next_time = base_time + elapsed
-        finite = jnp.all(jnp.isfinite(proposed.vector()), axis=-1)
-        centre = proposed.pos + jnp.einsum(
-            "...ij,j->...i", proposed.rotation, jnp.array([0.0, 0.0, 0.005])
-        )
-        clearance, collision = jax.vmap(lambda i, t, p: task.events.clearance(bank, i, p, t))(
-            jnp.arange(bank.num_instances), next_time, centre
-        )
-        _, _, _, result_next = task.events.events(bank, proposed.pos, bank.goal, collision, ~finite)
-        if getattr(task, "arrival_sampling", "policy") != "physics":
-            result_next = jnp.where(result_next == 1, 0, result_next)
-        physical = _select(active & finite, proposed, physical)
-        clock = jnp.where(active, next_time, clock)
-        result = jnp.where(active, result_next, result)
-        # Keep finite geometry evidence when the proposed state itself is invalid.
-        minimum = jnp.where(active & finite, jnp.minimum(minimum, clearance), minimum)
-        return (physical, clock, result, minimum), None
-
-    initial_minimum = jnp.full((bank.num_instances,), jnp.inf)
-    (state, timestamp, outcome, minimum), _ = jax.lax.scan(
-        substep,
-        (state, timestamp, outcome, initial_minimum),
-        jnp.arange(substeps),
+def sample_navigation_interval(task, bank, state, command, timestamp, outcome):
+    """Observe the paper's original interval map on the common physical clock."""
+    commands = jnp.broadcast_to(command, (task.substeps, *command.shape))
+    state, timestamp, outcome, _, minimum = task.transition.checked(
+        state,
+        commands,
+        task.transition_events(bank, arrival_sampling=getattr(task, "arrival_sampling", "policy")),
+        timestamp=timestamp,
+        outcome=outcome,
+        sample_from_start=True,
     )
     arrived = euclidean_norm(bank.goal - state.pos) <= task.goal_radius
     outcome = jnp.where((outcome == 0) & arrived, 1, outcome)
-    minimum = jnp.where(jnp.isfinite(minimum), minimum, 0.0)
     return state, timestamp, outcome, minimum
 
 
 def make_rollout(task, network, bank, initial_state=None):
+    """Build a compiled navigation rollout using the acceleration policy."""
     count = bank.num_instances
 
     @jax.jit
@@ -97,7 +66,7 @@ def make_rollout(task, network, bank, initial_state=None):
             body_action, next_memory = network.apply(params, points, valid, proprio, memory)
             command = task.command(body_action, physical)
             call_time = jnp.where(active, index * task.dt, timestamp)
-            nxt, new_time, new_result, clearance = advance_checked(
+            nxt, new_time, new_result, clearance = sample_navigation_interval(
                 task, bank, physical, command, call_time, result
             )
             new_result = jnp.where(
@@ -173,149 +142,6 @@ def make_rollout(task, network, bank, initial_state=None):
     return run
 
 
-def summarize_trace(trace, scene_ids, speed, duration, start):
-    episodes = []
-    for case, scene_id in enumerate(scene_ids):
-        length = int(np.asarray(trace["active"])[:, case].sum())
-        if length < 1:
-            raise ValueError("Every evaluation case must contain an actual transition")
-        result = int(np.asarray(trace["outcome"])[length - 1, case])
-        result = 5 if result == 0 else result
-        positions = np.vstack([np.asarray(start)[case], np.asarray(trace["pos"])[:length, case]])
-        speed_values = np.asarray(trace["metrics"]["speed"])[:length, case]
-        elapsed = float(np.asarray(trace["time"])[length - 1, case])
-        episodes.append(
-            dict(
-                scene_id=scene_id,
-                command_speed_m_s=float(speed),
-                outcome=OUTCOME_NAMES[result],
-                arrived=result == 1,
-                collision=result == 2,
-                out_of_bounds=result == 3,
-                numerical_failure=result == 4,
-                timeout=result == 5,
-                steps=length,
-                elapsed_s=elapsed,
-                arrival_time_s=elapsed if result == 1 else None,
-                path_length_m=float(np.linalg.norm(np.diff(positions, axis=0), axis=-1).sum()),
-                peak_speed_m_s=float(speed_values.max()),
-                mean_speed_m_s=float(speed_values.mean()),
-                min_clearance_m=float(
-                    np.asarray(trace["metrics"]["clearance"])[:length, case].min()
-                ),
-                final_goal_distance_m=float(
-                    np.asarray(trace["metrics"]["goal_distance"])[length - 1, case]
-                ),
-            )
-        )
-    counts = {
-        key: sum(int(row[key]) for row in episodes)
-        for key in (
-            "arrived",
-            "collision",
-            "out_of_bounds",
-            "numerical_failure",
-            "timeout",
-        )
-    }
-    return dict(
-        num_trials=len(episodes),
-        **counts,
-        success_rate=counts["arrived"] / len(episodes),
-        constrained_time_mean_s=float(
-            np.mean([row["elapsed_s"] if row["arrived"] else duration for row in episodes])
-        ),
-        episodes=episodes,
-    )
-
-
-def export_case(task, trace, case, directory):
-    from drone_playground.visualization.navigation_scene import (
-        active_indices,
-        create_replay_model,
-        obstacle_track,
-    )
-    from drone_playground.visualization.rscope_io import export_rollout
-
-    length = int(np.asarray(trace["active"])[:, case].sum())
-    single = {
-        key: np.asarray(trace[key])[:length, case : case + 1]
-        for key in ("pos", "time", "obs", "actions", "reward")
-    }
-    matrices = np.asarray(trace["rotation"])[:length, case]
-    single["quat"] = Rotation.from_matrix(matrices).as_quat()[:, None]
-    single["metrics"] = {
-        k: np.asarray(v)[:length, case : case + 1] for k, v in trace["metrics"].items()
-    }
-    # Include the real pre-action state. RScope needs two timestamps even when
-    # the first transition terminates; frame count and transition count differ.
-    initial_position = np.asarray(trace["observation_pos"])[0, case]
-    initial_rotation = np.asarray(trace["observation_rotation"])[0, case]
-    initial_centre = initial_position + initial_rotation @ np.array([0.0, 0.0, 0.005])
-    initial_clearance = float(
-        clearance_and_collision(task.bank, case, 0.0, initial_centre, task.body_radius)[0]
-    )
-    initial_metrics = {
-        "clearance": initial_clearance,
-        "goal_distance": float(np.linalg.norm(np.asarray(task.bank.goal[case]) - initial_position)),
-        "speed": float(np.linalg.norm(np.asarray(trace["observation_velocity"])[0, case])),
-    }
-    initial_fields = {
-        "pos": initial_position[None, None],
-        "quat": Rotation.from_matrix(initial_rotation).as_quat()[None, None],
-        "time": np.zeros_like(single["time"][:1]),
-        "obs": single["obs"][:1],
-        "actions": np.zeros_like(single["actions"][:1]),
-        "reward": np.zeros_like(single["reward"][:1]),
-    }
-    for name, initial in initial_fields.items():
-        single[name] = np.concatenate([initial, single[name]], axis=0)
-    single["metrics"] = {
-        name: np.concatenate([np.full_like(values[:1], initial_metrics[name]), values], axis=0)
-        for name, values in single["metrics"].items()
-    }
-    active = active_indices(task.bank, case)
-    single["obstacle_pos"] = obstacle_track(task.bank, case, single["time"][:, 0])[
-        :, active, None, :
-    ].swapaxes(1, 2)
-    model = create_replay_model(task, case)
-    directory = Path(directory)
-    path = export_rollout(model, directory, single)
-    import mujoco
-    from rscope import rollout
-
-    rollout.rollouts.clear()
-    rollout.num_evals = 0
-    rollout.append_unroll(path)
-    restored = rollout.rollouts[-1]
-    np.testing.assert_allclose(restored.mocap_pos[:, 0, 0], single["pos"][:, 0], atol=1e-6)
-    for axis in range(single["actions"].shape[-1]):
-        np.testing.assert_allclose(
-            restored.metrics[f"action/{axis}"],
-            single["actions"][..., axis],
-            atol=1e-6,
-        )
-    loaded_model = mujoco.MjModel.from_xml_path(str(directory / "scene.xml"))
-    if loaded_model.nmocap != model.mj_model.nmocap:
-        raise ValueError("Replay model lost an obstacle or drone motion body")
-    save_report(
-        directory / "readback-verification.json",
-        dict(
-            frames=length + 1,
-            transitions=length,
-            initial_frame_included=True,
-            action_channels=single["actions"].shape[-1],
-            positions_and_action_channels_match=True,
-            model_xml_recompiled=True,
-            motion_bodies=loaded_model.nmocap,
-            replay_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-        ),
-    )
-    rollout.rollouts.clear()
-    rollout.num_evals = 0
-    return path
-
-
 def training_provenance(run, checkpoint, selected_updates, parameter_sha256):
     """Distinguish a completed training budget from the age of its selected policy."""
     run = Path(run).resolve()
@@ -372,7 +198,10 @@ def write_summary(report, directory):
     lines = [
         "# 点云论文方法重建：navigation 测试",
         "",
-        f"冻结检查点：`{report['checkpoint']}`。所选权重训练至 {report['trained_updates']} 次更新。",
+        (
+            f"冻结检查点：`{report['checkpoint']}`。"
+            f"所选权重训练至 {report['trained_updates']} 次更新。"
+        ),
         f"参数摘要：`{report['parameter_sha256']}`。",
         "统计单位为场景、命令速度与具名重置种子的组合；训练内评测选模，冻结 checkpoint 后评测。",
         "",
@@ -386,29 +215,43 @@ def write_summary(report, directory):
     else:
         lines.append("完整训练运行预算以独立运行结果为准；本表记录当前冻结权重的迭代数。")
     lines += [
-        f"到达 {report['arrived']}/{report['num_trials']}，碰撞 {report['collision']}，"
-        f"越界 {report['out_of_bounds']}，超时 {report['timeout']}，数值失败 {report['numerical_failure']}。",
+        f"到达 {report['arrived']}/{report['num_trials']}，碰撞 {report['collision']}，"(
+            f"越界 {report['out_of_bounds']}，超时 {report['timeout']}，"
+            f"数值失败 {report['numerical_failure']}。"
+        ),
         "",
-        "| 场景 | 命令速度（米/秒） | 结果 | 结束时间（秒） | 路径长（米） | 终点距离（米） | 最小净空（米） |",
+        (
+            "| 场景 | 命令速度（米/秒） | 结果 | 结束时间（秒） | "
+            "路径长（米） | 终点距离（米） | 最小净空（米） |"
+        ),
         "|---|---:|---|---:|---:|---:|---:|",
     ]
     for row in rows:
         lines.append(
-            f"| {row['scene_id']} | {row['command_speed_m_s']:g} | {outcome_names[row['outcome']]} | "
+            f"| {row['scene_id']} | {row['command_speed_m_s']:g} | "
+            f"{outcome_names[row['outcome']]} | "
             f"{row['elapsed_s']:.3f} | {row['path_length_m']:.3f} | "
             f"{row['final_goal_distance_m']:.3f} | {row['min_clearance_m']:.3f} |"
         )
     lines += [
         "",
-        f"策略／状态转移频率 {report['policy_hz']:g} Hz，步内碰撞采样 {report['collision_sampling_hz']:g} Hz；无碰撞步末状态与训练映射一致。",
-        "机器报告、逐帧归档与逐场景 RScope 回放保留全部失败，图元和运动来自验收后的 navigation 目录。",
+        (
+            f"策略／状态转移频率 {report['policy_hz']:g} Hz，"
+            f"步内碰撞采样 {report['collision_sampling_hz']:g} Hz；"
+            "无碰撞步末状态与训练映射一致。"
+        ),
+        (
+            "机器报告、逐帧归档与逐场景 RScope 回放保留全部失败，"
+            "图元和运动来自验收后的 navigation 目录。"
+        ),
         "",
     ]
     (directory / "report.md").write_text("\n".join(lines))
 
 
 def evaluate_pointcloud(config, root: Path, run_id: str):
-    from drone_playground.environments.environment import build_environment
+    """Evaluate a frozen point-cloud navigation policy on benchmark scenes."""
+    from drone_playground.environments.factory import build_environment
 
     state, metadata = load_training_state(config["checkpoint"])
     trained = metadata["config"]
@@ -422,11 +265,13 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
             raise ValueError(f"Frozen-policy evaluation changed env.{slot}")
     if config["algorithm"]["gradient"] != trained["algorithm"]["gradient"]:
         raise ValueError("Frozen-policy evaluation changed its derivative identity")
-    if config["env"]["task"]["freq"] != trained["env"]["task"]["freq"]:
+    if config["env"]["freq"] != trained["env"]["freq"]:
         raise ValueError("The recurrent policy tick must match its training time semantics")
     if config["env"]["scene"]["name"] != "navigation":
         raise ValueError(
-            "Choose experiment=navigation/differentiable_pointcloud_acceleration_benchmark for the transfer benchmark"
+            "Choose "
+            "experiment=navigation/differentiable_pointcloud_acceleration_benchmark "
+            "for the transfer benchmark"
         )
     repeats = config["evaluation"]["episodes"]
     if not isinstance(repeats, int) or repeats < 1:
@@ -572,19 +417,25 @@ def evaluate_pointcloud(config, root: Path, run_id: str):
                     else (True if selected_is_final else None)
                 ),
                 training_run_evidence=provenance,
-                catalog_sha256=manifest["catalog_sha256"],
                 scene_ids=ids,
                 policy_hz=task.freq,
                 dynamics_transition_hz=task.freq,
                 collision_sampling_hz=task.physics_freq,
-                collision_interpolation="same tick-start paper step evaluated at intermediate times",
+                collision_interpolation=(
+                    "same tick-start paper step evaluated at intermediate times"
+                ),
                 duration_s=task.duration,
                 body_radius_m=task.body_radius,
                 goal_radius_m=task.goal_radius,
                 dynamics=task.dynamics.forward,
                 elapsed_s=time.monotonic() - started,
-                reward_semantics="distance progress for replay only; training uses trajectory losses",
-                evaluation_scope="fixed navigation geometry transfer; deterministic cells; protocol identity below",
+                reward_semantics=(
+                    "distance progress for replay only; training uses trajectory losses"
+                ),
+                evaluation_scope=(
+                    "fixed navigation geometry transfer; deterministic cells; protocol "
+                    "identity below"
+                ),
                 protocol=cfg["evaluation"].get("protocol"),
                 arrival_sampling=task.arrival_sampling,
                 training_action_delay_ms=trained.get("runtime", {}).get("action_delay_ms"),

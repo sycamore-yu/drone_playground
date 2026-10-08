@@ -5,22 +5,22 @@ import hashlib
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from drone_playground.artifacts.layout import (  # noqa: E402
-    experiment_scope,
-    find_experiment,
-    resolve_artifact,
-)
+import contextlib
+
+from drone_playground.artifacts.layout import experiment_scope, find_experiment
 
 
 def read(path):
+    """Load a JSON artifact without changing its contents."""
     return json.loads(Path(path).read_text())
 
 
 def write(path, value):
+    """Atomically write a JSON artifact at the requested path."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
@@ -28,13 +28,15 @@ def write(path, value):
 
 
 def digest(path):
+    """Calculate the SHA-256 checksum of a stored artifact."""
     with Path(path).open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def run_date(path):
+    """Derive a UTC calendar key from the run manifest start time."""
     value = read(path / "manifest.json")["started_at"]
-    return datetime.fromisoformat(value).astimezone(timezone.utc).strftime("%y%m%d")
+    return datetime.fromisoformat(value).astimezone(UTC).strftime("%y%m%d")
 
 
 def _relative(root, path):
@@ -59,7 +61,7 @@ def _run_config(run):
 
 
 def _checkpoint_reference(root, checkpoint, report):
-    checkpoint = resolve_artifact(checkpoint)
+    checkpoint = Path(checkpoint)
     if not checkpoint.is_absolute():
         checkpoint = Path(root) / checkpoint
     metadata_path = checkpoint.with_suffix(".json")
@@ -104,15 +106,10 @@ def build_selection(root, progress, goal, pointcloud_run=None):
             if run is None:
                 raise FileNotFoundError(record["run_id"])
             config = read(run / "resolved-config.json")
-            checkpoint_eval_only = (
-                cell["method"] == "pointcloud"
-                and config.get("mode") == "train"
-            )
+            checkpoint_eval_only = cell["method"] == "pointcloud" and config.get("mode") == "train"
             if checkpoint_eval_only:
                 result = read(run / "result.json")
-                report_source = (
-                    run / "eval" / f"update-{result['selected']['updates']:07d}.json"
-                )
+                report_source = run / "eval" / f"update-{result['selected']['updates']:07d}.json"
             else:
                 report_source = run / "eval/report.json"
             report = read(report_source)
@@ -133,9 +130,7 @@ def build_selection(root, progress, goal, pointcloud_run=None):
                     "report": _relative(root, report_source),
                     "parameter_sha256": report.get("parameter_sha256"),
                     "checkpoint": (
-                        _checkpoint_reference(root, checkpoint, report)
-                        if checkpoint
-                        else None
+                        _checkpoint_reference(root, checkpoint, report) if checkpoint else None
                     ),
                     "quality_passed": cell["passed"],
                     "status": cell["status"],
@@ -159,7 +154,7 @@ def build_selection(root, progress, goal, pointcloud_run=None):
 
     document = {
         "goal": goal,
-        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_utc": datetime.now(UTC).isoformat(),
         "summary": {
             key: progress[key]
             for key in (
@@ -177,9 +172,7 @@ def build_selection(root, progress, goal, pointcloud_run=None):
 
     lines = [f"# {goal}", "", "| Method | Task | Status | Runs |", "|---|---|---|---:|"]
     for row in index:
-        lines.append(
-            f"| {row['method']} | {row['task']} | {row['status']} | {len(row['runs'])} |"
-        )
+        lines.append(f"| {row['method']} | {row['task']} | {row['status']} | {len(row['runs'])} |")
     lines.extend(
         [
             "",
@@ -231,15 +224,14 @@ def migration_plan(root):
                     task, method = experiment_scope(config)
                     destination = experiments / "runs" / task / method / run.name
                 else:
-                    destination = (
-                        experiments / "scratch" / "legacy-runs" / date.name / run.name
-                    )
+                    destination = experiments / "scratch" / "legacy-runs" / date.name / run.name
                 moves.append((run, destination))
 
     known = {
         "mid360-paper-replay": experiments / "scratch/replays/mid360-paper-replay",
         "mid360-pointcloud-preview": experiments / "scratch/previews/mid360-pointcloud-preview",
-        "mid360-pointcloud-preview-test": experiments / "scratch/previews/mid360-pointcloud-preview-test",
+        "mid360-pointcloud-preview-test": experiments
+        / "scratch/previews/mid360-pointcloud-preview-test",
     }
     for name, destination in known.items():
         source = experiments / name
@@ -283,10 +275,8 @@ def migrate_layout(root):
             if destination.exists() or destination.is_symlink():
                 raise FileExistsError(destination)
             _move(item, destination)
-        try:
+        with contextlib.suppress(OSError):
             legacy_tmp.rmdir()
-        except OSError:
-            pass
 
     legacy_selected = experiments / "main_result"
     if legacy_selected.exists() or legacy_selected.is_symlink():
@@ -348,12 +338,8 @@ def import_legacy_selection(root, goal):
                     "parameter_sha256": record.get("parameter_sha256"),
                     "report": _relative(root, report) if report is not None else None,
                     "checkpoint": checkpoint,
-                    "legacy_package": (
-                        _relative(root, package) if package is not None else None
-                    ),
-                    "quality_passed": record.get(
-                        "quality_passed", cell.get("quality_passed")
-                    ),
+                    "legacy_package": (_relative(root, package) if package is not None else None),
+                    "quality_passed": record.get("quality_passed", cell.get("quality_passed")),
                     "status": record.get("status", cell.get("status")),
                 }
             )
@@ -373,7 +359,7 @@ def import_legacy_selection(root, goal):
         )
     document = {
         "goal": goal,
-        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_utc": datetime.now(UTC).isoformat(),
         "origin": "legacy-main-result-import",
         "legacy_index": _relative(root, legacy_index),
         "legacy_index_sha256": digest(legacy_index),
@@ -388,9 +374,7 @@ def import_legacy_selection(root, goal):
         "|---|---|---|---:|",
     ]
     for row in cells:
-        lines.append(
-            f"| {row['method']} | {row['task']} | {row['status']} | {len(row['runs'])} |"
-        )
+        lines.append(f"| {row['method']} | {row['task']} | {row['status']} | {len(row['runs'])} |")
     lines += [
         "",
         "Selection only: raw runs stay under results/runs; "
@@ -402,13 +386,15 @@ def import_legacy_selection(root, goal):
 
 
 def main():
+    """Organize stored experiment artifacts using explicit CLI options."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--goal", default="v1-18-cells")
     parser.add_argument("--pointcloud-run")
     parser.add_argument("--migrate-layout", action="store_true")
     parser.add_argument(
-        "--import-legacy", action="store_true",
+        "--import-legacy",
+        action="store_true",
         help="Refresh the preserved historical selection rather than current progress.",
     )
     parser.add_argument("--apply", action="store_true")
@@ -439,12 +425,7 @@ def main():
         return
 
     progress_path = root / "artifacts/verification/release-progress.json"
-    legacy_index = (
-        root
-        / "results/scratch/legacy/main_result"
-        / args.goal
-        / "index.json"
-    )
+    legacy_index = root / "results/scratch/legacy/main_result" / args.goal / "index.json"
     if progress_path.is_file() and not args.import_legacy:
         progress = read(progress_path)
         source = str(progress_path.relative_to(root))

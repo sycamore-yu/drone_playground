@@ -2,7 +2,7 @@
 
 import copy
 
-from drone_playground.environments.environment import build_controller
+from drone_playground.environments.factory import build_controller
 
 
 def experiment_conditions(config):
@@ -27,8 +27,8 @@ def experiment_conditions(config):
             action_interface=controller.contract(),
             controller=env["controller"],
             reference=env["reference"],
-            control_frequency_hz=task["freq"],
-            physics_frequency_hz=task.get("physics_freq"),
+            control_frequency_hz=env["freq"],
+            physics_frequency_hz=env.get("physics_freq"),
             latency={
                 name: config["runtime"].get(name)
                 for name in ("action_delay_steps", "action_delay_ms")

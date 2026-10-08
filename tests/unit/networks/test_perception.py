@@ -6,12 +6,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from drone_playground.networks.factory import network_factory
 from drone_playground.networks.perception import (
     PointFrameEncoder,
     SensorLayout,
     privileged_critic_fields,
 )
-from drone_playground.networks.factory import network_factory
 
 
 def test_actor_and_critic_information_boundary_is_explicit():

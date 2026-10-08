@@ -18,11 +18,7 @@ MANIFEST = "SOURCE_MANIFEST.json"
 
 def _path(name: str) -> PurePosixPath:
     path = PurePosixPath(name)
-    if (
-        path.is_absolute()
-        or not name
-        or any(p in ("", ".", "..") for p in name.split("/"))
-    ):
+    if path.is_absolute() or not name or any(p in ("", ".", "..") for p in name.split("/")):
         raise ValueError(f"invalid source manifest path: {name!r}")
     return path
 
@@ -37,22 +33,22 @@ def _identity(kind: str, mode: int, data: bytes) -> dict:
 
 def _write_archive(output: Path, files: dict, timestamp: int = 0) -> str:
     """Write normalized metadata; gzip headers do not depend on the output name."""
-    with output.open("xb") as raw:
-        with gzip.GzipFile(
-            filename="", mode="wb", fileobj=raw, mtime=timestamp
-        ) as compressed:
-            with tarfile.open(fileobj=compressed, mode="w") as archive:
-                for name, (identity, data) in sorted(files.items()):
-                    info = tarfile.TarInfo(name)
-                    info.mode = identity["mode"]
-                    info.mtime = timestamp
-                    if identity["kind"] == "symlink":
-                        info.type = tarfile.SYMTYPE
-                        info.linkname = os.fsdecode(data)
-                        archive.addfile(info)
-                    else:
-                        info.size = len(data)
-                        archive.addfile(info, io.BytesIO(data))
+    with (
+        output.open("xb") as raw,
+        gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=timestamp) as compressed,
+        tarfile.open(fileobj=compressed, mode="w") as archive,
+    ):
+        for name, (identity, data) in sorted(files.items()):
+            info = tarfile.TarInfo(name)
+            info.mode = identity["mode"]
+            info.mtime = timestamp
+            if identity["kind"] == "symlink":
+                info.type = tarfile.SYMTYPE
+                info.linkname = os.fsdecode(data)
+                archive.addfile(info)
+            else:
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
     return hashlib.sha256(output.read_bytes()).hexdigest()
 
 
@@ -77,9 +73,7 @@ def export_source(root: Path, output: Path, revision: str = "HEAD") -> dict:
             text=True,
         )
     )
-    source = subprocess.check_output(
-        ["git", "archive", "--format=tar", commit], cwd=root
-    )
+    source = subprocess.check_output(["git", "archive", "--format=tar", commit], cwd=root)
     files = {}
     with tarfile.open(fileobj=io.BytesIO(source)) as archive:
         for item in archive:
@@ -87,9 +81,7 @@ def export_source(root: Path, output: Path, revision: str = "HEAD") -> dict:
                 continue
             _path(item.name)
             if item.name == MANIFEST:
-                raise ValueError(
-                    f"{MANIFEST} is reserved for generated export metadata"
-                )
+                raise ValueError(f"{MANIFEST} is reserved for generated export metadata")
             if item.issym():
                 kind, data, mode = "symlink", os.fsencode(item.linkname), 0o777
             elif item.isfile():
@@ -101,9 +93,7 @@ def export_source(root: Path, output: Path, revision: str = "HEAD") -> dict:
     manifest = {
         "schema_version": 1,
         "source_revision": commit,
-        "files": {
-            name: identity for name, (identity, _) in sorted(files.items())
-        },
+        "files": {name: identity for name, (identity, _) in sorted(files.items())},
     }
     data = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     files[MANIFEST] = (_identity("file", 0o644, data), data)
@@ -178,9 +168,7 @@ def capture_source_archive(root: Path, destination: Path) -> dict | None:
         )
     candidates = {os.fsdecode(name) for name in names.split(b"\0") if name}
     # Runs themselves are never source, even if a user removes that ignore rule.
-    candidates = {
-        name for name in candidates if not name.startswith("results/")
-    }
+    candidates = {name for name in candidates if not name.startswith("results/")}
     candidates.update(baseline)
     candidates.discard(MANIFEST)
     files = {}
@@ -189,9 +177,7 @@ def capture_source_archive(root: Path, destination: Path) -> dict | None:
         if value is not None:
             files[name] = value
     modified = sorted(
-        name
-        for name in baseline
-        if name in files and files[name][0] != baseline[name]
+        name for name in baseline if name in files and files[name][0] != baseline[name]
     )
     removed = sorted(baseline.keys() - files.keys())
     added = sorted(files.keys() - baseline.keys())

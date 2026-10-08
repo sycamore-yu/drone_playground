@@ -1,14 +1,14 @@
 """Schedule configured host modules; algorithms live outside this module."""
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 from hydra.utils import instantiate
-from scipy.spatial.transform import Rotation
 
-from drone_playground.references import Trajectory, Waypoint
-from drone_playground.runtime.decision import output_kind, validate_reply_time
+from drone_playground.references import Trajectory
+from drone_playground.runtime.decision import Decision, output_kind, validate_decision
 
 
 class Pipeline:
@@ -34,7 +34,8 @@ class Pipeline:
                     bind(env, self.directory / str(index))
                 if module.input_kind != previous:
                     raise ValueError(
-                        f"Pipeline contract mismatch at stage {index}: {previous} -> {module.input_kind}"
+                        f"Pipeline contract mismatch at stage {index}: "
+                        f"{previous} -> {module.input_kind}"
                     )
                 frequency = float(spec.get("frequency_hz", self.frequency))
                 if not np.isfinite(frequency) or not 0 < frequency <= self.frequency:
@@ -108,71 +109,40 @@ class Pipeline:
                     self.next_ticks[index] = tick + self.periods[index]
                 else:
                     reply = self.cached[index]
-                    cached_output = reply.get("output")
-                    deadline = reply.get("valid_until")
-                    if deadline is None and isinstance(cached_output, Waypoint):
-                        # The module declares its own output envelope; read the
-                        # deadline from it rather than the stage reply.
-                        deadline = cached_output.valid_until
-                    deadline = packet["time"] if deadline is None else deadline
-                    if cached_output is not None and deadline < packet["time"]:
-                        reply = {
-                            **reply,
-                            "output": None,
-                            "decision_status": "no_plan",
-                            "expired_stage": index,
-                            # The envelope of the output just invalidated, so a
-                            # caller still sees when the last plan was made.
-                            "generated_at": getattr(
-                                cached_output,
-                                "generated_at",
-                                reply.get("generated_at"),
-                            ),
-                            "valid_until": deadline,
-                        }
-                upstream = reply.get("output")
+                    if reply.output is not None and reply.valid_until < packet["time"]:
+                        reply = replace(
+                            reply,
+                            output=None,
+                            status="no_plan",
+                            diagnostics={**reply.diagnostics, "expired_stage": index},
+                        )
+                if not isinstance(reply, Decision):
+                    raise TypeError("A pipeline module must return Decision")
+                upstream = reply.output
+                stages.append(reply)
                 if upstream is None:
-                    stages.append(dict(reply, stage=index))
                     break
                 if output_kind(upstream) != module.output_kind:
                     raise ValueError("Module violated its declared physical output")
-                # A module that returns its own envelope expresses generation
-                # time through the output itself and declares no producing tick
-                # of its own; its stage reply then mirrors that output. The
-                # output's envelope is the authority, so it is validated here
-                # rather than trusting whatever the module dict claimed.
-                if isinstance(upstream, Waypoint):
-                    reply = {
-                        **reply,
-                        "generated_at": upstream.generated_at,
-                        "valid_until": upstream.valid_until,
-                    }
-                validate_reply_time(reply, upstream, packet["time"])
-                stages.append(dict(reply, stage=index))
-                identity.append(f"{index}:{reply['plan_id']}")
+                validate_decision(reply, packet["time"])
+                identity.append(f"{index}:{reply.plan_id}")
             plan_id = "/".join(identity)
-            curve, reference = None, None
             if upstream is not None:
                 self.plans.add(plan_id)
                 self.commands += 1
                 if isinstance(upstream, Trajectory):
-                    curve = upstream
-                    reference = curve.sample(packet["time"])
-                    if not curve.yaw_defined:
-                        reference["yaw"] = Rotation.from_quat(packet["quaternion"]).as_euler("xyz")[
-                            2
-                        ]
                     self.trajectories.add(plan_id)
-            return dict(
+            return replace(
                 reply,
                 output=upstream,
-                reference=reference,
-                trajectory=curve,
-                stages=stages,
                 plan_id=plan_id,
-                commands=self.commands,
-                plans=len(self.plans),
-                trajectories=len(self.trajectories),
+                stages=tuple(stages),
+                diagnostics={
+                    **reply.diagnostics,
+                    "commands": self.commands,
+                    "plans": len(self.plans),
+                    "trajectories": len(self.trajectories),
+                },
             )
         finally:
             self.latencies.append(time.monotonic() - started)

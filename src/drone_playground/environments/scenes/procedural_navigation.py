@@ -29,7 +29,6 @@ from drone_playground.environments.scenes.geometry import (
     MOTION_PARAMS,
     MOTION_STATIC,
     MOTION_TREFOIL,
-    Obstacle,
     SANDO_CUBE_M,
     SANDO_CYLINDER_HEIGHT_M,
     SANDO_EXTRA_CLEARANCE_M,
@@ -39,6 +38,7 @@ from drone_playground.environments.scenes.geometry import (
     SANDO_TREFOIL_SLOWER_RAW,
     SANDO_TREFOIL_SPEED_BOUND_M_PER_S,
     STATIC_FAMILIES,
+    Obstacle,
     SceneBank,
     _pack_instance,
     _stack_instances,
@@ -110,7 +110,7 @@ class Element:
     """Body half extents in world axes."""
 
     excursion: tuple[float, float, float]
-    """Half-extent of the reachable centre displacement over all phases."""
+    """Half-extent of the reachable center displacement over all phases."""
 
     area_m2: float
     motion: int = MOTION_STATIC
@@ -119,19 +119,11 @@ class Element:
     @property
     def reach(self) -> tuple[float, float, float]:
         """Half extents of the swept body, used for bounds and spacing."""
-        return tuple(
-            self.half[axis] + self.excursion[axis] for axis in range(3)
-        )
+        return tuple(self.half[axis] + self.excursion[axis] for axis in range(3))
 
     def obstacle(self, centre: tuple[float, float, float]) -> Obstacle:
-        size = (
-            (self.half[0], self.half[2] * 2.0, 0.0)
-            if self.kind == KIND_CYLINDER
-            else self.half
-        )
-        return Obstacle(
-            self.shape, self.kind, centre, size, self.motion, self.params
-        )
+        size = (self.half[0], self.half[2] * 2.0, 0.0) if self.kind == KIND_CYLINDER else self.half
+        return Obstacle(self.shape, self.kind, centre, size, self.motion, self.params)
 
 
 @dataclass(frozen=True)
@@ -166,6 +158,7 @@ class ProceduralNavigationScene:
     source_commit: str = "3a4450dcc5a8ed5ca825c9da7966e2642be091de"
 
     def __post_init__(self) -> None:
+        """Validate and prepare the ProceduralNavigationScene instance after initialization."""
         unknown = [family for family in self.families if family not in FAMILIES]
         if unknown:
             raise ValueError(f"Unknown scene families: {unknown}")
@@ -173,21 +166,13 @@ class ProceduralNavigationScene:
             raise ValueError("At least one scene family is required")
         moving = {family in DYNAMIC_FAMILIES for family in self.families}
         if self.dynamic and moving != {True}:
-            raise ValueError(
-                "A dynamic navigation task requires only moving scene families"
-            )
+            raise ValueError("A dynamic navigation task requires only moving scene families")
         if not self.dynamic and moving != {False}:
-            raise ValueError(
-                "A static navigation task requires only static scene families"
-            )
-        if len(self.density) != 3 or not all(
-            0.0 < value < 0.9 for value in self.density
-        ):
+            raise ValueError("A static navigation task requires only static scene families")
+        if len(self.density) != 3 or not all(0.0 < value < 0.9 for value in self.density):
             raise ValueError("density must declare one fraction per difficulty")
         if self.vertical_scale_m[1] > self.height_m / 2.0 - SANDO_CUBE_M / 2.0:
-            raise ValueError(
-                "vertical trefoil amplitude does not fit inside the corridor"
-            )
+            raise ValueError("vertical trefoil amplitude does not fit inside the corridor")
 
     @property
     def corridor(self) -> Corridor:
@@ -207,9 +192,7 @@ class ProceduralNavigationScene:
 
     # -- generation -------------------------------------------------------------------
 
-    def build(
-        self, seed: int, per_difficulty: int
-    ) -> tuple[SceneBank, dict[str, Any]]:
+    def build(self, seed: int, per_difficulty: int) -> tuple[SceneBank, dict[str, Any]]:
         """Generate ``per_difficulty`` instances for each difficulty level.
 
         Instances are laid out in difficulty blocks, so an evaluation cell
@@ -226,19 +209,13 @@ class ProceduralNavigationScene:
             for offset in range(per_difficulty):
                 index = difficulty_index * per_difficulty + offset
                 family = self.families[offset % len(self.families)]
-                instance, record = self._generate_one(
-                    seed, index, family, difficulty
-                )
+                instance, record = self._generate_one(seed, index, family, difficulty)
                 instances.append(instance)
                 rows.append(record)
         corridor = self.corridor
         bank = _stack_instances(instances).replace(
-            start=jnp.asarray(
-                np.tile(np.asarray(self.start, np.float32), (count, 1))
-            ),
-            goal=jnp.asarray(
-                np.tile(np.asarray(self.goal, np.float32), (count, 1))
-            ),
+            start=jnp.asarray(np.tile(np.asarray(self.start, np.float32), (count, 1))),
+            goal=jnp.asarray(np.tile(np.asarray(self.goal, np.float32), (count, 1))),
             difficulty=jnp.asarray(
                 [DIFFICULTIES.index(row["difficulty"]) for row in rows],
                 np.int32,
@@ -248,12 +225,8 @@ class ProceduralNavigationScene:
                 np.int32,
             ),
             subtype_names=tuple(self.families),
-            world_low=jnp.asarray(
-                [corridor.x[0], corridor.y[0], corridor.z[0]], jnp.float32
-            ),
-            world_high=jnp.asarray(
-                [corridor.x[1], corridor.y[1], corridor.z[1]], jnp.float32
-            ),
+            world_low=jnp.asarray([corridor.x[0], corridor.y[0], corridor.z[0]], jnp.float32),
+            world_high=jnp.asarray([corridor.x[1], corridor.y[1], corridor.z[1]], jnp.float32),
         )
         manifest = {
             "source": "SANDO generate_random_forest.py + paper_dynamic_scene.py",
@@ -261,9 +234,7 @@ class ProceduralNavigationScene:
             "corridor": asdict(self.corridor),
             "families": list(self.families),
             "dynamic": self.dynamic,
-            "density_by_difficulty": dict(
-                zip(DIFFICULTIES, self.density, strict=True)
-            ),
+            "density_by_difficulty": dict(zip(DIFFICULTIES, self.density, strict=True)),
             "min_clearance_m": self.min_clearance_m,
             "start": list(self.start),
             "goal": list(self.goal),
@@ -286,9 +257,7 @@ class ProceduralNavigationScene:
         rejections: list[dict[str, Any]] = []
         for attempt in range(self.max_generation_attempts):
             instance_seed = seed * 1000003 + index * 7919 + attempt
-            obstacles, sampling = self._sample_obstacles(
-                instance_seed, family, difficulty
-            )
+            obstacles, sampling = self._sample_obstacles(instance_seed, family, difficulty)
             verdict = self._accept(obstacles)
             if verdict["accepted"]:
                 return _pack_instance(obstacles, self.capacity), {
@@ -303,23 +272,15 @@ class ProceduralNavigationScene:
                     "obstacle_table": [
                         {
                             "shape": obstacle.shape,
-                            "origin": [
-                                round(value, 6) for value in obstacle.origin
-                            ],
-                            "size": [
-                                round(value, 6) for value in obstacle.size
-                            ],
+                            "origin": [round(value, 6) for value in obstacle.origin],
+                            "size": [round(value, 6) for value in obstacle.size],
                             "motion": MOTION_NAMES[obstacle.motion],
-                            "params": [
-                                round(value, 6) for value in obstacle.params
-                            ],
+                            "params": [round(value, 6) for value in obstacle.params],
                         }
                         for obstacle in obstacles
                     ],
                 }
-            rejections.append(
-                {"instance_seed": instance_seed, "attempt": attempt, **verdict}
-            )
+            rejections.append({"instance_seed": instance_seed, "attempt": attempt, **verdict})
         raise RuntimeError(
             f"scene generation failed after {self.max_generation_attempts} attempts "
             f"for instance {index} ({family}/{difficulty}); "
@@ -340,9 +301,7 @@ class ProceduralNavigationScene:
         aabbs: list[tuple] = []
         failures = 0
         shrink = 1.0
-        shrink_threshold = max(
-            1, int(self.max_place_tries * SANDO_SHRINK_AFTER_RATIO)
-        )
+        shrink_threshold = max(1, int(self.max_place_tries * SANDO_SHRINK_AFTER_RATIO))
         shrink_events = 0
         capacity_limited = False
         while any(value > 1e-9 for value in budget.values()):
@@ -365,9 +324,7 @@ class ProceduralNavigationScene:
             else:
                 failures += 1
                 if failures > shrink_threshold:
-                    shrink = max(
-                        self._shrink_floor(shape), shrink * SANDO_SHRINK_RATE
-                    )
+                    shrink = max(self._shrink_floor(shape), shrink * SANDO_SHRINK_RATE)
                     shrink_events += 1
         occupied = sum(placed_area.values())
         return obstacles, {
@@ -379,9 +336,7 @@ class ProceduralNavigationScene:
                 1 for obstacle in obstacles if obstacle.motion != MOTION_STATIC
             ),
             "obstacles_by_shape": {
-                shape: sum(
-                    1 for obstacle in obstacles if obstacle.shape == shape
-                )
+                shape: sum(1 for obstacle in obstacles if obstacle.shape == shape)
                 for shape in placed_area
             },
             "placement_failures": failures,
@@ -392,9 +347,7 @@ class ProceduralNavigationScene:
     @staticmethod
     def _pick_shape(rng: random.Random, budget: dict[str, float]) -> str:
         shapes = [shape for shape, value in budget.items() if value > 1e-9]
-        return rng.choices(
-            shapes, weights=[budget[shape] for shape in shapes], k=1
-        )[0]
+        return rng.choices(shapes, weights=[budget[shape] for shape in shapes], k=1)[0]
 
     @staticmethod
     def _shrink_floor(shape: str) -> float:
@@ -403,9 +356,7 @@ class ProceduralNavigationScene:
             return COLUMN_RADIUS_M[0] / COLUMN_RADIUS_M[1]
         return SANDO_SHRINK_RATE
 
-    def _sample_element(
-        self, rng: random.Random, shape: str, shrink: float
-    ) -> Element:
+    def _sample_element(self, rng: random.Random, shape: str, shrink: float) -> Element:
         """Sample geometry and motion; ``shrink`` is SANDO's size-reduction fallback."""
         if shape in ("column", "pillar"):
             radius = (
@@ -413,11 +364,7 @@ class ProceduralNavigationScene:
                 if shape == "column"
                 else max(PILLAR_FULL_M[0], PILLAR_FULL_M[1]) / 2.0 * shrink
             )
-            height = (
-                self.cylinder_height_m
-                if shape == "column"
-                else PILLAR_FULL_M[2]
-            )
+            height = self.cylinder_height_m if shape == "column" else PILLAR_FULL_M[2]
             area = (
                 math.pi * radius * radius
                 if shape == "column"
@@ -432,9 +379,7 @@ class ProceduralNavigationScene:
             )
         if shape == "cube":
             half = SANDO_CUBE_M / 2.0 * shrink
-            return Element(
-                shape, KIND_BOX, (half,) * 3, (0.0,) * 3, (2 * half) ** 2
-            )
+            return Element(shape, KIND_BOX, (half,) * 3, (0.0,) * 3, (2 * half) ** 2)
         if shape == "crossbar":
             half = tuple(value / 2.0 * shrink for value in CROSSBAR_FULL_M)
             area = CROSSBAR_FULL_M[0] * shrink * CROSSBAR_FULL_M[1] * shrink
@@ -444,9 +389,7 @@ class ProceduralNavigationScene:
             sx, sy = (rng.uniform(*SANDO_TREFOIL_SCALES_M) for _ in range(2))
             sz = rng.uniform(*self.vertical_scale_m)
             offset = rng.uniform(*SANDO_TREFOIL_OFFSET_S)
-            slower = (
-                rng.uniform(*SANDO_TREFOIL_SLOWER_RAW) * SANDO_GLOBAL_TIME_SCALE
-            )
+            slower = rng.uniform(*SANDO_TREFOIL_SLOWER_RAW) * SANDO_GLOBAL_TIME_SCALE
             excursion = (sx / 2.0, sy * 3.0 / 5.0, sz / 2.0)
             return Element(
                 shape,
@@ -476,10 +419,8 @@ class ProceduralNavigationScene:
             )
         raise ValueError(f"Unknown element shape: {shape}")
 
-    def _sample_centre(
-        self, rng: random.Random, element: Element
-    ) -> tuple[float, float, float]:
-        """Uniform centre sample inside the bounds shrunk by the swept reach."""
+    def _sample_centre(self, rng: random.Random, element: Element) -> tuple[float, float, float]:
+        """Uniform center sample inside the bounds shrunk by the swept reach."""
         corridor = self.corridor
         margin = corridor.wall_margin_m
         reach = list(element.reach)
@@ -513,7 +454,7 @@ class ProceduralNavigationScene:
         """Reject the start/goal safety box and too-tight pairwise swept spacing.
 
         SANDO rejects only the start point (robot radius 0.1 m) and tests the XY
-        centre distance of the planned obstacle. This project additionally clears
+        center distance of the planned obstacle. This project additionally clears
         a safety box around the goal and compares swept bounding boxes, so a
         moving element can never overlap static geometry. Both strengthenings are
         recorded in the manifest.
@@ -540,10 +481,7 @@ class ProceduralNavigationScene:
                 )
                 for axis in range(3)
             ]
-            if (
-                math.hypot(gaps[0], gaps[1]) < self.min_clearance_m
-                and gaps[2] <= 0.0
-            ):
+            if math.hypot(gaps[0], gaps[1]) < self.min_clearance_m and gaps[2] <= 0.0:
                 return False
         return True
 
@@ -555,8 +493,7 @@ class ProceduralNavigationScene:
         for obstacle in obstacles:
             low, high = obstacle.swept_aabb()
             if any(
-                low[axis] < bounds[axis][0] - 1e-9
-                or high[axis] > bounds[axis][1] + 1e-9
+                low[axis] < bounds[axis][0] - 1e-9 or high[axis] > bounds[axis][1] + 1e-9
                 for axis in range(3)
             ):
                 return {
@@ -575,20 +512,18 @@ class ProceduralNavigationScene:
             return {
                 "accepted": False,
                 "rule": "start-goal-not-connected-under-conservative-occupancy",
-                "reachable_cells": int(len(cells)),
+                "reachable_cells": len(cells),
             }
         return {
             "accepted": True,
             "rule": "accepted",
-            "reachable_cells": int(len(cells)),
+            "reachable_cells": len(cells),
             "straight_line_blocked": self._straight_line_blocked(obstacles),
             "min_path_clearance_m": self._min_path_clearance(obstacles),
             "max_speed_m_per_s": self._max_speed(obstacles),
         }
 
-    def _occupancy_search(
-        self, obstacles: list[Obstacle]
-    ) -> tuple[set, bool] | None:
+    def _occupancy_search(self, obstacles: list[Obstacle]) -> tuple[set, bool] | None:
         """Breadth-first connectivity check on a conservatively inflated grid.
 
         Cells are tested against obstacle footprints at ``t = 0``. For dynamic
@@ -598,8 +533,8 @@ class ProceduralNavigationScene:
         """
         corridor = self.corridor
         cell = self.reachability_cell_m
-        nx = int(round(corridor.length_m / cell))
-        ny = int(round(corridor.width_m / cell))
+        nx = round(corridor.length_m / cell)
+        ny = round(corridor.width_m / cell)
         inflation = BODY_RADIUS_M + 0.5 * cell * math.sqrt(2.0)
         xs = corridor.x[0] + (np.arange(nx) + 0.5) * cell
         ys = corridor.y[0] + (np.arange(ny) + 0.5) * cell
@@ -617,9 +552,9 @@ class ProceduralNavigationScene:
             half = obstacle.half_extents()
             dx = np.abs(grid_x - obstacle.origin[0]) - half[0] - inflation
             dy = np.abs(grid_y - obstacle.origin[1]) - half[1] - inflation
-            horizontal = np.hypot(
-                np.maximum(dx, 0.0), np.maximum(dy, 0.0)
-            ) + np.minimum(np.maximum(dx, dy), 0.0)
+            horizontal = np.hypot(np.maximum(dx, 0.0), np.maximum(dy, 0.0)) + np.minimum(
+                np.maximum(dx, dy), 0.0
+            )
             blocked |= horizontal < 0.0
         start_cell = self._cell_of(corridor.start, cell)
         goal_cell = self._cell_of(corridor.goal, cell)
@@ -639,25 +574,18 @@ class ProceduralNavigationScene:
                 frontier.append(neighbour)
         return seen, goal_cell in seen
 
-    def _cell_of(
-        self, point: tuple[float, float, float], cell: float
-    ) -> tuple[int, int]:
+    def _cell_of(self, point: tuple[float, float, float], cell: float) -> tuple[int, int]:
         corridor = self.corridor
         return (
             int((point[0] - corridor.x[0]) / cell),
             int((point[1] - corridor.y[0]) / cell),
         )
 
-    def _segments(
-        self, obstacles: list[Obstacle]
-    ) -> list[tuple[float, float, float]]:
+    def _segments(self, obstacles: list[Obstacle]) -> list[tuple[float, float, float]]:
         corridor = self.corridor
         start, goal = corridor.start, corridor.goal
         return [
-            tuple(
-                start[axis] + (step / 300.0) * (goal[axis] - start[axis])
-                for axis in range(3)
-            )
+            tuple(start[axis] + (step / 300.0) * (goal[axis] - start[axis]) for axis in range(3))
             for step in range(301)
         ]
 
@@ -670,20 +598,16 @@ class ProceduralNavigationScene:
             for point in points:
                 if obstacle.kind == KIND_CYLINDER:
                     if (
-                        math.hypot(point[0] - centre[0], point[1] - centre[1])
-                        < half[0]
+                        math.hypot(point[0] - centre[0], point[1] - centre[1]) < half[0]
                         and abs(point[2] - centre[2]) < half[2]
                     ):
                         return True
-                elif all(
-                    abs(point[axis] - centre[axis]) < half[axis]
-                    for axis in range(3)
-                ):
+                elif all(abs(point[axis] - centre[axis]) < half[axis] for axis in range(3)):
                     return True
         return False
 
     def _min_path_clearance(self, obstacles: list[Obstacle]) -> float:
-        """Body-centre clearance to the nearest obstacle along the direct segment."""
+        """Body-center clearance to the nearest obstacle along the direct segment."""
         points = self._segments(obstacles)
         best = math.inf
         for point in points:
@@ -691,22 +615,16 @@ class ProceduralNavigationScene:
                 centre = obstacle.position(0.0)
                 half = obstacle.half_extents()
                 if obstacle.kind == KIND_CYLINDER:
-                    radial = (
-                        math.hypot(point[0] - centre[0], point[1] - centre[1])
-                        - half[0]
-                    )
+                    radial = math.hypot(point[0] - centre[0], point[1] - centre[1]) - half[0]
                     vertical = abs(point[2] - centre[2]) - half[2]
-                    distance = math.hypot(
-                        max(radial, 0.0), max(vertical, 0.0)
-                    ) + min(max(radial, vertical), 0.0)
+                    distance = math.hypot(max(radial, 0.0), max(vertical, 0.0)) + min(
+                        max(radial, vertical), 0.0
+                    )
                 else:
-                    q = [
-                        abs(point[axis] - centre[axis]) - half[axis]
-                        for axis in range(3)
-                    ]
-                    distance = math.sqrt(
-                        sum(max(value, 0.0) ** 2 for value in q)
-                    ) + min(max(q), 0.0)
+                    q = [abs(point[axis] - centre[axis]) - half[axis] for axis in range(3)]
+                    distance = math.sqrt(sum(max(value, 0.0) ** 2 for value in q)) + min(
+                        max(q), 0.0
+                    )
                 best = min(best, distance)
         return round(best - BODY_RADIUS_M, 4)
 
@@ -722,11 +640,7 @@ class ProceduralNavigationScene:
         return float(max(speeds)) if speeds else 0.0
 
 
-
-
-def make_bank(
-    scene: Any, seed: int, per_difficulty: int
-) -> tuple[SceneBank, dict[str, Any]]:
+def make_bank(scene: Any, seed: int, per_difficulty: int) -> tuple[SceneBank, dict[str, Any]]:
     """Build a scene bank through the selected scene implementation's contract."""
     import inspect
 

@@ -19,11 +19,8 @@ env:
     - D03
     - D06
     catalog_path: null
-    verification_path: null
   task:
     name: navigation
-    freq: 10
-    physics_freq: 500
     duration: 300.0
     goal_radius: 0.5
     reference_count: 32
@@ -58,6 +55,8 @@ env:
   name: navigation
   _target_: drone_playground.environments.base.DroneEnvironment
   reference: null
+  freq: 10
+  physics_freq: 500
 runtime:
   action_delay_ms:
   - 25.0

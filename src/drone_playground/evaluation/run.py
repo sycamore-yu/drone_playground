@@ -9,13 +9,14 @@ from pathlib import Path
 from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 from drone_playground.evaluation.tracking.metrics import select_replays
-from drone_playground.networks.policies import NeuralPolicy
+from drone_playground.learning.inference import NeuralPolicy
 from drone_playground.visualization.rscope_io import export_rollout
 
 
 def make_evaluator(env, make_policy, seeds):
+    """Build an evaluator with fixed seeds and environment-specific task logic."""
     from hydra.utils import get_class
 
     target = env.experiment_config["evaluation"]["policy_evaluator"]
@@ -54,27 +55,8 @@ def make_evaluator(env, make_policy, seeds):
     return get_class(target)(env, make_policy, seeds, **arguments)
 
 
-def resolve_evaluation_config(config, metadata):
-    selection = config["evaluation"].get("environment", "checkpoint")
-    if selection == "checkpoint":
-        resolved = copy.deepcopy(metadata["config"])
-    elif selection == "config":
-        resolved = copy.deepcopy(config)
-        if resolved["method"]["output"] != metadata["config"]["method"]["output"]:
-            raise ValueError("Frozen policy output and requested execution command contract differ")
-        # Network and training algorithm identify the loaded policy, while
-        # task/controller/model/scene/observations identify the selected evaluation.
-        for group in ("network", "algorithm", "method"):
-            resolved[group] = copy.deepcopy(metadata["config"][group])
-    else:
-        raise ValueError("evaluation.environment must be checkpoint or config")
-    resolved["mode"] = config["mode"]
-    resolved["evaluation"] = copy.deepcopy(config["evaluation"])
-    resolved["runtime"]["device"] = config["runtime"]["device"]
-    return resolved
-
-
 def evaluate_experiment(config, root, run_id):
+    """Dispatch frozen-parameter evaluation and save its artifact reports."""
     if not config.get("checkpoint"):
         raise ValueError("Frozen neural execution requires checkpoint=<path>")
     policy = NeuralPolicy.load(config["checkpoint"])
@@ -83,7 +65,9 @@ def evaluate_experiment(config, root, run_id):
         policy.parameters,
         policy.metadata,
     )
-    resolved = resolve_evaluation_config(config, metadata)
+    resolved = copy.deepcopy(config)
+    if resolved["method"]["output"] != metadata["config"]["method"]["output"]:
+        raise ValueError("Frozen policy output and selected control input differ")
     rec = RunRecorder(root, run_id, resolved, task_id="composable-flight/05-task-evaluation")
     env = None
     with capture_console(rec.path / "console.log"):

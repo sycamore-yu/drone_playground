@@ -26,5 +26,6 @@ class CheckpointTests(unittest.TestCase):
         np.testing.assert_allclose(dist.scale, 0.367879, atol=1e-6)
         np.testing.assert_allclose(dist.loc, 0.0, atol=1e-6)
 
+
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,6 @@ env:
     - 0.07
   task:
     name: tracking
-    freq: 10
     duration: 10.0
     reference_count: 256
     numerical_guard: false
@@ -23,7 +22,6 @@ env:
     command_distribution:
       kind: reference
       distribution: reference_bank
-    physics_freq: 500
     body_radius: 0.07
     goal_radius: 0.5
     reference_gain: 2.0
@@ -51,6 +49,8 @@ env:
     name: figure8
     amplitude: 1.0
   _target_: drone_playground.environments.base.DroneEnvironment
+  freq: 10
+  physics_freq: 500
 runtime:
   action_delay_ms:
   - 25.0
@@ -116,7 +116,7 @@ evaluation:
   - D06
   duration: 40.0
   entrypoint: drone_playground.evaluation.tracking.acceleration.evaluate_pointcloud_control
-  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator
+  policy_evaluator: drone_playground.evaluation.tracking.policy.TrackingEvaluator
 source: Learning to Fly from Point Clouds via Differentiable Simulation; public-paper
   reconstruction
 algorithm:

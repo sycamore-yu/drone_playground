@@ -14,6 +14,7 @@ from jax.scipy.spatial.transform import Rotation
 
 
 def validate_effects(settings):
+    """Validate and normalize configured environment randomization effects."""
     allowed = {
         "observation_noise": {
             "position_std_m",
@@ -52,13 +53,15 @@ def validate_effects(settings):
         spec = settings.get(group) or {}
         if not isinstance(spec, dict) or set(spec) - fields:
             raise ValueError(
-                f"Unsupported {group} fields: {set(spec) - fields if isinstance(spec, dict) else spec}"
+                f"Unsupported {group} fields: "
+                f"{set(spec) - fields if isinstance(spec, dict) else spec}"
             )
         for name, value in spec.items():
             if name == "position":
                 if not isinstance(value, dict) or value.get("distribution", "mixture") != "mixture":
                     raise ValueError(
-                        "Navigation initial positions use a declared collision-safe mixture distribution"
+                        "Navigation initial positions use a declared collision-safe mixture "
+                        "distribution"
                     )
                 if set(value) - {
                     "distribution",
@@ -127,6 +130,7 @@ def validate_effects(settings):
 
 
 def point_measurement_noise(points, valid, key, standard_deviation_m=0.0, dropout_probability=0.0):
+    """Apply reproducible noise and dropout to point measurements."""
     if not math.isfinite(standard_deviation_m) or standard_deviation_m < 0:
         raise ValueError("Measurement standard deviation must be finite and nonnegative")
     if not 0 <= dropout_probability <= 1:
@@ -181,7 +185,9 @@ def noisy_point_mass_state(state, time, dt, settings):
         std = settings.get(name, 0.0)
         if np.any(np.asarray(std)):
             draw = jax.vmap(
-                lambda key: jax.random.normal(jax.random.fold_in(key, index + 10), (3,))
+                lambda key, index=index: jax.random.normal(
+                    jax.random.fold_in(key, index + 10), (3,)
+                )
             )(keys)
             changes[field] = getattr(state, field) + draw * jnp.asarray(std)
     std = settings.get("orientation_std_rad", 0.0)
@@ -198,6 +204,7 @@ def noisy_point_mass_state(state, time, dt, settings):
 
 
 def reset_point_mass_state(state, key, settings, position_and_velocity=True):
+    """Sample a randomized initial state for point-mass motion."""
     keys = jax.random.split(key, 3)
     changes = {}
     if position_and_velocity:
@@ -225,6 +232,7 @@ def reset_point_mass_state(state, key, settings, position_and_velocity=True):
 
 
 def validate_command_distribution(spec):
+    """Validate the commanded motion distribution for a task."""
     if not isinstance(spec, dict) or set(spec) - {
         "kind",
         "distribution",
@@ -266,21 +274,6 @@ def validate_command_distribution(spec):
             raise ValueError("Fixed command value needs three finite axes")
 
 
-def external_wrench(data):
-    """Sample runtime forces on the actual physics clock, independently of DR."""
-    plugins = data.plugins
-    time = data.core.steps[0, 0] / data.core.freq
-    index = jnp.floor(time / plugins["gust_period_s"]).astype(jnp.int32)
-    gaussian, uniform = jax.random.split(jax.random.fold_in(plugins["disturbance_key"], index))
-    force = (
-        plugins["external_force_world_n"]
-        + jax.random.normal(gaussian, (3,)) * plugins["gust_std_n"]
-        + jax.random.uniform(uniform, (3,), minval=-1, maxval=1)
-        * plugins["force_uniform_half_width_n"]
-    )
-    return force, plugins["external_torque_body_nm"]
-
-
 def sample_command(default, key, spec):
     """Position goals, velocity commands and references share distribution terms."""
     if not spec or spec.get("distribution", "fixed") in (
@@ -306,7 +299,8 @@ class EnvironmentEffects(Wrapper):
         self.settings = settings
         if "position" in (settings.get("reset_randomization") or {}):
             raise ValueError(
-                "Collision-safe position mixtures belong to navigation; reference tasks use position_std_m or position_half_width_m"
+                "Collision-safe position mixtures belong to navigation; reference tasks "
+                "use position_std_m or position_half_width_m"
             )
         if "scene_phase_s" in (settings.get("reset_randomization") or {}) and not hasattr(
             env.default, "reference_phase_ticks"
@@ -322,7 +316,8 @@ class EnvironmentEffects(Wrapper):
             "gust_std_mps2",
         }:
             raise ValueError(
-                "Rigid-body disturbance uses force in N and torque in Nm; acceleration disturbances require a point-mass model"
+                "Rigid-body disturbance uses force in N and torque in Nm; acceleration "
+                "disturbances require a point-mass model"
             )
         if env.dynamics.forward == "lotf_simplified" and np.any(
             (settings.get("disturbance") or {}).get("torque_body_nm", 0)

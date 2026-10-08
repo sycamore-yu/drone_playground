@@ -6,8 +6,8 @@ import jax
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_experiment
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment
+from drone_playground.environments.factory import build_environment
 from drone_playground.learning.brax_configuration import native_training_config
 
 

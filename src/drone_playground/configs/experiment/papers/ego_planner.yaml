@@ -45,7 +45,7 @@ method:
     max_velocity_mps: 20.0
     max_acceleration_mps2: 3.0
     planning_horizon_m: 7.5
-  _target_: drone_playground.integrations.grpc_service.build_ros_method
+  _target_: drone_playground.integrations.ros1.planner.RosPlanner
 experiment:
   name: ego_planner
   kind: paper

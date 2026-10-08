@@ -13,21 +13,21 @@ from dataclasses import replace
 
 import jax
 import numpy as np
+from hydra.utils import instantiate
 from scipy.spatial.transform import Rotation
 
 from drone_playground.artifacts.decisions import NativeDecisionRecorder
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
-from drone_playground.control.external_tracking import ExternalTracking
-from drone_playground.environments.environment import build_environment, build_sensor
+from drone_playground.environments.factory import build_environment, build_sensor
 from drone_playground.environments.scenes.mujoco_geometry import bank_from_environment
 from drone_playground.environments.sensors.depth import cast_depth, sensor_pose
 from drone_playground.environments.sensors.lidar import cast_lidar
 from drone_playground.evaluation.racing import summarize_race
 from drone_playground.evaluation.tracking.metrics import summarize_trials
-from drone_playground.integrations.grpc_service import create_native_planner
 from drone_playground.integrations.sensors import pack_array
 from drone_playground.runtime.host_runner import run_steps
+from drone_playground.runtime.tracking import ExternalTracking
 from drone_playground.visualization.rscope_io import export_rollout
 
 
@@ -63,6 +63,7 @@ def bootstrap_position(task, position):
 
 
 def control_sensor(sensor, bank, kind):
+    """Prepare the observation sensor for a native tracking controller."""
     if kind == "none":
         return lambda pos, quat, clock, tick: None
     if kind in ("ego", "depth"):
@@ -86,6 +87,7 @@ def control_sensor(sensor, bank, kind):
 
 
 def evaluate_native_control(config, root, run_id):
+    """Evaluate native control methods with tracking and racing traces."""
     settings = config["method"]
     count = int(config["evaluation"]["episodes"])
     if count < 1:
@@ -124,7 +126,6 @@ def evaluate_native_control(config, root, run_id):
             save_report(rec.path / "task-adapter.json", adapter)
             calibration = sensor.calibration() if sensor else {}
             save_report(rec.path / "sensor-calibration.json", calibration)
-            worker_path = None
             traces, diagnostics, reset_details = [], [], []
             for case, seed in enumerate(seeds):
                 state = reset(jax.random.PRNGKey(seed))
@@ -154,12 +155,22 @@ def evaluate_native_control(config, root, run_id):
                         len(reference) - 1,
                     )
                 ]
-                worker = create_native_planner(
-                    settings,
-                    rec.path / "native" / str(case),
-                    settings["port"],
-                    worker_path,
+                worker = instantiate(
+                    {
+                        "_target_": settings["_target_"],
+                        "settings": {
+                            **{
+                                key: value
+                                for key, value in settings.items()
+                                if not key.startswith("_")
+                            },
+                            "port": settings["port"],
+                        },
+                    },
+                    directory=rec.path / "native" / str(case),
                     env=env,
+                    _recursive_=False,
+                    _convert_="all",
                 )
                 held = bootstrap_position(env.task.name, env.controller_observation(state)["pos"])
                 tracker = ExternalTracking(
@@ -183,8 +194,10 @@ def evaluate_native_control(config, root, run_id):
                             adapter,
                         )
 
-                        def decide(current, tick):
-                            nonlocal held, missing
+                        def decide(
+                            current, tick, reference=reference, worker=worker, tracker=tracker
+                        ):
+                            nonlocal missing
                             observation_start = time.perf_counter()
                             body = env.controller_observation(current)
                             packet = dict(
@@ -235,17 +248,8 @@ def evaluate_native_control(config, root, run_id):
                                 packet["goal"] = reference[index].tolist()
                             observation_seconds = time.perf_counter() - observation_start
                             reply = worker.step(packet)
-                            target = reply.get("reference")
-                            if target is None and reply.get("output") is None:
+                            if reply.output is None:
                                 missing += 1
-                                target = dict(
-                                    position=held,
-                                    velocity=[0.0, 0.0, 0.0],
-                                    acceleration=[0.0, 0.0, 0.0],
-                                    yaw=0.0,
-                                )
-                            else:
-                                held = body["pos"]
                             physical = None
                             try:
                                 physical = tracker.command(reply, current, tick)
@@ -255,9 +259,11 @@ def evaluate_native_control(config, root, run_id):
                             return physical, dict(
                                 observation_seconds=observation_seconds,
                                 recording_seconds=time.perf_counter() - recording_start,
-                                commands=reply["commands"],
-                                trajectories=reply["trajectories"],
-                                plans=reply.get("plans", reply["trajectories"]),
+                                commands=reply.diagnostics.get("commands", 0),
+                                trajectories=reply.diagnostics.get("trajectories", 0),
+                                plans=reply.diagnostics.get(
+                                    "plans", reply.diagnostics.get("trajectories", 0)
+                                ),
                                 executed_native_steps=tracker.consumed,
                                 clipped_command_steps=tracker.clipped,
                             )

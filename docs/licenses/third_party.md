@@ -110,7 +110,7 @@ source code is not copied into this package. The SUPER repository root does not 
 file at the pinned identity, while the planner source headers used by this project state
 LGPLv3-or-later; those original headers remain in the external build tree. Build scripts select
 upstream ROS1 templates and run targets, then apply the explicitly documented control-transfer
-patches under `native/ros1/patches/`. The package stores the process bridge, message adaptation,
+patches under `docker/ros1/patches/`. The package stores the process bridge, message adaptation,
 and those patches; full planner source trees remain external dependencies.
 
 MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. The active scene
@@ -130,4 +130,4 @@ The shared scene, sensor and collision contracts are described in `docs/architec
 
 ### 原生控制迁移补丁（2026-09-29）
 
-EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`native/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`artifacts/verification/final-acceptance/`与`native/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。
+EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`docker/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`artifacts/verification/final-acceptance/`与`docker/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。

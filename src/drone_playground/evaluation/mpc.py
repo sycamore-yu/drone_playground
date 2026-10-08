@@ -17,7 +17,7 @@ from drone_playground.artifacts.console import capture_console
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
 from drone_playground.control.controllers.mpc.factory import build_controller
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 from drone_playground.evaluation.racing import summarize_race
 from drone_playground.evaluation.tracking.metrics import select_replays, summarize_trials
 from drone_playground.runtime.host_runner import run_steps
@@ -25,6 +25,7 @@ from drone_playground.visualization.rscope_io import export_rollout
 
 
 def evaluate_optimization(config, root, run_id):
+    """Evaluate a configured optimization controller and record its benchmark results."""
     args = SimpleNamespace(
         controller=config["method"]["decision"]["name"],
         episodes=config["evaluation"]["episodes"],
@@ -81,7 +82,7 @@ def evaluate_optimization(config, root, run_id):
                     bool(current.done),
                 )
 
-            for tick, transition, finished in run_steps(
+            for tick, transition, _finished in run_steps(
                 state, env.episode_length, decide, step_fn, after_step
             ):
                 old, state = transition.before, transition.after
@@ -205,7 +206,9 @@ def evaluate_optimization(config, root, run_id):
             source="LSY AttitudeMPC"
             if args.controller == "attitude_mpc"
             else "Crazyflow sampling.py",
-            timing_protocol="synchronous simulation; controller latency measured, not injected as control delay",
+            timing_protocol=(
+                "synchronous simulation; controller latency measured, not injected as control delay"
+            ),
         )
         from drone_playground.runtime.timing import decision_statistics
 

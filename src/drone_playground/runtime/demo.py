@@ -94,7 +94,7 @@ def run_demo(root: Path, run_id: str, duration: float = 10.0, device: str = "cpu
 
             rec.phase("compiling", step=0)
             started = time.monotonic()
-            final, trace = jax.jit(lambda initial, cmds: jax.lax.scan(one_step, initial, cmds))(
+            _final, trace = jax.jit(lambda initial, cmds: jax.lax.scan(one_step, initial, cmds))(
                 data, jnp.asarray(commands)
             )
             trace = jax.tree.map(np.asarray, trace)

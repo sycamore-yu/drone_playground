@@ -1,4 +1,4 @@
-"""Validate the public v3 assembly rather than the names of paper algorithms."""
+"""Validate public assembly and the separate configuration and execution entries."""
 
 import importlib
 
@@ -12,7 +12,9 @@ def test_runtime_modules_have_single_responsibility_locations():
     required = (
         "control/wrappers.py",
         "control/controllers/mpc/sampling.py",
-        "networks/policies.py",
+        "learning/inference.py",
+        "configuration.py",
+        "app.py",
         "environments/tasks/navigation/task.py",
         "environments/scenes/catalog.py",
         "environments/sensors/lidar.py",
@@ -30,7 +32,7 @@ def test_runtime_modules_have_single_responsibility_locations():
     "environment", ["hovering", "tracking", "racing", "navigation/static", "navigation/dynamic"]
 )
 def test_ppo_composes_for_each_core_environment(environment):
-    module = importlib.import_module("drone_playground.composition")
+    module = importlib.import_module("drone_playground.configuration")
     assert hasattr(module, "compose_experiment"), "A method/environment assembly entry is required"
     cfg = module.compose_experiment("control/ppo", environment)
     module.validate_config(cfg)
@@ -50,20 +52,22 @@ def test_ppo_composes_for_each_core_environment(environment):
     ["papers/super", "papers/ego_planner", "control/attitude_mpc", "control/sampling_mpc"],
 )
 def test_optimization_recipe_exposes_modes_before_any_run_is_created(method, tmp_path):
-    module = importlib.import_module("drone_playground.composition")
+    from drone_playground.app import run_experiment
+
+    module = importlib.import_module("drone_playground.configuration")
     assert hasattr(module, "compose_experiment")
     cfg = module.compose_experiment(method)
     assert not cfg["method"]["trainable"]
     cfg["mode"] = "train"
     with pytest.raises(ValueError, match=r"training"):
-        module.run_experiment(cfg, tmp_path, "must-not-exist")
+        run_experiment(cfg, tmp_path, "must-not-exist")
     from drone_playground.artifacts.layout import find_experiment
 
     assert find_experiment(tmp_path, "must-not-exist") is None
 
 
 def test_sensor_and_forward_model_have_one_config_owner():
-    module = importlib.import_module("drone_playground.composition")
+    module = importlib.import_module("drone_playground.configuration")
     assert hasattr(module, "compose_experiment")
     cfg = module.compose_experiment("papers/super", "navigation/dynamic")
     assert cfg["env"]["sensor"]["name"] == "mid360"
@@ -74,7 +78,7 @@ def test_sensor_and_forward_model_have_one_config_owner():
 
 
 def test_source_dynamics_does_not_create_a_private_method():
-    from drone_playground.composition import compose_experiment
+    from drone_playground.configuration import compose_experiment
     from tests.helpers.configs import bodyrates_config
 
     reconstruction = compose_experiment("papers/differentiable_pointcloud")
@@ -97,7 +101,7 @@ def test_aero_mppi_identity_does_not_claim_a_sampling_mpc_implementation():
 
 
 def test_component_group_reselection_is_not_shadowed_by_a_recipe_copy():
-    from drone_playground.composition import compose_experiment, validate_config
+    from drone_playground.configuration import compose_experiment, validate_config
 
     cfg = compose_experiment(
         "control/ppo",
@@ -109,7 +113,7 @@ def test_component_group_reselection_is_not_shadowed_by_a_recipe_copy():
 
 
 def test_mpc_constructor_is_explicit_and_does_not_dispatch_by_display_name():
-    from drone_playground.composition import compose_experiment, validate_config
+    from drone_playground.configuration import compose_experiment, validate_config
 
     cfg = compose_experiment("control/attitude_mpc")
     target = cfg["method"]["decision"]["_target_"]

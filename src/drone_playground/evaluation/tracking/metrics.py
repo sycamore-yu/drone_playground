@@ -44,8 +44,6 @@ def summarize_trials(trace: dict, seeds: list[int], dt: float) -> dict:
 def select_replays(trace: dict, report: dict, count: int = 4) -> dict:
     """Fixed cases plus the worst case; preserve all trials in the JSON report."""
     fixed = list(range(min(count, report["num_trials"])))
-    worst = max(
-        report["episodes"], key=lambda row: (row["failed"], row["rmse_m"])
-    )["case"]
-    indices = sorted(set(fixed + [worst]))
+    worst = max(report["episodes"], key=lambda row: (row["failed"], row["rmse_m"]))["case"]
+    indices = sorted(set([*fixed, worst]))
     return jax.tree.map(lambda value: np.asarray(value)[:, indices], trace)

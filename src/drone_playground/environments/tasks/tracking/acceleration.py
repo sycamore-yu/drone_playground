@@ -8,53 +8,87 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from drone_playground.dynamics.point_mass import PointMassState
-from drone_playground.environments.scenes.geometry import euclidean_norm, signed_distance
-from drone_playground.environments.scenes.mujoco_geometry import bank_from_environment
+from drone_playground.environments.scenes.geometry import signed_distance
+from drone_playground.environments.scenes.mujoco_geometry import bank_from_model
 from drone_playground.environments.tasks.point_mass import PointMassTask
+from drone_playground.numerics import euclidean_norm
 
 
 class AccelerationTrackingTask(PointMassTask):
     """Retain point-cloud transfer kernels without selecting networks or learners."""
 
     def bind(self, env):
-        from drone_playground.environments.environment import build_reference_environment
+        import mujoco
+
+        from drone_playground.configuration import load_config
+        from drone_playground.environments.scenes.racing import load_lsy_config
+        from drone_playground.resources import resource_path
 
         super().bind(env)
-        native = build_reference_environment(
-            self.name, env.device, scene=env.scene, reference=env.reference
+        canonical = load_config("environment", ["env=" + self.name])
+        reference_config = canonical["env"]
+        reference_freq = reference_config["freq"]
+        reference_duration = reference_config["task"]["duration"]
+        order, bounds = (), None
+        if self.name == "racing":
+            model = mujoco.MjModel.from_xml_path(
+                str(resource_path("assets/scenes/racing/lsy_level0.xml"))
+            )
+            track = load_lsy_config().env.track
+            self.start = jnp.asarray(track.drones[0].pos, jnp.float32)
+            self.start_velocity = jnp.asarray(track.drones[0].vel, jnp.float32)
+            self.gate_positions = jnp.asarray([g["pos"] for g in track.gates])
+            self.gate_quaternions = jnp.asarray(
+                Rotation.from_euler("xyz", np.asarray([g["rpy"] for g in track.gates])).as_quat()
+            )
+            self.gate_order = jnp.asarray(np.abs(track.gate_order) - 1)
+            self.gate_reverse = jnp.asarray(np.array(track.gate_order) < 0)
+            self.bounds_low = jnp.asarray(track.safety_limits.pos_limit_low)
+            self.bounds_high = jnp.asarray(track.safety_limits.pos_limit_high)
+            bounds = (self.bounds_low, self.bounds_high)
+            order = track.gate_order
+        else:
+            model = mujoco.MjModel.from_xml_string("<mujoco/>")
+            self.start = jnp.asarray(env.scene.takeoff, jnp.float32)
+            self.start_velocity = jnp.zeros(3)
+            if env.reference.name == "figure8":
+                # Preserve the pinned FigureEightEnv reset at key=0. The public
+                # TrackingTask splits once before its upstream reset pipeline.
+                key = jax.random.split(jax.random.key(0))[0]
+                _, pos_key, vel_key = jax.random.split(key, 3)
+                self.start = jax.random.uniform(
+                    pos_key,
+                    (1, 1, 3),
+                    minval=jnp.array([-0.1, -0.1, 1.1]),
+                    maxval=jnp.array([0.1, 0.1, 1.3]),
+                )[0, 0]
+                self.start_velocity = jax.random.uniform(
+                    vel_key, (1, 1, 3), minval=-0.5, maxval=0.5
+                )[0, 0]
+            self.bounds_low, self.bounds_high = (
+                jnp.array([-4.0, -4.0, 0.0]),
+                jnp.array([4.0, 4.0, 4.0]),
+            )
+        self.reference_dt = 1.0 / reference_freq
+        references = env.reference.build(
+            canonical["runtime"]["scene_seed_eval"],
+            1,
+            reference_duration,
+            reference_freq,
+            self.start,
         )
-        try:
-            self.bank, self.geometry_identity = bank_from_environment(native)
-            physical = native.reset(jax.random.PRNGKey(0)).pipeline_state.sim_data.states
-            self.start = jnp.asarray(physical.pos[0, 0])
-            self.start_velocity = jnp.asarray(physical.vel[0, 0])
-            self.reference_dt = native.dt
-            self.references = jnp.asarray(native.trajectories[0])
-            self.reference_velocity = jnp.asarray(
-                np.gradient(np.asarray(self.references), self.reference_dt, axis=0)
-            )
-            if self.name == "racing":
-                track = native.config.env.track
-                self.gate_positions = jnp.asarray([g["pos"] for g in track.gates])
-                self.gate_quaternions = jnp.asarray(
-                    Rotation.from_euler(
-                        "xyz", np.asarray([g["rpy"] for g in track.gates])
-                    ).as_quat()
-                )
-                self.gate_order = jnp.asarray(np.abs(track.gate_order) - 1)
-                self.gate_reverse = jnp.asarray(np.array(track.gate_order) < 0)
-            self.bounds_low = (
-                jnp.array([-4.0, -4.0, 0.0])
-                if self.name != "racing"
-                else jnp.array(native.config.env.track.safety_limits.pos_limit_low)
-            )
-            self.bounds_high = (
-                jnp.array([4.0, 4.0, 4.0])
-                if self.name != "racing"
-                else jnp.array(native.config.env.track.safety_limits.pos_limit_high)
-            )
-        finally:
-            native.close()
+        self.references = jnp.asarray(references[0], jnp.float32)
+        self.reference_velocity = jnp.asarray(
+            np.gradient(np.asarray(self.references), self.reference_dt, axis=0)
+        )
+        self.bank, self.geometry_identity = bank_from_model(
+            model,
+            task=self.name,
+            start=self.start,
+            goal=self.references[-1],
+            bounds=bounds,
+            gate_order=order,
+        )
         self.bank = self.bank.replace(start=self.start[None])
         self.sensor_calibration = self.sensor.calibration()
         self.geometry_identity.update(
@@ -191,3 +225,10 @@ class AccelerationTrackingTask(PointMassTask):
             "adapter": self.settings["provenance"],
             "geometry": self.geometry_identity,
         }
+
+    def transition_events(self, bank=None):
+        """Supply native gate/contact rules without owning a physics loop."""
+        del bank
+        from drone_playground.environments.tasks.tracking.events import tracking_events
+
+        return lambda old, new, time, passed: tracking_events(self, old, new, time, passed)

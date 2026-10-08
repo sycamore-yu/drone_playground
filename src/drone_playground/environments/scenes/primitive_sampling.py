@@ -29,10 +29,9 @@ class PrimitiveScene:
     sphere_radius_m: tuple[float, float] = (0.2, 0.6)
 
     def __post_init__(self):
+        """Validate and prepare the PrimitiveScene instance after initialization."""
         if self.obstacles_per_kind < 1 or self.length_m <= 8:
-            raise ValueError(
-                "A primitive scene needs obstacles and a corridor longer than 8 m"
-            )
+            raise ValueError("A primitive scene needs obstacles and a corridor longer than 8 m")
 
     def sample(self, key, count):
         """Sample one independent static scene per environment using explicit PRNG state."""
@@ -41,9 +40,7 @@ class PrimitiveScene:
         capacity = 3 * n
         unit = jax.random.uniform(position_key, (count, capacity, 3))
         low = jnp.array([3.0, -self.width_m / 2, 0.8])
-        high = jnp.array(
-            [self.length_m - 3, self.width_m / 2, self.height_m - 0.8]
-        )
+        high = jnp.array([self.length_m - 3, self.width_m / 2, self.height_m - 0.8])
         origin = low + unit * (high - low)
         origin = origin.at[:, :n, 2].set(self.height_m / 2)
         unit_size = jax.random.uniform(size_key, (count, capacity, 3))
@@ -52,27 +49,12 @@ class PrimitiveScene:
         sr0, sr1 = self.sphere_radius_m
         size = bh0 + (bh1 - bh0) * unit_size
         radius = cr0 + (cr1 - cr0) * unit_size[:, :n, 0]
-        size = (
-            size.at[:, :n, 0]
-            .set(radius)
-            .at[:, :n, 1]
-            .set(self.height_m)
-            .at[:, :n, 2]
-            .set(0.0)
-        )
+        size = size.at[:, :n, 0].set(radius).at[:, :n, 1].set(self.height_m).at[:, :n, 2].set(0.0)
         sphere_radius = sr0 + (sr1 - sr0) * unit_size[:, 2 * n :, :1]
-        size = size.at[:, 2 * n :].set(
-            jnp.broadcast_to(sphere_radius, (count, n, 3))
-        )
-        kind = jnp.repeat(
-            jnp.array([KIND_CYLINDER, KIND_BOX, KIND_SPHERE], jnp.int32), n
-        )
-        lateral = jax.random.uniform(
-            target_key, (count, 2), minval=-3.0, maxval=3.0
-        )
-        start = jnp.stack(
-            [jnp.ones(count), lateral[:, 0], jnp.full(count, 3.0)], -1
-        )
+        size = size.at[:, 2 * n :].set(jnp.broadcast_to(sphere_radius, (count, n, 3)))
+        kind = jnp.repeat(jnp.array([KIND_CYLINDER, KIND_BOX, KIND_SPHERE], jnp.int32), n)
+        lateral = jax.random.uniform(target_key, (count, 2), minval=-3.0, maxval=3.0)
+        start = jnp.stack([jnp.ones(count), lateral[:, 0], jnp.full(count, 3.0)], -1)
         goal = jnp.stack(
             [
                 jnp.full(count, self.length_m - 1),
@@ -94,7 +76,5 @@ class PrimitiveScene:
             subtype=jnp.zeros(count, jnp.int32),
             subtype_names=(self.name,),
             world_low=jnp.array([0.0, -self.width_m / 2, 0.0]),
-            world_high=jnp.array(
-                [self.length_m, self.width_m / 2, self.height_m]
-            ),
+            world_high=jnp.array([self.length_m, self.width_m / 2, self.height_m]),
         )

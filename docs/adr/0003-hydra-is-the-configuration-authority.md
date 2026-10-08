@@ -28,4 +28,4 @@ MuJoCo Playground 的 registry 同时维护 constructor、default config 和 ran
 - `configs/env/navigation/static.yaml` 本身就是 `navigation/static` 的唯一 preset 定义。
 - `load()` 不提供第二套 Python 参数 API；自定义组合继续使用 Hydra override。
 - 新增环境或组件只需要新增 YAML preset 和实现类，不需要同步第二张 Python 映射表。
-- 配置迁移时不能把构造逻辑重新塞回 `composition.py` 或 factory switch。
+- 配置迁移时不能重新引入被删除的 `composition.py`，也不能在 factory 中增加按方法名称分派的构造矩阵。

@@ -3,8 +3,8 @@
 import jax
 import jax.numpy as jnp
 
-from drone_playground.composition import compose_experiment
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment
+from drone_playground.environments.factory import build_environment
 
 
 def task_and_bank():

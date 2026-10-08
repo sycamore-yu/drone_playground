@@ -5,8 +5,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_experiment
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment
+from drone_playground.environments.factory import build_environment
 from tests.helpers.configs import bodyrates_config
 
 
@@ -33,7 +33,7 @@ def test_lotf_is_a_backend_of_the_same_training_and_evaluation_task(forward):
 
 @pytest.mark.parametrize("backward", ["direct", "simplified_dynamics_jacobian"])
 def test_lotf_forward_and_backward_are_selected_independently(backward):
-    from drone_playground.environments.environment import build_dynamics
+    from drone_playground.environments.factory import build_dynamics
 
     cfg = bodyrates_config(forward="lotf_high_fidelity")
     cfg["algorithm"]["gradient"]["transition"] = backward
@@ -52,7 +52,7 @@ def test_lotf_forward_and_backward_are_selected_independently(backward):
     ],
 )
 def test_crazyflow_forward_models_are_parallel_dynamics_presets(preset, forward):
-    from drone_playground.environments.environment import build_dynamics
+    from drone_playground.environments.factory import build_dynamics
 
     cfg = compose_experiment(
         "control/bptt",
@@ -352,7 +352,7 @@ def test_source_dynamics_reuses_tracking_racing_and_navigation(environment, forw
                 "controller@env.controller=rates",
                 "env.controller.input_kind=rates",
                 "sensor@env.sensor=none",
-                "env.task.physics_freq=1000",
+                "env.physics_freq=1000",
                 "env.task.duration=0.04",
                 "runtime.action_delay_ms=null",
                 "runtime.device=cpu",

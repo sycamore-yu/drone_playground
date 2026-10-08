@@ -21,6 +21,7 @@ def minimum_jerk_path(
     acceleration_scale=3.0,
     minimum_segment_seconds=0.5,
 ):
+    """Generate a time-parameterized, minimum-jerk reference through waypoints."""
     if not isinstance(waypoints, Waypoint):
         raise TypeError("Minimum-jerk planning requires ordered Waypoint input")
     if (
@@ -60,7 +61,7 @@ def minimum_jerk_path(
     return Trajectory(time, durations, coefficients, yaw_defined=False)
 
 
-class MinimumJerkPlanning:
+class MinimumJerkPlanner:
     input_kind, output_kind, derivatives = "waypoint", "trajectory", "none"
 
     def __init__(self, **settings):

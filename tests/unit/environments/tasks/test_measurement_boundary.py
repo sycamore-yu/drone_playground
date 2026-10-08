@@ -24,7 +24,7 @@ def test_measurement_noise_changes_actor_input_not_loss_target(channels):
     )
     task.observation = FlightStateObservation()
     task.body_radius = 0.07
-    task.dt = 0.1
+    task.transition = SimpleNamespace(dt=0.1)
     task.observation_noise = {}
     bank = SimpleNamespace(num_instances=1, goal=jnp.array([[10.0, 3.0, 2.0]]))
     state = PointMassState.create(jnp.array([[0.0, 0.0, 1.0]])).replace(

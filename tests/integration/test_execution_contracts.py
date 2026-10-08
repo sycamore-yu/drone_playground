@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 from brax.envs.base import State
 
-from drone_playground.composition import compose_experiment, validate_config
+from drone_playground.configuration import compose_experiment, validate_config
 
 
 @pytest.mark.parametrize("method", ["papers/super", "papers/ego_planner"])
-def test_navigation_v2_limits_reach_the_worker_request(method, tmp_path):
-    from drone_playground.integrations.ros1 import NativePlanner
+def test_navigation_v2_limits_reach_the_worker_request(method, tmp_path, monkeypatch):
+    from drone_playground.integrations.ros1 import planner as ros1
 
     cfg = compose_experiment(
         method, "navigation/static", ["+evaluation.protocol=benchmarks/navigation.yaml"]
@@ -19,14 +19,34 @@ def test_navigation_v2_limits_reach_the_worker_request(method, tmp_path):
     validate_config(cfg)
     assert cfg["env"]["task"]["duration"] == 300.0
     assert cfg["method"]["limits"]["max_velocity_mps"] == 20.0
-    planner = object.__new__(NativePlanner)
-    planner.directory = tmp_path
     requests = []
-    planner.request = lambda payload, timeout: (
-        requests.append(payload) or {"launch_xml": "<launch/>"}
+
+    class Client:
+        def __init__(self, method, **kwargs):
+            requests.append(kwargs)
+            self.latencies = []
+
+        def reset(self, **kwargs):
+            return {"launch_xml": "<launch/>"}
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(ros1, "NativeClient", Client)
+    monkeypatch.setattr(ros1.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        ros1.subprocess,
+        "check_output",
+        lambda *args, **kwargs: (
+            b'[{"NetworkSettings":{"Networks":{"test":{"IPAddress":"127.0.0.1"}}}}]'
+        ),
     )
-    planner.start({}, [98, 0, 3], limits=cfg["method"]["limits"])
-    assert requests[0]["limits"]["max_velocity_mps"] == 20.0
+    planner = ros1.RosPlanner(cfg["method"], tmp_path)
+    try:
+        planner.start({}, [98, 0, 3], limits=cfg["method"]["limits"])
+        assert requests[0]["parameters"]["limits"]["max_velocity_mps"] == 20.0
+    finally:
+        planner.close()
 
 
 class Integrator:

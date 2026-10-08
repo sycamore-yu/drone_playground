@@ -18,6 +18,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from itertools import pairwise
 from pathlib import Path, PurePosixPath
 
 import numpy as np
@@ -187,7 +188,7 @@ def update_reference_route(
     pos = np.zeros(3, dtype=np.float64)
     mat = np.eye(3, dtype=np.float64).reshape(-1)
     count = 0
-    for start, end in zip(points[:-1], points[1:]):
+    for start, end in pairwise(points):
         if count >= len(scene.geoms):
             break
         start = np.asarray(start, dtype=np.float64)
@@ -343,6 +344,7 @@ def compatible_main(show_metrics: bool = False, show_reference: bool = True):
 
 
 def main(argv=None):
+    """Launch or connect the native RScope viewer using explicit CLI options."""
     parser = argparse.ArgumentParser(
         description="rscope 原生查看器：安全缓存与 MuJoCo 3.14 界面锁兼容"
     )

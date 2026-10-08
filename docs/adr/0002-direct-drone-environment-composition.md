@@ -36,7 +36,7 @@ DroneEnvironment(
 
 Planner、Policy 和 MPC 不成为 Environment 的特殊分支。Planner 产生 Reference；Controller 或 Policy 产生 Setpoint。MPC 按其真实职责归入 Controller，而不是形成独立的环境类别。
 
-中央 composition 只检查顶层配置、运行模式和相邻接口合同。它不维护具体方法、tracker、adapter、trainer 或 evaluator 的兼容矩阵。
+配置校验位于 `configuration.py`，运行模式分派位于 `app.py`；不保留单独的 `composition.py`。中央入口不维护具体方法、tracker、adapter、trainer 或 evaluator 的兼容矩阵。
 
 不新建全局 `EnvironmentState`。环境边界继续使用 Brax `State`。`pipeline_state` 保存环境内部运行状态，并允许 Crazyflow、LOTF 和 PointMass 保留各自原生物理状态。
 

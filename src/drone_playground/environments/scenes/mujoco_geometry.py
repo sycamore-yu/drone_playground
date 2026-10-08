@@ -20,10 +20,9 @@ from drone_playground.environments.scenes.geometry import (
 )
 
 
-def bank_from_environment(env):
-    model = env.sim.mj_model
+def bank_from_model(model, *, task, start, goal, source=None, bounds=None, gate_order=()):
+    """Extract physical primitives from an already available scene model."""
     data = mujoco.MjData(model)
-    source = getattr(env.sim, "mjx_data", None)
     if source is not None:
         for field in ("mocap_pos", "mocap_quat", "qpos"):
             destination = getattr(data, field)
@@ -66,8 +65,8 @@ def bank_from_environment(env):
         names.append(model.geom(index).name or "/".join(ancestors) + f"/geom-{index}")
         sizes.append(size)
     capacity = max(1, len(ids))
-    start = np.asarray(env.sim.default_data.states.pos[0, 0], np.float32)
-    goal = np.asarray(env.trajectories)[0, -1]
+    start = np.asarray(start, np.float32)
+    goal = np.asarray(goal, np.float32)
     kind = np.zeros(capacity, np.int32)
     size = np.ones((capacity, 3), np.float32)
     origin = np.zeros((capacity, 3), np.float32)
@@ -81,18 +80,12 @@ def bank_from_environment(env):
         )
         rotation[: len(ids)] = data.geom_xmat[ids].reshape(-1, 3, 3)
         active[: len(ids)] = True
-    if env.task.name == "racing":
-        limits = env.config.env.track.safety_limits
-        lower = np.array(limits.pos_limit_low, np.float32)
+    if bounds is not None:
+        lower, upper = (np.asarray(value, np.float32).copy() for value in bounds)
         lower[2] = max(0.0, lower[2])
-        upper = np.array(limits.pos_limit_high, np.float32)
-        order = list(env.config.env.track.gate_order)
     else:
-        lower, upper, order = (
-            np.array([-10.0, -10.0, 0.0]),
-            np.array([10.0, 10.0, 10.0]),
-            [],
-        )
+        lower, upper = np.array([-10.0, -10.0, 0.0]), np.array([10.0, 10.0, 10.0])
+    order = list(gate_order)
     bank = SceneBank(
         jnp.array(kind[None]),
         jnp.array(size[None]),
@@ -106,7 +99,7 @@ def bank_from_environment(env):
         jnp.zeros(1, jnp.int32),
         jnp.array(lower),
         jnp.array(upper),
-        (env.task.name,),
+        (task,),
         jnp.array(rotation[None], jnp.float32),
     )
     return bank, dict(
@@ -116,5 +109,23 @@ def bank_from_environment(env):
         gate_order=order,
         bank_digest=bank.digest(),
         geometry_rotations="world-from-local",
+        task=task,
+    )
+
+
+def bank_from_environment(env):
+    """Adapt an existing physical environment to the scene-only geometry reader."""
+    bounds, order = None, ()
+    if env.task.name == "racing":
+        track = env.config.env.track
+        bounds = (track.safety_limits.pos_limit_low, track.safety_limits.pos_limit_high)
+        order = track.gate_order
+    return bank_from_model(
+        env.sim.mj_model,
         task=env.task.name,
+        start=env.sim.default_data.states.pos[0, 0],
+        goal=np.asarray(env.trajectories)[0, -1],
+        source=getattr(env.sim, "mjx_data", None),
+        bounds=bounds,
+        gate_order=order,
     )

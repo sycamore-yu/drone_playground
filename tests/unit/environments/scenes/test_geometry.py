@@ -8,7 +8,10 @@ import numpy as np
 def test_oriented_gate_bar_ray_matches_mujoco():
     from drone_playground.environments.sensors.rays import cast_rays
 
-    xml = '<mujoco><worldbody><geom type="box" pos="1 0 1" size=".1 .5 .1" euler="0 0 45"/></worldbody></mujoco>'
+    xml = (
+        '<mujoco><worldbody><geom type="box" pos="1 0 1" size=".1 .5 .1" euler="0 '
+        '0 45"/></worldbody></mujoco>'
+    )
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)

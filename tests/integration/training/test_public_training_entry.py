@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from drone_playground.app import resolve_checkpoint_execution
-from drone_playground.composition import compose_experiment, run_experiment
+from drone_playground.app import run_experiment
+from drone_playground.configuration import compose_experiment
 
 
 @pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac", "dva"])
@@ -50,11 +50,12 @@ def test_public_train_checkpoint_evaluate_without_replays(algorithm, tmp_path):
     requested = compose_experiment(overrides=["runtime.device=cpu", "mode=eval"])
     requested["checkpoint"] = str(checkpoint)
     requested["evaluation"]["episodes"] = 2
-    resolved = resolve_checkpoint_execution(
-        requested, ["evaluation.episodes=2", "runtime.device=cpu"]
+    report = run_experiment(
+        requested,
+        tmp_path,
+        "eval",
+        overrides=["evaluation.episodes=2", "runtime.device=cpu"],
     )
-    assert resolved["algorithm"]["name"] == algorithm
-    report = run_experiment(resolved, tmp_path, "eval")
     assert report["parameters_frozen"]
     assert not list(tmp_path.rglob("*.mj_unroll"))
     assert Path(checkpoint).read_bytes()

@@ -12,7 +12,7 @@ from drone_playground.artifacts.reporting import tree_digest
 from drone_playground.evaluation.tracking.metrics import summarize_trials
 
 
-class PolicyEvaluator:
+class TrackingEvaluator:
     """Reuse one compiled evaluator for all snapshots of a given policy architecture."""
 
     def __init__(self, env, make_policy, seeds):

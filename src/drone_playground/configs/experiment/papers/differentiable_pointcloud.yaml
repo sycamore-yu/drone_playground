@@ -24,8 +24,6 @@ env:
     - 0.6
   task:
     name: navigation
-    freq: 10
-    physics_freq: 500
     duration: 16.0
     goal_radius: 0.5
     reference_count: 32
@@ -61,6 +59,8 @@ env:
   name: navigation
   _target_: drone_playground.environments.base.DroneEnvironment
   reference: null
+  freq: 10
+  physics_freq: 500
 training:
   scene_distribution:
     type: procedural

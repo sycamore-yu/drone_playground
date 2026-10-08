@@ -18,8 +18,6 @@ env:
     - S06
   task:
     name: navigation
-    freq: 50
-    physics_freq: 500
     duration: 300.0
     goal_radius: 0.5
     reference_count: 32
@@ -53,6 +51,8 @@ env:
   name: navigation/static
   _target_: drone_playground.environments.base.DroneEnvironment
   reference: null
+  freq: 50
+  physics_freq: 500
 evaluation:
   entrypoint: drone_playground.evaluation.navigation.policy.evaluate_navigation
   policy_evaluator: drone_playground.evaluation.navigation.policy.NavigationEvaluator

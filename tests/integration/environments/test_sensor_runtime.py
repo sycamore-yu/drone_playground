@@ -5,8 +5,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_experiment, validate_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment, validate_config
+from drone_playground.environments.factory import build_environment
 from drone_playground.environments.observations.state import NavigationSensorObservation
 
 

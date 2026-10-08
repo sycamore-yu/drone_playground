@@ -1,6 +1,6 @@
 """Reusable configuration builders for tests."""
 
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 
 
 def bodyrates_config(environment="hovering", forward="lotf_simplified"):

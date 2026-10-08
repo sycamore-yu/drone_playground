@@ -7,6 +7,7 @@ import jax
 
 @contextmanager
 def execution_scope(device):
+    """Select the execution device context without modifying global configuration."""
     if device not in ("cpu", "gpu"):
         raise ValueError("Runtime device must be cpu or gpu")
     with jax.default_device(jax.devices(device)[0]):

@@ -9,7 +9,7 @@ from tests.helpers.configs import differentiable_pointcloud_config as configurat
 
 
 def test_new_recipe_preserves_sensor_and_protocol_and_old_training_guard():
-    from drone_playground.composition import compose_experiment, validate_config
+    from drone_playground.configuration import compose_experiment, validate_config
 
     cfg = configuration()
     validate_config(cfg)
@@ -25,7 +25,7 @@ def test_new_recipe_preserves_sensor_and_protocol_and_old_training_guard():
 
 
 def test_training_initialization_covers_course_and_goal_without_obstacle_penetration():
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     config = configuration()
     config["training"]["scene_distribution"] = {"type": "fixed", "scene": None}
@@ -82,7 +82,8 @@ def test_near_goal_and_penetration_have_actual_differentiable_training_signal():
 
 def test_checked_delay_matches_training_physics_and_preserves_terminal_event():
     from drone_playground.control.delay import delayed_step
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.control.transition import delayed_schedule
+    from drone_playground.environments.factory import build_environment
 
     task = build_environment(configuration(), "cpu", role="eval").task
     bank = task.select_bank(jnp.array([0]))
@@ -91,14 +92,23 @@ def test_checked_delay_matches_training_physics_and_preserves_terminal_event():
     previous = jnp.zeros_like(current)
     ticks = jnp.array([20])
     expected, _ = delayed_step(task.dynamics, state, current, previous, ticks, 0.002, 50)
-    actual, time, outcome, _ = task.advance_checked(
-        bank, state, current, previous, ticks, jnp.zeros(1), jnp.zeros(1, jnp.int32)
+    schedule = delayed_schedule(current, previous, ticks, task.substeps)
+    actual, time, outcome, _, _ = task.transition.checked(
+        state,
+        schedule,
+        task.transition_events(bank),
+        timestamp=jnp.zeros(1),
+        outcome=jnp.zeros(1, jnp.int32),
     )
     np.testing.assert_allclose(actual.vector(), expected.vector(), atol=1e-6)
     np.testing.assert_allclose(time, 0.1, atol=1e-7)
     np.testing.assert_array_equal(outcome, 0)
-    stopped, clock, result, _ = task.advance_checked(
-        bank, state, current, previous, ticks, jnp.array([3.0]), jnp.array([1], jnp.int32)
+    stopped, clock, result, _, _ = task.transition.checked(
+        state,
+        schedule,
+        task.transition_events(bank),
+        timestamp=jnp.array([3.0]),
+        outcome=jnp.array([1], jnp.int32),
     )
     np.testing.assert_array_equal(stopped.vector(), state.vector())
     np.testing.assert_array_equal(clock, [3.0])
@@ -106,7 +116,7 @@ def test_checked_delay_matches_training_physics_and_preserves_terminal_event():
 
 
 def test_evaluator_accepts_runtime_delay_grid_and_speed_without_recompiling():
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
     from drone_playground.evaluation.navigation.recurrent import RecurrentNavigationEvaluator
 
     class ConstantPolicy:
@@ -123,7 +133,7 @@ def test_evaluator_accepts_runtime_delay_grid_and_speed_without_recompiling():
     task = build_environment(configuration(), "cpu", role="eval").task
     task.bank = task.select_bank(jnp.array([0]))
     task.manifest = {**task.manifest, "scene_ids": ["S01"]}
-    task.episode_length = 3
+    task.duration = 3 * task.dt
     network = ConstantPolicy()
     params = {}
     evaluator = RecurrentNavigationEvaluator(task, network, 22000, 1, 4.0)

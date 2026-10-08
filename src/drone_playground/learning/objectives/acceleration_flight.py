@@ -5,16 +5,14 @@ from dataclasses import dataclass
 import jax
 import jax.numpy as jnp
 
-from drone_playground.environments.scenes.geometry import euclidean_norm
+from drone_playground.numerics import euclidean_norm
 
 
 def causal_average(values, window):
     """Mean of available current/past samples, never using a future measurement."""
     if window < 1:
         raise ValueError("Velocity averaging window must be positive")
-    cumulative = jnp.concatenate(
-        [jnp.zeros_like(values[:1]), jnp.cumsum(values, axis=0)]
-    )
+    cumulative = jnp.concatenate([jnp.zeros_like(values[:1]), jnp.cumsum(values, axis=0)])
     end = jnp.arange(1, values.shape[0] + 1)
     start = jnp.maximum(0, end - window)
     counts = (end - start).reshape((-1,) + (1,) * (values.ndim - 1))
@@ -22,10 +20,9 @@ def causal_average(values, window):
 
 
 def huber(error, delta=1.0):
+    """Compute an elementwise Huber penalty with the configured transition scale."""
     absolute = jnp.abs(error)
-    return jnp.where(
-        absolute <= delta, 0.5 * error * error, delta * (absolute - 0.5 * delta)
-    )
+    return jnp.where(absolute <= delta, 0.5 * error * error, delta * (absolute - 0.5 * delta))
 
 
 @dataclass(frozen=True)
@@ -49,34 +46,21 @@ class VelocityTrackingAvoidanceObjective:
         velocity = causal_average(trajectory["velocity"], self.velocity_window)
         delta = trajectory["target_velocity"] - velocity
         velocity_loss = jnp.mean(
-            self.velocity_norm_weight
-            * huber(euclidean_norm(delta), self.huber_delta)
-            + self.velocity_component_weight
-            * jnp.sum(huber(delta, self.huber_delta), axis=-1)
+            self.velocity_norm_weight * huber(euclidean_norm(delta), self.huber_delta)
+            + self.velocity_component_weight * jnp.sum(huber(delta, self.huber_delta), axis=-1)
         )
         clearance = trajectory["clearance"]
-        approaching = jax.lax.stop_gradient(
-            jnp.maximum(trajectory["approaching_speed"], 0.0)
-        )
+        approaching = jax.lax.stop_gradient(jnp.maximum(trajectory["approaching_speed"], 0.0))
         penalty = jnp.maximum(1.0 - clearance, 0.0) ** 2
-        penalty += self.collision_beta1 * jax.nn.softplus(
-            -self.collision_beta2 * clearance
-        )
+        penalty += self.collision_beta1 * jax.nn.softplus(-self.collision_beta2 * clearance)
         collision_loss = jnp.mean(approaching * penalty)
         acceleration = trajectory["acceleration"]
-        acceleration_loss = jnp.mean(
-            jnp.sum(acceleration * acceleration, axis=-1)
-        )
-        previous = jnp.concatenate(
-            [jnp.zeros_like(acceleration[:1]), acceleration[:-1]]
-        )
+        acceleration_loss = jnp.mean(jnp.sum(acceleration * acceleration, axis=-1))
+        previous = jnp.concatenate([jnp.zeros_like(acceleration[:1]), acceleration[:-1]])
         jerk_magnitude = euclidean_norm((acceleration - previous) / dt)
         jerk_mean = jnp.mean(jerk_magnitude)
         jerk_variance = jnp.mean(jnp.var(jerk_magnitude, axis=0))
-        jerk_loss = (
-            self.jerk_mean_weight * jerk_mean
-            + self.jerk_variance_weight * jerk_variance
-        )
+        jerk_loss = self.jerk_mean_weight * jerk_mean + self.jerk_variance_weight * jerk_variance
         parts = dict(
             velocity=velocity_loss,
             collision=collision_loss,

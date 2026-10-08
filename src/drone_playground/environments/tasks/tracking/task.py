@@ -19,7 +19,6 @@ from crazyflow.envs import FigureEightEnv
 from crazyflow.sim.data import SimData
 from flax import struct
 
-from drone_playground.environments.initialization import initialize_simulation
 from drone_playground.environments.observations.state import (
     numerically_valid_observation,
 )
@@ -41,7 +40,6 @@ class TrackingTask(RigidBodyTask):
     """Reference-tracking events, observation and reward, independent of the learner."""
 
     name: str
-    freq: int
     duration: float
     reference_count: int
     numerical_guard: bool
@@ -50,25 +48,21 @@ class TrackingTask(RigidBodyTask):
     observation: object
     reward: object
 
+    def create_simulation(self, env):
+        from drone_playground.environments.initialization import initialize_rigid_body
+
+        return initialize_rigid_body(
+            env,
+            start=env.scene.takeoff,
+            figure_eight=env.reference.name == "figure8",
+            reset=True,
+        )
+
     def bind(self, env):
         if self.name not in ("hovering", "tracking"):
             raise ValueError("TrackingTask requires a hovering or tracking task name")
         env.reference_kind = env.reference.name
         env.numerical_guard = self.numerical_guard
-        env.simulation = initialize_simulation(
-            env.dynamics,
-            env.duration,
-            env.freq,
-            env.device,
-            env.scene.takeoff,
-            figure_eight=env.reference_kind == "figure8",
-            control_mode=env.controller.native_mode,
-        )
-        env.sim = env.simulation.sim
-        env.sim.reset()
-        env.default = env.sim.default_data
-        env.reset_fn = env.sim.build_reset_fn()
-        env.physics_freq = env.sim.freq
         count = self.reference_count if env.role == "train" else env.count
         trajectories = env.reference.build(env.reference_seed, count, env.duration, env.freq)
         env.trajectories = jax.device_put(
@@ -78,16 +72,6 @@ class TrackingTask(RigidBodyTask):
             np.arange(self.observation.n_samples) * env.freq * self.observation.interval,
             dtype=jnp.int32,
         )
-        env.controller.bind(
-            env.simulation.single_action_space.low,
-            env.simulation.single_action_space.high,
-            env.dynamics,
-        )
-        env.low, env.high = env.controller.low, env.controller.high
-        hover = jnp.array([0.0, 0.0, 0.0, float(env.default.params.mass[0]) * 9.81])
-        if hasattr(env.controller, "hover"):
-            hover = env.controller.hover(env.default)
-        env.hover_action = 2 * (hover - env.low) / (env.high - env.low) - 1
 
     def index(self, env, data: SimData) -> jax.Array:
         # This includes the upstream reset observation's index of -1.
@@ -198,9 +182,7 @@ class TrackingTask(RigidBodyTask):
             "tracking_error": error,
             "squared_error": error**2,
             "action_saturation": jnp.mean((jnp.abs(action) >= 0.99).astype(jnp.float32)),
-            "physical_thrust": physical[0]
-            if env.controller.input_kind == "thrust_bodyrates"
-            else physical[3],
+            "physical_thrust": physical[0] if env.controller.input_kind == "rates" else physical[3],
             "failure": terminated.astype(jnp.float32),
         }
         if env.numerical_guard:

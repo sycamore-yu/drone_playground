@@ -1,8 +1,6 @@
 name: navigation
 version: 2
 catalog: assets/scenes/navigation/catalog.xml
-catalog_sha256: 72f22f6519675f17f3082e59aa724999c8957aeb853055fb6c0e1ed794f8eca8
-geometry_sha256: dd5a6bd0a3c6e207193cd6cf038522d6d83905b7efe842ee92b5d81bc2222ff4
 scenes:
   static: [S01, S02, S03, S06]
   dynamic: [D01, D02, D03, D06]

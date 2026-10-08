@@ -30,12 +30,13 @@ def test_environment_composes_components_without_method_or_algorithm_names():
             return physical
 
     class Task:
-        name, freq, duration, time_limit_kind = "test", 10, 2.0, "truncation"
+        name, duration, time_limit_kind = "test", 2.0, "truncation"
         observation = SimpleNamespace(size=1)
 
         def bind(self, env):
-            env.physics_freq = 100
-            env.hover_action = jnp.zeros(1)
+            assert env.physics_freq == 100
+            assert env.substeps == 10
+            assert env.transition.physics_dt == 0.01
 
         def reset(self, env, rng):
             del env, rng
@@ -62,7 +63,7 @@ def test_environment_composes_components_without_method_or_algorithm_names():
         sensor=None,
         task=Task(),
     )
-    env = DroneEnvironment(**components)
+    env = DroneEnvironment(**components, freq=10, physics_freq=100)
     state = env.reset(jax.random.key(1))
     result = env.step(state, jnp.ones(1))
     assert isinstance(result, State)

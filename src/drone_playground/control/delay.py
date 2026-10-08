@@ -7,6 +7,7 @@ import jax.numpy as jnp
 from brax.envs.base import Wrapper
 
 from drone_playground.control.setpoints import StateSetpoint
+from drone_playground.control.transition import ActionTransition, delayed_schedule
 
 
 class ActionDelay(Wrapper):
@@ -138,11 +139,12 @@ class RandomActionDelay(Wrapper):
 
 
 def delayed_step(model, state, command, previous, delay_ticks, physics_dt, substeps):
-    """Apply the previous command until delivery, then the current command."""
-
-    def one(current, tick):
-        due = jnp.where((tick < delay_ticks)[..., None], previous, command)
-        nxt = model.step(current, StateSetpoint(acceleration=due), physics_dt)
-        return nxt, nxt.pos
-
-    return jax.lax.scan(one, state, jnp.arange(substeps))
+    """Use the common physical schedule, retaining substep positions for task loss."""
+    execution = ActionTransition(
+        lambda state, value: StateSetpoint(acceleration=value),
+        model.step,
+        substeps,
+        physics_dt,
+    )
+    commands = delayed_schedule(command, previous, delay_ticks, substeps)
+    return execution.step_schedule(state, commands, record=lambda current: current.pos)

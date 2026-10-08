@@ -81,10 +81,10 @@ def test_waypoint_head_keeps_order_anchor_and_physical_scale():
 def test_neural_physical_artifact_roundtrip_and_pipeline_consumption(tmp_path, kind):
     from brax.training.acme import running_statistics, specs
 
-    from drone_playground.artifacts.checkpoints import save_policy
-    from drone_playground.composition import compose_experiment
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.configuration import compose_experiment
+    from drone_playground.environments.factory import build_environment
     from drone_playground.learning.brax_configuration import native_training_config
+    from drone_playground.learning.checkpointing import save_policy
     from drone_playground.networks.factory import network_factory
     from drone_playground.runtime.pipeline import Pipeline
 
@@ -92,7 +92,7 @@ def test_neural_physical_artifact_roundtrip_and_pipeline_consumption(tmp_path, k
     base["network"]["hidden_sizes"] = [16, 16]
     config = copy.deepcopy(base)
     config["method"]["output"] = kind
-    config["env"]["task"]["freq"] = 10
+    config["env"]["freq"] = 10
     decoder = dict(kind=kind, anchor="goal", position_scale_m=[2.0, 2.0, 2.0])
     native = native_training_config(config)
     width = PhysicalActionDecoder(**decoder).action_size
@@ -113,7 +113,7 @@ def test_neural_physical_artifact_roundtrip_and_pipeline_consumption(tmp_path, k
         ]
         if kind == "waypoint":
             stages.append(
-                dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanning")
+                dict(_target_="drone_playground.planning.minimum_jerk.MinimumJerkPlanner")
             )
         planner = Pipeline(dict(output="trajectory", stages=stages), tmp_path / "chain", env)
         try:
@@ -127,7 +127,7 @@ def test_neural_physical_artifact_roundtrip_and_pipeline_consumption(tmp_path, k
                 policy_observation=np.asarray(state.obs).tolist(),
             )
             result = planner.step(packet)
-            curve = result["output"]
+            curve = result.output
             expected = planner.modules[0].policy.act(state.obs)[:3] * 2 + jnp.array([2.0, 0.0, 1.0])
             np.testing.assert_allclose(
                 curve.sample(curve.end_time)["position"], expected, atol=2e-5

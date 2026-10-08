@@ -90,6 +90,7 @@ PRIMARY_IDS = {"easy": "01", "medium": "02", "hard": "03"}
 
 
 def sha256(path: Path) -> str:
+    """Compute the SHA-256 digest of a scene source file."""
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
@@ -99,7 +100,6 @@ def _model_pose(model: ET.Element) -> list[float]:
 
 def load_sando_static(difficulty: str, worlds: Path) -> tuple[list[dict], dict]:
     """Copy one pinned SANDO forest, translating x by -3 m into P5 coordinates."""
-
     path = worlds / SANDO_STATIC_WORLD[difficulty]
     root = ET.parse(path).getroot()
     obstacles = []
@@ -158,7 +158,6 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
     ``launch/dyn_obstacles.launch.py``: 35% vertical pillars and 65% horizontal
     walls within the replacement subset.
     """
-
     total = SANDO_COUNTS[difficulty]
     dynamic_count = int(total * SANDO_DYNAMIC_FRACTION)
     static_count = total - dynamic_count
@@ -282,6 +281,7 @@ def generate_sando_dynamic(difficulty: str, seed: int = 0) -> tuple[list[dict], 
 
 
 def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
+    """Construct a fixed SANDO-derived navigation scene for the requested difficulty."""
     suffix = PRIMARY_IDS[difficulty]
     if kind == "static":
         obstacles, provenance = load_sando_static(difficulty, worlds)
@@ -294,7 +294,9 @@ def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
             "benchmark_role": "primary",
             "obstacles": obstacles,
             "review_duration_s": 3.0,
-            "layout_policy": "direct conversion of pinned SANDO forest geometry; no route reservation",
+            "layout_policy": (
+                "direct conversion of pinned SANDO forest geometry; no route reservation"
+            ),
             "source_provenance": provenance,
             "topology_acceptance": {
                 "require_direct_route_blocked": True,
@@ -313,7 +315,9 @@ def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
         "benchmark_role": "primary",
         "obstacles": obstacles,
         "review_duration_s": 45.0,
-        "layout_policy": "SANDO dynamic benchmark laws; fixed bounded realization; no route reservation",
+        "layout_policy": (
+            "SANDO dynamic benchmark laws; fixed bounded realization; no route reservation"
+        ),
         "source_provenance": provenance,
         "topology_acceptance": {
             "require_direct_route_blocked": True,
@@ -325,6 +329,7 @@ def primary_scene(kind: str, difficulty: str, worlds: Path) -> dict:
 
 
 def retained_extensions(catalog: dict) -> list[dict]:
+    """Copy the extra benchmark scenes retained outside the six primary cases."""
     return [
         copy.deepcopy(next(scene for scene in catalog["scenes"] if scene["id"] == scene_id))
         for scene_id in ("S06", "D06")
@@ -332,6 +337,7 @@ def retained_extensions(catalog: dict) -> list[dict]:
 
 
 def main() -> None:
+    """Build and validate the frozen navigation scene catalog from CLI arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sando-worlds", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True, help="New candidate MJCF directory")
@@ -360,16 +366,42 @@ def main() -> None:
         "world": WORLD,
         "design_rules": [
             "Primary benchmark is exactly six scenes: static/dynamic x easy/medium/hard.",
-            "Static difficulty follows SANDO 5/10/20 percent forest density using pinned world geometry.",
-            "Dynamic difficulty follows SANDO 50/100/200 total obstacles with 65 percent dynamic cubes.",
-            "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; they are the moving population.",
-            "Half of the remaining static-cylinder share is replaced by static SANDO-style rectangular obstacles: 0.4x0.4x4.0 m vertical pillars and 0.4x4.0x0.4 m horizontal walls, with a 35/65 vertical/horizontal split inside the replacement subset.",
-            "The other half of the static share remains 1.0-1.5 m radius, 6 m high cylinders to retain cylindrical clutter requested for this benchmark.",
-            "Dynamic randomization is conditioned only on finite P5 world bounds and endpoint safety, then frozen at seed 0.",
+            (
+                "Static difficulty follows SANDO 5/10/20 percent forest density using "
+                "pinned world geometry."
+            ),
+            (
+                "Dynamic difficulty follows SANDO 50/100/200 total obstacles with 65 "
+                "percent dynamic cubes."
+            ),
+            (
+                "SANDO dynamic cubes are 0.8 m and use the inherited trefoil law; they "
+                "are the moving population."
+            ),
+            (
+                "Half of the remaining static-cylinder share is replaced by static "
+                "SANDO-style rectangular obstacles: 0.4x0.4x4.0 m vertical pillars and "
+                "0.4x4.0x0.4 m horizontal walls, with a 35/65 vertical/horizontal split "
+                "inside the replacement subset."
+            ),
+            (
+                "The other half of the static share remains 1.0-1.5 m radius, 6 m high "
+                "cylinders to retain cylindrical clutter requested for this benchmark."
+            ),
+            (
+                "Dynamic randomization is conditioned only on finite P5 world bounds and "
+                "endpoint safety, then frozen at seed 0."
+            ),
             "No reference, oracle, inspection or demonstration trajectory is stored or reserved.",
             "Four physical boundary walls are visible to depth/LiDAR and participate in collision.",
-            "S06 and D06 are retained as additional 3-D extension scenes; D06 long crossbars move vertically.",
-            "Reachability is checked only through offline 3-D occupancy metrics; path coordinates are discarded.",
+            (
+                "S06 and D06 are retained as additional 3-D extension scenes; D06 long "
+                "crossbars move vertically."
+            ),
+            (
+                "Reachability is checked only through offline 3-D occupancy metrics; path "
+                "coordinates are discarded."
+            ),
         ],
         "references": {
             **catalog["references"],

@@ -16,6 +16,7 @@ ACADOS_VERSION = "v0.5.1"
 
 
 def run(args, cwd=None):
+    """Run a source-management command and return trimmed standard output."""
     return subprocess.check_output(args, cwd=cwd, text=True).strip()
 
 
@@ -42,15 +43,11 @@ def verify_checkout(directory, revision, patch, name):
             check(["apply", "--cached", str(patch)])
         difference = check(["diff", "--binary", "--no-ext-diff", "--"])
         if difference:
-            raise ValueError(
-                f"Cached modifications differ from the declared patch: {name}"
-            )
+            raise ValueError(f"Cached modifications differ from the declared patch: {name}")
         untracked = set(
             filter(
                 None,
-                check(
-                    ["ls-files", "--others", "--exclude-standard", "-z"]
-                ).split("\0"),
+                check(["ls-files", "--others", "--exclude-standard", "-z"]).split("\0"),
             )
         )
         if untracked - {".drone-playground-source.json"}:
@@ -70,26 +67,17 @@ def fetch(root=ROOT):
         if not directory.is_relative_to(root / "tmp/sources"):
             raise ValueError(f"Source cache must be under tmp/sources: {name}")
         revision = specification["revision"]
-        patch = (
-            root / specification["patch"]
-            if specification.get("patch")
-            else None
-        )
-        expected_patch = (
-            hashlib.sha256(patch.read_bytes()).hexdigest() if patch else None
-        )
+        patch = root / specification["patch"] if specification.get("patch") else None
+        expected_patch = hashlib.sha256(patch.read_bytes()).hexdigest() if patch else None
         marker = directory / ".drone-playground-source.json"
         if directory.exists():
             if run(["git", "rev-parse", "HEAD"], directory) != revision:
                 raise ValueError(f"Cached revision differs for {name}")
             if (
                 not marker.exists()
-                or json.loads(marker.read_text()).get("patch_sha256")
-                != expected_patch
+                or json.loads(marker.read_text()).get("patch_sha256") != expected_patch
             ):
-                raise ValueError(
-                    f"Existing cache needs explicit reconciliation: {directory}"
-                )
+                raise ValueError(f"Existing cache needs explicit reconciliation: {directory}")
         else:
             directory.parent.mkdir(parents=True, exist_ok=True)
             subprocess.run(
@@ -154,10 +142,7 @@ def setup_acados(root=ROOT):
             ],
             check=True,
         )
-    if (
-        run(["git", "describe", "--tags", "--exact-match"], destination)
-        != ACADOS_VERSION
-    ):
+    if run(["git", "describe", "--tags", "--exact-match"], destination) != ACADOS_VERSION:
         raise ValueError(f"Expected acados {ACADOS_VERSION}: {destination}")
 
     build = destination / "build"
@@ -200,16 +185,13 @@ def setup_acados(root=ROOT):
             "v0.2.0/t_renderer-v0.2.0-linux-amd64",
             renderer,
         )
-        renderer.chmod(
-            renderer.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-        )
+        renderer.chmod(renderer.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         marker.touch()
 
     pixi_python = root / ".pixi/envs/default/bin/python"
     if not pixi_python.is_file():
         raise FileNotFoundError(
-            "Pixi environment is required before building acados; "
-            "run pixi install --locked first"
+            "Pixi environment is required before building acados; run pixi install --locked first"
         )
     subprocess.run(
         [
@@ -234,6 +216,7 @@ def setup_acados(root=ROOT):
 
 
 def main():
+    """Select source setup or native solver installation from the command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser(

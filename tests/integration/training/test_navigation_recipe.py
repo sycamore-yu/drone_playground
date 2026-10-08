@@ -64,7 +64,7 @@ def test_invalid_conditioning_is_rejected_before_training():
 
 
 def motion_reward(**changes):
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
 
     args = dict(
         arrived=False,
@@ -81,7 +81,7 @@ def motion_reward(**changes):
         dt=0.02,
     )
     args.update(changes)
-    return MotionNavigationObjective(target_speed=2.0)(**args)
+    return MotionNavigationReward(target_speed=2.0)(**args)
 
 
 def test_continuous_reward_has_forward_and_altitude_gradients_before_collision():
@@ -115,9 +115,9 @@ def test_motion_terms_are_integrated_in_seconds_not_frame_count():
 
 
 def test_low_speed_command_range_does_not_reward_accelerating_toward_the_nominal_cap():
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
 
-    objective = MotionNavigationObjective(progress_scale=0.2)
+    objective = MotionNavigationReward(progress_scale=0.2)
 
     def reward(speed):
         return objective(
@@ -141,7 +141,7 @@ def test_low_speed_command_range_does_not_reward_accelerating_toward_the_nominal
 
 
 def test_global_reward_scaling_preserves_continuous_and_terminal_relations():
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
 
     args = dict(
         arrived=False,
@@ -157,17 +157,17 @@ def test_global_reward_scaling_preserves_continuous_and_terminal_relations():
         previous_action=jnp.zeros(4),
         dt=0.02,
     )
-    original = MotionNavigationObjective()(**args)
-    scaled = MotionNavigationObjective(reward_scale=0.01)(**args)
+    original = MotionNavigationReward()(**args)
+    scaled = MotionNavigationReward(reward_scale=0.01)(**args)
     np.testing.assert_allclose(scaled, original * 0.01, rtol=1e-6)
 
 
 def test_motion_objective_receives_real_environment_state():
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
     from tests.helpers.scenes import place
     from tests.helpers.scenes import synthetic_navigation_env as synthetic_env
 
-    env = synthetic_env([], objective=MotionNavigationObjective())
+    env = synthetic_env([], objective=MotionNavigationReward())
     state = env.reset(jax.random.PRNGKey(0), jnp.int32(0))
     state = place(state, env, (1.0, 0.0, 2.0))
     nxt = env.step(state, env.hover_action)
@@ -191,9 +191,9 @@ def test_navigation_selection_uses_progress_only_after_real_task_outcomes():
 
     a, b = report(0.0, 1.0, 96.0), report(0.0, 1.0, 80.0)
     assert checkpoint_eval_score("navigation", a) == checkpoint_eval_score("navigation", b)
-    assert checkpoint_eval_score("navigation", b, "navigation-convergence-v1") > checkpoint_eval_score(
-        "navigation", a, "navigation-convergence-v1"
-    )
+    assert checkpoint_eval_score(
+        "navigation", b, "navigation-convergence-v1"
+    ) > checkpoint_eval_score("navigation", a, "navigation-convergence-v1")
     assert checkpoint_eval_score(
         "navigation", report(1.0, 0.0, 0.5), "navigation-convergence-v1"
     ) > checkpoint_eval_score("navigation", report(0.0, 0.0, 0.1), "navigation-convergence-v1")
@@ -231,18 +231,18 @@ def test_navigation_v3_selection_ranks_successful_time_ahead_of_terminal_roundof
         )
 
     fast, slow = report(25.0, 0.4999), report(50.0, 0.4991)
-    assert checkpoint_eval_score("navigation", fast, "navigation-convergence-v3") > checkpoint_eval_score(
-        "navigation", slow, "navigation-convergence-v3"
-    )
+    assert checkpoint_eval_score(
+        "navigation", fast, "navigation-convergence-v3"
+    ) > checkpoint_eval_score("navigation", slow, "navigation-convergence-v3")
     assert checkpoint_eval_score(
         "navigation", report(300.0, 2.0, False), "navigation-convergence-v3"
     ) > checkpoint_eval_score("navigation", report(300.0, 20.0, False), "navigation-convergence-v3")
 
 
 def test_optional_position_cost_keeps_gradient_when_progress_telescopes_to_zero():
-    from drone_playground.learning.objectives.navigation import MotionNavigationObjective
+    from drone_playground.environments.tasks.rewards import MotionNavigationReward
 
-    objective = MotionNavigationObjective(
+    objective = MotionNavigationReward(
         position_scale=0.1,
         progress_scale=0.0,
         velocity_scale=0.0,

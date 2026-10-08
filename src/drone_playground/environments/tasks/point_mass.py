@@ -46,8 +46,6 @@ class PointMassTask:
         self,
         *,
         name,
-        freq,
-        physics_freq,
         duration,
         goal_radius,
         body_radius,
@@ -61,26 +59,26 @@ class PointMassTask:
         if unknown:
             raise TypeError(f"Unknown acceleration task fields: {sorted(unknown)}")
         if (
-            not np.isfinite([freq, physics_freq, duration, goal_radius, body_radius]).all()
-            or min(freq, physics_freq, duration, goal_radius, body_radius) <= 0
-            or physics_freq % freq
+            not np.isfinite([duration, goal_radius, body_radius]).all()
+            or min(duration, goal_radius, body_radius) <= 0
         ):
             raise ValueError(
                 "Task requires positive finite duration/radii and integral physics substeps"
             )
         speeds = command_distribution.get("speed_range_mps")
-        if speeds is not None and settings.get("max_speed") is not None:
-            if not 0 <= speeds[0] <= speeds[1] <= settings["max_speed"]:
-                raise ValueError("Commanded speed range exceeds the task maximum speed")
-        self.name, self.freq, self.physics_freq = name, freq, physics_freq
+        if (
+            speeds is not None
+            and settings.get("max_speed") is not None
+            and not 0 <= speeds[0] <= speeds[1] <= settings["max_speed"]
+        ):
+            raise ValueError("Commanded speed range exceeds the task maximum speed")
+        self.name = name
         self.duration, self.goal_radius, self.body_radius = duration, goal_radius, body_radius
         self.time_limit_kind, self.command_distribution = time_limit_kind, command_distribution
         self.observation, self.loss = observation, loss
         self.settings = dict(
             settings,
             name=name,
-            freq=freq,
-            physics_freq=physics_freq,
             duration=duration,
             goal_radius=goal_radius,
             body_radius=body_radius,
@@ -89,9 +87,6 @@ class PointMassTask:
         )
         self.events = NavigationEvents(goal_radius, body_radius)
         self.arrival_sampling = settings.get("arrival_sampling", "policy")
-        self.dt, self.physics_dt = 1.0 / freq, 1.0 / physics_freq
-        self.substeps = physics_freq // freq
-        self.episode_length = round(duration * freq)
         self.action_size = 3
 
     def bind(self, env):
@@ -102,11 +97,13 @@ class PointMassTask:
             )
         if env.conditions.get("action_delay_steps", 0):
             raise ValueError(
-                "This task owns physical transport delay; use milliseconds, not a second integer action delay"
+                "This task owns physical transport delay; use milliseconds, not a second "
+                "integer action delay"
             )
         self.dynamics, self.controller = env.dynamics, env.controller
         self.sensor, self.scene, self.reference_source = env.sensor, env.scene, env.reference
         self.conditions, self.role = env.conditions, env.role
+        self.settings.update(freq=env.freq, physics_freq=env.physics_freq)
         self.observation_noise = env.observation_noise
         self.environment_effects = env.environment_effects
         self.drone = env.dynamics.drone
@@ -119,11 +116,6 @@ class PointMassTask:
             else (self.sensor.points_per_frame, self.sensor.policy_value_channels),
             "valid": (self.sensor.points_per_frame,),
         }
-        env.physics_freq = self.physics_freq
-        env.hover_action = jnp.zeros(3)
-        env.handles_transport_delay = True
-        env.sensor_calibration = self.sensor_calibration
-        env.sensor_period = 1
         env.body_radius, env.goal_radius = self.body_radius, self.goal_radius
 
     @staticmethod
@@ -226,44 +218,48 @@ class PointMassTask:
         }
         return State(data, self._public_observation(data, info), zero, zero, metrics, info)
 
-    def advance(self, env, state, physical, commands):
-        """Execute the existing first-event kernel through the typed dynamics API."""
+    def transition_inputs(self, env, state, physical, commands):
+        """Expose task memory and events to the environment-owned physical loop."""
+        from drone_playground.control.transition import delayed_schedule
+
         if commands is not None:
             raise ValueError(
                 "This execution already owns transport delay; do not add another schedule"
             )
         control = self.controller.apply(state.pipeline_state, physical)
-        command = self.controller.input_values(control)[None]
-        data, info = self._batch(state.pipeline_state), state.info
-        args = (
-            data,
-            command,
-            info["previous_command"][None],
-            info["delay_ticks"][None],
-            info["clock"][None],
-            info["outcome"][None],
-        )
-        if self.name in ("tracking", "hovering", "racing"):
-            from drone_playground.environments.tasks.tracking.events import advance_checked
+        command = self.controller.input_values(control)
+        info = state.info
+        bank = self.bank.select(info["scenario_id"][None])
+        event = self.transition_events(bank)
 
-            data, clock, outcome, gates, clearance = advance_checked(
-                self, *args, info["gates_passed"][None]
-            )
-        else:
-            bank = self.bank.select(info["scenario_id"][None])
-            data, clock, outcome, clearance = self.advance_checked(bank, *args)
-            gates = info["gates_passed"][None]
-        return self._single(data), dict(
-            clock=clock[0],
-            outcome=outcome[0],
-            clearance=clearance[0],
-            gates_passed=gates[0],
-            previous_command=command[0],
+        def single_event(old, new, time, memory):
+            values = event(self._batch(old), self._batch(new), time[None], memory[None])
+            return jax.tree.map(lambda value: value[0], values)
+
+        return dict(
+            commands=delayed_schedule(
+                command, info["previous_command"], info["delay_ticks"], env.substeps
+            ),
+            event=single_event,
+            timestamp=info["clock"],
+            outcome=info["outcome"],
+            memory=info["gates_passed"],
         )
 
     def finish(self, env, state, data, action, physical, evidence):
         """Use the original point-mass evaluation reward and shared event codes."""
-        del action, physical
+        del action
+        clock, outcome, gates, clearance = evidence
+        command = self.controller.input_values(
+            self.controller.apply(state.pipeline_state, physical)
+        )
+        evidence = dict(
+            clock=clock,
+            outcome=outcome,
+            gates_passed=gates,
+            clearance=clearance,
+            previous_command=command,
+        )
         info = {
             **state.info,
             **{
@@ -348,3 +344,29 @@ class PointMassTask:
             + draws * jnp.asarray(noise.get("std_physical", 0.0))
             + jnp.asarray(noise.get("bias_physical", 0.0))
         )
+
+    @property
+    def freq(self):
+        """Read the environment-owned control frequency."""
+        return round(1.0 / self.transition.dt)
+
+    @property
+    def physics_freq(self):
+        """Read the environment-owned physical frequency."""
+        return round(1.0 / self.transition.physics_dt)
+
+    @property
+    def dt(self):
+        return self.transition.dt
+
+    @property
+    def physics_dt(self):
+        return self.transition.physics_dt
+
+    @property
+    def substeps(self):
+        return self.transition.substeps
+
+    @property
+    def episode_length(self):
+        return round(self.duration * self.freq)

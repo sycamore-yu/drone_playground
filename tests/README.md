@@ -12,7 +12,7 @@ tests/
 └── conftest.py    # 全局 pytest/JAX/SciPy 测试环境
 ```
 
-`unit/` 尽量镜像 `src/drone_playground` 的领域边界，例如 `actions`、`dynamics`、`environments`、`learning`、`runtime` 和 `visualization`。Unit 不调用完整 Hydra `compose_experiment` / `build_environment`，也不承担真实 TensorBoard、Git、回放或跨模块训练链。`integration/` 用于这些跨组件和外部 I/O 边界；不要为了目录完整性复制 unit coverage。`regression/` 只保存需要精确比较的冻结数值或历史行为基线。
+`unit/` 尽量镜像 `src/drone_playground` 的领域边界，例如 `control`、`dynamics`、`environments`、`learning`、`runtime` 和 `visualization`。Unit 不调用完整 Hydra `compose_experiment` / `build_environment`，也不承担真实 TensorBoard、Git、回放或跨模块训练链。`integration/` 用于这些跨组件和外部 I/O 边界；不要为了目录完整性复制 unit coverage。`regression/` 只保存需要精确比较的冻结数值或历史行为基线。
 
 测试只依赖生产代码公共接口或 `tests.helpers`；测试文件之间不得互相 import。退役实现不保留兼容测试，现役替代接口应承接仍有价值的行为断言。临时诊断放 `tmp/`，真实运行产物放 `results/`。
 

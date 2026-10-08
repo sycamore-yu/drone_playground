@@ -7,8 +7,6 @@ shared task interface. It is identified as BPTT, not a new policy-gradient metho
 
 from __future__ import annotations
 
-import hashlib
-import json
 import time
 from pathlib import Path
 
@@ -16,7 +14,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
-from brax.io import model
 from brax.training import types
 from brax.training.acme import running_statistics, specs
 from brax.training.agents.apg.networks import make_inference_fn
@@ -37,40 +34,17 @@ class TrainingState:
 
 
 def save_state(path, state, config):
-    path = Path(path)
-    typed = []
+    """Persist the BPTT continuation tree through the shared store."""
+    from drone_playground.artifacts.training_state import save_learner_state
 
-    def host(p, x):
-        if jax.dtypes.issubdtype(x.dtype, jax.dtypes.prng_key):
-            typed.append(jax.tree_util.keystr(p))
-            return np.asarray(jax.random.key_data(x))
-        return np.asarray(x)
-
-    payload = jax.tree_util.tree_map_with_path(host, state)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    model.save_params(str(temporary), payload)
-    temporary.replace(path)
-    path.with_suffix(".json").write_text(
-        json.dumps(
-            dict(
-                config=config,
-                typed_key_paths=typed,
-                updates=int(state.updates),
-                kind="bptt-full-training-state",
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-            ),
-            indent=2,
-        )
-        + "\n"
-    )
+    return save_learner_state(path, state, config, kind="bptt-full-training-state")
 
 
 def load_state(path, config):
-    path = Path(path)
-    meta = json.loads(path.with_suffix(".json").read_text())
-    if hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]:
-        raise ValueError("BPTT state digest mismatch")
+    """Restore BPTT learner parameters and optimizer state from a checkpoint."""
+    from drone_playground.artifacts.training_state import load_learner_state
+
+    state, meta = load_learner_state(path, kind="bptt-full-training-state")
     ignored = {
         "num_evals",
         "max_wall_seconds",
@@ -92,15 +66,7 @@ def load_state(path, config):
         ):
             if old[group] != new[group]:
                 raise ValueError(f"BPTT continuation differs on component {group}")
-    paths = set(meta["typed_key_paths"])
-    return jax.tree_util.tree_map_with_path(
-        lambda p, x: (
-            jax.random.wrap_key_data(jnp.asarray(x))
-            if jax.tree_util.keystr(p) in paths
-            else jnp.asarray(x)
-        ),
-        model.load_params(str(path)),
-    )
+    return state
 
 
 def train(
@@ -111,6 +77,7 @@ def train(
     state_directory=None,
     restore_state=None,
 ):
+    """Train a differentiable policy through batched environment rollouts."""
     count, horizon, updates = (
         int(config[k]) for k in ("num_envs", "horizon_length", "policy_updates")
     )
@@ -142,7 +109,7 @@ def train(
         specs.Array((environment.observation_size,), jnp.float32)
     )
     if config.get("warm_start"):
-        from drone_playground.artifacts.checkpoints import load_policy
+        from drone_playground.learning.inference import load_policy
 
         _, previous, meta = load_policy(config["warm_start"])
         if meta["config"]["algorithm"]["name"] not in ("apg", "bptt", "shac"):
@@ -253,7 +220,7 @@ def train(
             raise TimeoutError("BPTT wall-clock budget reached")
     delta = sum(
         np.square(np.asarray(a) - np.asarray(b)).sum()
-        for a, b in zip(jax.tree.leaves(initial), jax.tree.leaves(state.policy))
+        for a, b in zip(jax.tree.leaves(initial), jax.tree.leaves(state.policy), strict=True)
     )
     return (
         make_policy,

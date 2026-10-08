@@ -6,19 +6,20 @@ import numpy as np
 import pytest
 from hydra.errors import InstantiationException
 
-from drone_playground.composition import compose_experiment, validate_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment, validate_config
+from drone_playground.environments.factory import build_environment
 
 
 def test_navigation_without_benchmark_accepts_custom_task_conditions():
     config = compose_experiment("navigation/ppo", "navigation/static")
     config["evaluation"].pop("protocol", None)
-    config["env"]["task"].update(freq=25, duration=2.0, goal_radius=0.3)
+    config["env"]["freq"] = 25
+    config["env"]["task"].update(duration=2.0, goal_radius=0.3)
     validate_config(config)
 
 
 def test_task_frequency_changes_actual_physical_elapsed_time():
-    config = compose_experiment("control/ppo", "hovering", ["env.task.freq=25"])
+    config = compose_experiment("control/ppo", "hovering", ["env.freq=25"])
     env = build_environment(config, device="cpu", role="eval", count=1)
     try:
         state = env.reset(jax.random.PRNGKey(11))
@@ -33,6 +34,20 @@ def test_task_frequency_changes_actual_physical_elapsed_time():
         env.close()
 
 
+def test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate():
+    from tests.helpers.configs import bodyrates_config
+
+    env = build_environment(bodyrates_config(), device="cpu")
+    try:
+        state = env.reset(jax.random.PRNGKey(11))
+        physical = env.physical_action(env.hover_action)
+        result = env.step(state, env.hover_action)
+        assert physical[0] > 0
+        np.testing.assert_allclose(result.metrics["physical_thrust"], physical[0])
+    finally:
+        env.close()
+
+
 def test_duplicate_execution_frequency_is_rejected_instead_of_ignored():
     config = compose_experiment("control/ppo", "hovering")
     config["env"]["controller"]["frequency_hz"] = 25
@@ -43,7 +58,7 @@ def test_duplicate_execution_frequency_is_rejected_instead_of_ignored():
 def test_navigation_rejects_a_physics_clock_the_backend_does_not_execute():
     config = compose_experiment("navigation/ppo", "navigation/static")
     config["evaluation"]["protocol"] = None
-    config["env"]["task"]["physics_freq"] = 1000
+    config["env"]["physics_freq"] = 1000
     with pytest.raises(ValueError, match=r"physics frequency.*actual"):
         build_environment(config, device="cpu", role="eval", count=1)
 
@@ -122,7 +137,7 @@ def test_fitted_attitude_model_rejects_inertia_randomization_without_torque_dyna
 
 
 def test_retired_split_names_are_rejected():
-    from drone_playground.environments.environment import build_environment as construct
+    from drone_playground.environments.factory import build_environment as construct
 
     for role in ("dev", "heldout", "checkpoint", "checkpoint_eval", "benchmark"):
         with pytest.raises(ValueError, match=r"role"):

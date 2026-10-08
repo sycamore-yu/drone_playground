@@ -29,6 +29,7 @@ class PhysicalActionDecoder:
     tolerance_m: float = 0.2
 
     def __post_init__(self):
+        """Validate and prepare the PhysicalActionDecoder instance after initialization."""
         if self.kind not in ("waypoint", "trajectory") or self.anchor not in (
             "position",
             "goal",

@@ -19,8 +19,7 @@ def tree_digest(tree) -> str:
 
 
 def save_report(path: Path, report: dict) -> None:
+    """Persist a machine-readable experiment report as JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
     # NaN results remain visible rather than being silently converted to success.
-    path.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
-    )
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")

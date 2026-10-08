@@ -10,8 +10,7 @@ from dataclasses import dataclass
 import jax
 import jax.numpy as jnp
 
-from drone_playground.environments.scenes.geometry import euclidean_norm
-from drone_playground.learning.objectives.navigation import smooth_error
+from drone_playground.numerics import euclidean_norm, pseudo_huber
 
 
 def velocity_prediction_loss(prediction, proprioception, weight):
@@ -33,36 +32,25 @@ class PointCloudNavigationObjective:
     overspeed_weight: float = 1.0
     max_speed: float = 20.0
 
-    def __call__(
-        self, previous, current, goal, speeds, clearance, command, last, dt
-    ):
+    def __call__(self, previous, current, goal, speeds, clearance, command, last, dt):
         direction = jax.lax.stop_gradient(goal - previous.pos)
         target = (
             direction
-            * jnp.minimum(
-                1.0, speeds / jnp.maximum(euclidean_norm(direction), 1e-6)
-            )[..., None]
+            * jnp.minimum(1.0, speeds / jnp.maximum(euclidean_norm(direction), 1e-6))[..., None]
         )
         parts = dict(
-            velocity=jnp.mean(
-                jnp.sum(smooth_error(current.vel - target), axis=-1)
-            ),
+            velocity=jnp.mean(jnp.sum(pseudo_huber(current.vel - target), axis=-1)),
             position=jnp.mean(euclidean_norm(current.pos - goal)),
-            altitude=jnp.mean(smooth_error(current.pos[..., 2] - goal[..., 2])),
+            altitude=jnp.mean(pseudo_huber(current.pos[..., 2] - goal[..., 2])),
             clearance=jnp.mean(
                 jax.nn.relu(self.clearance_margin - clearance) ** 2
                 + jax.nn.softplus(-8 * clearance) / 8
             ),
             acceleration=jnp.mean(jnp.sum(command**2, axis=-1)),
             jerk=jnp.mean(jnp.sum(((command - last) / dt) ** 2, axis=-1)),
-            overspeed=jnp.mean(
-                jax.nn.relu(euclidean_norm(current.vel) - self.max_speed) ** 2
-            ),
+            overspeed=jnp.mean(jax.nn.relu(euclidean_norm(current.vel) - self.max_speed) ** 2),
         )
         return (
-            sum(
-                getattr(self, name + "_weight") * value
-                for name, value in parts.items()
-            ),
+            sum(getattr(self, name + "_weight") * value for name, value in parts.items()),
             parts,
         )

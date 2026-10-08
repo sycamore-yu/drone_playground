@@ -52,7 +52,7 @@ class IssuedCommandPredictor:
                     action = previous
             h = min(self.max_step_seconds, self.delay_seconds - tau)
 
-            def f(value):
+            def f(value, action=action):
                 return np.asarray(self.rhs(value, action)).ravel()
 
             k1 = f(x)

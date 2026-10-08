@@ -5,9 +5,11 @@ import copy
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from hydra.errors import InstantiationException
 
-from drone_playground.composition import validate_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import validate_config
+from drone_playground.control.transition import delayed_schedule
+from drone_playground.environments.factory import build_environment
 from tests.helpers.configs import differentiable_pointcloud_config as configuration
 
 
@@ -17,9 +19,8 @@ def custom_navigation_config():
     cfg["runtime"]["device"] = "cpu"
     cfg["evaluation"]["protocol"] = None
     cfg["evaluation"]["benchmark_id"] = None
+    cfg["env"].update(freq=20, physics_freq=500)
     cfg["env"]["task"].update(
-        freq=20,
-        physics_freq=500,
         duration=1.0,
         goal_radius=0.3,
         body_radius=0.09,
@@ -33,26 +34,24 @@ def custom_navigation_config():
 @pytest.mark.parametrize("physics_freq", [500, 1000])
 def test_custom_navigation_parameters_drive_the_real_task_and_clock(physics_freq):
     cfg = custom_navigation_config()
-    cfg["env"]["task"]["physics_freq"] = physics_freq
+    cfg["env"]["physics_freq"] = physics_freq
     env = build_environment(cfg, "cpu", "eval", 1)
     try:
         assert env.duration == 1.0
         assert env.goal_radius == env.task.events.goal_radius == 0.3
         assert env.body_radius == 0.09
         assert env.substeps == physics_freq // 20
-        assert f"{physics_freq}Hz" in env.physics_engine
+        assert f"{physics_freq}Hz" in env.task.physics_engine
         bank = env.task.select_bank(jnp.array([0]))
         bank = bank.replace(active=jnp.zeros_like(bank.active))
         state = env.task.initial_state(bank)
         command = jnp.zeros((1, 3))
-        result, timestamp, outcome, _ = env.task.advance_checked(
-            bank,
+        result, timestamp, outcome, _, _ = env.transition.checked(
             state,
-            command,
-            command,
-            jnp.array([0]),
-            jnp.zeros(1),
-            jnp.zeros(1, dtype=jnp.int32),
+            delayed_schedule(command, command, jnp.array([0]), env.substeps),
+            env.task.transition_events(bank),
+            timestamp=jnp.zeros(1),
+            outcome=jnp.zeros(1, dtype=jnp.int32),
         )
         np.testing.assert_allclose(timestamp, [0.05], atol=1e-7)
         assert np.isfinite(result.vector()).all()
@@ -75,5 +74,5 @@ def test_named_navigation_benchmark_still_rejects_changed_task_conditions():
 def test_custom_task_still_rejects_invalid_geometry_or_command_bounds(field, value):
     cfg = custom_navigation_config()
     cfg["env"]["task"][field] = value
-    with pytest.raises(ValueError):
-        validate_config(cfg)
+    with pytest.raises((ValueError, InstantiationException)):
+        build_environment(cfg, "cpu", "eval", 1)

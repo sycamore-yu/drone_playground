@@ -17,8 +17,8 @@ META = json.loads((ROOT / "composition-baseline.json").read_text())
 
 @pytest.mark.parametrize("case", META["cases"], ids=lambda c: f"{c['task']}-{c['dynamics']}")
 def test_preserved_transition(case):
-    from drone_playground.composition import compose_experiment
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.configuration import compose_experiment
+    from drone_playground.environments.factory import build_environment
 
     path = ROOT / "composition-baseline.npz"
     assert hashlib.sha256(path.read_bytes()).hexdigest() == META["sha256"]

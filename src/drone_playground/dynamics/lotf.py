@@ -1,4 +1,7 @@
-"""Pinned LOTF model reuse with selectable native or simplified-dynamics Jacobian differentiation."""
+"""Pinned LOTF model with selectable native or simplified-dynamics Jacobian.
+
+The backward model is configurable while the forward dynamics stay explicit.
+"""
 
 from __future__ import annotations
 
@@ -248,7 +251,7 @@ class LOTFModel(DynamicsBackend):
             motor_omega=data.states.rotor_vel[0, 0] * (2 * np.pi / 60),
         )
         if "external_force_world_n" in data.plugins:
-            from drone_playground.environments.randomization import external_wrench
+            from drone_playground.dynamics.disturbances import external_wrench
 
             def tick(native_state, index):
                 clock = data.replace(core=data.core.replace(steps=data.core.steps + index))

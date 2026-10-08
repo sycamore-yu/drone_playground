@@ -21,7 +21,7 @@ def test_fast_thin_bar_collision_is_detected_and_terminal_state_is_frozen():
     ev = evaluator()
     _, task, bank = task_and_bank()
     state = task.initial_state(bank).replace(vel=jnp.array([[40.0, 0.0, 0.0]]))
-    out = ev.advance_checked(
+    out = ev.sample_navigation_interval(
         task, bank, state, jnp.zeros((1, 3)), jnp.zeros(1), jnp.zeros(1, jnp.int32)
     )
     physical, timestamp, outcome, clearance = out
@@ -29,7 +29,9 @@ def test_fast_thin_bar_collision_is_detected_and_terminal_state_is_frozen():
     assert 0 < float(timestamp[0]) < 0.1
     assert 1.85 < float(physical.pos[0, 0]) < 2.0
     assert float(clearance[0]) < 0
-    again = ev.advance_checked(task, bank, physical, jnp.ones((1, 3)), timestamp, outcome)
+    again = ev.sample_navigation_interval(
+        task, bank, physical, jnp.ones((1, 3)), timestamp, outcome
+    )
     np.testing.assert_array_equal(again[0].pos, physical.pos)
     np.testing.assert_array_equal(again[1], timestamp)
 
@@ -38,13 +40,13 @@ def test_numerical_and_out_of_bounds_are_explicit_failures():
     ev = evaluator()
     _, task, bank = task_and_bank()
     state = task.initial_state(bank)
-    numerical = ev.advance_checked(
+    numerical = ev.sample_navigation_interval(
         task, bank, state, jnp.full((1, 3), jnp.nan), jnp.zeros(1), jnp.zeros(1, jnp.int32)
     )
     assert int(numerical[2][0]) == 4
     assert np.isfinite(np.asarray(numerical[0].pos)).all()
     escaped = state.replace(pos=jnp.array([[47.99, 0.0, 3.0]]), vel=jnp.array([[40.0, 0.0, 0.0]]))
-    bounds = ev.advance_checked(
+    bounds = ev.sample_navigation_interval(
         task, bank, escaped, jnp.zeros((1, 3)), jnp.zeros(1), jnp.zeros(1, jnp.int32)
     )
     assert int(bounds[2][0]) == 3
@@ -112,7 +114,9 @@ def test_collision_free_evaluation_keeps_the_reconstruction_training_transition(
     state = task.initial_state(bank).replace(vel=jnp.array([[1.0, 0.2, 0.0]]))
     command = jnp.array([[2.0, -1.0, 0.3]])
     expected = task.dynamics.step(state, task.controller.apply(state, command), task.dt)
-    actual = ev.advance_checked(task, bank, state, command, jnp.zeros(1), jnp.zeros(1, jnp.int32))
+    actual = ev.sample_navigation_interval(
+        task, bank, state, command, jnp.zeros(1), jnp.zeros(1, jnp.int32)
+    )
     np.testing.assert_allclose(actual[0].vector(), expected.vector(), atol=1e-6, rtol=1e-6)
 
 

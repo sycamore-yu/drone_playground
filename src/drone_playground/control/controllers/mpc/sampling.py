@@ -37,7 +37,7 @@ class SamplingMPC:
         self.samples, self.horizon, self.frequency = samples, horizon, frequency
         self.prediction_device = jax.devices(device)[0]
         self.predict_dt = prediction_seconds / horizon
-        predicted_frequency = int(round(1 / self.predict_dt))
+        predicted_frequency = round(1 / self.predict_dt)
         if abs(predicted_frequency * self.predict_dt - 1) > 1e-6:
             raise ValueError("Prediction step must be an integer simulation frequency")
         self.sim = Sim(

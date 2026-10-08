@@ -10,14 +10,16 @@ import numpy as np
 import pytest
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.artifacts.checkpoints import load_policy, save_policy
 from drone_playground.artifacts.migration import migrate_checkpoint
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 from drone_playground.learning.brax_configuration import native_training_config
+from drone_playground.learning.checkpointing import save_policy
+from drone_playground.learning.inference import load_policy
 from drone_playground.networks.factory import network_factory
 
 
-def test_explicit_migration_preserves_source_bytes_and_frozen_action(tmp_path):
+@pytest.mark.parametrize("old_version", [3, 4])
+def test_explicit_migration_preserves_source_bytes_and_frozen_action(tmp_path, old_version):
     config = compose_experiment("control/bptt", overrides=["network.hidden_sizes=[8,8]"])
     native = native_training_config(config)
     net = network_factory(native)(43, 4)
@@ -31,16 +33,22 @@ def test_explicit_migration_preserves_source_bytes_and_frozen_action(tmp_path):
     expected = maker(params, deterministic=True)(observation, jax.random.key(2))[0]
     metadata = json.loads(source.with_suffix(".json").read_text())
     old = copy.deepcopy(config)
-    old["config_version"] = 3
-    old["env"]["observation"] = old["env"]["task"].pop("observation")
-    old["objective"] = old["env"]["task"].pop("reward")
-    old["env"]["execution"] = dict(
-        dynamics=old["env"].pop("dynamics"),
-        controller=old["env"].pop("controller"),
-        command="attitude_thrust",
-    )
-    old["method"]["output"] = "attitude_thrust"
-    metadata.update(config=old, config_version=3)
+    old["config_version"] = old_version
+    old["env"]["task"]["freq"] = old["env"].pop("freq")
+    if old_version == 3:
+        old["env"]["observation"] = old["env"]["task"].pop("observation")
+        old["objective"] = old["env"]["task"].pop("reward")
+        old["env"]["execution"] = dict(
+            dynamics=old["env"].pop("dynamics"),
+            controller=old["env"].pop("controller"),
+            command="attitude_thrust",
+        )
+        old["method"]["output"] = "attitude_thrust"
+    else:
+        old["env"]["controller"]["_target_"] = (
+            "drone_playground.control.controllers.crazyflow.AttitudeControl"
+        )
+    metadata.update(config=old, config_version=old_version)
     source.with_suffix(".json").write_text(json.dumps(metadata))
     original = [path.read_bytes() for path in (source, source.with_suffix(".json"))]
     with pytest.raises(ValueError, match="migrate"):

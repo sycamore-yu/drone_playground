@@ -22,15 +22,9 @@ def experiment_scope(config):
     config = (config or {}).get("components", config or {})
     env = config.get("env") or {}
     task = env.get("task") or config.get("task") or {}
-    if isinstance(task, str):
-        task_name = task
-    else:
-        task_name = task.get("name")
+    task_name = task if isinstance(task, str) else task.get("name")
     method = config.get("method") or {}
-    if isinstance(method, str):
-        method_name = method
-    else:
-        method_name = method.get("name")
+    method_name = method if isinstance(method, str) else method.get("name")
     if method_name == "policy":
         method_name = (config.get("algorithm") or {}).get("name")
     method_name = method_name or (config.get("algorithm") or {}).get("name")
@@ -38,11 +32,13 @@ def experiment_scope(config):
 
 
 def iter_experiments(root):
+    """Enumerate existing experiment run directories in stable order."""
     experiments = Path(root) / "results" / "runs"
     return sorted(p for p in experiments.glob("*/*/*") if p.is_dir())
 
 
 def find_experiment(root, run_id):
+    """Resolve a unique run identifier to its experiment directory."""
     _run_id(run_id)
     experiments = Path(root) / "results" / "runs"
     candidates = experiments.glob("*/*/" + run_id)
@@ -62,8 +58,3 @@ def experiment_directory(root, run_id, config=None):
         raise ValueError("Creating a new run requires its Task/Method configuration")
     task, method = experiment_scope(config)
     return Path(root) / "results" / "runs" / task / method / run_id
-
-
-def resolve_artifact(path):
-    """Preserve the explicit artifact path without historical path translation."""
-    return Path(path)

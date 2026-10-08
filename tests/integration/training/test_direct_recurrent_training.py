@@ -7,7 +7,7 @@ import pytest
 
 from drone_playground.artifacts.training_state import load_training_state, save_training_state
 from drone_playground.configuration import load_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 from drone_playground.learning.algorithms.recurrent_bptt import initialize, make_update
 from drone_playground.learning.algorithms.recurrent_navigation_bptt import rollout_loss
 from drone_playground.learning.algorithms.recurrent_tracking_bptt import loss_function
@@ -71,12 +71,14 @@ def test_real_recurrent_update_and_restore(recipe, tmp_path):
         assert all(np.isfinite(np.asarray(value)).all() for value in metrics.values())
         assert any(
             not np.array_equal(a, b)
-            for a, b in zip(jax.tree.leaves(state.params), jax.tree.leaves(after.params))
+            for a, b in zip(
+                jax.tree.leaves(state.params), jax.tree.leaves(after.params), strict=True
+            )
         )
         path = tmp_path / "training-state.pkl"
         save_training_state(path, after, config)
         restored, metadata = load_training_state(path)
-        for actual, expected in zip(jax.tree.leaves(restored), jax.tree.leaves(after)):
+        for actual, expected in zip(jax.tree.leaves(restored), jax.tree.leaves(after), strict=True):
             np.testing.assert_array_equal(actual, expected)
         assert metadata["config"]["algorithm"]["name"] == "bptt"
     finally:

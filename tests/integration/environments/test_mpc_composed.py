@@ -4,9 +4,9 @@ import jax
 import numpy as np
 import pytest
 
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 from drone_playground.control.controllers.mpc.factory import build_controller
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 
 
 @pytest.mark.parametrize("kind", ["attitude_mpc", "sampling_mpc"])
@@ -39,9 +39,9 @@ def test_real_mpc_step_with_composed_dynamics_and_reset(kind, tmp_path):
 def test_live_trajectory_reaches_mpc_and_physics_without_short_horizon_extrapolation(
     kind, tmp_path
 ):
-    from drone_playground.control.external_tracking import ExternalTracking
     from drone_playground.references import Trajectory
     from drone_playground.runtime.decision import output_reply
+    from drone_playground.runtime.tracking import ExternalTracking
 
     choices = [
         "runtime.device=cpu",

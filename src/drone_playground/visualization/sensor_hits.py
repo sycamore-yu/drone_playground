@@ -19,10 +19,10 @@ from drone_playground.environments.sensors.depth import (
 from drone_playground.environments.sensors.lidar import (
     MID360_SAMPLES_PER_SCAN,
     Mid360Lidar,
-    body_rotation,
     cast_lidar,
 )
 from drone_playground.environments.sensors.rays import cast_rays
+from drone_playground.numerics import quat_to_matrix_xyzw
 
 REPLAY_HIT_SAMPLE_BUDGET = 2_400_000
 """Upper bound on ``frames × marker slots`` for one exported sensor overlay."""
@@ -39,6 +39,7 @@ class ReplaySensorContext:
 
 
 def supports_hit_overlay(sensor) -> bool:
+    """Check whether the sensor supports replay of physical hit locations."""
     return isinstance(sensor, (Mid360Lidar, DepthCamera, PinholeDepthCamera))
 
 
@@ -46,13 +47,9 @@ def _mid360_downsample(max_points: int) -> int:
     if max_points < 1:
         raise ValueError("Replay sensor point budget must be positive")
     divisors = [
-        d
-        for d in range(1, MID360_SAMPLES_PER_SCAN + 1)
-        if MID360_SAMPLES_PER_SCAN % d == 0
+        d for d in range(1, MID360_SAMPLES_PER_SCAN + 1) if MID360_SAMPLES_PER_SCAN % d == 0
     ]
-    return next(
-        d for d in divisors if MID360_SAMPLES_PER_SCAN // d <= max_points
-    )
+    return next(d for d in divisors if MID360_SAMPLES_PER_SCAN // d <= max_points)
 
 
 def _grid_stride(width: int, height: int, max_points: int) -> int:
@@ -63,9 +60,7 @@ def _grid_stride(width: int, height: int, max_points: int) -> int:
             continue
         if (width // stride) * (height // stride) <= max_points:
             return stride
-    raise ValueError(
-        "No valid replay grid stride fits the requested point budget"
-    )
+    raise ValueError("No valid replay grid stride fits the requested point budget")
 
 
 def _mid360_sampler(sensor: Mid360Lidar, max_points: int):
@@ -89,9 +84,7 @@ def _mid360_sampler(sensor: Mid360Lidar, max_points: int):
         return display, cached
 
     def sample(bank, scenario_id, position, quat, time, window):
-        frame = cast_lidar(
-            display, bank, scenario_id, position, quat, time, window
-        )
+        frame = cast_lidar(display, bank, scenario_id, position, quat, time, window)
         return frame.points_world, frame.valid
 
     batched = jax.jit(jax.vmap(sample, in_axes=(None, None, 0, 0, 0, 0)))
@@ -115,9 +108,7 @@ def _depth_sampler(camera: DepthCamera, stride: int):
         return cached
 
     def sample(bank, scenario_id, position, quat, time):
-        frame = cast_depth(
-            camera, bank, scenario_id, position, quat, time, stride
-        )
+        frame = cast_depth(camera, bank, scenario_id, position, quat, time, stride)
         origin, rotation = sensor_pose(camera, position, quat)
         directions = camera.optical_directions(stride) @ rotation.T
         points = origin[None, :] + directions * frame.depth[:, None]
@@ -158,21 +149,13 @@ def _depth_flight_sampler(camera: PinholeDepthCamera, stride: int):
         ],
         jnp.float32,
     )
-    columns = (
-        jnp.arange(0, camera.width, stride, dtype=jnp.float32)
-        + 0.5
-        - camera.width / 2
-    ) / fx
-    rows = (
-        jnp.arange(0, camera.height, stride, dtype=jnp.float32)
-        + 0.5
-        - camera.height / 2
-    ) / fy
+    columns = (jnp.arange(0, camera.width, stride, dtype=jnp.float32) + 0.5 - camera.width / 2) / fx
+    rows = (jnp.arange(0, camera.height, stride, dtype=jnp.float32) + 0.5 - camera.height / 2) / fy
     right, down = jnp.meshgrid(columns, rows)
     rays = jnp.stack((jnp.ones_like(right), -right, -down), -1).reshape(-1, 3)
 
     def sample(bank, scenario_id, position, quat, time):
-        rotation = body_rotation(quat)
+        rotation = quat_to_matrix_xyzw(quat)
         directions = rays @ camera_rotation.T @ rotation.T
         distance = cast_rays(
             bank.kind[scenario_id],
@@ -184,19 +167,10 @@ def _depth_flight_sampler(camera: PinholeDepthCamera, stride: int):
             bank.world_low,
             bank.world_high,
             True,
-            rotations=None
-            if bank.rotations is None
-            else bank.rotations[scenario_id],
+            rotations=None if bank.rotations is None else bank.rotations[scenario_id],
         )
-        valid = (
-            jnp.isfinite(distance)
-            & (distance >= camera.near_m)
-            & (distance <= camera.far_m)
-        )
-        points = (
-            position[None, :]
-            + directions * jnp.where(valid, distance, 0.0)[:, None]
-        )
+        valid = jnp.isfinite(distance) & (distance >= camera.near_m) & (distance <= camera.far_m)
+        points = position[None, :] + directions * jnp.where(valid, distance, 0.0)[:, None]
         return points, valid
 
     batched = jax.jit(jax.vmap(sample, in_axes=(None, None, 0, 0, 0)))
@@ -224,23 +198,18 @@ def _run_chunks(function, fixed, arrays, *, chunk_size=32):
     return np.concatenate(outputs, axis=0), np.concatenate(masks, axis=0)
 
 
-def sensor_hit_sequence(
-    context: ReplaySensorContext, trace: dict
-) -> tuple[np.ndarray, dict]:
+def sensor_hit_sequence(context: ReplaySensorContext, trace: dict) -> tuple[np.ndarray, dict]:
     """Reconstruct display-density world-frame hits for one single-episode replay.
 
     The overlay is deliberately a replay rendering product. It is ray-cast from
     the recorded pose and the same frozen scene geometry; it is not claimed to be
     an archived copy of the policy's observation tensor.
     """
-
     positions = np.asarray(trace["pos"], np.float32)
     quaternions = np.asarray(trace["quat"], np.float32)
     times = np.asarray(trace["time"], np.float32)
     if positions.ndim != 3 or positions.shape[1:] != (1, 3):
-        raise ValueError(
-            "Replay sensor hits require one episode with pos [T,1,3]"
-        )
+        raise ValueError("Replay sensor hits require one episode with pos [T,1,3]")
     if quaternions.shape != (len(positions), 1, 4) or times.shape != (
         len(positions),
         1,
@@ -258,9 +227,7 @@ def sensor_hit_sequence(
 
     if isinstance(sensor, Mid360Lidar):
         display, sampler = _mid360_sampler(sensor, effective_budget)
-        windows = np.floor(
-            np.maximum(time, 0.0) * sensor.source_rate_hz + 1e-6
-        ).astype(np.int32)
+        windows = np.floor(np.maximum(time, 0.0) * sensor.source_rate_hz + 1e-6).astype(np.int32)
         points, valid = _run_chunks(
             sampler,
             (context.bank, scenario),
@@ -282,8 +249,7 @@ def sensor_hit_sequence(
         )
         sampling = {
             "kind": "d435",
-            "points_per_frame": (sensor.width // stride)
-            * (sensor.height // stride),
+            "points_per_frame": (sensor.width // stride) * (sensor.height // stride),
             "pixel_stride": stride,
             "resolution": [sensor.width, sensor.height],
         }
@@ -297,15 +263,12 @@ def sensor_hit_sequence(
         )
         sampling = {
             "kind": "d435i_depth_flight",
-            "points_per_frame": (sensor.width // stride)
-            * (sensor.height // stride),
+            "points_per_frame": (sensor.width // stride) * (sensor.height // stride),
             "pixel_stride": stride,
             "resolution": [sensor.width, sensor.height],
         }
     else:
-        raise TypeError(
-            f"Unsupported replay hit sensor: {type(sensor).__name__}"
-        )
+        raise TypeError(f"Unsupported replay hit sensor: {type(sensor).__name__}")
 
     cloud = np.where(valid[..., None], points, np.nan).astype(np.float32)
     metadata = {

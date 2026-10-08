@@ -35,7 +35,7 @@ preview = TrajectoryPreview(
 )
 ```
 
-MIGHTY 若以外部原生进程接入，可以复用 `native/sdk` + RPC transport；
+MIGHTY 若以外部原生进程接入，可以复用 `tests/native` + RPC transport；
 AllocNet 若以仓库内 JAX/Flax Policy 实现，则直接产生其声明的 Setpoint/Actuation，
 不需要 bridge。只有选择了独立进程版 AllocateNet 时才需要 transport adapter。
 

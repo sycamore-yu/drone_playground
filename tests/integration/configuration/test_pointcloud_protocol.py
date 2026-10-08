@@ -2,8 +2,8 @@
 
 import pytest
 
-from drone_playground.composition import compose_experiment, validate_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.configuration import compose_experiment, validate_config
+from drone_playground.environments.factory import build_environment
 
 
 @pytest.mark.parametrize("sensor_hz", [5.0, 20.0])
@@ -29,7 +29,7 @@ def test_policy_coordinate_and_unit_labels_match_the_command_transform(field, va
     [
         ("task", "body_radius", 0.035),
         ("task", "goal_radius", 1.0),
-        ("task", "physics_freq", 250),
+        ("env", "physics_freq", 250),
         ("task", "duration", 20.0),
         ("evaluation", "duration", 20.0),
         ("evaluation", "speeds", [21.0]),

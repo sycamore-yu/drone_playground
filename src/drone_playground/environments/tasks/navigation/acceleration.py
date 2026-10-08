@@ -158,38 +158,23 @@ class AccelerationNavigationTask(PointMassTask):
         )
         return bank, state, clocks, speeds, self.delays(dk, count)
 
-    def advance_checked(self, bank, state, command, previous, ticks, timestamp, outcome):
-        """Use the training integration clock, with exact first-event freezing."""
-        initial_time = timestamp
+    def transition_events(self, bank=None, *, arrival_sampling="physics"):
+        """Bind navigation event semantics to the selected scene batch."""
+        bank = self.bank if bank is None else bank
 
-        def step(carry, tick):
-            physical, clock, result, minimum = carry
-            active = result == 0
-            due = jnp.where((tick < ticks)[:, None], previous, command)
-            candidate = self.dynamics.step(
-                physical, self.controller.apply(physical, due), self.physics_dt
-            )
-            now = initial_time + (tick + 1) * self.physics_dt
+        def event(previous, candidate, time, memory):
+            del previous
             finite = jnp.all(jnp.isfinite(candidate.vector()), axis=-1)
-            clearance = self.clearance(bank, candidate, now)
-            collision = clearance < 0
-            _, _, _, ended = self.events.events(bank, candidate.pos, bank.goal, collision, ~finite)
-            return (
-                _select(active & finite, candidate, physical),
-                jnp.where(active, now, clock),
-                jnp.where(active, ended, result),
-                jnp.where(active & finite, jnp.minimum(minimum, clearance), minimum),
-            ), None
+            clearance = self.clearance(bank, candidate, time)
+            _, _, _, outcome = self.events.events(
+                bank,
+                candidate.pos,
+                bank.goal,
+                clearance < 0,
+                ~finite,
+            )
+            if arrival_sampling != "physics":
+                outcome = jnp.where(outcome == 1, 0, outcome)
+            return finite, outcome, clearance, memory
 
-        end, _ = jax.lax.scan(
-            step,
-            (state, timestamp, outcome, jnp.full_like(timestamp, jnp.inf)),
-            jnp.arange(self.substeps),
-        )
-        physical, clock, result, minimum = end
-        return (
-            physical,
-            clock,
-            result,
-            jnp.where(jnp.isfinite(minimum), minimum, 0.0),
-        )
+        return event

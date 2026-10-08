@@ -15,10 +15,7 @@ import jax.numpy as jnp
 import mujoco
 import numpy as np
 
-from drone_playground.environments.scenes.geometry import (
-    SceneBank,
-    obstacle_positions,
-)
+from drone_playground.environments.scenes.geometry import SceneBank, obstacle_positions
 from drone_playground.environments.scenes.mjcf import instance_spec
 from drone_playground.resources import resource_path
 
@@ -29,7 +26,7 @@ def active_indices(bank: SceneBank, scenario_id: int) -> np.ndarray:
 
 
 def obstacle_track(bank: SceneBank, scenario_id: int, times: np.ndarray) -> np.ndarray:
-    """Obstacle centres over time with shape ``[T, capacity, 3]``."""
+    """Obstacle centers over time with shape ``[T, capacity, 3]``."""
     positions = jax.vmap(lambda time: obstacle_positions(bank, jnp.int32(scenario_id), time))(
         jnp.asarray(np.asarray(times, np.float32))
     )
@@ -56,10 +53,14 @@ def create_replay_model(env, scenario_id: int):
   </visual>
   <worldbody>
     <light pos="8 0 9" dir="0 0 -1"/>
-    <geom name="ground" type="plane" pos="0 0 {corridor_low[2]}" size="{half[0]} {half[1]} .1" rgba=".86 .88 .9 1"/>
-    <geom name="floor_marker" type="box" pos="{centre[0]} {centre[1]} {corridor_low[2] - 0.02}" size="{half[0]} {half[1]} 0.02" rgba=".78 .82 .86 1"/>
-    <geom name="start_marker" type="sphere" pos="{start[0]} {start[1]} {start[2]}" size="0.12" rgba="0.2 0.8 0.3 0.8"/>
-    <geom name="goal_marker" type="sphere" pos="{goal[0]} {goal[1]} {goal[2]}" size="0.5" rgba="0.9 0.8 0.2 0.35"/>
+    <geom name="ground" type="plane" pos="0 0 {corridor_low[2]}"
+          size="{half[0]} {half[1]} .1" rgba=".86 .88 .9 1"/>
+    <geom name="floor_marker" type="box" pos="{centre[0]} {centre[1]} {corridor_low[2] - 0.02}"
+          size="{half[0]} {half[1]} 0.02" rgba=".78 .82 .86 1"/>
+    <geom name="start_marker" type="sphere" pos="{start[0]} {start[1]} {start[2]}"
+          size="0.12" rgba="0.2 0.8 0.3 0.8"/>
+    <geom name="goal_marker" type="sphere" pos="{goal[0]} {goal[1]} {goal[2]}"
+          size="0.5" rgba="0.9 0.8 0.2 0.35"/>
   </worldbody>
 </mujoco>"""
     spec = mujoco.MjSpec.from_string(xml)

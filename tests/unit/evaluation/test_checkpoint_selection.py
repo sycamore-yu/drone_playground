@@ -23,11 +23,14 @@ NAVIGATION_PROTOCOL = {
 
 def report(counts):
     scenes = ["S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06"]
-    rows = [dict(scene_id=scene, seed=50000 + 8 * repeat + i,
-                 arrived=repeat < count)
-            for repeat in range(8) for i, (scene, count) in enumerate(zip(scenes, counts, strict=True))]
-    return dict(episodes=rows, num_trials=64,
-                initial_conditions=dict(seeds=[row["seed"] for row in rows]))
+    rows = [
+        dict(scene_id=scene, seed=50000 + 8 * repeat + i, arrived=repeat < count)
+        for repeat in range(8)
+        for i, (scene, count) in enumerate(zip(scenes, counts, strict=True))
+    ]
+    return dict(
+        episodes=rows, num_trials=64, initial_conditions=dict(seeds=[row["seed"] for row in rows])
+    )
 
 
 def selection(value, criterion="navigation-checkpoint_eval-v2"):
@@ -73,35 +76,45 @@ def test_primary_selection_does_not_use_extensions_to_choose_policy():
     criterion = "navigation-checkpoint_eval-primary-v1"
     a = selection(first, criterion)
     b = selection(full, criterion)
-    assert a['score'] == b['score'] == [8, 48]
-    assert a['pilot_objective'] == b['pilot_objective'] == 1.
-    assert a['primary_checkpoint_eval_passed'] and a['overall_success_rate'] == .75
+    assert a["score"] == b["score"] == [8, 48]
+    assert a["pilot_objective"] == b["pilot_objective"] == 1.0
+    assert a["primary_checkpoint_eval_passed"] and a["overall_success_rate"] == 0.75
     weak = selection(report([8, 8, 8, 8, 8, 7, 8, 8]), criterion)
-    assert not weak['primary_checkpoint_eval_passed']
-    assert weak['score'] < a['score']
+    assert not weak["primary_checkpoint_eval_passed"]
+    assert weak["score"] < a["score"]
 
 
 def test_primary_selection_retains_worst_scene_priority():
-    metric = 'navigation-checkpoint_eval-primary-v1'
+    metric = "navigation-checkpoint_eval-primary-v1"
     a = selection(report([0, 8, 8, 8, 8, 8, 8, 8]), metric)
     b = selection(report([1] * 8), metric)
-    assert b['score'] > a['score'] and b['pilot_objective'] > a['pilot_objective']
+    assert b["score"] > a["score"] and b["pilot_objective"] > a["pilot_objective"]
 
 
 def test_selection_consumes_explicit_scene_roles_and_configured_episode_count():
     from drone_playground.benchmarks import navigation_checkpoint_eval_selection
 
     scenes = ["forest", "warehouse", "forest06"]
-    rows = [dict(scene_id=scene, seed=100+i, arrived=scene != "warehouse")
-            for i, scene in enumerate(scenes * 3)]
-    value = dict(episodes=rows, num_trials=len(rows),
-                 initial_conditions=dict(seeds=[row["seed"] for row in rows]))
-    specification = dict(scenes={"navigation": scenes}, primary_scenes=["forest", "forest06"],
-                         episodes_per_scene={"checkpoint_eval": 3},
-                         success_threshold={"navigation-checkpoint_eval-primary-v1":
-                                            dict(scope="primary", per_scene=0.9)})
-    result = navigation_checkpoint_eval_selection(value, "navigation-checkpoint_eval-primary-v1",
-                                                  protocol=specification)
+    rows = [
+        dict(scene_id=scene, seed=100 + i, arrived=scene != "warehouse")
+        for i, scene in enumerate(scenes * 3)
+    ]
+    value = dict(
+        episodes=rows,
+        num_trials=len(rows),
+        initial_conditions=dict(seeds=[row["seed"] for row in rows]),
+    )
+    specification = dict(
+        scenes={"navigation": scenes},
+        primary_scenes=["forest", "forest06"],
+        episodes_per_scene={"checkpoint_eval": 3},
+        success_threshold={
+            "navigation-checkpoint_eval-primary-v1": dict(scope="primary", per_scene=0.9)
+        },
+    )
+    result = navigation_checkpoint_eval_selection(
+        value, "navigation-checkpoint_eval-primary-v1", protocol=specification
+    )
     assert result["score"] == [3, 6]
     assert result["pilot_objective"] == 1
-    assert result["overall_success_rate"] == 2/3
+    assert result["overall_success_rate"] == 2 / 3

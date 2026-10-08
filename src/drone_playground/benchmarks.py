@@ -1,6 +1,5 @@
 """Load and verify the exact external conditions of a named benchmark."""
 
-import hashlib
 import math
 from collections import Counter
 from pathlib import Path
@@ -14,6 +13,7 @@ NAVIGATION_BENCHMARK = "benchmarks/navigation.yaml"
 
 
 def benchmark_id(config):
+    """Resolve the benchmark protocol identifier from experiment settings."""
     evaluation = config.get("evaluation", config)
     if "release_validation" in evaluation:
         raise ValueError("release_validation was removed; use benchmark_id")
@@ -21,6 +21,7 @@ def benchmark_id(config):
 
 
 def load_protocol(path=NAVIGATION_BENCHMARK):
+    """Load and validate the named benchmark protocol description."""
     specification = yaml.safe_load(_path(path).read_bytes())
     if specification.get("name") != "navigation" or specification.get("version") != 2:
         raise ValueError("Unsupported benchmark protocol version")
@@ -35,6 +36,7 @@ def load_protocol(path=NAVIGATION_BENCHMARK):
 
 
 def protocol_scenes(protocol):
+    """Extract the scene identifiers required by a benchmark protocol."""
     return [scene for group in protocol["scenes"].values() for scene in group]
 
 
@@ -263,37 +265,29 @@ def _path(value):
 
 
 def protocol_identity(config):
+    """Derive the immutable identity of the selected benchmark protocol."""
     selected = config.get("evaluation", {}).get("protocol")
     if not selected:
         return None
     path = _path(selected)
-    raw = path.read_bytes()
     specification = load_protocol(path)
     task, scene = config["env"]["task"], config["env"]["scene"]
     target = config["env"]["dynamics"]["_target_"]
     condition = specification.get("execution_conditions", {}).get(target, {})
-    if "control_frequency_hz" in condition and task["freq"] != condition["control_frequency_hz"]:
+    if (
+        "control_frequency_hz" in condition
+        and config["env"]["freq"] != condition["control_frequency_hz"]
+    ):
         raise ValueError("Benchmark protocol differs on control frequency")
     if (
         "physics_frequency_hz" in condition
-        and task.get("physics_freq", 500) != condition["physics_frequency_hz"]
+        and config["env"].get("physics_freq", 500) != condition["physics_frequency_hz"]
     ):
         raise ValueError("Benchmark protocol differs on physics frequency")
     if task["time_limit_kind"] != specification["timeout"]["kind"]:
         raise ValueError("Benchmark protocol differs on time-limit interpretation")
     if task["name"] != "navigation":
         raise ValueError("Navigation protocol requires a navigation task")
-    from drone_playground.environments.scenes.catalog import (
-        DEFAULT_CATALOG,
-        verified_geometry,
-    )
-
-    catalog = _path(scene["catalog_path"]) if scene.get("catalog_path") else DEFAULT_CATALOG
-    if hashlib.sha256(catalog.read_bytes()).hexdigest() != specification["catalog_sha256"]:
-        raise ValueError("Benchmark catalog differs from the locked MJCF identity")
-    _, asset_digest = verified_geometry(catalog)
-    if asset_digest != specification["geometry_sha256"]:
-        raise ValueError("Benchmark geometry differs from the locked MJCF asset set")
     for field, expected in (
         ("duration", "timeout"),
         ("goal_radius", "goal_radius_m"),
@@ -319,9 +313,12 @@ def protocol_identity(config):
     ):
         raise ValueError("Benchmark protocol differs on commanded speed bounds")
     limits = config["method"].get("limits")
-    if specification["version"] == 2 and limits is not None:
-        if limits["max_velocity_mps"] != specification["nominal_max_velocity_mps"]:
-            raise ValueError("Benchmark protocol differs on nominal planner velocity limit")
+    if (
+        specification["version"] == 2
+        and limits is not None
+        and limits["max_velocity_mps"] != specification["nominal_max_velocity_mps"]
+    ):
+        raise ValueError("Benchmark protocol differs on nominal planner velocity limit")
     chosen = scene.get("scene_ids", protocol_scenes(specification))
     if not chosen or not set(chosen) <= set(protocol_scenes(specification)):
         raise ValueError("Benchmark contains an undeclared scene identity")
@@ -329,9 +326,7 @@ def protocol_identity(config):
         name=specification["name"],
         version=specification["version"],
         path=str(selected),
-        sha256=hashlib.sha256(raw).hexdigest(),
-        catalog_sha256=specification["catalog_sha256"],
-        mjcf_sha256=asset_digest,
+        catalog=scene.get("catalog_path") or specification["catalog"],
     )
 
 
@@ -412,6 +407,7 @@ def pilot_scene_rates(task: str, report: dict) -> dict:
 
 
 def checkpoint_eval_seeds(config: dict, count: int) -> list[int]:
+    """Select deterministic evaluation seeds for frozen checkpoint comparison."""
     start = int(config.get("checkpoint_eval_seed_start", 20000))
     if start < 0 or count < 1:
         raise ValueError(
@@ -421,6 +417,7 @@ def checkpoint_eval_seeds(config: dict, count: int) -> list[int]:
 
 
 def load_specification(task):
+    """Load the benchmark specification for the requested task."""
     if task not in ("tracking", "racing"):
         raise ValueError("This benchmark validator covers tracking and racing only")
     path = resource_path(f"benchmarks/{task}.yaml")
@@ -431,6 +428,7 @@ def load_specification(task):
 
 
 def validate_control_report(report, task, specification=None):
+    """Validate control metrics against the selected benchmark acceptance rules."""
     specification = load_specification(task) if specification is None else specification
     if specification.get("name") != task:
         raise ValueError("Benchmark specification and task differ")

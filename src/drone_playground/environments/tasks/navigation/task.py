@@ -24,20 +24,17 @@ from brax.envs.base import State
 from crazyflow.sim.data import SimData
 from flax import struct
 
-from drone_playground.environments.initialization import initialize_simulation
 from drone_playground.environments.observations.state import (
     NavigationObservation,
     numerically_valid_observation,
 )
-from drone_playground.environments.scenes.geometry import (
-    body_centre_from_state,
-    euclidean_norm,
-)
+from drone_playground.environments.scenes.geometry import body_centre_from_state
 from drone_playground.environments.scenes.procedural_navigation import make_bank
 from drone_playground.environments.sensors.depth import cast_depth
 from drone_playground.environments.sensors.lidar import Mid360Lidar, cast_lidar
 from drone_playground.environments.tasks.navigation.events import OUTCOME_RUNNING, NavigationEvents
 from drone_playground.environments.tasks.rigid_body import RigidBodyTask
+from drone_playground.numerics import euclidean_norm
 
 
 @struct.dataclass
@@ -61,8 +58,6 @@ class NavigationTask(RigidBodyTask):
     """Navigation observations, first-event outcomes and the configured reward."""
 
     name: str
-    freq: int
-    physics_freq: int
     duration: float
     goal_radius: float
     body_radius: float
@@ -73,49 +68,29 @@ class NavigationTask(RigidBodyTask):
     reward: object
     owns_reset_randomization = True
 
-    def bind(self, env):
+    def prepare(self, env):
         self.events = NavigationEvents(self.goal_radius, self.body_radius)
         count = self.reference_count if env.role == "train" else env.count
         count = max(count, len(getattr(env.scene, "scene_ids", ())))
         env.bank, env.scene_manifest = make_bank(env.scene, env.reference_seed, count)
+
+    def create_simulation(self, env):
+        from drone_playground.environments.initialization import initialize_rigid_body
+
+        return initialize_rigid_body(env, start=tuple(np.asarray(env.bank.start[0], np.float32)))
+
+    def bind(self, env):
         env.reset_randomization = env.conditions.get("reset_randomization")
         env.training_collision_mode = env.conditions.get("navigation_collision_mode", "terminate")
         if env.training_collision_mode not in ("terminate", "continuous_loss"):
             raise ValueError("Unknown navigation collision mode")
-        env.physics_freq = self.physics_freq
         env.goal_radius, env.body_radius = self.goal_radius, self.body_radius
-        env.simulation = initialize_simulation(
-            env.dynamics,
-            env.duration,
-            env.freq,
-            env.device,
-            tuple(np.asarray(env.bank.start[0], np.float32)),
-            control_mode=env.controller.native_mode,
-        )
-        env.sim = env.simulation.sim
-        if self.physics_freq != env.sim.freq:
-            env.sim.close()
-            raise ValueError("Requested physics frequency differs from the actual dynamics backend")
-        env.default = env.sim.default_data
-        env.reset_fn = env.sim.build_reset_fn()
-        env.controller.bind(
-            env.simulation.single_action_space.low,
-            env.simulation.single_action_space.high,
-            env.dynamics,
-        )
-        env.low, env.high = env.controller.low, env.controller.high
-        hover = jnp.array([0.0, 0.0, 0.0, float(env.default.params.mass[0]) * 9.81])
-        if hasattr(env.controller, "hover"):
-            hover = env.controller.hover(env.default)
-        env.hover_action = 2 * (hover - env.low) / (env.high - env.low) - 1
         env.identity_quat = jnp.asarray(env.default.states.quat[0, 0])
         env.bounds_low = jnp.asarray(env.bank.world_low, jnp.float32)
         env.bounds_high = jnp.asarray(env.bank.world_high, jnp.float32)
         sensor = env.sensor
         env.depth_stride = None
         env.points_per_frame = 0 if sensor is None else sensor.points_per_frame
-        env.sensor_period = 1 if sensor is None else sensor.period_steps(env.freq)
-        env.sensor_calibration = None if sensor is None else sensor.calibration()
         if (
             sensor is not None
             and self.observation.sensor_size

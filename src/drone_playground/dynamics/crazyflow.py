@@ -15,6 +15,16 @@ from drone_playground.dynamics.parameters import (
 
 @dataclass
 class CrazyflowModel(DynamicsBackend):
+    """Expose Crazyflow's native dynamics through the shared flight interface.
+
+    Args:
+        forward: Name of the selected Crazyflow forward dynamics model.
+        drone: Crazyflow aircraft parameter identifier.
+        backward: Must be ``direct`` for Crazyflow dynamics.
+        domain_randomization: Settings for sampling physical parameter variations.
+        parameter_overrides: Optional fixed physical parameter changes.
+    """
+
     forward: str = "so_rpy"
     drone: str = "cf2x_L250"
     backward: str = "direct"
@@ -22,12 +32,14 @@ class CrazyflowModel(DynamicsBackend):
     parameter_overrides: dict | None = None
 
     def __post_init__(self):
+        """Validate and prepare the CrazyflowModel instance after initialization."""
         from crazyflow.dynamics.core import Dynamics
 
         Dynamics(self.forward)
         if self.backward != "direct":
             raise ValueError(
-                "Crazyflow currently supports its direct derivative; select LOTF for the named surrogate"
+                "Crazyflow currently supports its direct derivative; select LOTF for the "
+                "named surrogate"
             )
         if self.domain_randomization is None:
             self.domain_randomization = {"enabled": False}
@@ -108,7 +120,7 @@ class CrazyflowModel(DynamicsBackend):
         def apply_external_wrench(data):
             if "external_force_world_n" not in data.plugins:
                 return data
-            from drone_playground.environments.randomization import external_wrench
+            from drone_playground.dynamics.disturbances import external_wrench
 
             force, body_torque = external_wrench(data)
             # The source integrator consumes world-frame force and torque.

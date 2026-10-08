@@ -30,6 +30,8 @@ import jax.numpy as jnp
 import numpy as np
 from flax import struct
 
+from drone_playground.numerics import euclidean_norm, quat_to_matrix_xyzw
+
 # --------------------------------------------------------------------------------------
 # Obstacle taxonomy
 # --------------------------------------------------------------------------------------
@@ -314,20 +316,6 @@ def obstacle_positions(bank: SceneBank, scenario_id: jax.Array, time: jax.Array)
     return jnp.where((motion == MOTION_STATIC)[:, None], origin, moving)
 
 
-@jax.custom_jvp
-def euclidean_norm(value):
-    """Exact last-axis norm with the zero subgradient at the origin."""
-    return jnp.linalg.norm(value, axis=-1)
-
-
-@euclidean_norm.defjvp
-def _euclidean_norm_jvp(primals, tangents):
-    (value,), (tangent,) = primals, tangents
-    norm = euclidean_norm(value)
-    derivative = jnp.sum(value * tangent, axis=-1) / jnp.where(norm > 0, norm, 1.0)
-    return norm, derivative
-
-
 def signed_distance(kind: jax.Array, size: jax.Array, centre: jax.Array, point: jax.Array):
     """Exact signed distance from a point to an analytic primitive.
 
@@ -403,33 +391,7 @@ def rotate_body_offset(quat: jax.Array, offset: jax.Array) -> jax.Array:
     replay exporter converts when it writes the trace. Using the wrong layout
     here would silently rotate the collision sphere by 180 degrees.
     """
-    x, y, z, w = quat
-    rotation = jnp.stack(
-        [
-            jnp.stack(
-                [
-                    1 - 2 * (y * y + z * z),
-                    2 * (x * y - z * w),
-                    2 * (x * z + y * w),
-                ]
-            ),
-            jnp.stack(
-                [
-                    2 * (x * y + z * w),
-                    1 - 2 * (x * x + z * z),
-                    2 * (y * z - x * w),
-                ]
-            ),
-            jnp.stack(
-                [
-                    2 * (x * z - y * w),
-                    2 * (y * z + x * w),
-                    1 - 2 * (x * x + y * y),
-                ]
-            ),
-        ]
-    )
-    return rotation @ offset
+    return quat_to_matrix_xyzw(quat) @ offset
 
 
 def body_centre_from_state(pos: jax.Array, quat: jax.Array) -> jax.Array:

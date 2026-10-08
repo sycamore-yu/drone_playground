@@ -10,11 +10,11 @@ import numpy as np
 import pytest
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.artifacts.checkpoints import save_policy
-from drone_playground.composition import compose_experiment
-from drone_playground.control.controllers.crazyflow import AttitudeControl
+from drone_playground.configuration import compose_experiment
+from drone_playground.control.controllers.attitude import AttitudeControl
 from drone_playground.environments.observations.state import NavigationObservation
 from drone_playground.learning.brax_configuration import native_training_config
+from drone_playground.learning.checkpointing import save_policy
 from drone_playground.learning.inference import FrozenNeuralCommand
 from drone_playground.networks.factory import network_factory
 from drone_playground.references import Trajectory, Waypoint
@@ -129,7 +129,7 @@ def test_waypoint_planning_to_frozen_controller_is_a_configured_chain(artifact, 
 
 
 def test_public_pipeline_accepts_state_only_host_for_external_reference_controllers():
-    from drone_playground.composition import validate_config
+    from drone_playground.configuration import validate_config
 
     config = compose_experiment("navigation/pipeline", "hovering", ["method.input_sensor=none"])
     config["env"]["observation"]["name"] = "state"

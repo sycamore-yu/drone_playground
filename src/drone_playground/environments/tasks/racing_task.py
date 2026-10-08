@@ -20,7 +20,6 @@ class RacingTask(RigidBodyTask):
     """Pinned LSY gate events and the existing reference-tracking reward."""
 
     name: str
-    freq: int
     duration: float
     reference_count: int
     time_limit_kind: str
@@ -28,12 +27,11 @@ class RacingTask(RigidBodyTask):
     observation: object
     reward: object
 
-    def bind(self, env):
-        if self.name != "racing" or self.freq != 50 or self.duration != 30.0:
+    def create_simulation(self, env):
+        if self.name != "racing" or env.freq != 50 or self.duration != 30.0:
             raise ValueError("LSY Level0 fixes racing at 50 Hz for 30 seconds")
-        cfg = env.scene.config(env.dynamics)
-        env.config = cfg
-        env.core = env.scene.create_core(
+        self.config = cfg = env.scene.config(env.dynamics)
+        core = env.scene.create_core(
             n_envs=1,
             n_drones=1,
             freq=env.freq,
@@ -47,14 +45,22 @@ class RacingTask(RigidBodyTask):
             max_episode_steps=env.episode_length,
             device=env.device,
         )
-        env.sim = env.core.sim
-        env.dynamics.bind(env.sim, control_mode=env.controller.native_mode)
-        env.sim.spec.compiler.texturedir = str(env.core.gate_spec_path.parent)
-        env.core.settings = env.core.settings.replace(autoreset=False)
+        try:
+            env.dynamics.bind(core.sim, control_mode=env.controller.native_mode)
+            core.sim.spec.compiler.texturedir = str(core.gate_spec_path.parent)
+            core.settings = core.settings.replace(autoreset=False)
+            return core, race_core.build_action_space("attitude", cfg.sim.drone)
+        except BaseException:
+            core.sim.close()
+            raise
+
+    def bind(self, env):
+        env.core = env.simulation
+        env.config = self.config
+        cfg = self.config
         env.default = env.core.data.replace(sim_data=env.sim.default_data)
         env.reset_fn = env.core.build_reset_fn()
         env.contact_fn = env.core.build_contact_check_fn()
-        env.physics_freq = env.sim.freq
         start = np.asarray(env.sim.default_data.states.pos[0, 0])
         count = self.reference_count if env.role == "train" else env.count
         env.trajectories = jnp.asarray(
@@ -63,20 +69,6 @@ class RacingTask(RigidBodyTask):
         env.offsets = jnp.arange(self.observation.n_samples, dtype=jnp.int32) * int(
             env.freq * self.observation.interval
         )
-        action_space = race_core.build_action_space("attitude", cfg.sim.drone)
-        env.controller.bind(action_space.low, action_space.high, env.dynamics)
-        env.low, env.high = env.controller.low, env.controller.high
-        hover = jnp.array(
-            [
-                0.0,
-                0.0,
-                0.0,
-                float(np.asarray(env.sim.default_data.params.mass).reshape(-1)[0]) * 9.81,
-            ]
-        )
-        if hasattr(env.controller, "hover"):
-            hover = env.controller.hover(env.sim.default_data)
-        env.hover_action = (hover - env.low) / (env.high - env.low) * 2 - 1
         env.required_gates = len(cfg.env.track.gate_order)
         env.core.data, _ = env.reset_fn(env.default)
         env.core.data, env.sim.mjx_data = env.core._render_sync(env.core.data, env.sim.mjx_data)
@@ -159,9 +151,7 @@ class RacingTask(RigidBodyTask):
             "tracking_error": error,
             "squared_error": error**2,
             "action_saturation": jnp.mean((jnp.abs(normalized) >= 0.99).astype(jnp.float32)),
-            "physical_thrust": physical[0]
-            if env.controller.input_kind == "thrust_bodyrates"
-            else physical[3],
+            "physical_thrust": physical[0] if env.controller.input_kind == "rates" else physical[3],
             "failure": failed.astype(jnp.float32),
             "collision": contacts[0, 0].astype(jnp.float32),
             "success": success.astype(jnp.float32),

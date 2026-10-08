@@ -12,6 +12,7 @@ from drone_playground.environments.scenes.geometry import clearance_and_collisio
 
 
 def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
+    """Generate reproducible navigation initial conditions for selected scenes."""
     spec = dict(specification)
     position = np.asarray(spec["position_half_width_m"], dtype=float)
     velocity = np.asarray(spec["velocity_half_width_mps"], dtype=float)
@@ -22,9 +23,7 @@ def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
         position.shape != (3,)
         or velocity.shape != (3,)
         or attempts < 1
-        or not np.isfinite(
-            np.r_[position, velocity, yaw, clearance, body_radius]
-        ).all()
+        or not np.isfinite(np.r_[position, velocity, yaw, clearance, body_radius]).all()
         or np.any(position < 0)
         or np.any(velocity < 0)
         or min(yaw, clearance, body_radius) < 0
@@ -45,7 +44,7 @@ def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
         yaws.append(yk.uniform(-yaw, yaw))
     proposals = np.asarray(proposals, dtype=np.float32)
 
-    # A yaw-only reset preserves the local collision-centre z offset.
+    # A yaw-only reset preserves the local collision-center z offset.
     @jax.jit
     def distances(points):
         return jax.vmap(
@@ -110,9 +109,7 @@ def navigation_resets(bank, scene_indices, seeds, specification, body_radius):
     )
 
 
-def navigation_cases(
-    bank, repeats, seed_start, per_scene=False, *, protocol=None
-):
+def navigation_cases(bank, repeats, seed_start, per_scene=False, *, protocol=None):
     """Map each episode explicitly to geometry and an independent reset seed.
 
     Per-scene seeds match the interleaved eight-scene learning protocol, even
@@ -131,14 +128,10 @@ def navigation_cases(
             label = bank.labels(index)
             unique.setdefault(label["subtype"], (index, label["difficulty"]))
         selected = [
-            set(scenes)
-            for scenes in protocol["scenes"].values()
-            if set(scenes) <= set(unique)
+            set(scenes) for scenes in protocol["scenes"].values() if set(scenes) <= set(unique)
         ]
         if not selected or set.union(*selected) != set(unique):
-            raise ValueError(
-                "Benchmark requires complete declared navigation tasks"
-            )
+            raise ValueError("Benchmark requires complete declared navigation tasks")
         for name in canonical:
             if name not in unique:
                 continue
@@ -147,9 +140,7 @@ def navigation_cases(
                 groups[difficulty].append(
                     dict(
                         scenario_id=scenario,
-                        seed=seed_start
-                        + len(canonical) * repeat
-                        + canonical.index(name),
+                        seed=seed_start + len(canonical) * repeat + canonical.index(name),
                         scene_id=name,
                     )
                 )

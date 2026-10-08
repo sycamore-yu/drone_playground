@@ -15,7 +15,24 @@ from drone_playground.references import Reference
 
 
 class DroneEnvironment(Env):
-    """Execute one complete control interval and then evaluate the task."""
+    """Execute one control interval and evaluate the task using Brax state.
+
+    Args:
+        dynamics: Physical model and state stepping implementation.
+        controller: Converts physical commands to the dynamics input contract.
+        reference: Task reference or trajectory source.
+        scene: Physical geometry used by the simulation.
+        sensor: Observation sensor used by the task.
+        task: Reset, observation, reward, and termination logic.
+        freq: Policy control frequency in hertz.
+        physics_freq: Optional internal physics sampling frequency in hertz.
+        device: Requested execution device.
+        role: Training or evaluation role of the environment.
+        count: Number of independent environment instances.
+        seed: Seed for reference and initial-state generation.
+        conditions: Optional environmental randomization and execution conditions.
+        name: Optional public environment name; defaults to the task name.
+    """
 
     def __init__(
         self,
@@ -26,6 +43,8 @@ class DroneEnvironment(Env):
         scene,
         sensor,
         task,
+        freq,
+        physics_freq=None,
         device="cpu",
         role="eval",
         count=1,
@@ -43,7 +62,7 @@ class DroneEnvironment(Env):
         self.device, self.role, self.count = device, role, count
         self.conditions = {} if conditions is None else conditions
         self.reference_seed = seed
-        self.freq, self.duration = task.freq, task.duration
+        self.freq, self.duration = freq, task.duration
         if self.freq <= 0 or self.duration <= 0 or count < 1:
             raise ValueError("Environment frequency, duration and count must be positive")
         self.episode_length = round(self.freq * self.duration)
@@ -57,12 +76,12 @@ class DroneEnvironment(Env):
             for name in ("reset_randomization", "observation_noise", "action_noise", "disturbance")
         }
         self.drone = dynamics.drone
-        task.bind(self)
-        if self.physics_freq <= 0 or self.physics_freq % self.freq:
-            raise ValueError("Control frequency must divide the actual physics frequency")
-        self.substeps = self.physics_freq // self.freq
-        self.dt_physics = 1.0 / self.physics_freq
-        self.low, self.high = controller.low, controller.high
+        from drone_playground.environments.initialization import initialize_execution
+
+        prepare = getattr(task, "prepare", None)
+        if prepare is not None:
+            prepare(self)
+        initialize_execution(self, physics_freq)
         self.transition = ActionTransition(
             lambda data, physical: controller.apply(task.physics(data), physical),
             lambda data, control, dt: task.with_physics(
@@ -71,6 +90,12 @@ class DroneEnvironment(Env):
             self.substeps,
             self.dt_physics,
         )
+        task.transition = self.transition
+        try:
+            task.bind(self)
+        except BaseException:
+            self.close()
+            raise
         self.reset_info_fields = tuple(getattr(task, "reset_info_fields", ()))
         if hasattr(dynamics, "physical_parameters"):
             self.reset_info_fields += ("physical_parameters",)
@@ -137,16 +162,17 @@ class DroneEnvironment(Env):
         return self._transition(state, action, physical, commands)
 
     def _transition(self, state, action, physical, commands=None, record_physical=None):
-        advance = getattr(self.task, "advance", None)
-        if advance is not None:
-            data, evidence = advance(self, state, physical, commands)
+        prepare = getattr(self.task, "transition_inputs", None)
+        if prepare is not None:
+            inputs = prepare(self, state, physical, commands)
+            data, *evidence = self.transition.checked(state.pipeline_state, **inputs)
             values = physical if record_physical is None else record_physical
             return self.task.finish(self, state, data, action, values, evidence)
         probe = self.task.probe(self, state)
         if commands is not None:
             result = self.transition.step_schedule(state.pipeline_state, commands, probe)
         elif probe is not None:
-            result = self.transition.step_with_evidence(state.pipeline_state, physical, probe)
+            result = self.transition.step(state.pipeline_state, physical, probe)
         else:
             result = self.transition.step(state.pipeline_state, physical)
         if probe is None:
@@ -179,7 +205,6 @@ class DroneEnvironment(Env):
         return None if self.sensor is None else self.freq / self.sensor_period
 
     def close(self):
-        """Release task-owned rendering and native simulation resources."""
-        close = getattr(self.task, "close", None)
-        if close is not None:
-            close(self)
+        """Release the shared simulation resource owned by this environment."""
+        if self.sim is not None:
+            self.sim.close()

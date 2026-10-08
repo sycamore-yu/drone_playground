@@ -9,9 +9,10 @@ import numpy as np
 from brax.training.acme import running_statistics, specs
 from brax.training.agents.ppo import networks as ppo_networks
 
-from drone_playground.artifacts.checkpoints import load_policy, save_policy
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 from drone_playground.learning.brax_configuration import native_training_config
+from drone_playground.learning.checkpointing import save_policy
+from drone_playground.learning.inference import load_policy
 from drone_playground.networks.factory import network_factory
 from drone_playground.networks.perception import SensorLayout
 

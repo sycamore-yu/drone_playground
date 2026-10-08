@@ -49,6 +49,8 @@ finally:
 
 `load()` 直接调用 Hydra。`algorithm` 选择训练更新规则；训练所得 Policy 与运行方法分开。没有 registry。
 
+环境控制频率使用 `env.freq`。物理时钟从原生后端读取，PointMass 等模型通过 `env.physics_freq` 指定；不再使用 `env.task.freq` 或 `env.task.physics_freq`。碰撞检测跟随物理子步，改变策略频率不会降低检测频率。
+
 新运行自动写入`results/runs/<task>/<method>/<run_id>/`。Task／Method 来自解析配置，默认 `run_id` 为UTC时间戳加训练 seed；读取状态可用`pixi run status --run-id=<标识>`。检查点和评测报告属于该 run，选定结果由`results/selected/`引用，不再复制成另一棵目录。
 
 在 CUDA 可用的主机上，可用 `JAX_PLATFORMS=cuda,cpu` 将 GPU 设为 JAX 默认后端，同时允许代码显式使用 CPU；项目的 `runtime.device` 也应选择 `gpu`。例如：
@@ -90,7 +92,7 @@ pixi run train experiment=control/bptt env=tracking \
   runtime.device=gpu run_id=lotf-tracking
 ```
 
-将 Dynamics preset 改为 `lotf_simplified` 即使用简化动力学；前向模型与 `algorithm.gradient.transition` 的反向规则独立选择。Navigation 组合使用 `env.task.physics_freq=1000`，并在自定义评测下选择适合的协议；标准 Navigation8 的模型条件仍由原协议规定。模型拒绝没有物理作用的参数：拟合姿态与 LOTF simplified 不接受惯量 DR，PointMassLag 只接受 `motor_strength`／`lag` 倍率。外力、力矩使用 N／Nm，点质量使用加速度 m/s²；测量噪声和动作误差单独声明。
+将 Dynamics preset 改为 `lotf_simplified` 即使用简化动力学；前向模型与 `algorithm.gradient.transition` 的反向规则独立选择。Navigation 组合使用 `env.physics_freq=1000`，并在自定义评测下选择适合的协议；标准 Navigation8 的模型条件仍由原协议规定。模型拒绝没有物理作用的参数：拟合姿态与 LOTF simplified 不接受惯量 DR，PointMassLag 只接受 `motor_strength`／`lag` 倍率。外力、力矩使用 N／Nm，点质量使用加速度 m/s²；测量噪声和动作误差单独声明。
 
 初态分布由对应 experiment 的 `training.reset_randomization` 声明。`training.scene_distribution.type` 声明 fixed／generated／procedural，固定库和固定 command range 不叫 curriculum。
 
@@ -109,9 +111,11 @@ pixi run play replay=results/runs/tracking/bptt/recheck-bptt-tracking/rollouts \
 
 数值报告和选模记录始终保存；普通 train/eval 的完整 RScope/MuJoCo replay 默认关闭，设置 `evaluation.record_replays=true` 才写入 `rollouts/`。Brax 训练显式启用 `training.publish_live=true` 时也会记录回放供实时查看。`play checkpoint=...` 自动记录本次执行轨迹；查看已有轨迹直接选择 `replay`。正式 Benchmark 由对应 `benchmarks/` specification 固定 cases、种子、预算与指标，不通过额外 Environment role 区分。
 
+循环感知策略的评测可使用 `++evaluation.batch_size=25` 限制同时计算的回合数。这只控制显存占用，不改变 `evaluation.episodes`、场景次序、随机种子、传感器或任务时限。批次结果合并后再执行正式质量判定。
+
 ### 历史检查点
 
-当前运行只接受配置 v4。历史 v3 权重、sidecar 和正式报告保持不变。先准备经过核对的完整 v4 解析配置，再显式创建新副本：
+当前运行只接受时钟位于 `env` 的配置 v4。历史 v3，以及仍把时钟放在 Task 中的旧 v4 权重、sidecar 和正式报告保持不变。先准备经过核对的完整当前 v4 解析配置，再显式创建新副本：
 
 ```bash
 pixi run python -m drone_playground.artifacts.migration \
@@ -121,28 +125,47 @@ pixi run python -m drone_playground.artifacts.migration \
 
 工具核对输入、网络和物理合同，保留来源配置及参数摘要。目标必须不存在。普通 Brax 推理权重保持字节不变；旧循环状态的类路径只在该显式工具内转换。含旧环境结构的 BPTT/SHAC 完整状态不能直接当作新架构续训状态，应选择其推理检查点做参数热启动。新架构产生的完整状态使用正常 `training.resume`。
 
+Python 执行与 CLI 共用同一配置准备过程。评测冻结检查点时，显式传入要改变的设置，默认值不会被当成用户的覆盖意图：
+
+```python
+from pathlib import Path
+from drone_playground.configuration import load_config
+from drone_playground.app import run_experiment
+
+overrides = [
+    "mode=eval",
+    "checkpoint=/path/to/current-checkpoint.pkl",
+    "runtime.device=cpu",
+    "evaluation.episodes=2",
+]
+config = load_config(overrides=overrides)
+report = run_experiment(config, Path("tmp/evaluation"), "frozen-eval", overrides=overrides)
+```
+
 ## 原生规划器与 MPC
 
 ```bash
 # 初次准备或明确重建 ROS 容器时执行。
-bash native/ros1/setup.sh
+bash docker/ros1/setup.sh
 
 pixi run eval experiment=papers/super env=navigation/static \
   +evaluation.protocol=benchmarks/navigation.yaml evaluation.episodes=2 runtime.device=cpu \
   run_id=super-static-new
 ```
 
-原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `native/ros1/versions.env`、`native/ros1/patches/` 及[原生集成说明](../native/ros1/README.md)。
+原生规划器安装脚本会重建项目命名的 ROS 容器；执行前确认既有规划任务已结束。现有容器独立于 Python 工作目录，具体镜像、提交和补丁见 `docker/ros1/versions.env`、`docker/ros1/patches/` 及[原生集成说明](../docker/ros1/README.md)。
 
-新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际物理输出、执行参考、有效期和控制命令。Reference、Setpoint、SFC 和轨迹预览按内容摘要保存，走廊及预览各自保留有效期。RPC 使用 v2；旧外部服务需用 v2 SDK 重建，历史冻结运行包不改写。
+新增原生评测在每回合的`native/.../decision-trace/`记录适配器→下游执行器边界：当前机体状态、实际物理输出、执行参考、有效期和控制命令。Reference、Setpoint、SFC 和轨迹预览按内容摘要保存，走廊及预览各自保留有效期。RPC 使用 v2；新 C++ 服务从 `integrations/rpc/proto/algorithm.proto` 生成并实现 gRPC 接口，不依赖额外 SDK 基类。运行产物中的 `native/` 只是该回合的记录目录，不是已删除的仓库根目录。历史冻结运行包不改写。
 
 原生与`pipeline`的悬停／跟踪／竞速评测使用`evaluation.seed_start`作为首个重置种子，显式的0也有效；留空时训练内 `checkpoint_eval` 从20000、最终 `benchmark` 从30000开始。新的`eval/report.json`逐回合保存实际初始位置、速度、xyzw姿态，以及启用相应延迟模型时的`delay_requested_ms`和`delay_effective_ms`。旧版曾忽略自定义首种子，回归及已完成报告的影响检查见[重置合同凭据](../artifacts/verification/native-control-reset-contract.json)。
 
 ```python
 from drone_playground.artifacts.decisions import load_native_decisions
 
-for frame in load_native_decisions("results/runs/<task>/<method>/<run_id>/native/hard/0/decision-trace"):
-    print(frame["tick"], frame["time"], frame["reply"].get("output"), frame["command"])
+for frame in load_native_decisions(
+    "results/runs/<task>/<method>/<run_id>/native/hard/0/decision-trace"
+):
+    print(frame["tick"], frame["time"], frame["reply"].output, frame["command"])
 ```
 
 读取会验证摘要并恢复三类输出对象，可在相同控制器配置下，从回合初态顺序重放执行参考，不必再次调用异步规划器。该记录位于物理转移之前；`command=null`表示控制器未返回命令。即使命令已生成，仍需按tick与物理轨迹中对应的转移配对，才能确认已执行。导航的转移记录在同回合`case-trace/`，控制任务的轨迹在运行目录`rollouts/`。记录开销可能影响原生异步调度，不能据此承诺再次调用规划器会得到同一路径。
@@ -164,7 +187,7 @@ python3 scripts/tools/build_navigation.py --sando-worlds /path/to/pinned-sando/w
   --output tmp/navigation-candidate
 ```
 
-脚本保留原生成数学，先核对源 world 摘要，再生成候选 MJCF，并从现役资产保留 S06／D06。候选输出不覆盖正式资产。修改几何后需要新的协议与校验记录。当前导航 XML 的摘要及旧 JSON→MJCF 迁移身份保存在包资源 `src/drone_playground/benchmarks/navigation-mjcf-verification.json`。
+脚本保留原生成数学，先核对源 world，再生成候选 MJCF，并从现役资产保留 S06／D06。候选输出不覆盖正式资产。运行环境直接读取 MJCF，不要求更新 SHA 清单。修改几何后的拓扑/可达性检查由离线工具显式执行；历史审查保留在 `artifacts/verification/navigation-mjcf/verification.json`，不随环境加载。
 
 ## 维护检查
 
@@ -185,4 +208,4 @@ JAX_PLATFORMS=cpu pixi run test
 
 ## 回放显示
 
-新导航回放自动显示实际深度／MID360视场；原生方法和模块链在保存真实输出时还显示规划轨迹及可选SFC。配套XML与mj_unroll必须一起保留。历史文件可复制增强，操作和数据合同见[回放可视化](notes/research/replay-visualization.md)。工程预览统一放在`results/scratch/previews/`或`results/scratch/replays/`；它们不增加正式质量通过数。
+新导航回放显示深度／MID360 的表面命中点，不绘制视场包络；原生方法和模块链在保存真实输出时还显示规划轨迹及可选 SFC。`visualization.rscope_io` 导出文件，`visualization.rscope_publish` 将完成的回放提供给查看器。配套 XML 与 mj_unroll 必须一起保留。历史文件可复制增强，操作和数据合同见[回放可视化](notes/research/replay-visualization.md)。工程预览统一放在 `results/scratch/previews/` 或 `results/scratch/replays/`；它们不增加正式质量通过数。

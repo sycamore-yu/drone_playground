@@ -13,7 +13,7 @@ from drone_playground.visualization.rscope_io import export_rollout
 
 @pytest.mark.parametrize("scene_id", ["S01", "D06"])
 def test_replay_attaches_fixed_mjcf_and_preserves_dynamic_positions(scene_id, tmp_path):
-    bank, manifest = NavigationCatalogScene(scene_ids=(scene_id,)).build()
+    bank, _manifest = NavigationCatalogScene(scene_ids=(scene_id,)).build()
     env = SimpleNamespace(
         bank=bank, dt=0.02, sensor=None, scenario=lambda _: {"scene_id": scene_id}
     )
@@ -54,6 +54,7 @@ def test_corridor_and_preview_keep_separate_expiry_in_actual_replay(tmp_path):
         TrajectoryPreview,
     )
     from drone_playground.references import Trajectory
+    from drone_playground.runtime.decision import Decision
     from drone_playground.visualization.layers import layers_from_decisions
 
     bank, _ = NavigationCatalogScene(scene_ids=("S01",)).build()
@@ -65,7 +66,21 @@ def test_corridor_and_preview_keep_separate_expiry_in_actual_replay(tmp_path):
     curve = Trajectory(0.0, [1.0], coefficients)
     preview = TrajectoryPreview("backup", curve, 0.0, 0.8)
     layers = layers_from_decisions(
-        [dict(time=0.0, reply=dict(corridors=(corridor,), trajectory_previews=(preview,)))]
+        [
+            dict(
+                time=0.0,
+                reply=Decision(
+                    "no_plan",
+                    None,
+                    "",
+                    0.0,
+                    0.0,
+                    {},
+                    corridors=(corridor,),
+                    trajectory_previews=(preview,),
+                ),
+            )
+        ]
     )
     assert {frame.layer: frame.valid_until for frame in layers.planning} == {
         "stage-output/sfc/candidate": 0.3,

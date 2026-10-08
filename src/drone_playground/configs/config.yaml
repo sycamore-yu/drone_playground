@@ -59,7 +59,7 @@ evaluation:
   output: null
   record_replays: false
   entrypoint: drone_playground.evaluation.run.evaluate_experiment
-  policy_evaluator: drone_playground.evaluation.tracking.policy.PolicyEvaluator
+  policy_evaluator: drone_playground.evaluation.tracking.policy.TrackingEvaluator
 visualization:
   mode: rscope
   publish: true

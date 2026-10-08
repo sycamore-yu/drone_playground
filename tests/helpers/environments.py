@@ -1,7 +1,7 @@
 """Small physical fixtures built through the public Hydra composition API."""
 
 from drone_playground.configuration import load_config
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 
 
 def tracking_environment(
@@ -21,8 +21,8 @@ def tracking_environment(
     if task == "random":
         task, reference = "tracking", "random"
     config = load_config("environment", ["env=" + task])
+    config["env"]["freq"] = freq
     config["env"]["task"].update(
-        freq=freq,
         duration=duration,
         reference_count=reference_count,
         numerical_guard=numerical_guard,

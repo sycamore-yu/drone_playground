@@ -11,25 +11,26 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
+from hydra.utils import instantiate
 
 from drone_playground.artifacts.decisions import NativeDecisionRecorder
 from drone_playground.artifacts.record import RunRecorder
 from drone_playground.artifacts.reporting import save_report
 from drone_playground.artifacts.traces import record_native_case
-from drone_playground.control.external_tracking import ExternalTracking
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 from drone_playground.environments.scenes.geometry import DIFFICULTIES
 from drone_playground.environments.sensors.depth import cast_depth, sensor_pose
 from drone_playground.environments.sensors.lidar import cast_lidar
 from drone_playground.evaluation.navigation.cases import navigation_cases, navigation_resets
 from drone_playground.evaluation.navigation.metrics import combine_cells, summarize_cell
 from drone_playground.evaluation.navigation.policy import export_navigation_replays
-from drone_playground.integrations.grpc_service import create_native_planner
 from drone_playground.integrations.sensors import sensor_packet
 from drone_playground.runtime.host_runner import run_steps
+from drone_playground.runtime.tracking import ExternalTracking
 
 
 def sensor_function(env, method):
+    """Build the sensor sampling function required by a native planner."""
     if method == "none":
         return lambda data: None
     if method in ("ego", "depth"):
@@ -71,6 +72,7 @@ def sensor_function(env, method):
 
 
 def evaluate_native(config, root: Path, run_id: str):
+    """Run external planning methods against navigation evaluation cases."""
     settings = config["method"]
     method = settings.get("input_sensor", settings.get("method"))
     role = config["evaluation"]["role"]
@@ -113,7 +115,6 @@ def evaluate_native(config, root: Path, run_id: str):
             save_report(rec.path / "initial-conditions.json", initials["record"])
         for index, case in enumerate(ordered):
             case["reset_index"] = index
-        worker_path = None
         sample = sensor_function(env, method)
         advance = jax.jit(env.step_physical)
         reset = jax.jit(env.reset)
@@ -180,16 +181,25 @@ def evaluate_native(config, root: Path, run_id: str):
                 worker = controller = None
                 unavailable = rejected = 0
                 commands = trajectories = 0
-                hold = np.asarray(state.pipeline_state.sim_data.states.pos[0, 0])
                 latencies = []
                 tic = time.monotonic()
                 try:
-                    worker = create_native_planner(
-                        settings,
-                        rec.path / "native" / difficulty / str(case),
-                        port,
-                        worker_path,
+                    worker = instantiate(
+                        {
+                            "_target_": settings["_target_"],
+                            "settings": {
+                                **{
+                                    key: value
+                                    for key, value in settings.items()
+                                    if not key.startswith("_")
+                                },
+                                "port": port,
+                            },
+                        },
+                        directory=rec.path / "native" / difficulty / str(case),
                         env=env,
+                        _recursive_=False,
+                        _convert_="all",
                     )
                     controller = ExternalTracking(
                         env,
@@ -210,7 +220,7 @@ def evaluate_native(config, root: Path, run_id: str):
                     )
 
                     def decide(current, tick):
-                        nonlocal commands, trajectories, unavailable, rejected, hold
+                        nonlocal commands, trajectories, unavailable, rejected
                         if cancelled.is_set():
                             raise CancelledError("Native evaluation cancelled")
                         observation_start = time.perf_counter()
@@ -222,22 +232,11 @@ def evaluate_native(config, root: Path, run_id: str):
                             )
                         observation_seconds = time.perf_counter() - observation_start
                         reply = worker.step(packet)
-                        reference = reply.get("reference")
-                        commands, trajectories = (
-                            reply["commands"],
-                            reply["trajectories"],
-                        )
-                        if reference is None and reply.get("output") is None:
+                        commands = int(reply.diagnostics.get("commands", 0))
+                        trajectories = int(reply.diagnostics.get("trajectories", 0))
+                        if reply.output is None:
                             unavailable += 1
-                            rejected += int(reply.get("rejected_reference", False))
-                            reference = dict(
-                                position=hold,
-                                velocity=[0.0, 0.0, 0.0],
-                                acceleration=[0.0, 0.0, 0.0],
-                                yaw=0.0,
-                            )
-                        else:
-                            hold = np.asarray(env.controller_observation(current)["pos"])
+                        rejected += int(reply.diagnostics.get("rejected_reference", False))
                         physical = None
                         try:
                             physical = controller.command(reply, current, tick)
@@ -353,7 +352,9 @@ def evaluate_native(config, root: Path, run_id: str):
                     for item in traces:
                         n = item["pos"].shape[0]
                         padded_item = jax.tree.map(
-                            lambda x: np.concatenate([x, np.repeat(x[-1:], length - n, axis=0)]),
+                            lambda x, length=length, n=n: np.concatenate(
+                                [x, np.repeat(x[-1:], length - n, axis=0)]
+                            ),
                             item,
                         )
                         padded_item["active"][n:] = False
@@ -371,14 +372,15 @@ def evaluate_native(config, root: Path, run_id: str):
                     from drone_playground.evaluation.navigation.policy import select_episodes
 
                     selection = select_episodes({"cells": {difficulty: cells[difficulty]}})
-                    export_navigation_replays(
-                        env,
-                        {difficulty: trace},
-                        rec.path / "rollouts",
-                        case_indices=selection,
-                        scenario_groups=scenario_groups,
-                        decision_root=rec.path / "native",
-                    )
+                    if config["evaluation"].get("record_replays", False):
+                        export_navigation_replays(
+                            env,
+                            {difficulty: trace},
+                            rec.path / "rollouts",
+                            case_indices=selection,
+                            scenario_groups=scenario_groups,
+                            decision_root=rec.path / "native",
+                        )
                     save_report(
                         rec.path / "eval" / (difficulty + ".json"),
                         cells[difficulty],
@@ -415,7 +417,10 @@ def evaluate_native(config, root: Path, run_id: str):
             quality_passed=None,
             quality_rule="benchmark validation pending",
             diagnostics=diagnostics,
-            native_modification="pinned upstream with declared native/ros1/patches; runtime hashes identify deployed build; gRPC/ROS adapters",
+            native_modification=(
+                "pinned upstream with declared docker/ros1/patches; runtime hashes "
+                "identify deployed build; gRPC/ROS adapters"
+            ),
         )
         from drone_playground.runtime.timing import decision_statistics
 

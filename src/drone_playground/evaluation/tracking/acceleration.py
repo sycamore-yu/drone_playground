@@ -12,7 +12,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from drone_playground.artifacts.reporting import save_report, tree_digest
-from drone_playground.environments.tasks.tracking.events import _select, advance_checked
+from drone_playground.control.transition import delayed_schedule
+from drone_playground.environments.tasks.tracking.events import _select
 from drone_playground.evaluation.racing import summarize_race
 from drone_playground.evaluation.tracking.metrics import summarize_trials
 from drone_playground.networks.factory import build_network
@@ -45,15 +46,13 @@ class ControlEvaluator:
             points, valid, proprio = task.measure(state, timestamp)
             action, next_memory = network.apply(params, points, valid, proprio, memory)
             command = task.command(action, state)
-            nxt, next_time, next_result, next_gates, clearance = advance_checked(
-                task,
+            nxt, next_time, next_result, next_gates, clearance = task.transition.checked(
                 state,
-                command,
-                last,
-                self.delay,
-                timestamp,
-                result,
-                passed,
+                delayed_schedule(command, last, self.delay, task.substeps),
+                task.transition_events(),
+                timestamp=timestamp,
+                outcome=result,
+                memory=passed,
             )
             # Hover/tracking require their full prescribed duration; racing requires gates.
             terminal = 5 if task.name == "racing" else 1
@@ -141,7 +140,9 @@ class ControlEvaluator:
             geometry=self.task.geometry_identity,
             reference_sha256=hashlib.sha256(np.asarray(self.task.references).tobytes()).hexdigest(),
             sensor_calibration=self.task.sensor_calibration,
-            evaluation_scope="fixed canonical reference/geometry, independent initial-state and delay seeds",
+            evaluation_scope=(
+                "fixed canonical reference/geometry, independent initial-state and delay seeds"
+            ),
         )
         from drone_playground.runtime.timing import measure_decision, sensor_schedule
 
@@ -249,9 +250,10 @@ def export_replays(task, trace, report, directory):
 
 
 def evaluate_pointcloud_control(config, root, run_id):
+    """Evaluate acceleration-based point-cloud control on tracking benchmarks."""
     from drone_playground.artifacts.record import RunRecorder
     from drone_playground.artifacts.training_state import load_training_state
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     state, metadata = load_training_state(config["checkpoint"])
     source = metadata["config"]

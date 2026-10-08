@@ -38,9 +38,9 @@ method:
 ```
 
 原生 C++ 服务使用
-`drone_playground.integrations.grpc_service.NativeServicePlanner`，底层 transport
-由 `drone_playground.rpc` 提供。SUPER/EGO 额外需要 ROS1 deployment adapter；
-其容器、补丁和构建脚本位于 `native/ros1/`。
+`drone_playground.integrations.service.NativeServicePlanner`，底层 transport
+由 `drone_playground.integrations.rpc` 提供。SUPER/EGO 额外需要 ROS1 deployment adapter；
+其容器、补丁和构建脚本位于 `docker/ros1/`。
 
 ## MPC
 

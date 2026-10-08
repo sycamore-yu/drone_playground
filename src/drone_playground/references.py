@@ -8,7 +8,7 @@ so a compiled consumer cannot silently extrapolate an expired reference.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import ClassVar, Union
+from typing import ClassVar
 
 import numpy as np
 from scipy.interpolate import CubicSpline
@@ -58,6 +58,7 @@ class Trajectory:
     kind: ClassVar[str] = "trajectory"
 
     def __post_init__(self):
+        """Validate and prepare the Trajectory instance after initialization."""
         durations = _finite(self.durations)
         coefficients = _finite(self.coefficients)
         if durations.ndim != 1 or len(durations) == 0:
@@ -91,6 +92,7 @@ class Trajectory:
         for name, value in zip(
             ("start_time", "durations", "coefficients", "yaw_defined", "frame"),
             (*values, *metadata),
+            strict=True,
         ):
             object.__setattr__(result, name, value)
         return result
@@ -183,6 +185,7 @@ class Waypoint:
     frame: ClassVar[str] = "world"
 
     def __post_init__(self):
+        """Validate and prepare the Waypoint instance after initialization."""
         positions = _finite(self.positions)
         if positions.ndim != 2 or positions.shape[1] != 3 or len(positions) == 0:
             raise ValueError("Waypoint positions must be [N,3]")
@@ -209,12 +212,14 @@ class Waypoint:
         """Reconstruct transformed arrays without host validation."""
         del metadata
         result = object.__new__(cls)
-        for name, value in zip(("positions", "tolerance", "generated_at", "valid_until"), values):
+        for name, value in zip(
+            ("positions", "tolerance", "generated_at", "valid_until"), values, strict=True
+        ):
             object.__setattr__(result, name, value)
         return result
 
 
-Reference = Union[Waypoint, Trajectory]
+Reference = Waypoint | Trajectory
 
 
 def reference_horizon(trajectory, time, offsets, *, yaw=None):
@@ -230,6 +235,7 @@ def reference_horizon(trajectory, time, offsets, *, yaw=None):
 
 
 def random_trajectory(seed: int, duration: float = 15.0, freq: int = 50) -> np.ndarray:
+    """Sample a reproducible random trajectory reference for flight tracking."""
     takeoff = np.array([-1.5, 1.0, 0.07])
     waypoints = np.random.RandomState(seed).uniform(-1, 1, (10, 3))
     waypoints = waypoints * [1.2, 1.2, 0.5] + 0.3 * takeoff + [0, 0, 0.7]
@@ -243,6 +249,7 @@ def random_trajectory(seed: int, duration: float = 15.0, freq: int = 50) -> np.n
 
 
 def race_reference(start, freq=50, duration=18.75):
+    """Construct the reference motion used by a racing scenario."""
     knots = np.array(
         [
             start,

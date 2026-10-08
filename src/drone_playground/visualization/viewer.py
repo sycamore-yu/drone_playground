@@ -2,16 +2,15 @@
 
 from pathlib import Path
 
-from drone_playground.visualization.rscope_io import publish_run
+from drone_playground.visualization.rscope_publish import publish_run
 
 
 def replay(directory: Path, *, publish=True):
+    """Find recorded MuJoCo rollouts and optionally publish them to RScope."""
     directory = Path(directory).resolve()
     candidates = sorted({p.parent for p in directory.rglob("*.mj_unroll")})
     if not candidates:
-        raise FileNotFoundError(
-            f"Replay directory contains no physical trajectories: {directory}"
-        )
+        raise FileNotFoundError(f"Replay directory contains no physical trajectories: {directory}")
     result = dict(
         source_directory=str(directory),
         available_cases=[str(p) for p in candidates],

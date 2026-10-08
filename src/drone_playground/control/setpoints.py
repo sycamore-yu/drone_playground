@@ -7,7 +7,7 @@ compiled control code keeps the same types without converting tracers to NumPy.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from typing import ClassVar, Union
+from typing import ClassVar
 
 import numpy as np
 
@@ -70,7 +70,7 @@ class RateSetpoint:
 
 @dataclass(frozen=True)
 class ForceTorque:
-    """Collective body thrust in newtons and body torque in newton-metres."""
+    """Collective body thrust in newtons and body torque in newton-meters."""
 
     thrust: jax.Array
     torque: jax.Array
@@ -97,8 +97,8 @@ class MotorRPM:
         return jnp.asarray(self.rpm)
 
 
-Setpoint = Union[StateSetpoint, AttitudeSetpoint, RateSetpoint]
-Actuation = Union[ForceTorque, MotorRPM]
+Setpoint = StateSetpoint | AttitudeSetpoint | RateSetpoint
+Actuation = ForceTorque | MotorRPM
 
 if jax is not None:
     for _type in (StateSetpoint, AttitudeSetpoint, RateSetpoint, ForceTorque, MotorRPM):

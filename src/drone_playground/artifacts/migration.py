@@ -19,21 +19,55 @@ from drone_playground.artifacts.schema import require_current
 def _legacy_target(target):
     """Translate former source locations only at this explicit migration boundary."""
     replacements = {
-        "environments.observations.TrackingObservation": "environments.observations.state.TrackingObservation",
-        "environments.observations.NavigationObservation": "environments.observations.state.NavigationObservation",
-        "environments.observations.NavigationSensorObservation": "environments.observations.state.NavigationSensorObservation",
-        "environments.tasks.pointcloud.PaperObservation": "environments.observations.flight_state.FlightStateObservation",
-        "environments.sensors.pointcloud.UniformMid360Lidar": "environments.sensors.lidar.UniformRayLidar",
-        "environments.sensors.depth_flight.DepthFlightCamera": "environments.sensors.depth.PinholeDepthCamera",
+        "environments.observations.TrackingObservation": (
+            "environments.observations.state.TrackingObservation"
+        ),
+        "environments.observations.NavigationObservation": (
+            "environments.observations.state.NavigationObservation"
+        ),
+        "environments.observations.NavigationSensorObservation": (
+            "environments.observations.state.NavigationSensorObservation"
+        ),
+        "environments.tasks.pointcloud.PaperObservation": (
+            "environments.observations.flight_state.FlightStateObservation"
+        ),
+        "environments.sensors.pointcloud.UniformMid360Lidar": (
+            "environments.sensors.lidar.UniformRayLidar"
+        ),
+        "environments.sensors.depth_flight.DepthFlightCamera": (
+            "environments.sensors.depth.PinholeDepthCamera"
+        ),
         "learning.objectives.TrackingObjective": "environments.tasks.rewards.TrackingObjective",
         "learning.objectives.NavigationObjective": "environments.tasks.rewards.NavigationObjective",
+        "learning.objectives.navigation.MotionNavigationObjective": (
+            "environments.tasks.rewards.MotionNavigationReward"
+        ),
+        "planning.minimum_jerk.MinimumJerkPlanning": "planning.minimum_jerk.MinimumJerkPlanner",
+        "evaluation.tracking.policy.PolicyEvaluator": (
+            "evaluation.tracking.policy.TrackingEvaluator"
+        ),
+        "integrations.ros1.RosPlanner": "integrations.ros1.planner.RosPlanner",
     }
     prefix = "drone_playground."
+    if not target.startswith(prefix):
+        return target
     suffix = target.removeprefix(prefix)
-    return prefix + replacements.get(suffix, suffix)
+    suffix = replacements.get(suffix, suffix)
+    for old, new in (
+        ("control.controllers.crazyflow.", "control.controllers.attitude."),
+        ("control.controllers.bodyrates.", "control.controllers.body_rate."),
+        ("control.external_tracking.", "runtime.tracking."),
+        ("networks.policies.", "learning.inference."),
+        ("environments.environment.", "environments.factory."),
+    ):
+        if suffix.startswith(old):
+            suffix = new + suffix[len(old) :]
+    return prefix + suffix
 
 
 def _normalized(value):
+    if isinstance(value, str):
+        return _legacy_target(value)
     if isinstance(value, list):
         return [_normalized(item) for item in value]
     if not isinstance(value, dict):
@@ -47,8 +81,8 @@ def _normalized(value):
 def _check_contract(source, target):
     """Require the frozen network, sensor, observation and physical decoder to match."""
     old = source.get("components", source)
-    if old.get("config_version") != 3:
-        raise ValueError("Only explicitly selected v3 policy artifacts can be migrated")
+    if old.get("config_version") not in (3, 4):
+        raise ValueError("Only explicitly selected v3/v4 policy artifacts can be migrated")
     env = old["env"]
     execution = env.get("execution", env.get("action", {}))
     dynamics = env.get("dynamics", execution.get("dynamics", {}))
@@ -69,9 +103,20 @@ def _check_contract(source, target):
     for name in ("forward", "drone"):
         if dynamics[name] != current["dynamics"][name]:
             raise ValueError(f"Explicit migration changes dynamics.{name}")
-    for name in ("name", "freq"):
-        if env["task"][name] != current["task"][name]:
-            raise ValueError(f"Explicit migration changes task.{name}")
+    if env["task"]["name"] != current["task"]["name"]:
+        raise ValueError("Explicit migration changes task.name")
+    for field in ("freq", "physics_freq"):
+        previous = env[field] if field in env else env["task"].get(field)
+        if previous != current.get(field):
+            raise ValueError(f"Explicit migration changes environment {field}")
+    if old["config_version"] == 4:
+        previous = _normalized(copy.deepcopy(env))
+        for field in ("freq", "physics_freq"):
+            if field in previous["task"]:
+                previous[field] = previous["task"].pop(field)
+        for field in ("dynamics", "controller", "scene", "reference", "task"):
+            if previous[field] != _normalized(current[field]):
+                raise ValueError(f"Explicit migration changes the frozen {field} contract")
     kinds = {
         "attitude_thrust": "attitude",
         "thrust_bodyrates": "rates",
@@ -102,7 +147,7 @@ def migrate_checkpoint(source, destination, config):
     from brax.io import model
 
     from drone_playground.artifacts.reporting import tree_digest
-    from drone_playground.environments.environment import build_observer, build_sensor
+    from drone_playground.environments.factory import build_observer, build_sensor
 
     source, destination = Path(source).resolve(), Path(destination).resolve()
     if source == destination or destination.exists() or destination.with_suffix(".json").exists():
@@ -117,7 +162,7 @@ def migrate_checkpoint(source, destination, config):
     current = require_current(config)
     _check_contract(metadata["config"], current)
     result = copy.deepcopy(metadata)
-    if metadata.get("family") in ("pointcloud_gru", "paper_pointcloud_gru"):
+    if metadata.get("family") in ("pointcloud_gru", "paper_pointcloud_gru", "recurrent_policy"):
         with source.open("rb") as stream:
             state = _HistoricalStateReader(stream).load()
         if tree_digest(state.params) != metadata["parameter_sha256"]:
@@ -139,7 +184,8 @@ def migrate_checkpoint(source, destination, config):
         result["observation_spec"] = observer.specification()
     else:
         raise ValueError(
-            "Migrate an inference checkpoint or recurrent learner state; a persisted old environment is not transferable"
+            "Migrate an inference checkpoint or recurrent learner state; a persisted "
+            "old environment is not transferable"
         )
     result.update(config=current, config_version=4, sha256=hashlib.sha256(content).hexdigest())
     result["migration"] = dict(

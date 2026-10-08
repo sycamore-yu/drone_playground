@@ -2,5 +2,5 @@
 src/drone_playground/control/controllers/mpc/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/compatibility.patch -whitespace
 src/drone_playground/environments/tasks/lsy_upstream/assets/obstacle.xml -whitespace
-native/ros1/patches/*.patch -whitespace
+docker/ros1/patches/*.patch -whitespace
 third_party/patches/*.patch -whitespace

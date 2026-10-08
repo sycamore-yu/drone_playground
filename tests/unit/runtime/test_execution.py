@@ -19,7 +19,7 @@ def test_complete_interval_applies_control_once_and_probes_every_physics_step():
 
     execution = ActionTransition(apply, advance, 4, 1.0)
     assert float(execution.step(jnp.float32(0), jnp.float32(10))) == 40
-    final, clearance, collided = execution.step_with_evidence(
+    final, clearance, collided = execution.step(
         jnp.float32(0), jnp.float32(10), lambda state, index: (jnp.float32(12 - state), state == 20)
     )
     assert float(final) == 40 and float(clearance) == -28 and bool(collided)

@@ -7,7 +7,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.composition import compose_experiment, validate_config
+from drone_playground.configuration import compose_experiment, validate_config
 
 
 def module():
@@ -35,7 +35,7 @@ def small_config():
 
 def test_reconstruction_composition_selects_real_module_slots():
     module()
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     cfg = small_config()
     validate_config(cfg)
@@ -51,7 +51,7 @@ def test_reconstruction_composition_selects_real_module_slots():
 
 def test_reconstruction_one_update_changes_encoder_and_has_finite_metrics():
     trainer = module()
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     cfg = small_config()
     task = build_environment(cfg, "cpu", "train", 2).task
@@ -69,7 +69,7 @@ def test_reconstruction_one_update_changes_encoder_and_has_finite_metrics():
 def test_reconstruction_cpu_resume_preserves_optimizer_rng_and_update(tmp_path):
     trainer = module()
     from drone_playground.artifacts.training_state import load_training_state, save_training_state
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     cfg = small_config()
     task = build_environment(cfg, "cpu", "train", 2).task
@@ -90,7 +90,7 @@ def test_reconstruction_cpu_resume_preserves_optimizer_rng_and_update(tmp_path):
 def test_observation_detaches_sensor_but_keeps_velocity_gradient():
     trainer = module()
     del trainer
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     cfg = small_config()
     task = build_environment(cfg, "cpu", "train", 2).task

@@ -30,6 +30,28 @@ class RigidBodyTask:
             for name in ("pos", "quat", "vel", "ang_vel")
         }
 
-    def close(self, env):
-        """Release the native simulation resource owned by this environment."""
-        env.sim.close()
+    @property
+    def freq(self):
+        """Read the environment-owned control frequency."""
+        return round(1.0 / self.transition.dt)
+
+    @property
+    def physics_freq(self):
+        """Read the environment-owned physical frequency."""
+        return round(1.0 / self.transition.physics_dt)
+
+    @property
+    def dt(self):
+        return self.transition.dt
+
+    @property
+    def physics_dt(self):
+        return self.transition.physics_dt
+
+    @property
+    def substeps(self):
+        return self.transition.substeps
+
+    @property
+    def episode_length(self):
+        return round(self.duration * self.freq)

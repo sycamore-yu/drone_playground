@@ -1,6 +1,6 @@
 """Perception contracts derived from current experiment composition."""
 
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 from drone_playground.learning.brax_configuration import native_training_config, sensor_layout
 
 

@@ -15,6 +15,7 @@ import threading
 import time
 import traceback
 from collections.abc import Mapping
+from datetime import UTC
 from pathlib import Path
 from types import TracebackType
 from typing import Any
@@ -29,9 +30,9 @@ _HEARTBEAT_INTERVAL_SECONDS = 60.0
 
 def _utc_now() -> str:
     """Return an RFC 3339 UTC timestamp."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -367,6 +368,7 @@ class RunRecorder:
         _atomic_write_text(manifest_path, _json_text(manifest))
 
     def __enter__(self) -> RunRecorder:
+        """Open the RunRecorder context and return its recording handle."""
         return self
 
     def __exit__(
@@ -375,6 +377,7 @@ class RunRecorder:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> bool:
+        """Close the RunRecorder context and release its owned resources."""
         if self._finished:
             return False
         if exc is None:

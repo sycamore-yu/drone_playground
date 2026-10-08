@@ -13,7 +13,8 @@ def test_incremental_publication_keeps_watched_directory_and_native_created_even
     from rscope.event_handler import MjUnrollHandler
     from watchdog.observers import Observer
 
-    from drone_playground.visualization.rscope_io import append_rollout, export_rollout, publish_run
+    from drone_playground.visualization.rscope_io import export_rollout
+    from drone_playground.visualization.rscope_publish import append_rollout, publish_run
 
     env = FigureEightEnv(num_envs=1, freq=50, device="cpu")
     env.sim.reset()
@@ -50,12 +51,12 @@ def test_incremental_publication_keeps_watched_directory_and_native_created_even
 
 
 def test_optional_live_publication_preserves_user_selection_and_reports_errors(tmp_path: Path):
-    from drone_playground.visualization.rscope_io import publish_snapshot
+    from drone_playground.visualization.rscope_publish import publish_snapshot
 
     # Exercise actual publication file operations; the native consumer is tested above.
     def bundle(path):
         path.mkdir(parents=True)
-        (path / "env.scene.xml").write_text("<mujoco/>")
+        (path / "scene.xml").write_text("<mujoco/>")
         (path / "rscope_meta.pkl").write_bytes(b"metadata fixture")
         (path / "sample.mj_unroll").write_bytes(b"complete trajectory fixture")
         return path

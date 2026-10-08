@@ -2,7 +2,10 @@
 
 `docs/` 只保存当前有效、面向人类阅读的长期文档。
 
+- [功能规格](functional-specification.md)：解耦功能、物理与数据合同、实验范围、验收条件及原始设想。
 - [架构](architecture.md)：系统概念、Task、Environment、Methods、Training、Evaluation 与 Benchmark。
+- [目录职责](directory-layout.md)：包内模块、部署文件和测试工程。
+- [外部算法接入](../src/drone_playground/integrations/README.md)：通用协议、ROS 适配和 C++ 流程。
 - [操作手册](runbook.md)：安装、训练、评测、回放和调试命令。
 - [开发约定](development.md)：测试、产物、提交与维护规则。
 - [当前状态](status.md)：当前进展、阻塞和下一步。

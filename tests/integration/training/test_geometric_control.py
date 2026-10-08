@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 
-from drone_playground.composition import compose_experiment, validate_config
+from drone_playground.configuration import compose_experiment, validate_config
 from drone_playground.control.controllers.trajectory import TrajectoryTracking
 from drone_playground.control.controllers.trajectory_jax import JaxTrajectoryTracking
-from drone_playground.environments.environment import build_environment
+from drone_playground.environments.factory import build_environment
 
 
 def config_for(kind):
@@ -127,11 +127,11 @@ def test_geometric_training_rejects_opaque_solver_and_invalid_gradient_paths():
 def test_frozen_geometric_policy_keeps_observed_goal_and_jax_tracker_semantics(tmp_path):
     from brax.training.acme import running_statistics, specs
 
-    from drone_playground.artifacts.checkpoints import save_policy
-    from drone_playground.control.external_tracking import ExternalTracking
     from drone_playground.learning.brax_configuration import native_training_config
+    from drone_playground.learning.checkpointing import save_policy
     from drone_playground.learning.inference import FrozenNeuralCommand
     from drone_playground.networks.factory import network_factory
+    from drone_playground.runtime.tracking import ExternalTracking
 
     config = config_for("trajectory")
     native = native_training_config(config)
@@ -174,7 +174,7 @@ def test_frozen_geometric_policy_keeps_observed_goal_and_jax_tracker_semantics(t
 def test_geometric_warm_start_cannot_reinterpret_identically_sized_parameters():
     import copy
 
-    from drone_playground.artifacts.checkpoints import require_matching_physical_decoder
+    from drone_playground.learning.checkpointing import require_matching_physical_decoder
 
     config = config_for("trajectory")
     metadata = dict(

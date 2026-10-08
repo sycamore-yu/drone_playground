@@ -68,8 +68,7 @@ def privileged_critic_fields(critic_uses_sensor: bool = False) -> dict:
     """
     return {
         "privileged_fields": [],
-        "actor_fields": list(PROPRIOCEPTION_FIELDS)
-        + ["selected range sensor history"],
+        "actor_fields": [*list(PROPRIOCEPTION_FIELDS), "selected range sensor history"],
         "critic_fields": list(PROPRIOCEPTION_FIELDS)
         + (["selected range sensor history"] if critic_uses_sensor else []),
         "actor_and_critic_share_observation_container": True,
@@ -104,6 +103,7 @@ class SensorLayout:
     embedding_size: int = 128
 
     def __post_init__(self) -> None:
+        """Validate and prepare the SensorLayout instance after initialization."""
         if self.kind not in ("depth", "lidar"):
             raise ValueError(f"Unknown sensor kind: {self.kind}")
         if self.kind == "depth" and self.grid is None:
@@ -112,13 +112,9 @@ class SensorLayout:
             raise ValueError("sensor layout dimensions must be positive")
 
     @classmethod
-    def from_observation(
-        cls, observation: NavigationSensorObservation, grid=None
-    ) -> SensorLayout:
+    def from_observation(cls, observation: NavigationSensorObservation, grid=None) -> SensorLayout:
         if observation.name not in SENSOR_FIELDS:
-            raise ValueError(
-                f"Unknown perception observation: {observation.name}"
-            )
+            raise ValueError(f"Unknown perception observation: {observation.name}")
         return cls(
             kind="depth" if observation.name == "navigation_depth" else "lidar",
             proprioception_size=observation.proprioception_size,
@@ -153,9 +149,7 @@ class SensorLayout:
 
     @property
     def observation_name(self) -> str:
-        return (
-            "navigation_depth" if self.kind == "depth" else "navigation_lidar"
-        )
+        return "navigation_depth" if self.kind == "depth" else "navigation_lidar"
 
     @property
     def sensor_size(self) -> int:
@@ -208,21 +202,15 @@ class DepthFrameEncoder(linen.Module):
         *leading, history, points, channels = frames.shape
         height, width = self.grid
         if height * width != points:
-            raise ValueError(
-                f"depth grid {self.grid} does not cover {points} sampled pixels"
-            )
-        grid = frames.reshape(
-            *leading, history, height, width, channels
-        ).reshape(-1, height, width, channels)
-        hidden = self.activation(
-            linen.Conv(features=32, kernel_size=(3, 3), padding="SAME")(grid)
+            raise ValueError(f"depth grid {self.grid} does not cover {points} sampled pixels")
+        grid = frames.reshape(*leading, history, height, width, channels).reshape(
+            -1, height, width, channels
         )
+        hidden = self.activation(linen.Conv(features=32, kernel_size=(3, 3), padding="SAME")(grid))
         hidden = self.activation(
             linen.Conv(features=64, kernel_size=(3, 3), padding="SAME")(hidden)
         )
-        pooled = jnp.concatenate(
-            [hidden.mean(axis=(1, 2)), hidden.max(axis=(1, 2))], axis=-1
-        )
+        pooled = jnp.concatenate([hidden.mean(axis=(1, 2)), hidden.max(axis=(1, 2))], axis=-1)
         embedded = self.activation(linen.Dense(self.embedding_size)(pooled))
         return embedded.reshape(*leading, history * self.embedding_size)
 
@@ -240,9 +228,7 @@ class PointFrameEncoder(linen.Module):
         flat = frames.reshape(-1, points, channels)
         hidden = self.activation(linen.Dense(64)(flat))
         hidden = self.activation(linen.Dense(64)(hidden))
-        pooled = jnp.concatenate(
-            [hidden.max(axis=1), hidden.mean(axis=1)], axis=-1
-        )
+        pooled = jnp.concatenate([hidden.max(axis=1), hidden.mean(axis=1)], axis=-1)
         embedded = self.activation(linen.Dense(self.embedding_size)(pooled))
         return embedded.reshape(*leading, history * self.embedding_size)
 
@@ -260,9 +246,7 @@ class SharedEncoder(linen.Module):
                 embedding_size=self.layout.embedding_size, grid=self.layout.grid
             )
         else:
-            encoder = PointFrameEncoder(
-                embedding_size=self.layout.embedding_size
-            )
+            encoder = PointFrameEncoder(embedding_size=self.layout.embedding_size)
         return encoder(frames)
 
     def embedding_dim(self) -> int:
@@ -311,31 +295,23 @@ class PerceptionActor(linen.Module):
             embedded = SharedEncoder(layout=self.layout)(frames)
         hidden = jnp.concatenate([proprio, embedded], axis=-1)
         for index, size in enumerate(self.hidden_sizes):
-            hidden = self.activation(
-                linen.Dense(size, name=f"hidden_{index}")(hidden)
-            )
+            hidden = self.activation(linen.Dense(size, name=f"hidden_{index}")(hidden))
         mean = linen.Dense(
             self.param_size,
             name="mean_head",
             kernel_init=jax.nn.initializers.orthogonal(self.mean_scale),
-            bias_init=lambda key, shape, dtype=jnp.float32: jnp.asarray(
-                self.mean_bias, dtype
-            ),
+            bias_init=lambda key, shape, dtype=jnp.float32: jnp.asarray(self.mean_bias, dtype),
         )(hidden)
         if self.head_mode == "mean":
             return mean
         log_std = self.param(
             "log_std",
-            lambda _: jnp.full(
-                (self.param_size,), jnp.log(self.init_noise_std)
-            ),
+            lambda _: jnp.full((self.param_size,), jnp.log(self.init_noise_std)),
         )
         if self.head_mode == "mean_std":
             return mean, jnp.broadcast_to(jnp.exp(log_std), mean.shape)
         if self.head_mode == "concat_log_std":
-            return jnp.concatenate(
-                [mean, jnp.broadcast_to(log_std, mean.shape)], axis=-1
-            )
+            return jnp.concatenate([mean, jnp.broadcast_to(log_std, mean.shape)], axis=-1)
         raise ValueError(f"Unknown actor head mode: {self.head_mode}")
 
 
@@ -363,25 +339,21 @@ class PerceptionCritic(linen.Module):
         hidden = proprio
         if self.uses_sensor:
             if self.sensor_encoder == "polar_range":
-                from drone_playground.environments.observations.polar_range import polar_range_features
-
-                polar = polar_range_features(
-                    frames, range_scale=self.range_scale
+                from drone_playground.environments.observations.polar_range import (
+                    polar_range_features,
                 )
+
+                polar = polar_range_features(frames, range_scale=self.range_scale)
                 embedded = polar.reshape(*polar.shape[:-2], -1)
             else:
                 embedded = SharedEncoder(layout=self.layout)(frames)
             hidden = jnp.concatenate([hidden, embedded], axis=-1)
         for index, size in enumerate(self.hidden_sizes):
-            hidden = self.activation(
-                linen.Dense(size, name=f"hidden_{index}")(hidden)
-            )
+            hidden = self.activation(linen.Dense(size, name=f"hidden_{index}")(hidden))
         return linen.Dense(1, name="value_head")(hidden)
 
 
-def _feed_forward(
-    module, preprocess, squeeze: bool = False
-) -> networks.FeedForwardNetwork:
+def _feed_forward(module, preprocess, squeeze: bool = False) -> networks.FeedForwardNetwork:
     """Brax-shaped network: ``apply(processor_params, policy_params, obs)``.
 
     Brax's own value network squeezes its trailing singleton axis, so the critic
@@ -392,9 +364,7 @@ def _feed_forward(
         return module.init(key, jnp.zeros((1, module.layout.total_size)))
 
     def apply(processor_params, policy_params, observations):
-        out = module.apply(
-            policy_params, preprocess(observations, processor_params)
-        )
+        out = module.apply(policy_params, preprocess(observations, processor_params))
         return jnp.squeeze(out, axis=-1) if squeeze else out
 
     return networks.FeedForwardNetwork(init=init, apply=apply)
@@ -410,14 +380,10 @@ def perception_network_factory(layout: SensorLayout, config: dict):
     if encoder not in ("pointnet", "polar_range"):
         raise ValueError("Unknown navigation sensor encoder")
     if encoder == "polar_range" and layout.kind != "lidar":
-        raise ValueError(
-            "The polar range encoder requires LiDAR measurement channels"
-        )
+        raise ValueError("The polar range encoder requires LiDAR measurement channels")
     range_scale = float(config.get("range_scale", 40.0))
     if not math.isfinite(range_scale) or range_scale <= 0:
-        raise ValueError(
-            "The physical normalization range must be positive and finite"
-        )
+        raise ValueError("The physical normalization range must be positive and finite")
     proprio_scale = config.get("proprio_scale")
     if proprio_scale is not None:
         proprio_scale = tuple(float(value) for value in proprio_scale)
@@ -427,20 +393,12 @@ def perception_network_factory(layout: SensorLayout, config: dict):
             raise ValueError(
                 "proprio_scale must contain one finite positive divisor per state field"
             )
-    action_bias = tuple(
-        float(value) for value in config.get("mean_action_bias", (0, 0, 0, 0))
-    )
-    if len(action_bias) != 4 or not all(
-        math.isfinite(value) for value in action_bias
-    ):
-        raise ValueError(
-            "mean_action_bias must contain four finite normalized actions"
-        )
+    action_bias = tuple(float(value) for value in config.get("mean_action_bias", (0, 0, 0, 0)))
+    if len(action_bias) != 4 or not all(math.isfinite(value) for value in action_bias):
+        raise ValueError("mean_action_bias must contain four finite normalized actions")
     if distribution_type == "tanh_normal":
         if any(abs(value) >= 1 for value in action_bias):
-            raise ValueError(
-                "tanh mean_action_bias must lie strictly within (-1, 1)"
-            )
+            raise ValueError("tanh mean_action_bias must lie strictly within (-1, 1)")
         mean_bias = tuple(math.atanh(value) for value in action_bias)
     else:
         mean_bias = action_bias
@@ -463,21 +421,13 @@ def perception_network_factory(layout: SensorLayout, config: dict):
                 f"perception layout {layout.total_size}"
             )
         if int(action_size) != 4:
-            raise ValueError(
-                "the navigation action contract is four-dimensional"
-            )
+            raise ValueError("the navigation action contract is four-dimensional")
         if distribution_type == "normal":
-            action_distribution = distribution.NormalDistribution(
-                event_size=action_size
-            )
+            action_distribution = distribution.NormalDistribution(event_size=action_size)
         elif distribution_type == "tanh_normal":
-            action_distribution = distribution.NormalTanhDistribution(
-                event_size=action_size
-            )
+            action_distribution = distribution.NormalTanhDistribution(event_size=action_size)
         else:
-            raise ValueError(
-                f"Unsupported distribution type: {distribution_type}"
-            )
+            raise ValueError(f"Unsupported distribution type: {distribution_type}")
         # The head mode follows the distribution Brax will actually consume:
         # normal wants a (loc, scale) tuple, tanh_normal one concatenated vector.
         if distribution_type == "normal":

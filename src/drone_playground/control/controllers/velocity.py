@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 
 from drone_playground.control.setpoints import AttitudeSetpoint, StateSetpoint
-from drone_playground.environments.scenes.geometry import euclidean_norm
+from drone_playground.numerics import euclidean_norm
 
 
 @dataclass
@@ -31,6 +31,7 @@ class VelocityControl:
     differentiable = True
 
     def __post_init__(self):
+        """Validate and prepare the VelocityControl instance after initialization."""
         if self.input_kind != "state":
             raise ValueError("VelocityControl accepts state setpoints")
         if self.max_speed <= 0 or not 0 < self.tilt_limit < math.pi / 2:

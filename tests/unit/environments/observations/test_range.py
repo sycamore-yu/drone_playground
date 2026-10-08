@@ -9,7 +9,7 @@ import pytest
 def test_range_bins_preserve_nearest_return_and_ignore_invalid_finite_filler():
     from drone_playground.environments.observations.polar_range import polar_range_features
 
-    # XYZ/range are normalized by the sensor's forty-metre range, as in MID360 input.
+    # XYZ/range are normalized by the sensor's forty-meter range, as in MID360 input.
     frames = jnp.array(
         [
             [

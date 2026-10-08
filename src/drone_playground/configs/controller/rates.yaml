@@ -1,2 +1,2 @@
-_target_: drone_playground.control.controllers.bodyrates.BodyRateControl
+_target_: drone_playground.control.controllers.body_rate.BodyRateControl
 input_kind: rates

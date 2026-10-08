@@ -24,6 +24,7 @@ class SensorView:
     angles_deg: tuple[float, float]
 
     def __post_init__(self):
+        """Validate and prepare the SensorView instance after initialization."""
         rotation = np.asarray(self.rotation, float)
         translation = np.asarray(self.translation, float)
         angles = np.asarray(self.angles_deg, float)
@@ -197,8 +198,8 @@ def polytope_edges(polytope: ConvexPolytope):
             raise ValueError("Cannot enumerate SFC interior") from exc
     hull = ConvexHull(vertices)
     edges = {}
-    for face, normal in zip(hull.simplices, hull.equations[:, :3]):
-        for a, b in zip(face, np.roll(face, -1)):
+    for face, normal in zip(hull.simplices, hull.equations[:, :3], strict=True):
+        for a, b in zip(face, np.roll(face, -1), strict=True):
             edges.setdefault(tuple(sorted((int(a), int(b)))), []).append(normal)
     indices = [
         edge
@@ -217,6 +218,7 @@ class PlanningFrame:
     polytopes: tuple[ConvexPolytope, ...] = ()
 
     def __post_init__(self):
+        """Validate and prepare the PlanningFrame instance after initialization."""
         if not self.layer or not np.isfinite([self.time, self.valid_until]).all() or self.time < 0:
             raise ValueError("Planning frames require a name and finite simulation times")
         object.__setattr__(self, "polytopes", tuple(self.polytopes))
@@ -232,6 +234,7 @@ class ReplayLayers:
     trajectory_samples: int = 64
 
     def __post_init__(self):
+        """Validate and prepare the ReplayLayers instance after initialization."""
         if not 2 <= self.trajectory_samples <= 512:
             raise ValueError("Trajectory rendering needs 2..512 samples")
         if self.point_cloud is not None and self.point_cloud_sequence is not None:
@@ -251,7 +254,10 @@ class ReplayLayers:
                 angles_deg=sensor.angles_deg,
                 rotation_body_from_sensor=sensor.rotation.tolist(),
                 translation_m=sensor.translation.tolist(),
-                meaning="calibration descriptor only; replay renders hit points, never a field-of-view envelope",
+                meaning=(
+                    "calibration descriptor only; replay renders hit points, never a "
+                    "field-of-view envelope"
+                ),
             )
         if self.point_cloud is not None:
             world = xml.find("worldbody")
@@ -378,7 +384,7 @@ class ReplayLayers:
             has_curve = any(f.trajectory is not None for f in frames)
             capacity = max(
                 len(g) + (self.trajectory_samples - 1 if f.trajectory is not None else 0)
-                for f, g in zip(frames, geometries)
+                for f, g in zip(frames, geometries, strict=True)
             )
             if not capacity:
                 continue
@@ -481,18 +487,18 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
     known = set()
     for row in rows:
         now, reply = float(row["time"]), row["reply"]
-        stages = reply.get("stages", [dict(reply, stage="output")])
+        stages = enumerate(reply.stages) if reply.stages else (("output", reply),)
         present = set()
-        for stage in stages:
-            prefix = f"stage-{stage['stage']}"
-            value = stage.get("trajectory", stage.get("output"))
+        for index, stage in stages:
+            prefix = f"stage-{index}"
+            value = stage.output
             name = prefix + "/trajectory"
             if isinstance(value, Trajectory):
                 emit(
                     PlanningFrame(
                         now,
                         min(
-                            stage.get("valid_until", value.end_time),
+                            stage.valid_until,
                             value.end_time,
                         ),
                         name,
@@ -500,8 +506,8 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
                     )
                 )
                 present.add(name)
-            if stage.get("corridors") or stage.get("trajectory_previews"):
-                for corridor in stage.get("corridors", ()):
+            if stage.corridors or stage.trajectory_previews:
+                for corridor in stage.corridors:
                     name = prefix + "/sfc/" + corridor.name
                     emit(
                         PlanningFrame(
@@ -512,7 +518,7 @@ def layers_from_decisions(rows, *, sensor=None, trajectory_samples=64):
                         )
                     )
                     present.add(name)
-                for preview in stage.get("trajectory_previews", ()):
+                for preview in stage.trajectory_previews:
                     name = prefix + "/preview/" + preview.name
                     emit(
                         PlanningFrame(

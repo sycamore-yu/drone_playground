@@ -41,8 +41,6 @@ def test_bptt_updates_real_policy_and_restores_all_state(tmp_path):
     assert continuation["actual_steps"] == 80
 
 
-
-
 def test_shac_sensor_training_uses_the_same_network_as_frozen_inference():
     from brax.training.agents.apg.networks import make_inference_fn
 

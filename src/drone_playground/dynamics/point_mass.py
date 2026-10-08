@@ -100,6 +100,7 @@ class PointMassLag(DynamicsBackend):
     disturbance: dict | None = None
 
     def __post_init__(self):
+        """Validate and prepare the PointMassLag instance after initialization."""
         if (
             not math.isfinite(self.time_constant)
             or not math.isfinite(self.decay_rate)
@@ -116,7 +117,8 @@ class PointMassLag(DynamicsBackend):
             "gust_period_s",
         }:
             raise ValueError(
-                "Acceleration-driven point mass supports acceleration disturbances; force/torque need a rigid-body model"
+                "Acceleration-driven point mass supports acceleration disturbances; "
+                "force/torque need a rigid-body model"
             )
 
     def _parameter_ranges(self):
@@ -140,7 +142,8 @@ class PointMassLag(DynamicsBackend):
         ranges.update({k: [v, v] for k, v in (self.parameter_overrides or {}).items()})
         if set(ranges) - {"motor_strength", "lag"}:
             raise ValueError(
-                "Point mass domain_randomization supports motor_strength and lag; mass/inertia are absent from acceleration-driven equations"
+                "Point mass domain_randomization supports motor_strength and lag; "
+                "mass/inertia are absent from acceleration-driven equations"
             )
         for bounds in ranges.values():
             if (

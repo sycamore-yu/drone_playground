@@ -4,7 +4,7 @@ import math
 
 import jax.numpy as jnp
 
-from drone_playground.control.controllers.crazyflow import AttitudeControl
+from drone_playground.control.controllers.attitude import AttitudeControl
 from drone_playground.control.setpoints import AttitudeSetpoint, StateSetpoint
 from drone_playground.references import Trajectory, Waypoint
 

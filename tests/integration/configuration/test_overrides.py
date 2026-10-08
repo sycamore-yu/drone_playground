@@ -3,8 +3,7 @@
 from hydra import initialize_config_dir
 from hydra.core.global_hydra import GlobalHydra
 
-from drone_playground.composition import compose_experiment
-from drone_playground.configuration import CONFIG_ROOT
+from drone_playground.configuration import CONFIG_ROOT, compose_experiment
 
 
 def test_reference_composition_reuses_cli_hydra_without_clearing_it():

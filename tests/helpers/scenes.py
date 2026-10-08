@@ -4,11 +4,7 @@ import jax.numpy as jnp
 import mujoco
 import numpy as np
 
-from drone_playground.environments.scenes.geometry import (
-    KIND_CYLINDER,
-    MOTION_STATIC,
-    SceneBank,
-)
+from drone_playground.environments.scenes.geometry import KIND_CYLINDER, MOTION_STATIC, SceneBank
 
 WORLD_LOW = np.array([0.0, -5.0, 0.0], np.float32)
 WORLD_HIGH = np.array([20.0, 5.0, 5.0], np.float32)
@@ -80,7 +76,7 @@ def synthetic_navigation_env(obstacles, duration=2.0, **kwargs):
     from types import SimpleNamespace
 
     from drone_playground.configuration import load_config
-    from drone_playground.environments.environment import build_environment
+    from drone_playground.environments.factory import build_environment
 
     config = load_config("environment", ["env=navigation/static"])
     config["env"]["sensor"] = None
@@ -90,7 +86,8 @@ def synthetic_navigation_env(obstacles, duration=2.0, **kwargs):
     config["env"]["dynamics"].update(
         forward=kwargs.pop("dynamics", "first_principles"), drone=kwargs.pop("drone", "cf2x_L250")
     )
-    config["env"]["task"].update(duration=duration, freq=kwargs.pop("freq", 50))
+    config["env"]["freq"] = kwargs.pop("freq", 50)
+    config["env"]["task"]["duration"] = duration
     collision = kwargs.pop("training_collision_mode", "terminate")
     objective = kwargs.pop("objective", None)
     if objective is not None:

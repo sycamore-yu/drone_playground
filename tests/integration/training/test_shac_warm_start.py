@@ -5,10 +5,10 @@ import jax.numpy as jnp
 import numpy as np
 from brax.training.acme import running_statistics, specs
 
-from drone_playground.artifacts.checkpoints import save_policy
-from drone_playground.composition import compose_experiment
+from drone_playground.configuration import compose_experiment
 from drone_playground.learning.algorithms.shac import train
 from drone_playground.learning.brax_configuration import native_training_config
+from drone_playground.learning.checkpointing import save_policy
 from drone_playground.networks.factory import network_factory
 from tests.helpers.environments import tracking_environment
 

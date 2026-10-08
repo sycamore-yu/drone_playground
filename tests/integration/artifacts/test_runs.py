@@ -15,7 +15,8 @@ from tensorboardX.proto import event_pb2
 
 from drone_playground.artifacts import RunRecorder
 from drone_playground.artifacts.layout import find_experiment
-from drone_playground.visualization.rscope_io import export_rollout, publish_run
+from drone_playground.visualization.rscope_io import export_rollout
+from drone_playground.visualization.rscope_publish import publish_run
 
 
 def _git(root: Path, *args: str) -> str:
@@ -147,7 +148,7 @@ def test_run_recorder_heartbeat_and_exception_result(tmp_path: Path, monkeypatch
 
     with pytest.raises(ValueError, match=r"boom"), RunRecorder(tmp_path, "failed", {"seed": 2}):
         raise ValueError("boom")
-    failed = json.loads((find_experiment(tmp_path, 'failed') / 'result.json').read_text())
+    failed = json.loads((find_experiment(tmp_path, "failed") / "result.json").read_text())
     assert failed["status"] == "failed"
     assert failed["exception"]["type"] == "ValueError"
     assert failed["exception"]["message"] == "boom"

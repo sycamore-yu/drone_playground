@@ -7,19 +7,16 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from drone_playground.artifacts.layout import (
-    experiment_directory,
-    iter_experiments,
-    resolve_artifact,
-)
+from drone_playground.artifacts.layout import experiment_directory, iter_experiments
 
 ROOT = Path.cwd()
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Create the command-line parser for experiment, replay, and status commands."""
     parser = argparse.ArgumentParser(description="Crazyflow 无人机训练、评测与记录")
     commands = parser.add_subparsers(dest="command", required=True)
     for mode in ("train", "eval", "play"):
@@ -49,6 +46,7 @@ def _set_device(device: str) -> None:
 
 
 def main(argv=None) -> None:
+    """Parse the selected command and dispatch it to its public entry point."""
     actual = list(sys.argv[1:] if argv is None else argv)
     if actual and actual[0] in ("train", "eval", "play"):
         from drone_playground.app import script_main
@@ -63,9 +61,9 @@ def main(argv=None) -> None:
 
         result = run_demo(ROOT, args.run_id, args.duration, args.device)
     elif args.command == "replay":
-        from drone_playground.visualization.rscope_io import publish_run
+        from drone_playground.visualization.rscope_publish import publish_run
 
-        result = {"active_directory": str(publish_run(resolve_artifact(args.directory)))}
+        result = {"active_directory": str(publish_run(Path(args.directory)))}
         if args.launch:
             command = [
                 sys.executable,
@@ -112,12 +110,12 @@ def main(argv=None) -> None:
                 actual_marker is not None and actual_marker == process.get("start_marker")
             )
             updated = datetime.fromisoformat(row["updated_at"])
-            row["seconds_since_update"] = (datetime.now(timezone.utc) - updated).total_seconds()
+            row["seconds_since_update"] = (datetime.now(UTC) - updated).total_seconds()
             row["needs_attention"] = row.get("status") == "running" and (
                 not row["process_identity_matches"] or row["seconds_since_update"] > 180
             )
             row["run_id"] = path.name
-            row["checked_at"] = datetime.now(timezone.utc).isoformat()
+            row["checked_at"] = datetime.now(UTC).isoformat()
             result.append(row)
     print(
         json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False),

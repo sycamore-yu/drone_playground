@@ -6,7 +6,7 @@ import gzip
 import hashlib
 import json
 import math
-from dataclasses import asdict
+from dataclasses import asdict, fields
 from pathlib import Path
 
 from drone_playground.control.setpoints import (
@@ -18,6 +18,7 @@ from drone_playground.control.setpoints import (
 )
 from drone_playground.planning.corridors import SafeFlightCorridor, TrajectoryPreview
 from drone_playground.references import Trajectory, Waypoint
+from drone_playground.runtime.decision import Decision
 
 _OUTPUTS = {
     kind.__name__: kind
@@ -58,11 +59,18 @@ class NativeDecisionRecorder:
         self.last_time = -math.inf
 
     def __enter__(self):
+        """Open the NativeDecisionRecorder context and return its recording handle."""
         self.directory.mkdir(parents=True, exist_ok=False)
         self.stream = gzip.open(self.directory / "frames.jsonl.gz", "xt", encoding="utf-8")
         return self
 
     def _pack(self, value):
+        if isinstance(value, Decision):
+            return {
+                "runtime_decision": {
+                    field.name: self._pack(getattr(value, field.name)) for field in fields(value)
+                }
+            }
         if isinstance(value, tuple(_OUTPUTS.values())):
             data = dict(type=type(value).__name__, fields=self._pack(asdict(value)))
             digest = hashlib.sha256(_json(data).encode()).hexdigest()
@@ -86,6 +94,7 @@ class NativeDecisionRecorder:
         self.last_time = time
 
     def __exit__(self, error_type, error, traceback):
+        """Close the NativeDecisionRecorder context and release its owned resources."""
         self.stream.close()
         with gzip.open(self.directory / "outputs.json.gz", "xt", encoding="utf-8") as handle:
             handle.write(_json(self.outputs))
@@ -97,7 +106,10 @@ class NativeDecisionRecorder:
             command_contract=self.command_contract,
             interrupted=error_type is not None,
             error=None if error is None else repr(error),
-            timing="pre-transition; produced commands require matching post-transition frames to prove application",
+            timing=(
+                "pre-transition; produced commands require matching post-transition "
+                "frames to prove application"
+            ),
             files={
                 name: hashlib.sha256((self.directory / name).read_bytes()).hexdigest()
                 for name in ("frames.jsonl.gz", "outputs.json.gz")
@@ -129,6 +141,11 @@ def load_native_decisions(directory: Path):
 
     def unpack(value):
         if isinstance(value, dict):
+            if set(value) == {"runtime_decision"}:
+                data = {key: unpack(item) for key, item in value["runtime_decision"].items()}
+                for key in ("stages", "corridors", "trajectory_previews"):
+                    data[key] = tuple(data[key])
+                return Decision(**data)
             if set(value) == {"physical_output_sha256"}:
                 return outputs[value["physical_output_sha256"]]
             return {key: unpack(item) for key, item in value.items()}
