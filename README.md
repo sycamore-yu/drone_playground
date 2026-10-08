@@ -12,19 +12,16 @@ The research direction includes learning policies that act directly, as well as 
 
 | SUPER (MID360 LiDAR) | EGO-Planner (D435 depth) |
 | --- | --- |
-| ![SUPER navigation replay with LiDAR surface hit points](docs/media/rscope-super-hits.gif) | ![EGO-Planner navigation replay with depth surface hit points](docs/media/rscope-ego-hits.gif) |
+| ![Follow-camera SUPER navigation with LiDAR surface hit points](docs/media/rscope-super-hits.gif) | ![Follow-camera EGO-Planner navigation with depth surface hit points](docs/media/rscope-ego-hits.gif) |
 
-Sensor hits are reconstructed from recorded poses and scene geometry for visualization. Field-of-view wireframes are hidden.
+**Task demonstrations**
 
-**Learning: PPO and differentiable RL (BPTT)**
+| Hovering | Racing | Static navigation (S06) | Dynamic navigation (D06) |
+| --- | --- | --- | --- |
+| ![PPO and DiffRL hovering with a follow camera](docs/media/rscope-ppo-diffrl-hovering.gif) | ![PPO and DiffRL racing with a follow camera](docs/media/rscope-ppo-diffrl-racing.gif) | ![Successful S06 depth navigation with camera surface-hit visualization](docs/media/rscope-depth-static-s06.gif) | ![Successful D06 point-cloud navigation with LiDAR surface-hit visualization](docs/media/rscope-pointcloud-dynamic-d06.gif) |
+| PPO / DiffRL (BPTT) | PPO / DiffRL (BPTT) | Depth policy · D435i | Point-cloud policy · uniform MID360 |
 
-| Scenario | PPO vs DiffRL (BPTT) |
-| --- | --- |
-| Hovering | ![PPO and BPTT hovering replay](docs/media/rscope-ppo-diffrl-hovering.gif) |
-| Racing | ![PPO and BPTT racing replay](docs/media/rscope-ppo-diffrl-racing.gif) |
-| Static navigation | ![PPO and BPTT static navigation replay](docs/media/rscope-ppo-diffrl-navigation.gif) |
-
-These are existing frozen-policy RScope recordings. The navigation recordings show short failed trials, not successful obstacle avoidance.
+All demonstrations use a camera that follows the recorded drone. Surface-hit markers are reconstructed from the saved poses and scene geometry for replay visualization, rather than copied from the policy's original sensor measurements. S06 and D06 are successful recorded episodes; the D06 point-cloud episode comes from a development run.
 
 ## Research scope
 
