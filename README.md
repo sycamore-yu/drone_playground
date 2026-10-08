@@ -8,9 +8,23 @@ The research direction includes learning policies that act directly, as well as 
 
 ## RScope demos
 
-| SUPER navigation | LiDAR observations |
+**Planning and perception**
+
+| SUPER (MID360 LiDAR) | EGO-Planner (D435 depth) |
 | --- | --- |
-| ![Recorded RScope replay of SUPER navigation with planning corridors](docs/media/rscope-super-navigation.gif) | ![Recorded RScope replay of LiDAR observations and obstacle geometry](docs/media/rscope-lidar-observation.gif) |
+| ![SUPER navigation replay with LiDAR surface hit points](docs/media/rscope-super-hits.gif) | ![EGO-Planner navigation replay with depth surface hit points](docs/media/rscope-ego-hits.gif) |
+
+Sensor hits are reconstructed from recorded poses and scene geometry for visualization. Field-of-view wireframes are hidden.
+
+**Learning: PPO and differentiable RL (BPTT)**
+
+| Scenario | PPO vs DiffRL (BPTT) |
+| --- | --- |
+| Hovering | ![PPO and BPTT hovering replay](docs/media/rscope-ppo-diffrl-hovering.gif) |
+| Racing | ![PPO and BPTT racing replay](docs/media/rscope-ppo-diffrl-racing.gif) |
+| Static navigation | ![PPO and BPTT static navigation replay](docs/media/rscope-ppo-diffrl-navigation.gif) |
+
+These are existing frozen-policy RScope recordings. The navigation recordings show short failed trials, not successful obstacle avoidance.
 
 ## Research scope
 
