@@ -1,0 +1,24 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_v2_arrival_stops_within_policy_tick_and_cannot_leave_goal_again _____
+tests/integration/evaluation/test_pointcloud_navigation.py:33: in test_v2_arrival_stops_within_policy_tick_and_cannot_leave_goal_again
+    from drone_playground.evaluation.navigation.acceleration import advance_checked
+E   ImportError: cannot import name 'advance_checked' from 'drone_playground.evaluation.navigation.acceleration' (/home/tong/tongworkspace/simulation_dev/drone_playground/src/drone_playground/evaluation/navigation/acceleration.py)
+----------------------------- Captured stdout call -----------------------------
+Failed to import warp: No module named 'warp'
+Failed to import mujoco_warp: No module named 'warp'
+___ test_checked_delay_matches_training_physics_and_preserves_terminal_event ___
+tests/integration/training/test_differentiable_pointcloud.py:94: in test_checked_delay_matches_training_physics_and_preserves_terminal_event
+    actual, time, outcome, _ = task.advance_checked(
+                               ^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'AccelerationNavigationTask' object has no attribute 'advance_checked'
+=============================== warnings summary ===============================
+tests/integration/training/test_differentiable_pointcloud.py::test_checked_delay_matches_training_physics_and_preserves_terminal_event
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/evaluation/test_pointcloud_navigation.py::test_v2_arrival_stops_within_policy_tick_and_cannot_leave_goal_again
+FAILED tests/integration/training/test_differentiable_pointcloud.py::test_checked_delay_matches_training_physics_and_preserves_terminal_event
+2 failed, 1 warning in 5.67s

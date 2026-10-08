@@ -1,0 +1,33 @@
+224	D102  	[ ] undocumented-public-method
+ 96	D103  	[ ] undocumented-public-function
+ 46	D101  	[ ] undocumented-public-class
+ 39	D107  	[ ] undocumented-public-init
+ 29	RUF001	[ ] ambiguous-unicode-character-string
+ 28	D105  	[ ] undocumented-magic-method
+ 19	D202  	[*] blank-line-after-function
+ 17	B905  	[ ] zip-without-explicit-strict
+ 13	B023  	[ ] function-uses-loop-variable
+  9	RUF046	[-] unnecessary-cast-to-int
+  4	UP035 	[*] deprecated-import
+  4	N806  	[ ] non-lowercase-variable-in-function
+  4	UP031 	[ ] printf-string-formatting
+  4	RUF059	[ ] unused-unpacked-variable
+  3	SIM102	[ ] collapsible-if
+  3	UP007 	[ ] non-pep604-annotation-union
+  2	RUF005	[ ] collection-literal-concatenation
+  2	SIM108	[ ] if-else-block-instead-of-if-exp
+  2	SIM117	[*] multiple-with-statements
+  2	RUF024	[ ] mutable-fromkeys-value
+  2	RUF043	[ ] pytest-raises-ambiguous-pattern
+  2	SIM105	[ ] suppressible-exception
+  2	D417  	[ ] undocumented-param
+  2	D104  	[ ] undocumented-public-package
+  1	RUF002	[ ] ambiguous-unicode-character-docstring
+  1	N818  	[ ] error-suffix-on-exception-name
+  1	N812  	[ ] lowercase-imported-as-non-lowercase
+  1	RUF015	[ ] unnecessary-iterable-allocation-for-first-element
+  1	B007  	[ ] unused-loop-control-variable
+  1	RUF100	[*] unused-noqa
+  1	RUF007	[ ] zip-instead-of-pairwise
+Found 565 errors.
+[*] 29 fixable with the `--fix` option (38 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,177 @@
+{
+  "actor_parameter_delta_l2": 0.09126696013548118,
+  "actual_steps": 4,
+  "algorithm": "bptt",
+  "best_checkpoint_eval_result": {
+    "checkpoint": "checkpoints/step-0000000004.pkl",
+    "completed": 2,
+    "completion_rate": 1.0,
+    "deadline_miss_fraction": 0.0,
+    "decision_deadline_ms": 20.0,
+    "decision_p50_ms": 0.21850201301276684,
+    "decision_p95_ms": 0.2829310717061163,
+    "decision_samples": 20,
+    "drone": "cf2x_L250",
+    "dynamics": "so_rpy",
+    "episodes": [
+      {
+        "case": 0,
+        "completed": true,
+        "duration_s": 0.08,
+        "failed": false,
+        "reference_seed": 20000,
+        "return": 1.4653996229171753,
+        "rmse_m": 0.5020882984828656,
+        "seed": 20000,
+        "steps": 4
+      },
+      {
+        "case": 1,
+        "completed": true,
+        "duration_s": 0.08,
+        "failed": false,
+        "reference_seed": 20000,
+        "return": 1.4653996229171753,
+        "rmse_m": 0.5020882984828656,
+        "seed": 20001,
+        "steps": 4
+      }
+    ],
+    "failed": 0,
+    "num_trials": 2,
+    "parameter_sha256": "6c9bfd10494ccad428e8708149affa98956c045676dd4e37cd9f8734fd92d354",
+    "parameters_frozen": true,
+    "quality_passed": false,
+    "quality_rule": {
+      "completion_rate": 0.9,
+      "navigation_scene_success_rate": 0.8,
+      "navigation_success_rate": 0.9,
+      "tracking_rmse_m": 0.25
+    },
+    "reference_seed": 20000,
+    "reference_sha256": "79a811d88cbdc254a278612388db635735915fbc975f88d694952762c21e9e20",
+    "return_mean": 1.4653996229171753,
+    "rmse_all_mean": 0.5020882984828656,
+    "rmse_completed_mean": 0.5020882984828656,
+    "role": "eval",
+    "sensor_timing": null,
+    "step": 4,
+    "task": "hovering",
+    "timing_protocol": "observation available to executable command; synchronized completion; physics excluded",
+    "warmup_decisions": 1
+  },
+  "elapsed_s": 49.86578342318535,
+  "elapsed_seconds": 49.47258953610435,
+  "engineer_passed": true,
+  "experiment_conditions": {
+    "action_interface": {
+      "fields": [
+        "roll",
+        "pitch",
+        "yaw",
+        "thrust"
+      ],
+      "frame": "world attitude / body thrust",
+      "kind": "attitude",
+      "units": [
+        "rad",
+        "rad",
+        "rad",
+        "N"
+      ]
+    },
+    "command_distribution": {
+      "distribution": "reference_bank",
+      "kind": "reference"
+    },
+    "conditions_sha256": "7cacb11f2051bf2df5361942fccc53a143c57f6c28f28bbfc1af1efb461dd854",
+    "control_frequency_hz": 50.0,
+    "controller": {
+      "_target_": "drone_playground.control.controllers.attitude.AttitudeControl",
+      "input_kind": "attitude"
+    },
+    "dynamics": {
+      "_target_": "drone_playground.dynamics.crazyflow.CrazyflowModel",
+      "drone": "cf2x_L250",
+      "forward": "so_rpy"
+    },
+    "environment_effects": {
+      "action_noise": null,
+      "disturbance": null,
+      "observation_noise": null,
+      "reset_randomization": null
+    },
+    "latency": {
+      "action_delay_ms": null,
+      "action_delay_steps": 0
+    },
+    "method": {
+      "implementation": "neural",
+      "name": "policy",
+      "output": "attitude",
+      "trainable": true
+    },
+    "observation": {
+      "_target_": "drone_playground.environments.observations.state.TrackingObservation",
+      "interval": 0.1,
+      "n_samples": 10,
+      "name": "state_reference"
+    },
+    "physics_frequency_hz": 500,
+    "reference": {
+      "_target_": "drone_playground.references.ReferenceGenerator",
+      "amplitude": 1.0,
+      "name": "hover",
+      "target": [
+        0.0,
+        0.0,
+        1.5
+      ]
+    },
+    "safety_margin": {
+      "body_radius_m": null,
+      "clearance_margin_m": null
+    },
+    "scene": {
+      "_target_": "drone_playground.environments.scenes.empty.EmptyScene",
+      "name": "empty",
+      "takeoff": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "scene_distribution": {
+      "scene": null,
+      "type": "fixed"
+    },
+    "sensor": {
+      "name": "none"
+    },
+    "sensor_timing": null,
+    "study": {
+      "conditions_id": null,
+      "type": "method_reproduction"
+    },
+    "task_duration_s": 0.08,
+    "time_limit_kind": "truncation"
+  },
+  "finished_at": "2026-10-04T05:50:39.475306+00:00",
+  "full_budget_completed": true,
+  "live_publications": [],
+  "quality_passed": false,
+  "run_id": "bptt-gpu",
+  "snapshots": 2,
+  "started_at": "2026-10-04T05:49:49.609214+00:00",
+  "status": "completed",
+  "task_id": "05",
+  "trainer_metrics": {
+    "actor_parameter_delta_l2": 0.09126695990562439,
+    "actual_steps": 4.0,
+    "compile_and_first_update_seconds": 31.374950132798404,
+    "net_update_seconds": 0.0,
+    "training/actor_grad_norm": 0.022674165666103363,
+    "training/actor_loss": -0.36734825372695923,
+    "window_resets": 0.0
+  }
+}

@@ -1,0 +1,38 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_failed_native_initialization_closes_its_allocated_simulation[bind] ____
+tests/integration/environments/test_execution_initialization.py:33: in test_failed_native_initialization_closes_its_allocated_simulation
+    assert closed == [True]
+E   assert [] == [True]
+E     
+E     Right contains one more item: True
+E     Use -v to get more diff
+___ test_failed_native_initialization_closes_its_allocated_simulation[reset] ___
+tests/integration/environments/test_execution_initialization.py:33: in test_failed_native_initialization_closes_its_allocated_simulation
+    assert closed == [True]
+E   assert [] == [True]
+E     
+E     Right contains one more item: True
+E     Use -v to get more diff
+____ test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate _____
+tests/integration/test_public_contracts.py:46: in test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate
+    np.testing.assert_allclose(result.metrics["physical_thrust"], physical[0])
+E   AssertionError: 
+E   Not equal to tolerance rtol=1e-07, atol=0
+E   
+E   Mismatched elements: 1 / 1 (100%)
+E   Max absolute difference among violations: 1.88352
+E   Max relative difference among violations: 1.
+E    ACTUAL: array(0., dtype=float32)
+E    DESIRED: array(1.88352, dtype=float32)
+=============================== warnings summary ===============================
+tests/integration/test_public_contracts.py::test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/environments/test_execution_initialization.py::test_failed_native_initialization_closes_its_allocated_simulation[bind]
+FAILED tests/integration/environments/test_execution_initialization.py::test_failed_native_initialization_closes_its_allocated_simulation[reset]
+FAILED tests/integration/test_public_contracts.py::test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate
+3 failed, 1 warning in 14.83s

@@ -1,0 +1,14 @@
+{
+  "ast_files": 169,
+  "format_passed": true,
+  "retired_paths_absent": [
+    "src/drone_playground/composition.py",
+    "src/drone_playground/environments/environment.py",
+    "src/drone_playground/networks/policies.py",
+    "src/drone_playground/control/external_tracking.py",
+    "src/drone_playground/control/controllers/crazyflow.py",
+    "src/drone_playground/control/controllers/bodyrates.py",
+    "src/drone_playground/learning/objectives/navigation.py"
+  ],
+  "installed_python_matches": true
+}

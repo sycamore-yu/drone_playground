@@ -1,0 +1,19 @@
+........................................                              [100%]
+=============================== warnings summary ===============================
+.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+tests/integration/training/test_public_training_entry.py::test_public_train_checkpoint_evaluate_without_replays[ppo]
+  /home/tong/tongworkspace/simulation_dev/drone_playground/tmp/sources/brax/brax/training/agents/ppo/train.py:742: DeprecationWarning: jax.device_put_replicated is deprecated; use jax.device_put instead.
+    training_state = jax.device_put_replicated(
+
+tests/integration/training/test_public_training_entry.py: 5 warnings
+tests/integration/training/test_composed_resume.py: 6 warnings
+tests/integration/training/test_recurrent_entry.py: 3 warnings
+tests/integration/test_cli.py: 1 warning
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/optax/_src/linear_algebra.py:44: DeprecationWarning: optax.global_norm is deprecated in favor of optax.tree.norm
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+40 passed, 17 warnings, 3 subtests passed in 470.04s (0:07:50)

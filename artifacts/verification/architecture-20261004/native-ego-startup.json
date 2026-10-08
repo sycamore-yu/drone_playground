@@ -1,0 +1,24 @@
+[
+  {
+    "method": "ego",
+    "steps": 150,
+    "statuses": {
+      "no_plan": 104,
+      "valid": 46
+    },
+    "native_commands": 46,
+    "fallback_steps": 104,
+    "generated_launch": true,
+    "generated_yaml": false,
+    "port": 17371,
+    "position": [
+      [
+        [
+          1.5203992128372192,
+          0.0,
+          2.9025464057922363
+        ]
+      ]
+    ]
+  }
+]

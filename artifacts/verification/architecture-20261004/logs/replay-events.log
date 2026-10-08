@@ -1,0 +1,27 @@
+....................F........                                            [100%]
+=================================== FAILURES ===================================
+__ test_continuous_collision_training_retains_penetration_and_escape_gradient __
+tests/integration/environments/test_navigation_collision.py:33: in test_continuous_collision_training_retains_penetration_and_escape_gradient
+    env = synthetic_env(
+tests/helpers/scenes.py:101: in synthetic_navigation_env
+    return build_environment(config, "cpu", role="train", scene=scene)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/drone_playground/environments/factory.py:105: in build_environment
+    task = task_factory(observation=observer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/target_policy.py:1297: in __call__
+    return self._call_with_target_policy(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.pixi/envs/default/lib/python3.13/site-packages/hydra/_internal/target_policy.py:1314: in _call_with_target_policy
+    result = super().__call__(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: NavigationTask.__init__() got an unexpected keyword argument 'freq'
+=============================== warnings summary ===============================
+.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59
+  /home/tong/tongworkspace/simulation_dev/drone_playground/.pixi/envs/default/lib/python3.13/site-packages/jaxopt/__init__.py:59: DeprecationWarning: JAXopt is no longer maintained. See https://docs.jax.dev/en/latest/ for alternatives.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/environments/test_navigation_collision.py::test_continuous_collision_training_retains_penetration_and_escape_gradient
+1 failed, 28 passed, 1 warning in 83.26s (0:01:23)

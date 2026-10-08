@@ -1,0 +1,45 @@
+[
+  {
+    "method": "ego",
+    "steps": 30,
+    "statuses": {
+      "no_plan": 30
+    },
+    "native_commands": 0,
+    "fallback_steps": 30,
+    "generated_launch": true,
+    "generated_yaml": false,
+    "port": 17361,
+    "position": [
+      [
+        [
+          2.0,
+          0.0,
+          2.9766156673431396
+        ]
+      ]
+    ]
+  },
+  {
+    "method": "super",
+    "steps": 30,
+    "statuses": {
+      "no_plan": 12,
+      "valid": 18
+    },
+    "native_commands": 17,
+    "fallback_steps": 13,
+    "generated_launch": true,
+    "generated_yaml": true,
+    "port": 17362,
+    "position": [
+      [
+        [
+          2.0122177600860596,
+          0.0037744834553450346,
+          2.9738755226135254
+        ]
+      ]
+    ]
+  }
+]

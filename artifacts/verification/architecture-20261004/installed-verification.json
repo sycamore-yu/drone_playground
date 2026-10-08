@@ -1,0 +1,9 @@
+{
+  "module": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/architecture-implementation-20261004/continuation/package/installed/drone_playground/__init__.py",
+  "working_directory": "/tmp",
+  "state_type": "State",
+  "control_hz": 50,
+  "physics_hz": 500,
+  "resources": true,
+  "retired_imports_absent": true
+}

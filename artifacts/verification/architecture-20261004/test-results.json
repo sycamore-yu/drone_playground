@@ -1,0 +1,1490 @@
+[
+  {
+    "classname": "tests.unit.environments.tasks.test_measurement_boundary",
+    "name": "test_measurement_noise_changes_actor_input_not_loss_target[depth]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.unit.environments.tasks.test_measurement_boundary",
+    "name": "test_measurement_noise_changes_actor_input_not_loss_target[pointcloud]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_method_name_conflict_is_rejected_even_when_both_are_neural",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_explicit_evaluation_recipe_restores_saved_network_parameters",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_mounted_sensor_override_is_seen_and_input_semantics_are_checked",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_external_worker_cannot_be_declared_as_a_jax_runtime",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_single_execution_override_keeps_the_checkpoint_task[env.dynamics.forward=so_rpy]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_single_execution_override_keeps_the_checkpoint_task[dynamics@env.dynamics=crazyflow_so_rpy]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_device_override_keeps_saved_command_delay",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_checkpoint_contract",
+    "name": "test_explicit_environment_replacement_uses_the_selected_task",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition.CompositionTests",
+    "name": "test_actual_step_and_selected_objective",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition.CompositionTests",
+    "name": "test_domain_randomization_never_leaks_to_unsupported_dynamics",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition.CompositionTests",
+    "name": "test_incompatible_action_and_gradient_are_rejected",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition.CompositionTests",
+    "name": "test_presets_overrides_and_unknown_key",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_runtime_modules_have_single_responsibility_locations",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_ppo_composes_for_each_core_environment[hovering]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_ppo_composes_for_each_core_environment[tracking]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_ppo_composes_for_each_core_environment[racing]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_ppo_composes_for_each_core_environment[navigation/static]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_ppo_composes_for_each_core_environment[navigation/dynamic]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_optimization_recipe_exposes_modes_before_any_run_is_created[papers/super]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_optimization_recipe_exposes_modes_before_any_run_is_created[papers/ego_planner]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_optimization_recipe_exposes_modes_before_any_run_is_created[control/attitude_mpc]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_optimization_recipe_exposes_modes_before_any_run_is_created[control/sampling_mpc]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_sensor_and_forward_model_have_one_config_owner",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_source_dynamics_does_not_create_a_private_method",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_aero_mppi_identity_does_not_claim_a_sampling_mpc_implementation",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_component_group_reselection_is_not_shadowed_by_a_recipe_copy",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_composition_contract",
+    "name": "test_mpc_constructor_is_explicit_and_does_not_dispatch_by_display_name",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_direct_hydra_environment",
+    "name": "test_environment_only_configuration_does_not_load_a_training_recipe",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_direct_hydra_environment",
+    "name": "test_public_load_executes_six_components_and_returns_brax_state",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_catalog_composition",
+    "name": "test_navigation_benchmark_entries_expand_the_accepted_scenes",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_catalog_composition",
+    "name": "test_navigation_experiments_share_catalog_task_identity",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_protocol",
+    "name": "test_composition_rejects_navigation_protocol_changes",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_custom_navigation_parameters_drive_the_real_task_and_clock[500]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_custom_navigation_parameters_drive_the_real_task_and_clock[1000]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_named_navigation_benchmark_still_rejects_changed_task_conditions",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_custom_task_still_rejects_invalid_geometry_or_command_bounds[goal_radius-0.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_custom_task_still_rejects_invalid_geometry_or_command_bounds[body_radius-0.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_navigation_task_contract",
+    "name": "test_custom_task_still_rejects_invalid_geometry_or_command_bounds[max_speed-1.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_overrides",
+    "name": "test_reference_composition_reuses_cli_hydra_without_clearing_it",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_perception_composition",
+    "name": "test_depth_and_lidar_keep_sensor_identity_with_equal_input_width",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_perception_composition",
+    "name": "test_dynamic_presets_keep_the_same_perception_contract",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_synchronous_sensor_rate_must_match_the_executed_policy_tick[5.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_synchronous_sensor_rate_must_match_the_executed_policy_tick[20.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_policy_coordinate_and_unit_labels_match_the_command_transform[network_output_frame-world]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_policy_coordinate_and_unit_labels_match_the_command_transform[command_units-normalized]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[task-body_radius-0.035]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[task-goal_radius-1.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[env-physics_freq-250]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[task-duration-20.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[evaluation-duration-20.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_selected_navigation_protocol_owns_its_constraints[evaluation-speeds-value5]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_pointcloud_protocol",
+    "name": "test_generic_navigation_adapter_accepts_custom_conditions_without_a_benchmark_label",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_protocols",
+    "name": "test_named_navigation_protocol_is_checked_and_recorded_by_identity",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_protocols",
+    "name": "test_named_protocol_does_not_require_a_hash_for_a_local_asset",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/apg]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/attitude_mpc]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/bptt]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/differentiable_pointcloud_hovering]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/differentiable_pointcloud_racing]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/differentiable_pointcloud_tracking]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/geometric]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/ppo]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/sampling_mpc]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[control/shac]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/bptt]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/differentiable_pointcloud_acceleration_benchmark]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/pipeline]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/ppo]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[navigation/shac]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[papers/depth_diffphysics]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[papers/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[papers/dva]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[papers/ego_planner]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_every_recipe_resolves_to_real_implementations[papers/super]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_benchmark_reads_real_locked_files_outside_repository_cwd",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[so_rpy]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[so_rpy_rotor]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[so_rpy_rotor_drag]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[first_principles]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[lotf_high_fidelity]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_dynamics_randomization_and_actual_container_step[lotf_simplified]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_point_mass_native_step_keeps_its_own_state_type",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_refactor_wiring",
+    "name": "test_reference_adapter_does_not_compose_a_learning_experiment",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.configuration.test_sensor_contract",
+    "name": "test_perception_observation_requires_a_sensor_component",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_explicit_migration",
+    "name": "test_explicit_migration_preserves_source_bytes_and_frozen_action[3]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_explicit_migration",
+    "name": "test_explicit_migration_preserves_source_bytes_and_frozen_action[4]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_perception_checkpoint",
+    "name": "test_perception_checkpoint_rebuilds_the_same_network",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_policy_checkpoint",
+    "name": "test_saved_brax_policy_reproduces_actions_and_normalization",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_runs",
+    "name": "test_run_recorder_writes_manifest_metrics_state_and_result",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_runs",
+    "name": "test_run_recorder_heartbeat_and_exception_result",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_runs",
+    "name": "test_rscope_export_native_roundtrip_and_safe_publish",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_source_snapshot",
+    "name": "test_export_is_deterministic_and_gitless_run_has_verified_origin",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_source_snapshot",
+    "name": "test_changed_deleted_and_new_sources_are_recorded_in_actual_snapshot",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_source_snapshot",
+    "name": "test_extracted_source_does_not_inherit_an_unrelated_parent_commit",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_source_snapshot",
+    "name": "test_invalid_manifest_path_is_rejected",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.artifacts.test_source_snapshot",
+    "name": "test_symlink_changes_do_not_copy_external_content",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value1]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value2]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value3]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value4]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_echo_and_reset_preserve_physical_type[value5]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_corridor_is_recorded_and_rendered_as_independent_evidence",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_native_typed_service",
+    "name": "test_native_late_result_is_not_executable",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_physical_outputs",
+    "name": "test_trajectory_decoder_matches_all_physical_endpoints_and_jax_derivative",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_physical_outputs",
+    "name": "test_waypoint_head_keeps_order_anchor_and_physical_scale",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_physical_outputs",
+    "name": "test_neural_physical_artifact_roundtrip_and_pipeline_consumption[waypoint]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_physical_outputs",
+    "name": "test_neural_physical_artifact_roundtrip_and_pipeline_consumption[trajectory]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_physical_outputs",
+    "name": "test_physical_head_contract_rejects_invalid_units_and_horizons",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_minimum_jerk_interpolation_preserves_physical_endpoint_constraints",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_configured_waypoint_planning_chain_preserves_curve_and_resets",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_missing_physical_adapter_before_running",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_cpp_downstream_receives_exact_upstream_physical_value[waypoint-value0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_cpp_downstream_receives_exact_upstream_physical_value[state-value1]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_cpp_downstream_receives_exact_upstream_physical_value[trajectory-value2]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_real_cpp_stages_chain_without_algorithm_specific_host_changes",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_no_plan_stops_downstream_and_close_visits_all_modules",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_saved_neural_module_preserves_decoder_and_rejects_same_width_wrong_fields",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_module_rates_hold_valid_outputs_but_never_reuse_expired_decisions",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_future_generated_output",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_unsupported_module_clocks[0.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_unsupported_module_clocks[-1.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_unsupported_module_clocks[nan]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_unsupported_module_clocks[60.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_pipeline",
+    "name": "test_pipeline_rejects_unsupported_module_clocks[7.0]",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_unified_decision",
+    "name": "test_physical_output_is_a_decision_not_a_second_dictionary_contract",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_unified_decision",
+    "name": "test_pipeline_keeps_typed_stages_and_does_not_sample_controller_reference",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.runtime.test_unified_decision",
+    "name": "test_hydra_constructs_ros_adapter_without_factory_or_starting_ros",
+    "status": "passed",
+    "report": "boundaries-final.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_execution_initialization",
+    "name": "test_failed_native_initialization_closes_its_allocated_simulation[bind]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_execution_initialization",
+    "name": "test_failed_native_initialization_closes_its_allocated_simulation[reset]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_navigation_without_benchmark_accepts_custom_task_conditions",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_task_frequency_changes_actual_physical_elapsed_time",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_body_rate_tracking_records_collective_thrust_instead_of_yaw_rate",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_duplicate_execution_frequency_is_rejected_instead_of_ignored",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_navigation_rejects_a_physics_clock_the_backend_does_not_execute",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_randomization_rejects_nonfinite_physical_ranges[bounds0]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_randomization_rejects_nonfinite_physical_ranges[bounds1]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_mass_randomization_changes_motion_and_reproduces_per_reset",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_inertia_randomization_preserves_inverse_and_changes_rigid_body_response",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_fitted_attitude_model_rejects_inertia_randomization_without_torque_dynamics",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_retired_split_names_are_rejected",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_current_artifact_schema_rejects_historical_versions",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_task_time_limit_classification_and_pre_reset_observation[termination]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_task_time_limit_classification_and_pre_reset_observation[truncation]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_ppo_truncation_bootstraps_terminal_value_without_using_next_episode",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_acceptance_is_separate_and_consumes_configured_thresholds",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_latency_statistics_exclude_warmup_and_count_deadline_misses",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_sensor_metadata_matches_executed_frame_capture_times",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_navigation_protocol_supplies_evaluation_and_checkpoint_budgets",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_public_contracts",
+    "name": "test_generic_navigation_executes_configured_cases_and_initial_states",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_public_training_entry",
+    "name": "test_public_train_checkpoint_evaluate_without_replays[ppo]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_public_training_entry",
+    "name": "test_public_train_checkpoint_evaluate_without_replays[bptt]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_public_training_entry",
+    "name": "test_public_train_checkpoint_evaluate_without_replays[shac]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_public_training_entry",
+    "name": "test_public_train_checkpoint_evaluate_without_replays[dva]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_direct_recurrent_training",
+    "name": "test_real_recurrent_update_and_restore[papers/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_direct_recurrent_training",
+    "name": "test_real_recurrent_update_and_restore[navigation/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_direct_recurrent_training",
+    "name": "test_real_recurrent_update_and_restore[papers/depth_diffphysics]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_direct_recurrent_training",
+    "name": "test_real_recurrent_update_and_restore[control/differentiable_pointcloud_hovering]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_composed_resume",
+    "name": "test_composed_complete_state_restores_identical_next_update[bptt]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_composed_resume",
+    "name": "test_composed_complete_state_restores_identical_next_update[shac]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_recurrent_entry",
+    "name": "test_recurrent_training_entry_completes_one_real_update[papers/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_recurrent_entry",
+    "name": "test_recurrent_training_entry_completes_one_real_update[navigation/differentiable_pointcloud]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_recurrent_entry",
+    "name": "test_recurrent_training_entry_completes_one_real_update[papers/depth_diffphysics]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_recurrent_entry",
+    "name": "test_recurrent_training_entry_completes_one_real_update[control/differentiable_pointcloud_hovering]",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_cli.CommandTests",
+    "name": "test_all_scripts_accept_hydra_configuration_display",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_cli.CommandTests",
+    "name": "test_parser_exposes_all_committed_entrypoints",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_cli.CommandTests",
+    "name": "test_real_control_demo_records_measured_states",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.test_cli",
+    "name": "test_train_eval_and_play_respect_replay_storage",
+    "status": "passed",
+    "report": "training.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_fast_thin_bar_collision_is_detected_and_terminal_state_is_frozen",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_numerical_and_out_of_bounds_are_explicit_failures",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_frozen_rollout_and_all_outcome_denominators",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_replay_preserves_point_mass_identity_and_positions",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_collision_free_evaluation_keeps_the_reconstruction_training_transition",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_training_run_budget_and_selected_checkpoint_age_are_separate",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_evaluation_summary_keeps_failures_and_training_provenance",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud",
+    "name": "test_first_step_numerical_failure_keeps_a_readable_two_state_replay",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud_navigation",
+    "name": "test_v2_pointcloud_preset_resolves_300_seconds_without_relabelling_v1",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud_navigation",
+    "name": "test_v2_arrival_stops_within_policy_tick_and_cannot_leave_goal_again",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.evaluation.test_pointcloud_navigation",
+    "name": "test_finished_pointcloud_batch_skips_sensor_and_policy_execution",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_new_recipe_preserves_sensor_and_protocol_and_old_training_guard",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_training_initialization_covers_course_and_goal_without_obstacle_penetration",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_near_goal_and_penetration_have_actual_differentiable_training_signal",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_checked_delay_matches_training_physics_and_preserves_terminal_event",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_evaluator_accepts_runtime_delay_grid_and_speed_without_recompiling",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.training.test_differentiable_pointcloud",
+    "name": "test_training_point_jitter_preserves_invalid_points_and_is_seeded",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.visualization.test_live_replay",
+    "name": "test_incremental_publication_keeps_watched_directory_and_native_created_event",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.visualization.test_live_replay",
+    "name": "test_optional_live_publication_preserves_user_selection_and_reports_errors",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_collision",
+    "name": "test_public_eval_always_keeps_hard_collision_termination",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_collision",
+    "name": "test_continuous_collision_training_retains_penetration_and_escape_gradient",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_direct_composition",
+    "name": "test_environment_composes_components_without_method_or_algorithm_names",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_frozen_resets_are_safe_reproducible_and_have_actual_variation",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_evaluator_starts_from_frozen_physical_state_and_records_values",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_depth_method_accepts_same_navigation_protocol",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_navigation_benchmark_counts_both_tasks_and_keeps_all_failures",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_native_cases_cover_four_scenes_and_match_learning_reset_seed_meanings[False]",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_native_cases_cover_four_scenes_and_match_learning_reset_seed_meanings[True]",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_navigation_resets",
+    "name": "test_native_benchmark_accepts_exactly_one_complete_task",
+    "status": "passed",
+    "report": "replay-events.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_local_dynamics_gradient_matches_finite_difference",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_matches_upstream_figure_eight_before_terminal",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_random_reference_matches_lsy_scipy_construction",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_random_task_reset_and_batch_shapes",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_reset_is_reproducible_and_seed_sensitive",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_reset_reserves_an_unconsumed_key_for_later_episodes",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.integration.environments.test_tracking.TrackingContractTests",
+    "name": "test_timeout_keeps_terminal_observation_and_draws_fresh_reset",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_prediction_uses_only_commands_that_have_arrived_and_resets_history",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_hover_orientation_and_body_rate_round_trip",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_rejects_invalid_delay_estimates[-1.0]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_rejects_invalid_delay_estimates[0.0]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_rejects_invalid_delay_estimates[nan]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_delay_prediction",
+    "name": "test_rejects_invalid_delay_estimates[inf]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_optimization.OptimizationTests",
+    "name": "test_actual_acados_solve_preserves_native_problem",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_optimization",
+    "name": "test_mpc_tracking_horizon_covers_the_final_tick_without_shortening_the_task",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_setpoints",
+    "name": "test_state_setpoint_keeps_velocity_and_acceleration_distinct",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_setpoints",
+    "name": "test_rate_and_attitude_setpoints_have_different_physical_fields",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_setpoints",
+    "name": "test_setpoint_is_a_batched_differentiable_pytree",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.control.test_setpoints",
+    "name": "test_host_setpoint_validation_rejects_invalid_units_shape_or_values",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value0]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value1]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value2]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value3]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value4]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_typed_setpoint_roundtrip_preserves_physical_fields[value5]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_corridor_roundtrip_preserves_its_own_time_window",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_typed_outputs",
+    "name": "test_wrong_or_nonfinite_wire_values_are_rejected",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_waypoints",
+    "name": "test_ordered_native_goals_keep_progress_across_identical_packets_and_hold_final_target",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_waypoints",
+    "name": "test_ros_upstream_waypoint_mode_advertises_and_enforces_actual_input[super]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.integrations.rpc.test_waypoints",
+    "name": "test_ros_upstream_waypoint_mode_advertises_and_enforces_actual_input[ego]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_reference_arrays",
+    "name": "test_trajectory_sampling_preserves_time_derivatives",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_reference_arrays",
+    "name": "test_trajectory_can_carry_policy_gradients_without_host_conversion",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_reference_arrays",
+    "name": "test_waypoint_is_a_pytree_with_preserved_validity",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_polynomial_reference_keeps_time_origin_and_exact_derivatives",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_piecewise_reference_samples_future_without_repeating_current_point",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_invalid_trajectory_duration_cannot_enter_execution[durations0]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_invalid_trajectory_duration_cannot_enter_execution[durations1]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_invalid_trajectory_duration_cannot_enter_execution[durations2]",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_waypoint_and_setpoint_are_distinct_physical_interfaces",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_bspline_adapter_preserves_upstream_curve_without_sampling_loss",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_super_position_and_yaw_with_different_knots_remain_exact",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_ego_does_not_invent_a_future_yaw_trajectory",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_trajectory_contracts",
+    "name": "test_mpc_horizon_needs_real_future_and_explicit_missing_yaw",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_numerics",
+    "name": "test_quaternion_values_and_jvp_do_not_add_normalization",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.test_numerics",
+    "name": "test_zero_norm_has_finite_zero_derivative",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.runtime.test_checked_transition",
+    "name": "test_checked_execution_freezes_only_the_terminated_instance",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.runtime.test_checked_transition",
+    "name": "test_collision_is_retained_when_execution_continues_to_interval_end",
+    "status": "passed",
+    "report": "final-targets.xml"
+  },
+  {
+    "classname": "tests.unit.runtime.test_checked_transition",
+    "name": "test_dense_sampling_keeps_the_original_interval_map_and_gradient",
+    "status": "passed",
+    "report": "final-targets.xml"
+  }
+]

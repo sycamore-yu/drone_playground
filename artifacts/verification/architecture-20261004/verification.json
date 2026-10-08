@@ -1,0 +1,124 @@
+{
+  "status": "implemented-and-targeted-verified",
+  "baseline_head": "69b1c392dcd52fdf7d85025797141b397e100010",
+  "tests": {
+    "unique_latest_passed": 248,
+    "latest_failed": 0,
+    "collected": 579,
+    "full_suite_executed": false,
+    "aggregation": "Latest result per class/name across the four ordered JUnit files; the stale helper failure in replay-events was fixed and rerun in final-targets."
+  },
+  "numeric_regression": {
+    "environments": 9,
+    "arrays": 388,
+    "rtol": 3e-06,
+    "atol": 3e-06
+  },
+  "protected": {
+    "checked": 16124,
+    "changed": [],
+    "missing": [],
+    "seconds": 37.749594925902784
+  },
+  "native": {
+    "super": {
+      "method": "super",
+      "steps": 30,
+      "statuses": {
+        "no_plan": 12,
+        "valid": 18
+      },
+      "native_commands": 17,
+      "fallback_steps": 13,
+      "generated_launch": true,
+      "generated_yaml": true,
+      "port": 17362,
+      "position": [
+        [
+          [
+            2.0122177600860596,
+            0.0037744834553450346,
+            2.9738755226135254
+          ]
+        ]
+      ]
+    },
+    "ego": {
+      "method": "ego",
+      "steps": 150,
+      "statuses": {
+        "no_plan": 104,
+        "valid": 46
+      },
+      "native_commands": 46,
+      "fallback_steps": 104,
+      "generated_launch": true,
+      "generated_yaml": false,
+      "port": 17371,
+      "position": [
+        [
+          [
+            1.5203992128372192,
+            0.0,
+            2.9025464057922363
+          ]
+        ]
+      ]
+    },
+    "container_rebuilt": false
+  },
+  "gpu": {
+    "algorithm": "bptt",
+    "actual_steps": 4,
+    "parameter_delta_l2": 0.09126696013548118,
+    "quality_claim": false
+  },
+  "packaging": {
+    "installed_check": {
+      "module": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/architecture-implementation-20261004/continuation/package/installed/drone_playground/__init__.py",
+      "working_directory": "/tmp",
+      "state_type": "State",
+      "control_hz": 50,
+      "physics_hz": 500,
+      "resources": true,
+      "retired_imports_absent": true
+    },
+    "wheel_sha256": "c15a0d38b7772bad86f42b12e01416c3c18e8a1b7cd7f18c034fadaf56b58759"
+  },
+  "static": {
+    "core_ruff": "F,I passed",
+    "changed_python_format": "169 files passed",
+    "full_ruff_errors": 565,
+    "full_ruff_clean": false
+  },
+  "review": {
+    "method": "direct source and call-site review against approved scope, not independent subagent review",
+    "standards": "Single configuration authority, explicit resource ownership, native state preservation, shared execution and numerical kernels; full Ruff reports remain.",
+    "spec": "Approved changes implemented and exercised; original results and task numerical contracts preserved."
+  },
+  "git": {
+    "committed": false,
+    "pushed": false,
+    "preexisting_worktree_preserved": true
+  },
+  "scratch": "tmp/architecture-implementation-20261004",
+  "documentation": {
+    "checked": [
+      "docs/status.md",
+      "docs/architecture.md",
+      "docs/directory-layout.md",
+      "docs/runbook.md",
+      "docs/development.md",
+      "docs/README.md",
+      "src/drone_playground/environments/README.md",
+      "src/drone_playground/learning/README.md",
+      "src/drone_playground/artifacts/README.md",
+      "artifacts/verification/architecture-20261004/README.md"
+    ],
+    "broken_links": []
+  },
+  "change_count": {
+    "present_changed_files": 203,
+    "removed_paths": 16
+  }
+}
