@@ -138,9 +138,99 @@ def overrides(case, variant):
             )
         else:
             result.extend(["learning.options.horizon=32", "learning.options.lr=0.0003"])
+    elif 3 <= variant <= 8:
+        if case.task == "racing":
+            # DiffAero racing rewards place substantial weight on progress through gates.
+            # It is dense training reward only; gate order and C3 remain unchanged.
+            tuning = {
+                3: (4.0, 0.0003, 32, 50.0),
+                4: (10.0, 0.0001, 32, 50.0),
+                5: (6.0, 0.0005, 16, 30.0),
+                6: (2.0, 0.001, 64, 50.0),
+                7: (10.0, 0.0003, 64, 50.0),
+                8: (4.0, 0.0001, 64, 30.0),
+            }
+            progress, lr, horizon, failure_cost = tuning[variant]
+            result.extend(
+                [
+                    f"++learning.options.progress_reward_scale={progress}",
+                    f"++learning.options.failure_cost={failure_cost}",
+                    f"learning.options.lr={lr}",
+                    f"learning.options.horizon={horizon}",
+                ]
+            )
+            if case.algorithm == "ppo":
+                result.append("learning.options.entropy_weight=0.002")
+        elif case.task == "tracking":
+            result.extend(
+                [
+                    f"learning.options.lr={0.0002 if variant % 2 else 0.0005}",
+                    f"learning.options.horizon={16 if variant % 3 == 0 else 32}",
+                ]
+            )
+        elif case.task in ("depth", "lidar"):
+            # Network structures stay identical across PPO/APG/SHAC. Variants
+            # differ only in recorded optimization and reward schedules.
+            grid = {
+                3: (0.25, 1.0, 0.0001, 0.5),
+                4: (0.75, 2.0, 0.0002, 1.0),
+                5: (1.0, 2.0, 0.0001, 0.5),
+                6: (0.25, 1.0, 0.0003, 0.5),
+                7: (1.0, 3.0, 0.00015, 0.75),
+                8: (0.5, 0.5, 0.0002, 1.0),
+            }
+            progress, boundary, lr, perception_weight = grid[variant]
+            result.extend(
+                [
+                    f"++learning.options.progress_reward_scale={progress}",
+                    f"++learning.options.height_boundary_weight={boundary}",
+                    f"learning.options.lr={lr}",
+                    f"learning.options.perception_weight={perception_weight}",
+                ]
+            )
+            if variant in (4, 5, 7):
+                result.append("simulation.navigation_goal_observation=true")
+            if case.algorithm == "ppo":
+                # Liu point-cloud PPO struggled with early zero-success
+                # privileged value fits; evaluate an actual sensor-critic
+                # alternative without granting the Actor privileged truth.
+                if variant in (3, 5, 6, 8):
+                    result.extend(
+                        [
+                            "learning.options.critic_uses_privileged=false",
+                            "++learning.options.critic_uses_sensor=true",
+                        ]
+                    )
+                result.extend(
+                    [
+                        "learning.options.initial_log_std=-2.5",
+                        "learning.options.critic_lr=0.0005",
+                        "learning.options.clip_epsilon=0.15",
+                    ]
+                )
+            else:
+                result.append(f"learning.options.temporal_gradient_alpha={0.916290731874155}")
+            if case.task == "lidar" or variant >= 5:
+                # More frequent independent evaluations can detect a genuine
+                # three-checkpoint stability streak without cherry-picking
+                # individual episodes. Final benchmarks stay untouched.
+                result.extend(
+                    ["learning.evaluation_interval=80", "learning.checkpoint_interval=40"]
+                )
+        else:
+            raise ValueError(f"Unsupported task: {case.task}")
     else:
         raise ValueError(f"Unknown optimization candidate: {variant}")
-    return result
+    # Hydra override order is significant. Keep the final intentional value
+    # for each option, but do not pass two spellings of the same key.
+    seen = set()
+    normalized = []
+    for option in reversed(result):
+        name = option.partition("=")[0].lstrip("+")
+        if name not in seen:
+            normalized.append(option)
+            seen.add(name)
+    return list(reversed(normalized))
 
 
 def directory(root, case, variant, seed):
@@ -234,7 +324,23 @@ def trial_status(path, running):
             ):
                 return "accepted"
             return "invalid"
-        if status in {"failed", "interrupted", "frozen_benchmark_failed"}:
+        if status == "interrupted":
+            proposal = read_json(path / "proposal.json")
+            restarts = read_json(path / "restarts.json") or {}
+            archive = path / "checkpoints" / "latest.training.zip"
+            stopped_by_budget = (path / "stop_requested.json").is_file()
+            score = best_evaluation_score(path)
+            promising = score is not None and score >= 0.65
+            if (
+                stopped_by_budget
+                and proposal is not None
+                and archive.is_file()
+                and promising
+                and restarts.get("attempts", 0) < 4
+            ):
+                return "recoverable"
+            return status
+        if status in {"failed", "frozen_benchmark_failed"}:
             return status
         if active:
             return "running"
@@ -291,6 +397,14 @@ def eligible(case, root, running, *, candidates):
             status = trial_status(path, running)
             previous.append({"seed": seed, "status": status, "score": best_evaluation_score(path)})
         history.append({"variant": variant, "runs": previous})
+    # A fully accepted three-seed recipe must WIN, even if another earlier
+    # candidate has a recoverable but unfinished run. Otherwise progress can
+    # regress from accepted to pending after extending the search space.
+    for item in history:
+        if all(entry["status"] == "accepted" for entry in item["runs"]):
+            return "accepted", item["variant"], None, history
+    for item in history:
+        variant, previous = item["variant"], item["runs"]
         # Screen each variant with seed 0 before spending seeds 1 and 2.
         if previous[0]["status"] in (
             "failed",
@@ -412,6 +526,17 @@ def resume(project, root, case, variant, seed):
     if "resume=null" not in runner or "initial_checkpoint=null" not in runner:
         raise RuntimeError(f"Refusing non-scratch resumption for {path}")
     runner[runner.index("resume=null")] = f"resume={archive}"
+    old_budget = read_json(path / "budget.json") or {}
+    last = last_update(path / "metrics.jsonl")
+    # Resume the SAME randomly initialized run, including its optimizer, RNG
+    # and recurrent history. Never import parameters from another experiment.
+    budget_limit = max(last, int(old_budget.get("limit", 1000))) + 1000
+    atomic_json(path / "budget.json", {"limit": budget_limit, "source": "same_run_resume"})
+    marker = path / "stop_requested.json"
+    if marker.exists():
+        with (path / "stop_history.jsonl").open("a") as stream:
+            stream.write(marker.read_text() + "\n")
+        marker.unlink()
     restart_file = path / "restarts.json"
     state = read_json(restart_file) or {"attempts": 0}
     state["attempts"] += 1
@@ -480,14 +605,13 @@ def supervise(root, max_parallel, update_budget, candidates):
             path = Path(path_string)
             streak = consecutive_passes(path / "metrics.jsonl")
             allowance = 160 * streak if streak else 0
+            limit = (read_json(path / "budget.json") or {}).get("limit", update_budget)
             if (
-                last_update(path / "metrics.jsonl") >= update_budget + allowance
+                last_update(path / "metrics.jsonl") >= limit + allowance
                 and not (path / "stop_requested.json").exists()
             ):
                 (path / "stop_requested.json").write_text(
-                    json.dumps(
-                        {"reason": "trial_update_budget", "threshold": update_budget, "pid": pid}
-                    )
+                    json.dumps({"reason": "trial_update_budget", "threshold": limit, "pid": pid})
                 )
                 os.kill(pid, signal.SIGINT)
         snapshot = report(root, running, candidates)
@@ -507,7 +631,19 @@ def supervise(root, max_parallel, update_budget, candidates):
             and snapshot["resources"]["gpu_free_mib"] >= 6500
             and snapshot["resources"]["ram_free_mib"] >= 10000
         ):
-            for case in cases():
+            # Prioritize recipes that already demonstrated main-scene arrivals
+            # before exploring families with zero successes. This uses
+            # checkpoint evaluations, never frozen benchmark results for tuning.
+            priority = {
+                "depth_shac": 0,
+                "lidar_apg": 1,
+                "lidar_shac": 2,
+                "depth_ppo": 3,
+                "racing_ppo": 4,
+                "racing_shac": 5,
+                "lidar_ppo": 6,
+            }
+            for case in sorted(cases(), key=lambda item: priority.get(item.key, 7)):
                 action, variant, seed, _ = eligible(case, root, running, candidates=candidates)
                 if action not in ("launch", "resume"):
                     continue
@@ -531,7 +667,7 @@ def main():
     parser.add_argument("--python", type=Path, default=None)
     parser.add_argument("--max-parallel", type=int, default=2)
     parser.add_argument("--update-budget", type=int, default=1000)
-    parser.add_argument("--candidates", type=int, default=3)
+    parser.add_argument("--candidates", type=int, default=9)
     args = parser.parse_args()
     root = args.results_root.expanduser().resolve()
     if args.python is not None:
@@ -542,7 +678,7 @@ def main():
     elif args.mode == "status":
         print(json.dumps(report(root, active_runs(root), args.candidates), indent=2))
     else:
-        if args.max_parallel < 1 or args.update_budget < 160 or not 1 <= args.candidates <= 3:
+        if args.max_parallel < 1 or args.update_budget < 160 or not 1 <= args.candidates <= 9:
             parser.error("Invalid concurrency, update budget or number of candidates")
         supervise(root, args.max_parallel, args.update_budget, args.candidates)
 
