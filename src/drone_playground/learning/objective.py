@@ -48,10 +48,20 @@ class EpisodeObjective:
         task_cost = self.env.cost(before, after, action)
         progress_reward = jnp.zeros_like(task_cost)
         if self.config["progress_reward_scale"]:
-            goal = self.env.task.goal
-            previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
-            distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
-            progress_reward = self.config["progress_reward_scale"] * (previous_distance - distance)
+            if self.env.task.name == "racing":
+                order = self.env.task.gate_order
+                active_gate = order[jnp.minimum(before.task.gates, len(order) - 1)]
+                goal = self.env.task.gate_positions[active_gate]
+                previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
+                distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
+                progress = previous_distance - distance
+                progress += 5.0 * (after.task.gates - before.task.gates)
+            else:
+                goal = self.env.task.goal
+                previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
+                distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
+                progress = previous_distance - distance
+            progress_reward = self.config["progress_reward_scale"] * progress
             progress_reward = jnp.where(before.done, 0.0, progress_reward)
             task_cost -= progress_reward
         failure = after.done & (after.task.event != Event.SUCCESS) & ~before.done

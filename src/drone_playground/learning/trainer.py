@@ -119,8 +119,8 @@ class Trainer:
                 raise ValueError("Privileged critic requires sensor-based Navigation PPO")
             if self.config["critic_uses_sensor"]:
                 raise ValueError("Choose either sensor-aware or privileged critic")
-        if self.config["progress_reward_scale"] and env.task.name != "navigation":
-            raise ValueError("progress_reward_scale requires Navigation")
+        if self.config["progress_reward_scale"] and env.task.name not in ("navigation", "racing"):
+            raise ValueError("progress_reward_scale requires Navigation or Racing")
         self._reset_options = {}
         if self.config["randomize_navigation_start"]:
             if env.task.name != "navigation":
