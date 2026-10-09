@@ -163,12 +163,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
         ):
             raise ValueError("Checkpoint training sampling progress disagrees with update count")
         progress = metadata["provenance"]
-        consecutive = progress.get("consecutive_passes", 0)
-        evaluation_index = progress.get("evaluation_index", 0)
-        previous_wall_seconds = progress.get("training_wall_seconds")
+        consecutive = progress["consecutive_passes"]
+        evaluation_index = progress["evaluation_index"]
+        previous_wall_seconds = progress["training_wall_seconds"]
         pending_evaluation = (
-            "evaluation_index" in progress
-            and int(state.updates) % config.learning.evaluation_interval == 0
+            int(state.updates) % config.learning.evaluation_interval == 0
             and evaluation_index < int(state.updates) // config.learning.evaluation_interval
         )
         record.event("resumed", checkpoint=str(config.resume), update=int(state.updates))
@@ -482,8 +481,9 @@ def main(config: DictConfig) -> None:
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
                     raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             physical = OmegaConf.to_container(config.simulation, resolve=True)
-            if previous["simulation"].get("navigation_goal_observation", False) != physical.get(
-                "navigation_goal_observation", False
+            if (
+                previous["simulation"]["navigation_goal_observation"]
+                != physical["navigation_goal_observation"]
             ):
                 raise ValueError(
                     "Frozen evaluation changes checkpoint navigation_goal_observation contract"
@@ -492,9 +492,7 @@ def main(config: DictConfig) -> None:
                 for field in ("dynamics", "drone", "physics_hz", "method_hz"):
                     if previous["simulation"][field] != physical[field]:
                         raise ValueError(f"Frozen evaluation changes physical {field}")
-                delay = previous["simulation"].get(
-                    "action_delay_s", previous["method"].get("action_delay", 0.0)
-                )
+                delay = previous["simulation"]["action_delay_s"]
                 if delay != physical["action_delay_s"]:
                     raise ValueError("Frozen evaluation changes action_delay_s contract")
                 for field in ("sensor", "observation"):
@@ -505,19 +503,12 @@ def main(config: DictConfig) -> None:
                 for field in ("randomization", "disturbance"):
                     if previous["simulation"].get(field, {}) != physical[field]:
                         raise ValueError(f"Frozen evaluation changes physical {field}")
-            old_action = metadata["config"].get("learning", {}).get("action")
-            if old_action is None:
-                # Version-1 archives had two fixed action contracts; decode them at this boundary.
-                navigation = previous["task"]["name"] == "navigation"
-                old_action = {
-                    "level": "acceleration" if navigation else "attitude_thrust",
-                    "heading": "target" if navigation else "fixed",
-                }
+            saved_action = metadata["config"]["learning"]["action"]
             requested_action = Action(
                 drone=physical["drone"],
                 **OmegaConf.to_container(config.method.action, resolve=True),
             )
-            archived_action = Action(drone=previous["simulation"]["drone"], **old_action)
+            archived_action = Action(drone=previous["simulation"]["drone"], **saved_action)
             if requested_action.contract != archived_action.contract:
                 raise ValueError(
                     "Frozen evaluation cannot reinterpret checkpoint action units or bounds"

@@ -27,9 +27,9 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
     base = 1_000_000 if index else 2_000_000
     scenes = NAV_SCENES if task == "navigation" else ["empty" if task == "tracking" else "racing"]
     reports = {}
+    all_rows = []
+    path.mkdir(parents=True, exist_ok=True)
     for scene_index, scene in enumerate(scenes):
-        directory = path / scene
-        directory.mkdir(parents=True)
         rows = []
         for world in range(count):
             rows.append(
@@ -45,11 +45,12 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
                     "min_clearance": 0.2,
                 }
             )
-        with (directory / "episodes.csv").open("w", newline="") as stream:
-            writer = csv.DictWriter(stream, fieldnames=rows[0])
-            writer.writeheader()
-            writer.writerows(rows)
+        all_rows.extend(rows)
         reports[scene] = {"episodes": count, "successes": min(count, successes), "passed": True}
+    with (path / "episodes.csv").open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=all_rows[0])
+        writer.writeheader()
+        writer.writerows(all_rows)
     write_json(
         path / "report.json",
         {
@@ -74,7 +75,7 @@ def make_run(
         "task": {"name": task, "duration": {"tracking": 20, "racing": 60, "navigation": 300}[task]},
         "sensor": {"name": sensor},
         "seed": seed,
-        "method": {"name": "policy"},
+        "method": {"name": "policy", "actor": {"kind": sensor}},
         "simulation": {
             "dynamics": "first_principles",
             "drone": "cf21B_500",
@@ -91,8 +92,8 @@ def make_run(
     }
     (path / "config.yaml").write_text(yaml.safe_dump(config))
     update = len(passes) * 100
-    cp = path / "checkpoints" / f"update-{update:08d}.policy.zip"
-    cp.parent.mkdir()
+    cp = path / "checkpoints" / f"step-{update:06d}" / "policy.zip"
+    cp.parent.mkdir(parents=True)
     payload = b"opaque-test-parameters"
     with zipfile.ZipFile(cp, "w") as archive:
         archive.writestr("variables.msgpack", payload)
@@ -100,8 +101,14 @@ def make_run(
             "metadata.json",
             json.dumps(
                 {
+                    "format_version": 2,
                     "purpose": "inference",
                     "kind": sensor,
+                    "actor": {
+                        "kind": sensor,
+                        "action_size": 4 if sensor == "state" else 3,
+                        "hidden_size": 192,
+                    },
                     "config": {"experiment": config},
                     "provenance": {"updates": update},
                     "sha256": hashlib.sha256(payload).hexdigest(),
@@ -109,6 +116,7 @@ def make_run(
             ),
         )
     header = {
+        "layout_version": 2,
         "status": "accepted",
         "python": "3.12.15",
         "versions": {"jax": "0.11.2"},
@@ -119,20 +127,18 @@ def make_run(
         "wall_seconds": 10,
         "training_wall_seconds": 9,
         "interactions_per_second": 300,
-        "selected_checkpoint": str(cp),
-        "config_sha256": hashlib.sha256((path / "config.yaml").read_bytes()).hexdigest(),
-    }
-    write_json(path / "run.json", header)
-    write_json(
-        path / "selection.json",
-        {
-            "checkpoint": str(cp),
+        "selected_checkpoint": str(cp.relative_to(path)),
+        "benchmark_directory": "eval/001",
+        "selection": {
+            "checkpoint": str(cp.relative_to(path)),
             "update": update,
             "evaluation_index": len(passes),
             "consecutive_passes": 3,
             "rule": "last_of_first_three_consecutive_passes",
         },
-    )
+        "config_sha256": hashlib.sha256((path / "config.yaml").read_bytes()).hexdigest(),
+    }
+    write_json(path / "run.json", header)
     events = [
         {
             "event": "update",
@@ -145,7 +151,7 @@ def make_run(
     count = 25 if task == "navigation" else 100
     for index, passed in enumerate(passes, 1):
         evaluation(
-            path / "checkpoint_eval" / f"update-{100 * index:08d}",
+            path / "checkpoints" / f"step-{100 * index:06d}",
             task,
             seed,
             index,
@@ -153,9 +159,8 @@ def make_run(
             count,
         )
         events.append({"event": "checkpoint_evaluation", "update": 100 * index})
-    (path / "events").mkdir()
-    (path / "events" / "metrics.jsonl").write_text("\n".join(map(json.dumps, events)) + "\n")
-    evaluation(path / "benchmark", task, seed, successes=count, count=count)
+    (path / "metrics.jsonl").write_text("\n".join(map(json.dumps, events)) + "\n")
+    evaluation(path / "eval/001", task, seed, successes=count, count=count)
     return path
 
 
@@ -169,7 +174,7 @@ def initialize_run(path, checkpoint):
     write_json(path / "run.json", header)
     with zipfile.ZipFile(checkpoint) as archive:
         initial_sha = json.loads(archive.read("metadata.json"))["sha256"]
-    target = Path(header["selected_checkpoint"])
+    target = path / header["selected_checkpoint"]
     with zipfile.ZipFile(target) as archive:
         payload = archive.read("variables.msgpack")
         metadata = json.loads(archive.read("metadata.json"))
@@ -228,12 +233,24 @@ def test_missing_paths_are_retained_and_all_18_cells_written(tmp_path):
     )
 
 
+def test_outdated_run_layout_is_rejected_instead_of_interpreted(tmp_path):
+    """The v2 evidence collector must not fall back to legacy selection or scene layouts."""
+    path = make_run(tmp_path)
+    header = json.loads((path / "run.json").read_text())
+    header["layout_version"] = 1
+    write_json(path / "run.json", header)
+    completed, report = run_collector(tmp_path, [path])
+    assert completed.returncode == 0, completed.stderr
+    assert report["runs"][0]["identity"]["passed"] is False
+    assert "Unsupported run layout" in " ".join(report["runs"][0]["issues"])
+
+
 @pytest.mark.parametrize("change", [None, "seed", "algorithm"])
 def test_resumed_checkpoint_preserves_training_configuration_checks(tmp_path, change):
     """Ignore the resume entrypoint while rejecting changed training seeds or algorithms."""
     path = make_run(tmp_path)
     header = json.loads((path / "run.json").read_text())
-    checkpoint = Path(header["selected_checkpoint"])
+    checkpoint = path / header["selected_checkpoint"]
     with zipfile.ZipFile(checkpoint) as archive:
         payload = archive.read("variables.msgpack")
         metadata = json.loads(archive.read("metadata.json"))
@@ -255,7 +272,7 @@ def test_resumed_checkpoint_preserves_training_configuration_checks(tmp_path, ch
 def test_csv_overrides_claimed_success(tmp_path, mutation):
     """Verify csv overrides claimed success."""
     path = make_run(tmp_path)
-    csv_path = path / "benchmark" / "empty" / "episodes.csv"
+    csv_path = path / "eval/001/episodes.csv"
 
     def change(rows):
         if mutation == "short":
@@ -327,13 +344,16 @@ def test_duplicate_input_is_an_error(tmp_path, duplicate):
 def test_mixed_navigation_grades_static_and_dynamic_separately(tmp_path):
     """Verify mixed navigation grades static and dynamic separately."""
     path = make_run(tmp_path, task="navigation")
-    benchmark_report = path / "benchmark" / "report.json"
+    benchmark_report = path / "eval/001/report.json"
     recorded = json.loads(benchmark_report.read_text())
     recorded["task_contract"] = {"navigation_goal_radius_m": 0.5}
     write_json(benchmark_report, recorded)
     rewrite_csv(
-        path / "benchmark" / "D01" / "episodes.csv",
-        lambda rows: [row.update(event="COLLISION") for row in rows[:3]],
+        path / "eval/001/episodes.csv",
+        lambda rows: [
+            row.update(event="COLLISION")
+            for row in [item for item in rows if item["scene"] == "D01"][:3]
+        ],
     )
     header = json.loads((path / "run.json").read_text())
     header["status"] = "frozen_benchmark_failed"
@@ -350,7 +370,7 @@ def test_racing_rejects_illegal_success_gate_order(tmp_path):
     """Verify racing rejects illegal success gate order."""
     path = make_run(tmp_path, task="racing")
     rewrite_csv(
-        path / "benchmark" / "racing" / "episodes.csv",
+        path / "eval/001/episodes.csv",
         lambda rows: rows[0].update(gate_order="1,2,3,4"),
     )
     _, report = run_collector(tmp_path, [path])
@@ -364,7 +384,8 @@ def test_running_and_failed_records_are_not_dropped(tmp_path):
         header = json.loads((path / "run.json").read_text())
         header["status"] = status
         write_json(path / "run.json", header)
-        (path / "selection.json").unlink()
+        header.pop("selection")
+        write_json(path / "run.json", header)
     _, report = run_collector(tmp_path, paths)
     assert [r["recorded_status"] for r in report["runs"]] == ["running", "failed"]
     values = report["cells"][0]["seeds"]
@@ -376,15 +397,16 @@ def test_active_run_with_pending_evidence_stays_incomplete(tmp_path, stage):
     """Verify active run with pending evidence stays incomplete."""
     source = make_run(tmp_path, "source")
     path = make_run(tmp_path, "active")
-    initialize_run(path, source / "checkpoints" / "update-00000300.policy.zip")
+    initialize_run(path, source / "checkpoints/step-000300/policy.zip")
     header = json.loads((path / "run.json").read_text())
     header["status"] = "running"
     header.pop("selected_checkpoint")
     write_json(path / "run.json", header)
-    (path / "benchmark" / "report.json").unlink()
+    (path / "eval/001/report.json").unlink()
     if stage == "initializing":
-        (path / "selection.json").unlink()
-        (path / "events" / "metrics.jsonl").write_text("")
+        header.pop("selection")
+        write_json(path / "run.json", header)
+        (path / "metrics.jsonl").write_text("")
     _, report = run_collector(tmp_path, [path])
     assert report["runs"][0]["recorded_status"] == "running"
     assert report["cells"][0]["seeds"]["0"]["status"] == "incomplete"
@@ -397,7 +419,7 @@ def test_shared_initialization_cost_is_counted_once(tmp_path):
     header = json.loads((source / "run.json").read_text())
     header.update(python="3.13.15", versions={"jax": "0.9.2"})
     write_json(source / "run.json", header)
-    cp_path = source / "checkpoints" / "update-00000300.policy.zip"
+    cp_path = source / "checkpoints/step-000300/policy.zip"
     paths = [make_run(tmp_path, f"formal-{seed}", task="racing", seed=seed) for seed in range(3)]
     for path in paths:
         initialize_run(path, cp_path)
@@ -428,7 +450,10 @@ def test_transitive_initialization_costs_and_unknown_historical_cost(tmp_path):
             "metadata.json",
             json.dumps(
                 {
+                    "format_version": 2,
                     "purpose": "inference",
+                    "kind": "depth",
+                    "actor": {"kind": "depth", "action_size": 3, "hidden_size": 192},
                     "config": {"experiment": {"initial_checkpoint": None}},
                     "provenance": provenance,
                     "sha256": hashlib.sha256(payload).hexdigest(),
@@ -438,7 +463,7 @@ def test_transitive_initialization_costs_and_unknown_historical_cost(tmp_path):
     altitude = make_run(tmp_path, "altitude", task="navigation", algorithm="apg")
     mixed = make_run(tmp_path, "mixed", task="navigation", algorithm="apg")
     initialize_run(altitude, reference)
-    initialize_run(mixed, altitude / "checkpoints" / "update-00000300.policy.zip")
+    initialize_run(mixed, altitude / "checkpoints/step-000300/policy.zip")
     # Full source-run cost can exceed the cost at the consumed checkpoint.
     for path, updates, wall in ((altitude, 500, 17.5), (mixed, 700, 41.25)):
         header = json.loads((path / "run.json").read_text())
@@ -456,7 +481,7 @@ def test_transitive_initialization_costs_and_unknown_historical_cost(tmp_path):
         for seed in range(3)
     ]
     for path in paths:
-        initialize_run(path, mixed / "checkpoints" / "update-00000300.policy.zip")
+        initialize_run(path, mixed / "checkpoints/step-000300/policy.zip")
     completed, report = run_collector(tmp_path, paths)
     assert completed.returncode == 0, completed.stderr
     assert len(report["runs"]) == 9
@@ -498,7 +523,7 @@ def test_transitive_initialization_costs_and_unknown_historical_cost(tmp_path):
 def test_cyclic_initialization_is_reported_without_double_counting(tmp_path):
     """Verify cyclic initialization is reported without double counting."""
     source = make_run(tmp_path, "source", task="racing", algorithm="apg")
-    checkpoint = source / "checkpoints" / "update-00000300.policy.zip"
+    checkpoint = source / "checkpoints/step-000300/policy.zip"
     initialize_run(source, checkpoint)
     formal = make_run(tmp_path, "formal", task="racing")
     initialize_run(formal, checkpoint)

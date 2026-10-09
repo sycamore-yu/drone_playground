@@ -16,15 +16,13 @@ import jax
 import numpy as np
 from flax import serialization
 
-from drone_playground.simulation.policy import read_checkpoint
-
-_FORMAT_VERSION = 2
+from drone_playground.simulation.policy import CHECKPOINT_VERSION, read_checkpoint
 
 
 def _save(path, payload, *, purpose, config, provenance, kind=None, actor_spec=None):
     path = Path(path)
     metadata = {
-        "format_version": _FORMAT_VERSION,
+        "format_version": CHECKPOINT_VERSION,
         "purpose": purpose,
         "config": config,
         "provenance": provenance,
@@ -101,6 +99,8 @@ def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
     """Save shared Actor full variables; inference needs only Simulation's Actor."""
     if kind not in ("state", "depth", "lidar"):
         raise ValueError("Unknown actor kind")
+    if not isinstance(actor_spec, dict) or actor_spec.get("kind") != kind:
+        raise ValueError("Actor specification must match the frozen inference kind")
     _save(
         path,
         serialization.to_bytes(jax.device_get(params)),
@@ -108,13 +108,7 @@ def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
         config=config,
         provenance=provenance,
         kind=kind,
-        actor_spec=actor_spec
-        or config.get("learning", {}).get("actor")
-        or {
-            "kind": kind,
-            "action_size": 4 if kind == "state" else 3,
-            "hidden_size": 192,
-        },
+        actor_spec=actor_spec,
     )
 
 

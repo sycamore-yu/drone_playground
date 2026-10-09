@@ -98,20 +98,10 @@ def read_events(path, issues):
     return events
 
 
-def metrics_path(run):
-    """Locate recorded logs in current or immutable legacy result packages."""
-    run = Path(run)
-    return (
-        run / "metrics.jsonl" if (run / "metrics.jsonl").is_file() else run / "events/metrics.jsonl"
-    )
-
-
-def resolve_run_path(value, run, root):
-    """Resolve version-2 run-local references while retaining historical evidence paths."""
+def resolve_run_path(value, run):
+    """Resolve the current run's checkpoint or evaluation location."""
     path = Path(value)
-    if not path.is_absolute() and path.parts[0] in {"checkpoints", "eval"}:
-        return (run / path).resolve()
-    return resolve_path(value, root)
+    return path.resolve() if path.is_absolute() else (run / path).resolve()
 
 
 def checkpoint(path):
@@ -124,8 +114,11 @@ def checkpoint(path):
             payload_sha = hashlib.sha256(archive.read("variables.msgpack")).hexdigest()
         result.update(metadata=metadata, payload_sha256=payload_sha)
         result["integrity"] = check(
-            metadata.get("sha256") == payload_sha and metadata.get("purpose") == "inference",
-            "Compared archive payload SHA-256 and inference purpose",
+            metadata.get("sha256") == payload_sha
+            and metadata.get("purpose") == "inference"
+            and metadata.get("format_version") == 2
+            and isinstance(metadata.get("actor"), dict),
+            "Verified v2 inference metadata, Actor specification and payload SHA-256",
         )
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         result["integrity"] = check(None, str(error))
@@ -134,8 +127,7 @@ def checkpoint(path):
 
 def scene_evidence(directory, scene, task, claimed):
     """Recompute quality and denominators from complete, independent CSV episodes."""
-    flat = (directory / "episodes.csv").is_file()
-    path = directory / "episodes.csv" if flat else directory / scene / "episodes.csv"
+    path = directory / "episodes.csv"
     result = {
         "csv": str(path),
         "claimed": claimed,
@@ -149,7 +141,7 @@ def scene_evidence(directory, scene, task, claimed):
     rows = None
     try:
         with path.open(newline="") as stream:
-            rows = [row for row in csv.DictReader(stream) if not flat or row.get("scene") == scene]
+            rows = [row for row in csv.DictReader(stream) if row.get("scene") == scene]
         result["csv_sha256"] = digest(path)
     except (OSError, csv.Error) as error:
         issues.append(str(error))
@@ -303,7 +295,7 @@ def cost_evidence(header, events, source):
         origin = f"{source}/run.json"
         if value is None:
             value = number(last.get("update" if key == "updates" else key))
-            origin = f"{metrics_path(source)}:last update (lower bound while running)"
+            origin = f"{Path(source) / 'metrics.jsonl'}:last update (lower bound while running)"
         result[key] = metric(value, origin)
     result["logged_update_events"] = len(updates)
     result["last_logged_update"] = last or None
@@ -319,7 +311,7 @@ def cost_evidence(header, events, source):
             }
             if samples
             else None,
-            str(metrics_path(source)),
+            str(Path(source) / "metrics.jsonl"),
         )
     result["gpu_scope"] = GPU_SCOPE
     result["isolated_gpu_seconds"] = metric(None, None, GPU_SCOPE)
@@ -347,8 +339,7 @@ def collect_run(path, root):
     issues = []
     config = read_mapping(path / "config.yaml", issues)
     header = read_mapping(path / "run.json", issues)
-    events = read_events(metrics_path(path), issues)
-    current_layout = header.get("layout_version") == 2
+    events = read_events(path / "metrics.jsonl", issues)
     task, sensor = config.get("task", {}).get("name"), config.get("sensor", {}).get("name")
     algorithm, seed = config.get("learning", {}).get("algorithm"), config.get("seed")
     result = {
@@ -364,6 +355,11 @@ def collect_run(path, root):
         "issues": issues,
         "cost": cost_evidence(header, events, path),
     }
+    if header.get("layout_version") != 2:
+        message = f"Unsupported run layout version: {header.get('layout_version')!r}"
+        issues.append(message)
+        result["identity"] = check(False, message)
+        return result
     if (task, sensor) not in {(t, s) for t, s, _ in CONDITIONS} or algorithm not in ALGORITHMS:
         result["identity"] = check(None, "Missing or unsupported task/sensor/algorithm")
         return result
@@ -378,14 +374,10 @@ def collect_run(path, root):
         if header.get("config_sha256")
         else check(None, "run.json config_sha256 unavailable")
     )
-    selection = (
-        header.get("selection", {})
-        if current_layout
-        else read_mapping(path / "selection.json", issues)
-    )
+    selection = header.get("selection", {})
     result["selection"] = selection or None
     cp = (
-        checkpoint(resolve_run_path(selection["checkpoint"], path, root))
+        checkpoint(resolve_run_path(selection["checkpoint"], path))
         if selection.get("checkpoint")
         else {
             "path": None,
@@ -405,19 +397,17 @@ def collect_run(path, root):
         cp_config if saved else None,
         "Compared checkpoint experiment/kind to config.yaml; resume is an execution entrypoint",
     )
-    folder = path / ("checkpoints" if current_layout else "checkpoint_eval")
-    prefix = "step-" if current_layout else "update-"
+    folder = path / "checkpoints"
+    prefix = "step-"
     directories = {
         int(p.name.removeprefix(prefix)): p
         for p in folder.glob(f"{prefix}*")
-        if p.is_dir()
-        and p.name.removeprefix(prefix).isdigit()
-        and (not current_layout or (p / "report.json").is_file())
+        if p.is_dir() and p.name.removeprefix(prefix).isdigit() and (p / "report.json").is_file()
     }
     for event in events:
         if event.get("event") == "checkpoint_evaluation" and type(event.get("update")) is int:
             update = event["update"]
-            name = f"step-{update:06d}" if current_layout else f"update-{update:08d}"
+            name = f"step-{update:06d}"
             directories.setdefault(update, folder / name)
     evaluations = []
     for update, directory in sorted(directories.items()):
@@ -426,9 +416,9 @@ def collect_run(path, root):
         evaluations.append(entry)
     result["checkpoint_evaluations"] = evaluations
     benchmark = evaluate(
-        resolve_run_path(header["benchmark_directory"], path, root)
+        resolve_run_path(header["benchmark_directory"], path)
         if header.get("benchmark_directory")
-        else path / "benchmark",
+        else path / "eval/001",
         task,
         seed,
         "benchmark",
@@ -473,7 +463,7 @@ def collect_run(path, root):
         )
         and metadata.get("provenance", {}).get("updates") == selection.get("update")
         and header.get("selected_checkpoint") is not None
-        and resolve_run_path(header["selected_checkpoint"], path, root) == Path(cp["path"])
+        and resolve_run_path(header["selected_checkpoint"], path) == Path(cp["path"])
         and independent
         and benchmark["partition"]["passed"] is True
     )
@@ -496,7 +486,7 @@ def collect_run(path, root):
     result["cost_to_selection"] = {
         "wall_seconds": metric(
             number(target_event.get("wall_seconds")),
-            f"{metrics_path(path)}:selected checkpoint evaluation",
+            f"{path / 'metrics.jsonl'}:selected checkpoint evaluation",
             "Selected checkpoint evaluation elapsed time not recorded",
         ),
         **{
@@ -587,7 +577,7 @@ def collect_initialization_costs(runs, root):
                 reference = source == initial["evidence"]["path"]
                 config = {} if reference else read_mapping(Path(source) / "config.yaml", issues)
                 header = {} if reference else read_mapping(Path(source) / "run.json", issues)
-                events = [] if reference else read_events(metrics_path(source), issues)
+                events = [] if reference else read_events(Path(source) / "metrics.jsonl", issues)
                 cost = cost_evidence(header, events, source)
                 if reference:
                     for value in cost.values():

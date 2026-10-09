@@ -286,13 +286,13 @@ def test_invalid_scene_schedule_fails_before_environment(scenes, block, monkeypa
 
 
 @pytest.mark.parametrize("missing_option", ["randomize_navigation_start", "failure_cost"])
-def test_old_trainer_checkpoint_without_optional_setting_restores(tmp_path, missing_option):
-    """Restore a legacy checkpoint using the unchanged default for an omitted option."""
+def test_missing_saved_training_option_is_rejected(tmp_path, missing_option):
+    """A saved training contract must match exactly; missing options are not guessed."""
     trainer = Trainer(Environment(), config={"horizon": 1})
     initial = trainer.initialize()
     old_config = dict(trainer.resolved_config)
     del old_config[missing_option]
     path = tmp_path / "old.zip"
     checkpoint.save_state(path, initial, config={"learning": old_config}, provenance={})
-    restored, _ = trainer.load_state(path)
-    assert_tree_equal(restored, initial)
+    with pytest.raises(ValueError, match="configuration"):
+        trainer.load_state(path)

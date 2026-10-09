@@ -1,5 +1,9 @@
 # Depth / LiDAR 从随机初始化训练
 
+**历史实验记录（2026-10-09）。** 下文记录的运行路径、进度和命令对应 v1 训练状态；
+当前程序只支持完整的 v2 状态与冻结策略。旧成功率只代表当时冻结评测，不能用于说明
+当前代码已经重新收敛。新实验须重新创建输出目录和训练状态，不接受旧 v1 的 `resume`。
+
 2026-10-09 新增的训练批次。三个算法均为 PPO / APG / SHAC，每种感知分别运行种子 0/1/2，
 共 18 次独立训练，对应 12 个静态/动态 Navigation 验收单元。
 
@@ -37,7 +41,8 @@ pixi run drone-playground -m mode=train experiment=navigation_lidar_scratch_safe
   'output=results/scratch_lidar_sensor_critic_reproduce_s${seed}'
 ```
 
-继续已有运行时保持其保存的配置，增加 `resume=<运行目录>/checkpoints/latest.training.zip`。
+当时的运行使用所记录的 `resume` 路径。当前版本不能恢复这批历史 v1 训练状态；
+下文路径用于来源与成本审计，而不是可执行的当前恢复命令。
 上方 Hydra grid 默认串行；当前执行按显存余量并行调度，竞争条件和墙钟时间须一起记录。
 
 ## 已记录的配方调整

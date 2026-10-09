@@ -19,12 +19,32 @@
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
 
-2026-10-09 的控制模型改动已整合到 `main`：反向模型、任务/动作解耦、控制器注入、SO3、两种 MPC、理想跟踪、延迟缓冲、随机化和新产物布局已接入。原有训练结果未迁移，旧训练作业已暂停。用法见[控制模型说明](control-models.md)，原分支验证及合并记录见[实施记录](plans/control-models-20261009.md)。
+当前 `main` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
+反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究
+证据，不再由当前加载器自动兼容。最近验证状态见[验证记录](validation.md)。
 
-## 设计与代码审查
+## 设计原则
 
-[控制接口、模型与方法组合设计](research/control-model-design.md)记录已批准的改进及原代码审查。用户取消了 Trajectory 的 JAX 化要求，SE3 继续暂缓；没有将这两项扩展加入实现。
+[ADR-0001](adr/0001-simulation-learning-boundary.md) 记录 Simulation/Learning 的职责与
+方法组合，数学模型与 Controller 可以独立调用。Trajectory 保持宿主 NumPy 表示，
+SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现役规格。
 
 ## 运行说明
 
 [训练接口](training.md)、[实验配方](experiments.md)、[原生方法](ros_planner.md)、[回放](replay.md)。
+
+## 代码索引与 Wiki
+
+本机使用 GitNexus 1.6.10。GitNexus 的索引和生成的 Wiki 均在被 Git 忽略的
+`.gitnexus/`，不是另一套权威手写文档。当前 Wiki 使用 CPA 的现有
+`http://127.0.0.1:8317/v1` 接口及既有凭据，模型为
+`deepseek/deepseek-v4.1-flash`。本机的私有启动脚本不会复制密钥到仓库。
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"
+gitnexus analyze --index-only --name new_drone_playground
+~/.local/bin/gitnexus-wiki-cpa --force .
+```
+
+生成后查看 `.gitnexus/wiki/index.html`；生成式 Wiki 用于导航，事实以源码、
+ADR、实测运行报告及手写文档为准。
