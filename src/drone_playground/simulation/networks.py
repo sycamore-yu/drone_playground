@@ -18,6 +18,18 @@ import jax.numpy as jnp
 from flax import linen as nn
 
 
+def reset_actor_memory(memory, done):
+    """Clear completed environments without fixing Actor memory shape or structure."""
+    return jax.tree.map(
+        lambda leaf: jnp.where(
+            done.reshape((done.shape[0],) + (1,) * (leaf.ndim - 1)),
+            jnp.zeros_like(leaf),
+            leaf,
+        ),
+        memory,
+    )
+
+
 class _StateMLP(nn.Module):
     output_size: int
 

@@ -8,14 +8,14 @@ import numpy as np
 from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import BaseEnv, make_environment
 from drone_playground.simulation.records import acceptance, atomic_json, write_episodes
 from drone_playground.simulation.runner import rollout, rollout_host, save_evaluation
 
 _NAVIGATION_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
-def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Environment:
+def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> BaseEnv:
     """Construct the physical input from the chosen method rather than its task name."""
     simulation = OmegaConf.to_container(config.simulation, resolve=True)
     simulation["num_envs"] = config.simulation.num_envs if num_envs is None else num_envs
@@ -24,7 +24,7 @@ def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Envi
     level = None
     if not implementation.trainable:
         level = get_class(config.controller._target_).output_level
-    return Environment(
+    return make_environment(
         task=config.task.name,
         scene=config.scene.name if scene is None else scene,
         reference=config.task.reference,

@@ -13,11 +13,12 @@ from pathlib import Path
 import hydra
 import jax
 import numpy as np
-from hydra.utils import get_class
+from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig, OmegaConf
 
 from drone_playground.simulation.evaluation import (
     create_environment,
+    create_method,
     evaluate,
     next_evaluation_directory,
 )
@@ -80,9 +81,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 or not 0 <= updates_in_scene <= scene_updates
             ):
                 raise ValueError("Checkpoint has invalid training sampling progress")
-    kind = config.method.actor.kind
-    actor_config = OmegaConf.to_container(config.method.actor, resolve=True)
-    actor_config.pop("kind")
+    kind = config.method.actor.get("kind", "custom")
     trainers = {}
 
     def trainer_for(index):
@@ -98,7 +97,13 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 algorithm=config.learning.algorithm,
                 seed=config.seed,
                 config=resolved["learning"]["options"],
-                actor_config=actor_config,
+                actor_config=OmegaConf.to_container(config.method.actor, resolve=True),
+                critic=(
+                    instantiate(config.learning.critic)
+                    if config.learning.get("critic") is not None
+                    else None
+                ),
+                method=create_method(config),
                 loss=config.learning.loss,
                 backward_model=config.learning.backward_model,
                 backward_options=OmegaConf.to_container(
@@ -113,7 +118,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
     if sampling is not None:
         identity["training_sampling"] = sampling
     if config.initial_checkpoint and not config.resume:
-        initial_actor, parameters, metadata = load_policy(config.initial_checkpoint)
+        initial_actor, parameters, metadata = load_policy(
+            config.initial_checkpoint, actor=trainer.actor
+        )
         if initial_actor.specification != trainer.actor.specification or jax.tree.structure(
             parameters
         ) != jax.tree.structure(state.params):
@@ -476,7 +483,7 @@ def main(config: DictConfig) -> None:
         if get_class(config.method.implementation._target_).trainable:
             if not config.checkpoint:
                 raise ValueError("Frozen policy execution requires checkpoint=<policy.zip>")
-            actor, parameters, metadata = load_policy(config.checkpoint)
+            _, metadata = read_checkpoint(config.checkpoint, "inference")
             previous = metadata["config"]["experiment"]
             for field in ("task",):
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
@@ -522,6 +529,8 @@ def main(config: DictConfig) -> None:
                 raise ValueError(
                     "Frozen evaluation cannot reinterpret checkpoint action units or bounds"
                 )
+            actor = instantiate(config.method.actor, action_size=requested_action.size)
+            actor, parameters, _ = load_policy(config.checkpoint, actor=actor)
         destination = next_evaluation_directory(record.directory)
         report = evaluate(config, destination, actor=actor, parameters=parameters)
         record.finish(

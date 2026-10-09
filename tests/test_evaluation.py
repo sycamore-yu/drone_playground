@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pytest
 
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.runner import rollout, save_evaluation
 
 
@@ -15,7 +15,9 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
     from drone_playground.simulation import runner
     from drone_playground.simulation.records import acceptance
 
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06)
+    env = make_environment(
+        task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06
+    )
     complete, recorded = rollout(env, seed=11, chunk_steps=2)
     assert recorded["position"].shape[1] == 3
 
@@ -45,7 +47,7 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
 
 def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
     """Do not allocate an archive when a completed evaluation has no requested replay."""
-    env = Environment(duration=0.02)
+    env = make_environment(duration=0.02)
     episodes, _ = rollout(env, seed=7)
     save_evaluation(
         tmp_path,
@@ -61,7 +63,7 @@ def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
 @pytest.mark.parametrize("criterion, passed", [("diagnostic", None), ("C4", True)])
 def test_recording_preserves_selected_criterion_and_all_outcomes(tmp_path, criterion, passed):
     """Persist the selected criterion with successes and collisions in the same CSV."""
-    environment = Environment(task="navigation", scene="S01", sensor="state")
+    environment = make_environment(task="navigation", scene="S01", sensor="state")
     episodes = [
         {
             "scene": "S01",

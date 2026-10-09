@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import optax
 from flax import struct
 
-from drone_playground.simulation.networks import sample_tanh_gaussian, tanh_gaussian_log_prob
+from drone_playground.simulation.networks import reset_actor_memory
 
 
 @struct.dataclass
@@ -13,7 +13,7 @@ class Rollout:
     """Carry sampled transitions and recurrent memory for PPO updates."""
 
     observations: dict
-    pre_tanh: jax.Array
+    pre_tanh: object
     log_prob: jax.Array
     rewards: jax.Array
     values: jax.Array
@@ -55,9 +55,9 @@ def collect_rollout(trainer, state):
         rng, action_key, reset_key = jax.random.split(rng, 3)
         observation = trainer._observe(env_state)
         raw, memory, _ = trainer.actor.apply(state.params, observation, memory)
-        action, pre_tanh, log_prob = sample_tanh_gaussian(action_key, raw, state.log_std)
+        action, pre_tanh, log_prob = trainer.method.sample(action_key, raw, state.log_std)
         after = trainer._step(env_state, action, differentiable=False)
-        cost, history, terms = trainer._cost(env_state, after, action, history)
+        cost, history, terms = trainer.objective.cost(env_state, after, action, history)
         value = trainer.critic.apply(state.critic_params, observation)
         next_value = trainer.critic.apply(state.critic_params, trainer._observe(after))
         data = Rollout(
@@ -85,7 +85,7 @@ def recurrent_policy(trainer, params, observations, initial_memory, done):
     def step(memory, inputs):
         observation, reset = inputs
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
-        return jnp.where(reset[:, None], 0, memory), (raw, auxiliary)
+        return reset_actor_memory(memory, reset), (raw, auxiliary)
 
     return jax.lax.scan(step, initial_memory, (observations, done))
 
@@ -116,7 +116,7 @@ def update(trainer, state):
         def minibatch(state, indices):
             data = jax.tree.map(lambda x: x[:, indices], rollout)
             advantage = advantages[:, indices]
-            memory = initial_memory[indices]
+            memory = jax.tree.map(lambda leaf: leaf[indices], initial_memory)
             rng, entropy_key = jax.random.split(state.rng)
             state = state.replace(rng=rng)
 
@@ -124,18 +124,19 @@ def update(trainer, state):
                 _, (mean, auxiliary) = recurrent_policy(
                     trainer, variables["params"], data.observations, memory, data.done
                 )
-                log_prob = tanh_gaussian_log_prob(data.pre_tanh, mean, variables["log_std"])
+                log_prob = trainer.method.log_probability(
+                    data.pre_tanh, mean, variables["log_std"], data.observations
+                )
                 ratio = jnp.exp(log_prob - data.log_prob)
                 clipped = jnp.clip(
                     ratio, 1 - trainer.config["clip_epsilon"], 1 + trainer.config["clip_epsilon"]
                 )
                 policy_loss = -jnp.mean(jnp.minimum(ratio * advantage, clipped * advantage))
                 # Reparameterized entropy estimate includes the tanh transform's Jacobian.
-                _, _, entropy_log_prob = sample_tanh_gaussian(
-                    entropy_key, mean, variables["log_std"]
+                entropy = trainer.method.entropy(entropy_key, mean, variables["log_std"])
+                auxiliary_loss = jnp.mean(
+                    trainer.objective.auxiliary_cost(auxiliary, data.observations)
                 )
-                entropy = -jnp.mean(entropy_log_prob)
-                auxiliary_loss = jnp.mean(trainer._auxiliary_cost(auxiliary, data.observations))
                 loss = policy_loss - trainer.config["entropy_weight"] * entropy + auxiliary_loss
                 return loss, {
                     "policy_loss": policy_loss,

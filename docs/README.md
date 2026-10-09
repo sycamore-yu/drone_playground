@@ -18,6 +18,7 @@
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
+| [0012](adr/0012-rl-environment-and-method-interface.md) | Brax 环境与状态合同、网络／Method／动作解耦，Brax PPO/APG 作为可选对照 |
 
 2026-10-09 的控制模型改动已整合到 `main`：反向模型、任务/动作解耦、控制器注入、SO3、两种 MPC、理想跟踪、延迟缓冲、随机化和新产物布局已接入。原有训练结果未迁移，旧训练作业已暂停。用法见[控制模型说明](control-models.md)，原分支验证及合并记录见[实施记录](plans/control-models-20261009.md)。
 

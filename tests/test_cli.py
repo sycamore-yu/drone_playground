@@ -327,7 +327,8 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
         config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123
     record = Record(Path(config.output))
     monkeypatch.setattr(cli, "RunRecord", lambda *args, **kwargs: record)
-    monkeypatch.setattr(cli, "load_policy", lambda path: (object(), {}, metadata))
+    monkeypatch.setattr(cli, "read_checkpoint", lambda path, purpose: (b"", metadata))
+    monkeypatch.setattr(cli, "load_policy", lambda path, *, actor: (actor, {}, metadata))
     monkeypatch.setattr(cli, "evaluate", lambda *args, **kwargs: pytest.fail("evaluated mismatch"))
     with pytest.raises(ValueError, match=field):
         cli.main(config)

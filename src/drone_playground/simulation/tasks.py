@@ -1,4 +1,4 @@
-"""Task references and first-event episode semantics in SI units."""
+"""Shared reference configurations and episode-event data in SI units."""
 
 from enum import IntEnum
 
@@ -49,7 +49,10 @@ def first_event(collision, finite, in_bounds, success, timeout):
 
 
 class Task:
-    """Task-specific references and rules, independent of the flight method."""
+    """Immutable task references, geometry limits and recording metadata.
+
+    Concrete environment classes implement observation, reward and event rules.
+    """
 
     def __init__(
         self,
@@ -180,52 +183,4 @@ class Task:
             jnp.zeros(batch),
             jnp.zeros(batch, jnp.int32),
             jnp.full(batch, jnp.inf),
-        )
-
-    def update(self, state: TaskState, before, after, time, clearance) -> TaskState:
-        """Judge every physics substep, retaining the first event and gate crossings."""
-        p = after.pos[:, 0]
-        finite = jnp.all(
-            jnp.isfinite(
-                jnp.concatenate([p, after.vel[:, 0], after.quat[:, 0], after.ang_vel[:, 0]], -1)
-            ),
-            -1,
-        )
-        collision = (clearance <= self.radius) | (p[:, 2] <= self.radius)
-        in_bounds = jnp.all((p >= self.low) & (p <= self.high), -1)
-        gates = state.gates
-        missed = jnp.zeros_like(finite)
-        if self.name == "racing":
-            total_gates = len(self.gate_order)
-            gate = self.gate_order[jnp.minimum(gates, total_gates - 1)]
-            center, rot = self.gate_positions[gate], self.gate_rotations[gate]
-            prev = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), before.pos[:, 0] - center)
-            curr = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), p - center)
-            crossed = (prev[:, 0] < 0) & (curr[:, 0] >= 0) & (gates < total_gates)
-            fraction = -prev[:, 0] / jnp.maximum(curr[:, 0] - prev[:, 0], 1e-8)
-            hit = prev + fraction[:, None] * (curr - prev)
-            aperture = jnp.all(jnp.abs(hit[:, 1:]) <= 0.2 - self.radius, -1)
-            gates = gates + (crossed & aperture).astype(jnp.int32)
-            # A far-away plane crossing is not a gate attempt.
-            missed = crossed & ~aperture & jnp.all(jnp.abs(hit[:, 1:]) < 0.36, -1)
-            success = gates == total_gates
-        elif self.name == "navigation":
-            success = jnp.linalg.norm(p - self.goal, axis=-1) <= self.goal_radius
-        else:
-            success = time >= self.duration - 1e-5
-        event = first_event(collision, finite, in_bounds, success, time >= self.duration - 1e-5)
-        event = jnp.where((event == Event.RUNNING) & missed, Event.MISSED_GATE, event)
-        active = state.event == Event.RUNNING
-        target, _, _ = self.target(time)
-        error = jnp.sum((p - target) ** 2, -1)
-        return TaskState(
-            event=jnp.where(active, event, state.event),
-            gates=jnp.where(active, gates, state.gates),
-            error_sum=state.error_sum + jnp.where(active, error, 0.0),
-            samples=state.samples + active.astype(jnp.int32),
-            min_clearance=jnp.where(
-                active,
-                jnp.minimum(state.min_clearance, clearance - self.radius),
-                state.min_clearance,
-            ),
         )

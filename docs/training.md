@@ -6,9 +6,9 @@ There is no total interaction cap and an update does not indicate convergence.
 
 ```python
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import TrackingEnv
 
-env = Environment(num_envs=32, device="gpu")
+env = TrackingEnv(num_envs=32, device="gpu")
 trainer = Trainer(env, kind="state", algorithm="ppo", seed=0,
                   config={"horizon": 32, "lr": 3e-4, "minibatches": 4})
 state = trainer.initialize()
@@ -22,8 +22,44 @@ trainer.save_inference("results/run/checkpoints/frozen.dp", state,
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
 
+## 可训练 Method 与 Brax 互通
+
+训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
+`method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；
+`PolicyMethod` 默认使用连续 tanh-Gaussian PPO 分布，而 PPO 更新调用
+`method.sample / log_probability / entropy`，APG/SHAC 通过
+`method.deterministic / execute` 使用同一个前向 Method。自定义可训练方法应
+在这些操作中定义自身的动作和概率／梯度合同，而不修改 PPO/APG/SHAC 代码。
+
+`Trainer` 管理单次参数更新、优化器及可恢复训练状态。`EpisodeObjective`
+独立计算各算法共用的实际任务代价、具名感知代价、因果历史和训练辅助项。
+基础任务奖励仍来自 `Environment.cost`；后续若采用具体环境子类，再将
+任务专属奖励项移动到相应任务实现，避免为同一种损失保留两份公式。
+
+可选 `learning.brax_adapter.BraxTrainingEnv` 提供 Brax 标准
+`Env.reset / step`、`State.pipeline_state/obs/reward/done/metrics/info`
+和规格属性。其 `pipeline_state` 直接持有现有 EnvState，不复制 Crazyflow
+的动力学、传感、任务和延迟状态。当前只验证了 State／无传感器的 PPO
+兼容路径；Depth/LiDAR、循环网络和原生 Brax APG 仍需分别评估。
+
+当环境已由 `Sim(n_worlds=num_envs)` 批量运行时，Brax PPO 对照使用
+`wrap_env=False`，由适配器执行完成世界的新随机初态重置、回合
+统计与终止前观测保留，禁止再套一层上游 `VmapWrapper`。
+
+可在安装了 Brax 0.14.2 的隔离环境运行短程验证：
+
+```bash
+SCIPY_ARRAY_API=1 JAX_PLATFORMS=cpu PYTHONPATH=src \
+  python tools/smoke_brax.py --algorithm ppo --num-envs 4 --timesteps 64
+```
+
+此入口直接调用上游 `brax.training.agents.ppo.train`，只用于接口验收和后续受控对照，
+不会替换现有 PPO 或创建第二套项目级 Runner/Trainer。此次短程训练完成了
+原生 PPO 更新调用，但没有验证收敛；完整算法对照需分别冻结配方、预算、随机种子和模型。
+也可以选择 `--algorithm apg`，调用 Brax 原生 APG 进行同样的短程接口检查。
+
 For Navigation acceleration recipes, select
-`Environment(task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"})`
+`NavigationEnv(scene="S01", sensor="depth", action={"level": "acceleration"})`
 and `Trainer(env, kind="depth", loss="zhang")`, or select LiDAR and `loss="liu"`.
 The network, physical action interface and loss are independent choices. Environment owns the
 batch, device, action conversion, sensor clock and observed fields. Trainer uses
