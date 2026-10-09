@@ -57,8 +57,8 @@ pixi run replay replay_path=/absolute/path/to/episode.mj_unroll
 Checkpoint metadata 的 provenance 保存连续通过数、评测索引及累计活动耗时；
 恢复后的吞吐率使用本次进程新增交互数除以本次耗时。`training_wall_seconds` 累计各段
 活动时间（含初始化、保存与评测，统计至对应记录时刻），不含停机时间；
-`session_wall_seconds` / `session_interactions` 描述本次调用。旧归档缺少的计数从零开始，
-未知历史耗时保持 `null`。历史进程写出的记录不会被本次代码修改补算。
+`session_wall_seconds` / `session_interactions` 描述本次调用。v2 训练归档必须包含
+完整训练状态和配置；缺失字段不再推测或补齐。
 已完成 C5 的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
 `eval/<编号>/`，实际目录记录在 `run.json` 的 `benchmark_directory`。
 
@@ -75,14 +75,15 @@ Simulation 管任务、场景、传感器、方法、控制执行、冻结策略
 和按需保存的轨迹、回放。各场景共用一张回合表，不预建空回放目录。
 评测保留所有失败分母；checkpoint evaluation 与 benchmark 使用分离的种子区间。
 
-新增控制器、LOTF/PointMass 反向模型、延迟、随机化及旧结果迁移的命令见
+新增控制器、LOTF/PointMass 反向模型、延迟及随机化的命令见
 [控制模型使用说明](docs/control-models.md)。`method=controller controller=so3` 选择
 SO3；两种 MPC 和 `controller=ideal` 使用同一组合入口。Trajectory 保持宿主实现。
 
 ## 当前证据
 
-下述收敛和原生飞行成绩来自重构前的冻结记录。本次控制模型改动的针对性验证
-单独记录在[实施记录](docs/plans/control-models-20261009.md)，不替代原有验收。
+下述收敛和原生飞行成绩属于**旧版归档的历史证据**，不是当前 v2 代码重新运行的结果。
+旧 v1 训练状态和冻结权重不会由当前代码加载；保留历史报告和冻结权重的原始文件用于审计。
+现行验证与最新实现状态见[验证记录](docs/validation.md)。
 
 可复核的代码检查在 [CLI 测试](tests/test_cli.py)、[学习测试](tests/test_learning.py)、
 [回放测试](tests/test_replay.py) 与 [ROS Planner 客户端测试](tests/test_ros_planner.py)。
@@ -109,12 +110,13 @@ Tracking、Racing、Navigation 和动态场景的实际 RScope 原生窗口验�
 
 ## 代码查询
 
-本仓库已建立 GitNexus 索引，注册名为 `new_drone_playground`。代码更新后可刷新：
+本仓库使用 GitNexus 索引，注册名为 `new_drone_playground`。更新流程与 Wiki 模型
+配置见[开发与代码查询](docs/README.md)。
 
 ```bash
+export PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"
 gitnexus analyze --index-only --name new_drone_playground
 gitnexus query -r new_drone_playground 'Trainer update checkpoint'
-gitnexus query -r new_drone_playground 'RosPlanner rollout_host'
 ```
 
 Python 与 C++ 之间的消息合同以 Protobuf 文件为准；索引不自动连接所有跨语言字段引用。

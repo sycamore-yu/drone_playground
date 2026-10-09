@@ -318,13 +318,7 @@ class Trainer:
         from drone_playground.learning.checkpoint import load_state
 
         state, metadata = load_state(path, self.initialize())
-        saved_config = dict(metadata["config"].get("learning", {}))
-        saved_config.setdefault("randomize_navigation_start", False)
-        saved_config.setdefault("failure_cost", 0.0)
-        saved_config.setdefault("progress_reward_scale", 0.0)
-        saved_config.setdefault("critic_uses_sensor", False)
-        saved_config.setdefault("critic_uses_privileged", False)
-        saved_config.setdefault("height_boundary_weight", 0.0)
+        saved_config = metadata["config"]["learning"]
         if saved_config != self.resolved_config:
             raise ValueError("Checkpoint learning configuration does not match this Trainer")
         return state, metadata

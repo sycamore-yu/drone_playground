@@ -1,7 +1,7 @@
 # 控制器、反向模型与运行记录
 
-代码先在 `feat/control-models-20261009` 独立开发，再合并到 `main`。此前的训练
-结果仍在原路径，没有自动转换 Checkpoint 状态结构。下面的命令从仓库根目录执行。
+当前 `main` 使用独立的动作、控制器和反向动力学模型。只支持 v2 训练和冻结策略归档；
+新训练应从新配置开始，不能将历史 v1 Checkpoint 当作恢复入口。以下命令在仓库根目录执行。
 
 ## 控制接口与控制器
 
@@ -125,17 +125,7 @@ results/<run_id>/
 `run.json` 的 `selection` 引用选中权重。选模和最终评测仍用不同种子；场景在同一张
 回合表中由 `scene` 区分，失败回合不丢弃。再次评测分配新编号，不覆盖已有结果。
 
-旧结果通过复制迁移，源目录保持不变。先查看迁移计划，再显式创建迁移副本：
-
-```bash
-pixi run migrate-results /path/to/inactive-run results/migrated-run
-pixi run migrate-results /path/to/inactive-run results/migrated-run --apply
-```
-
-工具拒绝活动运行、已存在的目标，以及会写穿目录或报告符号链接的迁移。
-权重归档字节保持不变；`migration.json` 保存源文件摘要和路径映射。
-目录迁移不转换旧训练状态结构。旧冻结策略可以按已保存的动作含义加载；新增状态
-字段后的完整续训需要同结构 Checkpoint，不能用搬目录代替状态迁移。
-
-本轮没有迁移主目录的历史数据，也没有重新跑 GPU 收敛矩阵或原生 S6 飞行验收。
-改动验证与日志位置见[实施记录](plans/control-models-20261009.md)。
+当前仅接受 `format_version=2`，不提供旧训练状态、旧冻结权重或旧结果目录的运行时
+兼容／迁移工具。v1 产物作为只读历史证据保留在 `results/`，不能混入新实验；
+独立验收收集器也只读取 v2 的 `checkpoints/step-*/`、`eval/` 和 `metrics.jsonl`。
+冻结历史验收结论不等于新代码的实测收敛结论，验证范围见[验证记录](validation.md)。

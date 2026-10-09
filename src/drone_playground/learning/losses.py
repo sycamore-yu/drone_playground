@@ -150,7 +150,7 @@ def zhang_loss(
     Auxiliary velocity: component MSE against detached velocity. It is disabled
     by default and requires predictions when its weight is nonzero (upstream
     uses 2). Acceleration is the caller's commanded net acceleration, without
-    gravity; physical conversion stays in Simulation. No unused legacy costs.
+    gravity; physical conversion stays in Simulation.
     """
     if acceleration.shape != velocity.shape:
         raise ValueError("Acceleration and velocity trajectories must have matching shapes")

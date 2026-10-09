@@ -250,7 +250,14 @@ def test_initial_checkpoint_preserves_parameters_with_fresh_training(config, tra
     """Verify initial checkpoint preserves parameters with fresh training."""
     initial = tmp_path / "initial.policy.zip"
     parameters = {"params": jnp.ones(1)}
-    save_inference(initial, parameters, kind="state", config={}, provenance={"updates": 999})
+    save_inference(
+        initial,
+        parameters,
+        kind="state",
+        config={},
+        provenance={"updates": 999},
+        actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
+    )
     config.initial_checkpoint = str(initial)
     cli.train(config, training.record)
     state, metadata = load_state(training.path, SmallState())
@@ -274,25 +281,6 @@ def test_resume_selected_checkpoint_does_not_train_again(config, training):
     assert training.record.identity["session_interactions"] == 0
     assert training.record.identity["benchmark_directory"] == "eval/002"
     assert (training.record.directory / "eval/001").is_dir()
-
-
-def test_legacy_resume_does_not_invent_history(config, training):
-    """Verify legacy resume does not invent history."""
-    save_state(
-        training.path,
-        SmallState(updates=10, interactions=100),
-        config={"experiment": OmegaConf.to_container(config, resolve=True)},
-        provenance={},
-    )
-    config.resume = str(training.path)
-    training.stop_at = 1
-    cli.train(config, training.record)
-    _, metadata = load_state(training.path, SmallState())
-    assert metadata["provenance"]["evaluation_index"] == 1
-    assert metadata["provenance"]["consecutive_passes"] == 1
-    assert metadata["provenance"]["training_wall_seconds"] is None
-    assert training.record.identity["interactions"] == 110
-    assert training.record.identity["session_interactions"] == 10
 
 
 def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
@@ -342,7 +330,14 @@ def test_shared_archive_validation(tmp_path, loader, damage):
     if loader == "training":
         save_state(path, SmallState(), config={}, provenance={})
     else:
-        save_inference(path, SmallState().params, kind="state", config={}, provenance={})
+        save_inference(
+            path,
+            SmallState().params,
+            kind="state",
+            config={},
+            provenance={},
+            actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
+        )
 
     def load():
         if loader == "training":
@@ -361,6 +356,43 @@ def test_shared_archive_validation(tmp_path, loader, damage):
         ValueError, match=r"checksum" if damage == "sha256" else "version or purpose"
     ):
         load()
+
+
+@pytest.mark.parametrize("purpose", ["training", "inference"])
+def test_version_one_archive_is_rejected_without_compatibility(tmp_path, purpose):
+    """The current runtime must never infer the missing v1 environment/actor contract."""
+    path = tmp_path / "outdated.zip"
+    if purpose == "training":
+        save_state(path, SmallState(), config={}, provenance={})
+    else:
+        save_inference(
+            path,
+            SmallState().params,
+            kind="state",
+            config={},
+            provenance={},
+            actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
+        )
+    with zipfile.ZipFile(path) as archive:
+        metadata = json.loads(archive.read("metadata.json"))
+        payload = archive.read("variables.msgpack")
+    metadata["format_version"] = 1
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("metadata.json", json.dumps(metadata))
+        archive.writestr("variables.msgpack", payload)
+    with pytest.raises(ValueError, match="version or purpose"):
+        if purpose == "training":
+            load_state(path, SmallState())
+        else:
+            load_policy(path)
+
+
+def test_v2_policy_requires_explicit_actor_specification(tmp_path):
+    """Do not invent action dimensions from the sensor name or old task presets."""
+    with pytest.raises(ValueError, match="Actor specification"):
+        save_inference(
+            tmp_path / "frozen.zip", SmallState().params, kind="state", config={}, provenance={}
+        )
 
 
 @pytest.mark.parametrize(

@@ -13,11 +13,11 @@ trainer = Trainer(env, kind="state", algorithm="ppo", seed=0,
                   config={"horizon": 32, "lr": 3e-4, "minibatches": 4})
 state = trainer.initialize()
 state, metrics = trainer.update(state)
-trainer.save_state("results/run/checkpoints/latest.dp", state,
+trainer.save_state("results/run/checkpoints/latest.training.zip", state,
                    config={"simulation": resolved_environment_config},
                    provenance={"git_revision": revision, "run_id": "run"})
-state, metadata = trainer.load_state("results/run/checkpoints/latest.dp")
-trainer.save_inference("results/run/checkpoints/frozen.dp", state,
+state, metadata = trainer.load_state("results/run/checkpoints/latest.training.zip")
+trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
                        config={"simulation": resolved_environment_config},
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
@@ -143,10 +143,10 @@ length; resuming performs the pending switch before the next update. A checkpoin
 after a switch but before a successful update has progress zero in the new scene.
 Mid-block resumes restore the active scene's template and continue its existing episodes.
 Schedule, geometry and progress validation prevent silently continuing a different run.
-The archive container format is unchanged. This control-model implementation adds environment
-and actor metadata: full-state resume requires a matching state structure and configuration.
-Legacy frozen policies retain their recorded action semantics; moving an old result directory
-does not convert its resumable state into the new structure.
+The current archive format is **v2 only**. Training resume requires matching complete
+state, environment, action, network and learning configuration. No missing options are
+filled from historical defaults. Standalone inference archives must declare the Actor
+specification; old v1 files are historical evidence, not loadable inputs.
 
 For mixed training, C5 evaluation and the final benchmark still evaluate all eight scenes
 separately, using nominal starts, the existing seed partitions and unchanged criteria.

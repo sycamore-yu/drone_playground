@@ -143,7 +143,7 @@ Runs whose recorded status is `running` remain `incomplete` while initialization
 or evaluation evidence is still being written. Individual failed checks remain
 visible; this status rule never makes a run pass or changes completed-run checks.
 
-C5 reads every persisted `checkpoint_eval/update-*` directory, including failed
+C5 reads every persisted `checkpoints/step-*/report.json` directory, including failed
 evaluations and directories referenced by events. Missing evaluations break the
 verifiable history. Checkpoint seeds must lie in `[1000000,2000000)`, benchmark
 seeds in `[2000000,infinity)`, and actual CSV seeds must match the saved seed formula
@@ -151,7 +151,8 @@ and be disjoint across those partitions. The current mixed-training selection ru
 requires three full evaluations passing all six main scenes; its frozen static
 and dynamic benchmark results are still graded separately.
 
-The collector hashes the selected archive, verifies its payload SHA-256 and inference
+The current collector accepts only v2 run headers and inference archives with an explicit
+Actor specification. It hashes the selected archive, verifies its payload SHA-256 and inference
 purpose, and compares its saved experiment and Actor kind to `config.yaml`. Archive
 SHA and payload SHA are distinct fields. Per-seed metrics and unavailable reasons,
 per-scene outcomes and successful flight times, checkpoint history, configurations,
@@ -187,6 +188,9 @@ kernel execution time. No missing values are replaced by zero estimates.
 `cost_to_selection` separately records the selected checkpoint's counters and its
 evaluation event's elapsed session time; resumed-session time is not silently treated
 as cumulative time to target.
+
+The following initialization lineage describes **historical v1 runs**, not archives loadable
+by the current v2 runtime. Frozen results are retained as historical evidence.
 
 Racing initialization is traced to
 `results/apg_racing_diagnostic_s0/checkpoints/update-00000400.policy.zip`.
