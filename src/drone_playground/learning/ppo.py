@@ -156,7 +156,7 @@ def update(trainer, state):
                 **metrics,
                 **critic_metrics,
                 "actor_loss": loss,
-                "actor_grad_norm": optax.global_norm(gradients),
+                "actor_grad_norm": optax.tree.norm(gradients),
             }
 
         return jax.lax.scan(minibatch, state, sequences)

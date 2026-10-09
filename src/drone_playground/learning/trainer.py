@@ -515,7 +515,7 @@ class Trainer:
                 critic_params=optax.apply_updates(state.critic_params, updates),
                 optimizer_state={**state.optimizer_state, "critic": optimizer},
             )
-            return state, {"critic_loss": loss, "critic_grad_norm": optax.global_norm(gradients)}
+            return state, {"critic_loss": loss, "critic_grad_norm": optax.tree.norm(gradients)}
 
         state, metrics = jax.lax.scan(fit, state, None, length=epochs)
         return state, jax.tree.map(jnp.mean, metrics)

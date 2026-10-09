@@ -1,5 +1,11 @@
 # Drone Playground
 
+**v0.2 development branch:** This is the next-generation JAX/Crazyflow research platform.
+The frozen v0.1 source is retained on the `v0.1` branch of
+[sycamore-yu/drone_playground](https://github.com/sycamore-yu/drone_playground).
+The public `main` branch remains on v0.1 until the v0.2 training and evaluation
+acceptance criteria are met. v0.2 is not yet a validated release.
+
 基于官方 Crazyflow 的四旋翼研究平台：Tracking、Racing、Navigation8，
 D435i Depth / Mid-360 LiDAR，PPO、APG/BPTT、SHAC，以及原生 EGO-Planner / SUPER。
 目标与验收条件见 [规格](docs/spec.md)，实际执行证据见 [验证记录](docs/validation.md)。

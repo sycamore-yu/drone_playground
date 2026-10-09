@@ -47,6 +47,6 @@ def update(trainer, state):
             **critic_metrics,
             "loss": loss,
             "actor_loss": loss,
-            "actor_grad_norm": optax.global_norm(gradients),
+            "actor_grad_norm": optax.tree.norm(gradients),
         },
     )
