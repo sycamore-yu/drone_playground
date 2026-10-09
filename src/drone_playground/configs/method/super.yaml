@@ -1,5 +1,11 @@
 name: super
-address: 127.0.0.1:50052
-timeout: 10.0
-replan_hz: 5.0
-action_delay: 0.0
+protocol: s6
+implementation:
+  _target_: drone_playground.simulation.methods.PlannerController
+  controller: ${controller}
+  planner:
+    _target_: drone_playground.simulation.ros_planner.RosPlanner
+    planner: super
+    address: 127.0.0.1:50052
+    timeout: 10.0
+    replan_interval: 0.2

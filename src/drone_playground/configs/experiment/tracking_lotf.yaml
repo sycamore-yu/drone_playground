@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - tracking
+method:
+  action:
+    level: body_rate
+learning:
+  backward_model: lotf

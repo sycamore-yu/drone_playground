@@ -1,6 +1,12 @@
 episodes: null
+protocol: ${method.protocol}
+allow_environment_change: false
 seed_base: null
 scenes: null
-record_replay: true
+record_replay: false
+record_trajectories: false
+primary_scenes:
+  static: [S01, S02, S03]
+  dynamic: [D01, D02, D03]
 replay_episodes: 2
 chunk_steps: 25

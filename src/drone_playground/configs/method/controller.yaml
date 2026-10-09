@@ -1,0 +1,5 @@
+name: controller
+protocol: learning
+implementation:
+  _target_: drone_playground.simulation.methods.PlannerController
+  controller: ${controller}

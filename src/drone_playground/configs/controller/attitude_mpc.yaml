@@ -1,0 +1,8 @@
+_target_: drone_playground.simulation.mpc.LSYAttitudeMPC
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+horizon: 25
+workdir: ${output}/acados
+acados_source: ${oc.env:ACADOS_SOURCE_DIR,null}
+python_path: .cache/acados-python
+yaw: 0.0

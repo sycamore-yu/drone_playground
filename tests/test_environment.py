@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from drone_playground.simulation.controllers import MellingerController
 from drone_playground.simulation.environment import Environment
 from drone_playground.simulation.methods import Setpoint, Trajectory
 from drone_playground.simulation.tasks import Event, first_event
@@ -19,7 +20,9 @@ def test_episode_duration_rejects_invalid_values(duration):
 
 def test_navigation_contract_records_instantiated_task_rules():
     """Verify navigation contract records instantiated task rules."""
-    env = Environment(task="navigation", scene="S01")
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"}, task="navigation", scene="S01"
+    )
     contract = env.task.contract
     assert contract["duration_seconds"] == 300
     assert contract["body_radius_metres"] == 0.07
@@ -114,10 +117,12 @@ def test_upstream_acceleration_conversion_hover_and_forward():
             states=state.physics.states.replace(quat=jnp.array([[[0.0, 0.0, 0.0, 1.0]]]))
         )
     )
-    hover = env.controller.acceleration(state.physics, jnp.zeros((1, 3)), jnp.zeros(1))
+    hover = MellingerController().acceleration(state.physics, jnp.zeros((1, 3)), jnp.zeros(1))
     np.testing.assert_allclose(hover.value[0, :3], 0, atol=1e-6)
     np.testing.assert_allclose(hover.value[0, 3], state.physics.params.mass[0] * 9.81, rtol=1e-5)
-    forward = env.controller.acceleration(state.physics, jnp.array([[2.0, 0.0, 0.0]]), jnp.zeros(1))
+    forward = MellingerController().acceleration(
+        state.physics, jnp.array([[2.0, 0.0, 0.0]]), jnp.zeros(1)
+    )
     assert forward.value[0, 1] > 0
 
 
@@ -161,7 +166,13 @@ def test_trajectory_validity_and_derivative_presence():
 
 def test_sensor_clock_and_masked_sensor_history_reset():
     """Verify sensor clock and masked sensor history reset."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=2)
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=2,
+    )
     state = env.reset(jax.random.key(0))
     state = env.step(state, jnp.zeros((2, 3)))
     np.testing.assert_array_equal(state.observation.frame, [0, 0])

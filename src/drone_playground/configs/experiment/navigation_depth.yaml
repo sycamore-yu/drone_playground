@@ -4,6 +4,14 @@ defaults:
   - override /scene: S01
   - override /sensor: depth
   - override /method: policy
+method:
+  action:
+    level: acceleration
+    heading: target
+  actor:
+    kind: depth
+learning:
+  loss: zhang
 simulation:
   method_hz: 10
   num_envs: 32

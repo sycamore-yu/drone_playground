@@ -1,2 +1,10 @@
 name: policy
-action_delay: 0.0
+protocol: learning
+implementation:
+  _target_: drone_playground.simulation.methods.PolicyMethod
+action:
+  level: attitude_thrust
+  heading: fixed
+actor:
+  kind: state
+  hidden_size: 192

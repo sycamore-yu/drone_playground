@@ -1,4 +1,7 @@
 algorithm: ppo
+loss: null
+backward_model: null
+backward_options: {}
 options:
   horizon: 64
   lr: 0.0003

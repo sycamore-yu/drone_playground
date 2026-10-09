@@ -1,0 +1,6 @@
+_target_: drone_playground.simulation.controllers.SO3Controller
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+kx: [5.7, 5.7, 6.2]
+kv: [3.4, 3.4, 4.0]
+yaw: 0.0

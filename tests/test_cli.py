@@ -82,7 +82,9 @@ def training(monkeypatch, tmp_path):
     )
 
     class Trainer:
-        actor = object()
+        actor = SimpleNamespace(
+            specification={"kind": "state", "action_size": 4, "hidden_size": 192}
+        )
         resolved_config: ClassVar[dict] = {}
 
         def __init__(self, *args, **kwargs):
@@ -140,7 +142,7 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
         ("checkpoint_eval", 3),
         ("benchmark", 0),
     ]
-    selection = json.loads((training.record.directory / "selection.json").read_text())
+    selection = json.loads((training.record.directory / "run.json").read_text())["selection"]
     assert (
         selection["update"] == selection["consecutive_passes"] == selection["evaluation_index"] == 3
     )
@@ -152,7 +154,7 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     _, saved = load_state(training.path, SmallState())
     assert saved["provenance"]["training_wall_seconds"] == 18
     assert training.record.identity["status"] == "accepted"
-    _, _, frozen = load_policy(selection["checkpoint"])
+    _, _, frozen = load_policy(training.record.directory / selection["checkpoint"])
     assert frozen["provenance"]["consecutive_passes"] == 3
 
 
@@ -196,7 +198,7 @@ def test_resume_completes_pending_evaluation_before_training(config, training):
         config={"experiment": OmegaConf.to_container(config, resolve=True)},
         provenance={"evaluation_index": 1, "consecutive_passes": 1, "training_wall_seconds": 10},
     )
-    partial = training.record.directory / "checkpoint_eval/update-00000002"
+    partial = training.record.directory / "checkpoints/step-000002"
     partial.mkdir(parents=True)
     (partial / "episodes.csv").write_bytes(b"recorded before restart\n")
     config.resume = str(training.path)
@@ -270,8 +272,8 @@ def test_resume_selected_checkpoint_does_not_train_again(config, training):
     assert training.evaluations[-2:] == [("benchmark", 0), ("benchmark", 0)]
     assert training.record.identity["updates"] == 3
     assert training.record.identity["session_interactions"] == 0
-    assert Path(training.record.identity["benchmark_directory"]).name.startswith("benchmark-")
-    assert (training.record.directory / "benchmark").is_dir()
+    assert training.record.identity["benchmark_directory"] == "eval/002"
+    assert (training.record.directory / "eval/001").is_dir()
 
 
 def test_legacy_resume_does_not_invent_history(config, training):
@@ -303,17 +305,24 @@ def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
 
 @pytest.mark.parametrize(
     "field",
-    ["dynamics", "drone", "physics_hz", "method_hz", "action_delay", "navigation_goal_observation"],
+    [
+        "dynamics",
+        "drone",
+        "physics_hz",
+        "method_hz",
+        "action_delay_s",
+        "navigation_goal_observation",
+    ],
 )
 def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch, field):
     """Verify frozen execution rejects changed physical contract."""
     metadata = {"config": {"experiment": OmegaConf.to_container(config, resolve=True)}}
     config.mode = "benchmark"
     config.checkpoint = "frozen.zip"
-    if field == "action_delay":
-        config.method.action_delay = 0.1
+    if field == "action_delay_s":
+        config.simulation.action_delay_s = 0.1
     elif field == "navigation_goal_observation":
-        OmegaConf.update(config, "simulation.navigation_goal_observation", True, force_add=True)
+        config.simulation.navigation_goal_observation = True
     else:
         config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123
     record = Record(Path(config.output))
@@ -371,28 +380,32 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     """Verify native s6 uses main scene counts and static successes."""
     config.mode = "benchmark"
     config.task.name = "navigation"
-    config.method = {"name": method, "address": "unused", "timeout": 1, "replan_hz": 5}
+    config.method = {"name": method, "protocol": "s6"}
     scenes = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
     config.benchmark.scenes = [scene for scene in scenes if scene != missing]
     config.benchmark.episodes = count
-    monkeypatch.setattr(evaluation, "RosPlanner", lambda *args, **kwargs: nullcontext(object()))
-    monkeypatch.setattr(evaluation, "create_environment", lambda config, **kwargs: kwargs["scene"])
+    implementation = SimpleNamespace(
+        trainable=False, execution="host", controller=object(), close=lambda: None
+    )
+    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+
+    def create_environment(config, **kwargs):
+        scene = SimpleNamespace(name=kwargs["scene"], geometry_identity={"name": kwargs["scene"]})
+        return SimpleNamespace(
+            scene=scene, task=SimpleNamespace(contract={}), control_level="attitude_thrust"
+        )
+
+    monkeypatch.setattr(evaluation, "create_environment", create_environment)
     seen = set()
 
     def rollout(env, planner, **kwargs):
-        success = env.startswith("S") and env != failed_static and env not in seen
+        scene = env.scene.name
+        success = scene.startswith("S") and scene != failed_static and scene not in seen
         event = "SUCCESS" if success else "COLLISION"
-        seen.add(env)
-        return [{"event": event}], {}, [], [{"status": "OK", "solve_ms": 1}]
+        seen.add(scene)
+        return [{"event": event, "scene": scene}], {}, [], [{"status": "OK", "solve_ms": 1}]
 
-    def save(directory, env, episodes, traces, **kwargs):
-        directory.mkdir(parents=True)
-        report = dict(kwargs["report"])
-        (directory / "report.json").write_text(json.dumps(report))
-        return report
-
-    monkeypatch.setattr(evaluation, "rollout_ros", rollout)
-    monkeypatch.setattr(evaluation, "save_evaluation", save)
+    monkeypatch.setattr(evaluation, "rollout_host", rollout)
     report = cli.evaluate(config, tmp_path)
     assert report["criterion"] == "S6"
     assert report["passed"] is expected
@@ -401,9 +414,10 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     assert report["reports"]["D01"]["successes"] == 0
     assert report["reports"]["D01"]["outcomes"] == {"COLLISION": count}
     assert report["reports"]["D01"]["passed"] is None
-    diagnostic = json.loads((tmp_path / "D01/episode-0000/report.json").read_text())
+    diagnostic = json.loads((tmp_path / "report.json").read_text())["reports"]["D01"]
     assert diagnostic["criterion"] == "diagnostic" and diagnostic["passed"] is None
-    assert (tmp_path / "D01/episode-0000/decisions.json").is_file()
+    assert (tmp_path / "decisions.json").is_file()
+    assert (tmp_path / "episodes.csv").is_file()
 
 
 def test_replay_launches_selected_record_and_restores_paths(config, monkeypatch, tmp_path):

@@ -47,13 +47,13 @@ obs = {
     'state': jnp.zeros((1, 18)), 'depth': jnp.ones((1, 12, 16, 1)),
     'points': jnp.ones((1, 8, 3)), 'mask': jnp.ones((1, 8), dtype=bool),
 }
-memory = jnp.zeros((1, 192))
 for kind in ('state', 'depth', 'lidar'):
-    actor = Actor(kind)
+    actor = Actor(kind, action_size=4 if kind == 'state' else 3)
+    memory = actor.initialize_memory(1)
     parameters = actor.init(jax.random.key(0), obs, memory)
     action, carry, velocity = actor.apply(parameters, obs, memory)
     assert action.shape == (1, 4 if kind == 'state' else 3)
-    assert carry.shape == (1, 192) and velocity.shape == (1, 3)
+    assert carry.shape == memory.shape and velocity.shape == (1, 3)
     assert all(np.isfinite(value).all() for value in (action, carry, velocity))
     print('actor', kind, action.shape, flush=True)
 print('wheel imports, 10 scenes and 3 actors passed', flush=True)

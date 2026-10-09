@@ -16,7 +16,7 @@ def read_checkpoint(path: str | Path, purpose: str) -> tuple[bytes, dict]:
     with zipfile.ZipFile(path) as archive:
         metadata = json.loads(archive.read("metadata.json"))
         payload = archive.read("variables.msgpack")
-    if metadata.get("format_version") != 1 or metadata.get("purpose") != purpose:
+    if metadata.get("format_version") not in (1, 2) or metadata.get("purpose") != purpose:
         raise ValueError("Unsupported checkpoint version or purpose")
     if hashlib.sha256(payload).hexdigest() != metadata.get("sha256"):
         raise ValueError("Checkpoint payload checksum mismatch")
@@ -29,4 +29,15 @@ def load_policy(path: str | Path) -> tuple[Actor, dict, dict]:
     if metadata.get("kind") not in {"state", "depth", "lidar"}:
         raise ValueError("Checkpoint does not declare a supported actor kind")
     parameters = jax.tree.map(jax.device_put, serialization.msgpack_restore(payload))
-    return Actor(kind=metadata["kind"]), parameters, metadata
+    specification = metadata.get("actor")
+    if specification is None:
+        if metadata["format_version"] != 1:
+            raise ValueError("Checkpoint does not declare its Actor specification")
+        specification = {
+            "kind": metadata["kind"],
+            "action_size": 4 if metadata["kind"] == "state" else 3,
+            "hidden_size": 192,
+        }
+    if specification.get("kind") != metadata["kind"]:
+        raise ValueError("Checkpoint Actor kind and specification disagree")
+    return Actor(**specification), parameters, metadata

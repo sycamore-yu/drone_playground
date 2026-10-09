@@ -22,8 +22,10 @@ trainer.save_inference("results/run/checkpoints/frozen.dp", state,
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
 
-For Navigation, select `Environment(task="navigation", scene="S01", sensor="depth")`
-and `kind="depth"`, or use `sensor="lidar"` and `kind="lidar"`. Environment owns the
+For Navigation acceleration recipes, select
+`Environment(task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"})`
+and `Trainer(env, kind="depth", loss="zhang")`, or select LiDAR and `loss="liu"`.
+The network, physical action interface and loss are independent choices. Environment owns the
 batch, device, action conversion, sensor clock and observed fields. Trainer uses
 `env.observe` for every actor kind.
 The shared Actor receives the same tensor inputs for every algorithm. Its raw output
@@ -141,8 +143,10 @@ length; resuming performs the pending switch before the next update. A checkpoin
 after a switch but before a successful update has progress zero in the new scene.
 Mid-block resumes restore the active scene's template and continue its existing episodes.
 Schedule, geometry and progress validation prevent silently continuing a different run.
-`TrainingState`'s archive format is unchanged, and older single-scene checkpoints remain
-loadable with the new sampler disabled.
+The archive container format is unchanged. This control-model implementation adds environment
+and actor metadata: full-state resume requires a matching state structure and configuration.
+Legacy frozen policies retain their recorded action semantics; moving an old result directory
+does not convert its resumable state into the new structure.
 
 For mixed training, C5 evaluation and the final benchmark still evaluate all eight scenes
 separately, using nominal starts, the existing seed partitions and unchanged criteria.
@@ -153,7 +157,7 @@ checksum/provenance. `resume` instead restores full training state and sampling 
 If a saved update was due for evaluation when the process stopped, resuming completes
 that evaluation before another update or scene switch. The evaluation seed index advances
 only after the complete evaluation returns. Existing partial output is retained under
-`checkpoint_eval/incomplete-update-*`; a `checkpoint_evaluation_retry` event records its
+`checkpoints/step-<update>/incomplete-*`; a `checkpoint_evaluation_retry` event records its
 path. Partial output does not count toward the three consecutive complete evaluations.
 
 ```bash

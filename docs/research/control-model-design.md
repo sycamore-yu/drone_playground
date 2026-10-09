@@ -1,8 +1,8 @@
 # 控制接口、反向模型与方法组合：设计和代码审查
 
-**Status:** Proposed · 2026-10-09
+**Status:** Accepted · 2026-10-09；本轮实现过程见 [实施记录](../plans/control-models-20261009.md)。
 
-本文件提出完整实现建议，不是新的批准记录。已经批准的原则见 [ADR-0001](../adr/0001-simulation-learning-boundary.md)、[ADR-0008](../adr/0008-independent-backward-dynamics-model.md) 和 [ADR-0009](../adr/0009-delayed-data-in-episode-state.md)。SE3Controller、文件改名和本文件的具体接口尚未批准。
+用户已批准本设计及后续收敛方案：恢复 LSY Attitude MPC、Sampling MPC，加入 SO3 和 SUPER 理想跟踪。Trajectory 保留宿主 NumPy 表示，不要求 JAX 化；需要训练的路径保持可导。SE3Controller 暂不加入。
 
 ## 1. 目标与判断标准
 
@@ -92,7 +92,7 @@ Planner → Trajectory → 注入的 Controller → 物理 Setpoint
 
 Policy 的下游转换与轨迹跟踪 Controller 不强制是同一个函数；依据实际输入声明选择。直接输出原生设定值的 Policy 不添加空控制器类。
 
-下面是待审配置示意。除了 `learning.backward_model` 外，这些新嵌套字段尚未批准或实现：
+下面是已批准设计的配置片段。完整可运行配方还包括 `method.implementation`，当前命令见[使用说明](../control-models.md)：
 
 ```yaml
 simulation:
@@ -137,7 +137,7 @@ Environment 保留原生 SimData 和现有 EnvState，不建立另一份完整 D
 
 调用边界需覆盖输入缩放、坐标转换、必要控制器和时间长度。若模型使用压缩状态，还要映射模型输出的导数回调用方的状态字段。JVP/VJP 不要求显式分配一个大 Jacobian 矩阵。
 
-LOTF 保留位置、旋转与速度；PointMassLag 保留位置、速度和滞后加速度。PointMass 未描述的姿态、电机状态不能默认填单位导数或全部断开。具体配方应声明只替换哪些块、其余块是否使用原生导数或一个明确的姿态响应模型。这些细节是实现研究，不在本文件假定已经批准。
+已批准并实现的映射为：PointMass 替换位置、速度和加速度的输出导数；LOTF 替换位置、姿态、速度及其导出的加速度。未建模输出继续使用原生 Crazyflow 导数，不填单位导数或全部断开。实现位于 `learning/dynamics.py`，各模型方程保存在 `simulation/dynamics/`。
 
 延迟也在同一转移里对齐。40 ms 后才生效的动作，反向模型不能让它立刻影响位置；缓冲状态的导数应把作用时间传回原来的动作。
 
@@ -145,7 +145,7 @@ LOTF 保留位置、旋转与速度；PointMassLag 保留位置、速度和滞�
 
 ## 6. 已核实的其他职责绑定
 
-以下为当前工作树的源码事实和修改建议，不表示已运行对应故障。行号于 2026-10-09 读取；工作树还会变化。
+以下保留重构前的代码审查，行号对应 2026-10-09 当时读取的旧实现。当前实现和验证见[实施记录](../plans/control-models-20261009.md)。第十项 Trajectory 的 JAX 化要求已由用户取消，宿主表示保持不变。
 
 | 问题 | 源码证据 | 影响 | 建议 |
 |---|---|---|---|
@@ -158,7 +158,7 @@ LOTF 保留位置、旋转与速度；PointMassLag 保留位置、速度和滞�
 | Racing 固定赛道与门序重复 | `environment.py:81–82`；`tasks.py:90–108,201–213`；`scene.py:222–223`；`runner.py:134–135` | 改门数、门序和赛道时多处同步 | 门几何来自 Scene、顺序来自任务实例；记录读取实际任务合同 |
 | 方法名字和传输方式决定评测分派 | `evaluation.py:73–84,124–132,176–214`；`runner.py:62–89` | 加新 Controller/Planner 需修改通用评测；ROS 身份隐含选 S6 | 构造时选择执行函数，评测协议由配置明确传入，保留原门槛 |
 | 随机真实质量参与动作缩放 | `environment.py:203–205`；`methods.py:105–109` | 扰动实验中策略输出隐含使用真实质量，但 Mellinger 又绑定标称质量 | 统一标称缩放与实际物理参数的权限；明示是否提供真实参数 |
-| 通用 Trajectory 暂为宿主 NumPy 对象 | `methods.py:22–58` | 学习式 Planner 的轨迹无法直接进入 JAX 求导组合 | 需要可微轨迹时，用现有类型表达 JAX pytree；宿主校验在 JIT 外，不维护两套同义轨迹 |
+| 通用 Trajectory 为宿主 NumPy 对象 | `methods.py:22–58` | 宿主规划和 MPC 使用 | 用户明确排除本项改动；训练路径可导即可 |
 
 优先同时处理动作/网络/尺度和方法构造，其次处理测量编码与循环记忆。门序和轨迹类型分别随对应扩展改动，不以一次重写整个仓库作为目标。
 
@@ -220,14 +220,14 @@ SO3/Mellinger 都是轨迹跟踪选项。将来纳入输出力矩或电机命令
 | 延迟 | 未到期不生效；独立世界、局部 reset 和恢复正确；梯度回到实际产生动作的时刻 |
 | 现有数据 | 旧权重和验收结果保留；若动作语义改变则新建配方，不把旧权重重新解释 |
 
-只有具体范围再次获得批准后才实施新增接口和文件移动。已批准的原则不需要反复确认。
+按已批准范围直接实施；保留官方正向、独立反向模型和两种执行方式，不重建通用 Pipeline。未建模输出使用原生导数，首批反向组合为加速度/PointMassLag 和推力角速度/LOTF。
 
 ## 11. 证据范围
 
-本轮读取当前本地源码和既有 ADR；仓库尚无 Git 提交，因此用文件路径、函数和读取时行号定位，不宣称是稳定发布版本。源码基线摘要保存在 `tmp/architecture-controls-20261009/before.json`。
+原审查发生在仓库首次提交之前，以文件路径、函数和读取时行号定位。后续实现以 `a563386` 为基线，在 `feat/control-models-20261009` 工作树执行；本节的旧源码行号不代表重构后的接口位置。
 
 DiffAero 本地对照版本为 `291ea14196aefbebcf7387dd71f7e096c83878b7`，位置为 `/home/tong/tongworkspace/reference_repos/diffaero-upstream-291ea14/`；重点文件是 `env/base_env.py`、`dynamics/base_dynamics.py`、`dynamics/pointmass.py`、`dynamics/quadrotor.py`、`dynamics/controller.py`。该版本从模型读取动作维数和动作上下界，Quadrotor 内部绑定 RateController。本项目要独立比较 Controller，所以保留外部注入而不照搬这个内部绑定。
 
 LOTF 本地对照为旧仓库的 `tmp/sources/lotf/lotf/objects/quadrotor_obj.py`，重点为 `_step_jvp` 和 `simplified_dyn`。论文：[LOTF III-B/III-E](https://arxiv.org/html/2508.21065v2)、[DiffAero III-A/IV-D](https://arxiv.org/html/2509.10247v1)。官方接口参考：[Crazyflow Control](https://learnsyslab.github.io/crazyflow/user-guide/control/)、[JAX 自定义导数](https://docs.jax.dev/en/latest/notebooks/Custom_derivative_rules_for_Python_code.html)。
 
-审查没有运行新训练或控制器验证。源码证据说明当前绑定；上述修改效果须由实施后的测试确认。
+原审查阶段没有运行新训练或控制器验证。后续已完成针对性测试、acados 短闭环和安装包验证；实际结果和未执行的完整验收见实施记录。

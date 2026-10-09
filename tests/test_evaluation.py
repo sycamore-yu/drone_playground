@@ -23,7 +23,7 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
         raise AssertionError("Score-only rollout sampled replay data")
 
     monkeypatch.setattr(runner, "_sample", forbidden_sample)
-    outcomes, traces = rollout(env, seed=11, chunk_steps=2, record_traces=False)
+    outcomes, traces = rollout(env, seed=11, chunk_steps=2, record=False)
     assert traces == {}
     for expected, actual in zip(complete, outcomes, strict=True):
         assert {k: v for k, v in expected.items() if k != "evaluation_wall_seconds"} == {

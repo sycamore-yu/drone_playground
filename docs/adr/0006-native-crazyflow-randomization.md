@@ -2,7 +2,7 @@
 
 **Status:** Accepted · 2026-10-09
 
-**Implementation:** 决策已批准；物理参数随机化和运行中扰动尚待实现。现有初态采样继续保留。
+**Implementation:** `simulation/randomization.py` 已接入官方 reset/step pipeline；现有初态采样继续保留。参数分布与载荷由 `simulation.randomization`、`simulation.disturbance` 配置。
 
 ## Context
 

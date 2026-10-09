@@ -24,9 +24,20 @@ from drone_playground.simulation.tasks import Event
 
 def test_additional_failure_cost_reaches_public_update_metrics():
     """Apply an extra terminal cost while retaining identical reset behavior."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", duration=0.02)
-    base = Trainer(env, kind="depth", config={"horizon": 1})
-    penalized = Trainer(env, kind="depth", config={"horizon": 1, "failure_cost": 160.0})
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        duration=0.02,
+    )
+    base = Trainer(env, loss="zhang", kind="depth", config={"horizon": 1})
+    penalized = Trainer(
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "failure_cost": 160.0},
+    )
     base_state, base_metrics = base.update(base.initialize())
     penalized_state, penalized_metrics = penalized.update(penalized.initialize())
     assert float(base_metrics["done_fraction"]) == 1.0
@@ -40,7 +51,13 @@ def test_additional_failure_cost_reaches_public_update_metrics():
 
 def test_navigation_progress_reward_matches_goal_distance_change():
     """Reward physical progress once per active transition, without changing physics."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1)
+    env = Environment(
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=1,
+        action={"level": "acceleration", "heading": "target"},
+    )
     base = Trainer(env, kind="depth", config={"horizon": 1, "perception_weight": 0})
     shaped = Trainer(
         env,
@@ -69,7 +86,13 @@ def test_navigation_progress_reward_matches_goal_distance_change():
 
 def test_height_boundary_cost_is_continuous_and_gated_after_done():
     """Penalize proximity to both height limits without changing existing reward terms."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=3)
+    env = Environment(
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=3,
+        action={"level": "acceleration", "heading": "target"},
+    )
     base = Trainer(env, kind="depth", config={"perception_weight": 0})
     penalized = Trainer(
         env, kind="depth", config={"perception_weight": 0, "height_boundary_weight": 20.0}
@@ -132,10 +155,18 @@ def test_optional_ppo_critic_consumes_actor_visible_sensor(kind):
 
 def test_sensor_critic_performs_real_depth_ppo_update():
     """Train the independent visual value function through the PPO update path."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1, duration=0.02)
+    env = Environment(
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=1,
+        duration=0.02,
+        action={"level": "acceleration", "heading": "target"},
+    )
     trainer = Trainer(
         env,
         kind="depth",
+        loss="zhang",
         algorithm="ppo",
         config={
             "horizon": 1,
@@ -161,10 +192,12 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         num_envs=2,
         duration=0.02,
         navigation_goal_observation=True,
+        action={"level": "acceleration", "heading": "target"},
     )
     trainer = Trainer(
         env,
         kind=kind,
+        loss="zhang" if kind == "depth" else "liu",
         config={
             "horizon": 2,
             "ppo_epochs": 1,
@@ -197,8 +230,14 @@ def test_optional_ppo_critic_rejects_unsupported_actor_or_algorithm():
 
 def test_privileged_critic_changes_value_without_changing_actor():
     """Keep true geometry and physical state out of the deployed actor inputs."""
-    env = Environment(task="navigation", scene="D03", sensor="depth", num_envs=1)
-    trainer = Trainer(env, kind="depth", config={"critic_uses_privileged": True})
+    env = Environment(
+        task="navigation",
+        scene="D03",
+        sensor="depth",
+        num_envs=1,
+        action={"level": "acceleration", "heading": "target"},
+    )
+    trainer = Trainer(env, kind="depth", loss="zhang", config={"critic_uses_privileged": True})
     state = trainer.initialize()
     observation = trainer._observe(state.env_state)
     assert np.isfinite(observation["privileged_state"]).all()
@@ -214,7 +253,7 @@ def test_privileged_critic_changes_value_without_changing_actor():
         trainer.critic.apply(state.critic_params, observation),
         trainer.critic.apply(state.critic_params, changed),
     )
-    default = Trainer(env, kind="depth")
+    default = Trainer(env, kind="depth", loss="zhang")
     assert "privileged_state" not in default._observe(state.env_state)
     later = state.env_state.replace(
         physics=state.env_state.physics.replace(
@@ -236,10 +275,18 @@ def test_privileged_critic_changes_value_without_changing_actor():
 
 def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
     """Train and restore the separate value input, including pre-reset bootstrap."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=2, duration=0.02)
+    env = Environment(
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=2,
+        duration=0.02,
+        action={"level": "acceleration", "heading": "target"},
+    )
     trainer = Trainer(
         env,
         kind="depth",
+        loss="zhang",
         config={"critic_uses_privileged": True, "horizon": 2, "ppo_epochs": 1},
     )
     before = trainer.initialize()
@@ -255,7 +302,7 @@ def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
     inference = tmp_path / "asymmetric.policy.zip"
     trainer.save_inference(inference, after, provenance={})
     saved_actor = load_inference(inference)
-    actor, params = Actor(kind=saved_actor["kind"]), saved_actor["params"]
+    actor, params = Actor(**saved_actor["actor"]), saved_actor["params"]
     measured = env.observe(after.env_state)
     expected = trainer.actor.apply(after.params, measured, after.recurrent_memory)
     actual = actor.apply(params, measured, after.recurrent_memory)
@@ -338,10 +385,24 @@ def test_gae_termination_truncation_and_rollout_boundary():
 
 def test_navigation_altitude_cost_matches_physical_height_error():
     """Verify navigation altitude cost matches physical height error."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1)
-    base = Trainer(env, kind="depth", config={"horizon": 1, "perception_weight": 0})
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=1,
+    )
+    base = Trainer(
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "perception_weight": 0},
+    )
     height = Trainer(
-        env, kind="depth", config={"horizon": 1, "perception_weight": 0, "altitude_weight": 2}
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "perception_weight": 0, "altitude_weight": 2},
     )
     initial = base.initialize()
     physics = initial.env_state.physics
@@ -444,7 +505,9 @@ def test_bootstrap_uses_final_observation_and_resets_recurrent_state():
 
     env.step = truncate
     trainer = Trainer(env, config={"horizon": 1})
-    initial = trainer.initialize().replace(recurrent_memory=jnp.ones((2, 192)))
+    initial = trainer.initialize().replace(
+        recurrent_memory=jnp.ones_like(trainer.actor.initialize_memory(2))
+    )
     state, rollout, _ = collect_rollout(trainer, initial)
     final = real_step(initial.env_state, jnp.tanh(rollout.pre_tanh[0]))
     expected = trainer.critic.apply(initial.critic_params, env.observe(final))
@@ -548,6 +611,7 @@ def perception_env(request):
     """Provide perception env for the surrounding execution."""
     sensor_config = {"points_per_frame": 32} if request.param == "lidar" else {}
     env = Environment(
+        action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
         num_envs=1,
@@ -565,6 +629,7 @@ def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, a
     horizon = 6 if kind == "lidar" else 2
     trainer = Trainer(
         env,
+        loss=("zhang" if kind == "depth" else "liu"),
         kind=kind,
         algorithm=algorithm,
         config={
@@ -611,6 +676,7 @@ def test_common_named_objective_weights_and_history(perception_env):
     kind, env = perception_env
     trainer = Trainer(
         env,
+        loss=("zhang" if kind == "depth" else "liu"),
         kind=kind,
         algorithm="apg",
         config={
@@ -647,6 +713,7 @@ def test_common_named_objective_weights_and_history(perception_env):
     for algorithm in ("ppo", "shac"):
         other = Trainer(
             env,
+            loss=("zhang" if kind == "depth" else "liu"),
             kind=kind,
             algorithm=algorithm,
             config={

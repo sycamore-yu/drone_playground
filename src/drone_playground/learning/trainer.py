@@ -83,7 +83,19 @@ class Trainer:
         config: Overrides of the options documented in docs/training.md.
     """
 
-    def __init__(self, env, kind="state", algorithm="ppo", seed=0, config=None):
+    def __init__(
+        self,
+        env,
+        kind="state",
+        algorithm="ppo",
+        seed=0,
+        config=None,
+        *,
+        actor_config=None,
+        loss=None,
+        backward_model=None,
+        backward_options=None,
+    ):
         """Configure the shared actor, critic, optimizers and compiled update."""
         if kind not in ("state", "depth", "lidar") or algorithm not in ("ppo", "apg", "shac"):
             raise ValueError("Expected kind state/depth/lidar and algorithm ppo/apg/shac")
@@ -93,6 +105,8 @@ class Trainer:
             raise ValueError(f"Unknown learning options: {sorted(unknown)}")
         self.config = {**_DEFAULTS, **options}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
+        self.loss_name = loss
+        self.backward_model, self.backward_options = backward_model, dict(backward_options or {})
         if not isinstance(self.config["randomize_navigation_start"], bool):
             raise ValueError("randomize_navigation_start must be boolean")
         if not isinstance(self.config["critic_uses_sensor"], bool):
@@ -144,15 +158,16 @@ class Trainer:
                 raise ValueError(f"{key} must be nonnegative")
         if self.config["velocity_aux_weight"] and kind != "depth":
             raise ValueError("velocity_aux_weight requires the depth actor")
-        if self.config["altitude_weight"] and kind == "state":
-            raise ValueError("altitude_weight requires a Navigation actor")
-        if self.config["height_boundary_weight"] and kind == "state":
-            raise ValueError("height_boundary_weight requires a Navigation actor")
-        if env.action_size != (4 if kind == "state" else 3):
-            raise ValueError("Actor kind and environment action size disagree")
-        if kind != "state" and env.task.name != "navigation":
-            raise ValueError("Named perception recipes require Navigation")
-        self.actor = Actor(kind=kind)
+        if self.config["altitude_weight"] and env.task.name != "navigation":
+            raise ValueError("altitude_weight requires a Navigation task")
+        if self.config["height_boundary_weight"] and env.task.name != "navigation":
+            raise ValueError("height_boundary_weight requires a Navigation task")
+        if loss not in (None, "zhang", "liu"):
+            raise ValueError("Loss must be null, zhang or liu")
+        if loss is not None and env.action.level != "acceleration":
+            raise ValueError("Named acceleration/jerk losses require acceleration commands")
+        settings = dict(actor_config or {})
+        self.actor = Actor(kind=kind, action_size=env.action_size, **settings)
         critic_kind = kind if self.config["critic_uses_sensor"] else "state"
         self.critic = Critic(
             kind="privileged" if self.config["critic_uses_privileged"] else critic_kind
@@ -167,27 +182,38 @@ class Trainer:
             if self.config["critic_uses_privileged"]
             else env.observe
         )
-        recipe = zhang_loss if kind == "depth" else liu_loss
+        recipe = {"zhang": zhang_loss, "liu": liu_loss}.get(loss)
         defaults = {
             key: parameter.default
-            for key, parameter in inspect.signature(recipe).parameters.items()
+            for key, parameter in (inspect.signature(recipe).parameters.items() if recipe else ())
             if parameter.default is not inspect.Parameter.empty
             and key not in ("velocity_prediction", "clearance_mask", "velocity_aux_weight")
         }
         invalid = self.config["perception_loss"].keys() - defaults.keys()
-        if invalid or (kind == "state" and self.config["perception_loss"]):
+        if invalid:
             raise ValueError(f"Unsupported perception loss options: {sorted(invalid)}")
         defaults.update(self.config["perception_loss"])
         if any(not math.isfinite(value) or value < 0 for value in defaults.values()):
             raise ValueError("Perception loss options must be finite and nonnegative")
-        if not isinstance(defaults["velocity_window"], int) or defaults["velocity_window"] < 1:
+        if recipe and (
+            not isinstance(defaults["velocity_window"], int) or defaults["velocity_window"] < 1
+        ):
             raise ValueError("velocity_window must be a positive integer")
-        for key in ("huber_delta", "collision_beta" if kind == "depth" else "beta2"):
+        for key in (
+            ("huber_delta", "collision_beta" if loss == "zhang" else "beta2") if recipe else ()
+        ):
             if defaults[key] <= 0:
                 raise ValueError(f"{key} must be positive")
-        self.config["perception_loss"] = defaults if kind != "state" else {}
+        self.config["perception_loss"] = defaults
         self._recipe = recipe
-        self._window = defaults["velocity_window"] if kind != "state" else 1
+        self._window = defaults.get("velocity_window", 1)
+        from drone_playground.learning.dynamics import training_step
+
+        self._differentiable_step = (
+            training_step(env, backward_model, self.backward_options)
+            if algorithm != "ppo"
+            else env.step
+        )
         self.actor_optimizer = optax.chain(
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adamw(self.config["lr"], weight_decay=self.config["weight_decay"]),
@@ -211,6 +237,11 @@ class Trainer:
             "seed": self.seed,
             "num_envs": self.env.num_envs,
             "dt": self.env.dt,
+            "actor": self.actor.specification,
+            "action": self.env.action.contract,
+            "loss": self.loss_name,
+            "backward_model": self.backward_model,
+            "backward_options": self.backward_options,
         }
 
     def initialize(self) -> TrainingState:
@@ -218,7 +249,7 @@ class Trainer:
         rng, reset_key, actor_key, critic_key = jax.random.split(jax.random.PRNGKey(self.seed), 4)
         env_state = self.env.reset(reset_key, **self._reset_options)
         observation = self._observe(env_state)
-        memory = jnp.zeros((self.env.num_envs, 192))
+        memory = self.actor.initialize_memory(self.env.num_envs)
         params = self.actor.init(actor_key, observation, memory)
         critic_params = self.critic.init(critic_key, observation)
         log_std = jnp.full(
@@ -308,6 +339,7 @@ class Trainer:
             kind=self.kind,
             config={**(config or {}), "learning": self.resolved_config},
             provenance=provenance,
+            actor_spec=self.actor.specification,
         )
 
     def _step(self, before, action, *, differentiable):
@@ -317,7 +349,11 @@ class Trainer:
                     before.physics, alpha=self.config["temporal_gradient_alpha"], dt=self.env.dt
                 )
             )
-        return self.env.step(before, action)
+        return (
+            self._differentiable_step(before, action)
+            if differentiable
+            else self.env.step(before, action)
+        )
 
     def _reset(self, key, after, memory, history):
         done = after.done
@@ -352,21 +388,21 @@ class Trainer:
         extra_failure_cost = self.config["failure_cost"] * failure
         task_cost += extra_failure_cost
         height_boundary_cost = jnp.zeros_like(task_cost)
-        if self.kind != "state":
+        if self.config["altitude_weight"]:
             altitude_error = after.physics.states.pos[:, 0, 2] - self.env.task.goal[2]
             task_cost += self.config["altitude_weight"] * self.env.dt * altitude_error**2
-            if self.config["height_boundary_weight"]:
-                height = after.physics.states.pos[:, 0, 2]
-                edge_distance = jnp.minimum(
-                    height - self.env.task.low[2], self.env.task.high[2] - height
-                )
-                height_boundary_cost = (
-                    self.config["height_boundary_weight"]
-                    * self.env.dt
-                    * jax.nn.relu(1.0 - edge_distance) ** 2
-                )
-                height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
-                task_cost += height_boundary_cost
+        if self.config["height_boundary_weight"]:
+            height = after.physics.states.pos[:, 0, 2]
+            edge_distance = jnp.minimum(
+                height - self.env.task.low[2], self.env.task.high[2] - height
+            )
+            height_boundary_cost = (
+                self.config["height_boundary_weight"]
+                * self.env.dt
+                * jax.nn.relu(1.0 - edge_distance) ** 2
+            )
+            height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
+            task_cost += height_boundary_cost
         cost = self.config["task_weight"] * task_cost
         terms = {
             "task_cost": task_cost,
@@ -375,7 +411,7 @@ class Trainer:
             "progress_reward": progress_reward,
             "perception_cost": jnp.zeros_like(cost),
         }
-        if self.kind == "state":
+        if self._recipe is None:
             return cost, history, terms
         velocity = after.physics.states.vel[:, 0]
         position = after.physics.states.pos[:, 0]
@@ -385,7 +421,7 @@ class Trainer:
         velocities = jnp.concatenate((history.velocity[:, 1:], velocity[:, None]), axis=1)
         count = history.count + 1
         smoothed = velocities.sum(axis=1) / jnp.minimum(count, self._window)[:, None]
-        acceleration = action * 6.0  # Simulation's Navigation net-acceleration contract, m/s².
+        acceleration = self.env.action.decode(action)
         previous = jnp.where((history.count > 0)[:, None], history.acceleration, acceleration)
         clearance = self.env.scene.clearance(position, after.time) - self.env.task.radius
         old_clearance = self.env.scene.clearance(before.physics.states.pos[:, 0], before.time)
@@ -423,7 +459,7 @@ class Trainer:
                 **kwargs,
             )
             terms["jerk"] = pair_terms["jerk"]
-            if self.kind == "lidar":
+            if self.loss_name == "liu":
                 terms["jerk_mean"] = pair_terms["jerk_mean"]
             return total + kwargs["jerk_weight"] * pair_terms["jerk"], terms
 
@@ -436,7 +472,7 @@ class Trainer:
         difference = jerk - history.jerk_mean
         jerk_mean = history.jerk_mean + difference / jerk_count
         jerk_m2 = history.jerk_m2 + difference * (jerk - jerk_mean)
-        if self.kind == "lidar":
+        if self.loss_name == "liu":
             variance = jerk_m2 / jerk_count
             named = named + kwargs["jerk_weight"] * kwargs["jerk_variance_weight"] * variance
             named_terms["jerk_variance"] = variance
@@ -448,10 +484,9 @@ class Trainer:
         return cost, history, terms
 
     def _auxiliary_cost(self, prediction, observation):
-        # Navigation's first three state features are measured body-frame velocity.
         if not self.config["velocity_aux_weight"]:
             return jnp.zeros(prediction.shape[:-1])
-        target = jax.lax.stop_gradient(observation["state"][..., :3])
+        target = jax.lax.stop_gradient(observation["velocity_body"])
         return self.config["velocity_aux_weight"] * jnp.mean((prediction - target) ** 2, axis=-1)
 
     def _apply_actor(self, state, gradients):

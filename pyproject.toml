@@ -20,6 +20,7 @@ packages = ["src/drone_playground"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "assets/scenes" = "drone_playground/assets/scenes"
+"LICENSES" = "drone_playground/licenses"
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -48,7 +49,9 @@ JAX_COMPILATION_CACHE_DIR = ".cache/jax"
 
 [tool.pixi.tasks]
 test = "pytest -q"
-lint = "ruff check src tests tools"
+lint = "ruff check src tests tools && ruff format --check src tests tools"
+setup-acados = "python tools/setup_acados.py"
+migrate-results = "python tools/migrate_results.py"
 sim = "drone-playground mode=sim"
 train = "drone-playground mode=train"
 checkpoint_eval = "drone-playground mode=checkpoint_eval"
