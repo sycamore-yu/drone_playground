@@ -1,7 +1,7 @@
 # 验证与验收证据
 
-2026-10-09 的最新完整锁定环境 CPU 测试通过 **223 项**，耗时 **1466.77 s**；
-其中包含验收收集器的 20 项测试，覆盖初始化成本追溯和运行中状态。
+2026-10-09 的最新完整锁定环境 CPU 测试通过 **239 项**，耗时 **813.26 s**；
+其中包含验收收集器的 23 项测试，覆盖初始化成本追溯、运行中状态和续训配置核对。
 完整 Ruff 规则与全部 43 个 Python 文件的格式检查通过。训练质量另按
 [18 单元验收表](../results/acceptance/current.md)判断，不由单元测试替代。
 
@@ -33,12 +33,12 @@ Pixi 安装完成后，CPU 验证实际核验如下版本。Crazyflow 安装元�
 
 | 检查 | 结果 | 证据 |
 |---|---|---|
-| 完整 CPU pytest | 223 passed，1466.77 s | [`full-suite-final.log`](../tmp/ros-planner-refactor/full-suite-final.log) |
-| 验收收集器专项 | 20 passed，全部包含在最终完整测试中 | [`acceptance-report-final.log`](../tmp/acceptance-report-final.log) |
+| 完整 CPU pytest | 239 passed，813.26 s | [`full-suite-asymmetric-final.log`](../tmp/ros-planner-refactor/full-suite-asymmetric-final.log) |
+| 验收收集器专项 | 23 passed，全部包含在最终完整测试中 | [`collector-resume-green.log`](../tmp/ros-planner-refactor/collector-resume-green.log) |
 | Ruff 与格式 | E/F/I/UP/B/SIM/N/D/RUF 通过；43 files already formatted | `pixi run lint`、`pixi run ruff format --check src tests tools` |
 | 安装与 wheel | 真实 wheel 的五项测试通过，包含在完整 CPU 运行中 | [`test_packaging.py`](../tests/test_packaging.py) |
-| 发布包构建 | 新 ROS 目录、评测模块和恢复修复均打包；sdist 及由 sdist 构建的 wheel 成功 | [`release-build-recovery.log`](../tmp/ros-planner-refactor/release-build-recovery.log) |
-| 更新后的配方打包 | 最新 wheel 独立 venv 的全部 18 配方 × 3 算法，共 54 个组合通过 | [`release-install-check-recovery.log`](../tmp/ros-planner-refactor/release-install-check-recovery.log) |
+| 发布包构建 | 包含 ROS、评测、恢复修复和进度/传感器/特权 Critic | [`release-build-asymmetric.log`](../tmp/ros-planner-refactor/release-build-asymmetric.log) |
+| 更新后的配方打包 | 独立 venv：19 通用配方 × 3 算法，加 2 个 PPO 专用特权配方，共 59 个组合通过 | [`release-install-check-asymmetric.log`](../tmp/ros-planner-refactor/release-install-check-asymmetric.log) |
 | 原生 EGO / SUPER | 两者均完成 12 静态 + 12 动态回合并通过 S6 | [原生飞行记录](ros_planner.md) |
 | RScope 原生窗口 | 三任务及动态场景的实际绘制、位姿核对、正常关闭通过 | [S7 验证](replay-validation.md) |
 | 正式 Learning | 18/18 单元通过；36 次训练、5,400 个冻结回合 | [逐种子验收结果](../results/acceptance/current.md) |
@@ -52,7 +52,7 @@ pixi run ruff format --check src tests tools
 pixi run build
 ```
 
-完整运行中的 74 条警告来自 Optax 内部的 `optax.global_norm` 弃用提示。
+完整运行中的 78 条警告来自 Optax 内部的 `optax.global_norm` 弃用提示。
 较早完整运行曾为 165 passed、1 failed，唯一失败为测试中未导入的 `np`；
 修复后该文件 33 项重测通过，后续上述完整运行也通过。原始日志
 `tmp/agents/package-cpu-pixi-clean.log`、`package-cli-fixed.log` 保持原样。

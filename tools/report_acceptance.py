@@ -374,9 +374,12 @@ def collect_run(path, root):
     result["checkpoint"] = cp
     metadata = cp.get("metadata") or {}
     saved = metadata.get("config", {}).get("experiment")
-    cp_config = saved == config and metadata.get("kind") == sensor
+    cp_config = isinstance(saved, dict) and (
+        {**saved, "resume": None} == {**config, "resume": None} and metadata.get("kind") == sensor
+    )
     result["checkpoint_config"] = check(
-        cp_config if saved else None, "Compared checkpoint experiment/kind to config.yaml"
+        cp_config if saved else None,
+        "Compared checkpoint experiment/kind to config.yaml; resume is an execution entrypoint",
     )
     directories = {
         int(p.name.removeprefix("update-")): p

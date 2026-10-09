@@ -127,19 +127,56 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    """Independent [256,128] LayerNorm/ELU value MLP, returning [B].
+    """Independent value MLP with an optional, independently trained sensor encoder.
 
-    Takes state [B,F] or an observation mapping containing ``state``. Perception
-    fields are not consumed: the trainer must explicitly choose the critic's state
-    (including any permitted privileged features). No actor parameters are shared.
+    By default, only state [B,F] is consumed, preserving existing checkpoints.
+    Depth/LiDAR PPO may use its already available measurements for a more
+    informative value estimate. Actor and critic never share parameters.
+    Privileged mode consumes only the explicit training-only state vector.
     """
+
+    kind: Literal["state", "depth", "lidar", "privileged"] = "state"
 
     @nn.compact
     def __call__(self, obs: jax.Array | Mapping[str, jax.Array]) -> jax.Array:
-        """Estimate state value using the independent critic parameters."""
-        state = obs["state"] if isinstance(obs, Mapping) else obs
+        """Estimate value using the explicitly configured observation source."""
+        key = "privileged_state" if self.kind == "privileged" else "state"
+        state = obs[key] if isinstance(obs, Mapping) else obs
         if state.ndim != 2:
             raise ValueError("Expected critic state [B,F]")
+        if self.kind == "depth":
+            if not isinstance(obs, Mapping):
+                raise ValueError("Depth critic requires the depth observation")
+            depth = obs["depth"]
+            if depth.shape != (state.shape[0], 12, 16, 1):
+                raise ValueError("Expected critic depth [B,12,16,1]")
+            features = nn.relu(nn.Conv(16, (3, 3), strides=(2, 2), name="value_conv_0")(depth))
+            features = nn.relu(nn.Conv(32, (3, 3), strides=(2, 2), name="value_conv_1")(features))
+            state = jnp.concatenate([state, jnp.mean(features, axis=(1, 2))], axis=-1)
+        elif self.kind == "lidar":
+            if not isinstance(obs, Mapping):
+                raise ValueError("LiDAR critic requires the point observation")
+            points, mask = obs["points"], obs["mask"]
+            if points.ndim != 3 or points.shape[-1] != 3 or mask.shape != points.shape[:-1]:
+                raise ValueError("Expected critic points [B,N,3] and mask [B,N]")
+            features = jnp.where(mask[..., None], points, 0.0)
+            features = nn.relu(
+                nn.Dense(
+                    32,
+                    kernel_init=nn.initializers.variance_scaling(
+                        0.01, "fan_in", "truncated_normal"
+                    ),
+                    name="value_point_0",
+                )(features)
+            )
+            features = nn.relu(nn.Dense(64, name="value_point_1")(features))
+            features = jnp.max(
+                jnp.where(mask[..., None], features, -jnp.inf), axis=1, initial=-jnp.inf
+            )
+            features = jnp.where(jnp.any(mask, axis=1, keepdims=True), features, 0.0)
+            state = jnp.concatenate([state, features], axis=-1)
+        elif self.kind not in ("state", "privileged"):
+            raise ValueError(f"Unknown critic kind: {self.kind}")
         return _StateMLP(1, name="mlp")(state)[..., 0]
 
 

@@ -28,7 +28,20 @@ batch, device, action conversion, sensor clock and observed fields. Trainer uses
 `env.observe` for every actor kind.
 The shared Actor receives the same tensor inputs for every algorithm. Its raw output
 is squashed by `tanh` before `Environment.step`. The independent Critic receives only
-`observation['state']`; it never sees extra geometry or sensor fields.
+`observation['state']` by default. Depth/LiDAR PPO can opt into
+`critic_uses_sensor=true`, which constructs a separate small sensor encoder
+for the value function using only measurements already visible to the Actor.
+Alternatively, `critic_uses_privileged=true` selects AsymmetricPPO's independent
+value MLP. This Navigation-only PPO option is mutually exclusive with
+`critic_uses_sensor`. Its input includes true position, goal displacement,
+quaternion, velocities, previous action, time, signed clearance, and 26 ideal
+world-frame geometry ranges capped at 40 m. Fixed normalization scales are
+position `[100,20,6]` m, displacement `[100,40,6]` m, linear velocity 3 m/s,
+angular velocity 10 rad/s, task duration, and geometry 40 m. These inputs bypass
+sensor noise, delay and field of view and are explicitly simulation privileges.
+The Actor ignores `privileged_state`; its architecture and frozen input contract
+remain the same. Only Actor variables are exported for inference. See
+[ADR-0010](adr/0010-training-only-privileged-ppo-critic.md).
 
 `TrainingState` is a Flax dataclass containing full actor variables (`params`, including
 its `params` collection), critic and target critic variables, both Optax states, RNG,
@@ -167,6 +180,31 @@ Its default is zero; the altitude diagnostic explicitly uses one. The option is 
 by all three algorithms and rejected for state-only tasks. The Actor still receives
 the configured observation, without privileged height or geometry fields added by this loss.
 
+Navigation may also add `progress_reward_scale * (distance_before-distance_after)`
+as a per-transition **reward** (subtracted from the task cost), gated by the prior
+episode's active state. This follows the goal-progress term used in the previous
+Navigation PPO recipe. It defaults to zero and does not change the terminal events,
+physics or evaluation. The previous PPO also used a velocity-tracking controller,
+a different action contract, and `reward_scale=0.01`; its raw reward coefficients
+cannot be substituted into the present acceleration-action objective.
+
+Two independent, opt-in diagnostics isolate the new options from existing runs:
+
+```bash
+pixi run drone-playground mode=train experiment=navigation_depth_scratch_ppo_stable \
+  learning=ppo seed=0 '++learning.options.progress_reward_scale=0.5' \
+  output=results/diagnostic_depth_ppo_progress_s0
+pixi run drone-playground mode=train experiment=navigation_depth_scratch_ppo_stable \
+  learning=ppo seed=0 '++learning.options.critic_uses_sensor=true' \
+  output=results/diagnostic_depth_ppo_sensor_critic_s0
+```
+
+The current 18-cell acceptance matrix retains its existing recipes and checkpoints.
+These diagnostics use fresh initialization and must be evaluated by the same C5/C6
+protocol before considering a recipe replacement. The sensor-aware critic costs
+additional memory and compute; it is restricted to PPO because SHAC differentiates
+through the state-value bootstrap.
+
 This is a Crazyflow method adaptation with a causal per-step reward, not a claim to
 reproduce the original point-mass experiment. All spatial objective quantities use
 world coordinates and SI units. Velocity is a trailing causal mean with shorter episode
@@ -215,6 +253,9 @@ revision belong in checkpoint metadata.
 | `weight_decay` | 0 | Actor AdamW decay; critic uses Adam |
 | `task_weight`, `perception_weight` | 1, 1 | Common cost weights |
 | `altitude_weight` | 0 | Navigation goal-height squared error inside the task cost |
+| `progress_reward_scale` | 0 | Navigation progress reward per metre advanced toward the goal |
+| `critic_uses_sensor` | false | Independent Depth/LiDAR PPO sensor encoder for the Critic |
+| `critic_uses_privileged` | false | Navigation AsymmetricPPO with training-only true state and geometry |
 | `velocity_aux_weight` | 0 | Depth auxiliary component MSE |
 | `randomize_navigation_start` | false | Wide collision-checked Navigation training starts |
 | `perception_loss` | Named defaults | Keyword overrides for the selected named helper |

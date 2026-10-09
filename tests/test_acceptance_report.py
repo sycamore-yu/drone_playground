@@ -228,6 +228,29 @@ def test_missing_paths_are_retained_and_all_18_cells_written(tmp_path):
     )
 
 
+@pytest.mark.parametrize("change", [None, "seed", "algorithm"])
+def test_resumed_checkpoint_preserves_training_configuration_checks(tmp_path, change):
+    """Ignore the resume entrypoint while rejecting changed training seeds or algorithms."""
+    path = make_run(tmp_path)
+    header = json.loads((path / "run.json").read_text())
+    checkpoint = Path(header["selected_checkpoint"])
+    with zipfile.ZipFile(checkpoint) as archive:
+        payload = archive.read("variables.msgpack")
+        metadata = json.loads(archive.read("metadata.json"))
+    saved = metadata["config"]["experiment"]
+    saved["resume"] = str(path / "checkpoints/latest.training.zip")
+    if change == "seed":
+        saved["seed"] = 1
+    elif change == "algorithm":
+        saved["learning"]["algorithm"] = "apg"
+    with zipfile.ZipFile(checkpoint, "w") as archive:
+        archive.writestr("metadata.json", json.dumps(metadata))
+        archive.writestr("variables.msgpack", payload)
+    result, report = run_collector(tmp_path, [path])
+    assert result.returncode == 0, result.stderr
+    assert report["runs"][0]["checkpoint_config"]["passed"] is (change is None)
+
+
 @pytest.mark.parametrize("mutation", ["short", "failed", "rmse", "duplicate", "holdout"])
 def test_csv_overrides_claimed_success(tmp_path, mutation):
     """Verify csv overrides claimed success."""

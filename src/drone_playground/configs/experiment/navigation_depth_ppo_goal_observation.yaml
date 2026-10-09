@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - navigation_depth_scratch_ppo_stable
+simulation:
+  navigation_goal_observation: true
+learning:
+  options:
+    critic_uses_sensor: true
+    progress_reward_scale: 0.5
+    height_boundary_weight: 20.0
+    perception_loss:
+      velocity_window: 1

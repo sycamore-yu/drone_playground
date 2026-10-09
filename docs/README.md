@@ -17,6 +17,8 @@
 | [0007](adr/0007-run-artifact-layout.md) | 权重与选模成绩同目录；统一独立评测；按需创建轨迹和回放 |
 | [0008](adr/0008-independent-backward-dynamics-model.md) | 独立选择 `learning.backward_model`；模型数学实现与训练求导连接分工 |
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
+| [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
+| [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
 
 2026-10-09 已批准的反向模型选择、任务/动作解耦、控制器注入和 SO3 接入、延迟缓冲、物理随机化及产物布局调整尚未完成代码实现。现有运行目录和 README 命令仍描述当前实现，不能把目标布局直接用于尚未迁移的结果。
 

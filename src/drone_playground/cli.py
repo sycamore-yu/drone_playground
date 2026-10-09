@@ -161,6 +161,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
     environments = {}
     initial_interactions = int(state.interactions)
     checkpoint_path = record.directory / "checkpoints" / "latest.training.zip"
+    last_checkpoint_update = -1
+    last_frozen = None
     stop_requested = False
 
     def request_stop(signum, frame):
@@ -183,7 +185,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "interactions_per_second": interactions / elapsed if elapsed > 0 else 0.0,
         }
 
-    def checkpoint(current):
+    def checkpoint(current, *, export_policy=True):
+        nonlocal last_checkpoint_update, last_frozen
         provenance = {
             **record.identity,
             "updates": int(current.updates),
@@ -198,14 +201,19 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 "updates_in_scene": updates_in_scene,
             }
         save_state(checkpoint_path, current, config=identity, provenance=provenance)
+        last_checkpoint_update = int(current.updates)
         frozen = record.directory / "checkpoints" / f"update-{int(current.updates):08d}.policy.zip"
-        save_inference(frozen, current.params, kind=kind, config=identity, provenance=provenance)
+        if export_policy:
+            save_inference(
+                frozen, current.params, kind=kind, config=identity, provenance=provenance
+            )
+            last_frozen = frozen
         return frozen
 
     def evaluate_checkpoint():
         nonlocal consecutive, evaluation_index
         update = int(state.updates)
-        frozen = checkpoint(state)
+        frozen = checkpoint(state, export_policy=False)
         directory = record.directory / "checkpoint_eval" / f"update-{update:08d}"
         if directory.exists():
             previous = Path(
@@ -278,12 +286,19 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 }
                 record.event("update", **measured)
                 print(json.dumps(measured), flush=True)
-            if update % config.learning.checkpoint_interval == 0:
+            if (
+                update % config.learning.checkpoint_interval == 0
+                and update % config.learning.evaluation_interval != 0
+            ):
                 checkpoint(state)
             if update % config.learning.evaluation_interval:
                 continue
             evaluate_checkpoint()
-        frozen = checkpoint(state)
+        frozen = (
+            last_frozen
+            if last_checkpoint_update == int(state.updates) and last_frozen is not None
+            else checkpoint(state)
+        )
         if consecutive < config.learning.required_consecutive_passes:
             record.finish(
                 "interrupted",
@@ -435,6 +450,12 @@ def main(config: DictConfig) -> None:
             for field in ("dynamics", "drone", "physics_hz", "method_hz"):
                 if previous["simulation"][field] != physical[field]:
                     raise ValueError(f"Frozen evaluation changes physical {field}")
+            if previous["simulation"].get("navigation_goal_observation", False) != physical.get(
+                "navigation_goal_observation", False
+            ):
+                raise ValueError(
+                    "Frozen evaluation changes checkpoint navigation_goal_observation contract"
+                )
             if previous["method"]["action_delay"] != config.method.action_delay:
                 raise ValueError("Frozen evaluation changes checkpoint action_delay contract")
         report = evaluate(config, record.directory, actor=actor, parameters=parameters)

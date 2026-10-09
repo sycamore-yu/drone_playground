@@ -18,6 +18,7 @@ from drone_playground.learning.ppo import (
 from drone_playground.learning.shac import update_target
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.networks import Actor, Critic
 from drone_playground.simulation.tasks import Event
 
 
@@ -35,6 +36,247 @@ def test_additional_failure_cost_reaches_public_update_metrics():
     )
     np.testing.assert_allclose(penalized_metrics["failure_cost"], 160.0, atol=2e-5)
     np.testing.assert_array_equal(base_state.env_state.time, penalized_state.env_state.time)
+
+
+def test_navigation_progress_reward_matches_goal_distance_change():
+    """Reward physical progress once per active transition, without changing physics."""
+    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1)
+    base = Trainer(env, kind="depth", config={"horizon": 1, "perception_weight": 0})
+    shaped = Trainer(
+        env,
+        kind="depth",
+        config={"horizon": 1, "perception_weight": 0, "progress_reward_scale": 0.5},
+    )
+    initialized = base.initialize()
+    before = initialized.env_state
+    moved = before.physics.states.pos.at[0, 0, 0].add(1.0)
+    after = before.replace(
+        physics=before.physics.replace(states=before.physics.states.replace(pos=moved))
+    )
+    action = jnp.zeros((1, 3))
+    cost, _, _ = base._cost(before, after, action, initialized.objective_state)
+    shaped_cost, _, terms = shaped._cost(before, after, action, initialized.objective_state)
+    expected = 0.5 * (
+        jnp.linalg.norm(env.task.goal - before.physics.states.pos[0, 0])
+        - jnp.linalg.norm(env.task.goal - after.physics.states.pos[0, 0])
+    )
+    np.testing.assert_allclose(cost - shaped_cost, [expected], rtol=1e-5)
+    np.testing.assert_allclose(terms["progress_reward"], [expected], rtol=1e-5)
+    done = before.replace(task=before.task.replace(event=jnp.array([Event.COLLISION])))
+    _, _, done_terms = shaped._cost(done, after, action, initialized.objective_state)
+    np.testing.assert_array_equal(done_terms["progress_reward"], 0)
+
+
+def test_height_boundary_cost_is_continuous_and_gated_after_done():
+    """Penalize proximity to both height limits without changing existing reward terms."""
+    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=3)
+    base = Trainer(env, kind="depth", config={"perception_weight": 0})
+    penalized = Trainer(
+        env, kind="depth", config={"perception_weight": 0, "height_boundary_weight": 20.0}
+    )
+    initialized = base.initialize()
+    state = initialized.env_state
+    positions = state.physics.states.pos.at[:, 0, 2].set(jnp.array([0.6, 3.0, 5.9]))
+    state = state.replace(
+        physics=state.physics.replace(states=state.physics.states.replace(pos=positions))
+    )
+    action = jnp.zeros((3, 3))
+    cost, _, _ = base._cost(state, state, action, initialized.objective_state)
+    changed, _, terms = penalized._cost(state, state, action, initialized.objective_state)
+    np.testing.assert_allclose(changed - cost, [0.324, 0.0, 0.324], atol=1e-6)
+    np.testing.assert_allclose(terms["height_boundary_cost"], [0.324, 0.0, 0.324], atol=1e-6)
+
+    def boundary_cost(heights):
+        positions = state.physics.states.pos.at[:, 0, 2].set(heights)
+        after = state.replace(
+            physics=state.physics.replace(states=state.physics.states.replace(pos=positions))
+        )
+        return penalized._cost(state, after, action, initialized.objective_state)[2][
+            "height_boundary_cost"
+        ].sum()
+
+    np.testing.assert_allclose(
+        jax.grad(boundary_cost)(jnp.array([0.6, 3.0, 5.9])), [-0.72, 0.0, 0.72], atol=1e-6
+    )
+    done = state.replace(task=state.task.replace(event=jnp.full(3, Event.COLLISION)))
+    _, _, terms = penalized._cost(done, done, action, initialized.objective_state)
+    np.testing.assert_array_equal(terms["height_boundary_cost"], 0)
+
+
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_optional_ppo_critic_consumes_actor_visible_sensor(kind):
+    """The optional value encoder uses measured data; the old value encoder does not."""
+    state = jnp.ones((2, 10), dtype=jnp.float32)
+    observation = {"state": state}
+    changed = {"state": state}
+    if kind == "depth":
+        observation["depth"] = jnp.zeros((2, 12, 16, 1))
+        changed["depth"] = jnp.ones((2, 12, 16, 1))
+    else:
+        observation["points"] = jnp.ones((2, 8, 3))
+        changed["points"] = jnp.full((2, 8, 3), 2.0)
+        observation["mask"] = changed["mask"] = jnp.ones((2, 8), dtype=bool)
+    critic = Critic(kind=kind)
+    variables = critic.init(jax.random.PRNGKey(5), observation)
+    assert critic.apply(variables, observation).shape == (2,)
+    assert not np.array_equal(
+        critic.apply(variables, observation), critic.apply(variables, changed)
+    )
+    state_critic = Critic()
+    default_variables = state_critic.init(jax.random.PRNGKey(5), observation)
+    np.testing.assert_array_equal(
+        state_critic.apply(default_variables, observation),
+        state_critic.apply(default_variables, changed),
+    )
+
+
+def test_sensor_critic_performs_real_depth_ppo_update():
+    """Train the independent visual value function through the PPO update path."""
+    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1, duration=0.02)
+    trainer = Trainer(
+        env,
+        kind="depth",
+        algorithm="ppo",
+        config={
+            "horizon": 1,
+            "ppo_epochs": 1,
+            "minibatches": 1,
+            "critic_uses_sensor": True,
+        },
+    )
+    before = trainer.initialize()
+    after, metrics = trainer.update(before)
+    assert np.isfinite(metrics["critic_loss"])
+    assert np.isfinite(metrics["policy_loss"])
+    assert tree_changed(before.critic_params, after.critic_params)
+
+
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
+    """Train the expanded goal input with immediate velocity and continuous height cost."""
+    env = Environment(
+        task="navigation",
+        scene="S01",
+        sensor=kind,
+        num_envs=2,
+        duration=0.02,
+        navigation_goal_observation=True,
+    )
+    trainer = Trainer(
+        env,
+        kind=kind,
+        config={
+            "horizon": 2,
+            "ppo_epochs": 1,
+            "critic_uses_sensor": True,
+            "progress_reward_scale": 0.5,
+            "height_boundary_weight": 20.0,
+            "perception_loss": {"velocity_window": 1},
+        },
+    )
+    state = trainer.initialize()
+    assert env.observe(state.env_state)["state"].shape == (2, 12)
+    updated, metrics = trainer.update(state)
+    assert all(np.isfinite(float(value)) for value in metrics.values())
+    assert tree_changed(state.params, updated.params)
+    assert tree_changed(state.critic_params, updated.critic_params)
+    path = tmp_path / "goal.training.zip"
+    trainer.save_state(path, updated, provenance={})
+    restored, _ = trainer.load_state(path)
+    assert_tree_equal(updated, restored)
+
+
+def test_optional_ppo_critic_rejects_unsupported_actor_or_algorithm():
+    """Keep pathwise value gradients and original state-policy contracts unchanged."""
+    env = Environment(num_envs=1)
+    with pytest.raises(ValueError, match="Sensor-aware critic"):
+        Trainer(env, config={"critic_uses_sensor": True})
+    with pytest.raises(ValueError, match="Navigation"):
+        Trainer(env, config={"progress_reward_scale": 0.5})
+
+
+def test_privileged_critic_changes_value_without_changing_actor():
+    """Keep true geometry and physical state out of the deployed actor inputs."""
+    env = Environment(task="navigation", scene="D03", sensor="depth", num_envs=1)
+    trainer = Trainer(env, kind="depth", config={"critic_uses_privileged": True})
+    state = trainer.initialize()
+    observation = trainer._observe(state.env_state)
+    assert np.isfinite(observation["privileged_state"]).all()
+    changed = {**observation, "privileged_state": observation["privileged_state"] + 1.0}
+    memory = state.recurrent_memory
+    for before, after in zip(
+        jax.tree.leaves(trainer.actor.apply(state.params, observation, memory)),
+        jax.tree.leaves(trainer.actor.apply(state.params, changed, memory)),
+        strict=True,
+    ):
+        np.testing.assert_array_equal(before, after)
+    assert not np.array_equal(
+        trainer.critic.apply(state.critic_params, observation),
+        trainer.critic.apply(state.critic_params, changed),
+    )
+    default = Trainer(env, kind="depth")
+    assert "privileged_state" not in default._observe(state.env_state)
+    later = state.env_state.replace(
+        physics=state.env_state.physics.replace(
+            core=state.env_state.physics.core.replace(
+                steps=state.env_state.physics.core.steps + 500
+            )
+        )
+    )
+    for old, new in zip(
+        jax.tree.leaves(env.observe(state.env_state)),
+        jax.tree.leaves(env.observe(later)),
+        strict=True,
+    ):
+        np.testing.assert_array_equal(old, new)
+    assert not np.array_equal(
+        env.observe_privileged(state.env_state), env.observe_privileged(later)
+    )
+
+
+def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
+    """Train and restore the separate value input, including pre-reset bootstrap."""
+    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=2, duration=0.02)
+    trainer = Trainer(
+        env,
+        kind="depth",
+        config={"critic_uses_privileged": True, "horizon": 2, "ppo_epochs": 1},
+    )
+    before = trainer.initialize()
+    after, metrics = trainer.update(before)
+    assert np.isfinite(metrics["policy_loss"])
+    assert np.isfinite(metrics["critic_loss"])
+    assert tree_changed(before.params, after.params)
+    assert tree_changed(before.critic_params, after.critic_params)
+    path = tmp_path / "asymmetric.training.zip"
+    trainer.save_state(path, after, provenance={})
+    restored, _ = trainer.load_state(path)
+    assert_tree_equal(after, restored)
+    inference = tmp_path / "asymmetric.policy.zip"
+    trainer.save_inference(inference, after, provenance={})
+    saved_actor = load_inference(inference)
+    actor, params = Actor(kind=saved_actor["kind"]), saved_actor["params"]
+    measured = env.observe(after.env_state)
+    expected = trainer.actor.apply(after.params, measured, after.recurrent_memory)
+    actual = actor.apply(params, measured, after.recurrent_memory)
+    for saved, loaded in zip(jax.tree.leaves(expected), jax.tree.leaves(actual), strict=True):
+        np.testing.assert_array_equal(saved, loaded)
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "options"),
+    [("shac", {}), ("ppo", {"critic_uses_sensor": True}), ("ppo", {"critic_uses_privileged": 1})],
+)
+def test_privileged_critic_rejects_ambiguous_or_unsupported_configuration(algorithm, options):
+    """Require a boolean choice of one PPO critic observation source."""
+    env = Environment(task="navigation", scene="S01", sensor="depth")
+    with pytest.raises(ValueError, match=r"[Pp]rivileged|[Cc]ritic"):
+        Trainer(
+            env,
+            kind="depth",
+            algorithm=algorithm,
+            config={"critic_uses_privileged": True, **options},
+        )
 
 
 def test_integer_log_standard_deviation_allows_ppo_update():

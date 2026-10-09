@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - navigation_depth_scratch_safe
+learning:
+  options:
+    lr: 0.0001

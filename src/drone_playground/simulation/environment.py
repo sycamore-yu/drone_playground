@@ -70,6 +70,7 @@ class Environment:
         sensor: str = "state",
         sensor_config: dict | None = None,
         point_count: int = 1024,
+        navigation_goal_observation: bool = False,
     ):
         """Construct the configured task, scene, sensor and Crazyflow physics."""
         if num_envs <= 0 or method_hz <= 0 or physics_hz % method_hz:
@@ -82,6 +83,11 @@ class Environment:
             raise ValueError("Racing requires the LSY Level0 scene")
         self.scene = Scene(scene)
         self.task = Task(task, self.scene, reference, duration, reference_seed)
+        if not isinstance(navigation_goal_observation, bool):
+            raise ValueError("navigation_goal_observation must be boolean")
+        if navigation_goal_observation and task != "navigation":
+            raise ValueError("Goal observation requires Navigation")
+        self.navigation_goal_observation = navigation_goal_observation
         if task == "navigation" and float(self.scene.clearance(self.task.start, 0.0)) < 0.22:
             raise ValueError("Navigation nominal reset position lacks 0.15 m body clearance")
         self.num_envs, self.method_hz = num_envs, method_hz
@@ -250,6 +256,16 @@ class Environment:
             body_v, body_target = rot.apply(v, inverse=True), rot.apply(goal_velocity, inverse=True)
             up = rot.apply(jnp.broadcast_to(jnp.array([0.0, 0.0, 1.0]), p.shape), inverse=True)
             features = jnp.concatenate([body_v, body_target, up, jnp.full((len(p), 1), 0.07)], -1)
+            if self.navigation_goal_observation:
+                height_error = (self.task.goal[2] - p[:, 2]) / (
+                    self.task.high[2] - self.task.low[2]
+                )
+                remaining = jnp.linalg.norm(delta, axis=-1) / jnp.linalg.norm(
+                    self.task.goal - self.task.start
+                )
+                features = jnp.concatenate(
+                    [features, height_error[:, None], remaining[:, None]], -1
+                )
         else:
             target, tv, ta = self.task.target(state.time)
             future = jnp.stack(
@@ -269,6 +285,45 @@ class Environment:
         if self.sensor is not None:
             observation.update(self.sensor.encode(state.observation))
         return observation
+
+    def observe_privileged(self, state: EnvState) -> Array:
+        """Return true Navigation state and instantaneous geometry for training only.
+
+        Twenty-six fixed world-frame rays cover the nonzero directions in
+        {-1,0,1} cubed. These ideal ranges have no sensor delay, noise or field
+        of view restriction. Physical scales are fixed across all scenes.
+        """
+        if self.task.name != "navigation":
+            raise ValueError("Privileged observation requires Navigation")
+        physics = state.physics.states
+        position = physics.pos[:, 0]
+        directions = jnp.array(
+            [
+                (x, y, z)
+                for x in (-1, 0, 1)
+                for y in (-1, 0, 1)
+                for z in (-1, 0, 1)
+                if (x, y, z) != (0, 0, 0)
+            ],
+            dtype=position.dtype,
+        )
+        ranges = self.scene.raycast(position, directions, state.time, max_range=40.0)
+        clearance = self.scene.clearance(position, state.time) - self.task.radius
+        return jnp.concatenate(
+            [
+                self._observe_state(state)["state"],
+                position / jnp.array([100.0, 20.0, 6.0]),
+                (self.task.goal - position) / jnp.array([100.0, 40.0, 6.0]),
+                physics.quat[:, 0],
+                physics.vel[:, 0] / 3.0,
+                physics.ang_vel[:, 0] / 10.0,
+                state.previous_action,
+                (state.time / self.task.duration)[:, None],
+                (jnp.clip(clearance, -40.0, 40.0) / 40.0)[:, None],
+                ranges / 40.0,
+            ],
+            axis=-1,
+        )
 
     def cost(self, before: EnvState, after: EnvState, action: Array) -> Array:
         """Dense task costs and first-event penalties; same terms for all algorithms."""

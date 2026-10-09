@@ -29,6 +29,23 @@ def test_navigation_contract_records_instantiated_task_rules():
     assert contract["goal_metres"] == [98, 0, 3]
 
 
+def test_optional_goal_observation_exposes_height_and_remaining_distance():
+    """Expose normalized goal quantities while retaining the original ten features."""
+    legacy = Environment(task="navigation", scene="S01")
+    informed = Environment(task="navigation", scene="S01", navigation_goal_observation=True)
+    state = legacy.reset(jax.random.key(7))
+    physics = state.physics.replace(
+        states=state.physics.states.replace(pos=jnp.array([[[97.0, 0.0, 2.0]]]))
+    )
+    state = state.replace(physics=physics)
+    original = legacy.observe(state)["state"]
+    actual = informed.observe(state)["state"]
+    assert original.shape == (1, 10)
+    assert actual.shape == (1, 12)
+    np.testing.assert_array_equal(actual[:, :10], original)
+    np.testing.assert_allclose(actual[:, -2:], [[0.1818181818, 0.0147313913]], rtol=1e-6)
+
+
 def test_forward_matches_official_crazyflow():
     """Verify forward matches official crazyflow."""
     env = Environment(num_envs=3)

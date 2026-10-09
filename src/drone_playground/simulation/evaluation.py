@@ -144,6 +144,7 @@ def evaluate(
                 actor=actor,
                 parameters=parameters,
                 chunk_steps=config.benchmark.chunk_steps,
+                record_traces=config.benchmark.record_replay,
             )
             reports[scene] = save_evaluation(
                 directory / scene,

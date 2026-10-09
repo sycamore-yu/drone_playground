@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - navigation_lidar_scratch_safe
+learning:
+  options:
+    critic_uses_privileged: true

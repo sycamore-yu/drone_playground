@@ -55,7 +55,7 @@ def _sample(env, state, command):
 
 
 @lru_cache(maxsize=16)
-def _rollout_kernel(env, method, actor, chunk_steps):
+def _rollout_kernel(env, method, actor, chunk_steps, record_traces):
     def run(carry, parameters):
         def advance(carry, _):
             state, memory, integral = carry
@@ -70,7 +70,9 @@ def _rollout_kernel(env, method, actor, chunk_steps):
                 setpoint, integral = env.controller(state.physics, reference, integral)
                 command = setpoint.value
                 state = env.step_setpoint(state, setpoint)
-            return (state, memory, integral), _sample(env, state, command)
+            return (state, memory, integral), (
+                _sample(env, state, command) if record_traces else ()
+            )
 
         return jax.lax.scan(advance, carry, None, length=chunk_steps)
 
@@ -78,7 +80,14 @@ def _rollout_kernel(env, method, actor, chunk_steps):
 
 
 def rollout(
-    env, *, seed: int, method: str = "mellinger", actor=None, parameters=None, chunk_steps: int = 25
+    env,
+    *,
+    seed: int,
+    method: str = "mellinger",
+    actor=None,
+    parameters=None,
+    chunk_steps: int = 25,
+    record_traces: bool = True,
 ) -> tuple[list[dict], dict[str, np.ndarray]]:
     """Run one complete independent episode per world through the public Environment.
 
@@ -92,22 +101,28 @@ def rollout(
     state = env.reset(jax.random.PRNGKey(seed))
     memory = jnp.zeros((env.num_envs, 192))
     integral = jnp.zeros((env.num_envs, 3))
-    run_chunk = _rollout_kernel(env, method, actor, chunk_steps)
-    samples = [_sample(env, state, jnp.zeros((env.num_envs, 4)))]
-    samples = [{key: np.asarray(value)[None] for key, value in samples[0].items()}]
+    run_chunk = _rollout_kernel(env, method, actor, chunk_steps, record_traces)
+    samples = []
+    if record_traces:
+        initial = _sample(env, state, jnp.zeros((env.num_envs, 4)))
+        samples.append({key: np.asarray(value)[None] for key, value in initial.items()})
     carry = (state, memory, integral)
     started = time.monotonic()
     for _ in range(math.ceil((env.task.duration / env.dt + 1) / chunk_steps)):
         carry, chunk = run_chunk(carry, parameters)
-        chunk = jax.device_get(chunk)
-        samples.append(chunk)
+        if record_traces:
+            samples.append(jax.device_get(chunk))
         if np.all(np.asarray(carry[0].done)):
             break
     state = jax.device_get(carry[0])
     elapsed = time.monotonic() - started
     if not np.all(state.done):
         raise RuntimeError("Task deadline did not produce an episode event")
-    traces = {key: np.concatenate([sample[key] for sample in samples], 0) for key in samples[0]}
+    traces = (
+        {key: np.concatenate([sample[key] for sample in samples], 0) for key in samples[0]}
+        if record_traces
+        else {}
+    )
     episodes = []
     for index in range(env.num_envs):
         event = Event(int(state.task.event[index]))
@@ -149,7 +164,8 @@ def save_evaluation(
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     write_episodes(directory / "episodes.csv", episodes)
-    np.savez_compressed(directory / "trajectories.npz", **traces)
+    if traces:
+        np.savez_compressed(directory / "trajectories.npz", **traces)
     report = dict(report)
     report.update(
         task=env.task.name,

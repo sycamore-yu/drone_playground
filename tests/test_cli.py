@@ -156,6 +156,38 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     assert frozen["provenance"]["consecutive_passes"] == 3
 
 
+def test_checkpoint_evaluations_do_not_repeat_policy_serialization(config, training, monkeypatch):
+    """Keep crash recovery and C5 provenance with two state writes per evaluation."""
+    from collections import Counter
+
+    from drone_playground.learning import checkpoint
+
+    writes = Counter()
+    original_state, original_policy = checkpoint.save_state, checkpoint.save_inference
+
+    def state_writer(path, state, **kwargs):
+        writes[("state", state.updates)] += 1
+        return original_state(path, state, **kwargs)
+
+    def policy_writer(path, params, **kwargs):
+        writes[("policy", kwargs["provenance"]["updates"])] += 1
+        return original_policy(path, params, **kwargs)
+
+    monkeypatch.setattr(checkpoint, "save_state", state_writer)
+    monkeypatch.setattr(checkpoint, "save_inference", policy_writer)
+    config.learning.checkpoint_interval = 1
+    training.stop_at = None
+    cli.train(config, training.record)
+    assert writes[("state", 1)] <= 2
+    assert writes[("policy", 1)] == 1
+    assert sum(value for (purpose, _), value in writes.items() if purpose == "state") <= 7
+    assert sum(value for (purpose, _), value in writes.items() if purpose == "policy") <= 4
+    state, metadata = load_state(training.path, SmallState())
+    assert state.updates == 3
+    assert metadata["provenance"]["consecutive_passes"] == 3
+    assert metadata["provenance"]["training_wall_seconds"] == 18
+
+
 def test_resume_completes_pending_evaluation_before_training(config, training):
     """Retry a saved unevaluated update and retain the partial output."""
     save_state(
@@ -269,7 +301,10 @@ def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
         cli.train(config, Record(Path(config.output)))
 
 
-@pytest.mark.parametrize("field", ["dynamics", "drone", "physics_hz", "method_hz", "action_delay"])
+@pytest.mark.parametrize(
+    "field",
+    ["dynamics", "drone", "physics_hz", "method_hz", "action_delay", "navigation_goal_observation"],
+)
 def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch, field):
     """Verify frozen execution rejects changed physical contract."""
     metadata = {"config": {"experiment": OmegaConf.to_container(config, resolve=True)}}
@@ -277,6 +312,8 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
     config.checkpoint = "frozen.zip"
     if field == "action_delay":
         config.method.action_delay = 0.1
+    elif field == "navigation_goal_observation":
+        OmegaConf.update(config, "simulation.navigation_goal_observation", True, force_add=True)
     else:
         config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123
     record = Record(Path(config.output))

@@ -60,7 +60,11 @@ _DEFAULTS = {
     "weight_decay": 0.0,
     "task_weight": 1.0,
     "altitude_weight": 0.0,
+    "height_boundary_weight": 0.0,
     "failure_cost": 0.0,
+    "progress_reward_scale": 0.0,
+    "critic_uses_sensor": False,
+    "critic_uses_privileged": False,
     "perception_weight": 1.0,
     "velocity_aux_weight": 0.0,
     "perception_loss": {},
@@ -91,6 +95,19 @@ class Trainer:
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         if not isinstance(self.config["randomize_navigation_start"], bool):
             raise ValueError("randomize_navigation_start must be boolean")
+        if not isinstance(self.config["critic_uses_sensor"], bool):
+            raise ValueError("critic_uses_sensor must be boolean")
+        if self.config["critic_uses_sensor"] and (algorithm != "ppo" or kind == "state"):
+            raise ValueError("Sensor-aware critic requires Depth/LiDAR PPO")
+        if not isinstance(self.config["critic_uses_privileged"], bool):
+            raise ValueError("critic_uses_privileged must be boolean")
+        if self.config["critic_uses_privileged"]:
+            if algorithm != "ppo" or kind == "state" or env.task.name != "navigation":
+                raise ValueError("Privileged critic requires Depth/LiDAR Navigation PPO")
+            if self.config["critic_uses_sensor"]:
+                raise ValueError("Choose either sensor-aware or privileged critic")
+        if self.config["progress_reward_scale"] and env.task.name != "navigation":
+            raise ValueError("progress_reward_scale requires Navigation")
         self._reset_options = {}
         if self.config["randomize_navigation_start"]:
             if env.task.name != "navigation":
@@ -116,7 +133,9 @@ class Trainer:
             "weight_decay",
             "task_weight",
             "altitude_weight",
+            "height_boundary_weight",
             "failure_cost",
+            "progress_reward_scale",
             "perception_weight",
             "entropy_weight",
             "velocity_aux_weight",
@@ -127,12 +146,27 @@ class Trainer:
             raise ValueError("velocity_aux_weight requires the depth actor")
         if self.config["altitude_weight"] and kind == "state":
             raise ValueError("altitude_weight requires a Navigation actor")
+        if self.config["height_boundary_weight"] and kind == "state":
+            raise ValueError("height_boundary_weight requires a Navigation actor")
         if env.action_size != (4 if kind == "state" else 3):
             raise ValueError("Actor kind and environment action size disagree")
         if kind != "state" and env.task.name != "navigation":
             raise ValueError("Named perception recipes require Navigation")
-        self.actor, self.critic = Actor(kind=kind), Critic()
-        self._observe = env.observe
+        self.actor = Actor(kind=kind)
+        critic_kind = kind if self.config["critic_uses_sensor"] else "state"
+        self.critic = Critic(
+            kind="privileged" if self.config["critic_uses_privileged"] else critic_kind
+        )
+        self._observe = (
+            (
+                lambda state: {
+                    **env.observe(state),
+                    "privileged_state": env.observe_privileged(state),
+                }
+            )
+            if self.config["critic_uses_privileged"]
+            else env.observe
+        )
         recipe = zhang_loss if kind == "depth" else liu_loss
         defaults = {
             key: parameter.default
@@ -256,6 +290,10 @@ class Trainer:
         saved_config = dict(metadata["config"].get("learning", {}))
         saved_config.setdefault("randomize_navigation_start", False)
         saved_config.setdefault("failure_cost", 0.0)
+        saved_config.setdefault("progress_reward_scale", 0.0)
+        saved_config.setdefault("critic_uses_sensor", False)
+        saved_config.setdefault("critic_uses_privileged", False)
+        saved_config.setdefault("height_boundary_weight", 0.0)
         if saved_config != self.resolved_config:
             raise ValueError("Checkpoint learning configuration does not match this Trainer")
         return state, metadata
@@ -302,16 +340,39 @@ class Trainer:
         from drone_playground.simulation.tasks import Event
 
         task_cost = self.env.cost(before, after, action)
+        progress_reward = jnp.zeros_like(task_cost)
+        if self.config["progress_reward_scale"]:
+            goal = self.env.task.goal
+            previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
+            distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
+            progress_reward = self.config["progress_reward_scale"] * (previous_distance - distance)
+            progress_reward = jnp.where(before.done, 0.0, progress_reward)
+            task_cost -= progress_reward
         failure = after.done & (after.task.event != Event.SUCCESS) & ~before.done
         extra_failure_cost = self.config["failure_cost"] * failure
         task_cost += extra_failure_cost
+        height_boundary_cost = jnp.zeros_like(task_cost)
         if self.kind != "state":
             altitude_error = after.physics.states.pos[:, 0, 2] - self.env.task.goal[2]
             task_cost += self.config["altitude_weight"] * self.env.dt * altitude_error**2
+            if self.config["height_boundary_weight"]:
+                height = after.physics.states.pos[:, 0, 2]
+                edge_distance = jnp.minimum(
+                    height - self.env.task.low[2], self.env.task.high[2] - height
+                )
+                height_boundary_cost = (
+                    self.config["height_boundary_weight"]
+                    * self.env.dt
+                    * jax.nn.relu(1.0 - edge_distance) ** 2
+                )
+                height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
+                task_cost += height_boundary_cost
         cost = self.config["task_weight"] * task_cost
         terms = {
             "task_cost": task_cost,
             "failure_cost": extra_failure_cost,
+            "height_boundary_cost": height_boundary_cost,
+            "progress_reward": progress_reward,
             "perception_cost": jnp.zeros_like(cost),
         }
         if self.kind == "state":

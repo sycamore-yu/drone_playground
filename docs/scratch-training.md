@@ -25,11 +25,16 @@
 
 ```bash
 pixi run drone-playground -m mode=train experiment=navigation_depth_scratch_safe \
-  learning=ppo,shac seed=0,1,2 \
+  learning=shac seed=0,1,2 \
   'output=results/scratch_depth_reproduce_${learning.algorithm}_s${seed}'
+pixi run drone-playground -m mode=train experiment=navigation_depth_scratch_ppo_asymmetric \
+  learning=ppo seed=0,1,2 'output=results/scratch_depth_ppo_asymmetric_reproduce_s${seed}'
 pixi run drone-playground -m mode=train experiment=navigation_lidar_scratch_safe \
-  learning=ppo,apg,shac seed=0,1,2 \
+  learning=apg,shac seed=0,1,2 \
   'output=results/scratch_lidar_reproduce_${learning.algorithm}_s${seed}'
+pixi run drone-playground -m mode=train experiment=navigation_lidar_scratch_safe \
+  learning=ppo seed=0,1,2 '++learning.options.critic_uses_sensor=true' \
+  'output=results/scratch_lidar_sensor_critic_reproduce_s${seed}'
 ```
 
 继续已有运行时保持其保存的配置，增加 `resume=<运行目录>/checkpoints/latest.training.zip`。
@@ -40,7 +45,7 @@ pixi run drone-playground -m mode=train experiment=navigation_lidar_scratch_safe
 APG-Depth 基础配方种子 0 在第 160 次更新时，S03 为 11/25、D03 为 24/25，
 其余五个主场景为 25/25；第 320、480 次检查八场景均为 25/25。
 第 640 次检查再次通过，选择该权重；独立冻结八场景全部 25/25。
-该种子完成 2,621,440 次交互、640 次更新、2,988.22 s 活动墙钟时间。其余种子仍独立验收。
+该种子完成 2,621,440 次交互、640 次更新、2,988.22 s 活动墙钟时间。三种子的完整结果见后文。
 
 早期 PPO-Depth 在第 160、320 次检查八场景均未成功，主要为约 2 s 内高度下越界；
 LiDAR APG 的第 320 次 S01 轨迹主要在 z≈6 m 上越界，SHAC 在首次检查主要下越界。
@@ -73,6 +78,15 @@ APG-Depth 的三种子复现：
 pixi run drone-playground -m mode=train experiment=navigation_depth_scratch \
   learning=apg seed=0,1,2 'output=results/scratch_depth_apg_reproduce_s${seed}'
 ```
+
+种子 2 已按首次连续通过 160/320/480 选择第 480 次模型，独立冻结为 198/200：
+六个主场景全部 25/25，S06 为 25/25、D06 为 23/25。
+该种子保存路径的成本为 480 次更新、1,966,080 次交互、4,715.27 s。
+种子 1 已按 320/480/640 选择第 640 次模型，独立冻结为 198/200：
+六个主场景全部 25/25，S06 为 25/25、D06 为 23/25；
+保存路径成本为 640 次更新、2,621,440 次交互、5,510.78 s。
+APG-Depth 三个种子独立冻结合计 596/600，六个主场景合计 450/450。
+主机中断尝试未记录部分的成本边界见下方恢复说明。
 
 ## 旧仓库经验的当前核对
 
@@ -134,6 +148,69 @@ SHAC-LiDAR 第 320 次中断前主场景 S01/S02/S03/D01/D02/D03 为 25/25/20/25
 本次中断尝试的总成本只能报告下界，不能把缺失部分填为零。
 验证期间先并行三个 GPU 训练，后续并行度同时按主存与显存余量安排。
 
+Depth-PPO 基础 safe 配方在 480/800 次的 S01 为 15/25、25/25，
+但在 640/960 次再次回退；KL 最近多次为 0.035–0.060，裁剪比例约 25%–35%。
+第 800 次实际 Critic 值为 −173.1 至 3.4、均值 −131.4，见
+[值函数检查](../results/scratch_diagnostics/ppo-critic-scale.json)，
+没有发现此前怀疑的明显数值尺度问题。训练后的 raw action 噪声标准差约 0.04，未持续扩大。
+
+新增 `navigation_depth_scratch_ppo_stable`，只把 Actor `lr` 从 3e-4 降至 1e-4；
+其余 safe 配置与实际物理/验收规则相同。选定 Depth-PPO 种子 0/1/2
+改为 `results/scratch_stable_depth_ppo_s{seed}`，均重新随机初始化；
+旧 safe 运行和恢复检查点保留，不能把旧优化器状态导入新学习率运行。
+这一变化针对更新幅度，不声称已提高冻结质量；LiDAR-PPO 保留原学习率。
+
+第 640/800/960 次的 SHAC-LiDAR 固定初态复查见
+[后期诊断](../results/scratch_diagnostics/lidar-late-followup.json)：
+感知 RMS 为 1.563/1.492/1.403，状态 RMS 为 0.565/0.577/0.586，
+update 门大预激活比例为 6.3%/7.3%/7.3%，状态到动作 Jacobian 范数为 0.359/0.518/0.580。
+该初态没有复现感知特征持续放大；保持现有 PointNet 输入单位和初始化。
+第 640 次主场景全部 25/25，但 800 次 S03/D03 为 20/21，960 次 D03 为 20；
+动态障碍表现仍有波动，尚未满足连续三次全主场景通过。
+
+APG-LiDAR 种子 0 已按第 320/480/640 次连续通过选第 640 次模型，
+独立冻结为 198/200：S01/S02/S03/D01/D03/S06/D06 各 25/25，D02 为 23/25。
+保存路径成本为 640 次更新、1,310,720 次交互、7,746.68 s；
+六个主场景的独立冻结总数为 148/150，不能据单种子宣布三种子单元完成。
+
+LiDAR-PPO 基础 safe 配方在第 160/320/480/640/800 次八场景均为 0/25，
+最近 KL 约 0.01–0.017，更新幅度已不同于早期 Depth-PPO。
+按用户建议开始普通 PPO 的同观测独立 Critic 试验：只覆盖
+`learning.options.critic_uses_sensor=true`，Actor、学习率、奖励、采样和 Task 保持该基线配置。
+新选定路径为 `results/scratch_sensor_lidar_ppo_s{seed}`，三种子均随机初始化；
+`results/scratch_safe_lidar_ppo_s0` 的失败结果和恢复检查点保留。
+此试验不添加进度奖励、不使用仿真特权字段，也尚未证明质量提高。
+该试验第 640 次主场景为 2/150，第 800 次上升至 63/150：
+S01/S02/S03/D01/D02/D03 分别为 25/1/0/25/12/0；继续观察，尚未收敛。
+2026-10-09 用户进一步授权测试 DiffAero AsymmetricPPO。
+[训练专用特权 Critic](adr/0010-training-only-privileged-ppo-critic.md)已加入并通过五项定向回归，
+完整 CPU 回归 239 项通过；Depth 种子 0 已启动，LiDAR 特权配方尚未启动，
+不混同于本段的普通传感器 Critic 试验。
+
+Depth-PPO 低学习率基线第 160/320/480/640/800/960/1120 次八场景均未成功，
+近期 KL 约 0.012–0.022，降低更新幅度尚未带来冻结质量证据。
+新独立试验沿用该配置，只覆盖 `learning.options.progress_reward_scale=0.5`，
+每向目标接近 1 m 增加 0.5 reward；高度、净空、失败代价和 Critic 配置保留。
+该阶段选择 `results/scratch_progress_depth_ppo_s{seed}` 三个随机初始化运行；
+低学习率基线 `results/scratch_stable_depth_ppo_s0` 的检查点与失败分母保留。
+与 LiDAR 的感知 Critic 试验分别记录，不把两项同时变化归为单项效果。
+
+截至上述新一轮调参开始，18 次正式运行中已有 6 次通过：
+Depth APG 三种子，以及 Depth SHAC / LiDAR APG / LiDAR SHAC 各种子 0。
+Depth SHAC 种子 0 按 480/640/800 次连续通过选第 800 次，独立冻结 199/200，
+唯一失败位于 D03（24/25）。LiDAR SHAC 种子 0 按 1600/1760/1920 次连续通过选第 1920 次，
+独立冻结 200/200。两者的事件、完整评测和权重均保留在选定目录。
+
+Depth 进度奖励对照在 160/320/480 次检查均为 0/200，主动停止并以真实最新分数 0 记录为 pruned。
+选定 Depth-PPO 路径更新为 `results/scratch_asymmetric_depth_ppo_s{seed}`；
+新候选相对低学习率基线只增加特权 Critic，重新随机初始化，尚未证明改善质量。
+当前并行运行 LiDAR PPO 对照及 Depth SHAC / LiDAR APG / LiDAR SHAC 的种子 1；
+特权 Depth PPO 候选优先于其余种子 2 排队。CPU 验证期间最多五路 GPU 训练，验证结束后有足够 RAM 和显存时增到六路。
+GPU 整卡利用率已达 100%；并行量由实际资源决定，不能把进程数等同于吞吐量。
+optim-agent 0.1.1 的 ask/tell 使用 `.optim-agent-runs/ppo-depth.db` 和 `ppo-lidar.db`，
+候选的真实命令、逐次主场景分母和状态保存在同目录；独立工具环境位于 `tmp/optim-agent-venv/`。
+[执行计划](research/scratch-convergence-plan.md)记录优化目标、停止条件和未完成事项。
+
 ## 选定清单
 
 全矩阵报告保留此前已完成的 Tracking / Racing 六个单元；
@@ -170,15 +247,15 @@ SHAC-LiDAR 第 320 次中断前主场景 S01/S02/S03/D01/D02/D03 为 25/25/20/25
     "results/scratch_depth_apg_s0",
     "results/scratch_depth_apg_s1",
     "results/scratch_depth_apg_s2",
-    "results/scratch_safe_depth_ppo_s0",
-    "results/scratch_safe_depth_ppo_s1",
-    "results/scratch_safe_depth_ppo_s2",
+    "results/scratch_asymmetric_depth_ppo_s0",
+    "results/scratch_asymmetric_depth_ppo_s1",
+    "results/scratch_asymmetric_depth_ppo_s2",
     "results/scratch_safe_depth_shac_s0",
     "results/scratch_safe_depth_shac_s1",
     "results/scratch_safe_depth_shac_s2",
-    "results/scratch_safe_lidar_ppo_s0",
-    "results/scratch_safe_lidar_ppo_s1",
-    "results/scratch_safe_lidar_ppo_s2",
+    "results/scratch_sensor_lidar_ppo_s0",
+    "results/scratch_sensor_lidar_ppo_s1",
+    "results/scratch_sensor_lidar_ppo_s2",
     "results/scratch_safe_lidar_apg_s0",
     "results/scratch_safe_lidar_apg_s1",
     "results/scratch_safe_lidar_apg_s2",
