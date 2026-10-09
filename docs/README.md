@@ -23,6 +23,11 @@
 反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究
 证据，不再由当前加载器自动兼容。最近验证状态见[验证记录](validation.md)。
 
+2026-10-09 的数据清理移除了 `results/` 下 **75 个 v1 完整训练归档**（2.19 GiB）；
+**546 个冻结策略归档**、历史验收报告、轨迹与回放仍然保留。这些 v1 冻结策略只作
+来源审计，不能直接交给当前 v2 加载器。逐文件删除清单和 SHA-256 保存在本地忽略的
+`tmp/neat-freak/legacy-training-deleted-20261009.json`。不从该清单推导可恢复的训练参数。
+
 ## 设计原则
 
 [ADR-0001](adr/0001-simulation-learning-boundary.md) 记录 Simulation/Learning 的职责与
@@ -39,6 +44,8 @@ SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现�
 `.gitnexus/`，不是另一套权威手写文档。当前 Wiki 使用 CPA 的现有
 `http://127.0.0.1:8317/v1` 接口及既有凭据，模型为
 `deepseek/deepseek-v4.1-flash`。本机的私有启动脚本不会复制密钥到仓库。
+本轮 GitNexus 1.6.10 已成功生成 **24 页** Wiki，源提交为 `6f59782`；后续文档
+提交需按下列命令重新索引，才能使 Wiki 和 `main` HEAD 完全一致。
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"
