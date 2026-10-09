@@ -87,7 +87,21 @@ SO3；两种 MPC 和 `controller=ideal` 使用同一组合入口。Trajectory �
 
 ## 当前证据
 
-下述收敛和原生飞行成绩属于**旧版归档的历史证据**，不是当前 v2 代码重新运行的结果。
+### v0.2 从零训练矩阵
+
+本轮正式训练严格使用 `initial_checkpoint=null`：Actor、Critic、优化器均从各
+独立种子随机初始化，不加载旧版或参考权重。PPO、APG/BPTT、SHAC 覆盖
+Tracking、Racing、Navigation Depth、Navigation LiDAR，共 12 组训练／
+18 个静态与动态验收单元，每组三种子。DiffAero 和旧仓库只提供配置经验。
+
+一个管理入口 `tools/train_scratch_matrix.py` 负责 GPU 调度、真实收敛测量与
+失败后重新随机初始化试验；所有中间训练、日志、报告和重试参数都存放在
+Git 忽略的 `results/scratch_v02/`。`matrix.json` 是唯一的当前训练矩阵汇总，
+运行中的任务不得视为成功。失败尝试保留真实记录但不新增阶段性 Markdown。
+
+### 历史 v0.1 证据（不计入当前收敛）
+
+下述收敛和原生飞行成绩属于**旧版归档的历史证据**，不是当前 v0.2 从零训练的结果。
 旧 v1 训练状态和冻结权重不会由当前代码加载；保留历史报告和冻结权重的原始文件用于审计。
 现行验证与最新实现状态见[验证记录](docs/validation.md)。
 
@@ -102,8 +116,8 @@ Tracking、Racing、Depth/LiDAR Navigation 的三算法、三种子正式运行�
 Racing 和 Navigation 使用共同初始化的配方单独记录预训练来源及成本，
 详见 [实验调整](docs/experiments.md) 和 [吞吐验证](docs/performance.md)。
 Racing 的共同初始化由本项目 APG 从随机权重训练得到；Depth/LiDAR 的上述配方包含历史
-参考权重迁移。另已启动三算法、三种子的 [Depth/LiDAR 从零训练](docs/scratch-training.md)，
-其收敛状态单独报告。
+参考权重迁移。旧版 Depth/LiDAR 随机训练的阶段性记录保留在 Git 历史和
+`results/scratch_v02/archive/`，不再作为本轮训练的现行入口。
 LiDAR 扩展场景 D06 仍仅为 0–15/25；该场景按规格完整报告，不参与主场景门槛判定。
 
 EGO 与 SUPER 各完成 12 个静态、12 个动态回合，并通过 S6；失败完整保留。

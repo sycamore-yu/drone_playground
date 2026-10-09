@@ -43,7 +43,8 @@ Environment；`checkpoints/step-*/policy.zip` 保存独立推理所需的 Actor 
 
 初始平台的三算法验收、初始化实验及从零训练调查发生在 v1 状态结构下。
 历史指标、来源、失败与成本保存在 `results/acceptance/`、
-[从零训练记录](scratch-training.md) 和 Git 历史。它们不是当前代码已经重新训练通过的证据。
+历史阶段性从零训练记录保留在 Git 历史（原 `docs/scratch-training.md`）
+及本地 `results/scratch_v02/archive/`，不能当作本轮从零收敛的证据。
 
 本版本不接受旧 `.training.zip` 或 `.policy.zip`，也不提供旧权重转换与目录迁移命令。
 旧权重和报告保留为只读研究证据；开始新的实验须重新训练并单独记录成本。

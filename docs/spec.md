@@ -195,7 +195,7 @@ D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体�
 | **L6** | GPU 训练吞吐、训练成本、权重和恢复状态有完整记录                                  |
 
 
-Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。预训练模型可以用于研究对照、参数初始化或推理实验；其权重与数值结果存放在 [参考实验资产](../research/checkpoints/manifest.json) 中。
+Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。**v0.2 的 18 单元正式验收全部从随机网络参数训练**，不得用旧仓库、参考项目或历史 run 权重初始化。DiffAero、旧仓库和论文只用于参考奖励、网络、观测和超参数。现行矩阵结果由被 Git 忽略的 `results/scratch_v02/matrix.json` 汇总，历史验收数据不能替代。
 
 ## 9. 工具、配置与交付
 

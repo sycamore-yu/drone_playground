@@ -1,4 +1,6 @@
-# Acceptance evidence collector
+# Acceptance evidence collector (historical v0.1)
+
+此页记录 2026-10-08 历史验收，不能作为 v0.2 随机初始化矩阵的收敛证明。
 
 [Current 18-cell table](../results/acceptance/current.md) ·
 [Full evidence JSON](../results/acceptance/current.json) ·

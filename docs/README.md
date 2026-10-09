@@ -39,6 +39,14 @@ SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现�
 
 [训练接口](training.md)、[实验配方](experiments.md)、[原生方法](ros_planner.md)、[回放](replay.md)。
 
+## 阶段性实验记录
+
+版本控制只保留稳定的规格、ADR、可复现入口和正式研究结论。
+每轮参数尝试不新增 Markdown：失败模型、过程指标、日志、独立评测及来源
+统一归入被 Git 忽略的 `results/scratch_v02/`，由单一 `matrix.json` 汇总。
+临时诊断脚本与缓存放 `tmp/`；历史实验文档从当前索引退出，由 Git 历史保留。
+最终有独立冻结证据的结论才回填 README，且不会将历史权重的成绩归入从零收敛。
+
 ## 代码索引与 Wiki
 
 本机使用 GitNexus 1.6.10。GitNexus 的索引和生成的 Wiki 均在被 Git 忽略的
