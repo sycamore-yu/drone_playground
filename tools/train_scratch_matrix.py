@@ -228,6 +228,11 @@ def trial_status(path, running):
         if active:
             return "running"
         if status == "running":
+            state_archive = path / "checkpoints" / "latest.training.zip"
+            proposal = read_json(path / "proposal.json")
+            restarts = read_json(path / "restarts.json") or {}
+            if state_archive.is_file() and proposal is not None and restarts.get("attempts", 0) < 3:
+                return "recoverable"
             return "stale"
     if active:
         return "running"
@@ -277,9 +282,15 @@ def eligible(case, root, running, *, candidates):
             "stale",
         ):
             continue
-        if previous[0]["status"] in ("missing", "running"):
+        if previous[0]["status"] in ("missing", "running", "recoverable"):
             return (
-                ("launch" if previous[0]["status"] == "missing" else "waiting"),
+                (
+                    "launch"
+                    if previous[0]["status"] == "missing"
+                    else "resume"
+                    if previous[0]["status"] == "recoverable"
+                    else "waiting"
+                ),
                 variant,
                 0,
                 history,
@@ -293,7 +304,13 @@ def eligible(case, root, running, *, candidates):
         for seed in (1, 2):
             if previous[seed]["status"] != "accepted":
                 return (
-                    ("launch" if previous[seed]["status"] == "missing" else "waiting"),
+                    (
+                        "launch"
+                        if previous[seed]["status"] == "missing"
+                        else "resume"
+                        if previous[seed]["status"] == "recoverable"
+                        else "waiting"
+                    ),
                     variant,
                     seed,
                     history,
@@ -317,6 +334,22 @@ def resources():
     return {"gpu_free_mib": memory_mib, "gpu_percent": gpu_util, "ram_free_mib": available_ram}
 
 
+def tmux_launch(project, path, runner, session_name, *, append=False):
+    """Launch the configured original CLI without owning its training lifecycle."""
+    environment = (
+        "env SCIPY_ARRAY_API=1 XLA_PYTHON_CLIENT_PREALLOCATE=false "
+        "PYTHONPATH=src "
+        f"JAX_COMPILATION_CACHE_DIR={shlex.quote(str(project / '.cache' / 'jax'))} "
+    )
+    redirect = ">>" if append else ">"
+    script = (
+        f"cd {shlex.quote(str(project))} && "
+        f"{environment}{shlex.join(runner)} "
+        f"{redirect} {shlex.quote(str(path / 'console.log'))} 2>&1"
+    )
+    subprocess.run(["tmux", "new-session", "-d", "-s", session_name, script], check=True)
+
+
 def launch(project, root, python, case, variant, seed):
     """Run the original project CLI with explicit scratch initialization."""
     path = directory(root, case, variant, seed)
@@ -331,16 +364,6 @@ def launch(project, root, python, case, variant, seed):
     ):
         raise RuntimeError(f"Refusing to overwrite tmux session: {name}")
     runner = [str(python), "-m", "drone_playground.cli", *overrides_list]
-    environment = (
-        "env SCIPY_ARRAY_API=1 XLA_PYTHON_CLIENT_PREALLOCATE=false "
-        "PYTHONPATH=src "
-        f"JAX_COMPILATION_CACHE_DIR={shlex.quote(str(project / '.cache' / 'jax'))} "
-    )
-    script = (
-        f"cd {shlex.quote(str(project))} && "
-        f"{environment}{shlex.join(runner)} "
-        f"> {shlex.quote(str(path / 'console.log'))} 2>&1"
-    )
     (path / "proposal.json").write_text(
         json.dumps(
             {
@@ -356,7 +379,27 @@ def launch(project, root, python, case, variant, seed):
             indent=2,
         )
     )
-    subprocess.run(["tmux", "new-session", "-d", "-s", name, script], check=True)
+    tmux_launch(project, path, runner, name)
+    return name
+
+
+def resume(project, root, case, variant, seed):
+    """Restore only the same trial's complete own state after an abnormal stop."""
+    path = directory(root, case, variant, seed)
+    proposal = read_json(path / "proposal.json")
+    archive = path / "checkpoints" / "latest.training.zip"
+    if proposal is None or not archive.is_file() or proposal.get("initial_checkpoint") is not None:
+        raise RuntimeError(f"No valid scratch recovery state for {path}")
+    runner = list(proposal["command"])
+    if "resume=null" not in runner or "initial_checkpoint=null" not in runner:
+        raise RuntimeError(f"Refusing non-scratch resumption for {path}")
+    runner[runner.index("resume=null")] = f"resume={archive}"
+    restart_file = path / "restarts.json"
+    state = read_json(restart_file) or {"attempts": 0}
+    state["attempts"] += 1
+    atomic_json(restart_file, state)
+    name = f"dp-scr-{case.task[:2]}-{case.algorithm}-{seed}-{variant}-resume"
+    tmux_launch(project, path, runner, name, append=True)
     return name
 
 
@@ -437,10 +480,16 @@ def supervise(root, max_parallel, update_budget, candidates):
         ):
             for case in cases():
                 action, variant, seed, _ = eligible(case, root, running, candidates=candidates)
-                if action != "launch":
+                if action not in ("launch", "resume"):
                     continue
-                session = launch(project, root, python, case, variant, seed)
-                print(f"launched {session}: {case.key} seed={seed} trial={variant}", flush=True)
+                if action == "resume":
+                    session = resume(project, root, case, variant, seed)
+                else:
+                    session = launch(project, root, python, case, variant, seed)
+                print(
+                    f"{action} {session}: {case.key} seed={seed} trial={variant}",
+                    flush=True,
+                )
                 break
         time.sleep(20)
 
