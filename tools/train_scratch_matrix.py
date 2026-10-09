@@ -220,7 +220,18 @@ def trial_status(path, running):
     if report is not None:
         status = report.get("status", "unknown")
         if status == "accepted":
-            if report.get("benchmark_passed") is True and "initialization" not in report:
+            selection = report.get("selection", {})
+            try:
+                configured = (path / "config.yaml").read_text()
+            except OSError:
+                configured = ""
+            fresh = re.search(r"^initial_checkpoint:\s*null\s*$", configured, re.MULTILINE)
+            if (
+                report.get("benchmark_passed") is True
+                and selection.get("consecutive_passes", 0) >= 3
+                and fresh is not None
+                and "initialization" not in report
+            ):
                 return "accepted"
             return "invalid"
         if status in {"failed", "interrupted", "frozen_benchmark_failed"}:
@@ -251,13 +262,20 @@ def best_evaluation_score(path):
         scene_reports = report.get("reports", {})
         if not isinstance(scene_reports, dict):
             continue
-        rates = [
-            float(result["success_rate"])
-            for scene, result in scene_reports.items()
-            if scene in ("empty", "racing", "S01", "S02", "S03", "D01", "D02", "D03")
-            and isinstance(result, dict)
-            and isinstance(result.get("success_rate"), (float, int))
-        ]
+        rates = []
+        for scene, result in scene_reports.items():
+            if scene not in ("empty", "racing", "S01", "S02", "S03", "D01", "D02", "D03"):
+                continue
+            if not isinstance(result, dict):
+                continue
+            success_rate = result.get("success_rate")
+            if not isinstance(success_rate, (float, int)):
+                continue
+            score = float(success_rate)
+            if scene == "empty":
+                rmse = result.get("successful_position_rmse")
+                score *= min(1.0, 0.25 / rmse) if isinstance(rmse, (float, int)) and rmse > 0 else 0
+            rates.append(score)
         if rates:
             values.append(sum(rates) / len(rates))
     return max(values) if values else None
@@ -417,14 +435,25 @@ def report(root, running, candidates):
                 "variants": history,
             }
         )
+    cells = []
+    for row in rows:
+        if row["cell"].startswith(("depth_", "lidar_")):
+            cells.extend(
+                {"cell": f"{row['cell']}_{kind}", "outcome": row["outcome"]}
+                for kind in ("static", "dynamic")
+            )
+        else:
+            cells.append({"cell": row["cell"], "outcome": row["outcome"]})
     return {
         "source": "random_initialization_only",
-        "matrix_cells": 18,
+        "matrix_cells": len(cells),
         "train_families": 12,
         "required_seeds": [0, 1, 2],
         "active_runs": list(running),
         "families_accepted": sum(row["outcome"] == "accepted" for row in rows),
         "families_unresolved": sum(row["outcome"] == "unresolved" for row in rows),
+        "accepted_cells": sum(cell["outcome"] == "accepted" for cell in cells),
+        "cells": cells,
         "rows": rows,
     }
 
