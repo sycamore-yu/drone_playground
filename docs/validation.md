@@ -9,9 +9,10 @@
 当前支持范围内。逐文件 SHA-256、路径、大小及来源状态保存于忽略目录
 `tmp/neat-freak/legacy-training-deleted-20261009.json`，清单不能恢复已删除的参数。
 
-GitNexus 索引与 Wiki 已在旧提交 `6f59782` 上核对一致，以
-`deepseek/deepseek-v4.1-flash` 完成 24 页生成。更新后的 Wiki 源提交需另行核实，
-不能将生成式文档当成未经测试的实现证据。原 Brax 工作树还有未提交代码，未清场。
+GitNexus 索引与 Wiki 经增量刷新，以 `deepseek/deepseek-v4.1-flash` 完成 24 页生成。
+Wiki 的来源提交应与 `main` 的 HEAD、知识图谱索引一致；完成状态以
+`.gitnexus/wiki/meta.json` 及命令退出码为准。生成式文档不作为未经测试的实现证据。
+原 Brax 工作树仍有未提交代码，未清场。
 
 ## 主分支合并检查：2026-10-09
 

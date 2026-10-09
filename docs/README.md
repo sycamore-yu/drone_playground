@@ -44,8 +44,9 @@ SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现�
 `.gitnexus/`，不是另一套权威手写文档。当前 Wiki 使用 CPA 的现有
 `http://127.0.0.1:8317/v1` 接口及既有凭据，模型为
 `deepseek/deepseek-v4.1-flash`。本机的私有启动脚本不会复制密钥到仓库。
-本轮 GitNexus 1.6.10 已成功生成 **24 页** Wiki，源提交为 `6f59782`；后续文档
-提交需按下列命令重新索引，才能使 Wiki 和 `main` HEAD 完全一致。
+本轮 GitNexus 1.6.10 已成功生成 **24 页** Wiki。每次代码或文档提交后使用下面的
+命令增量刷新，并核对 `.gitnexus/meta.json.lastCommit`、
+`.gitnexus/wiki/meta.json.fromCommit` 与 `git rev-parse HEAD` 一致；不在此处手写提交号。
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"
