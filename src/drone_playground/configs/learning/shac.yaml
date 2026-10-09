@@ -1,0 +1,26 @@
+algorithm: shac
+options:
+  horizon: 32
+  lr: 0.0003
+  critic_lr: 0.001
+  gamma: 0.99
+  gae_lambda: 0.95
+  ppo_epochs: 4
+  minibatches: 4
+  critic_epochs: 4
+  clip_epsilon: 0.2
+  entropy_weight: 0.0
+  max_grad_norm: 1.0
+  target_alpha: 0.995
+  temporal_gradient_alpha: 0.0
+  initial_log_std: -1.5
+  weight_decay: 0.0
+  task_weight: 1.0
+  perception_weight: 1.0
+  velocity_aux_weight: 0.0
+  perception_loss: {}
+checkpoint_interval: 100
+evaluation_interval: 200
+log_interval: 10
+required_consecutive_passes: 3
+selection: last_of_first_three_consecutive_passes

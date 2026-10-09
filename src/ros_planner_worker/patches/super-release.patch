@@ -1,0 +1,23 @@
+--- a/super_planner/include/path_search/astar.h
++++ b/super_planner/include/path_search/astar.h
+@@ -140,7 +140,9 @@
+               const ros_interface::RosInterface::Ptr &ros_ptr,
+               rog_map::ROGMapROS::Ptr rm);
+ 
+-        ~Astar() {};
++        ~Astar() {
++            for (auto node : grid_node_buffer_) delete node;
++        };
+ 
+         typedef std::shared_ptr<Astar> Ptr;
+ 
+--- a/super_planner/src/super_core/astar.cpp
++++ b/super_planner/src/super_core/astar.cpp
+@@ -386,6 +386,7 @@
+                     node_path.push_back(temp_ptr);
+                 }
+                 ConvertNodePathToPointPath(node_path, out_path);
++                if (start_pt_out_local_map) delete node_path.back();
+                 return REACH_GOAL;
+             }
+ 

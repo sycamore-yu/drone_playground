@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - override /task: racing
+  - override /scene: racing
+  - override /sensor: state
+  - override /method: policy
+simulation:
+  method_hz: 50
+  num_envs: 256

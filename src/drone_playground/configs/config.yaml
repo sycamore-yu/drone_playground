@@ -1,0 +1,29 @@
+defaults:
+  - task: tracking
+  - scene: empty
+  - sensor: state
+  - method: mellinger
+  - learning: apg
+  - benchmark: default
+  - _self_
+  - optional experiment: null
+
+mode: sim
+seed: 0
+output: results/${now:%Y%m%d_%H%M%S}_${mode}_${task.name}_${sensor.name}_${learning.algorithm}_s${seed}
+simulation:
+  device: gpu
+  dynamics: first_principles
+  drone: cf21B_500
+  physics_hz: 500
+  method_hz: 50
+  num_envs: 1
+checkpoint: null
+initial_checkpoint: null
+resume: null
+replay_path: null
+hydra:
+  run:
+    dir: ${output}
+  job:
+    chdir: false

@@ -1,0 +1,5 @@
+name: ego
+address: 127.0.0.1:50051
+timeout: 10.0
+replan_hz: 2.5
+action_delay: 0.0

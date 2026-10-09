@@ -1,0 +1,17 @@
+--- a/src/planner/plan_env/include/plan_env/grid_map.h
++++ b/src/planner/plan_env/include/plan_env/grid_map.h
+@@ -188,6 +188,14 @@
+ 
+   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+ 
++  // Synchronous RPC ingress uses the same upstream ROS cloud callback.
++  void ingestCloud(const nav_msgs::OdometryConstPtr& odom,
++                   const sensor_msgs::PointCloud2ConstPtr& cloud) {
++    resetBuffer();
++    odomCallback(odom);
++    cloudCallback(cloud);
++  }
++
+ private:
+   MappingParameters mp_;
+   MappingData md_;

@@ -1,0 +1,37 @@
+--- a/rog_map/include/rog_map/prob_map.h
++++ b/rog_map/include/rog_map/prob_map.h
+@@ -108,6 +108,7 @@
+         std::vector<float> occupancy_buffer_;
+ 
+         bool map_empty_{true};
++        bool first_update_{true};
+         struct RaycastData {
+             raycaster::RayCaster raycaster;
+             std::queue<Vec3i> update_cache_id_g;
+--- a/rog_map/src/rog_map/prob_map.cpp
++++ b/rog_map/src/rog_map/prob_map.cpp
+@@ -26,11 +26,9 @@
+ using namespace super_utils;
+ 
+ void ProbMap::initProbMap() {
+-    static bool init_once{false};
+-    if (init_once) {
++    if (!occupancy_buffer_.empty()) {
+         throw std::runtime_error(" -- [ROGMap] ProbMap can only init once.");
+     }
+-    init_once = true;
+     initSlidingMap(cfg_.half_map_size_i, cfg_.resolution,
+                    cfg_.map_sliding_en, cfg_.map_sliding_thresh,
+                    cfg_.fix_map_origin);
+@@ -356,9 +354,8 @@
+     }
+ 
+     /* For the first frame, clear all unknown around the robot */
+-    static bool first = true;
+-    if (first) {
+-        first = false;
++    if (first_update_) {
++        first_update_ = false;
+         for (double dx = -cfg_.raycast_range_min; dx <= cfg_.raycast_range_min; dx += cfg_.resolution) {
+             for (double dy = -cfg_.raycast_range_min; dy <= cfg_.raycast_range_min; dy += cfg_.resolution) {
+                 for (double dz = -cfg_.raycast_range_min; dz <= cfg_.raycast_range_min; dz += cfg_.resolution) {

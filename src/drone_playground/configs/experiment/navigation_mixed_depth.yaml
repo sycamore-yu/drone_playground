@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - override /task: navigation
+  - override /scene: S01
+  - override /sensor: depth
+  - override /method: policy
+simulation:
+  method_hz: 10
+  num_envs: 128
+initial_checkpoint: null
+learning:
+  scenes: [S01, S02, S03, D01, D02, D03, S06, D06]
+  scene_updates: 20
+  options:
+    randomize_navigation_start: true
+    horizon: 32
+    lr: 0.0003
+    temporal_gradient_alpha: 0.916290731874155

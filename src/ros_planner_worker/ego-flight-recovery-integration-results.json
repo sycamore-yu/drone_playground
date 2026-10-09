@@ -1,0 +1,89 @@
+{
+  "recorded_utc": "2026-10-08T16:40:57.989036+00:00",
+  "build_command": "docker build --build-arg BUILD_JOBS=4 -t drone-playground-native:clean-noetic -t drone-playground-native:noetic native",
+  "image_id": "sha256:77376660dd85c6cf667d600fd07433f8d069161cb26966c971519cdf11d008d4",
+  "image_tags": [
+    "drone-playground-native:clean-noetic",
+    "drone-playground-native:noetic"
+  ],
+  "source_sha256": {
+    "native/src/ego.cpp": "891ef5aff71fcce27aacb0a61760cc287ed5c6d20e7f1aa5b6f5b404cb0319ab",
+    "native/src/service.cpp": "9544d63a9b0c0be39ed1fa98fbba215df6dfc23cf063f3cf65d6b95fa4eae375",
+    "native/integration.py": "519d21dec4d3e34994a663bebe03c1d5c5fd980eb8af4a88b82900b8d604290d"
+  },
+  "integration_command": "pixi run --frozen python native/integration.py --address 127.0.0.1:50065 --planner both",
+  "integration_results": [
+    {
+      "planner": "ego",
+      "upstream_commit": "bfda51284c8c1b476043255a8145ef925a3778a5",
+      "samples": 47,
+      "duration": 2.2980091860000003,
+      "clear_timings": {
+        "mapping_ms": 12.763117,
+        "solve_ms": 0.631056,
+        "total_ms": 17.21112
+      },
+      "replan_timings": {
+        "mapping_ms": 17.150543,
+        "solve_ms": 0.826892,
+        "total_ms": 20.756012
+      },
+      "obstacle_timings": {
+        "mapping_ms": 16.90493,
+        "solve_ms": 4.158181,
+        "total_ms": 25.519498
+      },
+      "depth_timings": {
+        "mapping_ms": 4.787557,
+        "solve_ms": 0.845328,
+        "total_ms": 6.139177
+      },
+      "obstacle_lateral_excursion": 0.8930579575774611,
+      "empty_samples": 47,
+      "empty_depth_samples": 47,
+      "recovery_samples": 62,
+      "shortened_goal": [
+        6.597733077991051,
+        0.0,
+        2.0
+      ]
+    },
+    {
+      "planner": "super",
+      "upstream_commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
+      "samples": 59,
+      "duration": 2.8997844980000003,
+      "clear_timings": {
+        "mapping_ms": 62.348892,
+        "solve_ms": 3.740802,
+        "total_ms": 69.912104
+      },
+      "replan_timings": {
+        "mapping_ms": 42.846345,
+        "solve_ms": 2.272186,
+        "total_ms": 48.57076
+      },
+      "obstacle_timings": {
+        "mapping_ms": 77.178931,
+        "solve_ms": 26.444828,
+        "total_ms": 105.838554
+      },
+      "depth_timings": {
+        "mapping_ms": 30.609207,
+        "solve_ms": 3.523309,
+        "total_ms": 34.440295
+      },
+      "obstacle_lateral_excursion": 1.8671724013268256
+    }
+  ],
+  "regression_before": "tmp/agents/ego-moving-fixtures-before.jsonl: obstacle_x=4.0, velocity=(2.4,0.3,0.08) returned NO_SOLUTION without upstream recovery",
+  "regression_worker_log": "tmp/agents/ego-recovery-fixture-worker.log: failed first native optimization followed by successful native randomized initialization",
+  "client_tests": {
+    "command": "pixi run --frozen python -m pytest -q tests/test_native.py",
+    "passed": 9
+  },
+  "ruff": "passed",
+  "build_log": "tmp/agents/ego-recovery-clean-build.log",
+  "flight_results": "results/ego_S6_acceptance_s0",
+  "runtime": "Frozen project Pixi Python 3.12.15, JAX 0.11.2 CUDA"
+}

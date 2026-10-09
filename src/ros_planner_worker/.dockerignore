@@ -1,0 +1,7 @@
+*
+!CMakeLists.txt
+!proto/**
+!src/**
+!config/**
+!patches/**
+!scripts/entrypoint.sh

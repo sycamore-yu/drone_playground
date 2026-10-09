@@ -1,0 +1,359 @@
+{
+  "baseline": "results/selected/v1-18-cells.json",
+  "source_commit": "69b1c39",
+  "retrained": false,
+  "formal_expected_episodes": 2600,
+  "formal_actual_episodes": 2600,
+  "completed_weights": 22,
+  "expected_weights": 22,
+  "all_formal_runs_executed": true,
+  "results": [
+    {
+      "cell": "01-ppo-tracking",
+      "seed": 0,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.09720106934525932,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0/weights/step-0000524288.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/ppo/formal-01-ppo-tracking-s0-r1/eval/report.json"
+    },
+    {
+      "cell": "01-ppo-tracking",
+      "seed": 1,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.10730447107543775,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1/weights/step-0000524288.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/ppo/formal-01-ppo-tracking-s1-r1/eval/report.json"
+    },
+    {
+      "cell": "01-ppo-tracking",
+      "seed": 2,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.12408731559157465,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2/weights/step-0000524288.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/ppo/formal-01-ppo-tracking-s2-r1/eval/report.json"
+    },
+    {
+      "cell": "02-ppo-racing",
+      "seed": 10,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10/weights/step-0001572864.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/ppo/formal-02-ppo-racing-s10-r1/eval/report.json"
+    },
+    {
+      "cell": "02-ppo-racing",
+      "seed": 11,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11/weights/step-0002097152.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/ppo/formal-02-ppo-racing-s11-r1/eval/report.json"
+    },
+    {
+      "cell": "02-ppo-racing",
+      "seed": 12,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12/weights/step-0001572864.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/ppo/formal-02-ppo-racing-s12-r1/eval/report.json"
+    },
+    {
+      "cell": "03-shac-tracking",
+      "seed": 0,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.07243119230766851,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/shac/formal-03-shac-tracking-s0-r1/eval/report.json"
+    },
+    {
+      "cell": "03-shac-tracking",
+      "seed": 1,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.11608792027938401,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/shac/formal-03-shac-tracking-s1-r1/eval/report.json"
+    },
+    {
+      "cell": "03-shac-tracking",
+      "seed": 2,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.14838618594172787,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/shac/formal-03-shac-tracking-s2-r1/eval/report.json"
+    },
+    {
+      "cell": "04-shac-racing",
+      "seed": 30,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30/weights/step-0001024000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/shac/formal-04-shac-racing-s30-r1/eval/report.json"
+    },
+    {
+      "cell": "04-shac-racing",
+      "seed": 31,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/shac/formal-04-shac-racing-s31-r1/eval/report.json"
+    },
+    {
+      "cell": "04-shac-racing",
+      "seed": 32,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32/weights/step-0001024000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/shac/formal-04-shac-racing-s32-r1/eval/report.json"
+    },
+    {
+      "cell": "05-bptt-tracking",
+      "seed": 0,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.03898648693606058,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/bptt/formal-05-bptt-tracking-s0-r1/eval/report.json"
+    },
+    {
+      "cell": "05-bptt-tracking",
+      "seed": 1,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.03654181635472735,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/bptt/formal-05-bptt-tracking-s1-r1/eval/report.json"
+    },
+    {
+      "cell": "05-bptt-tracking",
+      "seed": 2,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": 0.03362687776882176,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/tracking/bptt/formal-05-bptt-tracking-s2-r1/eval/report.json"
+    },
+    {
+      "cell": "06-bptt-racing",
+      "seed": 0,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/bptt/formal-06-bptt-racing-s0-r1/eval/report.json"
+    },
+    {
+      "cell": "06-bptt-racing",
+      "seed": 1,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/bptt/formal-06-bptt-racing-s1-r1/eval/report.json"
+    },
+    {
+      "cell": "06-bptt-racing",
+      "seed": 2,
+      "trials": 100,
+      "passed": true,
+      "completion_rate": 1.0,
+      "rmse_completed_mean": null,
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2/weights/step-0000512000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/racing/bptt/formal-06-bptt-racing-s2-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-static",
+      "seed": 30,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "S01": 24,
+        "S02": 25,
+        "S03": 24,
+        "S06": 5
+      },
+      "totals": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/weights/update-0000250.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s30-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-dynamic",
+      "seed": 30,
+      "trials": 100,
+      "passed": false,
+      "counts": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 22,
+        "D06": 13
+      },
+      "totals": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/weights/update-0000250.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s30-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-static",
+      "seed": 31,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 20
+      },
+      "totals": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/weights/update-0000625.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s31-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-dynamic",
+      "seed": 31,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "totals": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/weights/update-0000625.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s31-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-static",
+      "seed": 32,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 25
+      },
+      "totals": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/weights/update-0000875.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s32-r1/eval/report.json"
+    },
+    {
+      "cell": "depth-dynamic",
+      "seed": 32,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "totals": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/weights/update-0000875.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/depth_flight_navigation_adaptation/formal-depth-navigation-s32-r1/eval/report.json"
+    },
+    {
+      "cell": "pointcloud-static",
+      "seed": 0,
+      "trials": 100,
+      "passed": true,
+      "counts": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 9
+      },
+      "totals": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "S06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/weights/update-0003000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/differentiable_pointcloud/formal-pointcloud-navigation-s0-r2/eval/report.json"
+    },
+    {
+      "cell": "pointcloud-dynamic",
+      "seed": 0,
+      "trials": 100,
+      "passed": false,
+      "counts": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 13,
+        "D06": 19
+      },
+      "totals": {
+        "D01": 25,
+        "D02": 25,
+        "D03": 25,
+        "D06": 25
+      },
+      "source": "/home/tong/tongworkspace/simulation_dev/drone_playground/results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/weights/update-0003000.pkl",
+      "report": "/home/tong/tongworkspace/simulation_dev/drone_playground/tmp/matrix18/output/results/runs/navigation/differentiable_pointcloud/formal-pointcloud-navigation-s0-r2/eval/report.json"
+    }
+  ],
+  "pointcloud_confirmation": "Only seed 0 was present; three-seed confirmation cannot be reported.",
+  "nonlearning_quality_required": false,
+  "execution_note": "PointCloud required batch_size=25 after full-batch GPU memory exhaustion; all 200 cases, seeds, network and sensor inputs are unchanged.",
+  "nonlearning_execution_evidence": [
+    "tmp/matrix18-refactor-smoke/eval-mpc-summary.json",
+    "tmp/matrix18-refactor-smoke/eval-native-r2-summary.json"
+  ]
+}

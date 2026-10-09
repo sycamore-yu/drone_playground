@@ -1,0 +1,7 @@
+--- a/src/planner/bspline_opt/src/bspline_optimizer.cpp
++++ b/src/planner/bspline_opt/src/bspline_optimizer.cpp
+@@ -1,4 +1,3 @@
+ #include "bspline_opt/bspline_optimizer.h"
+-#include "bspline_opt/gradient_descent_optimizer.h"
+ // using namespace std;
+ 

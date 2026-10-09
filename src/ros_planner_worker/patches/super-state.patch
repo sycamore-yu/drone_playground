@@ -1,0 +1,12 @@
+--- a/super_planner/src/super_core/super_planner.cpp
++++ b/super_planner/src/super_core/super_planner.cpp
+@@ -407,6 +407,8 @@
+             // just skip the first part of the guide trajectory
+             pos_init_state.setZero();
+-            pos_init_state.col(0) = local_start_p_;
++            pos_init_state.col(0) = robot_state_.p;
++            pos_init_state.col(1) = robot_state_.v;
++            pos_init_state.col(2) = robot_state_.a;
+             replan_process_start_TT = -1;
+             replan_state_TT = -1;
+         } else {

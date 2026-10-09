@@ -1,0 +1,17 @@
+# @package _global_
+defaults:
+  - override /task: racing
+  - override /scene: racing
+  - override /sensor: state
+  - override /method: policy
+initial_checkpoint: ???
+simulation:
+  num_envs: 1024
+learning:
+  options:
+    horizon: 64
+    lr: 0.0001
+    temporal_gradient_alpha: 0.4
+    initial_log_std: -3.0
+  evaluation_interval: 100
+  checkpoint_interval: 50

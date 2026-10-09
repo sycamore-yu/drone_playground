@@ -1,0 +1,7 @@
+# @package _global_
+defaults:
+  - navigation_lidar_scratch
+learning:
+  options:
+    failure_cost: 160.0
+    initial_log_std: -3.0

@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - override /task: navigation
+  - override /scene: S01
+  - override /sensor: lidar
+  - override /method: policy
+simulation:
+  method_hz: 10
+  num_envs: 32

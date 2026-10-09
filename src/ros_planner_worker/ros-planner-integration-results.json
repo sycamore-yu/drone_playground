@@ -1,0 +1,75 @@
+{
+  "verified_unix": 1791514900.3557794,
+  "rpc_service": "drone_playground.ros_planner.v1.RosPlanner",
+  "worker_image": "sha256:67318275c5d54c2976b3d773cef559f82e898cd55bcfe4da6ba2d786b0e51039",
+  "results": [
+    {
+      "planner": "ego",
+      "upstream_commit": "bfda51284c8c1b476043255a8145ef925a3778a5",
+      "samples": 47,
+      "duration": 2.2980091860000003,
+      "clear_timings": {
+        "mapping_ms": 12.418553,
+        "solve_ms": 0.577519,
+        "total_ms": 16.34854
+      },
+      "replan_timings": {
+        "mapping_ms": 15.805441,
+        "solve_ms": 0.764245,
+        "total_ms": 19.569957
+      },
+      "obstacle_timings": {
+        "mapping_ms": 13.17561,
+        "solve_ms": 2.733842,
+        "total_ms": 18.615613
+      },
+      "depth_timings": {
+        "mapping_ms": 7.628957,
+        "solve_ms": 1.008294,
+        "total_ms": 8.848171
+      },
+      "obstacle_lateral_excursion": 0.8930579575774611,
+      "empty_samples": 47,
+      "empty_depth_samples": 47,
+      "recovery_samples": 62,
+      "shortened_goal": [
+        6.597733077991051,
+        0.0,
+        2.0
+      ]
+    },
+    {
+      "planner": "super",
+      "upstream_commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
+      "samples": 59,
+      "duration": 2.8997844980000003,
+      "clear_timings": {
+        "mapping_ms": 88.956467,
+        "solve_ms": 3.960044,
+        "total_ms": 95.156456
+      },
+      "replan_timings": {
+        "mapping_ms": 43.154779,
+        "solve_ms": 2.178603,
+        "total_ms": 48.320043
+      },
+      "obstacle_timings": {
+        "mapping_ms": 98.818432,
+        "solve_ms": 34.039679,
+        "total_ms": 134.724386
+      },
+      "depth_timings": {
+        "mapping_ms": 32.472432,
+        "solve_ms": 5.462075,
+        "total_ms": 38.121358
+      },
+      "obstacle_lateral_excursion": 1.8671724013268256
+    }
+  ],
+  "sources": {
+    "src/ros_planner_worker/integration.py": "3ff31cb897ab882418b0eb41459b263def8cc24e8d247739ef7cd5535cded839",
+    "src/drone_playground/simulation/ros_planner/client.py": "5a43d1f452207d1f8703b34980929f4c403018a120e2f7f367bcacc995cad39b",
+    "src/ros_planner_worker/proto/drone_playground/simulation/ros_planner/planner.proto": "5c1e568b70c1ac6147c433092e5f308904b1ebcdfda4bfa1d696e2f71b819b57"
+  },
+  "scope": "Real C++ solves, obstacle response, PVA consistency, reset/replanning, depth/cloud input and rejection/recovery; separate from S6 flight acceptance."
+}

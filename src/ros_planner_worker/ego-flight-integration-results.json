@@ -1,0 +1,85 @@
+{
+  "recorded_utc": "2026-10-08T16:16:51.194120+00:00",
+  "build_command": "docker build --build-arg BUILD_JOBS=2 -t drone-playground-native:clean-noetic -t drone-playground-native:noetic native",
+  "image_id": "sha256:dc323f39706114e02bcc53cb2974fe42896f93ec7f8edd7531dfadeb5b5a65ec",
+  "image_tags": [
+    "drone-playground-native:clean-noetic",
+    "drone-playground-native:noetic"
+  ],
+  "upstream_sources": "Pinned clean Dockerfile build copies; reference directories unmodified",
+  "source_sha256": {
+    "native/src/ego.cpp": "e49005fddf2cad0a1358ebb1d529d870a07688440110fccefa9869454f6a5ce4",
+    "native/src/service.cpp": "9544d63a9b0c0be39ed1fa98fbba215df6dfc23cf063f3cf65d6b95fa4eae375",
+    "native/integration.py": "9d7c96bee5924313ba4eaa08548b277c540e4edd1602747aaac04a7fdd4bde88"
+  },
+  "integration_command": "native/.venv/bin/python native/integration.py --address 127.0.0.1:50063 --planner both",
+  "integration_results": [
+    {
+      "planner": "ego",
+      "upstream_commit": "bfda51284c8c1b476043255a8145ef925a3778a5",
+      "samples": 47,
+      "duration": 2.2980091860000003,
+      "clear_timings": {
+        "mapping_ms": 12.355416,
+        "solve_ms": 0.775754,
+        "total_ms": 16.551089
+      },
+      "replan_timings": {
+        "mapping_ms": 11.543275,
+        "solve_ms": 0.690434,
+        "total_ms": 15.812346
+      },
+      "obstacle_timings": {
+        "mapping_ms": 10.340517,
+        "solve_ms": 2.125385,
+        "total_ms": 15.945688
+      },
+      "depth_timings": {
+        "mapping_ms": 5.036592,
+        "solve_ms": 0.569109,
+        "total_ms": 6.063611
+      },
+      "obstacle_lateral_excursion": 0.8930579575774611,
+      "empty_samples": 47,
+      "empty_depth_samples": 47,
+      "shortened_goal": [
+        6.597733077991051,
+        0.0,
+        2.0
+      ]
+    },
+    {
+      "planner": "super",
+      "upstream_commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
+      "samples": 59,
+      "duration": 2.8997844980000003,
+      "clear_timings": {
+        "mapping_ms": 64.46147,
+        "solve_ms": 6.534888,
+        "total_ms": 73.296882
+      },
+      "replan_timings": {
+        "mapping_ms": 54.624317,
+        "solve_ms": 2.191428,
+        "total_ms": 58.899875
+      },
+      "obstacle_timings": {
+        "mapping_ms": 61.71169,
+        "solve_ms": 26.457312,
+        "total_ms": 91.488079
+      },
+      "depth_timings": {
+        "mapping_ms": 24.288597,
+        "solve_ms": 3.505662,
+        "total_ms": 27.980442
+      },
+      "obstacle_lateral_excursion": 1.8671724013268256
+    }
+  ],
+  "client_tests": {
+    "command": "PYTHONPATH=src native/.venv/bin/python -m pytest -q tests/test_native.py",
+    "passed": 9
+  },
+  "flight_worker": "dp-flight-ego port 50061: rebuilt ego.cpp/service.cpp matching clean image SHA256; full suite in results/ego_S6_s0",
+  "build_log": "tmp/agents/ego-clean-build.log"
+}

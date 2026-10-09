@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - navigation_mixed_lidar
+initial_checkpoint: null
+simulation:
+  num_envs: 64
+learning:
+  options:
+    altitude_weight: 1.0
+    perception_loss:
+      clearance_margin: 2.0
+      collision_weight: 8.0
+      minimum_approach_speed: 1.0
+  evaluation_interval: 160
+  checkpoint_interval: 80

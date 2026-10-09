@@ -1,0 +1,74 @@
+syntax = "proto3";
+package drone_playground.ros_planner.v1;
+
+// SI units; world is right-handed ENU, body is FLU. All times are simulation ns.
+service RosPlanner {
+  rpc Initialize(InitializeRequest) returns (Session);
+  rpc Reset(Session) returns (Session);
+  rpc Decide(DecideRequest) returns (Decision);
+  rpc Close(Session) returns (Closed);
+}
+message Vec3 { double x = 1; double y = 2; double z = 3; }
+message Quaternion { double w = 1; double x = 2; double y = 3; double z = 4; }
+message Pose { Vec3 position = 1; Quaternion orientation = 2; }
+message State {
+  int64 timestamp_ns = 1;
+  Pose pose = 2;
+  Vec3 velocity = 3;
+  Vec3 acceleration = 4;
+}
+message Goal { int64 timestamp_ns = 1; Vec3 position = 2; double yaw = 3; }
+message PointCloud { repeated Vec3 points = 1; } // Hit endpoints in sensor frame, metres.
+message Depth {
+  uint32 width = 1; uint32 height = 2;
+  double fx = 3; double fy = 4; double cx = 5; double cy = 6;
+  repeated float metres = 7 [packed = true]; // Optical +z depth; 0 is no return.
+}
+message Measurement {
+  int64 timestamp_ns = 1;
+  int64 available_ns = 2;
+  Pose world_from_sensor = 3; // Optical frame for depth; explicit frame for cloud.
+  oneof data { PointCloud cloud = 4; Depth depth = 5; }
+}
+message InitializeRequest {
+  string planner = 1; // "ego" or "super".
+  double max_velocity = 2;
+  double max_acceleration = 3;
+  double sample_dt = 4;
+  double max_sensor_age = 5;
+  double robot_radius = 6;
+}
+message Session {
+  string id = 1; uint64 episode = 2;
+  string planner = 3; string upstream_commit = 4;
+}
+message DecideRequest {
+  Session session = 1;
+  uint64 sequence = 2;
+  State state = 3;
+  Goal goal = 4;
+  Measurement measurement = 5;
+}
+enum PlanningStatus {
+  STATUS_UNSPECIFIED = 0;
+  SOLVED = 1;
+  NO_SOLUTION = 2;
+  INVALID_INPUT = 3;
+  STALE_INPUT = 4;
+  DEADLINE_EXCEEDED = 5;
+}
+message Sample {
+  int64 timestamp_ns = 1;
+  Vec3 position = 2; Vec3 velocity = 3; Vec3 acceleration = 4;
+}
+message Timings { double mapping_ms = 1; double solve_ms = 2; double total_ms = 3; }
+message Decision {
+  PlanningStatus status = 1; string detail = 2;
+  Session session = 3; uint64 sequence = 4;
+  int64 input_timestamp_ns = 5;
+  int64 valid_from_ns = 6; int64 valid_until_ns = 7;
+  repeated Sample samples = 8;
+  Timings timings = 9;
+  int32 upstream_status = 10;
+}
+message Closed {}

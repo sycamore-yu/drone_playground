@@ -1,0 +1,130 @@
+<mujoco model="lsy-level0">
+  <compiler angle="degree" />
+  <asset>
+    <texture name="gate_texture_top" type="2d" file="textures/gate_top.png" />
+    <texture name="gate_texture_bottom" type="2d" file="textures/gate_bottom.png" />
+    <texture name="gate_texture_left" type="2d" file="textures/gate_left.png" />
+    <texture name="gate_texture_right" type="2d" file="textures/gate_right.png" />
+    <material name="gate_mat_top" texture="gate_texture_top" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
+    <material name="gate_mat_bottom" texture="gate_texture_bottom" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
+    <material name="gate_mat_left" texture="gate_texture_left" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
+    <material name="gate_mat_right" texture="gate_texture_right" specular="0.5" shininess="0.3" reflectance="0.0" emission="0.2" />
+    <material name="frame_mat" rgba="0.5 0.5 0.5 1" specular="0.4" shininess="0.4" reflectance="0.5" />
+    <material name="rope_mat" rgba="0.1 0.1 0.1 1" specular="0.0" shininess="0.0" reflectance="0.0" />
+    <material name="stand_mat" rgba="0.7 0.58 0.45 1" specular="0.0" shininess="0.0" reflectance="0.0" />
+  </asset>
+  <custom>
+    <numeric name="gate_order" data="1 2 3 4 2" />
+    <numeric name="world_low" data="-2.5 -1.5 -0.001" />
+    <numeric name="world_high" data="2.5 1.5 2" />
+    <numeric name="initial_velocity" data="0 0 0" />
+    <numeric name="initial_angular_velocity" data="0 0 0" />
+  </custom>
+  <worldbody>
+    <body name="gate:0" pos="0.5 0.25 0.69999999999999996" quat="0.92490905985731309 0 0 -0.38018841512316143" mocap="true">
+      <geom name="front_top:0" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 0.25" euler="-90 -90 180" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="front_bottom:0" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 -0.25" euler="-90 -90 180" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="front_left:0" type="box" size=".05 .2 5e-4" pos="-1e-3 -0.25 0" euler="90 -90 180" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="front_right:0" type="box" size=".05 .2 5e-4" pos="-1e-3 0.25 0" euler="90 -90 180" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="back_top:0" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 0.25" euler="90 90 0" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="back_bottom:0" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 -0.25" euler="90 90 0" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="back_left:0" type="box" size=".05 .2 5e-4" pos="1e-3 -0.25 0" euler="90 90 0" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="back_right:0" type="box" size=".05 .2 5e-4" pos="1e-3 0.25 0" euler="90 90 0" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="frame_top:0" type="box" size=".35 .01 .01" pos="0.0 0.01 0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_bottom:0" type="box" size=".35 .01 .01" pos="0.0 -0.01 -0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_left:0" type="box" size=".01 .35 .01" pos="0.0 -0.35 0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_right:0" type="box" size=".01 .35 .01" pos="0.0 0.35 -0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_left:0" type="capsule" fromto="0.0 -0.34 0.34  0.0 -0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_right:0" type="capsule" fromto="0.0 0.34 0.34   0.0 0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_left:0" type="capsule" fromto="0.0 -0.34 -0.34  0.0 -0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_right:0" type="capsule" fromto="0.0 0.34 -0.34   0.0 0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="gate_stand:0" type="box" size="0.05 0.05 0.5" pos="0 0 -0.86" material="stand_mat" contype="1" conaffinity="1" />
+      <geom name="col_top:0" type="box" pos="0 0 0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_bottom:0" type="box" pos="0 0 -0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_left:0" type="box" pos="0 -0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_right:0" type="box" pos="0 0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+    </body>
+    <body name="gate:1" pos="1.05 0.75 1.2" quat="0.38554307361593598 0 0 0.92268983867103305" mocap="true">
+      <geom name="front_top:1" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 0.25" euler="-90 -90 180" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="front_bottom:1" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 -0.25" euler="-90 -90 180" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="front_left:1" type="box" size=".05 .2 5e-4" pos="-1e-3 -0.25 0" euler="90 -90 180" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="front_right:1" type="box" size=".05 .2 5e-4" pos="-1e-3 0.25 0" euler="90 -90 180" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="back_top:1" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 0.25" euler="90 90 0" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="back_bottom:1" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 -0.25" euler="90 90 0" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="back_left:1" type="box" size=".05 .2 5e-4" pos="1e-3 -0.25 0" euler="90 90 0" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="back_right:1" type="box" size=".05 .2 5e-4" pos="1e-3 0.25 0" euler="90 90 0" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="frame_top:1" type="box" size=".35 .01 .01" pos="0.0 0.01 0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_bottom:1" type="box" size=".35 .01 .01" pos="0.0 -0.01 -0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_left:1" type="box" size=".01 .35 .01" pos="0.0 -0.35 0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_right:1" type="box" size=".01 .35 .01" pos="0.0 0.35 -0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_left:1" type="capsule" fromto="0.0 -0.34 0.34  0.0 -0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_right:1" type="capsule" fromto="0.0 0.34 0.34   0.0 0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_left:1" type="capsule" fromto="0.0 -0.34 -0.34  0.0 -0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_right:1" type="capsule" fromto="0.0 0.34 -0.34   0.0 0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="gate_stand:1" type="box" size="0.05 0.05 0.5" pos="0 0 -0.86" material="stand_mat" contype="1" conaffinity="1" />
+      <geom name="col_top:1" type="box" pos="0 0 0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_bottom:1" type="box" pos="0 0 -0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_left:1" type="box" pos="0 -0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_right:1" type="box" pos="0 0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+    </body>
+    <body name="gate:2" pos="-1 -0.25 0.69999999999999996" quat="0.00079632671073326335 0 0 0.99999968293183461" mocap="true">
+      <geom name="front_top:2" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 0.25" euler="-90 -90 180" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="front_bottom:2" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 -0.25" euler="-90 -90 180" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="front_left:2" type="box" size=".05 .2 5e-4" pos="-1e-3 -0.25 0" euler="90 -90 180" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="front_right:2" type="box" size=".05 .2 5e-4" pos="-1e-3 0.25 0" euler="90 -90 180" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="back_top:2" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 0.25" euler="90 90 0" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="back_bottom:2" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 -0.25" euler="90 90 0" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="back_left:2" type="box" size=".05 .2 5e-4" pos="1e-3 -0.25 0" euler="90 90 0" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="back_right:2" type="box" size=".05 .2 5e-4" pos="1e-3 0.25 0" euler="90 90 0" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="frame_top:2" type="box" size=".35 .01 .01" pos="0.0 0.01 0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_bottom:2" type="box" size=".35 .01 .01" pos="0.0 -0.01 -0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_left:2" type="box" size=".01 .35 .01" pos="0.0 -0.35 0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_right:2" type="box" size=".01 .35 .01" pos="0.0 0.35 -0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_left:2" type="capsule" fromto="0.0 -0.34 0.34  0.0 -0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_right:2" type="capsule" fromto="0.0 0.34 0.34   0.0 0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_left:2" type="capsule" fromto="0.0 -0.34 -0.34  0.0 -0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_right:2" type="capsule" fromto="0.0 0.34 -0.34   0.0 0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="gate_stand:2" type="box" size="0.05 0.05 0.5" pos="0 0 -0.86" material="stand_mat" contype="1" conaffinity="1" />
+      <geom name="col_top:2" type="box" pos="0 0 0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_bottom:2" type="box" pos="0 0 -0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_left:2" type="box" pos="0 -0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_right:2" type="box" pos="0 0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+    </body>
+    <body name="gate:3" pos="0 -0.75 1.2" quat="1 0 0 0" mocap="true">
+      <geom name="front_top:3" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 0.25" euler="-90 -90 180" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="front_bottom:3" type="box" size=".3 .05 5e-4" pos="-1e-3 0.0 -0.25" euler="-90 -90 180" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="front_left:3" type="box" size=".05 .2 5e-4" pos="-1e-3 -0.25 0" euler="90 -90 180" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="front_right:3" type="box" size=".05 .2 5e-4" pos="-1e-3 0.25 0" euler="90 -90 180" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="back_top:3" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 0.25" euler="90 90 0" material="gate_mat_top" contype="0" conaffinity="0" />
+      <geom name="back_bottom:3" type="box" size=".3 .05 5e-4" pos="1e-3 0.0 -0.25" euler="90 90 0" material="gate_mat_bottom" contype="0" conaffinity="0" />
+      <geom name="back_left:3" type="box" size=".05 .2 5e-4" pos="1e-3 -0.25 0" euler="90 90 0" material="gate_mat_left" contype="0" conaffinity="0" />
+      <geom name="back_right:3" type="box" size=".05 .2 5e-4" pos="1e-3 0.25 0" euler="90 90 0" material="gate_mat_right" contype="0" conaffinity="0" />
+      <geom name="frame_top:3" type="box" size=".35 .01 .01" pos="0.0 0.01 0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_bottom:3" type="box" size=".35 .01 .01" pos="0.0 -0.01 -0.35" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_left:3" type="box" size=".01 .35 .01" pos="0.0 -0.35 0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="frame_right:3" type="box" size=".01 .35 .01" pos="0.0 0.35 -0.01" euler="90 90 0" material="frame_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_left:3" type="capsule" fromto="0.0 -0.34 0.34  0.0 -0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_top_right:3" type="capsule" fromto="0.0 0.34 0.34   0.0 0.29 0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_left:3" type="capsule" fromto="0.0 -0.34 -0.34  0.0 -0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="rope_bottom_right:3" type="capsule" fromto="0.0 0.34 -0.34   0.0 0.29 -0.29" size="0.004" material="rope_mat" contype="0" conaffinity="0" />
+      <geom name="gate_stand:3" type="box" size="0.05 0.05 0.5" pos="0 0 -0.86" material="stand_mat" contype="1" conaffinity="1" />
+      <geom name="col_top:3" type="box" pos="0 0 0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_bottom:3" type="box" pos="0 0 -0.28" size="0.01 0.36 0.08" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_left:3" type="box" pos="0 -0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+      <geom name="col_right:3" type="box" pos="0 0.28 0" size="0.01 0.08 0.36" rgba="1 1 1 0" contype="1" conaffinity="1" />
+    </body>
+    <body name="obstacle:0" pos="0 0.75 1.55" quat="1 0 0 0" mocap="true">
+      <geom name="obstacle:0" type="capsule" size="0.015 0.8" pos="0 0 -0.8" rgba="0.83 0.75 0.63 1" />
+    </body>
+    <body name="obstacle:1" pos="1 0.25 1.55" quat="1 0 0 0" mocap="true">
+      <geom name="obstacle:1" type="capsule" size="0.015 0.8" pos="0 0 -0.8" rgba="0.83 0.75 0.63 1" />
+    </body>
+    <body name="obstacle:2" pos="-1.5 -0.25 1.55" quat="1 0 0 0" mocap="true">
+      <geom name="obstacle:2" type="capsule" size="0.015 0.8" pos="0 0 -0.8" rgba="0.83 0.75 0.63 1" />
+    </body>
+    <body name="obstacle:3" pos="-0.5 -0.75 1.55" quat="1 0 0 0" mocap="true">
+      <geom name="obstacle:3" type="capsule" size="0.015 0.8" pos="0 0 -0.8" rgba="0.83 0.75 0.63 1" />
+    </body>
+    <site name="drone_start" pos="-1.5 0.75 0.01" quat="1 0 0 0" size="0.001" />
+  </worldbody>
+</mujoco>

@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - override /task: tracking
+  - override /scene: empty
+  - override /sensor: state
+  - override /method: policy
+simulation:
+  method_hz: 50
+  num_envs: 256

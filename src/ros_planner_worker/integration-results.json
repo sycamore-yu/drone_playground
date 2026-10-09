@@ -1,0 +1,140 @@
+{
+  "image": "sha256:e0025dfe74963f15ff6bfeab1d8b89945e1451fcdee004757eac3c474803ba4f",
+  "address": "127.0.0.1:50051",
+  "checks": [
+    "genuine_cloud",
+    "obstacle_avoidance",
+    "analytic_pva",
+    "moving_initial_state",
+    "replan",
+    "reset",
+    "genuine_depth",
+    "stale_input",
+    "malformed_depth",
+    "rpc_deadline",
+    "timeout_recovery",
+    "reset_deadline_recovery"
+  ],
+  "results": [
+    {
+      "planner": "ego",
+      "upstream_commit": "bfda51284c8c1b476043255a8145ef925a3778a5",
+      "samples": 47,
+      "duration": 2.2980091860000003,
+      "clear_timings": {
+        "mapping_ms": 11.254866,
+        "solve_ms": 0.679053,
+        "total_ms": 16.795562
+      },
+      "replan_timings": {
+        "mapping_ms": 13.362381,
+        "solve_ms": 0.534893,
+        "total_ms": 17.818227
+      },
+      "obstacle_timings": {
+        "mapping_ms": 12.378207,
+        "solve_ms": 2.15559,
+        "total_ms": 19.925042
+      },
+      "depth_timings": {
+        "mapping_ms": 10.138712,
+        "solve_ms": 0.559544,
+        "total_ms": 11.243729
+      },
+      "obstacle_lateral_excursion": 0.8930579575774611
+    },
+    {
+      "planner": "super",
+      "upstream_commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
+      "samples": 59,
+      "duration": 2.8997844980000003,
+      "clear_timings": {
+        "mapping_ms": 63.251726,
+        "solve_ms": 6.199134,
+        "total_ms": 72.409321
+      },
+      "replan_timings": {
+        "mapping_ms": 49.353089,
+        "solve_ms": 2.065119,
+        "total_ms": 54.644619
+      },
+      "obstacle_timings": {
+        "mapping_ms": 54.773096,
+        "solve_ms": 25.634358,
+        "total_ms": 83.461473
+      },
+      "depth_timings": {
+        "mapping_ms": 25.273683,
+        "solve_ms": 3.49769,
+        "total_ms": 29.093188
+      },
+      "obstacle_lateral_excursion": 1.8671724013268256
+    }
+  ],
+  "python_unit_tests": {
+    "passed": 8,
+    "command": "PYTHONPATH=src native/.venv/bin/pytest -q tests/test_native.py"
+  },
+  "initialization_deadline_recovery": "passed against compiled C++ worker",
+  "clean_base_verification": {
+    "image": "sha256:e7c0f4aecc20249b8662039f72c0dfd506b14247cb054798cc787432d178cbd9",
+    "tag": "drone-playground-native:clean-noetic",
+    "results": [
+      {
+        "planner": "ego",
+        "upstream_commit": "bfda51284c8c1b476043255a8145ef925a3778a5",
+        "samples": 47,
+        "duration": 2.2980091860000003,
+        "clear_timings": {
+          "mapping_ms": 12.49683,
+          "solve_ms": 0.611684,
+          "total_ms": 17.915554
+        },
+        "replan_timings": {
+          "mapping_ms": 26.283262,
+          "solve_ms": 1.01384,
+          "total_ms": 31.921693
+        },
+        "obstacle_timings": {
+          "mapping_ms": 10.831271,
+          "solve_ms": 2.147614,
+          "total_ms": 18.286829
+        },
+        "depth_timings": {
+          "mapping_ms": 10.50299,
+          "solve_ms": 0.534714,
+          "total_ms": 11.386228
+        },
+        "obstacle_lateral_excursion": 0.8930579575774611
+      },
+      {
+        "planner": "super",
+        "upstream_commit": "2ad3419c127a617c6d7df6925e81a14175a9c096",
+        "samples": 59,
+        "duration": 2.8997844980000003,
+        "clear_timings": {
+          "mapping_ms": 60.934282,
+          "solve_ms": 6.518932,
+          "total_ms": 71.257682
+        },
+        "replan_timings": {
+          "mapping_ms": 44.325519,
+          "solve_ms": 2.083699,
+          "total_ms": 49.59408
+        },
+        "obstacle_timings": {
+          "mapping_ms": 55.360935,
+          "solve_ms": 25.323737,
+          "total_ms": 83.567138
+        },
+        "depth_timings": {
+          "mapping_ms": 24.270769,
+          "solve_ms": 3.713191,
+          "total_ms": 28.240837
+        },
+        "obstacle_lateral_excursion": 1.8671724013268256
+      }
+    ],
+    "passed": true
+  }
+}

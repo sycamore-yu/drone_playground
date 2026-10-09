@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - override /task: tracking
+  - override /scene: empty
+  - override /sensor: state
+  - override /method: policy
+simulation:
+  num_envs: 1024
+learning:
+  evaluation_interval: 100
+  checkpoint_interval: 50

@@ -1,0 +1,609 @@
+<mujoco model="D03">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <custom>
+    <text name="scene_metadata" data="{&quot;id&quot;: &quot;D03&quot;, &quot;difficulty&quot;: &quot;hard&quot;, &quot;title&quot;: &quot;SANDO hard dynamic benchmark&quot;, &quot;source&quot;: &quot;SANDO&quot;, &quot;dynamic&quot;: true, &quot;benchmark_role&quot;: &quot;primary&quot;, &quot;review_duration_s&quot;: 45.0, &quot;layout_policy&quot;: &quot;SANDO dynamic benchmark laws; fixed bounded realization; no route reservation&quot;, &quot;source_provenance&quot;: {&quot;seed&quot;: 0, &quot;total_obstacles&quot;: 200, &quot;dynamic_obstacles&quot;: 130, &quot;static_obstacles&quot;: 70, &quot;static_cylinders&quot;: 35, &quot;static_boxes&quot;: 35, &quot;static_vertical_boxes&quot;: 12, &quot;static_horizontal_boxes&quot;: 23, &quot;dynamic_fraction&quot;: 0.65, &quot;static_box_fraction_of_static_share&quot;: 0.5, &quot;static_box_vertical_fraction&quot;: 0.35, &quot;bounded_sampling_rejections&quot;: 246, &quot;sampling_note&quot;: &quot;SANDO dynamic laws conditioned on P5 physical bounds and endpoint safety; half of the static-cylinder share replaced by SANDO-sized static boxes&quot;}, &quot;topology_acceptance&quot;: {&quot;require_direct_route_blocked&quot;: true, &quot;require_reachable&quot;: true, &quot;max_full_length_straight_lanes&quot;: null, &quot;max_clear_straight_run_m&quot;: null}, &quot;obstacle_metadata&quot;: [{&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 0}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 1}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 2}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 3}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 4}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 5}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 6}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 7}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 8}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 9}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 10}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 11}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 12}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 13}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 14}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 15}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 16}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 17}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 18}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 19}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 20}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 21}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 22}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 23}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 24}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 25}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 26}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 27}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 28}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 29}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 30}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 31}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 32}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 33}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 34}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 35}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 36}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 37}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 38}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 39}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 40}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 41}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 42}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 43}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 44}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 45}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 46}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 47}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 48}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 49}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 50}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 51}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 52}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 53}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 54}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 55}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 56}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 57}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 58}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 59}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 60}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 61}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 62}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 63}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 64}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 65}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 66}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 67}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 68}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 69}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 70}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 71}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 72}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 73}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 74}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 75}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 76}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 77}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 78}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 79}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 80}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 81}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 82}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 83}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 84}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 85}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 86}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 87}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 88}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 89}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 90}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 91}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 92}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 93}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 94}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 95}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 96}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 97}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 98}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 99}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 100}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 101}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 102}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 103}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 104}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 105}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 106}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 107}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 108}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 109}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 110}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 111}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 112}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 113}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 114}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 115}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 116}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 117}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 118}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 119}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 120}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 121}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 122}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 123}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 124}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 125}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 126}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 127}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 128}, {&quot;role&quot;: &quot;sando_dynamic_cube&quot;, &quot;source_index&quot;: 129}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 130}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 131}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 132}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 133}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 134}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 135}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 136}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 137}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 138}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 139}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 140}, {&quot;role&quot;: &quot;sando_static_vertical_box&quot;, &quot;source_index&quot;: 141}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 142}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 143}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 144}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 145}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 146}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 147}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 148}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 149}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 150}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 151}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 152}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 153}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 154}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 155}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 156}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 157}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 158}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 159}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 160}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 161}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 162}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 163}, {&quot;role&quot;: &quot;sando_static_horizontal_box&quot;, &quot;source_index&quot;: 164}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 165}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 166}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 167}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 168}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 169}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 170}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 171}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 172}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 173}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 174}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 175}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 176}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 177}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 178}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 179}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 180}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 181}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 182}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 183}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 184}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 185}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 186}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 187}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 188}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 189}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 190}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 191}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 192}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 193}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 194}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 195}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 196}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 197}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 198}, {&quot;role&quot;: &quot;sando_dynamic_static_cylinder&quot;, &quot;source_index&quot;: 199}]}" />
+  </custom>
+  <worldbody>
+    <body name="obstacle_4" mocap="true" pos="26.049231039195941 12.201113080520891 2.6947972153423572" user="1 2.0280834003280379 3.4394093728079085 2.7976470844485375 2.4745349314446989 42.392953161809466">
+      <geom name="obstacle_geom_4" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_5" mocap="true" pos="10.905784593110369 2.0506898436220489 3.3262456394675586" user="1 3.0948818226568475 3.6289337265826722 3.0805672139406477 2.8915156379214029 41.360715848967082">
+      <geom name="obstacle_geom_5" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_6" mocap="true" pos="58.761706417543635 -2.2004389489793539 2.8851474463324251" user="1 2.7698022919453207 3.151302028329777 2.5806590048055158 0.56817398566306843 34.74385294895518">
+      <geom name="obstacle_geom_6" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_7" mocap="true" pos="89.817312135787901 16.923297592807074 2.6623996997922177" user="1 2.78259210046925 3.4105667997088123 2.5512682426242543 2.4348861255236356 45.274058851496306">
+      <geom name="obstacle_geom_7" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_8" mocap="true" pos="79.332508413022424 -16.705080472134103 2.9511324201628488" user="1 2.9728884039383336 3.2602946808229456 3.6901551513430304 0.72910686618556875 43.399267532880948">
+      <geom name="obstacle_geom_8" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_9" mocap="true" pos="11.713429320851798 -11.181578525286859 3.6783318868423036" user="1 2.6650722984393109 3.6318261930673188 2.2012150404321922 0.43907546673691156 42.861941002044489">
+      <geom name="obstacle_geom_9" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_10" mocap="true" pos="4.5234067865612353 2.9546414715666778 4.1400640587961588" user="1 3.0683959365214477 3.3611782651245132 2.0533935893244104 1.9049997297343748 41.410808950800593">
+      <geom name="obstacle_geom_10" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_11" mocap="true" pos="57.595294803154076 -4.3516236270869246 1.98055976134075" user="1 3.9610333012945373 2.0727840752229714 2.0432730197100479 2.8830938407188333 34.715927529485427">
+      <geom name="obstacle_geom_11" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_12" mocap="true" pos="12.389516442443171 -11.576939604534143 3.7029863614167238" user="1 3.8739383172891615 2.0455651513373168 2.8512376639336345 0.30450065812250926 35.906738036330665">
+      <geom name="obstacle_geom_12" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_13" mocap="true" pos="19.935579046706298 -5.6577879475359261 3.4263932249014424" user="1 3.6766531303868328 3.8369641239906631 2.3388492121949351 2.0179216907191577 47.13401338456309">
+      <geom name="obstacle_geom_13" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_14" mocap="true" pos="5.8050943826498669 7.04807137197513 3.8816983748064655" user="1 2.6846250821571678 2.5013746785702233 3.1935827869388218 1.3269421010972369 34.554620213402437">
+      <geom name="obstacle_geom_14" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_15" mocap="true" pos="47.162541509628795 -3.603784173697818 2.7764509580971208" user="1 3.0172002601252661 2.6228920020004134 2.714303365180526 2.5129835231069371 35.763944508934479">
+      <geom name="obstacle_geom_15" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_16" mocap="true" pos="63.308875991830035 -16.661317992970829 3.4022174218452497" user="1 3.9736429604102561 2.8036336444250871 3.3570300104839363 0.94853141166402699 35.169587442765689">
+      <geom name="obstacle_geom_16" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_17" mocap="true" pos="74.913482339086315 8.0529927037943878 3.1214474586989183" user="1 3.4247153050324837 3.8054203012386614 3.2802823995864481 1.117347788916768 40.323882454380104">
+      <geom name="obstacle_geom_17" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_18" mocap="true" pos="51.900372870132927 -2.0582285761378181 2.4544752177086102" user="1 3.1697774039865489 3.3586051347442498 2.8460761470148448 1.1049943690032777 47.482132891581152">
+      <geom name="obstacle_geom_18" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_19" mocap="true" pos="40.590688316794889 7.1971793244000892 4.0106263316043806" user="1 2.9908118498223777 3.83409334551963 2.6449206297626122 1.495322674472251 39.699747333827759">
+      <geom name="obstacle_geom_19" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_20" mocap="true" pos="67.006815131529422 -11.920347648021856 2.9390824416671215" user="1 2.4375461937443115 2.6804406301020638 3.9251329265093635 2.6970241140930229 44.775674976806208">
+      <geom name="obstacle_geom_20" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_21" mocap="true" pos="6.6359131037785239 -16.614274526677196 3.9755812560175139" user="1 2.0788316587560578 2.4501813073529921 2.0812640532918021 0.045855419909180406 45.186175115133629">
+      <geom name="obstacle_geom_21" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_22" mocap="true" pos="57.387247749154923 7.1428542715743646 3.7204399561285482" user="1 3.5156927645227651 3.9810651254111242 3.4939307783002658 2.7173421700585987 35.051697470977054">
+      <geom name="obstacle_geom_22" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_23" mocap="true" pos="53.541630432858099 3.9445705466987633 3.8027864686414152" user="1 2.9644271261318322 3.5820804234181911 2.7771377803002286 1.7591653667443488 45.303145012298259">
+      <geom name="obstacle_geom_23" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_24" mocap="true" pos="3.2465462373943987 4.6960169472402171 3.0198651648733423" user="1 2.2105856493127298 3.0982875324635542 2.6933359532799366 1.1502422194946622 44.113148626079798">
+      <geom name="obstacle_geom_24" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_25" mocap="true" pos="49.031967752424563 15.251064616489657 2.9404789716248936" user="1 2.9343768300761406 3.2646252801107689 2.6757307596575046 0.37297137758475729 42.621372876151028">
+      <geom name="obstacle_geom_25" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_26" mocap="true" pos="81.025084943735891 0.7602923692560708 3.6419565974426606" user="1 2.3782549357143701 3.5642282127145881 2.8891592081126811 2.2698486638920952 39.013739799999918">
+      <geom name="obstacle_geom_26" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_27" mocap="true" pos="63.696603741172041 -16.617772207242698 2.2792446205848154" user="1 2.7385120784795953 3.8978638578833236 2.1157142278020347 1.2258786635494441 38.406087963473148">
+      <geom name="obstacle_geom_27" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_28" mocap="true" pos="55.81815883930463 7.5280121427413285 3.682628622728529" user="1 2.892328767899695 2.7975538102594122 3.5352814856425567 1.2951494866923361 35.716676285036215">
+      <geom name="obstacle_geom_28" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_29" mocap="true" pos="70.62940429996884 -1.1426031313678529 3.2127149849438545" user="1 3.5201796734469841 2.4647254428824903 3.5239900261954231 0.84026515406516777 47.411525651368251">
+      <geom name="obstacle_geom_29" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_30" mocap="true" pos="25.260808582471327 -8.6641398455804541 3.520891418234926" user="1 3.8175486504440141 3.1908198309728388 2.0709019313820551 2.3767094149251307 36.63258897181786">
+      <geom name="obstacle_geom_30" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_31" mocap="true" pos="57.398180308237656 5.0855875641937054 2.6255032153518911" user="1 2.821609004671199 3.2691880247529319 2.8068257531736354 2.3356507771621433 44.299958091266404">
+      <geom name="obstacle_geom_31" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_32" mocap="true" pos="29.225416811082216 -5.1278270577690179 3.0152436237875446" user="1 2.3141399342313145 3.3940638619738497 2.7628555059614262 1.7731874242710211 33.993972468288071">
+      <geom name="obstacle_geom_32" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_33" mocap="true" pos="6.022210749970192 -7.9925939015116043 3.4808387606001832" user="1 2.1048117561241275 3.2422843905644703 2.0510935985356769 1.4145866049297013 45.894649035665161">
+      <geom name="obstacle_geom_33" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_34" mocap="true" pos="28.792410486343755 -15.781589319104281 2.3435795818670315" user="1 2.6603915450592361 2.336510797302358 2.8434197850228093 2.6916029308916265 38.692792671954692">
+      <geom name="obstacle_geom_34" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_35" mocap="true" pos="44.729189524972476 8.3531102977695184 2.5966474806091693" user="1 2.2584460706839868 3.8207847950879401 2.8882486723239302 2.3680132176760775 37.955643420208702">
+      <geom name="obstacle_geom_35" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_36" mocap="true" pos="97.067579335449565 -4.1394205219243485 4.1855676538042115" user="1 2.9074083446390664 2.6790074796724141 2.2046777398341075 2.648496555215579 44.405024506962128">
+      <geom name="obstacle_geom_36" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_37" mocap="true" pos="18.778503564961891 -11.935136541343612 3.1906715252705213" user="1 3.4712053135234315 2.6244641917482099 3.7199887988667451 0.76391752396713186 37.241697568153832">
+      <geom name="obstacle_geom_37" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_38" mocap="true" pos="20.118504547378379 -8.1343499489234858 2.2671345327507098" user="1 3.2093398043822861 3.0723300521724863 2.5219759534678792 0.6953636262541657 33.663446178987911">
+      <geom name="obstacle_geom_38" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_39" mocap="true" pos="78.349363589217262 -16.043969341344781 3.4315400247174423" user="1 2.4975473913261994 2.5691139680115649 3.472166866021599 1.978862375164909 43.565021687158442">
+      <geom name="obstacle_geom_39" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_40" mocap="true" pos="22.007359233142765 6.1105368027201976 3.1433971190177958" user="1 2.9893978805726262 3.906651761194639 2.9618301770989426 0.94183097863698151 45.24696695653823">
+      <geom name="obstacle_geom_40" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_41" mocap="true" pos="25.915829939726198 4.1722397213739804 3.3136754092891998" user="1 3.6433925973835684 3.5707375003654978 2.7681846610274228 0.1775409178882108 32.385337533028562">
+      <geom name="obstacle_geom_41" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_42" mocap="true" pos="30.490241957438379 -5.745683737518462 2.6580532210523775" user="1 3.4646276478534608 2.3024324231359294 2.0439744217858777 1.8834898634550656 32.167296660028178">
+      <geom name="obstacle_geom_42" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_43" mocap="true" pos="4.4963240716168524 -10.968976931114657 3.1155074932178222" user="1 2.1330901953720574 2.1248115352530554 3.9441864887472335 1.2679586813416495 45.956358227859774">
+      <geom name="obstacle_geom_43" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_44" mocap="true" pos="40.92844343999316 -9.4503639537973463 2.6253467143953002" user="1 3.4712738242838932 3.3732932315012021 2.9252996706826391 0.12581714014847101 46.418377904838323">
+      <geom name="obstacle_geom_44" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_45" mocap="true" pos="33.005100665524942 13.605462261514553 3.7826340847096986" user="1 2.4935885361724814 2.0439506166661445 3.6129339470912059 0.50653201511826496 44.292076868624967">
+      <geom name="obstacle_geom_45" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_46" mocap="true" pos="68.684365628883867 -1.7632912412091315 3.3855508601670135" user="1 2.8075576178221233 2.9920100726358951 2.0413675348915112 2.2198755069601592 32.321555990248626">
+      <geom name="obstacle_geom_46" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_47" mocap="true" pos="68.072538584763961 3.2801478215184865 3.6036704459525066" user="1 2.5795551984748313 3.3722216302466599 2.4141959512620765 1.5878160040734934 37.183545703931983">
+      <geom name="obstacle_geom_47" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_48" mocap="true" pos="94.668939459479617 12.735504407535963 3.6144709365844396" user="1 3.4945639016063921 2.3753091703391975 3.0977545222055607 1.2716376918265344 46.867708526387702">
+      <geom name="obstacle_geom_48" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_49" mocap="true" pos="17.383353806681644 -13.205646257613015 3.1354470145520597" user="1 2.3148035791469654 2.2201073459037213 3.0078463946600129 2.3899829136600239 41.390269153780409">
+      <geom name="obstacle_geom_49" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_50" mocap="true" pos="92.35592861863212 17.119450100286912 3.0389957545620874" user="1 3.8807816545941343 2.5053711747708407 3.7635745668072946 2.3204378788805706 41.464044673502002">
+      <geom name="obstacle_geom_50" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_51" mocap="true" pos="12.538247475645914 -14.641753759795213 2.423571458617241" user="1 3.2837867694537897 3.5281369048889615 2.0934275199444436 2.4712796178372534 32.467693315542647">
+      <geom name="obstacle_geom_51" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_52" mocap="true" pos="55.494683005801228 9.7659139923204279 3.024885487176912" user="1 3.899357351366004 2.6893967062256712 3.1717667104750786 0.24839718820294909 40.671329069812259">
+      <geom name="obstacle_geom_52" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_53" mocap="true" pos="15.519843069219807 16.006495490320013 2.7109059438949559" user="1 2.077202284821035 3.1710054304743709 3.28309930134151 0.1013870961063279 43.815589163619087">
+      <geom name="obstacle_geom_53" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_54" mocap="true" pos="81.780014147418498 -17.134270312521753 3.0935997602647154" user="1 2.9130949618055322 2.4774425746838422 2.9173407632449688 0.47816912925684651 37.078451654777062">
+      <geom name="obstacle_geom_54" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_55" mocap="true" pos="65.520729970094749 -0.94057775392506571 2.7236803787101667" user="1 3.0868855876090606 3.6411884802232786 2.6867655963072252 2.4388862723454472 33.047875632170523">
+      <geom name="obstacle_geom_55" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_56" mocap="true" pos="5.1723879096013832 14.484363318065746 3.6629176373396484" user="1 3.7168958623032227 2.5244853351681922 3.2959947215894614 0.28715414188652943 44.910007970300633">
+      <geom name="obstacle_geom_56" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_57" mocap="true" pos="22.503349122656381 -4.2064943194226281 3.0810589039678287" user="1 2.7941184181037251 3.1627514968666088 3.6711645759995086 2.9939027192266709 45.838954120625026">
+      <geom name="obstacle_geom_57" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_58" mocap="true" pos="96.411900688783959 -15.733594437100891 4.0105576471257987" user="1 2.0974353424341565 3.4269516377513018 2.0535914267263449 1.2631490468457889 45.603663778804133">
+      <geom name="obstacle_geom_58" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_59" mocap="true" pos="39.310814762828208 16.982572705989703 3.3527805644478308" user="1 3.2083685615954933 2.3227580960036631 2.6809915672892193 1.2332884928362662 41.15447097788978">
+      <geom name="obstacle_geom_59" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_60" mocap="true" pos="64.735597147100179 -11.803195000950733 3.0772003711203206" user="1 3.96344242265004 2.2223699132603301 3.3770864863979764 1.842915352477966 37.748768690815986">
+      <geom name="obstacle_geom_60" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_61" mocap="true" pos="25.388347854124227 -0.53874140617617172 3.6029150554155009" user="1 3.8454635912037949 3.1232900552694631 3.6544835700791647 0.23379963890880295 45.383404800125554">
+      <geom name="obstacle_geom_61" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_62" mocap="true" pos="92.081456546442084 -13.279944948619153 3.8099494470122903" user="1 3.6991323406519765 3.757317736651526 3.0342790396347845 1.8247627316560306 35.083131492678675">
+      <geom name="obstacle_geom_62" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_63" mocap="true" pos="92.948384435730958 -16.528200315220008 2.8528616549130756" user="1 2.6690560763045479 3.0135902445527369 2.9110496049986185 1.439829817861384 33.394542389653154">
+      <geom name="obstacle_geom_63" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_64" mocap="true" pos="83.316008379683055 -0.38880152976745563 3.0799502251771336" user="1 2.945357505460187 2.3620367531444226 3.0820011699843732 0.47861921718240397 45.316851205967282">
+      <geom name="obstacle_geom_64" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_65" mocap="true" pos="22.461614764460968 -0.17478306446518488 4.2876164899738312" user="1 3.0179568965214001 2.6817433251688776 2.1550035820121414 1.7210008000349966 35.371884873972888">
+      <geom name="obstacle_geom_65" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_66" mocap="true" pos="36.749912771263801 -4.7535053310597739 3.532737348838948" user="1 2.4632576895937728 3.8717844515936317 3.4847761359251095 1.4433586223424573 45.766420060229798">
+      <geom name="obstacle_geom_66" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_67" mocap="true" pos="47.972749846874805 -8.3456262586630814 2.2839482174595038" user="1 2.688031106187128 2.4870641044277217 2.3738818307168992 2.8676272035709531 39.710211476264661">
+      <geom name="obstacle_geom_67" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_68" mocap="true" pos="67.562907486623686 0.088887307407127025 2.4467122326092858" user="1 2.6290478783535685 3.3678434789425324 2.1837905566657492 0.95143573867384479 45.933313951817631">
+      <geom name="obstacle_geom_68" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_69" mocap="true" pos="37.890897100484956 2.9270341920468965 3.1401089227061547" user="1 2.4033121380384586 3.0160243287737689 2.2406833106219501 0.31659149437678968 46.252387066436057">
+      <geom name="obstacle_geom_69" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_70" mocap="true" pos="12.454722455886657 15.730678870585706 2.379196798165919" user="1 2.9098052315082357 2.679630639089372 2.83243543288759 1.1316971423897868 40.753732537892027">
+      <geom name="obstacle_geom_70" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_71" mocap="true" pos="28.352128982526903 6.1317424434976004 2.8977882245740396" user="1 3.8590910307885449 3.9377381627497048 3.0447603864148172 0.26266953768447299 36.542011195973849">
+      <geom name="obstacle_geom_71" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_72" mocap="true" pos="43.404171729198382 5.3416635658546419 2.9707149116231304" user="1 3.7977082530141346 3.1414726216913227 2.4267543047378028 1.3241380832994052 35.637406043825671">
+      <geom name="obstacle_geom_72" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_73" mocap="true" pos="90.495016875839596 13.741032575871785 2.723276458117379" user="1 2.3927831351833699 2.087084026072394 2.2683389074034945 1.3296578423862866 42.489092525874788">
+      <geom name="obstacle_geom_73" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_74" mocap="true" pos="22.399810448908219 7.3808139887613642 3.94779753582635" user="1 3.5144821631270924 2.8510549504251292 3.2914558147499795 2.9651022989986635 45.844863359736415">
+      <geom name="obstacle_geom_74" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_75" mocap="true" pos="54.059574164465054 15.684935858212803 3.3168660714210008" user="1 2.0425562472066003 2.4146453751261276 3.707789695446746 1.7564214520814647 45.662095765548543">
+      <geom name="obstacle_geom_75" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_76" mocap="true" pos="47.944063272103158 -7.2225119514669736 3.4166496059943663" user="1 2.0485837178915434 2.8684982896917322 3.3288276781990502 2.8864086747224547 43.878282897991276">
+      <geom name="obstacle_geom_76" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_77" mocap="true" pos="80.308000473050612 -12.418254689855992 3.7979824406420661" user="1 3.0838421741069197 2.6774902569560997 3.1044715346985123 0.48426999691210681 39.649033746938628">
+      <geom name="obstacle_geom_77" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_78" mocap="true" pos="6.766470709087935 2.820168168601576 2.5828038476431994" user="1 3.722456336006414 3.1724006850758437 2.9705448304810984 1.560677576973363 44.200176447544827">
+      <geom name="obstacle_geom_78" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_79" mocap="true" pos="34.732079578053856 2.3115765560681432 3.3295610909749649" user="1 3.9911109086452576 3.387368390908275 3.9237423424445659 1.1970979839877458 41.449617804782569">
+      <geom name="obstacle_geom_79" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_80" mocap="true" pos="26.929356214533541 14.834688596677687 3.144836852345275" user="1 2.6338485625044648 3.0956919886692136 3.9584751171981454 0.14529890082652608 43.033399791021829">
+      <geom name="obstacle_geom_80" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_81" mocap="true" pos="31.27485507020873 12.342805723188775 2.4579925504143336" user="1 2.8976234750191328 2.2457676742025372 2.7489417965640985 1.5621631678480854 35.447440336474678">
+      <geom name="obstacle_geom_81" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_82" mocap="true" pos="5.8355056973042103 8.3667722007386089 3.9164243794749383" user="1 2.7145998359093544 2.4984343968503233 2.4426169812519714 0.90251753007329116 34.085567947603337">
+      <geom name="obstacle_geom_82" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_83" mocap="true" pos="24.33483284582103 2.3988980438769545 4.0242676387211382" user="1 3.1628406745375459 2.3360005728153448 2.4959064949157121 2.9628744894403871 36.533809085312292">
+      <geom name="obstacle_geom_83" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_84" mocap="true" pos="86.770298224309911 11.800493511229249 3.4679388112138145" user="1 3.4438845136892509 3.5799637273673452 3.6948153704372793 0.18709930953475107 34.443247228638469">
+      <geom name="obstacle_geom_84" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_85" mocap="true" pos="50.55293246202428 -11.500418965575765 2.6328720905223997" user="1 2.9863646790837626 2.2535428979367733 2.171922304225101 0.034958390126883065 44.885587636617394">
+      <geom name="obstacle_geom_85" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_86" mocap="true" pos="39.629513962756235 9.0478313197598297 4.0701048303261924" user="1 2.3154300538604184 2.4853411576266535 2.41979381230479 0.13603797022117992 45.348967004826974">
+      <geom name="obstacle_geom_86" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_87" mocap="true" pos="13.361763970927898 -0.82206165584521784 3.4364858846437869" user="1 3.6669633515987967 2.3992148579443171 2.7938134422805483 1.4205810271520845 38.773857711903361">
+      <geom name="obstacle_geom_87" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_88" mocap="true" pos="47.544167055726895 -8.1639909930339982 3.7348829716736707" user="1 3.8261558909994005 2.6980014570528912 3.2757201433642358 1.142117755022537 40.972502009829412">
+      <geom name="obstacle_geom_88" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_89" mocap="true" pos="69.553894471620865 0.060651093096812048 3.198328280892361" user="1 3.5142914885984329 3.6865912710911175 2.3776197795767176 0.6491546913644064 39.949590185784693">
+      <geom name="obstacle_geom_89" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_90" mocap="true" pos="50.965701893169658 12.309019743610669 2.5695334898408491" user="1 3.8001049389203163 3.555205671657208 3.0126316224961709 2.478978365230601 39.33763838378735">
+      <geom name="obstacle_geom_90" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_91" mocap="true" pos="18.50030840795749 -13.056542603011639 4.3630518514301748" user="1 2.7207603098362352 3.6235526094984154 2.0180213551893766 2.9723747370391886 32.039005416349305">
+      <geom name="obstacle_geom_91" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_92" mocap="true" pos="35.471806740620359 3.2830090617943526 3.6282719408077302" user="1 3.3989822570194868 3.5361559118656904 2.0285465358775072 1.5950801805975177 37.382282619328919">
+      <geom name="obstacle_geom_92" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_93" mocap="true" pos="89.581300054462389 -16.88398287932328 3.7166146562888294" user="1 2.319158031017218 2.2153488920991133 2.5178881370861261 2.1444766313856869 41.437340853798766">
+      <geom name="obstacle_geom_93" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_94" mocap="true" pos="77.335421824036047 13.549017365582394 3.4870234419000892" user="1 2.9645545526475692 3.3728912879372523 2.2000152272667872 2.2930360755123695 35.943406764449975">
+      <geom name="obstacle_geom_94" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_95" mocap="true" pos="78.512639634787234 5.4113633500625049 2.5363138265971745" user="1 3.072034311321616 2.1494616122257257 2.0817958207104788 0.044474444695813298 44.099207559891482">
+      <geom name="obstacle_geom_95" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_96" mocap="true" pos="39.939374575381315 2.4107386860676918 3.3133976548075759" user="1 2.8133908272493047 3.7841044810082325 3.9114290451011988 2.9551773938464843 32.647348977522263">
+      <geom name="obstacle_geom_96" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_97" mocap="true" pos="33.181236447614118 -0.5927111296292118 2.6428097941412361" user="1 2.1687149119506888 2.6310562258773547 2.7673934813819168 1.2099132062988533 39.404042671229917">
+      <geom name="obstacle_geom_97" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_98" mocap="true" pos="15.589419778024116 -4.6381140814613264 2.7608256672584779" user="1 3.3285144726651019 3.048718635255276 3.1305813238428222 1.056700228265975 42.352337509282286">
+      <geom name="obstacle_geom_98" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_99" mocap="true" pos="72.686024365545435 -3.9149839903489116 3.7596499120944231" user="1 3.4878640572678226 3.8094879779568074 2.9334966169656962 1.0356657929486555 44.125601543719092">
+      <geom name="obstacle_geom_99" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_100" mocap="true" pos="43.521007721562007 4.760092569558168 2.6829936213579701" user="1 3.0373644308419294 2.2233018722316844 2.0805185671136526 1.0760885783973764 46.751672275162157">
+      <geom name="obstacle_geom_100" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_101" mocap="true" pos="17.981755242430321 -9.229544554339304 2.4325638638726752" user="1 3.8284144085980625 3.8939487251503611 2.0026071490521011 1.9436868079661935 35.529199188011418">
+      <geom name="obstacle_geom_101" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_102" mocap="true" pos="92.190900777944933 -0.8070766315416833 3.2673155719495308" user="1 3.2006485217502365 3.2104658521573795 3.4198233604751627 0.26638693081181031 39.669346688018045">
+      <geom name="obstacle_geom_102" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_103" mocap="true" pos="60.391752296141931 -13.457814500659184 2.7288750546674083" user="1 2.1618711240716948 3.0029474092687045 3.3772628528839497 1.2593338075411704 36.768870778934854">
+      <geom name="obstacle_geom_103" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_104" mocap="true" pos="33.093114909305967 9.3171080400601269 2.886485218841528" user="1 2.1915311649609954 3.1270252501208486 2.0403938597626912 2.3660899422051442 44.862543361935344">
+      <geom name="obstacle_geom_104" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_105" mocap="true" pos="73.011550539798435 -16.340863461562666 2.8523748776409197" user="1 2.782791133370758 2.2567861046219999 3.7841808881725076 2.8268823607347633 46.430705550008533">
+      <geom name="obstacle_geom_105" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_106" mocap="true" pos="97.406429016782837 -12.720116615630715 3.9815502342220643" user="1 2.0343910955108502 3.0756442644967219 2.9594848704055412 0.3785891701734091 44.728014755749292">
+      <geom name="obstacle_geom_106" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_107" mocap="true" pos="27.085193307372347 15.93736610419554 3.2976537829026173" user="1 3.7047211034783163 3.732961927045416 3.5835659593213594 2.209465054137421 31.841675220034507">
+      <geom name="obstacle_geom_107" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_108" mocap="true" pos="14.343000817233486 -11.714718419213686 2.8099296592309697" user="1 2.0067492338746407 2.2543130538683247 2.9699334135435667 0.12319282077224913 36.841402869045083">
+      <geom name="obstacle_geom_108" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_109" mocap="true" pos="42.255500898955532 15.846118847596081 2.644629245849901" user="1 3.5227349965467614 2.3552842101315381 2.1368666777768812 1.3214814880691348 36.973359137073864">
+      <geom name="obstacle_geom_109" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_110" mocap="true" pos="51.187345423745278 -6.2270665666102953 3.9503520545369275" user="1 3.4712098795463495 2.7679137222405927 2.2517329420481254 2.1295337165694153 40.374038783156003">
+      <geom name="obstacle_geom_110" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_111" mocap="true" pos="59.851011915491483 -3.7402966410926766 4.050121212856884" user="1 3.0959343345853627 3.0512725442455979 2.436987779912148 0.27257176171537401 46.469255791820864">
+      <geom name="obstacle_geom_111" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_112" mocap="true" pos="26.209445053826897 12.018017909329686 3.060198921868257" user="1 3.2057252494794053 2.0577532105265881 2.6907485869569081 2.3065793839485469 35.04856439464173">
+      <geom name="obstacle_geom_112" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_113" mocap="true" pos="8.8681307541449872 -15.020544878653514 2.485370110588339" user="1 3.2252091857993808 3.3081430358939992 2.4601949879707785 0.40828794410879232 46.417234812759496">
+      <geom name="obstacle_geom_113" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_114" mocap="true" pos="26.004358185176002 3.4337414076494674 3.3108623195436913" user="1 3.5859993007238207 2.3249483739970556 3.2506071645315342 2.0364773829833425 41.010980194463137">
+      <geom name="obstacle_geom_114" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_115" mocap="true" pos="72.775421127418483 0.71134542222573671 4.3185602574547275" user="1 3.300370736918711 3.2560953534124994 2.0263155285488672 0.43062536508521709 41.327126068127548">
+      <geom name="obstacle_geom_115" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_116" mocap="true" pos="76.691165470949457 -14.229675273844848 3.0473143151842992" user="1 2.3086927510534525 3.5264080883659763 3.6424104510551727 1.8618419582541077 32.856050763982395">
+      <geom name="obstacle_geom_116" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_117" mocap="true" pos="29.823936592740317 -2.1936817023020616 3.0427444657587577" user="1 2.4738008350258252 3.294567901817314 3.8065457161511262 0.91882706622819943 37.622738155550508">
+      <geom name="obstacle_geom_117" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_118" mocap="true" pos="44.993963857191545 -4.5472926002633773 3.0732896759301518" user="1 2.103938425057291 3.5534721578849511 2.5706845746992872 1.8660182603887816 38.511632328530837">
+      <geom name="obstacle_geom_118" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_119" mocap="true" pos="61.128909023816988 2.7579479645469185 2.570231383879658" user="1 2.3206463133909701 2.0150454978166259 2.2139535224403364 1.1546801784922636 35.861894243275408">
+      <geom name="obstacle_geom_119" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_120" mocap="true" pos="33.888836399997757 8.3399747928861743 3.9430033211166964" user="1 2.2185358950130682 2.0624055182349235 2.620273490586865 1.8661034193762669 46.400885351146577">
+      <geom name="obstacle_geom_120" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_121" mocap="true" pos="5.7288405860308034 13.636532812217027 2.9031281820064301" user="1 2.6027451497101897 3.0536791849795417 3.1158049653289659 2.0333348066518582 31.779134300557953">
+      <geom name="obstacle_geom_121" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_122" mocap="true" pos="14.444836975277553 -16.27320666929981 3.5123441916029825" user="1 2.9046694315505568 2.3967932051831662 2.7489721161355143 2.0083637812323598 39.105159638488566">
+      <geom name="obstacle_geom_122" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_123" mocap="true" pos="27.281530034096292 -13.447663728444169 4.0161680645418372" user="1 3.8001656154136949 2.6471287703913275 2.0464472826170041 1.4228027080423988 44.303168004194866">
+      <geom name="obstacle_geom_123" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_124" mocap="true" pos="95.128041282306938 4.0653882419382654 2.706880662825589" user="1 2.0658447070649908 2.8278860582719481 2.9339907883415268 2.8603622513365705 38.781623963890979">
+      <geom name="obstacle_geom_124" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_125" mocap="true" pos="3.888840292449236 -6.1546956363572782 3.0734229508791238" user="1 2.7619326082110018 3.2899794384175864 3.523025492435341 2.3141327850268802 36.276359135041638">
+      <geom name="obstacle_geom_125" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_126" mocap="true" pos="36.967455822270082 -3.2503712720007591 4.1539709444585586" user="1 3.2926096733273269 2.339854454199374 2.0745212946007019 1.3174535250359618 38.781704572893439">
+      <geom name="obstacle_geom_126" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_127" mocap="true" pos="6.9125367520305181 -16.016527063497918 4.2726943374855697" user="1 2.0639704350953574 3.2979663012864622 2.3579741568850219 1.9626156431478974 47.468382975617033">
+      <geom name="obstacle_geom_127" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_128" mocap="true" pos="53.985633031928138 -14.472132666397659 1.9900454202255244" user="1 3.6993229452093539 3.0228917022049648 2.1614938769717185 1.5196304162941032 32.334609294523716">
+      <geom name="obstacle_geom_128" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_129" mocap="true" pos="87.930681968512403 -10.075406106037018 3.4167123672720021" user="1 3.9892858770212545 3.7927295322979138 3.0572582917646729 0.97244164113015052 42.879053373902998">
+      <geom name="obstacle_geom_129" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_130" mocap="true" pos="17.219201413913154 6.2614555213742129 3.7529232724608148" user="1 2.6470296561733706 3.9706935380815853 2.1901494786393068 2.3796871191632976 34.074656102172995">
+      <geom name="obstacle_geom_130" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_131" mocap="true" pos="92.664053254337105 12.904602147276492 3.0357136462153576" user="1 2.3419053479645089 2.3984945695347148 3.1338385732503005 1.7798991294343174 38.259688298613035">
+      <geom name="obstacle_geom_131" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_132" mocap="true" pos="47.989430926316977 16.042064496292817 3.3894649946902207" user="1 3.4676085391957923 3.2732889921281738 3.8014969788221467 2.1747591843197043 41.810185878686781">
+      <geom name="obstacle_geom_132" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_133" mocap="true" pos="25.244941355057048 -8.6041029168917138 2.9316833172396288" user="1 2.0466271415344428 3.8745738364182873 3.0274815700545066 1.5063687980844573 38.480007238230179">
+      <geom name="obstacle_geom_133" type="box" size="0.40000000000000002 0.40000000000000002 0.40000000000000002" rgba="0.95 0.45 0.12 1" />
+    </body>
+    <body name="obstacle_134" mocap="true" pos="73.100583744147087 10.452185096346067 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_134" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_135" mocap="true" pos="72.236982760020368 18.615860945450649 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_135" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_136" mocap="true" pos="41.449690279025653 -16.574265673125229 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_136" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_137" mocap="true" pos="79.833602367529537 8.4989129934983865 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_137" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_138" mocap="true" pos="80.977422289561503 17.930775741793887 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_138" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_139" mocap="true" pos="34.968080780876519 -1.1300049650891992 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_139" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_140" mocap="true" pos="44.490445074352905 9.763636807515546 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_140" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_141" mocap="true" pos="70.345423295984887 -1.0039002960431702 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_141" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_142" mocap="true" pos="18.501832936843641 3.4856381281508959 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_142" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_143" mocap="true" pos="2.4989996903878042 -5.7701241343474443 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_143" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_144" mocap="true" pos="30.786180816912957 -17.332601481913095 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_144" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_145" mocap="true" pos="9.7393558660976325 11.532649280530482 2" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_145" type="box" size="0.20000000000000001 0.20000000000000001 2" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_146" mocap="true" pos="45.315639398155525 -14.851384167952549 4.062366379719859" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_146" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_147" mocap="true" pos="31.564742212014718 -2.3909226476810552 3.2013316745737548" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_147" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_148" mocap="true" pos="15.45310429389799 11.299900697368113 3.7431526281574108" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_148" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_149" mocap="true" pos="49.12519852902075 8.3782468810536805 3.3041647201910012" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_149" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_150" mocap="true" pos="99.186938422973398 11.0099104180699 1.9987722465435622" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_150" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_151" mocap="true" pos="51.069111573549165 -4.2464373072538208 2.6263796176056053" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_151" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_152" mocap="true" pos="89.576512273523662 -16.15220418372224 3.9191667978990932" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_152" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_153" mocap="true" pos="50.390787526711215 -14.183955173537029 4.0620079250922432" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_153" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_154" mocap="true" pos="56.312069397703603 2.5259894902377766 0.99142236626804014" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_154" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_155" mocap="true" pos="35.674747019982945 -14.776853358225903 2.3844996250138522" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_155" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_156" mocap="true" pos="37.062092902331699 -6.8066212227194214 3.8744745430532328" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_156" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_157" mocap="true" pos="62.424488125112489 -15.597752539384491 3.0665259771798237" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_157" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_158" mocap="true" pos="65.714837427765758 -0.99791723342013583 2.1565653881306055" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_158" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_159" mocap="true" pos="21.394909241295402 -3.2895511821537262 1.6605261370327551" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_159" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_160" mocap="true" pos="48.630594038918098 6.7750196137429555 3.8927210819450959" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_160" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_161" mocap="true" pos="14.542527816603945 12.391127409245627 3.4430599266789104" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_161" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_162" mocap="true" pos="62.806947358685285 -12.317016342986747 0.95814560736473176" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_162" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_163" mocap="true" pos="13.685161221759866 -7.1259840241433317 1.7489418810578958" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_163" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_164" mocap="true" pos="81.039708442891552 -6.2563472252960786 1.2841700081542045" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_164" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_165" mocap="true" pos="97.572089826727122 8.1957365095194312 3.59191069296552" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_165" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_166" mocap="true" pos="49.72207185204978 -16.124041516576682 2.8105334354665459" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_166" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_167" mocap="true" pos="44.474305755772839 -7.2780110912938554 1.0149341373098979" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_167" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_168" mocap="true" pos="31.611202033739882 -9.1075837805619564 1.9825438826141268" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_168" type="box" size="0.20000000000000001 2 0.20000000000000001" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_169" mocap="true" pos="71.333406864798434 -15.334662761553663 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_169" type="cylinder" size="1.1894205373602369 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_170" mocap="true" pos="75.88658059220117 -7.6124655207157268 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_170" type="cylinder" size="1.4279862000125372 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_171" mocap="true" pos="86.406007410215921 -12.431103390945664 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_171" type="cylinder" size="1.3247938986958012 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_172" mocap="true" pos="63.941645761245979 -13.209791526826757 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_172" type="cylinder" size="1.2788883528077375 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_173" mocap="true" pos="47.524201094050866 -10.370472347927326 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_173" type="cylinder" size="1.356499141170374 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_174" mocap="true" pos="89.537957504097932 15.859376998291083 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_174" type="cylinder" size="1.0528842212669083 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_175" mocap="true" pos="37.885218668145782 -16.429977896490776 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_175" type="cylinder" size="1.2319310474568521 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_176" mocap="true" pos="66.318058327445755 8.2754329266119164 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_176" type="cylinder" size="1.0288526487401124 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_177" mocap="true" pos="11.304238551254308 5.2865401267219028 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_177" type="cylinder" size="1.4174656920286237 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_178" mocap="true" pos="60.751263716874519 -16.243499731626585 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_178" type="cylinder" size="1.0409190527227221 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_179" mocap="true" pos="58.061076774947487 -11.323813839737099 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_179" type="cylinder" size="1.3738157708184564 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_180" mocap="true" pos="30.213015411177569 13.037562192368732 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_180" type="cylinder" size="1.4510497084710718 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_181" mocap="true" pos="53.106177935457069 8.1065989335864046 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_181" type="cylinder" size="1.3820331966046855 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_182" mocap="true" pos="62.667121123210755 5.8718212868318211 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_182" type="cylinder" size="1.2018408598784107 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_183" mocap="true" pos="89.281234812318928 -12.911907459468942 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_183" type="cylinder" size="1.0809209302999594 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_184" mocap="true" pos="72.438559745008092 -11.543133068891951 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_184" type="cylinder" size="1.2600605555501188 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_185" mocap="true" pos="90.14637303822947 -5.6967396510435542 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_185" type="cylinder" size="1.3678061345809758 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_186" mocap="true" pos="86.906697527378412 6.3461377724297066 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_186" type="cylinder" size="1.0453975287527357 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_187" mocap="true" pos="51.635148692379794 11.881700095151444 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_187" type="cylinder" size="1.4988844480450623 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_188" mocap="true" pos="45.865967727359717 -17.749537485830082 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_188" type="cylinder" size="1.1745711571550248 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_189" mocap="true" pos="49.949849565461577 17.17610574697175 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_189" type="cylinder" size="1.0325901922794105 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_190" mocap="true" pos="91.580939117559041 -2.4010144370175723 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_190" type="cylinder" size="1.0497660501328077 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_191" mocap="true" pos="75.161674786128756 -15.156821214449279 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_191" type="cylinder" size="1.0669900707875615 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_192" mocap="true" pos="23.686366242868118 1.8896053178491314 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_192" type="cylinder" size="1.330159189166801 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_193" mocap="true" pos="86.036986368500536 3.5894805115989712 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_193" type="cylinder" size="1.3187447222193114 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_194" mocap="true" pos="48.11938248679013 0.17218231737051326 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_194" type="cylinder" size="1.3314828979891942 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_195" mocap="true" pos="26.994494180147822 -8.1603243892711887 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_195" type="cylinder" size="1.311489409522627 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_196" mocap="true" pos="62.173988608150886 -12.792160132054029 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_196" type="cylinder" size="1.0978551264870253 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_197" mocap="true" pos="54.843386790998629 13.329679104729763 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_197" type="cylinder" size="1.1558913493145753 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_198" mocap="true" pos="17.399490706385489 -18.058119578564327 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_198" type="cylinder" size="1.2650826237450614 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_199" mocap="true" pos="52.845477731132263 4.5065589436298836 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_199" type="cylinder" size="1.2732829553533977 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_200" mocap="true" pos="65.895347577175244 14.805258935639372 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_200" type="cylinder" size="1.1587496981330596 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_201" mocap="true" pos="79.604199035383999 -10.930434465853573 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_201" type="cylinder" size="1.1654354892365322 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_202" mocap="true" pos="49.438364166641605 0.78533909378320033 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_202" type="cylinder" size="1.368841796534856 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+    <body name="obstacle_203" mocap="true" pos="2.6052154416597695 9.5365528708208878 3" user="0 0 0 0 0 0">
+      <geom name="obstacle_geom_203" type="cylinder" size="1.4030644302807944 3" rgba="0.35 0.42 0.5 1" />
+    </body>
+  </worldbody>
+</mujoco>

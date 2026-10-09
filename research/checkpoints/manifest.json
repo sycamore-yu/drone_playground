@@ -1,0 +1,2629 @@
+{
+  "purpose": "Reference policy checkpoints, training recipes, and evaluation provenance",
+  "unique_checkpoints": 22,
+  "evaluation_references": 26,
+  "distinct_formal_reports": 22,
+  "checkpoints": [
+    {
+      "sha256": "9bbf509856f53283e8e7b6bd80f631d2fe66a432311700e826f7d992b9fca86c",
+      "relative_path": "weights/9bbf509856f53283e8e7b6bd80f631d2fe66a432311700e826f7d992b9fca86c.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 0,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "9dce73ca3a2620dbb92804978902cae286738c6e1b7eed07f7e1effa5eb04ee7",
+      "sidecar_sha256": "65d505c999e2bf6a299aa3f2929168cab8786c83c1bc762467ca292e96081a7a",
+      "recipe": {
+        "network": {
+          "name": "brax_ppo",
+          "distribution_type": "normal",
+          "normalize_observations": false,
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879
+        },
+        "algorithm": {
+          "name": "ppo",
+          "unroll_length": 16,
+          "batch_size": 64,
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "learning_rate": 0.0008,
+          "discounting": 0.92,
+          "gae_lambda": 0.94,
+          "clipping_epsilon": 0.2,
+          "entropy_cost": 0.007,
+          "max_grad_norm": 1.0,
+          "gradient": {
+            "transition": "direct"
+          }
+        },
+        "training": {
+          "seed": 0,
+          "num_envs": 1024,
+          "policy_updates": 1000,
+          "num_timesteps": 2097152,
+          "max_wall_seconds": 3600
+        },
+        "objective": {
+          "name": "tracking_exp",
+          "scale": 1.0,
+          "distance_scale": 2.0
+        },
+        "dynamics": {
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "name": "state_reference",
+          "n_samples": 10,
+          "interval": 0.1
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "name": "figure8",
+          "freq": 50,
+          "duration": 10.0,
+          "reference": "figure8",
+          "reference_count": 256,
+          "numerical_guard": false,
+          "reference_generator": {
+            "name": "figure8",
+            "amplitude": 1.0
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "device": "gpu",
+          "timing": "synchronous",
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ]
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 0,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/759f0baedfb85a856e64d10e953dcc86a9d16634c0484cc52dbcdc3d2ae34b38.json",
+          "sha256": "759f0baedfb85a856e64d10e953dcc86a9d16634c0484cc52dbcdc3d2ae34b38",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.09720106934525932
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed0/weights/step-0000524288.pkl"
+    },
+    {
+      "sha256": "138a6bad50e7ad775d1e85e328fa507956804c22bee592c71cd5763ef218c774",
+      "relative_path": "weights/138a6bad50e7ad775d1e85e328fa507956804c22bee592c71cd5763ef218c774.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 1,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "91967bfe7af81c5bcbcba34ea19e9c8c4b6f3b4772559dfc4a243bb7a2ff084e",
+      "sidecar_sha256": "6914b844d279c8f3194f875a074e1c5e7a903514b235043abb0da74dfa862215",
+      "recipe": {
+        "network": {
+          "distribution_type": "normal",
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879,
+          "name": "brax_ppo",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "batch_size": 64,
+          "clipping_epsilon": 0.2,
+          "discounting": 0.92,
+          "entropy_cost": 0.007,
+          "gae_lambda": 0.94,
+          "gradient": {
+            "transition": "direct"
+          },
+          "learning_rate": 0.0008,
+          "max_grad_norm": 1.0,
+          "name": "ppo",
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "unroll_length": 16
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 1024,
+          "num_timesteps": 2097152,
+          "policy_updates": 1000,
+          "seed": 1
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 1,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/bf7fb5bcf59b72ab1562f97228f2c54f883b1fa3740267d267814b4a4f0981e4.json",
+          "sha256": "bf7fb5bcf59b72ab1562f97228f2c54f883b1fa3740267d267814b4a4f0981e4",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.10730447107543775
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed1/weights/step-0000524288.pkl"
+    },
+    {
+      "sha256": "6c65adab02cc9296b09d698ae8b3f6436f00660c197103be93c1befe9dc05026",
+      "relative_path": "weights/6c65adab02cc9296b09d698ae8b3f6436f00660c197103be93c1befe9dc05026.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 2,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "12aece08c0c17b7b1548408605681ede46a021e4cb97de1019ba8e7b8c942cc8",
+      "sidecar_sha256": "a9522ce26a2efe073619b238e68a824ccb2ea74e2e7d5852f23156a1a1284d0c",
+      "recipe": {
+        "network": {
+          "distribution_type": "normal",
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879,
+          "name": "brax_ppo",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "batch_size": 64,
+          "clipping_epsilon": 0.2,
+          "discounting": 0.92,
+          "entropy_cost": 0.007,
+          "gae_lambda": 0.94,
+          "gradient": {
+            "transition": "direct"
+          },
+          "learning_rate": 0.0008,
+          "max_grad_norm": 1.0,
+          "name": "ppo",
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "unroll_length": 16
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 1024,
+          "num_timesteps": 2097152,
+          "policy_updates": 1000,
+          "seed": 2
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "01-ppo-tracking",
+          "seed": 2,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/26c74dee02271b8e96a57b9bef8dc0a8dcdb00f66b400225c67409041cd5386a.json",
+          "sha256": "26c74dee02271b8e96a57b9bef8dc0a8dcdb00f66b400225c67409041cd5386a",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.12408731559157465
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/01-ppo-tracking/260929-seed2/weights/step-0000524288.pkl"
+    },
+    {
+      "sha256": "d64e6116027a5650613118e9450e2d1c2e925fad47aeae5f9b49c06556c488cf",
+      "relative_path": "weights/d64e6116027a5650613118e9450e2d1c2e925fad47aeae5f9b49c06556c488cf.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 10,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "6276496e3b3993ac92591f66d48c79a8fcdd89b25675e6ff98e53030df29ad4b",
+      "sidecar_sha256": "baf353f6fae3f7ef57d0bb8623163d6b2698e5c7be820532b1398a918638bc85",
+      "recipe": {
+        "network": {
+          "distribution_type": "normal",
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879,
+          "name": "brax_ppo",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "batch_size": 64,
+          "clipping_epsilon": 0.2,
+          "discounting": 0.92,
+          "entropy_cost": 0.007,
+          "gae_lambda": 0.94,
+          "gradient": {
+            "transition": "direct"
+          },
+          "learning_rate": 0.0008,
+          "max_grad_norm": 1.0,
+          "name": "ppo",
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "unroll_length": 16
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 1024,
+          "num_timesteps": 4194304,
+          "policy_updates": 1000,
+          "seed": 10
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 10,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/7fbfd2c74572259debe79bac48b8d2bf3a639718041f2e91ffbc4a8e38554bc9.json",
+          "sha256": "7fbfd2c74572259debe79bac48b8d2bf3a639718041f2e91ffbc4a8e38554bc9",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed10/weights/step-0001572864.pkl"
+    },
+    {
+      "sha256": "7b6d414f5c79561b49826a3ade9fe8db9299742cd7763034be54f3ca79b22500",
+      "relative_path": "weights/7b6d414f5c79561b49826a3ade9fe8db9299742cd7763034be54f3ca79b22500.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 11,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "663fb07144754f91a78b4a54d61a4446e4f1b827a4818975415bf85962a4cded",
+      "sidecar_sha256": "35b16587812266f4b6e86538502f3d8e0cfddcf95639e9507d8b738c48a0c264",
+      "recipe": {
+        "network": {
+          "distribution_type": "normal",
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879,
+          "name": "brax_ppo",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "batch_size": 64,
+          "clipping_epsilon": 0.2,
+          "discounting": 0.92,
+          "entropy_cost": 0.007,
+          "gae_lambda": 0.94,
+          "gradient": {
+            "transition": "direct"
+          },
+          "learning_rate": 0.0008,
+          "max_grad_norm": 1.0,
+          "name": "ppo",
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "unroll_length": 16
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 1024,
+          "num_timesteps": 4194304,
+          "policy_updates": 1000,
+          "seed": 11
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 11,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/63c1c3d014340feca11f4623bef0052f339813f09b3b14fe4f5d819d68aba215.json",
+          "sha256": "63c1c3d014340feca11f4623bef0052f339813f09b3b14fe4f5d819d68aba215",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed11/weights/step-0002097152.pkl"
+    },
+    {
+      "sha256": "c889e8465d8caa9c8b0519205a938231af7f98651dc1b9434449c671e26a1c08",
+      "relative_path": "weights/c889e8465d8caa9c8b0519205a938231af7f98651dc1b9434449c671e26a1c08.pkl",
+      "size_bytes": 58881,
+      "seed_and_cells": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 12,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Crazyflow paper PPO-scale recipe + Brax native trainer; task is public FigureEight, not the paper Lissajous task",
+      "parameter_sha256": "b1edc5e488b44d89b902bf11f700c29e0fb89dea8631d5983f32c4bb2675e4dc",
+      "sidecar_sha256": "8e623b1b2582fc527381ef03f72c53e569ad0cb3e0eb491a042d772f002d6908",
+      "recipe": {
+        "network": {
+          "distribution_type": "normal",
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "init_noise_std": 0.367879,
+          "name": "brax_ppo",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "batch_size": 64,
+          "clipping_epsilon": 0.2,
+          "discounting": 0.92,
+          "entropy_cost": 0.007,
+          "gae_lambda": 0.94,
+          "gradient": {
+            "transition": "direct"
+          },
+          "learning_rate": 0.0008,
+          "max_grad_norm": 1.0,
+          "name": "ppo",
+          "num_minibatches": 16,
+          "num_updates_per_batch": 8,
+          "unroll_length": 16
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 1024,
+          "num_timesteps": 4194304,
+          "policy_updates": 1000,
+          "seed": 12
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "02-ppo-racing",
+          "seed": 12,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/985dfa170b9dc0e6926fbd42729fd90c04a2e9930a454632779ce16dce2f4f69.json",
+          "sha256": "985dfa170b9dc0e6926fbd42729fd90c04a2e9930a454632779ce16dce2f4f69",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/02-ppo-racing/260929-seed12/weights/step-0001572864.pkl"
+    },
+    {
+      "sha256": "dbabf8f7a31c48d6dd7a15eec2954dd44c957e39628b0c557dffa1ceeb87d636",
+      "relative_path": "weights/dbabf8f7a31c48d6dd7a15eec2954dd44c957e39628b0c557dffa1ceeb87d636.pkl",
+      "size_bytes": 32609,
+      "seed_and_cells": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 0,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "efdc2e6a9d6e9333d5f8a02992dd3196b518a2e18195ca91b564091fb6d3ae52",
+      "sidecar_sha256": "7959b7090f21a45f3b75b2c384f4dd4bf484b2d4e9e619995c2ba05458853c27",
+      "recipe": {
+        "network": {
+          "name": "brax_shac",
+          "normalize_observations": false,
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "layer_norm": true
+        },
+        "algorithm": {
+          "name": "shac",
+          "horizon_length": 32,
+          "learning_rate": 0.003,
+          "critic_learning_rate": 0.002,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "td_lambda": 0.95,
+          "target_critic_alpha": 0.4,
+          "max_grad_norm": 1.0,
+          "critic_max_grad_norm": 10.0,
+          "use_schedule": true,
+          "schedule_decay": 0.997,
+          "gradient": {
+            "transition": "direct"
+          }
+        },
+        "training": {
+          "seed": 0,
+          "num_envs": 128,
+          "policy_updates": 1000,
+          "num_timesteps": null,
+          "max_wall_seconds": 3600
+        },
+        "objective": {
+          "name": "tracking_exp",
+          "scale": 1.0,
+          "distance_scale": 2.0
+        },
+        "dynamics": {
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "name": "state_reference",
+          "n_samples": 10,
+          "interval": 0.1
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "name": "figure8",
+          "freq": 50,
+          "duration": 10.0,
+          "reference": "figure8",
+          "reference_count": 256,
+          "numerical_guard": false,
+          "reference_generator": {
+            "name": "figure8",
+            "amplitude": 1.0
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "device": "gpu",
+          "timing": "synchronous",
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ]
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 0,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/8cf10ae6195d057dba80dd504780bd94e7d091e2c8b70c53004ceb35afef7dde.json",
+          "sha256": "8cf10ae6195d057dba80dd504780bd94e7d091e2c8b70c53004ceb35afef7dde",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.07243119230766851
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed0/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "73c3e76409c207c9ac491036c51563df911bacd7a3253cb134d17da750be8423",
+      "relative_path": "weights/73c3e76409c207c9ac491036c51563df911bacd7a3253cb134d17da750be8423.pkl",
+      "size_bytes": 32609,
+      "seed_and_cells": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 1,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "f234418671715159efe8c8762c69ce89ea3fd51ce14d26898ab73a6e3eaabd62",
+      "sidecar_sha256": "ca399f75c897f44d95128155a2dacf9db5e5fef551e7d64881abebc6fc4de67a",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "layer_norm": true,
+          "name": "brax_shac",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "critic_learning_rate": 0.002,
+          "critic_max_grad_norm": 10.0,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.003,
+          "max_grad_norm": 1.0,
+          "name": "shac",
+          "schedule_decay": 0.997,
+          "target_critic_alpha": 0.4,
+          "td_lambda": 0.95,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 1
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 1,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/5b083eb8c25fad1990a4e33ae49c98b5f296e264354a0ae081a99ea776cf3468.json",
+          "sha256": "5b083eb8c25fad1990a4e33ae49c98b5f296e264354a0ae081a99ea776cf3468",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.11608792027938401
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed1/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "dbc3c62a00783b08cb042db4a221689fc25b18bd21d94098e712cbf0347dfef5",
+      "relative_path": "weights/dbc3c62a00783b08cb042db4a221689fc25b18bd21d94098e712cbf0347dfef5.pkl",
+      "size_bytes": 32609,
+      "seed_and_cells": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 2,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "23f5447ab66445d68e1050c5cb4f8bc24ff83f6945510b9076f80d71c037ad2a",
+      "sidecar_sha256": "05df66242b8f3cf67c12cd9b29ecd5a620444b2bbf19ff0c595371246efd33b1",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            64,
+            64
+          ],
+          "layer_norm": true,
+          "name": "brax_shac",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "critic_learning_rate": 0.002,
+          "critic_max_grad_norm": 10.0,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.003,
+          "max_grad_norm": 1.0,
+          "name": "shac",
+          "schedule_decay": 0.997,
+          "target_critic_alpha": 0.4,
+          "td_lambda": 0.95,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 2
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "03-shac-tracking",
+          "seed": 2,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/5ba82ab294ffcf3cc97710c964c6afc67b024ea0fbf2ddd9aefbf1ac7aa7d754.json",
+          "sha256": "5ba82ab294ffcf3cc97710c964c6afc67b024ea0fbf2ddd9aefbf1ac7aa7d754",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.14838618594172787
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/03-shac-tracking/260929-seed2/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "97d873a790a25021b27d2d2439c28b5537a8418963879bd80062e549aa011e1b",
+      "relative_path": "weights/97d873a790a25021b27d2d2439c28b5537a8418963879bd80062e549aa011e1b.pkl",
+      "size_bytes": 185455,
+      "seed_and_cells": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 30,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "ba86450227eec1d7666d5a6865e7eeae4ffd83df24667e0214705bf55bc211d1",
+      "sidecar_sha256": "f5b856fcb9efae5a691000902c1db25033ad857c2de86bebfb102b7ac150db2f",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            256,
+            128
+          ],
+          "layer_norm": true,
+          "name": "diffaero_mlp_adapter",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "actor_adam_b1": 0.9,
+          "actor_adam_b2": 0.999,
+          "critic_learning_rate": 0.003,
+          "critic_max_grad_norm": 10.0,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.0003,
+          "max_grad_norm": 1.0,
+          "name": "shac",
+          "schedule_decay": 0.997,
+          "target_critic_alpha": 0.995,
+          "td_lambda": 0.95,
+          "use_schedule": false
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 30
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 30,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/069c27e4941730390426e238c060f46b804353b2f2a3706c728c8673fd55f1b1.json",
+          "sha256": "069c27e4941730390426e238c060f46b804353b2f2a3706c728c8673fd55f1b1",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed30/weights/step-0001024000.pkl"
+    },
+    {
+      "sha256": "3e07916a2460972468168e74ea2fb4c6f3d7427398d741d418286fd78a776550",
+      "relative_path": "weights/3e07916a2460972468168e74ea2fb4c6f3d7427398d741d418286fd78a776550.pkl",
+      "size_bytes": 185455,
+      "seed_and_cells": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 31,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "1815032694520a154bc6b0b2dc8c872856b4151423befad96409329cfad1856d",
+      "sidecar_sha256": "5e59db8e9870e1631b587aa8504f143ab6796a494178eb187921b129c36cd58f",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            256,
+            128
+          ],
+          "layer_norm": true,
+          "name": "diffaero_mlp_adapter",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "actor_adam_b1": 0.9,
+          "actor_adam_b2": 0.999,
+          "critic_learning_rate": 0.003,
+          "critic_max_grad_norm": 10.0,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.0003,
+          "max_grad_norm": 1.0,
+          "name": "shac",
+          "schedule_decay": 0.997,
+          "target_critic_alpha": 0.995,
+          "td_lambda": 0.95,
+          "use_schedule": false
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 31
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 31,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/ba13998dd54c4d73ecc3c32babc85c42f673372f808a10e0fff5ef67ab5035e9.json",
+          "sha256": "ba13998dd54c4d73ecc3c32babc85c42f673372f808a10e0fff5ef67ab5035e9",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed31/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "fc53b05be65c2a7c0df8ac0ae2818c02199d72fcc63aae6329b63dbbe56ebf41",
+      "relative_path": "weights/fc53b05be65c2a7c0df8ac0ae2818c02199d72fcc63aae6329b63dbbe56ebf41.pkl",
+      "size_bytes": 185455,
+      "seed_and_cells": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 32,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "Independent SHAC JAX implementation based on Xu et al. 2022; Brax APG policy network; unchanged P2 task",
+      "parameter_sha256": "9928d60a08d47ad41fa5b53d1de8ef7feb629d8bee4a037fe05b97d8329b2f81",
+      "sidecar_sha256": "ce333a37be48a962db9a93098dd7136b2a7e3f2cfcd04405db016bac09fbfe06",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            256,
+            128
+          ],
+          "layer_norm": true,
+          "name": "diffaero_mlp_adapter",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "actor_adam_b1": 0.9,
+          "actor_adam_b2": 0.999,
+          "critic_learning_rate": 0.003,
+          "critic_max_grad_norm": 10.0,
+          "critic_updates": 8,
+          "discounting": 0.99,
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.0003,
+          "max_grad_norm": 1.0,
+          "name": "shac",
+          "schedule_decay": 0.997,
+          "target_critic_alpha": 0.995,
+          "td_lambda": 0.95,
+          "use_schedule": false
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 32
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "04-shac-racing",
+          "seed": 32,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/f6f06ba8330dde41c01a3c5d2c92d8d06318d06bda75bf4dcf20da25a1eb33f8.json",
+          "sha256": "f6f06ba8330dde41c01a3c5d2c92d8d06318d06bda75bf4dcf20da25a1eb33f8",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/04-shac-racing/260930-seed32/weights/step-0001024000.pkl"
+    },
+    {
+      "sha256": "40e99a020eee6440396d0a115a91efcdedd0541ba26af6792ff824108c54b214",
+      "relative_path": "weights/40e99a020eee6440396d0a115a91efcdedd0541ba26af6792ff824108c54b214.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 0,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "84ca7c379ff34229510caa18e2ebe522c0a424da022ed129b0525935b130fde8",
+      "sidecar_sha256": "a6af97b47eabd29d0fc9ac26d22eab1cfa26059aaea046f8db95e6310ced49e6",
+      "recipe": {
+        "network": {
+          "name": "brax_apg",
+          "normalize_observations": false,
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true
+        },
+        "algorithm": {
+          "name": "bptt",
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "use_schedule": true,
+          "schedule_decay": 0.997,
+          "gradient": {
+            "transition": "direct"
+          }
+        },
+        "training": {
+          "seed": 0,
+          "num_envs": 128,
+          "policy_updates": 1000,
+          "num_timesteps": null,
+          "max_wall_seconds": 3600
+        },
+        "objective": {
+          "name": "tracking_exp",
+          "scale": 1.0,
+          "distance_scale": 2.0
+        },
+        "dynamics": {
+          "forward": "so_rpy",
+          "drone": "cf2x_L250"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "name": "state_reference",
+          "n_samples": 10,
+          "interval": 0.1
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "name": "figure8",
+          "freq": 50,
+          "duration": 10.0,
+          "reference": "figure8",
+          "reference_count": 256,
+          "numerical_guard": false,
+          "reference_generator": {
+            "name": "figure8",
+            "amplitude": 1.0
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "device": "gpu",
+          "timing": "synchronous",
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ]
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 0,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/e7217c1f9ea21188df13cf2031f0804e85122a5cd498547a3ffa1acb6e015dbb.json",
+          "sha256": "e7217c1f9ea21188df13cf2031f0804e85122a5cd498547a3ffa1acb6e015dbb",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.03898648693606058
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed0/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "5666403a29f6179de646d34f98cf4a00cab89f7d6f88b32fd41728f07ed4d641",
+      "relative_path": "weights/5666403a29f6179de646d34f98cf4a00cab89f7d6f88b32fd41728f07ed4d641.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 1,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "4bdf68ad5d9afa4c4445a9afba039660554e7b840fcc41c360fe09e2482d4e83",
+      "sidecar_sha256": "bf4812c654841b234b250094e08f3a8774961a1724a30bc1c7c0aa77d97a83d1",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true,
+          "name": "brax_apg",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "name": "bptt",
+          "schedule_decay": 0.997,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 1
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 1,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/42889008ac5b2f011df25b312b5b07756a83c535fcf6b7941d4556534d87005d.json",
+          "sha256": "42889008ac5b2f011df25b312b5b07756a83c535fcf6b7941d4556534d87005d",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.03654181635472735
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed1/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "f89412fedbc5d6e6e8bf74381b82a841b445cbe27b7e6e963d2065f3fc538659",
+      "relative_path": "weights/f89412fedbc5d6e6e8bf74381b82a841b445cbe27b7e6e963d2065f3fc538659.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 2,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "79414178ba6f412e470adeb3086b62640d45266474960c5cfa4fb18e52e58086",
+      "sidecar_sha256": "5f18408d9a5fb00d9e926bb4bacf9b460ef866b1867e007a0c471f67150c4b00",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true,
+          "name": "brax_apg",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "name": "bptt",
+          "schedule_decay": 0.997,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 2
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf2x_L250",
+          "forward": "so_rpy"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 10.0,
+          "freq": 50,
+          "name": "figure8",
+          "numerical_guard": false,
+          "reference": "figure8",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "figure8"
+          }
+        },
+        "scene": {
+          "name": "empty",
+          "takeoff": [
+            -1.5,
+            1.0,
+            0.07
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "05-bptt-tracking",
+          "seed": 2,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/708eea921482cf730041c62d7b5242229c0e7f97ad667456b304046f743b5a38.json",
+          "sha256": "708eea921482cf730041c62d7b5242229c0e7f97ad667456b304046f743b5a38",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": 0.03362687776882176
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/05-bptt-tracking/260929-seed2/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "9097b9ebbf484fcc828bc661424906b5ef50f9d3e2ac4a41e61d390e96c39741",
+      "relative_path": "weights/9097b9ebbf484fcc828bc661424906b5ef50f9d3e2ac4a41e61d390e96c39741.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 0,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "b7bc1236abd451698911db788da1300ad7c872df8a147da7362728ce6faf1593",
+      "sidecar_sha256": "ed2b8ffa71eb7c8591d720205ef4da878f84968023661c15062ba0b4d7ea33d3",
+      "recipe": {
+        "network": {
+          "name": "brax_apg",
+          "normalize_observations": false,
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true
+        },
+        "algorithm": {
+          "name": "bptt",
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "use_schedule": true,
+          "schedule_decay": 0.997,
+          "gradient": {
+            "transition": "direct"
+          }
+        },
+        "training": {
+          "seed": 0,
+          "num_envs": 128,
+          "policy_updates": 1000,
+          "num_timesteps": null,
+          "max_wall_seconds": 3600
+        },
+        "objective": {
+          "name": "tracking_exp",
+          "scale": 1.0,
+          "distance_scale": 2.0
+        },
+        "dynamics": {
+          "forward": "first_principles",
+          "drone": "cf21B_500"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "name": "state_reference",
+          "n_samples": 10,
+          "interval": 0.1
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "name": "racing",
+          "freq": 50,
+          "duration": 30.0,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "numerical_guard": false,
+          "reference_generator": {
+            "name": "lsy_course",
+            "amplitude": 1.0
+          }
+        },
+        "scene": {
+          "name": "lsy_level0",
+          "disturbances": true
+        },
+        "runtime": {
+          "device": "gpu",
+          "timing": "synchronous",
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ]
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 0,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/589c1736be22a35960d0a4fffbc55884aee337fb0f8bc9a001288544fb988723.json",
+          "sha256": "589c1736be22a35960d0a4fffbc55884aee337fb0f8bc9a001288544fb988723",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed0/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "9febddb1564cea748e8b09b0b51f0f7a757e77b170103126f428c787a064f236",
+      "relative_path": "weights/9febddb1564cea748e8b09b0b51f0f7a757e77b170103126f428c787a064f236.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 1,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "1fab786d91c2ba3f621547212e05f62a7669ef1e4c1a3c7f72b4aa0bc9f0a4ad",
+      "sidecar_sha256": "9c75f3f0fb8a580572160fd9916ad9e0e7824883b356a64a59d2e32881a47da8",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true,
+          "name": "brax_apg",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "name": "bptt",
+          "schedule_decay": 0.997,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 1
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 1,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/bb8a17a687ecea06291262c1046a1a90f87a1d889f2dec51017be3a609746f04.json",
+          "sha256": "bb8a17a687ecea06291262c1046a1a90f87a1d889f2dec51017be3a609746f04",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed1/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "3fd75fb10a9698ca6801a24a4f8530ecadc35974d79faf28b2fc57ad2d61aac0",
+      "relative_path": "weights/3fd75fb10a9698ca6801a24a4f8530ecadc35974d79faf28b2fc57ad2d61aac0.pkl",
+      "size_bytes": 13007,
+      "seed_and_cells": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 2,
+          "selection_status": "passed"
+        }
+      ],
+      "kind": "inference-parameters",
+      "policy_family": "brax",
+      "trained_adaptation": "BPTT with the Brax APG policy and finite-horizon mean-reward gradient; explicit snapshots and continuation",
+      "parameter_sha256": "6038bbc44d92b4f12e29ee7208f5d92b1e6167b74e37943f6f00f526ec04abc1",
+      "sidecar_sha256": "ea7bce5bd20fa1cc143471645365aa163a78cfeec5f1c006b488ac018d22cc0a",
+      "recipe": {
+        "network": {
+          "hidden_sizes": [
+            32,
+            32
+          ],
+          "layer_norm": true,
+          "name": "brax_apg",
+          "normalize_observations": false
+        },
+        "algorithm": {
+          "gradient": {
+            "transition": "direct"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.005,
+          "max_grad_norm": 1.0,
+          "name": "bptt",
+          "schedule_decay": 0.997,
+          "use_schedule": true
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 128,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 2
+        },
+        "objective": {
+          "distance_scale": 2.0,
+          "name": "tracking_exp",
+          "scale": 1.0
+        },
+        "dynamics": {
+          "drone": "cf21B_500",
+          "forward": "first_principles"
+        },
+        "physical_command": "attitude_thrust",
+        "observation": {
+          "interval": 0.1,
+          "n_samples": 10,
+          "name": "state_reference"
+        },
+        "sensor": {
+          "name": "none"
+        },
+        "task": {
+          "duration": 30.0,
+          "freq": 50,
+          "name": "racing",
+          "numerical_guard": false,
+          "reference": "lsy_course",
+          "reference_count": 256,
+          "reference_generator": {
+            "amplitude": 1.0,
+            "name": "lsy_course"
+          }
+        },
+        "scene": {
+          "disturbances": true,
+          "name": "lsy_level0"
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "06-bptt-racing",
+          "seed": 2,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/176dfeb8c61f8d0db5766058ad1fe5c84ed039f20b379697e5a729ebae9e26b0.json",
+          "sha256": "176dfeb8c61f8d0db5766058ad1fe5c84ed039f20b379697e5a729ebae9e26b0",
+          "completion_rate": 1.0,
+          "rmse_completed_mean": null
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/06-bptt-racing/260929-seed2/weights/step-0000512000.pkl"
+    },
+    {
+      "sha256": "2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba",
+      "relative_path": "weights/2c9f0d540095c77391772cdd34aa1d795d3e0cb6178258ef0e36933fbaecbcba.pkl",
+      "size_bytes": 6172368,
+      "seed_and_cells": [
+        {
+          "cell": "11-depth-static",
+          "seed": 30,
+          "selection_status": "passed_revised_criterion"
+        },
+        {
+          "cell": "12-depth-dynamic",
+          "seed": 30,
+          "selection_status": "passed_revised_criterion"
+        }
+      ],
+      "kind": "complete-training-state",
+      "policy_family": "paper_pointcloud_gru",
+      "trained_adaptation": "Independent JAX depth CNN/GRU and velocity-prediction adaptation of Learning vision-based agile flight via differentiable physics; common navigation plant/objective, not original CUDA reproduction",
+      "parameter_sha256": "a421f572e02b0a2332a6f58fc3f627a2fdc6caa813ff9090032982707f50069a",
+      "sidecar_sha256": "1288b28635e5a61ae97d6e78e386a8c1f45151b11b9c8bff3663a5281185db23",
+      "recipe": {
+        "network": {
+          "far_m": 10.0,
+          "hidden_size": 192
+        },
+        "algorithm": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08,
+          "gradient": {
+            "decay_rate": 0.916290731874155,
+            "transition": "exponential"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.001,
+          "max_grad_norm": 1.0,
+          "name": "depth_navigation_bptt",
+          "velocity_prediction_weight": 1.0,
+          "weight_decay": 0.01
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 32,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 30
+        },
+        "objective": {
+          "acceleration_weight": 0.005,
+          "altitude_weight": 0.2,
+          "clearance_margin": 1.0,
+          "clearance_weight": 8.0,
+          "jerk_weight": 0.0005,
+          "max_speed": 20.0,
+          "overspeed_weight": 1.0,
+          "position_weight": 0.1,
+          "velocity_weight": 1.0
+        },
+        "dynamics": {
+          "drone": "paper_point_mass",
+          "forward": "point_mass_lag",
+          "gravity": 9.80665,
+          "time_constant": 0.08333333333333333
+        },
+        "physical_command": "world_acceleration",
+        "observation": {
+          "name": "flight_body_state",
+          "proprioception_size": 10
+        },
+        "sensor": {
+          "capture_rate_hz": 30.0,
+          "far_m": 10.0,
+          "height": 48,
+          "horizontal_fov_deg": 87.0,
+          "name": "d435i_depth_flight_ideal",
+          "near_m": 0.2,
+          "pitch_degrees": 20.0,
+          "source_rate_hz": 10.0,
+          "state_gradient": "detached",
+          "vertical_fov_deg": 58.0,
+          "width": 64
+        },
+        "task": {
+          "adapter_identity": "depth-flight-navigation-adaptation-v1",
+          "arrival_sampling": "physics",
+          "body_radius": 0.07,
+          "command_speed_range": [
+            2.0,
+            4.0
+          ],
+          "duration": 300.0,
+          "freq": 10,
+          "goal_radius": 0.5,
+          "initial_clearance_m": 0.15,
+          "max_speed": 20.0,
+          "name": "depth_navigation",
+          "physics_freq": 500,
+          "training_position_candidates": 32,
+          "training_velocity_noise": 0.3
+        },
+        "scene": {
+          "name": "navigation",
+          "scene_ids": [
+            "S01",
+            "S02",
+            "S03",
+            "S06",
+            "D01",
+            "D02",
+            "D03",
+            "D06"
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "depth-static",
+          "seed": 30,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/dca0730ef058027770e7b4fcce332821add30c3afe44d5172c447bd671a763de.json",
+          "sha256": "dca0730ef058027770e7b4fcce332821add30c3afe44d5172c447bd671a763de",
+          "scene_success_counts": {
+            "S01": 24,
+            "S02": 25,
+            "S03": 24,
+            "S06": 5
+          },
+          "scene_trials": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 25
+          }
+        },
+        {
+          "cell": "depth-dynamic",
+          "seed": 30,
+          "passed": false,
+          "trials": 100,
+          "report": "reports/dca0730ef058027770e7b4fcce332821add30c3afe44d5172c447bd671a763de.json",
+          "sha256": "dca0730ef058027770e7b4fcce332821add30c3afe44d5172c447bd671a763de",
+          "scene_success_counts": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 22,
+            "D06": 13
+          },
+          "scene_trials": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          }
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed30/weights/update-0000250.pkl"
+    },
+    {
+      "sha256": "6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56",
+      "relative_path": "weights/6ce93d9cf7df89beb923cbaee99c340d4b732e47fef3b293958a2b52ccbd8a56.pkl",
+      "size_bytes": 6172368,
+      "seed_and_cells": [
+        {
+          "cell": "11-depth-static",
+          "seed": 31,
+          "selection_status": "passed_revised_criterion"
+        },
+        {
+          "cell": "12-depth-dynamic",
+          "seed": 31,
+          "selection_status": "passed_revised_criterion"
+        }
+      ],
+      "kind": "complete-training-state",
+      "policy_family": "paper_pointcloud_gru",
+      "trained_adaptation": "Independent JAX depth CNN/GRU and velocity-prediction adaptation of Learning vision-based agile flight via differentiable physics; common navigation plant/objective, not original CUDA reproduction",
+      "parameter_sha256": "d041badf7151ed09e4c1edbba2289d93fbff4199a701bc001c01285ed25dd1b9",
+      "sidecar_sha256": "d6128f71fa384da79ffe3d3f5e78b594ee7c32558d904c82e929e7ed23fd9c59",
+      "recipe": {
+        "network": {
+          "far_m": 10.0,
+          "hidden_size": 192
+        },
+        "algorithm": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08,
+          "gradient": {
+            "decay_rate": 0.916290731874155,
+            "transition": "exponential"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.001,
+          "max_grad_norm": 1.0,
+          "name": "depth_navigation_bptt",
+          "velocity_prediction_weight": 1.0,
+          "weight_decay": 0.01
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 32,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 31
+        },
+        "objective": {
+          "acceleration_weight": 0.005,
+          "altitude_weight": 0.2,
+          "clearance_margin": 1.0,
+          "clearance_weight": 8.0,
+          "jerk_weight": 0.0005,
+          "max_speed": 20.0,
+          "overspeed_weight": 1.0,
+          "position_weight": 0.1,
+          "velocity_weight": 1.0
+        },
+        "dynamics": {
+          "drone": "paper_point_mass",
+          "forward": "point_mass_lag",
+          "gravity": 9.80665,
+          "time_constant": 0.08333333333333333
+        },
+        "physical_command": "world_acceleration",
+        "observation": {
+          "name": "flight_body_state",
+          "proprioception_size": 10
+        },
+        "sensor": {
+          "capture_rate_hz": 30.0,
+          "far_m": 10.0,
+          "height": 48,
+          "horizontal_fov_deg": 87.0,
+          "name": "d435i_depth_flight_ideal",
+          "near_m": 0.2,
+          "pitch_degrees": 20.0,
+          "source_rate_hz": 10.0,
+          "state_gradient": "detached",
+          "vertical_fov_deg": 58.0,
+          "width": 64
+        },
+        "task": {
+          "adapter_identity": "depth-flight-navigation-adaptation-v1",
+          "arrival_sampling": "physics",
+          "body_radius": 0.07,
+          "command_speed_range": [
+            2.0,
+            4.0
+          ],
+          "duration": 300.0,
+          "freq": 10,
+          "goal_radius": 0.5,
+          "initial_clearance_m": 0.15,
+          "max_speed": 20.0,
+          "name": "depth_navigation",
+          "physics_freq": 500,
+          "training_position_candidates": 32,
+          "training_velocity_noise": 0.3
+        },
+        "scene": {
+          "name": "navigation",
+          "scene_ids": [
+            "S01",
+            "S02",
+            "S03",
+            "S06",
+            "D01",
+            "D02",
+            "D03",
+            "D06"
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "depth-static",
+          "seed": 31,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/06326b4e555342c4ac9bd6add9a0bfba239cb04c52e996a8765cbe86b2eebde4.json",
+          "sha256": "06326b4e555342c4ac9bd6add9a0bfba239cb04c52e996a8765cbe86b2eebde4",
+          "scene_success_counts": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 20
+          },
+          "scene_trials": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 25
+          }
+        },
+        {
+          "cell": "depth-dynamic",
+          "seed": 31,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/06326b4e555342c4ac9bd6add9a0bfba239cb04c52e996a8765cbe86b2eebde4.json",
+          "sha256": "06326b4e555342c4ac9bd6add9a0bfba239cb04c52e996a8765cbe86b2eebde4",
+          "scene_success_counts": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          },
+          "scene_trials": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          }
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed31/weights/update-0000625.pkl"
+    },
+    {
+      "sha256": "7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd",
+      "relative_path": "weights/7d5e7bb7cad95bf1dc02d648061354cff8ff2d16e9358cf844209a2c8e84f8cd.pkl",
+      "size_bytes": 6172368,
+      "seed_and_cells": [
+        {
+          "cell": "11-depth-static",
+          "seed": 32,
+          "selection_status": "passed_revised_criterion"
+        },
+        {
+          "cell": "12-depth-dynamic",
+          "seed": 32,
+          "selection_status": "passed_revised_criterion"
+        }
+      ],
+      "kind": "complete-training-state",
+      "policy_family": "paper_pointcloud_gru",
+      "trained_adaptation": "Independent JAX depth CNN/GRU and velocity-prediction adaptation of Learning vision-based agile flight via differentiable physics; common navigation plant/objective, not original CUDA reproduction",
+      "parameter_sha256": "9f170fccb4a4b9410535cd5cf8518d9ed0ad7bee78da270b657b09b30412fbfd",
+      "sidecar_sha256": "814a669c51db006f2303ea43a07104d448604b3118798e79ac05ca6919d3e0d7",
+      "recipe": {
+        "network": {
+          "far_m": 10.0,
+          "hidden_size": 192
+        },
+        "algorithm": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08,
+          "gradient": {
+            "decay_rate": 0.916290731874155,
+            "transition": "exponential"
+          },
+          "horizon_length": 32,
+          "learning_rate": 0.001,
+          "max_grad_norm": 1.0,
+          "name": "depth_navigation_bptt",
+          "velocity_prediction_weight": 1.0,
+          "weight_decay": 0.01
+        },
+        "training": {
+          "max_wall_seconds": 3600,
+          "num_envs": 32,
+          "num_timesteps": null,
+          "policy_updates": 1000,
+          "seed": 32
+        },
+        "objective": {
+          "acceleration_weight": 0.005,
+          "altitude_weight": 0.2,
+          "clearance_margin": 1.0,
+          "clearance_weight": 8.0,
+          "jerk_weight": 0.0005,
+          "max_speed": 20.0,
+          "overspeed_weight": 1.0,
+          "position_weight": 0.1,
+          "velocity_weight": 1.0
+        },
+        "dynamics": {
+          "drone": "paper_point_mass",
+          "forward": "point_mass_lag",
+          "gravity": 9.80665,
+          "time_constant": 0.08333333333333333
+        },
+        "physical_command": "world_acceleration",
+        "observation": {
+          "name": "flight_body_state",
+          "proprioception_size": 10
+        },
+        "sensor": {
+          "capture_rate_hz": 30.0,
+          "far_m": 10.0,
+          "height": 48,
+          "horizontal_fov_deg": 87.0,
+          "name": "d435i_depth_flight_ideal",
+          "near_m": 0.2,
+          "pitch_degrees": 20.0,
+          "source_rate_hz": 10.0,
+          "state_gradient": "detached",
+          "vertical_fov_deg": 58.0,
+          "width": 64
+        },
+        "task": {
+          "adapter_identity": "depth-flight-navigation-adaptation-v1",
+          "arrival_sampling": "physics",
+          "body_radius": 0.07,
+          "command_speed_range": [
+            2.0,
+            4.0
+          ],
+          "duration": 300.0,
+          "freq": 10,
+          "goal_radius": 0.5,
+          "initial_clearance_m": 0.15,
+          "max_speed": 20.0,
+          "name": "depth_navigation",
+          "physics_freq": 500,
+          "training_position_candidates": 32,
+          "training_velocity_noise": 0.3
+        },
+        "scene": {
+          "name": "navigation",
+          "scene_ids": [
+            "S01",
+            "S02",
+            "S03",
+            "S06",
+            "D01",
+            "D02",
+            "D03",
+            "D06"
+          ]
+        },
+        "runtime": {
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ],
+          "device": "gpu",
+          "timing": "synchronous"
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "depth-static",
+          "seed": 32,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/d6fe0f46051f6f998b57e5756a0368cd605a97bb09a4cecb563e680d27e2a725.json",
+          "sha256": "d6fe0f46051f6f998b57e5756a0368cd605a97bb09a4cecb563e680d27e2a725",
+          "scene_success_counts": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 25
+          },
+          "scene_trials": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 25
+          }
+        },
+        {
+          "cell": "depth-dynamic",
+          "seed": 32,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/d6fe0f46051f6f998b57e5756a0368cd605a97bb09a4cecb563e680d27e2a725.json",
+          "sha256": "d6fe0f46051f6f998b57e5756a0368cd605a97bb09a4cecb563e680d27e2a725",
+          "scene_success_counts": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          },
+          "scene_trials": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          }
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/11-depth-static/260930-seed32/weights/update-0000875.pkl"
+    },
+    {
+      "sha256": "e1750add4300262fe2907943651e6530c4ba27667751b4a5cba98cb7b1b1f9d7",
+      "relative_path": "weights/e1750add4300262fe2907943651e6530c4ba27667751b4a5cba98cb7b1b1f9d7.pkl",
+      "size_bytes": 6748843,
+      "seed_and_cells": [
+        {
+          "cell": "13-pointcloud-static",
+          "seed": 0,
+          "selection_status": "development_not_confirmed"
+        },
+        {
+          "cell": "14-pointcloud-dynamic",
+          "seed": 0,
+          "selection_status": "development_not_qualified"
+        }
+      ],
+      "kind": "complete-training-state",
+      "policy_family": "paper_pointcloud_gru",
+      "trained_adaptation": "PointNet/GRU architecture of Learning to Fly from Point Clouds; explicitly trained navigation-domain adaptation, not zero-shot reproduction",
+      "parameter_sha256": "806a264b78eaad59adee0809eb5a43ca6181efed347d9e59475185ff272c4600",
+      "sidecar_sha256": "10496c2a4e0f9241abe93de66414166ad370cabf6a15443616956d0a610a8869",
+      "recipe": {
+        "network": {
+          "hidden_size": 192,
+          "point_channels": [
+            64,
+            128,
+            1024
+          ],
+          "negative_slope": 0.01,
+          "point_input_scale": 0.1,
+          "output_init_scale": 1.0
+        },
+        "algorithm": {
+          "name": "pointcloud_navigation_bptt",
+          "horizon_length": 32,
+          "learning_rate": 0.0003,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08,
+          "weight_decay": 0.01,
+          "gradient": {
+            "transition": "exponential",
+            "decay_rate": 0.916290731874155
+          },
+          "max_grad_norm": 1.0
+        },
+        "training": {
+          "seed": 0,
+          "num_envs": 32,
+          "policy_updates": 3000,
+          "num_timesteps": null,
+          "max_wall_seconds": 3600
+        },
+        "objective": {
+          "velocity_weight": 1.0,
+          "position_weight": 0.1,
+          "altitude_weight": 0.2,
+          "clearance_weight": 8.0,
+          "clearance_margin": 1.5,
+          "acceleration_weight": 0.005,
+          "jerk_weight": 0.0005,
+          "overspeed_weight": 1.0,
+          "max_speed": 20.0
+        },
+        "dynamics": {
+          "forward": "point_mass_lag",
+          "drone": "paper_point_mass",
+          "time_constant": 0.08333333333333333,
+          "gravity": 9.80665
+        },
+        "physical_command": "world_acceleration",
+        "observation": {
+          "name": "paper_pointcloud_state",
+          "proprioception_size": 10
+        },
+        "sensor": {
+          "name": "paper_mid360_uniform",
+          "azimuth_count": 180,
+          "elevation_count": 30,
+          "elevation_start_deg": -7.2,
+          "elevation_span_deg": 60.0,
+          "range_m": [
+            0.1,
+            100.0
+          ],
+          "source_rate_hz": 10.0,
+          "include_ground": true,
+          "state_gradient": "detached"
+        },
+        "task": {
+          "name": "pointcloud_navigation",
+          "adapter_identity": "pointcloud-navigation-adaptation-v1",
+          "freq": 10,
+          "physics_freq": 500,
+          "duration": 300.0,
+          "arrival_sampling": "physics",
+          "goal_radius": 0.5,
+          "body_radius": 0.07,
+          "max_speed": 20.0,
+          "command_speed_range": [
+            2.0,
+            4.0
+          ],
+          "initial_clearance_m": 0.15,
+          "training_position_candidates": 32,
+          "training_velocity_noise": 0.3
+        },
+        "scene": {
+          "name": "navigation",
+          "scene_ids": [
+            "S01",
+            "S02",
+            "S03",
+            "S06",
+            "D01",
+            "D02",
+            "D03",
+            "D06"
+          ]
+        },
+        "runtime": {
+          "device": "gpu",
+          "timing": "synchronous",
+          "action_delay_ms": [
+            25.0,
+            50.0
+          ]
+        }
+      },
+      "formal_evaluations": [
+        {
+          "cell": "pointcloud-static",
+          "seed": 0,
+          "passed": true,
+          "trials": 100,
+          "report": "reports/cbc0c5863d2b23ba0350aa9567cbc385bdb0940dfdde9fcf2ba061e80d237862.json",
+          "sha256": "cbc0c5863d2b23ba0350aa9567cbc385bdb0940dfdde9fcf2ba061e80d237862",
+          "scene_success_counts": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 9
+          },
+          "scene_trials": {
+            "S01": 25,
+            "S02": 25,
+            "S03": 25,
+            "S06": 25
+          }
+        },
+        {
+          "cell": "pointcloud-dynamic",
+          "seed": 0,
+          "passed": false,
+          "trials": 100,
+          "report": "reports/cbc0c5863d2b23ba0350aa9567cbc385bdb0940dfdde9fcf2ba061e80d237862.json",
+          "sha256": "cbc0c5863d2b23ba0350aa9567cbc385bdb0940dfdde9fcf2ba061e80d237862",
+          "scene_success_counts": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 13,
+            "D06": 19
+          },
+          "scene_trials": {
+            "D01": 25,
+            "D02": 25,
+            "D03": 25,
+            "D06": 25
+          }
+        }
+      ],
+      "source_checkpoint_path": "results/scratch/legacy/main_result/v1-18-cells/13-pointcloud-static/260930-seed0-dev/weights/update-0003000.pkl"
+    }
+  ],
+  "source_index": "results/selected/v1-18-cells.json",
+  "source_index_sha256": "02b38b0401ec7e10651fac8d8591f8491f7216d97d0d45a7c97e508bcf66d273",
+  "source_evaluation_summary": "tmp/matrix18/formal-summary.json",
+  "source_evaluation_summary_sha256": "2c70d4d560196fbcd9a4ab14d7643775b6e43ae8ced219909693ed1d8e89dc49",
+  "source_revision": "69b1c39",
+  "evaluated_episodes": 2600
+}
