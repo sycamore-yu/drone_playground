@@ -26,7 +26,7 @@
 
 ## 2026-10-09 方法组合补充
 
-**Status:** Accepted。**Implementation:** 待实现控制器注入与构造阶段的方法组合；当前两种执行路径已存在。
+**Status:** Accepted。**Implementation:** 已在控制模型工作树实现控制器注入、Hydra 组合和 JAX/宿主执行。
 
 Hydra 在构造阶段创建 Planner、Controller 或 Policy。需要规划跟踪时，使用 `PlannerController(planner, controller)`；直接输出控制目标的 Policy 或联合方法直接执行。运行循环调用已经构造的方法，不再根据 `ego`、`super`、`policy` 等算法名字分派。
 
@@ -36,11 +36,11 @@ Environment 保留物理时钟、命令执行、任务判定和传感采样。�
 
 保留 JAX 和宿主两种执行方式。JAX 路径使用纯函数、显式参数/状态/RNG 及 `jit`；宿主路径调用 C++/ROS 或宿主求解器。二者共用 Environment、任务规则、评测和产物格式。普通 RPC 调用不进入路径式自动微分。
 
-当前实现位置为 `simulation/runner.py` 的 `rollout()` / `_rollout_kernel()` 和 `rollout_ros()`，不是两个已经实现的 Runner 类。后续沿用两种执行方式，不以新增类或拆分文件作为完成标准。
+当前入口为 `simulation/runner.py` 的 `rollout()` 和 `rollout_host()`。构造阶段生成调用函数，不另建两套 Runner 类。
 
 ## 2026-10-09 控制接口与独立数学实现补充
 
-**Status:** Accepted。**Implementation:** 待实现任务与动作接口解耦、SO3Controller 接入；现有模型、网络及执行路径仍有固定配方绑定。
+**Status:** Accepted。**Implementation:** 已实现 Action、Actor 输出/记忆和损失选择的解耦，SO3 与 Mellinger 通过同一 Controller 接口执行。
 
 Task 不绑定动作层级。Tracking、Racing 和 Navigation 定义参考需求、奖励/指标及终止规则；动作维数、单位、坐标和范围由所选控制接口决定。Actor 输出遵守该接口，不根据任务名或传感器名决定动作含义。
 
@@ -50,4 +50,4 @@ Task 不绑定动作层级。Tracking、Racing 和 Navigation 定义参考需求
 
 SO3 的输入、输出与 JAX 移植需要对照[原 SO3Control](https://github.com/ZJU-FAST-Lab/ego-planner/blob/bfda51284c8c1b476043255a8145ef925a3778a5/src/uav_simulator/so3_control/src/SO3Control.cpp)。接口转换、名义机体参数及剩余低层控制须记录。加入 SO3 不要求复制 EGO 的整个仿真器。
 
-模块是否拆分或改名、完整配置布局、SE3Controller 是否加入仍是[待审设计](../research/control-model-design.md)中的建议。此补充只记录上述明确批准的内容。
+后续批准恢复 LSY Attitude MPC、Sampling MPC，并加入 SUPER 理想跟踪。两个 MPC 位于 `simulation/mpc.py`，SO3、Mellinger 和 IdealTracking 位于 `controllers.py`，通过 `PlannerController` 组合。理想跟踪显式选择状态响应，不把状态修改隐藏在普通 Controller 调用中。Trajectory 保留宿主 NumPy 表示；SE3 暂缓。命令和当前实现范围见[使用说明](../control-models.md)。

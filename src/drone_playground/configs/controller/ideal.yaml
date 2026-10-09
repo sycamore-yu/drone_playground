@@ -1,0 +1,6 @@
+_target_: drone_playground.simulation.controllers.IdealTracking
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+physics_hz: ${simulation.physics_hz}
+action_delay_s: ${simulation.action_delay_s}
+yaw: 0.0

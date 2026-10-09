@@ -46,7 +46,7 @@ Simulation: Task + Scene + Sensor + Method + Evaluation
 
 Simulation 使用 Crazyflow 的 `Sim`、`SimData`、原生控制器、纯 JAX 步进函数、Pipeline 和 MJCF/MJX 场景能力。物理推进及已有低层控制直接调用 Crazyflow。新方法以自身实现、配置和必要适配扩展，无需修改物理积分器。
 
-2026-10-09 批准的后续实现包括[独立反向模型选择](adr/0008-independent-backward-dynamics-model.md)、[任务/动作解耦与 SO3Controller 接入](adr/0001-simulation-learning-boundary.md)，以及[实例内的延迟缓冲状态](adr/0009-delayed-data-in-episode-state.md)。这些是目标设计，尚未改变当前运行代码。具体接口与模块调整见[待审设计](research/control-model-design.md)。
+2026-10-09 的控制模型工作树已接入[独立反向模型](adr/0008-independent-backward-dynamics-model.md)、[任务/动作解耦及控制器](adr/0001-simulation-learning-boundary.md)、[延迟缓冲](adr/0009-delayed-data-in-episode-state.md)和原生物理随机化。两种 MPC 与 SUPER 理想跟踪使用相同的方法组合；Trajectory 保持宿主实现。实际命令见[使用说明](control-models.md)，本次针对性验证不替代历史收敛验收。
 
 ### 3.1 方法组合
 
@@ -208,10 +208,18 @@ Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。预
 results/<run_id>/
   config.yaml
   run.json
-  events/
+  metrics.jsonl
   checkpoints/
-  episodes.csv
-  rollouts/
+    latest.training.zip
+    step-000025/
+      policy.zip
+      report.json
+      episodes.csv
+  eval/001/
+    report.json
+    episodes.csv
+    trajectories.npz    # 按需保存
+    replays/             # 实际生成回放时创建
 ```
 
 输出真实训练/评测配置、权重、指标、成功和失败案例；回放在需要时记录。训练状态恢复和冻结推理分别保存完整所需参数。

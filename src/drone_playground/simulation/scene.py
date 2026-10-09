@@ -219,8 +219,11 @@ class Scene:
         gate_ids = [i for i in range(model.nbody) if model.body(i).name.startswith("gate:")]
         self.gate_positions = jnp.asarray(data.xpos[gate_ids].copy())
         self.gate_rotations = jnp.asarray(data.xmat[gate_ids].reshape(-1, 3, 3).copy())
-        self.gate_order = (
-            tuple(int(x) for x in model.numeric("gate_order").data) if self.name == "racing" else ()
+        self.numeric = {
+            model.numeric(i).name: model.numeric(i).data.copy() for i in range(model.nnumeric)
+        }
+        self.gate_order = tuple(
+            int(x) for x in self.numeric.get("gate_order", np.arange(len(gate_ids)) + 1)
         )
 
     def positions(self, t: Array | float = 0.0) -> Array:

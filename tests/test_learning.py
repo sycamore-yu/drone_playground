@@ -23,9 +23,20 @@ from drone_playground.simulation.tasks import Event
 
 def test_additional_failure_cost_reaches_public_update_metrics():
     """Apply an extra terminal cost while retaining identical reset behavior."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", duration=0.02)
-    base = Trainer(env, kind="depth", config={"horizon": 1})
-    penalized = Trainer(env, kind="depth", config={"horizon": 1, "failure_cost": 160.0})
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        duration=0.02,
+    )
+    base = Trainer(env, loss="zhang", kind="depth", config={"horizon": 1})
+    penalized = Trainer(
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "failure_cost": 160.0},
+    )
     base_state, base_metrics = base.update(base.initialize())
     penalized_state, penalized_metrics = penalized.update(penalized.initialize())
     assert float(base_metrics["done_fraction"]) == 1.0
@@ -96,10 +107,24 @@ def test_gae_termination_truncation_and_rollout_boundary():
 
 def test_navigation_altitude_cost_matches_physical_height_error():
     """Verify navigation altitude cost matches physical height error."""
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=1)
-    base = Trainer(env, kind="depth", config={"horizon": 1, "perception_weight": 0})
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        num_envs=1,
+    )
+    base = Trainer(
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "perception_weight": 0},
+    )
     height = Trainer(
-        env, kind="depth", config={"horizon": 1, "perception_weight": 0, "altitude_weight": 2}
+        env,
+        loss="zhang",
+        kind="depth",
+        config={"horizon": 1, "perception_weight": 0, "altitude_weight": 2},
     )
     initial = base.initialize()
     physics = initial.env_state.physics
@@ -202,7 +227,9 @@ def test_bootstrap_uses_final_observation_and_resets_recurrent_state():
 
     env.step = truncate
     trainer = Trainer(env, config={"horizon": 1})
-    initial = trainer.initialize().replace(recurrent_memory=jnp.ones((2, 192)))
+    initial = trainer.initialize().replace(
+        recurrent_memory=jnp.ones_like(trainer.actor.initialize_memory(2))
+    )
     state, rollout, _ = collect_rollout(trainer, initial)
     final = real_step(initial.env_state, jnp.tanh(rollout.pre_tanh[0]))
     expected = trainer.critic.apply(initial.critic_params, env.observe(final))
@@ -306,6 +333,7 @@ def perception_env(request):
     """Provide perception env for the surrounding execution."""
     sensor_config = {"points_per_frame": 32} if request.param == "lidar" else {}
     env = Environment(
+        action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
         num_envs=1,
@@ -323,6 +351,7 @@ def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, a
     horizon = 6 if kind == "lidar" else 2
     trainer = Trainer(
         env,
+        loss=("zhang" if kind == "depth" else "liu"),
         kind=kind,
         algorithm=algorithm,
         config={
@@ -369,6 +398,7 @@ def test_common_named_objective_weights_and_history(perception_env):
     kind, env = perception_env
     trainer = Trainer(
         env,
+        loss=("zhang" if kind == "depth" else "liu"),
         kind=kind,
         algorithm="apg",
         config={
@@ -405,6 +435,7 @@ def test_common_named_objective_weights_and_history(perception_env):
     for algorithm in ("ppo", "shac"):
         other = Trainer(
             env,
+            loss=("zhang" if kind == "depth" else "liu"),
             kind=kind,
             algorithm=algorithm,
             config={

@@ -47,8 +47,8 @@ def assert_tree_equal(left, right):
 def test_actor_contract_determinism_jit_and_algorithm_independent_init(kind, action_size):
     """Verify actor contract determinism jit and algorithm independent init."""
     obs = observations(kind)
-    memory = jnp.zeros((2, 192))
-    actor = Actor(kind=kind)
+    actor = Actor(kind=kind, action_size=4 if kind == "state" else 3)
+    memory = actor.initialize_memory(2)
     key = jax.random.key(10)
     params = actor.init(key, obs, memory)
     action, updated, auxiliary = actor.apply(params, obs, memory)
@@ -63,7 +63,9 @@ def test_actor_contract_determinism_jit_and_algorithm_independent_init(kind, act
     # No algorithm field or algorithm-specific parameter initialization exists.
     assert "algorithm" not in inspect.signature(Actor).parameters
     for _algorithm in ("ppo", "apg", "shac"):
-        assert_tree_equal(params, Actor(kind=kind).init(key, obs, memory))
+        assert_tree_equal(
+            params, Actor(kind=kind, action_size=4 if kind == "state" else 3).init(key, obs, memory)
+        )
     if kind == "state":
         sentinel = jnp.full_like(memory, 2.0)
         result = actor.apply(params, obs, sentinel)
@@ -86,8 +88,8 @@ def test_actor_contract_determinism_jit_and_algorithm_independent_init(kind, act
 def test_actor_parameter_and_observation_gradients(kind):
     """Verify actor parameter and observation gradients."""
     obs = observations(kind)
-    memory = jnp.zeros((2, 192))
-    actor = Actor(kind=kind)
+    actor = Actor(kind=kind, action_size=4 if kind == "state" else 3)
+    memory = actor.initialize_memory(2)
     params = actor.init(jax.random.key(2), obs, memory)
 
     def objective(variables, inputs):
@@ -109,7 +111,7 @@ def test_independent_batched_parameter_trees():
     """Verify independent batched parameter trees."""
     actor = Actor(kind="state")
     obs = observations("state")
-    memory = jnp.zeros((2, 192))
+    memory = actor.initialize_memory(2)
     keys = jax.random.split(jax.random.key(8), 2)
     params = jax.vmap(actor.init, in_axes=(0, None, None))(keys, obs, memory)
     actions, _, _ = jax.vmap(actor.apply, in_axes=(0, None, None))(params, obs, memory)

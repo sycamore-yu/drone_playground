@@ -267,6 +267,7 @@ def preprocess_depth(
     far: float = 10.0,
     scale: float = 3.0,
     offset: float = -0.6,
+    pool: int = 4,
 ) -> tuple[Array, Array]:
     """Inverse axial depth then 4x4 max pooling; 48x64 -> 12x16.
 
@@ -276,10 +277,10 @@ def preprocess_depth(
     """
     depth, mask = measurement.values, measurement.mask
     height, width = depth.shape[-2:]
-    if height % 4 or width % 4 or not 0 < near < far:
-        raise ValueError("Depth dimensions must be divisible by 4 and 0 < near < far")
+    if pool < 1 or height % pool or width % pool or not 0 < near < far:
+        raise ValueError("Depth dimensions must be divisible by pool and 0 < near < far")
     inverse = scale / jnp.clip(jnp.where(mask, depth, far), near, far) + offset
-    blocks = (*depth.shape[:-2], height // 4, 4, width // 4, 4)
+    blocks = (*depth.shape[:-2], height // pool, pool, width // pool, pool)
     pooled = jnp.max(jnp.where(mask, inverse, -jnp.inf).reshape(blocks), axis=(-3, -1))
     valid = jnp.any(mask.reshape(blocks), axis=(-3, -1))
     return jnp.where(valid, pooled, 0), valid

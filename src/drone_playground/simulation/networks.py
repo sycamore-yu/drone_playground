@@ -48,6 +48,17 @@ class Actor(nn.Module):
     """
 
     kind: Literal["state", "depth", "lidar"] = "state"
+    action_size: int = 4
+    hidden_size: int = 192
+
+    def initialize_memory(self, batch: int) -> jax.Array:
+        """Return actor-owned recurrent state; the state MLP needs no memory."""
+        return jnp.zeros((batch, 0 if self.kind == "state" else self.hidden_size))
+
+    @property
+    def specification(self) -> dict:
+        """Describe network dimensions independently from the sensor and action units."""
+        return {"kind": self.kind, "action_size": self.action_size, "hidden_size": self.hidden_size}
 
     @nn.compact
     def __call__(
@@ -57,12 +68,15 @@ class Actor(nn.Module):
         if self.kind not in ("state", "depth", "lidar"):
             raise ValueError(f"Unknown actor kind: {self.kind!r}")
         state = obs["state"]
-        if state.ndim != 2 or memory.shape != (state.shape[0], 192):
-            raise ValueError("Expected state [B,F] and memory [B,192]")
+        if self.action_size < 1 or self.hidden_size < 1:
+            raise ValueError("Network output and hidden sizes must be positive")
+        expected_memory = (state.shape[0], 0 if self.kind == "state" else self.hidden_size)
+        if state.ndim != 2 or memory.shape != expected_memory:
+            raise ValueError(f"Expected state [B,F] and memory {expected_memory}")
         batch = state.shape[0]
         aux_velocity = jnp.zeros((batch, 3), dtype=state.dtype)
         if self.kind == "state":
-            return _StateMLP(4, name="mlp")(state), memory, aux_velocity
+            return _StateMLP(self.action_size, name="mlp")(state), memory, aux_velocity
 
         slope = 0.05 if self.kind == "depth" else 0.01
         if self.kind == "depth":
@@ -104,17 +118,22 @@ class Actor(nn.Module):
             )
             features = jnp.where(jnp.any(mask, axis=1, keepdims=True), features, 0)
 
-        features = nn.Dense(192, use_bias=False, name="perception_projection")(features)
+        features = nn.Dense(self.hidden_size, use_bias=False, name="perception_projection")(
+            features
+        )
         state_features = nn.Dense(
-            192,
+            self.hidden_size,
             kernel_init=nn.initializers.variance_scaling(0.25, "fan_in", "truncated_normal"),
             name="state_projection",
         )(state)
         features = nn.leaky_relu(features + state_features, negative_slope=slope)
-        new_memory, features = nn.GRUCell(192, name="gru")(memory, features)
+        new_memory, features = nn.GRUCell(self.hidden_size, name="gru")(memory, features)
         features = nn.leaky_relu(features, negative_slope=slope)
         raw_action = nn.Dense(
-            3, use_bias=False, kernel_init=nn.initializers.orthogonal(0.01), name="action_head"
+            self.action_size,
+            use_bias=False,
+            kernel_init=nn.initializers.orthogonal(0.01),
+            name="action_head",
         )(features)
         if self.kind == "depth":
             aux_velocity = nn.Dense(

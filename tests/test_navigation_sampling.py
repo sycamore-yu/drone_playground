@@ -45,7 +45,12 @@ def recipe(kind="depth", algorithm="shac"):
 @pytest.mark.parametrize("scene", SCENES)
 def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
     """Verify wide starts valid reproducible and benchmark unchanged."""
-    env = Environment(task="navigation", scene=scene, num_envs=64)
+    env = Environment(
+        action={"level": "acceleration", "heading": "target"},
+        task="navigation",
+        scene=scene,
+        num_envs=64,
+    )
     key = jax.random.PRNGKey(17)
     nominal = env.reset(key)
     assert_tree_equal(nominal, env.reset(key, randomize_position=False))
@@ -80,6 +85,7 @@ def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
 def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
     """Verify masked random reset preserves inactive world and sensor."""
     env = Environment(
+        action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="D01",
         num_envs=2,
@@ -99,7 +105,12 @@ def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
     assert float(reset.time[0]) == 0
     assert float(reset.physics.states.pos[0, 0, 0]) > 2.25
     # Episode resets use the same sampler and clear only the finished histories.
-    trainer = Trainer(env, kind=kind, config={"horizon": 1, "randomize_navigation_start": True})
+    trainer = Trainer(
+        env,
+        loss=("zhang" if kind == "depth" else "liu"),
+        kind=kind,
+        config={"horizon": 1, "randomize_navigation_start": True},
+    )
     initial = trainer.initialize()
     assert np.all(np.asarray(initial.env_state.physics.states.pos[:, 0, 0]) > 2.25)
     finished = state.replace(
@@ -240,8 +251,7 @@ def test_cli_real_scene_switch_and_exact_midblock_boundary_resume(kind, monkeypa
     header = json.loads((record.directory / "run.json").read_text())
     assert set(header["training_sampling"]["geometry_sha256"]) == {"S01", "D01"}
     events = [
-        json.loads(line)
-        for line in (record.directory / "events/metrics.jsonl").read_text().splitlines()
+        json.loads(line) for line in (record.directory / "metrics.jsonl").read_text().splitlines()
     ]
     switches = [event for event in events if event["event"] == "training_scene_switch"]
     assert [event["update"] for event in switches] == [2, 4]

@@ -2,7 +2,8 @@ defaults:
   - task: tracking
   - scene: empty
   - sensor: state
-  - method: mellinger
+  - controller: mellinger
+  - method: controller
   - learning: apg
   - benchmark: default
   - _self_
@@ -18,6 +19,11 @@ simulation:
   physics_hz: 500
   method_hz: 50
   num_envs: 1
+  action_delay_s: 0.0
+  randomization: {}
+  disturbance: {}
+observation:
+  depth: {}
 checkpoint: null
 initial_checkpoint: null
 resume: null

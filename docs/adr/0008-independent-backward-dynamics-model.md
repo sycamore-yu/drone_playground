@@ -2,13 +2,13 @@
 
 **Status:** Accepted · 2026-10-09
 
-**Implementation:** 待实现。当前仍使用官方 Crazyflow 前向和已有的时间梯度衰减，尚无 `learning.backward_model`。
+**Implementation:** `learning/dynamics.py` 已支持 `learning.backward_model=null/point_mass_lag/lotf`；数学实现位于 `simulation/dynamics/`。前向仍是官方 Crazyflow。
 
 ## Context
 
 用户需要保持现有前向模型选择，同时使用 LOTF 或 PointMass 的动力学方程计算策略更新所需的梯度。反向模型具有状态、控制输入、模型参数和状态转移方程；梯度衰减不能代替它。
 
-ADR-0005 曾在未经批准时写入模型范围限制，已撤回。本文件记录本轮明确批准的选择与职责，不恢复该限制。
+本文件记录已批准的反向模型选择与职责；独立数学实现可用于求导和预测，不要求部署另一套正向仿真。
 
 ## Decision
 
@@ -22,7 +22,7 @@ learning:
   backward_model: point_mass_lag
 ```
 
-上面的字段是已批准的目标配置，当前程序尚不接受它。省略反向模型不创建第二个模型实例。已有梯度衰减作为显式训练选项单独记录，不隐含选择反向动力学。
+选择 `point_mass_lag` 时使用加速度动作配方，选择 `lotf` 时使用推力/角速度动作配方。现成入口为 `experiment=tracking_point_mass` 和 `experiment=tracking_lotf`。省略反向模型不创建第二个模型实例；已有梯度衰减单独配置。
 
 职责如下：
 
@@ -45,7 +45,7 @@ PPO、APG、SHAC 共用环境与训练转移入口。PPO 不通过动力学求�
 
 模型参数和作用范围随训练配置、Checkpoint 保存。完整恢复使用相同求导配置；冻结推理不加载只用于训练的反向模型。
 
-本决定没有禁止未来新增前向模型，也没有批准任意前向/反向组合。具体变量映射和模块命名见[待审设计](../research/control-model-design.md)。
+后续批准的输出映射已实现：PointMass 替换位置、速度和加速度导数；LOTF 替换位置、姿态、速度及其导出的加速度。未建模输出保留 Crazyflow 原生导数。默认不会把姿态指令当作角速度；不兼容输入在构造时拒绝。具体配置见[使用说明](../control-models.md)。
 
 ## Evidence
 

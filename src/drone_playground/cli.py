@@ -13,9 +13,15 @@ from pathlib import Path
 import hydra
 import jax
 import numpy as np
+from hydra.utils import get_class
 from omegaconf import DictConfig, OmegaConf
 
-from drone_playground.simulation.evaluation import create_environment, evaluate
+from drone_playground.simulation.evaluation import (
+    create_environment,
+    evaluate,
+    next_evaluation_directory,
+)
+from drone_playground.simulation.methods import Action
 from drone_playground.simulation.policy import load_policy, read_checkpoint
 from drone_playground.simulation.records import RunRecord, atomic_json, gpu_usage
 from drone_playground.simulation.scene import Scene
@@ -29,7 +35,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
-    if config.method.name != "policy":
+    if not get_class(config.method.implementation._target_).trainable:
         raise ValueError("Training requires method=policy or an experiment recipe")
     if config.learning.required_consecutive_passes != 3:
         raise ValueError("C5 requires three consecutive full checkpoint evaluations")
@@ -74,7 +80,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 or not 0 <= updates_in_scene <= scene_updates
             ):
                 raise ValueError("Checkpoint has invalid training sampling progress")
-    kind = "state" if config.sensor.name == "state" else config.sensor.name
+    kind = config.method.actor.kind
+    actor_config = OmegaConf.to_container(config.method.actor, resolve=True)
+    actor_config.pop("kind")
     trainers = {}
 
     def trainer_for(index):
@@ -90,6 +98,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 algorithm=config.learning.algorithm,
                 seed=config.seed,
                 config=resolved["learning"]["options"],
+                actor_config=actor_config,
+                loss=config.learning.loss,
+                backward_model=config.learning.backward_model,
+                backward_options=OmegaConf.to_container(
+                    config.learning.backward_options, resolve=True
+                ),
             )
         return trainers[index]
 
@@ -100,9 +114,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
         identity["training_sampling"] = sampling
     if config.initial_checkpoint and not config.resume:
         initial_actor, parameters, metadata = load_policy(config.initial_checkpoint)
-        if initial_actor.kind != kind or jax.tree.structure(parameters) != jax.tree.structure(
-            state.params
-        ):
+        if initial_actor.specification != trainer.actor.specification or jax.tree.structure(
+            parameters
+        ) != jax.tree.structure(state.params):
             raise ValueError("Initialization checkpoint has a different Actor structure")
         for initial, template in zip(
             jax.tree.leaves(parameters), jax.tree.leaves(state.params), strict=True
@@ -129,7 +143,17 @@ def train(config: DictConfig, record: RunRecord) -> None:
         if "initialization" in metadata["config"]:
             identity["initialization"] = metadata["config"]["initialization"]
         previous = metadata["config"]["experiment"]
-        for field in ("task", "scene", "sensor", "simulation", "method", "learning", "seed"):
+        for field in (
+            "task",
+            "scene",
+            "sensor",
+            "simulation",
+            "method",
+            "controller",
+            "observation",
+            "learning",
+            "seed",
+        ):
             if previous[field] != resolved[field]:
                 raise ValueError(f"Resume changes the saved {field} contract; use a new experiment")
         if scenes is not None and (
@@ -198,20 +222,35 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 "updates_in_scene": updates_in_scene,
             }
         save_state(checkpoint_path, current, config=identity, provenance=provenance)
-        frozen = record.directory / "checkpoints" / f"update-{int(current.updates):08d}.policy.zip"
-        save_inference(frozen, current.params, kind=kind, config=identity, provenance=provenance)
+        frozen = (
+            record.directory / "checkpoints" / f"step-{int(current.updates):06d}" / "policy.zip"
+        )
+        save_inference(
+            frozen,
+            current.params,
+            kind=kind,
+            config=identity,
+            provenance=provenance,
+            actor_spec=trainer.actor.specification,
+        )
         return frozen
 
     def evaluate_checkpoint():
         nonlocal consecutive, evaluation_index
         update = int(state.updates)
         frozen = checkpoint(state)
-        directory = record.directory / "checkpoint_eval" / f"update-{update:08d}"
-        if directory.exists():
-            previous = Path(
-                tempfile.mkdtemp(prefix=f"incomplete-{directory.name}-", dir=directory.parent)
-            )
-            directory.rename(previous)
+        directory = frozen.parent
+        if (directory / "report.json").exists() or (directory / "episodes.csv").exists():
+            previous = Path(tempfile.mkdtemp(prefix="incomplete-", dir=directory))
+            for item in directory.iterdir():
+                if item.name in {
+                    "report.json",
+                    "episodes.csv",
+                    "trajectories.npz",
+                    "decisions.json",
+                    "replays",
+                }:
+                    item.rename(previous / item.name)
             record.event(
                 "checkpoint_evaluation_retry",
                 update=update,
@@ -293,25 +332,21 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 **cost(state),
             )
             return
-        atomic_json(
-            record.directory / "selection.json",
-            {
-                "rule": config.learning.selection,
-                "checkpoint": str(frozen),
-                "update": int(state.updates),
-                "consecutive_passes": consecutive,
-                "evaluation_index": evaluation_index,
-            },
-        )
+        record.identity["selection"] = {
+            "rule": config.learning.selection,
+            "checkpoint": str(frozen.relative_to(record.directory)),
+            "update": int(state.updates),
+            "consecutive_passes": consecutive,
+            "evaluation_index": evaluation_index,
+        }
+        atomic_json(record.directory / "run.json", record.identity)
         benchmark_config = OmegaConf.create(resolved)
         benchmark_config.mode = "benchmark"
         benchmark_config.benchmark.seed_base = None
         benchmark_config.benchmark.episodes = None
         if scenes is not None:
             benchmark_config.benchmark.scenes = None
-        benchmark_directory = record.directory / "benchmark"
-        if benchmark_directory.exists():
-            benchmark_directory = Path(tempfile.mkdtemp(prefix="benchmark-", dir=record.directory))
+        benchmark_directory = next_evaluation_directory(record.directory)
         report = evaluate(
             benchmark_config,
             benchmark_directory,
@@ -324,9 +359,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "accepted" if report["passed"] else "frozen_benchmark_failed",
             updates=int(state.updates),
             interactions=int(state.interactions),
-            selected_checkpoint=str(frozen),
+            selected_checkpoint=str(frozen.relative_to(record.directory)),
             benchmark_passed=report["passed"],
-            benchmark_directory=str(benchmark_directory),
+            benchmark_directory=str(benchmark_directory.relative_to(record.directory)),
             **cost(state),
         )
     except BaseException as error:
@@ -343,6 +378,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
     finally:
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
+        if "method" in environments:
+            environments["method"].close()
 
 
 def replay(path: str | Path) -> None:
@@ -423,22 +460,56 @@ def main(config: DictConfig) -> None:
         if config.mode not in {"sim", "checkpoint_eval", "benchmark"}:
             raise ValueError(f"Unknown execution mode: {config.mode}")
         actor = parameters = None
-        if config.method.name == "policy":
+        if get_class(config.method.implementation._target_).trainable:
             if not config.checkpoint:
                 raise ValueError("Frozen policy execution requires checkpoint=<policy.zip>")
             actor, parameters, metadata = load_policy(config.checkpoint)
             previous = metadata["config"]["experiment"]
-            for field in ("task", "sensor"):
+            for field in ("task",):
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
                     raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             physical = OmegaConf.to_container(config.simulation, resolve=True)
-            for field in ("dynamics", "drone", "physics_hz", "method_hz"):
-                if previous["simulation"][field] != physical[field]:
-                    raise ValueError(f"Frozen evaluation changes physical {field}")
-            if previous["method"]["action_delay"] != config.method.action_delay:
-                raise ValueError("Frozen evaluation changes checkpoint action_delay contract")
-        report = evaluate(config, record.directory, actor=actor, parameters=parameters)
-        record.finish("completed", acceptance_passed=report["passed"])
+            if not config.benchmark.allow_environment_change:
+                for field in ("dynamics", "drone", "physics_hz", "method_hz"):
+                    if previous["simulation"][field] != physical[field]:
+                        raise ValueError(f"Frozen evaluation changes physical {field}")
+                delay = previous["simulation"].get(
+                    "action_delay_s", previous["method"].get("action_delay", 0.0)
+                )
+                if delay != physical["action_delay_s"]:
+                    raise ValueError("Frozen evaluation changes action_delay_s contract")
+                for field in ("sensor", "observation"):
+                    if field in previous and previous[field] != OmegaConf.to_container(
+                        config[field], resolve=True
+                    ):
+                        raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
+                for field in ("randomization", "disturbance"):
+                    if previous["simulation"].get(field, {}) != physical[field]:
+                        raise ValueError(f"Frozen evaluation changes physical {field}")
+            old_action = metadata["config"].get("learning", {}).get("action")
+            if old_action is None:
+                # Version-1 archives had two fixed action contracts; decode them at this boundary.
+                navigation = previous["task"]["name"] == "navigation"
+                old_action = {
+                    "level": "acceleration" if navigation else "attitude_thrust",
+                    "heading": "target" if navigation else "fixed",
+                }
+            requested_action = Action(
+                drone=physical["drone"],
+                **OmegaConf.to_container(config.method.action, resolve=True),
+            )
+            archived_action = Action(drone=previous["simulation"]["drone"], **old_action)
+            if requested_action.contract != archived_action.contract:
+                raise ValueError(
+                    "Frozen evaluation cannot reinterpret checkpoint action units or bounds"
+                )
+        destination = next_evaluation_directory(record.directory)
+        report = evaluate(config, destination, actor=actor, parameters=parameters)
+        record.finish(
+            "completed",
+            acceptance_passed=report["passed"],
+            evaluation_directory=str(destination.relative_to(record.directory)),
+        )
     except BaseException as error:
         if record.identity["status"] == "running":
             record.finish("failed", error=f"{type(error).__name__}: {error}")

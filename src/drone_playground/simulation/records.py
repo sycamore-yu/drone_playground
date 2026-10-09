@@ -72,8 +72,6 @@ class RunRecord:
         if (self.directory / "run.json").exists() and not resume:
             raise FileExistsError(f"Run already exists: {self.directory}")
         self.directory.mkdir(parents=True, exist_ok=True)
-        for name in ("events", "checkpoints", "rollouts"):
-            (self.directory / name).mkdir(exist_ok=True)
         resolved = OmegaConf.to_container(config, resolve=True)
         config_path = self.directory / "config.yaml"
         if not resume:
@@ -87,6 +85,7 @@ class RunRecord:
                 versions[package] = "source"
         self.identity = {
             "schema_version": 1,
+            "layout_version": 2,
             "status": "running",
             "started_unix": time.time(),
             "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
@@ -106,7 +105,7 @@ class RunRecord:
     def event(self, event: str, **metrics) -> None:
         """Append one finite metric record, preserving earlier failed attempts."""
         data = {"event": event, "wall_seconds": time.monotonic() - self.start, **metrics}
-        with (self.directory / "events" / "metrics.jsonl").open("a") as stream:
+        with (self.directory / "metrics.jsonl").open("a") as stream:
             stream.write(json.dumps(data, allow_nan=False) + "\n")
 
     def finish(self, status: str, **metrics) -> None:

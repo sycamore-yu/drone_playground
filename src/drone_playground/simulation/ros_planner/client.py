@@ -299,6 +299,40 @@ class RosPlanner:
         Extra simulation metadata is never serialized to the worker.
         """
         self._check_open()
+        measurement = observation["measurement"]
+        if not isinstance(measurement, rpc.Measurement):
+            from scipy.spatial.transform import Rotation
+
+            config = observation["sensor_config"]
+            pose = observation["sensor_pose"]
+            position, rotation = pose[:3], Rotation.from_quat(pose[3:])
+            acquisition = float(measurement.acquisition_time[0])
+            available = float(measurement.available_time[0])
+            if config.profile == "d435i":
+                mounting = Rotation.from_euler(
+                    "xyz", [config.roll_deg, -config.pitch_deg, config.yaw_deg], degrees=True
+                )
+                optical = Rotation.from_matrix([[0, 0, 1], [-1, 0, 0], [0, -1, 0]])
+                measurement = depth_measurement(
+                    np.asarray(measurement.values[0]),
+                    acquisition,
+                    fx=config.width / (2 * np.tan(np.deg2rad(config.horizontal_fov_deg) / 2)),
+                    fy=config.height / (2 * np.tan(np.deg2rad(config.vertical_fov_deg) / 2)),
+                    cx=(config.width - 1) / 2,
+                    cy=(config.height - 1) / 2,
+                    position=position + rotation.apply(config.translation),
+                    quaternion=np.roll((rotation * mounting * optical).as_quat(), 1),
+                    available_time=available,
+                )
+            else:
+                points = observation["sensor_points"]
+                measurement = cloud_measurement(
+                    points[np.asarray(measurement.mask[0])],
+                    acquisition,
+                    position=position,
+                    quaternion=np.roll(rotation.as_quat(), 1),
+                    available_time=available,
+                )
         stamp = _ns(time)
         if time < self._last_time:
             self._trajectory = None
@@ -328,7 +362,7 @@ class RosPlanner:
                 acceleration=_vector(observation["acceleration"]),
             ),
             rpc.Goal(timestamp_ns=stamp, position=goal_vector, yaw=goal_yaw),
-            observation["measurement"],
+            measurement,
         )
 
     __call__ = plan

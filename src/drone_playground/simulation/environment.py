@@ -1,4 +1,7 @@
-"""Pure batched episodes around the official Crazyflow control and step functions."""
+"""Batched episodes with explicit control inputs, delivery state and native physics."""
+
+import math
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -14,8 +17,10 @@ from flax import struct
 from jax import Array
 from jax.scipy.spatial.transform import Rotation
 
-from drone_playground.simulation.methods import MellingerController, Setpoint
+from drone_playground.simulation.delay import CommandState, delay_range
+from drone_playground.simulation.methods import Action, Setpoint
 from drone_playground.simulation.observation import ObservationState, SensorObservation
+from drone_playground.simulation.randomization import install_randomization
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import SensorConfig
 from drone_playground.simulation.tasks import Event, Task, TaskState
@@ -29,6 +34,8 @@ class EnvState:
     task: TaskState
     previous_action: Array
     observation: ObservationState | None = None
+    commands: CommandState | None = None
+    acceleration: Array | None = None
 
     @property
     def time(self):
@@ -70,6 +77,13 @@ class Environment:
         sensor: str = "state",
         sensor_config: dict | None = None,
         point_count: int = 1024,
+        action: Action | dict | None = None,
+        control_level: str | None = None,
+        action_delay_s=0.0,
+        randomization: dict | None = None,
+        disturbance: dict | None = None,
+        observation_config: dict | None = None,
+        task_config: dict | None = None,
     ):
         """Construct the configured task, scene, sensor and Crazyflow physics."""
         if num_envs <= 0 or method_hz <= 0 or physics_hz % method_hz:
@@ -78,37 +92,79 @@ class Environment:
             )
         if task == "navigation" and scene == "empty":
             raise ValueError("Navigation requires an explicitly selected scene")
-        if task == "racing" and scene != "racing":
-            raise ValueError("Racing requires the LSY Level0 scene")
         self.scene = Scene(scene)
-        self.task = Task(task, self.scene, reference, duration, reference_seed)
+        self.task = Task(
+            task, self.scene, reference, duration, reference_seed, **(task_config or {})
+        )
         if task == "navigation" and float(self.scene.clearance(self.task.start, 0.0)) < 0.22:
             raise ValueError("Navigation nominal reset position lacks 0.15 m body clearance")
         self.num_envs, self.method_hz = num_envs, method_hz
         self.substeps = physics_hz // method_hz
         self.dt = 1 / method_hz
+        self.action = (
+            action
+            if isinstance(action, Action)
+            else Action(drone=drone, frequency=method_hz, **(action or {}))
+        )
+        self.control_level = control_level or self.action.output_level
+        self.delay_bounds = delay_range(action_delay_s)
+        self.ideal_samples = math.ceil(self.delay_bounds[1] * physics_hz) + self.substeps
+        native_control = {
+            "attitude_thrust": Control.attitude,
+            "body_rate": Control.body_rate,
+            "force_torque": Control.force_torque,
+            "rotor_vel": Control.rotor_vel,
+            "ideal": Control.attitude,
+        }
+        if self.control_level not in native_control:
+            raise ValueError(f"Unsupported execution control: {self.control_level}")
+        if self.control_level == "ideal" and (randomization or disturbance):
+            raise ValueError("Ideal tracking has no mass or external-force response")
         self.sim = Sim(
             n_worlds=num_envs,
             drone=Drone(drone),
             dynamics=Dynamics(dynamics),
-            control=Control.attitude,
+            control=native_control[self.control_level],
             freq=physics_hz,
             device=device,
             attitude_freq=physics_hz,
+            body_rate_freq=physics_hz,
             force_torque_freq=physics_hz,
         )
+        install_randomization(self.sim, randomization, disturbance)
         self.physics_step = self.sim.build_step_fn()
         self.physics_reset = self.sim.build_reset_fn()
-        self.controller = MellingerController(self.sim, method_hz)
-        self.action_size = 3 if task == "navigation" else 4
+        self.action_size = self.action.size
+        self._stage = {
+            "attitude_thrust": cf.attitude_control,
+            "body_rate": cf.body_rate_control,
+            "force_torque": cf.force_torque_control,
+            "rotor_vel": cf.rotor_vel_control,
+            "ideal": None,
+        }[self.control_level]
         self.sensor = None
+        self.observation_config = dict(observation_config or {})
+        sensor_config = dict(sensor_config or {})
+        latency_bounds = delay_range(sensor_config.get("latency", 0.0))
+        if "latency" in sensor_config:
+            sensor_config["latency"] = latency_bounds[1]
         if sensor == "depth":
-            config = SensorConfig.d435i("training64x48", **(sensor_config or {}))
-            self.sensor = SensorObservation(self.scene, config, physics_hz)
+            config = SensorConfig.d435i(sensor_config.pop("mode", "training64x48"), **sensor_config)
+            self.sensor = SensorObservation(
+                self.scene,
+                config,
+                physics_hz,
+                latency_bounds=latency_bounds,
+                encoding=self.observation_config.get("depth", {}),
+            )
         elif sensor in {"lidar", "uniform_lidar_paper"}:
             factory = SensorConfig.mid360 if sensor == "lidar" else SensorConfig.uniform_lidar_paper
             self.sensor = SensorObservation(
-                self.scene, factory(**(sensor_config or {})), physics_hz, point_count
+                self.scene,
+                factory(**sensor_config),
+                physics_hz,
+                point_count,
+                latency_bounds=latency_bounds,
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")
@@ -126,6 +182,7 @@ class Environment:
             raise ValueError("randomize_position requires Navigation")
         batch = self.num_envs
         pos_key, vel_key, yaw_key = jax.random.split(key, 3)
+        physics_key, delay_key = jax.random.fold_in(key, 100), jax.random.fold_in(key, 101)
         width = (
             jnp.array([0.25, 0.25, 0.10]) if self.task.name == "navigation" else jnp.full(3, 0.05)
         )
@@ -164,7 +221,10 @@ class Environment:
         quat = jnp.stack(
             [jnp.zeros_like(yaw), jnp.zeros_like(yaw), jnp.sin(yaw / 2), jnp.cos(yaw / 2)], -1
         )
-        initial = self.physics_reset(self.sim.data, self.sim.default_data)
+        default = self.sim.default_data.replace(
+            core=self.sim.default_data.core.replace(rng_key=physics_key)
+        )
+        initial = self.physics_reset(self.sim.data, default)
         states = initial.states.replace(pos=pos[:, None], vel=vel[:, None], quat=quat[:, None])
         if self.sim.dynamics == Dynamics.first_principles:
             rpm = motor_force2rotor_vel(
@@ -174,14 +234,33 @@ class Environment:
             states = states.replace(rotor_vel=rpm)
         initial = initial.replace(states=states)
         observation = None if self.sensor is None else self.sensor.reset(initial)
+        inputs = self.action.decode(jnp.zeros((batch, self.action_size)))
+        neutral = self.action.setpoint(initial, inputs, self.task.target(jnp.zeros(batch))[0]).value
+        if self.control_level == "ideal":
+            neutral = jnp.concatenate([pos, vel, jnp.zeros_like(pos), yaw[:, None]], -1)
+            neutral = jnp.broadcast_to(neutral[:, None], (batch, self.ideal_samples, 10)).reshape(
+                batch, -1
+            )
+        commands = CommandState.create(
+            delay_key, neutral, inputs, self.delay_bounds, self.sim.freq, self.method_hz
+        )
         fresh = EnvState(
-            initial, self.task.initial(batch), jnp.zeros((batch, self.action_size)), observation
+            initial,
+            self.task.initial(batch),
+            jnp.zeros((batch, self.action_size)),
+            observation,
+            commands,
+            jnp.zeros_like(pos),
+        )
+        # Persisted arrays have explicit dtypes; avoid a different JIT specialization on restore.
+        fresh = jax.tree.map(
+            lambda value: jnp.asarray(value, dtype=jnp.asarray(value).dtype), fresh
         )
         if state is None:
             return fresh
         if mask is None:
             mask = state.done
-        physics = self.physics_reset(state.physics, initial, mask)
+        physics = pytree_replace(state.physics, initial, world_mask(initial), mask)
         task = jax.tree.map(lambda old, new: jnp.where(mask, new, old), state.task, fresh.task)
         action = jnp.where(mask[:, None], fresh.previous_action, state.previous_action)
         if observation is not None:
@@ -192,35 +271,89 @@ class Environment:
                 state.observation,
                 fresh.observation,
             )
-        return EnvState(physics, task, action, observation)
+        commands = jax.tree.map(
+            lambda old, new: jnp.where(
+                mask.reshape((len(mask),) + (1,) * (new.ndim - 1)), new, old
+            ),
+            state.commands,
+            fresh.commands,
+        )
+        acceleration = jnp.where(mask[:, None], fresh.acceleration, state.acceleration)
+        return EnvState(physics, task, action, observation, commands, acceleration)
 
     def action_setpoint(self, state: EnvState, action: Array) -> Setpoint:
         """Decode the shared bounded action contract; all algorithms use this conversion."""
-        if self.task.name == "navigation":
-            delta = self.task.goal - state.physics.states.pos[:, 0]
-            yaw = jnp.arctan2(delta[:, 1], delta[:, 0])
-            return self.controller.acceleration(state.physics, action * 6.0, yaw)
-        hover = state.physics.params.mass * 9.81
-        value = action * jnp.array([0.6, 0.6, jnp.pi, 1.0])
-        value = value.at[:, 3].set(hover * (1 + 0.6 * action[:, 3]))
-        return Setpoint(value)
+        return self.action.setpoint(
+            state.physics, self.action.decode(action), self.task.target(state.time)[0]
+        )
 
-    def _step(self, state: EnvState, action: Array) -> EnvState:
+    def _step(self, state: EnvState, action: Array, *, physics_step=None) -> EnvState:
         action = jnp.clip(action, -1.0, 1.0)
-        result = self._step_setpoint(state, self.action_setpoint(state, action))
+        if self.sensor is not None and self.sensor.latency_bounds[1] > 0:
+            action = jnp.where(state.observation.available[:, None], action, 0.0)
+        physical = self.action.decode(action)
+        setpoint = self.action.setpoint(state.physics, physical, self.task.target(state.time)[0])
+        result = self._step_setpoint(state, setpoint, physical, physics_step=physics_step)
         return result.replace(
             previous_action=jnp.where(state.done[:, None], state.previous_action, action)
         )
 
-    def _step_setpoint(self, state: EnvState, setpoint: Setpoint) -> EnvState:
-        if setpoint.level != "attitude_thrust" or setpoint.frame != "world":
-            raise ValueError("Crazyflow attitude control requires world RPY radians and thrust N")
-        staged = cf.attitude_control(state.physics, setpoint.value[:, None, :])
-        staged = pytree_replace(staged, state.physics, world_mask(staged), state.done)
-        state = state.replace(physics=staged)
+    def build_step(self, physics_step):
+        """Bind one differentiable physics transfer without changing the frozen environment."""
+        return jax.jit(partial(self._step, physics_step=physics_step))
+
+    def native_step(self, physics, acceleration, command, physical_input):
+        """Execute the official pipeline for one physical tick."""
+        staged = self._stage(physics, command[:, None, :])
+        result = self.physics_step(staged, 1)
+        actual_acceleration = (result.states.vel[:, 0] - physics.states.vel[:, 0]) * self.sim.freq
+        return result, actual_acceleration
+
+    def _step_setpoint(
+        self, state: EnvState, setpoint: Setpoint, inputs=None, *, physics_step=None
+    ) -> EnvState:
+        if setpoint.level != self.control_level:
+            raise ValueError("Controller output and configured physics input do not match")
+        frame = "world" if self.control_level in {"attitude_thrust", "ideal"} else "body"
+        if setpoint.frame != frame:
+            raise ValueError("Control coordinate frame does not match the native interface")
+        if inputs is None:
+            inputs = jnp.zeros((self.num_envs, self.action_size))
+        commands = state.commands.push(
+            setpoint.value, inputs, state.physics.core.steps[:, 0], ~state.done
+        )
+        state = state.replace(commands=commands)
+        advance_physics = self.native_step if physics_step is None else physics_step
 
         def advance(carry, _):
-            physics = self.physics_step(carry.physics, 1)
+            tick = carry.physics.core.steps[:, 0]
+            command, physical, issued = carry.commands.at(tick)
+            if self.control_level == "ideal":
+                index = jnp.clip(tick - issued, 0, self.ideal_samples - 1)
+                sample = command.reshape(self.num_envs, self.ideal_samples, 10)[
+                    jnp.arange(self.num_envs), index
+                ]
+                pos, vel, acc = sample[:, :3], sample[:, 3:6], sample[:, 6:9]
+                up = acc + jnp.array([0.0, 0.0, 9.80])
+                up = up / jnp.maximum(jnp.linalg.norm(up, axis=-1, keepdims=True), 1e-6)
+                heading = jnp.stack(
+                    [jnp.cos(sample[:, 9]), jnp.sin(sample[:, 9]), jnp.zeros(self.num_envs)], -1
+                )
+                side = jnp.cross(up, heading)
+                side = side / jnp.maximum(jnp.linalg.norm(side, axis=-1, keepdims=True), 1e-6)
+                quat = Rotation.from_matrix(
+                    jnp.stack([jnp.cross(side, up), side, up], -1)
+                ).as_quat()
+                physics = carry.physics.replace(
+                    states=carry.physics.states.replace(
+                        pos=pos[:, None], vel=vel[:, None], quat=quat[:, None]
+                    ),
+                    core=carry.physics.core.replace(
+                        steps=carry.physics.core.steps + 1, mjx_synced=jnp.array(False)
+                    ),
+                )
+            else:
+                physics, acc = advance_physics(carry.physics, carry.acceleration, command, physical)
             time = physics.core.steps[:, 0] / self.sim.freq
             clearance = self.scene.clearance(physics.states.pos[:, 0], time)
             task_state = self.task.update(
@@ -230,7 +363,20 @@ class Environment:
             observation = carry.observation
             if self.sensor is not None:
                 observation = self.sensor.update(observation, physics, ~carry.done)
-            return carry.replace(physics=physics, task=task_state, observation=observation), None
+            commands = carry.commands.replace(
+                applied=jnp.where(carry.done[:, None], carry.commands.applied, command),
+                applied_input=jnp.where(
+                    carry.done[:, None], carry.commands.applied_input, physical
+                ),
+            )
+            acc = jnp.where(carry.done[:, None], carry.acceleration, acc)
+            return carry.replace(
+                physics=physics,
+                task=task_state,
+                observation=observation,
+                commands=commands,
+                acceleration=acc,
+            ), None
 
         result, _ = jax.lax.scan(advance, state, None, length=self.substeps)
         return result
@@ -257,15 +403,23 @@ class Environment:
             ).reshape(len(p), -1)
             features = jnp.concatenate([target - p, tv - v, ta, q, w, v, future], -1)
             if self.task.name == "racing":
-                gate = self.task.gate_order[jnp.minimum(state.task.gates, 4)]
+                count = len(self.task.gate_order)
+                gate = self.task.gate_order[jnp.minimum(state.task.gates, count - 1)]
                 features = jnp.concatenate(
-                    [features, self.task.gate_positions[gate] - p, (state.task.gates / 5)[:, None]],
+                    [
+                        features,
+                        self.task.gate_positions[gate] - p,
+                        (state.task.gates / count)[:, None],
+                    ],
                     -1,
                 )
         return {"state": features}
 
     def _observe(self, state: EnvState) -> dict[str, Array]:
         observation = self._observe_state(state)
+        observation["velocity_body"] = Rotation.from_quat(state.physics.states.quat[:, 0]).apply(
+            state.physics.states.vel[:, 0], inverse=True
+        )
         if self.sensor is not None:
             observation.update(self.sensor.encode(state.observation))
         return observation

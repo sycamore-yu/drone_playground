@@ -3,7 +3,6 @@
 from enum import IntEnum
 
 import jax.numpy as jnp
-import mujoco
 import numpy as np
 from flax import struct
 from jax import Array
@@ -59,12 +58,14 @@ class Task:
         reference: str = "figure_eight",
         duration: float | None = None,
         reference_seed: int = 0,
+        gate_order=None,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
             raise ValueError(f"Unknown task: {name}")
         self.name = name
         self.reference = reference
+        self.gate_order = jnp.zeros(0, jnp.int32)
         self.radius = 0.07
         self.goal_radius = 0.5
         self.duration = (
@@ -84,27 +85,24 @@ class Task:
         elif name == "racing":
             self.start = jnp.array([-1.5, 0.75, 0.5])
             self.low, self.high = jnp.array([-2.5, -1.5, 0.07]), jnp.array([2.5, 1.5, 2.0])
-            model = scene.model
-            data = mujoco.MjData(model)
-            mujoco.mj_forward(model, data)
-            ids = [
-                mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f"gate:{i}") for i in range(4)
-            ]
-            if min(ids) < 0:
-                raise ValueError("Racing requires the four LSY Level0 gates")
-            self.gate_positions = jnp.asarray(data.xpos[ids])
-            self.gate_rotations = jnp.asarray(data.xmat[ids].reshape(4, 3, 3))
-            self.gate_order = jnp.array([0, 1, 2, 3, 1])
+            self.gate_positions, self.gate_rotations = scene.gate_positions, scene.gate_rotations
+            order = np.asarray(scene.gate_order if gate_order is None else gate_order, int) - 1
+            if len(order) == 0 or np.any(order < 0) or np.any(order >= len(self.gate_positions)):
+                raise ValueError("Racing needs a nonempty order referencing existing scene gates")
+            self.gate_order = jnp.asarray(order)
+            detours = np.asarray(scene.numeric.get("reference_detours", [])).reshape(-1, 4)
+            speed = float(scene.numeric.get("reference_speed", [0.5])[0])
+            spacing = float(scene.numeric.get("reference_spacing", [0.3])[0])
+            if speed <= 0 or spacing <= 0:
+                raise ValueError("Racing reference speed and gate spacing must be positive")
             points = [np.asarray(self.start)]
-            for i in [0, 1, 2, 3, 1]:
+            for i in order:
                 center = np.asarray(self.gate_positions[i])
                 normal = np.asarray(self.gate_rotations[i, :, 0])
-                points.extend([center - 0.3 * normal, center, center + 0.3 * normal])
-                if i == 2:
-                    # The third gate's exit must pass around its frame and the two course posts.
-                    points.extend([[-1.3, -1.0, 1.2], [-0.55, -1.0, 1.2]])
+                points.extend([center - spacing * normal, center, center + spacing * normal])
+                points.extend(detours[detours[:, 0] == i + 1, 1:])
             points = np.array(points)
-            times = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1)) / 0.5]
+            times = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1)) / speed]
             self._set_spline(times, points)
             self.goal = jnp.asarray(points[-1])
         elif reference == "spline":
@@ -198,18 +196,19 @@ class Task:
         gates = state.gates
         missed = jnp.zeros_like(finite)
         if self.name == "racing":
-            gate = self.gate_order[jnp.minimum(gates, 4)]
+            total_gates = len(self.gate_order)
+            gate = self.gate_order[jnp.minimum(gates, total_gates - 1)]
             center, rot = self.gate_positions[gate], self.gate_rotations[gate]
             prev = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), before.pos[:, 0] - center)
             curr = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), p - center)
-            crossed = (prev[:, 0] < 0) & (curr[:, 0] >= 0) & (gates < 5)
+            crossed = (prev[:, 0] < 0) & (curr[:, 0] >= 0) & (gates < total_gates)
             fraction = -prev[:, 0] / jnp.maximum(curr[:, 0] - prev[:, 0], 1e-8)
             hit = prev + fraction[:, None] * (curr - prev)
             aperture = jnp.all(jnp.abs(hit[:, 1:]) <= 0.2 - self.radius, -1)
             gates = gates + (crossed & aperture).astype(jnp.int32)
             # A far-away plane crossing is not a gate attempt.
             missed = crossed & ~aperture & jnp.all(jnp.abs(hit[:, 1:]) < 0.36, -1)
-            success = gates == 5
+            success = gates == total_gates
         elif self.name == "navigation":
             success = jnp.linalg.norm(p - self.goal, axis=-1) <= self.goal_radius
         else:

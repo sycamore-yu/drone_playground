@@ -18,10 +18,10 @@ from flax import serialization
 
 from drone_playground.simulation.policy import read_checkpoint
 
-_FORMAT_VERSION = 1
+_FORMAT_VERSION = 2
 
 
-def _save(path, payload, *, purpose, config, provenance, kind=None):
+def _save(path, payload, *, purpose, config, provenance, kind=None, actor_spec=None):
     path = Path(path)
     metadata = {
         "format_version": _FORMAT_VERSION,
@@ -29,6 +29,7 @@ def _save(path, payload, *, purpose, config, provenance, kind=None):
         "config": config,
         "provenance": provenance,
         "kind": kind,
+        "actor": actor_spec,
         "sha256": hashlib.sha256(payload).hexdigest(),
     }
     metadata_json = json.dumps(metadata, sort_keys=True, allow_nan=False)
@@ -96,7 +97,7 @@ def load_state(path, template):
     return restored, metadata
 
 
-def save_inference(path, params, *, kind, config, provenance):
+def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
     """Save shared Actor full variables; inference needs only Simulation's Actor."""
     if kind not in ("state", "depth", "lidar"):
         raise ValueError("Unknown actor kind")
@@ -107,6 +108,13 @@ def save_inference(path, params, *, kind, config, provenance):
         config=config,
         provenance=provenance,
         kind=kind,
+        actor_spec=actor_spec
+        or config.get("learning", {}).get("actor")
+        or {
+            "kind": kind,
+            "action_size": 4 if kind == "state" else 3,
+            "hidden_size": 192,
+        },
     )
 
 

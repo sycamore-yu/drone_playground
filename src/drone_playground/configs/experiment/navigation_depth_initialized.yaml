@@ -1,9 +1,6 @@
 # @package _global_
 defaults:
-  - override /task: navigation
-  - override /scene: S01
-  - override /sensor: depth
-  - override /method: policy
+  - navigation_depth
 initial_checkpoint: ???
 simulation:
   method_hz: 10

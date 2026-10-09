@@ -12,17 +12,16 @@
 | [0002](adr/0002-crazyflow-upstream-and-style.md) | 官方 Crazyflow、依赖及代码规范 |
 | [0003](adr/0003-project-scope.md) | 首发研究范围和验收 |
 | [0004](adr/0004-native-method-integration.md) | 原生 C++/ROS 接入 |
-| [0005](adr/0005-crazyflow-forward-and-training-derivatives.md) | **Withdrawn**：保留撤回记录；新批准的反向模型选择见 0008 |
 | [0006](adr/0006-native-crazyflow-randomization.md) | 使用原生 reset/step pipeline 随机化物理 |
 | [0007](adr/0007-run-artifact-layout.md) | 权重与选模成绩同目录；统一独立评测；按需创建轨迹和回放 |
 | [0008](adr/0008-independent-backward-dynamics-model.md) | 独立选择 `learning.backward_model`；模型数学实现与训练求导连接分工 |
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
 
-2026-10-09 已批准的反向模型选择、任务/动作解耦、控制器注入和 SO3 接入、延迟缓冲、物理随机化及产物布局调整尚未完成代码实现。现有运行目录和 README 命令仍描述当前实现，不能把目标布局直接用于尚未迁移的结果。
+2026-10-09 的控制模型实现位于独立工作树：反向模型、任务/动作解耦、控制器注入、SO3、两种 MPC、理想跟踪、延迟缓冲、随机化和新产物布局已接入。主目录的活动训练和历史结果保持原样。用法见[控制模型说明](control-models.md)，验证见[实施记录](plans/control-models-20261009.md)。
 
-## 待审设计与代码审查
+## 设计与代码审查
 
-[控制接口、模型与方法组合设计](research/control-model-design.md)记录当前职责绑定、完整实现建议、命名比较和 SE3 候选来源。该文档为 `Proposed`；其中的新字段、文件拆分和额外修复不因写入文档而获得批准。
+[控制接口、模型与方法组合设计](research/control-model-design.md)记录已批准的改进及原代码审查。用户取消了 Trajectory 的 JAX 化要求，SE3 继续暂缓；没有将这两项扩展加入实现。
 
 ## 运行说明
 

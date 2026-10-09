@@ -1,9 +1,6 @@
 # @package _global_
 defaults:
-  - override /task: navigation
-  - override /scene: S01
-  - override /sensor: lidar
-  - override /method: policy
+  - navigation_lidar
 initial_checkpoint: ???
 simulation:
   method_hz: 10

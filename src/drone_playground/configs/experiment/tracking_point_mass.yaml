@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - tracking
+method:
+  action:
+    level: acceleration
+learning:
+  backward_model: point_mass_lag
+  backward_options:
+    time_constant: 0.08333333333333333

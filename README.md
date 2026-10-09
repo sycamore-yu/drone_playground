@@ -30,7 +30,7 @@ pixi run train experiment=tracking learning=ppo seed=0 output=results/ppo_tracki
 pixi run train experiment=tracking learning=ppo seed=0 output=results/ppo_tracking_s0 \
   resume=results/ppo_tracking_s0/checkpoints/latest.training.zip
 
-# 使用 selection.json 指向的实际 policy.zip 路径替换下列路径。
+# 使用 run.json 的 selection.checkpoint 指向的 policy.zip 路径替换下列路径。
 pixi run checkpoint_eval experiment=tracking learning=ppo \
   checkpoint=/absolute/path/to/selected.policy.zip output=results/tracking_eval
 pixi run benchmark experiment=tracking learning=ppo \
@@ -60,7 +60,7 @@ Checkpoint metadata 的 provenance 保存连续通过数、评测索引及累计
 `session_wall_seconds` / `session_interactions` 描述本次调用。旧归档缺少的计数从零开始，
 未知历史耗时保持 `null`。历史进程写出的记录不会被本次代码修改补算。
 已完成 C5 的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
-`benchmark-*`，实际目录记录在 `run.json` 的 `benchmark_directory`。
+`eval/<编号>/`，实际目录记录在 `run.json` 的 `benchmark_directory`。
 
 ## 架构与记录
 
@@ -70,11 +70,19 @@ Simulation 管任务、场景、传感器、方法、控制执行、冻结策略
 详见 [架构决策](docs/adr/0001-simulation-learning-boundary.md)、
 [训练接口](docs/training.md)、[场景资产](assets/scenes/README.md) 和 [回放](docs/replay.md)。
 
-每次运行写入 `results/<run_id>/`：`config.yaml`、`run.json`、`events/metrics.jsonl`、
-`checkpoints/`，以及评测目录内逐场景报告、回合 CSV、轨迹和可选 RScope 记录。
+每次运行写入 `results/<run_id>/`：`config.yaml`、`run.json`、`metrics.jsonl`、
+`checkpoints/step-*/` 内的权重和选模成绩，以及 `eval/<编号>/` 内的报告、回合 CSV
+和按需保存的轨迹、回放。各场景共用一张回合表，不预建空回放目录。
 评测保留所有失败分母；checkpoint evaluation 与 benchmark 使用分离的种子区间。
 
+新增控制器、LOTF/PointMass 反向模型、延迟、随机化及旧结果迁移的命令见
+[控制模型使用说明](docs/control-models.md)。`method=controller controller=so3` 选择
+SO3；两种 MPC 和 `controller=ideal` 使用同一组合入口。Trajectory 保持宿主实现。
+
 ## 当前证据
+
+下述收敛和原生飞行成绩来自重构前的冻结记录。当前控制模型工作树的针对性验证
+单独记录在[实施记录](docs/plans/control-models-20261009.md)，不替代原有验收。
 
 可复核的代码检查在 [CLI 测试](tests/test_cli.py)、[学习测试](tests/test_learning.py)、
 [回放测试](tests/test_replay.py) 与 [ROS Planner 客户端测试](tests/test_ros_planner.py)。
@@ -106,7 +114,7 @@ Tracking、Racing、Navigation 和动态场景的实际 RScope 原生窗口验�
 ```bash
 gitnexus analyze --index-only --name new_drone_playground
 gitnexus query -r new_drone_playground 'Trainer update checkpoint'
-gitnexus query -r new_drone_playground 'RosPlanner rollout_ros'
+gitnexus query -r new_drone_playground 'RosPlanner rollout_host'
 ```
 
 Python 与 C++ 之间的消息合同以 Protobuf 文件为准；索引不自动连接所有跨语言字段引用。
