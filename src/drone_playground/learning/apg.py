@@ -20,10 +20,10 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
         rng, reset_key = jax.random.split(rng)
         observation = trainer._observe(env_state)
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
-        action = jnp.tanh(raw)
+        action = trainer.method.deterministic(raw)
         after = trainer._step(env_state, action, differentiable=True)
-        cost, history, terms = trainer._cost(env_state, after, action, history)
-        auxiliary_cost = trainer._auxiliary_cost(auxiliary, observation)
+        cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        auxiliary_cost = trainer.objective.auxiliary_cost(auxiliary, observation)
         boundary = after.done | (index == trainer.config["horizon"] - 1)
         if bootstrap:
             value = trainer.critic.apply(state.target_critic_params, observation)

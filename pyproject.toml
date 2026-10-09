@@ -12,6 +12,9 @@ dependencies = [
   "mujoco", "mujoco-mjx", "rscope", "grpcio", "protobuf", "PyYAML",
 ]
 
+[project.optional-dependencies]
+brax = ["brax==0.14.2"]
+
 [project.scripts]
 drone-playground = "drone_playground.cli:main"
 

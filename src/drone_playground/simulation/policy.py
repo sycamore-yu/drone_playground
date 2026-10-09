@@ -27,13 +27,17 @@ def read_checkpoint(path: str | Path, purpose: str) -> tuple[bytes, dict]:
     return payload, metadata
 
 
-def load_policy(path: str | Path) -> tuple[Actor, dict, dict]:
-    """Return the shared Actor, its explicit variables and its complete experiment identity."""
+def load_policy(path: str | Path, *, actor=None) -> tuple[Actor, dict, dict]:
+    """Restore an Actor selected by trusted configuration, never checkpoint executable names."""
     payload, metadata = read_checkpoint(path, "inference")
-    if metadata.get("kind") not in {"state", "depth", "lidar"}:
+    if actor is None and metadata.get("kind") not in {"state", "depth", "lidar"}:
         raise ValueError("Checkpoint does not declare a supported actor kind")
     parameters = jax.tree.map(jax.device_put, serialization.msgpack_restore(payload))
     specification = metadata["actor"]
     if specification.get("kind") != metadata["kind"]:
         raise ValueError("Checkpoint Actor kind and specification disagree")
+    if actor is not None:
+        if actor.specification != specification:
+            raise ValueError("Checkpoint Actor specification differs from selected method")
+        return actor, parameters, metadata
     return Actor(**specification), parameters, metadata

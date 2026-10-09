@@ -191,6 +191,38 @@ class PolicyMethod:
     execution = "jax"
     trainable = True
 
+    def initial_log_std(self, env, value):
+        """Initialize this method's stochastic continuous-action parameters."""
+        return jnp.full((env.action_size,), value)
+
+    def sample(self, rng, raw, log_std):
+        """Return executable action, sampled policy variables and log probability."""
+        from drone_playground.simulation.networks import sample_tanh_gaussian
+
+        return sample_tanh_gaussian(rng, raw, log_std)
+
+    def log_probability(self, sample, raw, log_std, observation):
+        """Evaluate the probability of a previous sample under current weights."""
+        from drone_playground.simulation.networks import tanh_gaussian_log_prob
+
+        return tanh_gaussian_log_prob(sample, raw, log_std)
+
+    def entropy(self, rng, raw, log_std):
+        """Estimate transformed-action entropy using the same distribution."""
+        return -jnp.mean(self.sample(rng, raw, log_std)[2])
+
+    def deterministic(self, raw):
+        """Decode the mean network output for evaluation and differentiable training."""
+        return jnp.tanh(raw)
+
+    def execute(self, env, state, action, step=None):
+        """Execute this method's action through the selected JAX transition.
+
+        The caller selects the forward or backward dynamics step. A learnable
+        planner can supply a different physical action conversion here.
+        """
+        return (env.step if step is None else step)(state, action)
+
     def initialize(self, env, seed, actor=None):
         """Initialize only the memory required by this actor."""
         if actor is None:
@@ -203,9 +235,11 @@ class PolicyMethod:
             raise ValueError("Policy execution requires an Actor")
 
         def step(state, memory, parameters):
+            from drone_playground.simulation.networks import reset_actor_memory
+
             raw, memory, _ = actor.apply(parameters, env.observe(state), memory)
-            state = env.step(state, jnp.tanh(raw))
-            memory = jnp.where(state.done[:, None], 0.0, memory)
+            state = self.execute(env, state, self.deterministic(raw))
+            memory = reset_actor_memory(memory, state.done)
             return state, memory
 
         return step

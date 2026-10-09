@@ -6,5 +6,6 @@ action:
   level: attitude_thrust
   heading: fixed
 actor:
+  _target_: drone_playground.simulation.networks.Actor
   kind: state
   hidden_size: 192

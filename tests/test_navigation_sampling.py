@@ -14,7 +14,7 @@ from drone_playground import cli
 from drone_playground.learning import checkpoint
 from drone_playground.learning.ppo import collect_rollout
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.policy import read_checkpoint
 from drone_playground.simulation.records import RunRecord
 from drone_playground.simulation.tasks import Event
@@ -45,7 +45,7 @@ def recipe(kind="depth", algorithm="shac"):
 @pytest.mark.parametrize("scene", SCENES)
 def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
     """Verify wide starts valid reproducible and benchmark unchanged."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene=scene,
@@ -84,7 +84,7 @@ def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
 def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
     """Verify masked random reset preserves inactive world and sensor."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="D01",
@@ -134,7 +134,7 @@ def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
 @pytest.mark.parametrize("task,scene", [("tracking", "empty"), ("racing", "racing")])
 def test_training_sampler_rejects_other_tasks(task, scene):
     """Verify training sampler rejects other tasks."""
-    env = Environment(task=task, scene=scene)
+    env = make_environment(task=task, scene=scene)
     with pytest.raises(ValueError, match=r"Navigation"):
         env.reset(jax.random.PRNGKey(0), randomize_position=True)
     with pytest.raises(ValueError, match=r"Navigation"):
@@ -288,7 +288,7 @@ def test_invalid_scene_schedule_fails_before_environment(scenes, block, monkeypa
 @pytest.mark.parametrize("missing_option", ["randomize_navigation_start", "failure_cost"])
 def test_missing_saved_training_option_is_rejected(tmp_path, missing_option):
     """A saved training contract must match exactly; missing options are not guessed."""
-    trainer = Trainer(Environment(), config={"horizon": 1})
+    trainer = Trainer(make_environment(), config={"horizon": 1})
     initial = trainer.initialize()
     old_config = dict(trainer.resolved_config)
     del old_config[missing_option]
