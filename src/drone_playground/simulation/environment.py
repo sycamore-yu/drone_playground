@@ -123,6 +123,11 @@ class BaseEnv:
             if isinstance(action, Action)
             else Action(drone=drone, frequency=method_hz, **(action or {}))
         )
+        if (
+            self.task.reward_profile == "legacy_motion_navigation_v2"
+            and self.action.level != "velocity_yaw"
+        ):
+            raise ValueError("Motion-aware-v2 task reward requires velocity_yaw action contract")
         self.control_level = control_level or self.action.output_level
         self.delay_bounds = delay_range(action_delay_s)
         self.ideal_samples = math.ceil(self.delay_bounds[1] * physics_hz) + self.substeps
@@ -471,6 +476,12 @@ class BaseEnv:
         success = (after.task.event == Event.SUCCESS) & ~before.done
         return jnp.where(before.done, 0.0, (error + smooth) * self.dt + 20 * failure - 5 * success)
 
+    def task_reward_components(
+        self, before: EnvState, after: EnvState, action: Array
+    ) -> tuple[Array, dict[str, Array]]:
+        """Supply base task cost and task-owned metric terms to any learner."""
+        return self.cost(before, after, action), {}
+
     def _tracking_error(self, after: EnvState):
         """Compute physical reference errors without encoding a network action."""
         p, v = after.physics.states.pos[:, 0], after.physics.states.vel[:, 0]
@@ -699,7 +710,12 @@ class NavigationEnv(BaseEnv):
         )
 
     def cost(self, before: EnvState, after: EnvState, action: Array) -> Array:
-        """Retain the navigation velocity and obstacle-distance reward."""
+        """Evaluate the configured Navigation task reward in physical state."""
+        if self.task.reward_profile == "legacy_motion_navigation_v2":
+            from drone_playground.simulation.task_rewards import motion_navigation_reward
+
+            reward, _ = motion_navigation_reward(self, before, after, action)
+            return -reward
         position = after.physics.states.pos[:, 0]
         velocity = after.physics.states.vel[:, 0]
         direction = self.goal_for(after) - position
@@ -709,6 +725,17 @@ class NavigationEnv(BaseEnv):
         clearance = self.scene_clearance(position, after.time, after.scene_state) - self.task.radius
         error = error + 5 * jax.nn.softplus((0.5 - clearance) * 8) / 8
         return self._shared_cost(before, after, action, error)
+
+    def task_reward_components(
+        self, before: EnvState, after: EnvState, action: Array
+    ) -> tuple[Array, dict[str, Array]]:
+        """Expose the same Task reward to PPO, APG, SHAC and Brax training."""
+        if self.task.reward_profile == "legacy_motion_navigation_v2":
+            from drone_playground.simulation.task_rewards import motion_navigation_reward
+
+            reward, terms = motion_navigation_reward(self, before, after, action)
+            return -reward, terms
+        return super().task_reward_components(before, after, action)
 
 
 def make_environment(*, task: str = "tracking", **kwargs) -> BaseEnv:

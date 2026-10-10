@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 from flax import struct
 
-from drone_playground.simulation.tasks import Event
+from drone_playground.simulation.task_rewards import shaped_task_cost
 
 
 @struct.dataclass
@@ -32,6 +32,19 @@ class EpisodeObjective:
         self.recipe = recipe
         self.loss_name = loss_name
         self.window = config["perception_loss"].get("velocity_window", 1)
+        keys = (
+            "task_weight",
+            "progress_reward_scale",
+            "failure_cost",
+            "altitude_weight",
+            "height_boundary_weight",
+        )
+        # Old checkpoints record task coefficients under Learning. New task
+        # presets can own the coefficients explicitly; they take precedence.
+        self.task_reward_shaping = {
+            **{key: config[key] for key in keys},
+            **env.task.reward_shaping,
+        }
 
     def initialize_state(self, batch: int) -> ObjectiveState:
         """Initialize causal statistics without assuming an Actor memory layout."""
@@ -44,59 +57,9 @@ class EpisodeObjective:
         )
 
     def cost(self, before, after, action, history):
-        """Return the same scalar task and named-perception cost for every algorithm."""
-        if self.config["reward_profile"] == "legacy_motion_navigation_v2":
-            from drone_playground.learning.navigation_reward import motion_navigation_reward
-
-            reward, terms = motion_navigation_reward(self.env, before, after, action)
-            return -reward, history, terms
-        task_cost = self.env.cost(before, after, action)
-        progress_reward = jnp.zeros_like(task_cost)
-        if self.config["progress_reward_scale"]:
-            if self.env.task.name == "racing":
-                order = self.env.task.gate_order
-                active_gate = order[jnp.minimum(before.task.gates, len(order) - 1)]
-                goal = self.env.task.gate_positions[active_gate]
-                previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
-                distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
-                progress = previous_distance - distance
-                progress += 5.0 * (after.task.gates - before.task.gates)
-            else:
-                goal = self.env.goal_for(before)
-                previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
-                distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
-                progress = previous_distance - distance
-            progress_reward = self.config["progress_reward_scale"] * progress
-            progress_reward = jnp.where(before.done, 0.0, progress_reward)
-            task_cost -= progress_reward
-        failure = after.done & (after.task.event != Event.SUCCESS) & ~before.done
-        extra_failure_cost = self.config["failure_cost"] * failure
-        task_cost += extra_failure_cost
-        height_boundary_cost = jnp.zeros_like(task_cost)
-        if self.config["altitude_weight"]:
-            goal = self.env.goal_for(after)
-            altitude_error = after.physics.states.pos[:, 0, 2] - goal[..., 2]
-            task_cost += self.config["altitude_weight"] * self.env.dt * altitude_error**2
-        if self.config["height_boundary_weight"]:
-            height = after.physics.states.pos[:, 0, 2]
-            edge_distance = jnp.minimum(
-                height - self.env.task.low[2], self.env.task.high[2] - height
-            )
-            height_boundary_cost = (
-                self.config["height_boundary_weight"]
-                * self.env.dt
-                * jax.nn.relu(1.0 - edge_distance) ** 2
-            )
-            height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
-            task_cost += height_boundary_cost
-        cost = self.config["task_weight"] * task_cost
-        terms = {
-            "task_cost": task_cost,
-            "failure_cost": extra_failure_cost,
-            "height_boundary_cost": height_boundary_cost,
-            "progress_reward": progress_reward,
-            "perception_cost": jnp.zeros_like(cost),
-        }
+        """Compose Task cost with optional learning-specific perceptual losses."""
+        cost, terms = shaped_task_cost(self.env, before, after, action, self.task_reward_shaping)
+        terms["perception_cost"] = jnp.zeros_like(cost)
         if self.recipe is None:
             return cost, history, terms
         velocity = after.physics.states.vel[:, 0]

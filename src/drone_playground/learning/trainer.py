@@ -115,7 +115,8 @@ class Trainer:
         if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
             raise ValueError("Unknown reward profile")
         if self.config["reward_profile"] != "default" and (
-            algorithm != "ppo"
+            env.task.reward_profile != self.config["reward_profile"]
+            or algorithm != "ppo"
             or env.task.name != "navigation"
             or env.action.level != "velocity_yaw"
             or loss is not None

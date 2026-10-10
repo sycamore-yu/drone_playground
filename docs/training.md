@@ -113,6 +113,24 @@ PPO 训练记录额外提供 `navigation_progress_metres`、
 `critic_return_rmse_preupdate` 和传感器有效测量比例。
 以上均是训练轨迹诊断指标，不能替代独立冻结成功率。
 
+### Task 奖励与 Learning 损失的归属
+
+根据 [ADR-0001](adr/0001-simulation-learning-boundary.md)、
+[ADR-0012](adr/0012-rl-environment-and-method-interface.md) 与
+[ADR-0019](adr/0019-task-owned-reward-contract.md)，Task 参数归
+Simulation 管理，任务奖励数学在 simulation/task_rewards.py。
+NavigationEnv 通过 cost() 和 task_reward_components() 对所有方法
+暴露相同的 Task 奖励；learning/objective.py 仅负责组合任务成本
+与 Zhang/Liu 等网络专有的感知、预测和 jerk 学习损失。
+
+**新配方**选择 task.options.reward_profile 与可选的
+task.options.reward_shaping；参考
+navigation_procedural_{depth,lidar}_ppo_velocity_task。
+**已有 Trial-4** 的原始速度 PPO YAML 和 checkpoint 必须保持不变，
+其历史 learning.options.reward_profile 仅在构造 Environment 时
+转换为 Task 的奖励类型。原 Learning 训练参数里的进度／失败／高度
+权重暂时保留为历史配置来源，但计算全部在 Simulation 执行。
+
 训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
 `method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；
 `PolicyMethod` 默认使用连续 tanh-Gaussian PPO 分布，而 PPO 更新调用

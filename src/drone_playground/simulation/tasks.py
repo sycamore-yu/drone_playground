@@ -62,11 +62,39 @@ class Task:
         duration: float | None = None,
         reference_seed: int = 0,
         gate_order=None,
+        reward_profile: str = "default",
+        reward_shaping: dict[str, float] | None = None,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
             raise ValueError(f"Unknown task: {name}")
         self.name = name
+        if reward_profile not in {"default", "legacy_motion_navigation_v2"}:
+            raise ValueError("Unsupported Task reward profile")
+        if reward_profile != "default" and name != "navigation":
+            raise ValueError("Alternative Navigation reward requires navigation task")
+        self.reward_profile = reward_profile
+        self.reward_shaping = dict(reward_shaping or {})
+        accepted_shaping = {
+            "task_weight",
+            "progress_reward_scale",
+            "failure_cost",
+            "altitude_weight",
+            "height_boundary_weight",
+        }
+        if self.reward_shaping.keys() - accepted_shaping:
+            raise ValueError("Unsupported task reward-shaping option")
+        if any(
+            not isinstance(v, (float, int)) or not np.isfinite(v) or v < 0
+            for v in self.reward_shaping.values()
+        ):
+            raise ValueError("Task reward-shaping coefficients must be finite and nonnegative")
+        if name == "tracking" and self.reward_shaping.get("progress_reward_scale", 0):
+            raise ValueError("Task progress reward requires Navigation or Racing")
+        if name != "navigation" and any(
+            self.reward_shaping.get(key, 0) for key in ("altitude_weight", "height_boundary_weight")
+        ):
+            raise ValueError("Task altitude shaping requires Navigation")
         self.reference = reference
         self.gate_order = jnp.zeros(0, jnp.int32)
         self.radius = 0.07
@@ -133,6 +161,10 @@ class Task:
                 "TIMEOUT",
             ],
         }
+        if self.reward_profile != "default":
+            result["reward_profile"] = self.reward_profile
+        if self.reward_shaping:
+            result["reward_shaping"] = dict(self.reward_shaping)
         if self.name == "navigation":
             result.update(
                 goal_metres=np.asarray(self.goal).tolist(), goal_radius_metres=self.goal_radius

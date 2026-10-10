@@ -9,13 +9,13 @@ import pytest
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
-from drone_playground.learning.navigation_reward import motion_navigation_reward
 from drone_playground.learning.ppo import advantage_progress_correlation
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.evaluation import create_environment, create_method
 from drone_playground.simulation.methods import Action
 from drone_playground.simulation.procedural_scene import ProceduralScene
+from drone_playground.simulation.task_rewards import motion_navigation_reward
 from drone_playground.simulation.tasks import Event
 
 
@@ -68,6 +68,107 @@ def test_old_motion_reward_failure_and_success_scale_and_gradient():
     assert np.isfinite(np.asarray(reward)).all()
 
 
+def test_task_reward_profile_matches_environment_cost_and_learning_objective():
+    """Task/Environment owns reward math; Learning adds no hidden task reward."""
+    env = make_environment(
+        task="navigation",
+        scene="train/procedural",
+        num_envs=2,
+        device="cpu",
+        procedural={"max_obstacles": 6},
+        action={"level": "velocity_yaw"},
+        task_config={"reward_profile": "legacy_motion_navigation_v2"},
+    )
+    initial = env.reset(jax.random.key(15))
+    action = jnp.zeros((2, 4))
+    after = env.step(initial, action)
+    expected_reward, expected_terms = motion_navigation_reward(env, initial, after, action)
+    cost, task_terms = env.task_reward_components(initial, after, action)
+    np.testing.assert_allclose(cost, -expected_reward, rtol=1e-6, atol=1e-6)
+    np.testing.assert_allclose(env.cost(initial, after, action), cost, rtol=1e-6)
+    np.testing.assert_allclose(
+        task_terms["motion_safety_cost"], expected_terms["motion_safety_cost"]
+    )
+    trainer = Trainer(
+        env,
+        kind="state",
+        algorithm="ppo",
+        config={"horizon": 1, "perception_weight": 0.0},
+    )
+    objective_cost, _, objective_terms = trainer.objective.cost(
+        initial, after, action, trainer.objective.initialize_state(2)
+    )
+    np.testing.assert_allclose(objective_cost, cost, rtol=1e-6, atol=1e-6)
+    np.testing.assert_allclose(
+        objective_terms["motion_arrival_reward"], expected_terms["motion_arrival_reward"]
+    )
+    assert env.task.contract["reward_profile"] == "legacy_motion_navigation_v2"
+
+
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_task_owned_configuration_and_archived_reward_override_are_equivalent(kind):
+    """New task contract and archived trial-4 Learning selector agree numerically."""
+    root = Path(__file__).resolve().parents[1] / "src/drone_playground/configs"
+    with initialize_config_dir(version_base=None, config_dir=str(root)):
+        old = compose(
+            config_name="config",
+            overrides=[f"experiment=navigation_procedural_{kind}_ppo_velocity"],
+        )
+        new = compose(
+            config_name="config",
+            overrides=[f"experiment=navigation_procedural_{kind}_ppo_velocity_task"],
+        )
+    assert old.learning.options.reward_profile == "legacy_motion_navigation_v2"
+    assert old.task.get("options", {}).get("reward_profile") is None
+    assert new.learning.options.reward_profile == "default"
+    assert new.task.options.reward_profile == "legacy_motion_navigation_v2"
+    assert new.task.options.reward_shaping.progress_reward_scale == 0.0
+    for recipe in (old, new):
+        recipe.simulation.num_envs = 1
+        recipe.simulation.procedural.max_obstacles = 6
+        recipe.simulation.device = "cpu"
+    previous, updated = create_environment(old), create_environment(new)
+    state = previous.reset(jax.random.key(7))
+    other = updated.reset(jax.random.key(7))
+    control = jnp.zeros((1, 4))
+    np.testing.assert_allclose(
+        previous.cost(state, state, control), updated.cost(other, other, control), rtol=1e-6
+    )
+    assert previous.task.reward_profile == updated.task.reward_profile
+    assert "reward_profile" not in previous.task.contract or (
+        previous.task.contract["reward_profile"] == "legacy_motion_navigation_v2"
+    )
+
+
+def test_task_reward_shaping_overrides_old_learning_parameters():
+    """Task is the source of truth when it explicitly defines reward coefficients."""
+    env = make_environment(
+        task="navigation",
+        scene="S01",
+        num_envs=1,
+        device="cpu",
+        task_config={"reward_shaping": {"progress_reward_scale": 0.6}},
+    )
+    baseline = make_environment(task="navigation", scene="S01", num_envs=1, device="cpu")
+    left = Trainer(env, config={"horizon": 1, "progress_reward_scale": 0})
+    right = Trainer(baseline, config={"horizon": 1, "progress_reward_scale": 0})
+    first = env.reset(jax.random.key(5))
+    shifted = first.replace(
+        physics=first.physics.replace(
+            states=first.physics.states.replace(pos=first.physics.states.pos.at[:, 0, 0].add(0.3))
+        )
+    )
+    action = jnp.zeros((1, env.action_size))
+    task_cost, _, terms = left.objective.cost(
+        first, shifted, action, left.objective.initialize_state(1)
+    )
+    base_cost, _, _ = right.objective.cost(
+        first, shifted, action, right.objective.initialize_state(1)
+    )
+    assert float(terms["progress_reward"][0]) > 0
+    np.testing.assert_allclose(base_cost - task_cost, terms["progress_reward"], rtol=1e-6)
+
+
 def test_ppo_advantage_progress_correlation_is_informative():
     """Detect useful ordering of advantages, not simply critic loss magnitude."""
     x = jnp.array([-2.0, -1.0, 1.0, 2.0])
@@ -106,6 +207,11 @@ def test_velocity_ppo_real_training_update_with_procedural_observations(experime
     assert env.action.level == "velocity_yaw"
     assert env.control_level == "attitude_thrust"
     assert env.scene.distribution.start_sampling == "collision_free"
+    assert env.task.reward_profile == "legacy_motion_navigation_v2"
+    # The original in-flight trial-4 YAML is immutable; the environment
+    # constructor projects its historical Learning selector to Task.
+    assert config.task.get("options", {}).get("reward_profile") is None
+    assert config.learning.options.reward_profile == "legacy_motion_navigation_v2"
     trainer = Trainer(
         env,
         kind=config.method.actor.kind,

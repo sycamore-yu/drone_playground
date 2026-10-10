@@ -82,6 +82,11 @@ current navigation failure.
 7. The automatic loop is not proof of convergence. Only the existing
    three-independent-seed frozen protocol may increase a formal matrix cell.
 
+**Reward ownership clarification:** [ADR-0019](0019-task-owned-reward-contract.md)
+supersedes the temporary Learning-side reward implementation. Existing
+in-flight Trial-4 settings retain their original configuration for exact
+checkpoint recovery. New experiments select reward under Task.
+
 ## Acceptance
 
 - Both velocity policies pass CPU JAX and GPU short-update tests; action

@@ -21,6 +21,16 @@ def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Base
     simulation["num_envs"] = config.simulation.num_envs if num_envs is None else num_envs
     implementation = get_class(config.method.implementation._target_)
     action = OmegaConf.to_container(config.method, resolve=True).get("action", {})
+    task_options = OmegaConf.to_container(config.task, resolve=True).get("options", {})
+    # Historical in-flight velocity PPO runs saved the reward choice under
+    # learning.options. Interpret those existing configs as an environment
+    # Task selector without rewriting their on-disk identities/checkpoints.
+    # New experiments must choose task.options.reward_profile directly.
+    historical_profile = config.learning.options.get("reward_profile", "default")
+    if historical_profile != "default":
+        if task_options.get("reward_profile", historical_profile) != historical_profile:
+            raise ValueError("Conflicting historical and task-owned reward profiles")
+        task_options["reward_profile"] = historical_profile
     level = None
     if not implementation.trainable:
         level = get_class(config.controller._target_).output_level
@@ -30,7 +40,7 @@ def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Base
         reference=config.task.reference,
         duration=config.task.duration,
         reference_seed=config.task.reference_seed,
-        task_config=OmegaConf.to_container(config.task, resolve=True).get("options", {}),
+        task_config=task_options,
         sensor=config.sensor.name,
         sensor_config=OmegaConf.to_container(config.sensor.config, resolve=True),
         point_count=config.sensor.point_count,
