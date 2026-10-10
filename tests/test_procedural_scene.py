@@ -67,6 +67,20 @@ def test_density_families_match_navigation_benchmark_scale_not_geometry():
     assert not np.array_equal(state.centers[0], state.centers[1])
 
 
+def test_collision_free_start_sampler_provides_goal_distance_curriculum():
+    """Shorter episodes vary distance without changing frozen evaluation geometry."""
+    scene = ProceduralScene({"max_obstacles": 36, "start_sampling": "collision_free"})
+    a = scene.sample(jax.random.PRNGKey(21), 12)
+    b = scene.sample(jax.random.PRNGKey(21), 12)
+    np.testing.assert_allclose(a.start, b.start, rtol=0.0, atol=2e-6)
+    clearance = scene.clearance(a.start, 0.0, scene_state=a)
+    assert (np.asarray(clearance) > 0.45).all()
+    dx = np.asarray(a.goal[:, 0] - a.start[:, 0])
+    assert (dx > 4.0).all()
+    assert (dx < 99.0).all()
+    assert (dx < 35.0).any()  # Some episodes begin near their terminal goal.
+
+
 def test_corridor_and_start_goal_are_collision_free_for_several_seeds():
     """Constructive outside lane remains traversable independently of obstacles."""
     scene = ProceduralScene()

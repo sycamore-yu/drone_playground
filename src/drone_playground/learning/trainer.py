@@ -64,6 +64,7 @@ _DEFAULTS = {
     "velocity_aux_weight": 0.0,
     "perception_loss": {},
     "randomize_navigation_start": False,
+    "reward_profile": "default",
 }
 
 
@@ -107,8 +108,22 @@ class Trainer:
         if unknown:
             raise ValueError(f"Unknown learning options: {sorted(unknown)}")
         self.config = {**_DEFAULTS, **options}
+        if self.config["perception_loss"] is None:
+            self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         self.loss_name = loss
+        if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
+            raise ValueError("Unknown reward profile")
+        if self.config["reward_profile"] != "default" and (
+            algorithm != "ppo"
+            or env.task.name != "navigation"
+            or env.action.level != "velocity_yaw"
+            or loss is not None
+        ):
+            raise ValueError(
+                "legacy_motion_navigation_v2 requires Navigation PPO, "
+                "velocity_yaw action and loss=null"
+            )
         self.backward_model, self.backward_options = backward_model, dict(backward_options or {})
         if not isinstance(self.config["randomize_navigation_start"], bool):
             raise ValueError("randomize_navigation_start must be boolean")
@@ -137,7 +152,7 @@ class Trainer:
         if env.num_envs % self.config["minibatches"]:
             raise ValueError("minibatches must divide env.num_envs (whole recurrent sequences)")
         for key, value in self.config.items():
-            if key != "perception_loss" and not math.isfinite(value):
+            if key not in ("perception_loss", "reward_profile") and not math.isfinite(value):
                 raise ValueError(f"{key} must be finite")
         for key in ("lr", "critic_lr", "max_grad_norm", "clip_epsilon"):
             if self.config[key] <= 0:

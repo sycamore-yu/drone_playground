@@ -40,6 +40,7 @@ class SceneDistribution:
     max_obstacles: int = 208
     corridor_y: float = -17.5
     training_seed: int = 0
+    start_sampling: str = "endpoints"
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
@@ -49,6 +50,8 @@ class SceneDistribution:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
             raise ValueError("training_seed must be a nonnegative integer")
+        if self.start_sampling not in ("endpoints", "collision_free"):
+            raise ValueError("start_sampling must be endpoints or collision_free")
 
 
 class ProceduralScene:
@@ -149,7 +152,7 @@ class ProceduralScene:
         centers, sizes, targets, speed, phase, active, cylinder, moving, start, goal = jax.vmap(
             sample_world
         )(keys)
-        return SceneState(
+        scenario = SceneState(
             centers,
             sizes,
             targets,
@@ -162,6 +165,37 @@ class ProceduralScene:
             goal,
             episodes,
         )
+        if self.distribution.start_sampling == "collision_free":
+            # The old successful training design used broad reset positions.
+            # Reserve some near-goal starts for terminal-reward exploration,
+            # but keep most episodes distributed throughout the whole course.
+            trial_keys = jax.vmap(lambda key: jax.random.fold_in(key, 731))(keys)
+
+            def candidates(key):
+                near_key, coord_key = jax.random.split(key)
+                near = jax.random.bernoulli(near_key, 0.35)
+                coordinates = jax.random.uniform(coord_key, (16, 3))
+                xlow = jnp.where(near, 65.0, 2.0)
+                return jnp.stack(
+                    [
+                        xlow + (93.0 - xlow) * coordinates[:, 0],
+                        -15.0 + 30.0 * coordinates[:, 1],
+                        1.2 + 4.0 * coordinates[:, 2],
+                    ],
+                    axis=-1,
+                )
+
+            trial_positions = jax.vmap(candidates)(trial_keys)
+            distances = self.clearance(trial_positions, scene_state=scenario)
+            valid = (distances > 0.45) & (
+                jnp.linalg.norm(trial_positions - scenario.goal[:, None, :], axis=-1) > 4.0
+            )
+            best = jnp.argmax(valid, axis=1)
+            start = jnp.take_along_axis(trial_positions, best[:, None, None], axis=1)[:, 0, :]
+            scenario = scenario.replace(
+                start=jnp.where(jnp.any(valid, axis=1)[:, None], start, scenario.start)
+            )
+        return scenario
 
     @staticmethod
     def _centers_at(state: SceneState, times: jax.Array):

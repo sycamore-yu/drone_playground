@@ -6,6 +6,7 @@ import optax
 from flax import struct
 
 from drone_playground.simulation.networks import reset_actor_memory
+from drone_playground.simulation.tasks import Event
 
 
 @struct.dataclass
@@ -52,6 +53,22 @@ def exceeds_kl_limit(approx_kl, target_kl):
     return jnp.logical_and(target_kl > 0, approx_kl > 1.5 * target_kl)
 
 
+def advantage_progress_correlation(advantages, progress):
+    """Measure whether better-than-expected actions coincide with real progress.
+
+    Only training rollout transitions are used; frozen benchmark outcomes are
+    deliberately not fed into this score. A zero-variance batch reports zero
+    instead of producing an undefined correlation.
+    """
+    x, y = advantages - advantages.mean(), progress - progress.mean()
+    covariance = jnp.mean(x * y)
+    return jnp.where(
+        (jnp.mean(x**2) > 1e-12) & (jnp.mean(y**2) > 1e-12),
+        covariance / jnp.maximum(x.std() * y.std(), 1e-8),
+        0.0,
+    )
+
+
 def collect_rollout(trainer, state):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
@@ -63,6 +80,27 @@ def collect_rollout(trainer, state):
         action, pre_tanh, log_prob = trainer.method.sample(action_key, raw, state.log_std)
         after = trainer._step(env_state, action, differentiable=False)
         cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        if trainer.env.task.name == "navigation":
+            before_position = env_state.physics.states.pos[:, 0]
+            after_position = after.physics.states.pos[:, 0]
+            goal = trainer.env.goal_for(env_state)
+            distances = jnp.linalg.norm(goal - before_position, axis=-1)
+            remaining = jnp.linalg.norm(goal - after_position, axis=-1)
+            progress = jnp.where(env_state.done, 0.0, distances - remaining)
+            terms = {
+                **terms,
+                "navigation_progress_metres": progress,
+                "navigation_remaining_metres": remaining,
+                "navigation_collision_fraction": (
+                    (after.task.event == Event.COLLISION) & ~env_state.done
+                ).astype(jnp.float32),
+                "navigation_out_of_bounds_fraction": (
+                    (after.task.event == Event.OUT_OF_BOUNDS) & ~env_state.done
+                ).astype(jnp.float32),
+                "navigation_success_fraction": (
+                    (after.task.event == Event.SUCCESS) & ~env_state.done
+                ).astype(jnp.float32),
+            }
         value = trainer.critic.apply(state.critic_params, observation)
         next_value = trainer.critic.apply(state.critic_params, trainer._observe(after))
         data = Rollout(
@@ -113,6 +151,13 @@ def update(trainer, state):
         jnp.var(targets), 1e-8
     )
     advantage_std = advantages.std()
+    advantage_positive_fraction = jnp.mean(advantages > 0.0)
+    advantage_mean = advantages.mean()
+    advantage_target_correlation = (
+        advantage_progress_correlation(advantages, terms["navigation_progress_metres"])
+        if "navigation_progress_metres" in terms
+        else jnp.zeros_like(advantage_std)
+    )
     advantages = normalize_advantages(advantages)
     batches = trainer.config["minibatches"]
 
@@ -194,10 +239,21 @@ def update(trainer, state):
     metrics.update(jax.tree.map(jnp.mean, terms))
     metrics["reward"] = rollout.rewards.mean()
     metrics["advantage_std"] = advantage_std
+    metrics["advantage_positive_fraction"] = advantage_positive_fraction
+    metrics["advantage_mean_pre_normalization"] = advantage_mean
+    metrics["advantage_progress_correlation"] = advantage_target_correlation
     metrics["value_target_std"] = value_target_std
+    metrics["value_prediction_mean"] = rollout.values.mean()
+    metrics["value_prediction_std"] = rollout.values.std()
+    metrics["value_target_mean"] = targets.mean()
+    metrics["critic_return_rmse_preupdate"] = jnp.sqrt(jnp.mean((targets - rollout.values) ** 2))
     metrics["critic_explained_variance_preupdate"] = value_explained_variance
     metrics["saturated_action_fraction"] = jnp.mean(jnp.abs(jnp.tanh(rollout.pre_tanh)) > 0.95)
     metrics["exploration_std"] = jnp.exp(state.log_std).mean()
+    if "depth_mask" in rollout.observations:
+        metrics["depth_valid_fraction"] = rollout.observations["depth_mask"].mean()
+    if "mask" in rollout.observations:
+        metrics["lidar_valid_fraction"] = rollout.observations["mask"].mean()
     metrics["done_fraction"] = rollout.done.mean()
     metrics["loss"] = metrics["actor_loss"] + metrics["critic_loss"]
     return trainer._finish(state, metrics)

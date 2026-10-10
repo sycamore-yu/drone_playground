@@ -45,6 +45,11 @@ class EpisodeObjective:
 
     def cost(self, before, after, action, history):
         """Return the same scalar task and named-perception cost for every algorithm."""
+        if self.config["reward_profile"] == "legacy_motion_navigation_v2":
+            from drone_playground.learning.navigation_reward import motion_navigation_reward
+
+            reward, terms = motion_navigation_reward(self.env, before, after, action)
+            return -reward, history, terms
         task_cost = self.env.cost(before, after, action)
         progress_reward = jnp.zeros_like(task_cost)
         if self.config["progress_reward_scale"]:
