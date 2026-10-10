@@ -26,6 +26,14 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
 
 ### Results v3
 
+新的长时间训练按照 [ADR-0016](adr/0016-training-patience-and-frozen-selection.md)
+启用训练诊断早停：`early_stopping.min_updates=800`，
+`patience=6`，`min_delta=0.02`。Patience 从第 800 次更新后的
+轻量筛查累计，最差场景优先。若首次通过完整候选选模，则只进行一次
+冻结 Benchmark；失败后新开随机初始化试验，不重复冻结挑选同一 run
+的其他 checkpoint。旧 v2 已有单次达标候选只允许使用
+`tools/freeze_legacy_candidate.py --run <旧 run 目录>` 独立审查一次。
+
 新 run 按 [ADR-0014](adr/0014-results-layout-orbax-tensorboard.md) 保存：
 `config.yaml`、TensorBoard 事件、`checkpoints/model_NNNNNN/`（Orbax
 `training/` + 选模通过才有的 `actor/`）、正式冻结 `episodes.csv`

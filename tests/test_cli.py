@@ -212,6 +212,43 @@ def test_three_stage_screening_only_promotes_a_complete_candidate(config, traini
     assert training.record.identity["status"] == "accepted"
 
 
+def test_six_unimproved_screens_stop_a_new_run_only_after_800(config, training, monkeypatch):
+    """Keep an early-stopped checkpoint without touching the frozen test set."""
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.learning.evaluation_interval = 160
+    config.learning.checkpoint_interval = 80
+    training.stop_at = None
+    evaluations = []
+
+    def stagnant_screen(config, directory, *, evaluation_index=0, **kwargs):
+        del kwargs
+        directory.mkdir(parents=True, exist_ok=True)
+        evaluations.append((config.mode, config.benchmark.protocol, evaluation_index))
+        if config.mode != "checkpoint_eval" or config.benchmark.protocol != "diagnostic":
+            raise AssertionError("Stagnant screening must not access full or frozen test data")
+        return {
+            "complete": True,
+            "reports": {
+                "empty": {
+                    "episodes": 8,
+                    "successes": 0,
+                    "successful_position_rmse": None,
+                }
+            },
+        }
+
+    monkeypatch.setattr(cli, "evaluate", stagnant_screen)
+    cli.train(config, training.record)
+    assert training.record.identity["status"] == "early_stopped"
+    assert training.record.identity["updates"] == 1600
+    assert training.record.identity["stagnant_screens"] == 6
+    assert len(evaluations) == 10
+    assert all(row[:2] == ("checkpoint_eval", "diagnostic") for row in evaluations)
+    assert training.path.exists()
+    assert [e["event"] for e in training.record.events].count("early_stopping") == 1
+
+
 def test_three_stage_real_results_layout_writes_orbax_and_events(config, training, monkeypatch):
     """The new run writes Orbax folders and one event stream, not zip/JSONL duplicates."""
     from drone_playground.simulation.records import RunRecord

@@ -467,6 +467,39 @@ def trial_status(path, running):
     """Trust the real run record and detect interrupted/vanished processes."""
     report = read_json(path / "run.json")
     active = str(path) in running
+    # A pre-v3 seed with an independently frozen *first passing checkpoint*
+    # may be adjudicated once without rewriting the historical ZIP run.
+    audit_dir = path.parent / ".scheduler" / "frozen_audits" / path.name
+    audit = read_json(audit_dir / "audit.json")
+    if audit is not None:
+        if audit.get("status") == "running":
+            return "auditing"
+        if audit.get("status") == "failed":
+            return "frozen_benchmark_failed"
+        if audit.get("status") == "accepted":
+            original_checkpoint = path / audit.get("checkpoint", "missing")
+            validation = read_json(original_checkpoint.parent / "report.json")
+            frozen = read_json(audit_dir / "report.json")
+            try:
+                configured = (path / "config.yaml").read_text()
+            except OSError:
+                configured = ""
+            if (
+                original_checkpoint.is_file()
+                and re.search(r"^initial_checkpoint:\s*null\s*$", configured, re.MULTILINE)
+                and validation is not None
+                and validation.get("mode") == "checkpoint_eval"
+                and validation.get("complete") is True
+                and validation.get("passed") is True
+                and 1_000_000 <= validation.get("seed_base", 0) < 2_000_000
+                and frozen is not None
+                and frozen.get("mode") == "benchmark"
+                and frozen.get("complete") is True
+                and frozen.get("passed") is True
+                and frozen.get("seed_base", 0) >= 2_000_000
+            ):
+                return "accepted"
+            return "invalid"
     if report is not None:
         status = report.get("status", "unknown")
         if status == "accepted":
@@ -530,7 +563,7 @@ def trial_status(path, running):
             ):
                 return "recoverable"
             return status
-        if status in {"failed", "frozen_benchmark_failed"}:
+        if status in {"failed", "frozen_benchmark_failed", "early_stopped"}:
             return status
         if active:
             return "running"
@@ -628,11 +661,12 @@ def eligible(case, root, running, *, candidates):
             "failed",
             "interrupted",
             "frozen_benchmark_failed",
+            "early_stopped",
             "invalid",
             "stale",
         ):
             continue
-        if previous[0]["status"] in ("missing", "running", "recoverable"):
+        if previous[0]["status"] in ("missing", "running", "recoverable", "auditing"):
             return (
                 (
                     "launch"
@@ -648,6 +682,7 @@ def eligible(case, root, running, *, candidates):
         if any(
             item["status"]
             in ("failed", "interrupted", "frozen_benchmark_failed", "invalid", "stale")
+            or item["status"] == "early_stopped"
             for item in previous[1:]
         ):
             continue
@@ -712,20 +747,15 @@ def launch(project, root, python, case, variant, seed):
         raise RuntimeError(f"Refusing to reuse an existing training directory: {path}")
     path.mkdir(parents=True)
     suggested, parent_variant = adaptive_overrides(case, variant, root, seed)
-    if seed > 0:
-        # Previously completed seed-0 runs can predate the three-stage
-        # protocol. Keep the same acceptance contract across all three seeds
-        # of that candidate rather than changing it after seeing results.
-        origin = directory(root, case, variant, 0) / "config.yaml"
-        if origin.is_file():
-            match = re.search(r"^\s+selection:\s*(\S+)\s*$", origin.read_text(), re.MULTILINE)
-            if match and match.group(1) == "last_of_first_three_consecutive_passes":
-                suggested.extend(
-                    [
-                        "learning.selection=last_of_first_three_consecutive_passes",
-                        "learning.required_consecutive_passes=3",
-                    ]
-                )
+    # Training hyperparameters stay identical to the accepted earlier seeds,
+    # but a NEW independently initialized seed uses the current checkpoint
+    # selection/stopping protocol. Original ZIP runs retain their legacy
+    # contract only when actually resuming the *same* original run.
+    suggested = [
+        override
+        for override in suggested
+        if not override.startswith(("learning.selection=", "learning.required_consecutive_passes="))
+    ]
     overrides_list = ["mode=train", *suggested, f"seed={seed}", f"output={path}"]
     name = f"dp-scr-{case.task[:2]}-{case.algorithm}-{seed}-{variant}"
     if (
@@ -747,7 +777,11 @@ def launch(project, root, python, case, variant, seed):
                 "from_scratch": True,
                 "initial_checkpoint": None,
                 "command": runner,
-                "selection": "three_consecutive_checkpoint_evaluations",
+                "selection": (
+                    "last_of_first_three_consecutive_passes"
+                    if "learning.selection=last_of_first_three_consecutive_passes" in overrides_list
+                    else "first_full_validation_pass"
+                ),
             },
             indent=2,
         )
@@ -858,6 +892,15 @@ def supervise(root, max_parallel, update_budget, candidates):
         running = active_runs(root)
         for path_string, pid in list(running.items()):
             path = Path(path_string)
+            # New v3 jobs own their Patience/benchmark lifecycle; an arbitrary
+            # 1,000-update SIGINT would pre-empt six post-800 light screens.
+            saved_config = path / "config.yaml"
+            if saved_config.is_file() and re.search(
+                r"^\s+selection:\s*first_full_validation_pass\s*$",
+                saved_config.read_text(),
+                re.MULTILINE,
+            ):
+                continue
             streak = consecutive_passes(path / "metrics.jsonl")
             allowance = 160 * streak if streak else 0
             limit = (read_json(path / "budget.json") or {}).get("limit", update_budget)

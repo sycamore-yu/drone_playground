@@ -64,6 +64,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
         save_model,
         save_state,
     )
+    from drone_playground.learning.selection import (
+        PatienceConfig,
+        screening_score,
+        update_patience,
+    )
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
@@ -71,6 +76,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
         raise ValueError("Training requires method=policy or an experiment recipe")
     selection = config.learning.selection
     legacy = selection == "last_of_first_three_consecutive_passes"
+    patience_settings = (
+        None
+        if legacy
+        else PatienceConfig(**OmegaConf.to_container(config.early_stopping, resolve=True))
+    )
     if selection not in ("last_of_first_three_consecutive_passes", "first_full_validation_pass"):
         raise ValueError("Unsupported checkpoint selection rule")
     if config.learning.required_consecutive_passes != (3 if legacy else 1):
@@ -179,6 +189,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
     evaluation_index = 0
     previous_wall_seconds = 0.0
     pending_evaluation = False
+    best_screen_score = None
+    stagnant_screens = 0
+    patience_exhausted = False
     if config.resume:
         if Path(config.resume).is_dir():
             state, metadata = load_model_state(config.resume, state)
@@ -210,6 +223,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
         consecutive = progress["consecutive_passes"]
         evaluation_index = progress["evaluation_index"]
         previous_wall_seconds = progress["training_wall_seconds"]
+        if patience_settings is not None:
+            screening_progress = progress.get("screening_progress", {})
+            best_screen_score = screening_progress.get("best_score")
+            stagnant_screens = int(screening_progress.get("stagnant_screens", 0))
         pending_evaluation = (
             int(state.updates) % config.learning.evaluation_interval == 0
             and evaluation_index < int(state.updates) // config.learning.evaluation_interval
@@ -277,6 +294,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "interactions": int(current.interactions),
             "consecutive_passes": consecutive,
             "evaluation_index": evaluation_index,
+            "screening_progress": {
+                "best_score": best_screen_score,
+                "stagnant_screens": stagnant_screens,
+            },
             **cost(current),
         }
         if scenes is not None:
@@ -317,6 +338,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
 
     def evaluate_checkpoint():
         nonlocal consecutive, evaluation_index
+        nonlocal best_screen_score, stagnant_screens, patience_exhausted
         update = int(state.updates)
         frozen = checkpoint(state, export_policy=False)
         directory = frozen if orbax_layout else frozen.parent
@@ -359,6 +381,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 evaluation_index=evaluation_index + 1,
                 environments=environments,
             )
+            score = screening_score(screening, config.task.name, primary_scenes)
+            best_screen_score, stagnant_screens, improved, patience_exhausted = update_patience(
+                score,
+                update,
+                best_screen_score,
+                stagnant_screens,
+                settings=patience_settings,
+            )
             suitable = screening_passed(screening, config.task.name, primary_scenes)
             record.event(
                 "screening_evaluation",
@@ -366,6 +396,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 passed=suitable,
                 episodes=8,
                 scenes=primary_scenes,
+                score=score,
+                best_score=best_screen_score,
+                improved=improved,
+                stagnant_screens=stagnant_screens,
+                patience_exhausted=patience_exhausted,
             )
             report = {"passed": False}
             if suitable:
@@ -397,11 +432,25 @@ def train(config: DictConfig, record: RunRecord) -> None:
             selection_rule=selection,
             checkpoint=str(frozen),
         )
+        if patience_exhausted and not report["passed"]:
+            record.event(
+                "early_stopping",
+                update=update,
+                reason="six_light_screens_without_significant_improvement",
+                best_score=best_screen_score,
+                stagnant_screens=stagnant_screens,
+                min_updates=patience_settings.min_updates,
+                min_delta=patience_settings.min_delta,
+            )
 
     try:
         if pending_evaluation:
             evaluate_checkpoint()
-        while not stop_requested and consecutive < config.learning.required_consecutive_passes:
+        while (
+            not stop_requested
+            and not patience_exhausted
+            and consecutive < config.learning.required_consecutive_passes
+        ):
             if scenes is not None and updates_in_scene == scene_updates:
                 next_index = (scene_index + 1) % len(scenes)
                 next_trainer = trainer_for(next_index)
@@ -453,6 +502,18 @@ def train(config: DictConfig, record: RunRecord) -> None:
             if last_checkpoint_update == int(state.updates) and last_frozen is not None
             else checkpoint(state, export_policy=not orbax_layout)
         )
+        if patience_exhausted and consecutive < config.learning.required_consecutive_passes:
+            record.finish(
+                "early_stopped",
+                updates=int(state.updates),
+                interactions=int(state.interactions),
+                best_screen_score=best_screen_score,
+                stagnant_screens=stagnant_screens,
+                resume_checkpoint=str(checkpoint_path),
+                reason="six_light_screens_without_significant_improvement",
+                **cost(state),
+            )
+            return
         if consecutive < config.learning.required_consecutive_passes:
             record.finish(
                 "interrupted",

@@ -22,6 +22,7 @@
 | [0013](adr/0013-three-stage-learning-acceptance.md) | 轻量筛查→完整候选选模→独立冻结 Benchmark；旧 run 保留原协议；吞吐测量 |
 | [0014](adr/0014-results-layout-orbax-tensorboard.md) | 新 Results v3：Orbax + TensorBoard；旧 ZIP 训练保留原位置 |
 | [0015](adr/0015-eight-acceptance-gates.md) | C/L/S 20 项去重为 S1–S4 与 L1–L4 八项；原质量门槛保留 |
+| [0016](adr/0016-training-patience-and-frozen-selection.md) | 800 updates 后 6 次轻量筛查无改善即结束配方；首次完整通过即独立冻结一次 |
 
 当前实验分支的新训练使用 Orbax/TensorBoard v3；已有 v2 ZIP 训练按原格式续训，
 不转换正在运行的 checkpoint。配置、控制器、延迟、随机化及反向模型见

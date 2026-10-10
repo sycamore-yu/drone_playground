@@ -33,6 +33,10 @@ resume: null
 results:
   format: orbax
   keep_checkpoints: 3
+early_stopping:
+  min_updates: 800
+  patience: 6
+  min_delta: 0.02
 replay_path: null
 hydra:
   output_subdir: null
