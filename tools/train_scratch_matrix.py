@@ -12,8 +12,10 @@ Example:
 """
 
 import argparse
+import hashlib
 import json
 import os
+import random
 import re
 import shlex
 import signal
@@ -231,6 +233,129 @@ def overrides(case, variant):
             normalized.append(option)
             seen.add(name)
     return list(reversed(normalized))
+
+
+def adaptive_overrides(case, variant, root, seed):
+    """Ask for the next bounded recipe using genuine prior checkpoint results.
+
+    This follows the Optim-Agent ask/tell principle: candidate choices depend
+    on measured checkpoint evaluations, all parameters are bounded, and the
+    final result is reported by the real environment. It never transfers
+    network or optimizer parameters.
+    """
+    if variant < 9:
+        return overrides(case, variant), None
+    if seed > 0:
+        pilot = read_json(directory(root, case, variant, 0) / "proposal.json")
+        if pilot is None or pilot.get("initial_checkpoint") is not None:
+            raise RuntimeError(f"Missing seed-0 recipe for {case.key} candidate {variant}")
+        options = [
+            arg
+            for arg in pilot["command"][3:]
+            if not arg.startswith(("seed=", "output=")) and arg != "mode=train"
+        ]
+        return options, pilot.get("parent_variant")
+
+    history = []
+    for previous in range(variant):
+        p = directory(root, case, previous, 0)
+        value = best_evaluation_score(p)
+        if value is None:
+            continue
+        recipe = read_json(p / "proposal.json")
+        if recipe is not None:
+            history.append((value, previous, recipe))
+    history.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    if history:
+        _, parent_variant, parent = history[0]
+        options = [
+            arg
+            for arg in parent["command"][3:]
+            if not arg.startswith(("seed=", "output=")) and arg != "mode=train"
+        ]
+    else:
+        parent_variant = 0
+        options = overrides(case, 0)
+
+    def numeric(name, default):
+        for option in reversed(options):
+            key, separator, value = option.partition("=")
+            if separator and key.lstrip("+") == name:
+                return float(value)
+        return default
+
+    digest = hashlib.sha256(f"{case.key}:{variant}".encode()).digest()
+    rng = random.Random(int.from_bytes(digest[:8], "little"))
+    base_lr = numeric("learning.options.lr", case.learning_rate)
+    chosen_lr = min(0.0015, max(0.00003, base_lr * rng.choice((0.4, 0.65, 0.8, 1.25, 1.6))))
+    options.append(f"learning.options.lr={chosen_lr:.8f}")
+    options.append(f"learning.options.horizon={rng.choice((16, 32, 64))}")
+
+    if case.task == "racing":
+        progress = rng.choice((2.0, 4.0, 6.0, 10.0, 15.0))
+        options.extend(
+            [
+                f"++learning.options.progress_reward_scale={progress}",
+                f"++learning.options.failure_cost={rng.choice((20.0, 40.0, 80.0))}",
+            ]
+        )
+    elif case.task in ("depth", "lidar"):
+        options.extend(
+            [
+                f"++learning.options.progress_reward_scale={rng.choice((0.25, 0.5, 1.0, 2.0))}",
+                f"++learning.options.height_boundary_weight={rng.choice((0.5, 1.0, 2.0, 4.0))}",
+                f"learning.options.perception_weight={rng.choice((0.25, 0.5, 0.75, 1.0))}",
+                f"learning.scene_updates={rng.choice((20, 40, 80))}",
+            ]
+        )
+        if rng.random() < 0.75:
+            options.append("simulation.navigation_goal_observation=true")
+        options.extend(
+            [
+                f"learning.evaluation_interval={rng.choice((80, 160))}",
+                "learning.checkpoint_interval=40",
+            ]
+        )
+    if case.algorithm == "ppo":
+        options.extend(
+            [
+                f"learning.options.initial_log_std={rng.choice((-3.5, -3.0, -2.5, -2.0))}",
+                f"learning.options.critic_lr={rng.choice((0.0003, 0.0005, 0.001))}",
+                f"learning.options.clip_epsilon={rng.choice((0.1, 0.15, 0.2))}",
+                f"learning.options.entropy_weight={rng.choice((0.0, 0.001, 0.005))}",
+            ]
+        )
+        if case.task in ("depth", "lidar"):
+            critic_type = rng.choice(("state", "sensor", "privileged"))
+            privileged = str(critic_type == "privileged").lower()
+            sensor = str(critic_type == "sensor").lower()
+            options.extend(
+                [
+                    f"++learning.options.critic_uses_privileged={privileged}",
+                    f"++learning.options.critic_uses_sensor={sensor}",
+                ]
+            )
+    if case.algorithm == "shac":
+        options.extend(
+            [
+                f"learning.options.target_alpha={rng.choice((0.95, 0.99, 0.995, 0.999))}",
+                f"learning.options.critic_lr={rng.choice((0.0003, 0.001, 0.003))}",
+                f"learning.options.critic_epochs={rng.choice((2, 4, 8))}",
+            ]
+        )
+    if case.algorithm in ("apg", "shac") and case.task in ("depth", "lidar"):
+        options.append(
+            f"learning.options.temporal_gradient_alpha={rng.choice((0.0, 0.35, 0.916290731874155))}"
+        )
+
+    seen = set()
+    unique = []
+    for option in reversed(options):
+        key = option.partition("=")[0].lstrip("+")
+        if key not in seen:
+            unique.append(option)
+            seen.add(key)
+    return list(reversed(unique)), parent_variant
 
 
 def directory(root, case, variant, seed):
@@ -488,7 +613,8 @@ def launch(project, root, python, case, variant, seed):
     if path.exists():
         raise RuntimeError(f"Refusing to reuse an existing training directory: {path}")
     path.mkdir(parents=True)
-    overrides_list = ["mode=train", *overrides(case, variant), f"seed={seed}", f"output={path}"]
+    suggested, parent_variant = adaptive_overrides(case, variant, root, seed)
+    overrides_list = ["mode=train", *suggested, f"seed={seed}", f"output={path}"]
     name = f"dp-scr-{case.task[:2]}-{case.algorithm}-{seed}-{variant}"
     if (
         subprocess.run(["tmux", "has-session", "-t", f"={name}"], capture_output=True).returncode
@@ -502,6 +628,7 @@ def launch(project, root, python, case, variant, seed):
                 "task": case.task,
                 "algorithm": case.algorithm,
                 "variant": variant,
+                "parent_variant": parent_variant,
                 "seed": seed,
                 "from_scratch": True,
                 "initial_checkpoint": None,
@@ -667,7 +794,7 @@ def main():
     parser.add_argument("--python", type=Path, default=None)
     parser.add_argument("--max-parallel", type=int, default=2)
     parser.add_argument("--update-budget", type=int, default=1000)
-    parser.add_argument("--candidates", type=int, default=9)
+    parser.add_argument("--candidates", type=int, default=48)
     args = parser.parse_args()
     root = args.results_root.expanduser().resolve()
     if args.python is not None:
@@ -678,7 +805,7 @@ def main():
     elif args.mode == "status":
         print(json.dumps(report(root, active_runs(root), args.candidates), indent=2))
     else:
-        if args.max_parallel < 1 or args.update_budget < 160 or not 1 <= args.candidates <= 9:
+        if args.max_parallel < 1 or args.update_budget < 160 or not 1 <= args.candidates <= 256:
             parser.error("Invalid concurrency, update budget or number of candidates")
         supervise(root, args.max_parallel, args.update_budget, args.candidates)
 
