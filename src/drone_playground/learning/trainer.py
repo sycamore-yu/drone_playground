@@ -43,6 +43,10 @@ _DEFAULTS = {
     "minibatches": 1,
     "critic_epochs": 4,
     "clip_epsilon": 0.2,
+    "ppo_target_kl": 0.0,
+    "ppo_value_clip": 0.0,
+    "bootstrap_weight": 1.0,
+    "report_terminal_critic_grad": False,
     "entropy_weight": 0.0,
     "max_grad_norm": 1.0,
     "target_alpha": 0.995,
@@ -138,6 +142,20 @@ class Trainer:
         for key in ("lr", "critic_lr", "max_grad_norm", "clip_epsilon"):
             if self.config[key] <= 0:
                 raise ValueError(f"{key} must be positive")
+        if self.config["ppo_target_kl"] < 0 or self.config["ppo_value_clip"] < 0:
+            raise ValueError("PPO target KL and value clipping must be nonnegative")
+        if algorithm != "ppo" and (
+            self.config["ppo_target_kl"] > 0 or self.config["ppo_value_clip"] > 0
+        ):
+            raise ValueError("PPO target KL and value clipping require PPO")
+        if not 0 <= self.config["bootstrap_weight"] <= 1:
+            raise ValueError("SHAC bootstrap_weight must be in [0,1]")
+        if algorithm != "shac" and (
+            self.config["bootstrap_weight"] != 1 or self.config["report_terminal_critic_grad"]
+        ):
+            raise ValueError("Terminal bootstrap ablation requires SHAC")
+        if not isinstance(self.config["report_terminal_critic_grad"], bool):
+            raise ValueError("report_terminal_critic_grad must be boolean")
         for key in ("gamma", "gae_lambda", "target_alpha"):
             if not 0 <= self.config[key] <= 1:
                 raise ValueError(f"{key} must be in [0,1]")
@@ -388,13 +406,26 @@ class Trainer:
             optimizer_state={**state.optimizer_state, "actor": optimizer},
         )
 
-    def _fit_critic(self, state, observations, targets, epochs):
+    def _fit_critic(self, state, observations, targets, epochs, *, old_values=None):
         observations = jax.tree.map(lambda x: x.reshape((-1, *x.shape[2:])), observations)
         targets = jax.lax.stop_gradient(targets.reshape(-1))
+        clipped_values = (
+            None if old_values is None else jax.lax.stop_gradient(old_values.reshape(-1))
+        )
 
         def fit(state, _):
             def objective(params):
-                return 0.5 * jnp.mean((self.critic.apply(params, observations) - targets) ** 2)
+                values = self.critic.apply(params, observations)
+                errors = (values - targets) ** 2
+                if clipped_values is not None and self.config["ppo_value_clip"] > 0:
+                    old = clipped_values
+                    clipped = old + jnp.clip(
+                        values - old,
+                        -self.config["ppo_value_clip"],
+                        self.config["ppo_value_clip"],
+                    )
+                    errors = jnp.maximum(errors, (clipped - targets) ** 2)
+                return 0.5 * jnp.mean(errors)
 
             loss, gradients = jax.value_and_grad(objective)(state.critic_params)
             updates, optimizer = self.critic_optimizer.update(

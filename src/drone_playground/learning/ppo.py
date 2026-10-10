@@ -47,6 +47,11 @@ def normalize_advantages(advantages):
     return (advantages - advantages.mean()) / jnp.maximum(advantages.std(), 1e-8)
 
 
+def exceeds_kl_limit(approx_kl, target_kl):
+    """Stop further actor minibatch updates when KL exceeds 1.5 times target."""
+    return jnp.logical_and(target_kl > 0, approx_kl > 1.5 * target_kl)
+
+
 def collect_rollout(trainer, state):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
@@ -103,17 +108,24 @@ def update(trainer, state):
         gamma=trainer.config["gamma"],
         gae_lambda=trainer.config["gae_lambda"],
     )
+    value_target_std = targets.std()
+    value_explained_variance = 1 - jnp.var(targets - rollout.values) / jnp.maximum(
+        jnp.var(targets), 1e-8
+    )
+    advantage_std = advantages.std()
     advantages = normalize_advantages(advantages)
     batches = trainer.config["minibatches"]
 
-    def epoch(state, _):
+    def epoch(carry, _):
+        state, halted = carry
         rng, permutation_key = jax.random.split(state.rng)
         sequences = jax.random.permutation(permutation_key, trainer.env.num_envs).reshape(
             batches, -1
         )
         state = state.replace(rng=rng)
 
-        def minibatch(state, indices):
+        def minibatch(carry, indices):
+            state, halted = carry
             data = jax.tree.map(lambda x: x[:, indices], rollout)
             advantage = advantages[:, indices]
             memory = jax.tree.map(lambda leaf: leaf[indices], initial_memory)
@@ -149,23 +161,43 @@ def update(trainer, state):
             (loss, metrics), gradients = jax.value_and_grad(objective, has_aux=True)(
                 {"params": state.params, "log_std": state.log_std}
             )
-            state = trainer._apply_actor(state, gradients)
-            state, critic_metrics = trainer._fit_critic(
-                state, data.observations, targets[:, indices], 1
+            skip_actor = halted | exceeds_kl_limit(
+                metrics["approx_kl"], trainer.config["ppo_target_kl"]
             )
-            return state, {
+            state = jax.lax.cond(
+                skip_actor,
+                lambda current: current,
+                lambda current: trainer._apply_actor(current, gradients),
+                state,
+            )
+            state, critic_metrics = trainer._fit_critic(
+                state,
+                data.observations,
+                targets[:, indices],
+                1,
+                old_values=data.values,
+            )
+            return (state, skip_actor), {
                 **metrics,
                 **critic_metrics,
                 "actor_loss": loss,
                 "actor_grad_norm": optax.tree.norm(gradients),
+                "kl_actor_update_skipped": skip_actor.astype(jnp.float32),
             }
 
-        return jax.lax.scan(minibatch, state, sequences)
+        return jax.lax.scan(minibatch, (state, halted), sequences)
 
-    state, metrics = jax.lax.scan(epoch, state, None, length=trainer.config["ppo_epochs"])
+    (state, _), metrics = jax.lax.scan(
+        epoch, (state, jnp.asarray(False)), None, length=trainer.config["ppo_epochs"]
+    )
     metrics = jax.tree.map(jnp.mean, metrics)
     metrics.update(jax.tree.map(jnp.mean, terms))
     metrics["reward"] = rollout.rewards.mean()
+    metrics["advantage_std"] = advantage_std
+    metrics["value_target_std"] = value_target_std
+    metrics["critic_explained_variance_preupdate"] = value_explained_variance
+    metrics["saturated_action_fraction"] = jnp.mean(jnp.abs(jnp.tanh(rollout.pre_tanh)) > 0.95)
+    metrics["exploration_std"] = jnp.exp(state.log_std).mean()
     metrics["done_fraction"] = rollout.done.mean()
     metrics["loss"] = metrics["actor_loss"] + metrics["critic_loss"]
     return trainer._finish(state, metrics)

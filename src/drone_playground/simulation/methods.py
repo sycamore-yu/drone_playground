@@ -193,7 +193,7 @@ class PolicyMethod:
 
     def initial_log_std(self, env, value):
         """Initialize this method's stochastic continuous-action parameters."""
-        return jnp.full((env.action_size,), value)
+        return jnp.full((env.action_size,), value, dtype=jnp.float32)
 
     def sample(self, rng, raw, log_std):
         """Return executable action, sampled policy variables and log probability."""

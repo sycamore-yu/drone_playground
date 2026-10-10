@@ -85,3 +85,92 @@ def test_failed_frozen_audit_is_terminal_and_new_early_stop_is_not_resumed(sched
     new = tmp_path / "lidar_ppo_s0_trial4"
     write(new / "run.json", {"status": "early_stopped"})
     assert scheduler.trial_status(new, {}) == "early_stopped"
+
+
+def test_retire_interrupted_legacy_and_pre_patience_instead_of_auto_resume(scheduler, tmp_path):
+    """Old three-pass ZIP and first-pass runs without Patience stay archived."""
+    old = tmp_path / "depth_ppo_s0"
+    write(
+        old / "config.yaml",
+        "initial_checkpoint: null\nlearning:\n"
+        "  selection: last_of_first_three_consecutive_passes\n",
+    )
+    write(old / "run.json", {"status": "interrupted", "layout_version": 2})
+    write(old / "checkpoints/latest.training.zip", "original saved training state")
+    assert scheduler.trial_status(old, {}) == "legacy_retired"
+
+    obsolete_v3 = tmp_path / "lidar_ppo_s0_trial3"
+    write(
+        obsolete_v3 / "config.yaml",
+        "initial_checkpoint: null\nlearning:\n  selection: first_full_validation_pass\n",
+    )
+    write(obsolete_v3 / "run.json", {"status": "interrupted", "layout_version": 3})
+    write(obsolete_v3 / "checkpoints/model_000800/training/commit_success.txt", "ok")
+    write(obsolete_v3 / "checkpoints/model_000800/metadata.json", "{}")
+    assert scheduler.trial_status(obsolete_v3, {}) == "pre_patience_retired"
+
+
+def test_new_patience_trial_can_resume_only_from_own_orbax_state(scheduler, tmp_path):
+    """A new run resumes on unexpected interruption, not after Patience."""
+    run = tmp_path / "depth_ppo_s0_trial3"
+    write(
+        run / "config.yaml",
+        "initial_checkpoint: null\nlearning:\n"
+        "  selection: first_full_validation_pass\nearly_stopping:\n"
+        "  min_updates: 800\n",
+    )
+    write(run / "run.json", {"status": "interrupted", "layout_version": 3})
+    write(run / "checkpoints/model_000800/training/commit_success.txt", "ok")
+    write(run / "checkpoints/model_000800/metadata.json", "{}")
+    write(
+        tmp_path / ".scheduler/proposals/depth_ppo_s0_trial3.json",
+        {
+            "from_scratch": True,
+            "initial_checkpoint": None,
+            "command": ["python", "-m", "drone_playground.cli", "initial_checkpoint=null"],
+        },
+    )
+    assert scheduler.trial_status(run, {}) == "recoverable"
+    write(run / "run.json", {"status": "early_stopped", "layout_version": 3})
+    assert scheduler.trial_status(run, {}) == "early_stopped"
+
+
+def test_procedural_regime_never_uses_fixed_navigation_training_recipes(scheduler, tmp_path):
+    """New protocol is isolated in another root and fixed Benchmark is unchanged."""
+    cases = {case.key: case for case in scheduler.cases("procedural")}
+    assert len(cases) == 12
+    for task in ("depth", "lidar"):
+        for algorithm in ("ppo", "apg", "shac"):
+            case = cases[f"{task}_{algorithm}"]
+            overrides = scheduler.overrides(case, 0)
+            assert f"experiment=navigation_procedural_{task}" in " ".join(overrides)
+            assert "initial_checkpoint=null" in overrides
+            assert "resume=null" in overrides
+    status = scheduler.report(tmp_path, {}, 1, regime="procedural")
+    assert status["regime"] == "procedural"
+    assert status["matrix_cells"] == 18
+    fixed = scheduler.report(tmp_path, {}, 1)
+    assert fixed["regime"] == "fixed"
+    assert fixed["matrix_cells"] == 18
+
+
+def test_procedural_racing_uses_separate_stable_recipes(scheduler):
+    """New racing candidates must not silently re-use archived failed settings."""
+    jobs = {case.key: case for case in scheduler.cases("procedural")}
+    assert jobs["racing_ppo"].experiment == "racing_ppo_stable"
+    assert jobs["racing_ppo"].horizon == 32
+    assert jobs["racing_shac"].experiment == "racing_shac_stable"
+    assert jobs["racing_shac"].learning_rate == 0.0001
+
+
+def test_selected_procedural_queue_is_smaller_and_stable(scheduler, tmp_path):
+    """Queue priority and comparison contracts are versioned separately."""
+    selected = ("depth_ppo", "lidar_ppo", "racing_shac", "racing_ppo")
+    cases = {case.key: case for case in scheduler.cases("procedural", selected)}
+    assert set(cases) == set(selected)
+    assert cases["racing_shac"].experiment == "racing_shac_stable"
+    assert cases["racing_shac"].learning_rate == 0.0001
+    a = scheduler.report(tmp_path, {}, 2, regime="procedural", only=selected)
+    assert a["train_families"] == 4
+    assert a["matrix_cells"] == 6
+    assert a["selected_families"] == sorted(selected)

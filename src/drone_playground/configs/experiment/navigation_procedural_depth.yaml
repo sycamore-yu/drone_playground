@@ -1,0 +1,17 @@
+# @package _global_
+# Independent per-world procedural Navigation; fixed Navigation8 is evaluation-only.
+defaults:
+  - navigation_depth_scratch_safe
+  - override /scene: train_procedural
+initial_checkpoint: null
+simulation:
+  method_hz: 10
+  num_envs: 16
+  procedural:
+    max_obstacles: 208
+    corridor_y: -17.5
+    training_seed: ${seed}
+learning:
+  scenes: null
+  options:
+    randomize_navigation_start: false

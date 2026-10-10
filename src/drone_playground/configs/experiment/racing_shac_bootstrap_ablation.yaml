@@ -1,0 +1,15 @@
+# @package _global_
+# Controlled SHAC terminal-value ablation; benchmark geometry is never changed.
+defaults:
+  - racing
+simulation:
+  num_envs: 256
+learning:
+  options:
+    horizon: 64
+    lr: 0.0001
+    critic_lr: 0.001
+    bootstrap_weight: 0.0
+    report_terminal_critic_grad: true
+  checkpoint_interval: 50
+  evaluation_interval: 100

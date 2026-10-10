@@ -20,6 +20,7 @@ from jax.scipy.spatial.transform import Rotation
 from drone_playground.simulation.delay import CommandState, delay_range
 from drone_playground.simulation.methods import Action, Setpoint
 from drone_playground.simulation.observation import ObservationState, SensorObservation
+from drone_playground.simulation.procedural_scene import ProceduralScene, SceneState
 from drone_playground.simulation.randomization import install_randomization
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import SensorConfig
@@ -36,6 +37,7 @@ class EnvState:
     observation: ObservationState | None = None
     commands: CommandState | None = None
     acceleration: Array | None = None
+    scene_state: SceneState | None = None
 
     @property
     def time(self):
@@ -90,6 +92,7 @@ class BaseEnv:
         action_delay_s=0.0,
         randomization: dict | None = None,
         disturbance: dict | None = None,
+        procedural: dict | None = None,
         observation_config: dict | None = None,
         task_config: dict | None = None,
     ):
@@ -102,7 +105,7 @@ class BaseEnv:
             raise ValueError(
                 "Positive batch and method frequency dividing physics frequency required"
             )
-        self.scene = Scene(scene)
+        self.scene = ProceduralScene(procedural) if scene == "train/procedural" else Scene(scene)
         self.task = Task(
             task, self.scene, reference, duration, reference_seed, **(task_config or {})
         )
@@ -205,7 +208,20 @@ class BaseEnv:
         batch = self.num_envs
         pos_key, vel_key, yaw_key = jax.random.split(key, 3)
         physics_key, delay_key = jax.random.fold_in(key, 100), jax.random.fold_in(key, 101)
-        pos = self._sample_reset_positions(pos_key, batch, randomize_position=randomize_position)
+        scene_state = (
+            self.scene.sample(
+                jax.random.fold_in(key, 99),
+                batch,
+                None if state is None else state.scene_state,
+            )
+            if isinstance(self.scene, ProceduralScene)
+            else None
+        )
+        pos = (
+            scene_state.start
+            if scene_state is not None
+            else self._sample_reset_positions(pos_key, batch, randomize_position=randomize_position)
+        )
         vel = jax.random.uniform(vel_key, (batch, 3), minval=-0.1, maxval=0.1)
         yaw = jax.random.uniform(yaw_key, (batch,), minval=-jnp.pi / 36, maxval=jnp.pi / 36)
         quat = jnp.stack(
@@ -223,9 +239,14 @@ class BaseEnv:
             )
             states = states.replace(rotor_vel=rpm)
         initial = initial.replace(states=states)
-        observation = None if self.sensor is None else self.sensor.reset(initial)
+        observation = (
+            None if self.sensor is None else self.sensor.reset(initial, scene_state=scene_state)
+        )
         inputs = self.action.decode(jnp.zeros((batch, self.action_size)))
-        neutral = self.action.setpoint(initial, inputs, self.task.target(jnp.zeros(batch))[0]).value
+        initial_target = (
+            scene_state.goal if scene_state is not None else self.task.target(jnp.zeros(batch))[0]
+        )
+        neutral = self.action.setpoint(initial, inputs, initial_target).value
         if self.control_level == "ideal":
             neutral = jnp.concatenate([pos, vel, jnp.zeros_like(pos), yaw[:, None]], -1)
             neutral = jnp.broadcast_to(neutral[:, None], (batch, self.ideal_samples, 10)).reshape(
@@ -241,6 +262,7 @@ class BaseEnv:
             observation,
             commands,
             jnp.zeros_like(pos),
+            scene_state,
         )
         # Persisted arrays have explicit dtypes; avoid a different JIT specialization on restore.
         fresh = jax.tree.map(
@@ -269,12 +291,36 @@ class BaseEnv:
             fresh.commands,
         )
         acceleration = jnp.where(mask[:, None], fresh.acceleration, state.acceleration)
-        return EnvState(physics, task, action, observation, commands, acceleration)
+        if scene_state is not None:
+            scene_state = jax.tree.map(
+                lambda old, new: jnp.where(
+                    mask.reshape(mask.shape + (1,) * (new.ndim - 1)), new, old
+                ),
+                state.scene_state,
+                scene_state,
+            )
+        return EnvState(physics, task, action, observation, commands, acceleration, scene_state)
+
+    def goal_for(self, state: EnvState) -> Array:
+        """Return static task goal or procedural per-world target."""
+        return self.task.goal if state.scene_state is None else state.scene_state.goal
+
+    def scene_clearance(self, position, time, scene_state=None):
+        """Use precisely the same geometry as the trained sensor."""
+        if scene_state is not None:
+            return self.scene.clearance(position, time, scene_state=scene_state)
+        return self.scene.clearance(position, time)
 
     def action_setpoint(self, state: EnvState, action: Array) -> Setpoint:
         """Decode the shared bounded action contract; all algorithms use this conversion."""
         return self.action.setpoint(
-            state.physics, self.action.decode(action), self.task.target(state.time)[0]
+            state.physics,
+            self.action.decode(action),
+            (
+                self.goal_for(state)
+                if self.task.name == "navigation"
+                else self.task.target(state.time)[0]
+            ),
         )
 
     def _step(self, state: EnvState, action: Array, *, physics_step=None) -> EnvState:
@@ -282,7 +328,12 @@ class BaseEnv:
         if self.sensor is not None and self.sensor.latency_bounds[1] > 0:
             action = jnp.where(state.observation.available[:, None], action, 0.0)
         physical = self.action.decode(action)
-        setpoint = self.action.setpoint(state.physics, physical, self.task.target(state.time)[0])
+        target = (
+            self.goal_for(state)
+            if self.task.name == "navigation"
+            else self.task.target(state.time)[0]
+        )
+        setpoint = self.action.setpoint(state.physics, physical, target)
         result = self._step_setpoint(state, setpoint, physical, physics_step=physics_step)
         return result.replace(
             previous_action=jnp.where(state.done[:, None], state.previous_action, action)
@@ -345,14 +396,21 @@ class BaseEnv:
             else:
                 physics, acc = advance_physics(carry.physics, carry.acceleration, command, physical)
             time = physics.core.steps[:, 0] / self.sim.freq
-            clearance = self.scene.clearance(physics.states.pos[:, 0], time)
+            clearance = self.scene_clearance(physics.states.pos[:, 0], time, carry.scene_state)
             task_state = self.update_task(
-                carry.task, carry.physics.states, physics.states, time, clearance
+                carry.task,
+                carry.physics.states,
+                physics.states,
+                time,
+                clearance,
+                scene_state=carry.scene_state,
             )
             physics = pytree_replace(physics, carry.physics, world_mask(physics), carry.done)
             observation = carry.observation
             if self.sensor is not None:
-                observation = self.sensor.update(observation, physics, ~carry.done)
+                observation = self.sensor.update(
+                    observation, physics, ~carry.done, scene_state=carry.scene_state
+                )
             commands = carry.commands.replace(
                 applied=jnp.where(carry.done[:, None], carry.commands.applied, command),
                 applied_input=jnp.where(
@@ -419,7 +477,9 @@ class BaseEnv:
         target, tv, _ = self.task.target(after.time)
         return 5 * jnp.sum((p - target) ** 2, -1) + 0.2 * jnp.sum((v - tv) ** 2, -1)
 
-    def update_task(self, state: TaskState, before, after, time, clearance) -> TaskState:
+    def update_task(
+        self, state: TaskState, before, after, time, clearance, *, scene_state=None
+    ) -> TaskState:
         """Apply common terminal-event priority with concrete task success semantics."""
         p = after.pos[:, 0]
         finite = jnp.all(
@@ -430,7 +490,9 @@ class BaseEnv:
         )
         collision = (clearance <= self.task.radius) | (p[:, 2] <= self.task.radius)
         in_bounds = jnp.all((p >= self.task.low) & (p <= self.task.high), -1)
-        success, gates, missed = self._task_progress(state, before, after, time)
+        success, gates, missed = self._task_progress(
+            state, before, after, time, scene_state=scene_state
+        )
         event = first_event(
             collision, finite, in_bounds, success, time >= self.task.duration - 1e-5
         )
@@ -450,7 +512,7 @@ class BaseEnv:
             ),
         )
 
-    def _task_progress(self, state: TaskState, before, after, time):
+    def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
         """Concrete task decides what counts as success and a missed gate."""
         raise NotImplementedError
 
@@ -468,7 +530,7 @@ class TrackingEnv(BaseEnv):
         """Expose tracking position, velocity and future reference errors."""
         return self._reference_observation(state)
 
-    def _task_progress(self, state: TaskState, before, after, time):
+    def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
         """Complete tracking at the configured trajectory duration."""
         return (
             time >= self.task.duration - 1e-5,
@@ -501,7 +563,7 @@ class RacingEnv(BaseEnv):
         )
         return base
 
-    def _task_progress(self, state: TaskState, before, after, time):
+    def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
         """Count only forward crossings inside the original gate aperture."""
         gates = state.gates
         count = len(self.task.gate_order)
@@ -572,7 +634,8 @@ class NavigationEnv(BaseEnv):
         physics = state.physics.states
         p, v, q = physics.pos[:, 0], physics.vel[:, 0], physics.quat[:, 0]
         rot = Rotation.from_quat(q)
-        delta = self.task.goal - p
+        goal = self.goal_for(state)
+        delta = goal - p
         distance = jnp.linalg.norm(delta, axis=-1)
         goal_velocity = delta / jnp.maximum(distance[:, None], 1e-6)
         goal_velocity = goal_velocity * jnp.minimum(3.0, distance)[:, None]
@@ -581,16 +644,16 @@ class NavigationEnv(BaseEnv):
         up = rot.apply(jnp.broadcast_to(jnp.array([0.0, 0.0, 1.0]), p.shape), inverse=True)
         features = jnp.concatenate([body_v, body_target, up, jnp.full((len(p), 1), 0.07)], -1)
         if self.navigation_goal_observation:
-            height_error = (self.task.goal[2] - p[:, 2]) / (self.task.high[2] - self.task.low[2])
-            remaining = distance / jnp.linalg.norm(self.task.goal - self.task.start)
+            height_error = (goal[..., 2] - p[:, 2]) / (self.task.high[2] - self.task.low[2])
+            start = self.task.start if state.scene_state is None else state.scene_state.start
+            remaining = distance / jnp.linalg.norm(goal - start, axis=-1)
             features = jnp.concatenate([features, height_error[:, None], remaining[:, None]], -1)
         return {"state": features}
 
-    def _task_progress(self, state: TaskState, before, after, time):
+    def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
         """Reach the physical goal sphere before the 300-second deadline."""
-        success = (
-            jnp.linalg.norm(after.pos[:, 0] - self.task.goal, axis=-1) <= self.task.goal_radius
-        )
+        goal = self.task.goal if scene_state is None else scene_state.goal
+        success = jnp.linalg.norm(after.pos[:, 0] - goal, axis=-1) <= self.task.goal_radius
         return success, state.gates, jnp.zeros_like(time, dtype=bool)
 
     def observe_privileged(self, state: EnvState) -> Array:
@@ -607,13 +670,23 @@ class NavigationEnv(BaseEnv):
             ],
             dtype=position.dtype,
         )
-        ranges = self.scene.raycast(position, directions, state.time, max_range=40.0)
-        clearance = self.scene.clearance(position, state.time) - self.task.radius
+        ranges = (
+            self.scene.raycast(
+                position,
+                directions,
+                state.time,
+                max_range=40.0,
+                scene_state=state.scene_state,
+            )
+            if state.scene_state is not None
+            else self.scene.raycast(position, directions, state.time, max_range=40.0)
+        )
+        clearance = self.scene_clearance(position, state.time, state.scene_state) - self.task.radius
         return jnp.concatenate(
             [
                 self._observe_state(state)["state"],
                 position / jnp.array([100.0, 20.0, 6.0]),
-                (self.task.goal - position) / jnp.array([100.0, 40.0, 6.0]),
+                (self.goal_for(state) - position) / jnp.array([100.0, 40.0, 6.0]),
                 physics.quat[:, 0],
                 physics.vel[:, 0] / 3.0,
                 physics.ang_vel[:, 0] / 10.0,
@@ -629,11 +702,11 @@ class NavigationEnv(BaseEnv):
         """Retain the navigation velocity and obstacle-distance reward."""
         position = after.physics.states.pos[:, 0]
         velocity = after.physics.states.vel[:, 0]
-        direction = self.task.goal - position
+        direction = self.goal_for(after) - position
         distance = jnp.linalg.norm(direction, axis=-1, keepdims=True)
         desired = direction / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
         error = jnp.sum((velocity - desired) ** 2, -1)
-        clearance = self.scene.clearance(position, after.time) - self.task.radius
+        clearance = self.scene_clearance(position, after.time, after.scene_state) - self.task.radius
         error = error + 5 * jax.nn.softplus((0.5 - clearance) * 8) / 8
         return self._shared_cost(before, after, action, error)
 

@@ -12,6 +12,7 @@ from drone_playground.learning.apg import rollout_objective
 from drone_playground.learning.checkpoint import load_inference, load_state, save_state
 from drone_playground.learning.ppo import (
     collect_rollout,
+    exceeds_kl_limit,
     generalized_advantage_estimate,
     normalize_advantages,
     recurrent_policy,
@@ -248,13 +249,55 @@ def test_sensor_critic_performs_real_depth_ppo_update():
             "ppo_epochs": 1,
             "minibatches": 1,
             "critic_uses_sensor": True,
+            "ppo_target_kl": 0.02,
+            "ppo_value_clip": 0.2,
         },
     )
     before = trainer.initialize()
     after, metrics = trainer.update(before)
     assert np.isfinite(metrics["critic_loss"])
     assert np.isfinite(metrics["policy_loss"])
+    assert np.isfinite(metrics["critic_explained_variance_preupdate"])
+    assert np.isfinite(metrics["saturated_action_fraction"])
+    assert np.isfinite(metrics["value_target_std"])
+    assert np.isfinite(metrics["kl_actor_update_skipped"])
     assert tree_changed(before.critic_params, after.critic_params)
+
+
+def test_ppo_kl_gate_is_opt_in_and_respects_target():
+    """Reject implausibly large actor updates without stopping Critic fitting."""
+    assert not bool(exceeds_kl_limit(jnp.array(0.8), 0.0))
+    assert not bool(exceeds_kl_limit(jnp.array(0.029), 0.02))
+    assert bool(exceeds_kl_limit(jnp.array(0.031), 0.02))
+    assert bool(jax.jit(exceeds_kl_limit)(jnp.array(0.04), jnp.array(0.02)))
+
+
+def test_racing_shac_bootstrap_diagnostic_is_explicit_and_finite():
+    """Value-gradient ablation reports evidence without changing Racing success."""
+    env = make_environment(task="racing", scene="racing", num_envs=1, device="cpu")
+    trainer = Trainer(
+        env,
+        kind="state",
+        algorithm="shac",
+        config={
+            "horizon": 1,
+            "critic_epochs": 1,
+            "bootstrap_weight": 0.0,
+            "report_terminal_critic_grad": True,
+        },
+    )
+    _, metrics = trainer.update(trainer.initialize())
+    for field in (
+        "terminal_critic_input_gradient_norm",
+        "gates_advanced",
+        "collision_fraction",
+        "bootstrap_terminal_value_abs",
+        "bootstrap_terminal_vs_step_cost",
+    ):
+        assert field in metrics
+        assert np.isfinite(np.asarray(metrics[field])).all()
+    with pytest.raises(ValueError, match="requires SHAC"):
+        Trainer(env, algorithm="apg", config={"bootstrap_weight": 0.0})
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])

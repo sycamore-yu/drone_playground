@@ -39,8 +39,55 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
 `training/` + 选模通过才有的 `actor/`）、正式冻结 `episodes.csv`
 及按需生成的 `replays/best/`。唯一额外索引 `run.json` 保存完成性、来源和
 所选模型路径。每个模型目录的 `metadata.json` 保存其训练状态来源。
-旧 v2 ZIP 训练归档仍可以按原合同恢复；新 v3 推理加载直接指定
+旧 v2 ZIP 训练归档仅保留供历史追溯，不由调度器自动续训；新 v3 推理加载直接指定
 `checkpoint=results/<run_id>/checkpoints/model_NNNNNN`。
+
+## Navigation 程序化训练 / 固定 Benchmark
+
+根据 [ADR-0017](adr/0017-procedural-training-fixed-navigation-benchmark.md)，
+程序化训练使用 `scene=train/procedural`，每个并行世界独立持有
+`EnvState.scene_state`：障碍位置、形状、掩码、动态运动目标、
+速度/相位，以及无人机起终点。每次 reset 使用 JAX PRNG 采样；
+碰撞、Depth、LiDAR、privileged Critic 和训练损失使用同一几何。
+训练地图保留位于 y=-17.5 的可行外侧通路作为构造性可达性证明。
+
+新训练入口是 `navigation_procedural_depth` /
+`navigation_procedural_lidar`（PPO 可使用各自 `_ppo` 后缀）。
+对应 YAML 在 `learning.scenes: null`，不再每 20 个 updates
+轮换 S01–D06；原 S01–D06 冻结 MJCF、种子基段与正式门槛不变。
+S06/D06 只作扩展报告，不作为已见几何的泛化证明。
+
+原 12/18 已通过矩阵继续保存在 `results/scratch_v02/`；
+新协议必须使用独立的 `results/procedural_v01/`：
+
+```bash
+python tools/train_scratch_matrix.py plan --regime procedural \
+  --only depth_ppo,lidar_ppo,racing_ppo,racing_shac \
+  --results-root results/procedural_v01
+python tools/train_scratch_matrix.py run --regime procedural \
+  --only depth_ppo,lidar_ppo,racing_ppo,racing_shac \
+  --results-root results/procedural_v01 --max-parallel 1
+```
+
+训练前须验证 NVIDIA 驱动与用户态库版本一致。
+CPU 端的程序化 Scene/JAX 烟雾测试不能视为 GPU 模型收敛。
+该轮仅包含四个遗留难题，共 6 个待解决的正式单元，
+不重跑已经通过验收的 12 个单元。独立监控器就是本地 Python
+`train_scratch_matrix.py`，每 20 秒更新 `matrix.json`
+中的 `observed_at_utc` 和活跃进程；无需 ChatGPT 定时调用。
+Racing/SHAC 的新配方 `racing_shac_stable` 将非零 bootstrap
+权重降低至 0.2，其他正式实验的物理任务、门数和冻结验收不变。
+
+PPO 诊断候选可选 `learning.options.ppo_target_kl`（默认 0 不启用）
+和 `learning.options.ppo_value_clip`（默认 0 不启用）；
+每次更新记录 explained variance、Clip Fraction、KL、
+Critic target std、动作饱和度与探索方差。
+`racing_shac_bootstrap_ablation` 只用于 SHAC 梯度消融：
+`bootstrap_weight=0` 不能计入正式 SHAC 的 3-seed 验收。
+新 Racing 配方 `racing_shac_stable` 仍保留非零终端价值权重
+（`bootstrap_weight=0.2`），按独立随机种子训练与正式验收；
+`racing_ppo_stable` 另以 KL 限制、价值裁剪和过门进度奖励
+进行受控重训。二者不得覆盖旧 `scratch_v02` 结果。
 
 训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
 `method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；

@@ -228,6 +228,7 @@ def measure(
     frame_index: Array | int | None = None,
     pose_at: Callable[[Array], tuple[Array, Array]] | None = None,
     selected_count: int | None = None,
+    scene_state=None,
 ) -> Measurement:
     """Measure batched worlds at frame-completion time ``t`` (one time per world).
 
@@ -259,7 +260,16 @@ def measure(
     world_rays = jnp.einsum("...nij,...nj->...ni", rotation, body_rays)
     # A depth cutoff is axial: off-axis rays must travel farther than max_range.
     limit = config.max_range / rays[..., 0] if config.profile == "d435i" else config.max_range
-    ranges = scene.raycast(origins, world_rays[..., None, :], times, limit)[..., 0]
+    if scene_state is None:
+        ranges = scene.raycast(origins, world_rays[..., None, :], times, limit)[..., 0]
+    else:
+        ranges = scene.raycast(
+            origins,
+            world_rays[..., None, :],
+            times,
+            limit,
+            scene_state=scene_state,
+        )[..., 0]
     values = ranges * rays[..., 0] if config.profile == "d435i" else ranges
     mask = jnp.isfinite(values) & (values >= config.min_range) & (ranges < limit)
     points = jnp.asarray(config.translation) + body_rays * ranges[..., None]

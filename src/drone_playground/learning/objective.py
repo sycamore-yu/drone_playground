@@ -57,7 +57,7 @@ class EpisodeObjective:
                 progress = previous_distance - distance
                 progress += 5.0 * (after.task.gates - before.task.gates)
             else:
-                goal = self.env.task.goal
+                goal = self.env.goal_for(before)
                 previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
                 distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
                 progress = previous_distance - distance
@@ -69,7 +69,8 @@ class EpisodeObjective:
         task_cost += extra_failure_cost
         height_boundary_cost = jnp.zeros_like(task_cost)
         if self.config["altitude_weight"]:
-            altitude_error = after.physics.states.pos[:, 0, 2] - self.env.task.goal[2]
+            goal = self.env.goal_for(after)
+            altitude_error = after.physics.states.pos[:, 0, 2] - goal[..., 2]
             task_cost += self.config["altitude_weight"] * self.env.dt * altitude_error**2
         if self.config["height_boundary_weight"]:
             height = after.physics.states.pos[:, 0, 2]
@@ -95,7 +96,7 @@ class EpisodeObjective:
             return cost, history, terms
         velocity = after.physics.states.vel[:, 0]
         position = after.physics.states.pos[:, 0]
-        delta = self.env.task.goal - position
+        delta = self.env.goal_for(after) - position
         distance = jnp.linalg.norm(delta, axis=-1, keepdims=True)
         target = delta / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
         velocities = jnp.concatenate((history.velocity[:, 1:], velocity[:, None]), axis=1)
@@ -103,8 +104,12 @@ class EpisodeObjective:
         smoothed = velocities.sum(axis=1) / jnp.minimum(count, self.window)[:, None]
         acceleration = self.env.action.decode(action)
         previous = jnp.where((history.count > 0)[:, None], history.acceleration, acceleration)
-        clearance = self.env.scene.clearance(position, after.time) - self.env.task.radius
-        old_clearance = self.env.scene.clearance(before.physics.states.pos[:, 0], before.time)
+        clearance = (
+            self.env.scene_clearance(position, after.time, after.scene_state) - self.env.task.radius
+        )
+        old_clearance = self.env.scene_clearance(
+            before.physics.states.pos[:, 0], before.time, before.scene_state
+        )
         old_clearance = old_clearance - self.env.task.radius
         valid = jnp.isfinite(clearance) & jnp.isfinite(old_clearance)
         approach = (

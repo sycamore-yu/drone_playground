@@ -18,10 +18,10 @@ import os
 import random
 import re
 import shlex
-import signal
 import subprocess
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -42,8 +42,18 @@ class Case:
         return f"{self.task}_{self.algorithm}"
 
 
-def cases():
-    """Build 12 jobs per seed; Navigation static/dynamic share trained policies."""
+def cases(regime="fixed", only=()):
+    """Build requested families without mixing procedural and old results."""
+    if regime not in {"fixed", "procedural"}:
+        raise ValueError("Training regime must be fixed or procedural")
+    only = frozenset(only)
+    allowed = {
+        f"{task}_{algorithm}"
+        for task in ("tracking", "racing", "depth", "lidar")
+        for algorithm in ("ppo", "apg", "shac")
+    }
+    if only - allowed:
+        raise ValueError(f"Unknown training family: {sorted(only - allowed)}")
     recipes = {
         "tracking": ("tracking_gpu", {"ppo": 1024, "apg": 256, "shac": 256}),
         "racing": ("racing", {"ppo": 512, "apg": 256, "shac": 256}),
@@ -56,24 +66,51 @@ def cases():
             {"ppo": 64, "apg": 64, "shac": 64},
         ),
     }
+    if regime == "procedural":
+        recipes["depth"] = (
+            "navigation_procedural_depth",
+            {"ppo": 16, "apg": 16, "shac": 16},
+        )
+        recipes["lidar"] = (
+            "navigation_procedural_lidar",
+            {"ppo": 16, "apg": 16, "shac": 16},
+        )
     for task, (experiment, sizes) in recipes.items():
         for algorithm in ("ppo", "apg", "shac"):
+            if only and f"{task}_{algorithm}" not in only:
+                continue
             selected = experiment
-            if task == "depth" and algorithm == "ppo":
+            if regime == "procedural" and task in ("depth", "lidar"):
+                selected = experiment + ("_ppo" if algorithm == "ppo" else "")
+            elif regime == "procedural" and task == "racing" and algorithm == "ppo":
+                selected = "racing_ppo_stable"
+            elif regime == "procedural" and task == "racing" and algorithm == "shac":
+                selected = "racing_shac_stable"
+            elif task == "depth" and algorithm == "ppo":
                 selected = "navigation_depth_scratch_ppo_asymmetric"
             elif task == "depth" and algorithm == "shac":
                 selected = "navigation_depth_scratch_safe"
             elif task == "lidar" and algorithm == "ppo":
                 selected = "navigation_lidar_scratch_ppo_asymmetric"
             learning_rate = (
-                0.001 if task in ("tracking", "racing") and algorithm != "ppo" else 0.0003
+                0.0001
+                if regime == "procedural" and task in ("depth", "lidar") and algorithm == "ppo"
+                else 0.0001
+                if regime == "procedural" and task == "racing" and algorithm == "shac"
+                else 0.001
+                if task in ("tracking", "racing") and algorithm != "ppo"
+                else 0.0003
             )
             yield Case(
                 task,
                 algorithm,
                 selected,
                 sizes[algorithm],
-                64 if task in ("tracking", "racing") and algorithm == "ppo" else 32,
+                32
+                if regime == "procedural" and task == "racing" and algorithm == "ppo"
+                else 64
+                if task in ("tracking", "racing") and algorithm == "ppo"
+                else 32,
                 learning_rate,
             )
 
@@ -85,7 +122,7 @@ def overrides(case, variant):
     Each alternative starts from independently sampled network weights.
     """
     experiment = case.experiment
-    if case.task == "lidar" and variant >= 3:
+    if case.task == "lidar" and variant >= 3 and "procedural" not in experiment:
         experiment = (
             "navigation_lidar_scratch_ppo_asymmetric_sparse"
             if case.algorithm == "ppo"
@@ -428,41 +465,6 @@ def active_runs(root):
     return processes
 
 
-def last_update(path):
-    """Read the most recent measured update, never guess progress from elapsed time."""
-    try:
-        lines = path.read_text().splitlines()
-    except OSError:
-        header = read_json(path.parent / "run.json") or {}
-        return int(header.get("last_update") or header.get("updates") or 0)
-    for line in reversed(lines):
-        try:
-            data = json.loads(line)
-            if data.get("event") == "update":
-                return int(data["update"])
-        except (ValueError, KeyError, TypeError):
-            continue
-    return 0
-
-
-def consecutive_passes(path):
-    """Recover the genuine consecutive success streak from evaluation events."""
-    try:
-        lines = path.read_text().splitlines()
-    except OSError:
-        header = read_json(path.parent / "run.json") or {}
-        evaluation = header.get("last_evaluation", {})
-        return int(evaluation.get("consecutive_passes", 0))
-    for line in reversed(lines):
-        try:
-            data = json.loads(line)
-            if data.get("event") == "checkpoint_evaluation":
-                return int(data["consecutive_passes"])
-        except (ValueError, KeyError, TypeError):
-            continue
-    return 0
-
-
 def trial_status(path, running):
     """Trust the real run record and detect interrupted/vanished processes."""
     report = read_json(path / "run.json")
@@ -502,6 +504,27 @@ def trial_status(path, running):
             return "invalid"
     if report is not None:
         status = report.get("status", "unknown")
+        # Old runs remain immutable evidence; do not extend the obsolete
+        # three-consecutive-validations protocol or pre-Patience v3 recipes.
+        # A fully accepted legacy seed (or verified one-time frozen audit) is
+        # still valid and is checked before this retirement rule.
+        try:
+            configured = (path / "config.yaml").read_text()
+        except OSError:
+            configured = ""
+        legacy_recipe = (
+            report.get("layout_version") == 2
+            or re.search(
+                r"^\s+selection:\s*last_of_first_three_consecutive_passes\s*$",
+                configured,
+                re.MULTILINE,
+            )
+            is not None
+        )
+        pre_patience_recipe = (
+            not legacy_recipe
+            and re.search(r"^early_stopping:\s*$", configured, re.MULTILINE) is None
+        )
         if status == "accepted":
             selection = report.get("selection", {})
             try:
@@ -547,20 +570,16 @@ def trial_status(path, running):
             ):
                 return "accepted"
             return "invalid"
+        if not active and status in {"interrupted", "running"}:
+            if legacy_recipe:
+                return "legacy_retired"
+            if pre_patience_recipe:
+                return "pre_patience_retired"
         if status == "interrupted":
             proposal = read_proposal(path)
             restarts = read_json(path / "restarts.json") or {}
             archive = latest_training_checkpoint(path)
-            stopped_by_budget = (path / "stop_requested.json").is_file()
-            score = best_evaluation_score(path)
-            promising = score is not None and score >= 0.65
-            if (
-                stopped_by_budget
-                and proposal is not None
-                and archive is not None
-                and promising
-                and restarts.get("attempts", 0) < 4
-            ):
+            if proposal is not None and archive is not None and restarts.get("attempts", 0) < 3:
                 return "recoverable"
             return status
         if status in {"failed", "frozen_benchmark_failed", "early_stopped"}:
@@ -660,6 +679,8 @@ def eligible(case, root, running, *, candidates):
         if previous[0]["status"] in (
             "failed",
             "interrupted",
+            "legacy_retired",
+            "pre_patience_retired",
             "frozen_benchmark_failed",
             "early_stopped",
             "invalid",
@@ -681,7 +702,15 @@ def eligible(case, root, running, *, candidates):
             )
         if any(
             item["status"]
-            in ("failed", "interrupted", "frozen_benchmark_failed", "invalid", "stale")
+            in (
+                "failed",
+                "interrupted",
+                "legacy_retired",
+                "pre_patience_retired",
+                "frozen_benchmark_failed",
+                "invalid",
+                "stale",
+            )
             or item["status"] == "early_stopped"
             for item in previous[1:]
         ):
@@ -800,32 +829,21 @@ def resume(project, root, case, variant, seed):
     runner = list(proposal["command"])
     if "resume=null" not in runner or "initial_checkpoint=null" not in runner:
         raise RuntimeError(f"Refusing non-scratch resumption for {path}")
-    runner[runner.index("resume=null")] = f"resume={archive}"
-    # Strict v2 restoration checks the entire saved Learning recipe. Old
-    # in-flight runs must keep the exact old protocol when the project default
-    # changes. Only source/CLI defaults are upgraded; saved model weights and
-    # optimizer/RNG histories are not rewritten.
     config_file = path / "config.yaml"
     saved = config_file.read_text()
     match = re.search(r"^\s+selection:\s*(\S+)\s*$", saved, re.MULTILINE)
-    if match and match.group(1) == "last_of_first_three_consecutive_passes":
-        runner.extend(
-            [
-                "learning.selection=last_of_first_three_consecutive_passes",
-                "learning.required_consecutive_passes=3",
-            ]
-        )
-    old_budget = read_json(path / "budget.json") or {}
-    last = last_update(path / "metrics.jsonl")
+    if (
+        not archive.is_dir()
+        or match is None
+        or match.group(1) != "first_full_validation_pass"
+        or re.search(r"^early_stopping:\s*$", saved, re.MULTILINE) is None
+    ):
+        raise ValueError(f"Refusing obsolete or incomplete training protocol: {path}")
+    runner[runner.index("resume=null")] = f"resume={archive}"
     # Resume the SAME randomly initialized run, including its optimizer, RNG
     # and recurrent history. Never import parameters from another experiment.
-    budget_limit = max(last, int(old_budget.get("limit", 1000))) + 1000
-    atomic_json(path / "budget.json", {"limit": budget_limit, "source": "same_run_resume"})
-    marker = path / "stop_requested.json"
-    if marker.exists():
-        with (path / "stop_history.jsonl").open("a") as stream:
-            stream.write(marker.read_text() + "\n")
-        marker.unlink()
+    # No new per-trial update budget: progress-based Patience owns termination.
+    # Keep historical budget records for audit only; do not extend them.
     restart_file = path / "restarts.json"
     state = read_json(restart_file) or {"attempts": 0}
     state["attempts"] += 1
@@ -835,10 +853,10 @@ def resume(project, root, case, variant, seed):
     return name
 
 
-def report(root, running, candidates):
+def report(root, running, candidates, regime="fixed", only=()):
     """Return one compact matrix snapshot; stage logs stay inside each trial."""
     rows = []
-    for case in cases():
+    for case in cases(regime, only):
         state, variant, seed, history = eligible(case, root, running, candidates=candidates)
         rows.append(
             {
@@ -859,9 +877,12 @@ def report(root, running, candidates):
         else:
             cells.append({"cell": row["cell"], "outcome": row["outcome"]})
     return {
+        "observed_at_utc": datetime.now(UTC).isoformat(),
         "source": "random_initialization_only",
+        "regime": regime,
+        "selected_families": sorted(only) if only else [],
         "matrix_cells": len(cells),
-        "train_families": 12,
+        "train_families": len(rows),
         "required_seeds": [0, 1, 2],
         "active_runs": list(running),
         "families_accepted": sum(row["outcome"] == "accepted" for row in rows),
@@ -879,7 +900,7 @@ def atomic_json(path, payload):
     temporary.replace(path)
 
 
-def supervise(root, max_parallel, update_budget, candidates):
+def supervise(root, max_parallel, candidates, regime="fixed", only=()):
     """Observe measured outcomes and admit new trials while GPU capacity exists."""
     project = Path(__file__).resolve().parents[1]
     python = Path(
@@ -888,41 +909,27 @@ def supervise(root, max_parallel, update_budget, candidates):
     if not python.is_file():
         raise RuntimeError(f"Python environment not installed: {python}")
     root.mkdir(parents=True, exist_ok=True)
+    previous = read_json(root / "matrix.json")
+    if previous is not None and previous.get("regime", "fixed") != regime:
+        raise ValueError("Refusing to mix different training regimes in one results directory")
+    if previous is not None and previous.get("selected_families", []) != (
+        sorted(only) if only else []
+    ):
+        raise ValueError("Refusing to change the selected families in an existing queue")
+    n_families = len(list(cases(regime, only)))
     while True:
         running = active_runs(root)
-        for path_string, pid in list(running.items()):
-            path = Path(path_string)
-            # New v3 jobs own their Patience/benchmark lifecycle; an arbitrary
-            # 1,000-update SIGINT would pre-empt six post-800 light screens.
-            saved_config = path / "config.yaml"
-            if saved_config.is_file() and re.search(
-                r"^\s+selection:\s*first_full_validation_pass\s*$",
-                saved_config.read_text(),
-                re.MULTILINE,
-            ):
-                continue
-            streak = consecutive_passes(path / "metrics.jsonl")
-            allowance = 160 * streak if streak else 0
-            limit = (read_json(path / "budget.json") or {}).get("limit", update_budget)
-            if (
-                last_update(path / "metrics.jsonl") >= limit + allowance
-                and not (path / "stop_requested.json").exists()
-            ):
-                (path / "stop_requested.json").write_text(
-                    json.dumps({"reason": "trial_update_budget", "threshold": limit, "pid": pid})
-                )
-                os.kill(pid, signal.SIGINT)
-        snapshot = report(root, running, candidates)
+        snapshot = report(root, running, candidates, regime=regime, only=only)
         snapshot["resources"] = resources()
         atomic_json(root / "matrix.json", snapshot)
         print(
-            f"accepted={snapshot['families_accepted']}/12 "
+            f"accepted={snapshot['families_accepted']}/{n_families} "
             f"active={len(running)} "
             f"VRAM_free={snapshot['resources']['gpu_free_mib']}MiB "
             f"GPU={snapshot['resources']['gpu_percent']}%",
             flush=True,
         )
-        if snapshot["families_accepted"] + snapshot["families_unresolved"] == 12:
+        if snapshot["families_accepted"] + snapshot["families_unresolved"] == n_families:
             return
         if (
             len(running) < max_parallel
@@ -941,7 +948,18 @@ def supervise(root, max_parallel, update_budget, candidates):
                 "racing_shac": 5,
                 "lidar_ppo": 6,
             }
-            for case in sorted(cases(), key=lambda item: priority.get(item.key, 7)):
+            if regime == "procedural":
+                priority = {
+                    "depth_ppo": 0,
+                    "lidar_ppo": 1,
+                    "racing_shac": 2,
+                    "racing_ppo": 3,
+                    "depth_apg": 4,
+                    "lidar_apg": 5,
+                    "depth_shac": 6,
+                    "lidar_shac": 7,
+                }
+            for case in sorted(cases(regime, only), key=lambda item: priority.get(item.key, 7)):
                 action, variant, seed, _ = eligible(case, root, running, candidates=candidates)
                 if action not in ("launch", "resume"):
                     continue
@@ -964,21 +982,33 @@ def main():
     parser.add_argument("--results-root", type=Path, required=True)
     parser.add_argument("--python", type=Path, default=None)
     parser.add_argument("--max-parallel", type=int, default=2)
-    parser.add_argument("--update-budget", type=int, default=1000)
     parser.add_argument("--candidates", type=int, default=48)
+    parser.add_argument("--regime", choices=("fixed", "procedural"), default="fixed")
+    parser.add_argument(
+        "--only",
+        default="",
+        help="Comma-separated logical train families, e.g. depth_ppo,lidar_ppo,racing_shac",
+    )
     args = parser.parse_args()
     root = args.results_root.expanduser().resolve()
+    only = tuple(x.strip() for x in args.only.split(",") if x.strip())
+    if len(only) != len(set(only)):
+        parser.error("--only cannot contain duplicate families")
     if args.python is not None:
         os.environ["DRONE_MATRIX_PYTHON"] = str(args.python.resolve())
     if args.mode == "plan":
-        for case in cases():
+        for case in cases(args.regime, only):
             print(case.key, overrides(case, 0), "seeds=0,1,2")
     elif args.mode == "status":
-        print(json.dumps(report(root, active_runs(root), args.candidates), indent=2))
+        print(
+            json.dumps(
+                report(root, active_runs(root), args.candidates, args.regime, only), indent=2
+            )
+        )
     else:
-        if args.max_parallel < 1 or args.update_budget < 160 or not 1 <= args.candidates <= 256:
-            parser.error("Invalid concurrency, update budget or number of candidates")
-        supervise(root, args.max_parallel, args.update_budget, args.candidates)
+        if args.max_parallel < 1 or not 1 <= args.candidates <= 256:
+            parser.error("Invalid concurrency or number of candidates")
+        supervise(root, args.max_parallel, args.candidates, args.regime, only)
 
 
 if __name__ == "__main__":

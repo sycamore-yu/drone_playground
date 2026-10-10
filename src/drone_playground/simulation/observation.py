@@ -79,14 +79,16 @@ class SensorObservation:
         quat = quat / jnp.maximum(jnp.linalg.norm(quat, axis=-1, keepdims=True), 1e-8)
         return poses[..., :3], quat
 
-    def reset(self, physics) -> ObservationState:
+    def reset(self, physics, *, scene_state=None) -> ObservationState:
         """Depth is available at reset; a scanning LiDAR needs one full scan period."""
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
         batch = len(p)
         pose = jnp.concatenate([jnp.zeros((batch, 1)), p, q], -1)
         history = jnp.broadcast_to(pose[:, None], (batch, self.history_length, 8))
         if self.config.profile == "d435i":
-            measurement = measure(self.scene, self.config, p, q, jnp.zeros(batch))
+            measurement = measure(
+                self.scene, self.config, p, q, jnp.zeros(batch), scene_state=scene_state
+            )
         else:
             shape = (batch, self.captured_points)
             measurement = Measurement(
@@ -146,7 +148,9 @@ class SensorObservation:
             valid,
         )
 
-    def update(self, state: ObservationState, physics, active) -> ObservationState:
+    def update(
+        self, state: ObservationState, physics, active, *, scene_state=None
+    ) -> ObservationState:
         """Interpolate physical poses to exact, including noninteger-rate, capture times."""
         time = physics.core.steps[:, 0] / physics.core.freq
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
@@ -176,6 +180,7 @@ class SensorObservation:
                 frame_index=state.frame + 1,
                 pose_at=pose_at,
                 selected_count=self.point_count if self.ray_sampling == "policy" else None,
+                scene_state=scene_state,
             )
             measurement = measurement._replace(
                 available_time=measurement.acquisition_time + state.delay_s
