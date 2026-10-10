@@ -176,6 +176,22 @@ def test_adaptive_procedural_candidate_never_switches_to_fixed_scenes(scheduler,
         assert "initial_checkpoint=null" in options
 
 
+def test_candidate_four_is_independent_old_motion_ppo_ablation(scheduler):
+    """Do not change already-running trials or import any old network weight."""
+    candidates = {case.key: case for case in scheduler.cases("procedural")}
+    for name in ("depth", "lidar"):
+        case = candidates[f"{name}_ppo"]
+        original = scheduler.overrides(case, 3)
+        ablation = scheduler.overrides(case, 4)
+        assert f"experiment=navigation_procedural_{name}_ppo_velocity" in ablation
+        assert "simulation.num_envs=64" in ablation
+        assert "learning.options.lr=0.0005" in ablation
+        assert "initial_checkpoint=null" in ablation
+        assert "resume=null" in ablation
+        assert ablation != original
+        assert "velocity" not in " ".join(original)
+
+
 def test_selected_procedural_queue_is_smaller_and_stable(scheduler, tmp_path):
     """Queue priority and comparison contracts are versioned separately."""
     selected = ("depth_ppo", "lidar_ppo", "racing_shac", "racing_ppo")

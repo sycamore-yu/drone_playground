@@ -121,6 +121,28 @@ def overrides(case, variant):
     These are recipe alternatives, not hidden changes to the test protocol.
     Each alternative starts from independently sampled network weights.
     """
+    if (
+        variant == 4
+        and case.algorithm == "ppo"
+        and case.task in ("depth", "lidar")
+        and "procedural" in case.experiment
+    ):
+        # Controlled old-recipe ablation, not an automatic replacement of PPO:
+        # same frozen evaluation, different velocity/yaw Action, motion-aware
+        # reward, per-episode free-start sampling, and PPO update batch size.
+        return [
+            f"experiment=navigation_procedural_{case.task}_ppo_velocity",
+            "learning=ppo",
+            "simulation.num_envs=64",
+            "learning.options.horizon=32",
+            "learning.options.lr=0.0005",
+            "initial_checkpoint=null",
+            "resume=null",
+            "checkpoint=null",
+            "learning.evaluation_interval=160",
+            "learning.checkpoint_interval=80",
+            "learning.log_interval=10",
+        ]
     experiment = case.experiment
     if case.task == "lidar" and variant >= 3 and "procedural" not in experiment:
         experiment = (

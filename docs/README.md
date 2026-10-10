@@ -24,6 +24,7 @@
 | [0015](adr/0015-eight-acceptance-gates.md) | C/L/S 20 项去重为 S1–S4 与 L1–L4 八项；原质量门槛保留 |
 | [0016](adr/0016-training-patience-and-frozen-selection.md) | 800 updates 后 6 次轻量筛查无改善即结束配方；首次完整通过即独立冻结一次 |
 | [0017](adr/0017-procedural-training-fixed-navigation-benchmark.md) | Navigation 训练采用每环境程序化障碍场景；正式 S01–D06 几何冻结，只用于独立评测 |
+| [0018](adr/0018-ppo-diagnostics-before-brax-replacement.md) | 保留 Brax 标准 Env 兼容和原生 PPO 对照；独立验证旧版速度指令、奖励配方与导航 PPO 训练诊断 |
 
 当前实验分支的新训练使用 Orbax/TensorBoard v3；已有 v2 ZIP 训练作为只读
 历史证据保留，调度器不得自动恢复旧三连续训。配置、控制器、延迟、随机化及反向模型见

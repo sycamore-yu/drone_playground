@@ -89,6 +89,30 @@ Critic target std、动作饱和度与探索方差。
 `racing_ppo_stable` 另以 KL 限制、价值裁剪和过门进度奖励
 进行受控重训。二者不得覆盖旧 `scratch_v02` 结果。
 
+### PPO 诊断与旧版本控制接口的受控对照
+
+[ADR-0012](adr/0012-rl-environment-and-method-interface.md) 已实现
+`BraxTrainingEnv` 标准交互合同；Brax 原生 PPO/APG 属于 **可选对照**，
+不是当前带 CNN/PointNet+GRU 感知策略的无缝替换。
+[ADR-0018](adr/0018-ppo-diagnostics-before-brax-replacement.md)
+记录旧仓库 Brax PPO、DiffAero、VisFly 与新自研 PPO 的差异和验收。
+
+`navigation_procedural_depth_ppo_velocity` 和
+`navigation_procedural_lidar_ppo_velocity` 是从零训练的独立配方：
+四维世界系速度指令与 Yaw 经速度内环生成 Crazyflow 的
+`attitude_thrust`，`reward_profile=legacy_motion_navigation_v2` 单独计算
+旧版启发的速度跟踪、净空、进度和终端奖励；不复用旧 checkpoint。
+`start_sampling=collision_free` 按 episode 采样不同的起点和起终距离，
+并做实际障碍净空检查，独立可达性验证仍需后续补充。
+
+当当前基线配方第 3 次尝试仍失败时，调度器把第 4 次尝试指向以上
+速度接口对照。已运行的配方绝不热修改优化器或动作定义。
+PPO 训练记录额外提供 `navigation_progress_metres`、
+`navigation_collision_fraction`、`navigation_out_of_bounds_fraction`、
+`advantage_progress_correlation`、`advantage_positive_fraction`、
+`critic_return_rmse_preupdate` 和传感器有效测量比例。
+以上均是训练轨迹诊断指标，不能替代独立冻结成功率。
+
 训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
 `method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；
 `PolicyMethod` 默认使用连续 tanh-Gaussian PPO 分布，而 PPO 更新调用
