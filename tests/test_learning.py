@@ -29,6 +29,7 @@ def test_additional_failure_cost_reaches_public_update_metrics():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         duration=0.02,
     )
     base = Trainer(env, loss="zhang", kind="depth", config={"horizon": 1})
@@ -55,6 +56,7 @@ def test_navigation_progress_reward_matches_goal_distance_change():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -90,6 +92,7 @@ def test_height_boundary_cost_is_continuous_and_gated_after_done():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=3,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -159,6 +162,7 @@ def test_sensor_critic_performs_real_depth_ppo_update():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         duration=0.02,
         action={"level": "acceleration", "heading": "target"},
@@ -189,6 +193,9 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         task="navigation",
         scene="S01",
         sensor=kind,
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+        if kind == "depth"
+        else {},
         num_envs=2,
         duration=0.02,
         navigation_goal_observation=True,
@@ -234,6 +241,7 @@ def test_privileged_critic_changes_value_without_changing_actor():
         task="navigation",
         scene="D03",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -279,6 +287,7 @@ def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=2,
         duration=0.02,
         action={"level": "acceleration", "heading": "target"},
@@ -390,6 +399,7 @@ def test_navigation_altitude_cost_matches_physical_height_error():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
     )
     base = Trainer(
@@ -607,9 +617,12 @@ def test_invalid_configuration_is_rejected(state_env, config):
 
 @pytest.fixture(scope="module", params=["depth", "lidar"])
 def perception_env(request):
-    # Small LiDAR acquisition keeps this a CPU integration check; camera shape is unchanged.
-    """Provide perception env for the surrounding execution."""
-    sensor_config = {"points_per_frame": 32} if request.param == "lidar" else {}
+    """Use the full physical scan; only the policy input is reduced for the CPU check."""
+    sensor_config = (
+        {"points_per_frame": 20000}
+        if request.param == "lidar"
+        else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+    )
     env = Environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
@@ -646,6 +659,8 @@ def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, a
     assert float(metrics["actor_grad_norm"]) > 0
     assert float(metrics["perception_cost"]) > 0
     assert tree_changed(initial.params, state.params)
+    encoder = "conv_0" if kind == "depth" else "point_0"
+    assert tree_changed(initial.params["params"][encoder], state.params["params"][encoder])
     assert np.linalg.norm(state.recurrent_memory) > 0
     assert state.env_state.observation is not None
     assert np.all(np.asarray(state.objective_state.count) == horizon)

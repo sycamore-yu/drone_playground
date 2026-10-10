@@ -1,5 +1,10 @@
 # Navigation throughput evidence
 
+Historical measurements below use the pre-snapshot sensor model. The
+`refactor/sensor-rendering` branch changes scan directions and frame acquisition;
+its correctness evidence and unresolved GPU gates are in [validation.md](validation.md).
+The timings below are not speed measurements of that branch.
+
 This record concerns bounded Navigation APG diagnostics on the RTX 4090 on
 2026-10-08. It does **not** complete C6 across the 18 training cells or establish
 time to convergence. The authoritative acceptance criteria remain in [spec.md](spec.md).

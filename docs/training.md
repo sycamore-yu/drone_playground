@@ -22,9 +22,22 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
 
-For Navigation acceleration recipes, select
-`Environment(task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"})`
-and `Trainer(env, kind="depth", loss="zhang")`, or select LiDAR and `loss="liu"`.
+For a Navigation depth recipe, construct the sensor with explicit image settings:
+
+```python
+env = Environment(
+    task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"},
+    sensor_config={"width": 64, "height": 48, "frequency_hz": 30,
+                   "pitch_deg": 20, "min_range": 0.3, "max_range": 10},
+)
+trainer = Trainer(env, kind="depth", loss="zhang")
+```
+
+LiDAR recipes select `sensor="lidar"`, `kind="lidar"` and `loss="liu"`. Device
+constructors no longer infer a training image mode. Sensor/Experiment YAML holds these
+settings. Both devices produce snapshots; checkpoint identity records acquisition
+semantics, the MID360 resource hash, point budget, preprocessing and latency bounds.
+Full training archives require the current state structure and matching identity.
 The network, physical action interface and loss are independent choices. Environment owns the
 batch, device, action conversion, sensor clock and observed fields. Trainer uses
 `env.observe` for every actor kind.

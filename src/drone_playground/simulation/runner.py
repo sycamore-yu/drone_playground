@@ -22,7 +22,7 @@ def measurement_points(env, state, count=128):
     if env.sensor is None:
         return jnp.zeros((env.num_envs, 0, 3)), jnp.zeros((env.num_envs, 0), bool)
     observation = state.observation
-    points = observation.points_at_completion.reshape(env.num_envs, -1, 3)
+    points = observation.measurement.points_body.reshape(env.num_envs, -1, 3)
     mask = observation.measurement.mask.reshape(env.num_envs, -1)
     indices = jnp.linspace(0, points.shape[1] - 1, min(count, points.shape[1])).astype(jnp.int32)
     points, mask = points[:, indices], mask[:, indices]

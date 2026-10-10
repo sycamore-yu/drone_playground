@@ -33,14 +33,14 @@ path = export_replay(
 无效测量先按 mask 去除；有效点、位姿和时间必须有限。
 
 Sensor 的 `Measurement.points_body` 不是世界坐标，调用方必须用采集时的机体位姿转换。
-对于 `measure(..., pose_at=None)`，其扫描期间机体位姿保持为传入的 pose：
+快照采集的所有点使用同一个采集位姿；延迟送达不改变这个位姿：
 
 ```python
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 world_hits = []
-for measurement, position, quaternion in zip(measurements, positions, quaternions_xyzw):
+for measurement, position, quaternion in zip(measurements, positions, quaternions_xyzw, strict=True):
     points = np.asarray(measurement.points_body).reshape(-1, 3)
     world_hits.append({
         "points_world": Rotation.from_quat(quaternion).apply(points) + position,
@@ -48,8 +48,8 @@ for measurement, position, quaternion in zip(measurements, positions, quaternion
     })
 ```
 
-如果扫描使用了 `pose_at`，须用 `Measurement.times` 对应的逐点采集位姿做同样转换；
-不能把移动扫描的所有点都套用最后一帧位姿。显示已有测量，不重新射线采样。
+运行循环从 `ObservationState.acquisition_pose` 取得该测量所属位姿，
+显示 `measurement.points_body` 的有效点，不重新采样，也不使用送达时的机器人位姿。
 调用方决定测量何时可用、规划何时生效和失效；将实际可见内容放到对应回放帧。
 规划应传入求解器实际输出的轨迹采样，导出器不生成路线或补做规划。
 

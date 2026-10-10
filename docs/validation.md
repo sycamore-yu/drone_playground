@@ -1,5 +1,82 @@
 # 验证与验收证据
 
+## Sensor / render 功能分支：2026-10-10
+
+分支 `refactor/sensor-rendering` 从 `e3949a5` 开始实施 ADR-0012/0013。
+这是功能分支证据，不代表已合并到 `v0.2` 或已通过冻结任务验收。
+
+已接入 MuJoCo-LiDAR 软件包中的 MID360 扫描资源，实现每世界扫描相位、快照采集和精简延迟状态。
+删除了合成扫描方向、逐射线位姿回调、长位姿历史和重复去畸变点云。
+相机训练参数在 YAML 中显式声明，运行及 checkpoint 记录采集语义与资源身份。
+动力学、Actor、训练损失及 `Scene` 的求交/距离数学代码没有改动。
+
+### 已完成的专项检查
+
+CPU 回归分组覆盖 **279 项**：学习 40 项、CLI 45 项、其余 194 项。
+首次非学习回归有 224 项通过、10 项 CLI 测试桩缺少新增 `sensor` 字段而失败；
+补齐测试桩并加入 5 项冻结传感器身份检查后，CLI 全部 45 项复测通过。
+学习模块单独完成 40 项全通过。原生替换脚本的失败与这些运行路径回归分别报告。
+
+| 检查 | 结果 | 证据 |
+|---|---|---|
+| 未修改的几何与环境基线 | 56 项通过 | `tmp/sensor-rendering/baseline.log` |
+| 学习模块完整回归 | 40 项通过 | `tmp/sensor-rendering/learning-final.log` |
+| CLI 完整复测 | 45 项通过，含缺失/变化传感器身份拒绝和显式跨模型对照 | `tmp/sensor-rendering/cli-final.log` |
+| 其余模块 | 194 项通过 | `tmp/sensor-rendering/regression.log` 中 CLI 之外的全部案例 |
+| 快照、运动时钟、源表相位、梯度与官方 Renderer | 12 项通过 | `tests/test_sensor_snapshot.py`、`tests/test_render_reference.py`；`snapshot-render.log` |
+| Depth/LiDAR × PPO/APG/SHAC 更新与完整恢复，加具名损失检查 | 8 项通过；CNN/PointNet 参数确实更新，恢复后的下一次更新一致 | `tests/test_learning.py`；`perception-updates.log` |
+| Depth 新旧同输入对照 | S01、D01 各三个世界时刻，深度、点坐标及有效 mask 一致 | `tmp/sensor-rendering/depth-migration.json` |
+| 依赖和分发包 | Pixi 锁文件检查、pip 依赖检查、sdist/wheel 构建、独立 wheel 导入及两种传感器环境步进通过 | `lock-check.log`、`build.log`、`wheel-smoke.log` |
+
+Renderer 对照覆盖正对及倾斜墙面，测试容差为 `atol=rtol=2e-5`，相机内参与像素中心一致。
+本机使用已有 X11 和 Mesa 软件 OpenGL 完成对照，没有安装驱动或改变系统渲染配置。
+无 OpenGL 上下文的环境会明确跳过这两项测试；本次两项均实际执行。
+LiDAR 学习集成测试改为完整 20,000 条采集，仅缩小策略输入；源表开头连续 32 条不能
+替代完整扫描的空间覆盖，因而不再把减少采集条数当作这个测试的加速方式。
+
+32 个世界、每帧 20,000 条、零送达延迟时，传感器状态的逻辑数组总量从
+28,854,688 降至 21,122,464 字节，减少约 26.8%。这项计算只统计状态叶子数组，
+不等于峰值进程内存、显存或训练吞吐收益。
+
+### 原生求交门禁未通过
+
+实测版本：MuJoCo 3.15.0、MuJoCo-LiDAR 0.3.5、JAX 0.11.2。
+`tools/check_sensor_migration.py` 保留了可复现检查。返回码为 1，七个指定案例有六个
+不符合现有 MuJoCo 交点约定；这是边界案例检查，不是随机精度统计。
+
+| 案例 | MuJoCo 参考距离/m | 候选距离/m |
+|---|---:|---:|
+| Sphere 中心向外，半径 1 | 1 | 0 |
+| Box 中心向外，半尺寸 1 | 1 | 0 |
+| Cylinder 中心轴向，半高 2 | 2 | 0 |
+| Capsule 中心轴向，半高 2、半径 1 | 3 | 0 |
+| Plane 背面向上 | −1（未命中） | 1 |
+| Box 表面平行射线，起点 `[-2,1,0]` | 1 | −1（漏检） |
+| Box 外部正向射线，起点 `[-2,0,0]` | 1 | 1 |
+
+运行时没有增加候选后端、回退分支或上游副本。扫描资源已复用；原有唯一的求交
+实现保留，直到替换满足原先的“无退化后删除”条件。
+
+### 未完成的验收
+
+本轮 `nvidia-smi` 报 NVML 与驱动版本不匹配（NVML 595.99），独立 CUDA 初始化也报
+`No visible GPU devices`。没有运行 GPU 吞吐/显存对照，也没有完成新快照与新扫描模式
+的固定策略整回合、冻结 Benchmark 或重新训练收敛验收。因此不报告训练加速倍数，
+不把旧扫描模型的成功率沿用到新模型。主工作区的训练与已有结果未修改。
+
+### 复现入口
+
+```bash
+pixi run env JAX_PLATFORMS=cpu python -m pytest -q tests/test_sensor_snapshot.py tests/test_learning.py
+pixi run env JAX_PLATFORMS=cpu MUJOCO_GL=glfw LIBGL_ALWAYS_SOFTWARE=1 \
+  __GLX_VENDOR_LIBRARY_NAME=mesa python -m pytest -q tests/test_render_reference.py
+pixi run env JAX_PLATFORMS=cpu python tools/check_sensor_migration.py \
+  --output tmp/sensor-rendering/native-gate.json
+```
+
+第二条需要可用的 X11 display；第三条在当前候选版本应返回 1 并保留全部失败证据。
+MID360 资源 SHA-256：`9fa0165576f0060488254f04bd647a891004d4f4faa6e9b03b69d830c117c9a3`。
+
 ## v1 资产清理与 Wiki（2026-10-09）
 
 当前代码只接受 v2 训练和冻结策略。已核对 `results/` 中的 75 个 v1

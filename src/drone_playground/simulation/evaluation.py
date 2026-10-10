@@ -60,7 +60,14 @@ def next_evaluation_directory(run_directory):
 
 
 def evaluate(
-    config, directory, *, actor=None, parameters=None, evaluation_index=0, environments=None
+    config,
+    directory,
+    *,
+    actor=None,
+    parameters=None,
+    evaluation_index=0,
+    environments=None,
+    checkpoint_config=None,
 ):
     """Save one flat episode table and complete per-scene statistics for an evaluation."""
     directory = Path(directory)
@@ -113,6 +120,13 @@ def evaluate(
             if key not in environments:
                 environments[key] = create_environment(config, num_envs=batch, scene=scene)
             env = environments[key]
+            if checkpoint_config is not None and not config.benchmark.allow_environment_change:
+                archived = checkpoint_config["learning"]
+                if "sensor" not in archived:
+                    raise ValueError("Frozen checkpoint does not declare its sensor contract")
+                sensor = None if env.sensor is None else env.sensor.specification
+                if archived["sensor"] != sensor:
+                    raise ValueError("Frozen evaluation changes checkpoint sensor contract")
             scene_rows, replays = [], []
             repetitions = 1 if method.execution == "jax" else count
             for episode_index in range(repetitions):
@@ -179,6 +193,7 @@ def evaluate(
                 task_contract=env.task.contract,
                 scene=scene,
                 geometry=env.scene.geometry_identity,
+                sensor=None if env.sensor is None else env.sensor.specification,
                 method=label,
                 outcomes=dict(outcomes),
                 replays=replays,

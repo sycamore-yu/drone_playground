@@ -18,8 +18,8 @@
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
-| [0012: sensor](adr/0012-sensor.md) | Proposed：原生 JAX 求交替换、精简采集职责；快照采样须单独批准与验证 |
-| [0013: render](adr/0013-render.md) | Proposed：Depth/LiDAR 共用原生求交；纠正相机参数来源，暂缓 Warp 与 Mesh 扩展 |
+| [0012: sensor](adr/0012-sensor.md) | Accepted：MID360 资源与快照采集已实现；原生求交替换未通过门禁，功能分支尚未合并 |
+| [0013: render](adr/0013-render.md) | Accepted：显式相机参数与官方 Renderer 对照；单一求交路径，暂不引入 Warp/Mesh |
 
 当前 `main` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
 反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究

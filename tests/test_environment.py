@@ -171,6 +171,7 @@ def test_sensor_clock_and_masked_sensor_history_reset():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=2,
     )
     state = env.reset(jax.random.key(0))
@@ -182,7 +183,7 @@ def test_sensor_clock_and_masked_sensor_history_reset():
     reset = env.reset(jax.random.key(1), state, jnp.array([True, False]))
     np.testing.assert_array_equal(reset.observation.frame, [0, 1])
     np.testing.assert_array_equal(
-        reset.observation.pose_history[1], state.observation.pose_history[1]
+        reset.observation.previous_pose[1], state.observation.previous_pose[1]
     )
     assert env.observe(reset)["depth"].shape == (2, 12, 16, 1)
 
