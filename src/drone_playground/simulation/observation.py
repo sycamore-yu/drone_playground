@@ -45,6 +45,7 @@ class SensorObservation:
         point_count: int = 1024,
         latency_bounds=None,
         encoding=None,
+        ray_sampling: str = "full",
     ):
         """Initialize SensorObservation state for the declared contract."""
         if config.frequency_hz > physics_hz:
@@ -57,6 +58,14 @@ class SensorObservation:
         self.scene, self.config = scene, config
         self.history_length = math.ceil(physics_hz / config.frequency_hz) + 2
         self.point_count = point_count
+        if ray_sampling not in ("full", "policy"):
+            raise ValueError("LiDAR ray_sampling must be 'full' or 'policy'")
+        if ray_sampling == "policy" and (
+            config.profile != "mid360" or not 0 < point_count <= config.points_per_frame
+        ):
+            raise ValueError("Policy ray sampling requires Mid-360 and a valid point count")
+        self.ray_sampling = ray_sampling
+        self.captured_points = point_count if ray_sampling == "policy" else config.points_per_frame
 
     @staticmethod
     def _pose_at(history, times):
@@ -79,7 +88,7 @@ class SensorObservation:
         if self.config.profile == "d435i":
             measurement = measure(self.scene, self.config, p, q, jnp.zeros(batch))
         else:
-            shape = (batch, self.config.points_per_frame)
+            shape = (batch, self.captured_points)
             measurement = Measurement(
                 jnp.zeros(shape),
                 jnp.zeros(shape, bool),
@@ -166,6 +175,7 @@ class SensorObservation:
                 capture_time,
                 frame_index=state.frame + 1,
                 pose_at=pose_at,
+                selected_count=self.point_count if self.ray_sampling == "policy" else None,
             )
             measurement = measurement._replace(
                 available_time=measurement.acquisition_time + state.delay_s
@@ -245,9 +255,9 @@ class SensorObservation:
                 "depth_mask": mask,
                 "acquisition_time": state.measurement.acquisition_time,
             }
-        measurement = reduce_points(
-            state.measurement._replace(points_body=state.points_at_completion), self.point_count
-        )
+        measurement = state.measurement._replace(points_body=state.points_at_completion)
+        if self.ray_sampling != "policy":
+            measurement = reduce_points(measurement, self.point_count)
         return {
             "points": measurement.points_body,
             "mask": measurement.mask,

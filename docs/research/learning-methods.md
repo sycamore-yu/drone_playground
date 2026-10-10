@@ -31,7 +31,7 @@
 | 输出 | 3D 加速度命令 |
 | 目标 | 速度 Huber、接近速度与净空、加速度、jerk |
 | 优化 | AdamW `lr=1e-4`、`batch=32`、`dt=0.1 s`、`rollout=160`；BPTT 与时间衰减 Jacobian |
-| 本平台 | 标准 LiDAR 使用 Mid-360 的非重复扫描；`uniform_lidar_paper` 保留论文角度网格；使用 Crazyflow 前向物理 |
+| 本平台 | 全帧 Mid-360 用厂商点率/视场模拟的合成非重复扫描，并非真实光学扫描曲线；新从零策略训练可使用其 20k 扫描中选出的 1024 条射线直接求交以节省计算；`uniform_lidar_paper` 保留论文角度网格；使用 Crazyflow 前向物理 |
 
 论文报告的梯度 checkpointing 用于降低点云长时 BPTT 的激活显存压力。点云编码对排列保持不变，未命中点不参与最大池化，网络输入保留实际时间和空间标定。
 

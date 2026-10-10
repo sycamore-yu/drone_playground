@@ -1,6 +1,10 @@
 # Acceptance evidence collector (historical v0.1)
 
 此页记录 2026-10-08 历史验收，不能作为 v0.2 随机初始化矩阵的收敛证明。
+2026-10-10 起新项目只采用 [ADR-0015](adr/0015-eight-acceptance-gates.md)
+定义的 S1–S4 与 L1–L4 **八项独立验收**。旧 C1–C6 的原始随机种子、
+100/25 回合阈值与三阶段测试规则已全部纳入 **L3**；旧 S6 的
+EGO/SUPER 原生运行范围已纳入 **S3**。本文原来的 20 项标签只属于历史报告。
 **当前 v0.2 的选模标准改为 [ADR-0013](adr/0013-three-stage-learning-acceptance.md)：**
 六个主场景各 8 回合轻量筛查（不能当成 C4 达标），通过后只做一次 25 回合／
 主场景的完整 checkpoint validation，再对三个独立随机初始化种子分别运行

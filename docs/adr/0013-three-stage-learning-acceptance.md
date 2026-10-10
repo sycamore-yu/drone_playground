@@ -34,4 +34,7 @@
 
 ## Relation to other acceptance criteria
 
-`C1` 三种子、`C2–C4` 真实任务质量和 `C6` 资源记录均保留；`L4/L5` 相应使用三阶段隔离／18 单元验收。独立 Simulation 合同 `S1–S8`、Learning 正确性 `L1–L3/L6` 暂不合并进每个 checkpoint 检查，后续单独讨论，不因此取消其原有规格。
+2026-10-10 的 [ADR-0015](0015-eight-acceptance-gates.md) 将旧 C1–C5 的
+完整种子/任务门槛纳入新 L3，将旧 C6 与 L6 的资源报告纳入新 L4；
+独立平台合同合并为 S1–S4。数值门槛不变，三阶段评测的实现仍归本 ADR，
+不再将旧 20 项清单作为额外完成任务。

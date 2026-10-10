@@ -379,6 +379,98 @@ def test_mid360_full_frame_and_per_ray_moving_geometry(make_scene):
     np.testing.assert_array_equal(reduced.points_body, result.points_body[indices])
 
 
+def test_mid360_selected_rays_match_full_scan_reduction_with_motion(make_scene):
+    """Cast policy-visible rays only, preserving full-scan phase and exact ray times."""
+    scene = make_scene(
+        '<body pos="0 0 0" mocap="true" user="2 2 0 0 4 0"><geom type="sphere" size="20"/></body>'
+    )
+    device = SensorConfig.mid360(points_per_frame=257)
+    count = 64
+
+    def pose_at(times):
+        positions = jnp.stack((0.3 * times, jnp.zeros_like(times), jnp.zeros_like(times)), -1)
+        quaternions = jnp.broadcast_to(jnp.array([0.0, 0.0, 0.0, 1.0]), (*times.shape, 4))
+        return positions, quaternions
+
+    def capture(t, selection):
+        return measure(
+            scene,
+            device,
+            jnp.zeros((2, 3)),
+            jnp.array([0.0, 0.0, 0.0, 1.0]),
+            t,
+            frame_index=jnp.array([3, 6]),
+            pose_at=pose_at,
+            selected_count=selection,
+        )
+
+    times = jnp.array([0.4, 0.7])
+    full = jax.jit(lambda t: capture(t, None))(times)
+    sparse = jax.jit(lambda t: capture(t, count))(times)
+    reference = reduce_points(full, count)
+    for name in Measurement._fields:
+        # XLA emits a different fusion for 64 rays than for the sliced 257-ray
+        # scan. Its float32 geometry rounding stays within 0.5 mm.
+        tolerance = (
+            5e-4
+            if name in ("values", "points_body")
+            else 2e-5
+            if name == "directions_body"
+            else 1e-6
+        )
+        np.testing.assert_allclose(
+            getattr(sparse, name), getattr(reference, name), atol=tolerance, rtol=1e-6
+        )
+    assert sparse.points_body.shape == (2, count, 3)
+    assert full.points_body.shape == (2, 257, 3)
+    assert np.diff(np.asarray(sparse.times[0])).min() > 0.0
+    with pytest.raises(ValueError, match="Selected rays"):
+        sensor_rays(SensorConfig.uniform_lidar_paper(), selected_count=64)
+
+
+def test_mid360_policy_sampling_changes_only_acquisition_workload():
+    """The real Environment receives a smaller scan with the same actor-visible shape."""
+    from drone_playground.simulation.environment import make_environment
+
+    base = dict(
+        task="navigation",
+        scene="S01",
+        num_envs=1,
+        device="cpu",
+        physics_hz=100,
+        method_hz=10,
+        sensor="lidar",
+        sensor_config={"points_per_frame": 257},
+        point_count=64,
+        action={"level": "acceleration", "heading": "target"},
+    )
+    full, policy = (
+        make_environment(**base, ray_sampling="full"),
+        make_environment(**base, ray_sampling="policy"),
+    )
+    try:
+        key = jax.random.PRNGKey(8)
+        initial_full, initial_sparse = full.reset(key), policy.reset(key)
+        assert initial_full.observation.measurement.points_body.shape == (1, 257, 3)
+        assert initial_sparse.observation.measurement.points_body.shape == (1, 64, 3)
+        action = jnp.zeros((1, 3))
+        measured_full = full.step(initial_full, action)
+        measured_sparse = policy.step(initial_sparse, action)
+        points_full = full.observe(measured_full)
+        points_sparse = policy.observe(measured_sparse)
+        assert points_full["points"].shape == points_sparse["points"].shape == (1, 64, 3)
+        # Different JIT fusion shapes alter float32 intersection roundoff
+        # by up to about 0.6 mm in the populated obstacle scene.
+        np.testing.assert_allclose(points_sparse["points"], points_full["points"], atol=1e-3)
+        np.testing.assert_array_equal(points_sparse["mask"], points_full["mask"])
+        np.testing.assert_allclose(
+            points_sparse["point_times"], points_full["point_times"], atol=1e-6
+        )
+    finally:
+        full.sim.close()
+        policy.sim.close()
+
+
 def test_scan_ego_motion_and_mask_preservation(make_scene):
     """Verify scan ego motion and mask preservation."""
     scene = make_scene('<geom type="sphere" size="20"/>')

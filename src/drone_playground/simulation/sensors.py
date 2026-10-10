@@ -143,7 +143,11 @@ class Measurement(NamedTuple):
 
 
 def sensor_rays(
-    config: SensorConfig, t: Array | float = 0.0, frame_index: Array | int | None = None
+    config: SensorConfig,
+    t: Array | float = 0.0,
+    frame_index: Array | int | None = None,
+    *,
+    selected_count: int | None = None,
 ) -> tuple[Array, Array]:
     """Unit rays in sensor axes and time offsets relative to frame completion.
 
@@ -151,6 +155,12 @@ def sensor_rays(
     0.1 s, spaced by 5 us in the default profile. ``frame_index`` can carry an
     explicit scan phase across resets; otherwise phase follows absolute time.
     """
+    if selected_count is not None and (
+        config.profile != "mid360"
+        or not isinstance(selected_count, int)
+        or not 0 < selected_count <= config.points_per_frame
+    ):
+        raise ValueError("Selected rays require a valid Mid-360 point count")
     if config.profile == "d435i":
         x = 2 * (jnp.arange(config.width) + 0.5) / config.width - 1
         y = 1 - 2 * (jnp.arange(config.height) + 0.5) / config.height
@@ -176,7 +186,13 @@ def sensor_rays(
             if frame_index is None
             else jnp.asarray(frame_index)
         )
-        index = jnp.arange(config.points_per_frame, dtype=jnp.float32)
+        index = (
+            jnp.arange(config.points_per_frame, dtype=jnp.float32)
+            if selected_count is None
+            else jnp.linspace(0, config.points_per_frame - 1, selected_count)
+            .astype(jnp.int32)
+            .astype(jnp.float32)
+        )
         # Irrational rotations sample the published envelope without claiming optical fidelity.
         azimuth = (
             2
@@ -211,6 +227,7 @@ def measure(
     *,
     frame_index: Array | int | None = None,
     pose_at: Callable[[Array], tuple[Array, Array]] | None = None,
+    selected_count: int | None = None,
 ) -> Measurement:
     """Measure batched worlds at frame-completion time ``t`` (one time per world).
 
@@ -223,7 +240,7 @@ def measure(
     position, quaternion = jnp.asarray(position), jnp.asarray(quaternion)
     batch = jnp.broadcast_shapes(position.shape[:-1], quaternion.shape[:-1])
     time = jnp.broadcast_to(jnp.asarray(t), batch)
-    rays, offsets = sensor_rays(config, time, frame_index)
+    rays, offsets = sensor_rays(config, time, frame_index, selected_count=selected_count)
     count = rays.shape[-2]
     rays = jnp.broadcast_to(rays, (*batch, count, 3))
     times = time[..., None] + offsets

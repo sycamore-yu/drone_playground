@@ -52,16 +52,16 @@ pixi run benchmark task=navigation scene=S01 sensor=lidar method=super \
 pixi run replay replay_path=/absolute/path/to/episode.mj_unroll
 ```
 
-同一 worker 同时仅供一个客户端使用。原生报告按 S6 判断：覆盖六个主场景，静态和动态
+同一 worker 同时仅供一个客户端使用。原生报告按新 S3（旧 S6）判断：覆盖六个主场景，静态和动态
 各至少 10 回合，S01/S02/S03 各至少一次安全到达；动态不设成功率门槛。
 逐回合 `episodes.csv`、`trajectories.npz`、`decisions.json` 保留实际控制、求解和失败结果。
 原生动态及扩展场景的 `passed: null` 表示诊断报告，没有单场景成功率验收门槛。
-学习策略 Navigation 仍按 C4 的每主场景 25 回合、至少 23 次成功判断。
+学习策略 Navigation 仍按新 L3（旧 C4）每主场景 25 回合、至少 23 次成功判断。
 
 新训练使用 `first_full_validation_pass` 三阶段选模：训练中只在六个导航主场景
-各跑 8 回合轻量筛查；通过后按 C2/C3/C4 做一次完整 checkpoint validation，
+各跑 8 回合轻量筛查；通过后按新 L3 的任务门槛做一次完整 checkpoint validation，
 首次完整通过的权重停止训练并进行独立冻结 benchmark。正式冻结导航还记录
-S06/D06，但它们不参与 C4；不再要求连续三次完整评测。已启动的旧 run
+S06/D06，但它们不参与 L3 主场景门槛；不再要求连续三次完整评测。已启动的旧 run
 按各自保存的 `last_of_first_three_consecutive_passes` 协议继续，不能默默改变选模标准。
 见 [ADR-0013](docs/adr/0013-three-stage-learning-acceptance.md)。
 Checkpoint metadata 的 provenance 保存选择协议、评测索引及累计活动耗时；
@@ -92,6 +92,10 @@ Simulation 管任务、场景、传感器、方法、控制执行、冻结策略
 SO3；两种 MPC 和 `controller=ideal` 使用同一组合入口。Trajectory 保持宿主实现。
 
 ## 当前证据
+
+正式交付只以 [ADR-0015](docs/adr/0015-eight-acceptance-gates.md)
+规定的 **S1–S4 / L1–L4 八项验收**汇报。18 单元×3 独立随机种子、
+三阶段冻结评测和全部原成功率门槛属于 L3，不再附加历史 C 系列检查表。
 
 ### v0.2 从零训练矩阵
 

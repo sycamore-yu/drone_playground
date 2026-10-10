@@ -156,6 +156,22 @@ def test_shared_mixed_recipes(kind, batch, algorithm):
     assert config.initial_checkpoint is None
     assert config.benchmark.scenes is None
     assert config.learning.required_consecutive_passes == 1
+
+
+@pytest.mark.parametrize(
+    "experiment",
+    ["navigation_lidar_scratch_sparse", "navigation_lidar_scratch_ppo_asymmetric_sparse"],
+)
+def test_sparse_mid360_training_recipe_preserves_hardware_scan_contract(experiment):
+    """Only new experiments opt into selected rays; original configs remain full scans."""
+    with initialize_config_dir(
+        version_base=None, config_dir=str(Path(cli.__file__).parent / "configs")
+    ):
+        config = compose(config_name="config", overrides=[f"experiment={experiment}"])
+    assert config.sensor.ray_sampling == "policy"
+    assert config.sensor.config.points_per_frame == 20_000
+    assert config.sensor.point_count == 1_024
+    assert config.initial_checkpoint is None
     assert config.learning.selection == "first_full_validation_pass"
 
 

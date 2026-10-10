@@ -83,6 +83,7 @@ class BaseEnv:
         sensor: str = "state",
         sensor_config: dict | None = None,
         point_count: int = 1024,
+        ray_sampling: str = "full",
         navigation_goal_observation: bool = False,
         action: Action | dict | None = None,
         control_level: str | None = None,
@@ -178,6 +179,7 @@ class BaseEnv:
                 physics_hz,
                 point_count,
                 latency_bounds=latency_bounds,
+                ray_sampling=ray_sampling,
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")

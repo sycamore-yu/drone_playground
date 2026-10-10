@@ -1,6 +1,6 @@
 # 文档入口
 
-[功能规格](spec.md)定义研究范围；[验证记录](validation.md)和[验收说明](acceptance.md)描述已有执行证据。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
+[功能规格](spec.md)定义当前唯一的 **S1–S4 / L1–L4 八项验收**；[验证记录](validation.md)和[历史验收说明](acceptance.md)描述已有执行证据。旧 C/S/L 二十项记录只作追溯，不作为另一套任务。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
 
 ## 架构决策
 
@@ -21,6 +21,7 @@
 | [0012](adr/0012-rl-environment-and-method-interface.md) | Brax 环境与状态合同、网络／Method／动作解耦，Brax PPO/APG 作为可选对照 |
 | [0013](adr/0013-three-stage-learning-acceptance.md) | 轻量筛查→完整候选选模→独立冻结 Benchmark；旧 run 保留原协议；吞吐测量 |
 | [0014](adr/0014-results-layout-orbax-tensorboard.md) | 新 Results v3：Orbax + TensorBoard；旧 ZIP 训练保留原位置 |
+| [0015](adr/0015-eight-acceptance-gates.md) | C/L/S 20 项去重为 S1–S4 与 L1–L4 八项；原质量门槛保留 |
 
 当前实验分支的新训练使用 Orbax/TensorBoard v3；已有 v2 ZIP 训练按原格式续训，
 不转换正在运行的 checkpoint。配置、控制器、延迟、随机化及反向模型见

@@ -348,5 +348,5 @@ CPU regression tests exercise real official Crazyflow physics for all three upda
 termination/truncation arithmetic, recurrent recomputation/reset, SHAC terminal-value
 state gradients, incoming-physics decay versus action gradients, exact checkpoint
 continuation, inference equality, and interrupted-save preservation. These tests do not
-establish C1–C6 convergence, GPU throughput, or the 18-cell benchmark acceptance matrix;
+establish L3 convergence, L4 GPU throughput, or the 18-cell benchmark acceptance matrix;
 those remain the caller's independent training/evaluation work.

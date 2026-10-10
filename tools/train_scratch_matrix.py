@@ -84,8 +84,15 @@ def overrides(case, variant):
     These are recipe alternatives, not hidden changes to the test protocol.
     Each alternative starts from independently sampled network weights.
     """
+    experiment = case.experiment
+    if case.task == "lidar" and variant >= 3:
+        experiment = (
+            "navigation_lidar_scratch_ppo_asymmetric_sparse"
+            if case.algorithm == "ppo"
+            else "navigation_lidar_scratch_sparse"
+        )
     result = [
-        f"experiment={case.experiment}",
+        f"experiment={experiment}",
         f"learning={case.algorithm}",
         f"simulation.num_envs={case.worlds}",
         f"learning.options.horizon={case.horizon}",
@@ -243,8 +250,6 @@ def adaptive_overrides(case, variant, root, seed):
     final result is reported by the real environment. It never transfers
     network or optimizer parameters.
     """
-    if variant < 9:
-        return overrides(case, variant), None
     if seed > 0:
         pilot = read_proposal(directory(root, case, variant, 0))
         if pilot is None or pilot.get("initial_checkpoint") is not None:
@@ -255,6 +260,8 @@ def adaptive_overrides(case, variant, root, seed):
             if not arg.startswith(("seed=", "output=")) and arg != "mode=train"
         ]
         return options, pilot.get("parent_variant")
+    if variant < 9:
+        return overrides(case, variant), None
 
     history = []
     for previous in range(variant):
@@ -284,6 +291,13 @@ def adaptive_overrides(case, variant, root, seed):
     else:
         parent_variant = 0
         options = overrides(case, 0)
+    if case.task == "lidar":
+        sparse = (
+            "navigation_lidar_scratch_ppo_asymmetric_sparse"
+            if case.algorithm == "ppo"
+            else "navigation_lidar_scratch_sparse"
+        )
+        options.append(f"experiment={sparse}")
 
     def numeric(name, default):
         for option in reversed(options):

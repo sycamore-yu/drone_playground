@@ -34,6 +34,7 @@ def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Base
         sensor=config.sensor.name,
         sensor_config=OmegaConf.to_container(config.sensor.config, resolve=True),
         point_count=config.sensor.point_count,
+        ray_sampling=config.sensor.get("ray_sampling", "full"),
         action=action,
         control_level=level,
         observation_config=OmegaConf.to_container(config.observation, resolve=True),

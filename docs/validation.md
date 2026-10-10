@@ -118,7 +118,14 @@ pixi run build
 
 首轮诊断发现 `configs/__init__.py` 缺失，导致 wheel console script 报 `Primary config module 'drone_playground.configs' not found`。补充后，重新构建的 wheel 通过诊断和精确锁环境测试。初始 `cli.py:416` 的 Ruff `E501` 也已修复。
 
-## 验收对应关系
+## 历史版本的验收对应关系
+
+下表是 2026-10-09 旧 C1–C6、S1–S8、L1–L6 的历史证据索引，
+不作为当前项目的 20 项独立验收标准。新的八项归属为：
+旧 S1/S2→S1、旧 S3/S4→S2、旧 S5/S6→S3、旧 S7/S8→S4；
+旧 L1/L3/L4→L1/L2、旧 L2→L2、旧 L5/C1–C5→L3、旧 L6/C6→L4。
+完整的从零训练必须使用新的独立模型权重和冻结评测，不引用下面的
+18/18 历史预训练成绩作为当期通过证据。
 
 | 规格 | 实际证据 | 范围 |
 |---|---|---|
