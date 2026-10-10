@@ -959,7 +959,20 @@ def supervise(root, max_parallel, candidates, regime="fixed", only=()):
                     "depth_shac": 6,
                     "lidar_shac": 7,
                 }
-            for case in sorted(cases(regime, only), key=lambda item: priority.get(item.key, 7)):
+
+            # Rotate among unresolved families before spending many trials on
+            # a single hard PPO cell. Each family gets an independent seed-0
+            # attempt before a second attempt is admitted for another family.
+            # This affects admission order only, never checkpoint selection.
+            def admission_key(case, priority_map=priority):
+                started = sum(
+                    directory(root, case, variant, seed).is_dir()
+                    for variant in range(candidates)
+                    for seed in (0, 1, 2)
+                )
+                return started, priority_map.get(case.key, 7)
+
+            for case in sorted(cases(regime, only), key=admission_key):
                 action, variant, seed, _ = eligible(case, root, running, candidates=candidates)
                 if action not in ("launch", "resume"):
                     continue
