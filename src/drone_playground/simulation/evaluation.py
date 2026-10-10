@@ -170,7 +170,11 @@ def evaluate(
                     "episodes": len(scene_rows),
                     "successes": outcomes["SUCCESS"],
                     "success_rate": outcomes["SUCCESS"] / len(scene_rows),
-                    "successful_position_rmse": None,
+                    "successful_position_rmse": (
+                        acceptance(task, scene_rows)["successful_position_rmse"]
+                        if task == "tracking"
+                        else None
+                    ),
                     "passed": None,
                 }
             )

@@ -155,13 +155,18 @@ def test_shared_mixed_recipes(kind, batch, algorithm):
     assert config.simulation.num_envs == batch
     assert config.initial_checkpoint is None
     assert config.benchmark.scenes is None
-    assert config.learning.required_consecutive_passes == 3
+    assert config.learning.required_consecutive_passes == 1
+    assert config.learning.selection == "first_full_validation_pass"
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
 def test_cli_real_scene_switch_and_exact_midblock_boundary_resume(kind, monkeypatch, tmp_path):
     """Verify cli real scene switch and exact midblock boundary resume."""
     config = recipe(kind)
+    # Preserve the original reset/sampling semantics independent of the new
+    # three-stage screen/validation implementation.
+    config.learning.selection = "last_of_first_three_consecutive_passes"
+    config.learning.required_consecutive_passes = 3
     config.mode = "train"
     config.simulation.device = "cpu"
     config.simulation.num_envs = 2

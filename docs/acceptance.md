@@ -1,6 +1,11 @@
 # Acceptance evidence collector (historical v0.1)
 
 此页记录 2026-10-08 历史验收，不能作为 v0.2 随机初始化矩阵的收敛证明。
+**当前 v0.2 的选模标准改为 [ADR-0013](adr/0013-three-stage-learning-acceptance.md)：**
+六个主场景各 8 回合轻量筛查（不能当成 C4 达标），通过后只做一次 25 回合／
+主场景的完整 checkpoint validation，再对三个独立随机初始化种子分别运行
+冻结 benchmark。C2/C3/C4 的任务质量门槛不变；下面的 C5 表属于历史采集器，
+原 `last_of_first_three_consecutive_passes` 的 18/18 成绩不得挪作新协议结果。
 
 [Current 18-cell table](../results/acceptance/current.md) ·
 [Full evidence JSON](../results/acceptance/current.json) ·

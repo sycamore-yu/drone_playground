@@ -1,0 +1,37 @@
+# ADR-0013：三阶段学习收敛验收与 GPU 吞吐测量
+
+**Status:** Accepted · 2026-10-10
+
+## Context
+
+先前 C5 要求每种子连续三次 **完整** checkpoint evaluation 达标。Navigation 的每次检查包括六个主场景及 S06/D06，各场景 25 回合（200 回合）。Depth/LiDAR 一次评测实测约需 110–140 秒。它造成反复完整评测的成本，并让三个独立种子在有限样本的过严连续门槛下反复训练。
+
+用户批准保留 **18 个验收单元、每配方 3 个随机初始化训练种子、C2–C4 原有任务质量门槛、独立冻结 Benchmark**，只改变中间诊断／选模协议；任何旧项目权重不用于本轮初始化。
+
+## Decision
+
+新训练选模规则为 `learning.selection=first_full_validation_pass`，使用单一训练器与环境：
+
+1. **训练中轻量筛查（screening）**：每次 `learning.evaluation_interval`，只评估 Navigation 六个主场景，各 **8 回合**；Tracking/Racing 评估对应场景 **8 回合**。筛查采用 `diagnostic` 协议，不记作 C2/C3/C4 达标。用于触发正式选模的宽松条件：Navigation 每主场景至少 6/8；Tracking 至少 7/8 且成功回合位置 RMSE ≤0.35 m；Racing 至少 7/8。结果放 `checkpoints/step-*/screening/`。
+2. **完整候选选模（checkpoint validation）**：只对通过筛查的候选执行一次完整检查：Navigation 六个主场景各 **25 回合**；Tracking/Racing 各 **100 回合**。继续使用 C2/C3/C4 的硬门槛。筛查与正式选模采用不同的随机种子基段：筛查 `1_000_000`，完整选模 `1_500_000`；二者均区别于训练随机种子。首次完整通过者作为固定的候选权重，不要求连续三次完整评测。
+3. **独立冻结 Benchmark**：停止更新，固定上述候选，以 **≥2_000_000** 的独立种子基段做一次正式冻结评测。Navigation 六个主场景各 25 回合，另对 S06/D06 各 25 回合完整记录（扩展场景不作 C4 门槛）；Tracking/Racing 各 100 回合。最终是否通过仍由 C2/C3/C4 逐场景硬阈值决定。冻结 Benchmark 失败不反复使用相同测试集来挑选权重，应另开具名新训练试验。
+
+单一 run 的检查点仅保留一个完整训练状态 `latest.training.zip`；候选选模及冻结评测记录分别保存。首次正式通过的权重导出到所属 step 目录；不为每次筛查复制策略归档。筛查与完整选模可在同一次训练更新后连续发生，但不能共用评测种子。
+
+## Migration of running experiments
+
+启动前已有的 `last_of_first_three_consecutive_passes` 训练保留原始规格及三次连续结果，不重写历史评分；同一 run 的续训必须显式保留旧 `learning.selection` 与 `required_consecutive_passes=3`，否则严格 checkpoint 合同不允许恢复。新增训练默认三阶段协议及 `required_consecutive_passes=1`。不同协议的成绩标注规则，不能假装完全相同的选模成本。
+
+## GPU performance
+
+保留 `XLA_PYTHON_CLIENT_PREALLOCATE=false`；GPU 活跃率和显存使用率不当成训练效率的唯一目标。对照真实 Crazyflow 训练，分别在稳定预热后测量：
+
+- 真实每次参数更新耗时、每秒交互数、显存峰值与 GPU 功率；
+- `num_envs` 变化对处理量、单次更新样本数和到达质量阈值总时间的影响；
+- 感知传感器的独立额外开销，以及与选模／冻结评测成本的占比。
+
+**当已有训练占用 RTX 4090 时，不启动同时竞争 GPU 的吞吐基准**。吞吐对照在 GPU 空闲时单独执行，独立存放在 Git 忽略的 `results/`，不将不同机器与任务间的 FPS 直接当作算法优劣。
+
+## Relation to other acceptance criteria
+
+`C1` 三种子、`C2–C4` 真实任务质量和 `C6` 资源记录均保留；`L4/L5` 相应使用三阶段隔离／18 单元验收。独立 Simulation 合同 `S1–S8`、Learning 正确性 `L1–L3/L6` 暂不合并进每个 checkpoint 检查，后续单独讨论，不因此取消其原有规格。

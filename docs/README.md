@@ -19,6 +19,7 @@
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
 | [0012](adr/0012-rl-environment-and-method-interface.md) | Brax 环境与状态合同、网络／Method／动作解耦，Brax PPO/APG 作为可选对照 |
+| [0013](adr/0013-three-stage-learning-acceptance.md) | 轻量筛查→完整候选选模→独立冻结 Benchmark；旧 run 保留原协议；吞吐测量 |
 
 当前 `main` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
 反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究

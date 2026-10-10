@@ -37,6 +37,10 @@ def config(tmp_path):
     result.simulation.device = "cpu"
     result.learning.evaluation_interval = 1
     result.learning.log_interval = 1
+    # Exercise the original, versioned continuation contract here; the
+    # three-stage protocol has separate selection tests below.
+    result.learning.selection = "last_of_first_three_consecutive_passes"
+    result.learning.required_consecutive_passes = 3
     return result
 
 
@@ -156,6 +160,89 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     assert training.record.identity["status"] == "accepted"
     _, _, frozen = load_policy(training.record.directory / selection["checkpoint"])
     assert frozen["provenance"]["consecutive_passes"] == 3
+
+
+def test_three_stage_screening_only_promotes_a_complete_candidate(config, training, monkeypatch):
+    """A light diagnostic never counts as formal C2/C3 or final acceptance."""
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    training.stop_at = None
+    calls = []
+
+    def staged(config, directory, *, evaluation_index=0, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        calls.append(
+            (
+                config.mode,
+                config.benchmark.protocol,
+                config.benchmark.episodes,
+                config.benchmark.seed_base,
+                evaluation_index,
+            )
+        )
+        if config.mode == "benchmark":
+            return {"passed": True}
+        if config.benchmark.protocol == "diagnostic":
+            successes = 5 if evaluation_index == 1 else 7
+            return {
+                "complete": True,
+                "reports": {
+                    "empty": {
+                        "episodes": 8,
+                        "successes": successes,
+                        "successful_position_rmse": 0.2,
+                    }
+                },
+            }
+        (directory / "report.json").write_text('{"passed": true, "complete": true}')
+        return {"passed": True}
+
+    monkeypatch.setattr(cli, "evaluate", staged)
+    cli.train(config, training.record)
+    assert calls == [
+        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 1),
+        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 2),
+        ("checkpoint_eval", "learning", None, 1_500_000, 2),
+        ("benchmark", "learning", None, None, 0),
+    ]
+    selected = training.record.identity["selection"]
+    assert selected["rule"] == "first_full_validation_pass"
+    assert selected["consecutive_passes"] == 1
+    assert selected["update"] == 2
+    assert training.record.identity["status"] == "accepted"
+
+
+@pytest.mark.parametrize(
+    "task,successes,rmse,expected",
+    [
+        ("navigation", 6, None, True),
+        ("navigation", 5, None, False),
+        ("racing", 7, None, True),
+        ("racing", 6, None, False),
+        ("tracking", 7, 0.34, True),
+        ("tracking", 7, 0.36, False),
+        ("tracking", 6, 0.2, False),
+    ],
+)
+def test_light_screen_is_not_a_full_acceptance(task, successes, rmse, expected):
+    """Screening is permissive, fixed-sized and distinct from formal benchmarks."""
+    scenes = (
+        ["S01", "S02", "S03", "D01", "D02", "D03"]
+        if task == "navigation"
+        else ["empty" if task == "tracking" else "racing"]
+    )
+    report = {
+        "complete": True,
+        "reports": {
+            scene: {
+                "episodes": 8,
+                "successes": successes,
+                "successful_position_rmse": rmse,
+            }
+            for scene in scenes
+        },
+    }
+    assert cli.screening_passed(report, task, scenes) is expected
 
 
 def test_checkpoint_evaluations_do_not_repeat_policy_serialization(config, training, monkeypatch):

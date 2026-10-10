@@ -271,7 +271,15 @@ def adaptive_overrides(case, variant, root, seed):
         options = [
             arg
             for arg in parent["command"][3:]
-            if not arg.startswith(("seed=", "output=")) and arg != "mode=train"
+            if not arg.startswith(
+                (
+                    "seed=",
+                    "output=",
+                    "learning.selection=",
+                    "learning.required_consecutive_passes=",
+                )
+            )
+            and arg != "mode=train"
         ]
     else:
         parent_variant = 0
@@ -444,9 +452,39 @@ def trial_status(path, running):
             except OSError:
                 configured = ""
             fresh = re.search(r"^initial_checkpoint:\s*null\s*$", configured, re.MULTILINE)
+            rule = selection.get("rule")
+            benchmark_dir = report.get("benchmark_directory")
+            benchmark = (
+                read_json(path / benchmark_dir / "report.json")
+                if isinstance(benchmark_dir, str)
+                else None
+            )
+            frozen_verified = (
+                benchmark is not None
+                and benchmark.get("mode") == "benchmark"
+                and benchmark.get("complete") is True
+                and benchmark.get("passed") is True
+                and benchmark.get("seed_base", 0) >= 2_000_000
+            )
+            if rule == "first_full_validation_pass":
+                selected_report = read_json(path / selection.get("full_validation", "missing"))
+                validated = (
+                    selection.get("consecutive_passes") == 1
+                    and selected_report is not None
+                    and selected_report.get("passed") is True
+                    and selected_report.get("complete") is True
+                    and selected_report.get("mode") == "checkpoint_eval"
+                    and 1_500_000 <= selected_report.get("seed_base", 0) < 2_000_000
+                )
+            else:
+                validated = (
+                    rule == "last_of_first_three_consecutive_passes"
+                    and selection.get("consecutive_passes", 0) >= 3
+                )
             if (
                 report.get("benchmark_passed") is True
-                and selection.get("consecutive_passes", 0) >= 3
+                and frozen_verified
+                and validated
                 and fresh is not None
                 and "initialization" not in report
             ):
@@ -487,9 +525,14 @@ def trial_status(path, running):
 
 
 def best_evaluation_score(path):
-    """Return the best measured mean main-scene success rate, if recorded."""
+    """Rank candidates using measured diagnostics or complete validation only.
+
+    The score is for tuning, never for declaring C2-C5 acceptance.
+    """
     values = []
-    for report_path in (path / "checkpoints").glob("step-*/report.json"):
+    reports = list((path / "checkpoints").glob("step-*/report.json"))
+    reports.extend((path / "checkpoints").glob("step-*/screening/report.json"))
+    for report_path in reports:
         report = read_json(report_path)
         if report is None:
             continue
@@ -617,6 +660,20 @@ def launch(project, root, python, case, variant, seed):
         raise RuntimeError(f"Refusing to reuse an existing training directory: {path}")
     path.mkdir(parents=True)
     suggested, parent_variant = adaptive_overrides(case, variant, root, seed)
+    if seed > 0:
+        # Previously completed seed-0 runs can predate the three-stage
+        # protocol. Keep the same acceptance contract across all three seeds
+        # of that candidate rather than changing it after seeing results.
+        origin = directory(root, case, variant, 0) / "config.yaml"
+        if origin.is_file():
+            match = re.search(r"^\s+selection:\s*(\S+)\s*$", origin.read_text(), re.MULTILINE)
+            if match and match.group(1) == "last_of_first_three_consecutive_passes":
+                suggested.extend(
+                    [
+                        "learning.selection=last_of_first_three_consecutive_passes",
+                        "learning.required_consecutive_passes=3",
+                    ]
+                )
     overrides_list = ["mode=train", *suggested, f"seed={seed}", f"output={path}"]
     name = f"dp-scr-{case.task[:2]}-{case.algorithm}-{seed}-{variant}"
     if (
@@ -656,6 +713,20 @@ def resume(project, root, case, variant, seed):
     if "resume=null" not in runner or "initial_checkpoint=null" not in runner:
         raise RuntimeError(f"Refusing non-scratch resumption for {path}")
     runner[runner.index("resume=null")] = f"resume={archive}"
+    # Strict v2 restoration checks the entire saved Learning recipe. Old
+    # in-flight runs must keep the exact old protocol when the project default
+    # changes. Only source/CLI defaults are upgraded; saved model weights and
+    # optimizer/RNG histories are not rewritten.
+    config_file = path / "config.yaml"
+    saved = config_file.read_text()
+    match = re.search(r"^\s+selection:\s*(\S+)\s*$", saved, re.MULTILINE)
+    if match and match.group(1) == "last_of_first_three_consecutive_passes":
+        runner.extend(
+            [
+                "learning.selection=last_of_first_three_consecutive_passes",
+                "learning.required_consecutive_passes=3",
+            ]
+        )
     old_budget = read_json(path / "budget.json") or {}
     last = last_update(path / "metrics.jsonl")
     # Resume the SAME randomly initialized run, including its optimizer, RNG

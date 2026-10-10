@@ -1,5 +1,51 @@
 # Navigation throughput evidence
 
+## v0.2：并行环境数与验收开销优化（2026-10-10）
+
+已批准 [ADR-0013](adr/0013-three-stage-learning-acceptance.md)：训练期间使用
+每主场景 8 回合轻量筛查，正式候选检查保留各主场景 25 回合，冻结
+benchmark 还完整报告 S06/D06。此前每轮全八场景、每场景 25 回合的反复
+筛查已不再是新 run 的默认协议。该调整减少中途评测的计算量，但仍保留
+最终三种子 C2/C3/C4 原始阈值。
+
+GPU 性能方面保留 `XLA_PYTHON_CLIENT_PREALLOCATE=false`，**显存占用不是
+吞吐优化目标**。并发运行过程中 RTX 4090 经常报告约 100% 的 GPU 活跃时间，
+但不能据此推断 CUDA 核心达到理论峰值。下面原有的同步更新性能测量
+已表明 Crazyflow 500 Hz、多帧传感器和可微展开存在很大成本。
+
+本次新增专用入口 `tools/benchmark_training_throughput.py`，执行的是真实
+`Environment + Trainer.update`，不是只测物理空转；在 JIT 预热后
+使用 `jax.block_until_ready` 同步计时，记录每秒真实交互数、
+每次更新墙钟耗时、GPU 显存与功率。正式训练进程仍在运行时，
+**该入口会拒绝新 GPU 测试**，避免通过资源争抢得到无效对照数据。
+
+```bash
+# 显示计划，不占用 GPU
+python tools/benchmark_training_throughput.py --dry-run
+
+# 只在正式矩阵 GPU 训练暂时完全空闲时运行，不中断现有作业
+python tools/benchmark_training_throughput.py \
+  --experiment navigation_lidar_scratch --algorithm apg \
+  --worlds 32,64,128,256 --warmup 2 --updates 8 \
+  --output results/performance/lidar-apg-world-count.json
+
+python tools/benchmark_training_throughput.py \
+  --experiment navigation_depth_scratch_safe --algorithm shac \
+  --worlds 64,128,256,512 --warmup 2 --updates 8 \
+  --output results/performance/depth-shac-world-count.json
+```
+
+不提前认定 batch256 比 batch64 更快。增加 `num_envs` 同时改变每次更新的样本数；
+**需要同时报告 updates/s、interactions/s、显存与达到 C2/C3/C4 所需总时间**。
+跨算法或不同传感器的吞吐不可直接作为同算法扩 batch 的因果结论。
+参考 [JAX 官方计时建议](https://docs.jax.dev/en/latest/benchmarking.html)、
+[JAX GPU 显存分配](https://docs.jax.dev/en/latest/gpu_memory_allocation.html)、
+[Isaac Lab 训练性能建议](https://isaac-sim.github.io/IsaacLab/main/source/overview/reinforcement-learning/training_guide.html)。
+
+---
+
+## 旧版诊断（2026-10-08）
+
 This record concerns bounded Navigation APG diagnostics on the RTX 4090 on
 2026-10-08. It does **not** complete C6 across the 18 training cells or establish
 time to convergence. The authoritative acceptance criteria remain in [spec.md](spec.md).

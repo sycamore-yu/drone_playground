@@ -58,14 +58,18 @@ pixi run replay replay_path=/absolute/path/to/episode.mj_unroll
 原生动态及扩展场景的 `passed: null` 表示诊断报告，没有单场景成功率验收门槛。
 学习策略 Navigation 仍按 C4 的每主场景 25 回合、至少 23 次成功判断。
 
-训练连续三次 checkpoint evaluation 达标后，按唯一支持的
-`last_of_first_three_consecutive_passes` 规则选择第三次权重，再运行独立 benchmark。
-Checkpoint metadata 的 provenance 保存连续通过数、评测索引及累计活动耗时；
+新训练使用 `first_full_validation_pass` 三阶段选模：训练中只在六个导航主场景
+各跑 8 回合轻量筛查；通过后按 C2/C3/C4 做一次完整 checkpoint validation，
+首次完整通过的权重停止训练并进行独立冻结 benchmark。正式冻结导航还记录
+S06/D06，但它们不参与 C4；不再要求连续三次完整评测。已启动的旧 run
+按各自保存的 `last_of_first_three_consecutive_passes` 协议继续，不能默默改变选模标准。
+见 [ADR-0013](docs/adr/0013-three-stage-learning-acceptance.md)。
+Checkpoint metadata 的 provenance 保存选择协议、评测索引及累计活动耗时；
 恢复后的吞吐率使用本次进程新增交互数除以本次耗时。`training_wall_seconds` 累计各段
 活动时间（含初始化、保存与评测，统计至对应记录时刻），不含停机时间；
 `session_wall_seconds` / `session_interactions` 描述本次调用。v2 训练归档必须包含
 完整训练状态和配置；缺失字段不再推测或补齐。
-已完成 C5 的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
+已通过完整选模的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
 `eval/<编号>/`，实际目录记录在 `run.json` 的 `benchmark_directory`。
 
 ## 架构与记录

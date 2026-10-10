@@ -67,6 +67,10 @@ Pixi 安装完成后，CPU 验证实际核验如下版本。Crazyflow 安装元�
 
 ## 检查结果
 
+**以下表格是 2026-10-09 旧验收版本的历史验证记录，不是 ADR-0013
+三阶段从零训练矩阵的通过证明。** 现行模型收敛状态以
+Git 忽略的 `results/scratch_v02/matrix.json` 和逐次独立冻结评测为准。
+
 | 检查 | 结果 | 证据 |
 |---|---|---|
 | 完整 CPU pytest | 239 passed，813.26 s | [`full-suite-asymmetric-final.log`](../tmp/ros-planner-refactor/full-suite-asymmetric-final.log) |

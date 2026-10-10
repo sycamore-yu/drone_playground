@@ -6,6 +6,11 @@
 
 ## 新实验
 
+从零训练 18 单元的正式选模遵循
+[ADR-0013](adr/0013-three-stage-learning-acceptance.md)：轻量筛查→完整候选验证→
+独立冻结 Benchmark。新训练不设置 `initial_checkpoint`；已有 run 续训时
+保持原来保存的协议，不允许将历史权重当作从零训练证据。
+
 ```bash
 pixi install --locked
 pixi run train experiment=tracking learning=apg seed=0 \

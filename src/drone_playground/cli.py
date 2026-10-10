@@ -30,18 +30,45 @@ from drone_playground.simulation.scene import Scene
 _NAVIGATION_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
+def screening_passed(report: dict, task: str, primary_scenes: list[str]) -> bool:
+    """Admit a promising candidate without conflating screening with formal C2/C3/C4.
+
+    Light screens are intentionally permissive; a complete independent
+    checkpoint validation still applies the original hard task thresholds.
+    """
+    if not report.get("complete"):
+        return False
+    results = report.get("reports", {})
+    if not primary_scenes or not all(scene in results for scene in primary_scenes):
+        return False
+    for scene in primary_scenes:
+        result = results[scene]
+        if result.get("episodes") != 8:
+            return False
+        target = 6 if task == "navigation" else 7
+        if result.get("successes", 0) < target:
+            return False
+        if task == "tracking":
+            rmse = result.get("successful_position_rmse")
+            if rmse is None or not np.isfinite(rmse) or rmse > 0.35:
+                return False
+    return True
+
+
 def train(config: DictConfig, record: RunRecord) -> None:
-    """Train until the declared consecutive-evaluation criterion, with no step/time cap."""
+    """Train under a versioned evaluation contract with one common update lifecycle."""
     from drone_playground.learning.checkpoint import load_state, save_inference, save_state
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
     if not get_class(config.method.implementation._target_).trainable:
         raise ValueError("Training requires method=policy or an experiment recipe")
-    if config.learning.required_consecutive_passes != 3:
-        raise ValueError("C5 requires three consecutive full checkpoint evaluations")
-    if config.learning.selection != "last_of_first_three_consecutive_passes":
+    selection = config.learning.selection
+    legacy = selection == "last_of_first_three_consecutive_passes"
+    if selection not in ("last_of_first_three_consecutive_passes", "first_full_validation_pass"):
         raise ValueError("Unsupported checkpoint selection rule")
+    if config.learning.required_consecutive_passes != (3 if legacy else 1):
+        raise ValueError("Learning selection and required_consecutive_passes disagree")
     resolved = OmegaConf.to_container(config, resolve=True)
     scenes = resolved["learning"].get("scenes")
     scene_updates = resolved["learning"].get("scene_updates", 20)
@@ -188,6 +215,23 @@ def train(config: DictConfig, record: RunRecord) -> None:
     evaluation_config.benchmark.episodes = None
     if scenes is not None:
         evaluation_config.benchmark.scenes = None
+    if not legacy:
+        primary_groups = OmegaConf.to_container(config.benchmark.primary_scenes, resolve=True)
+        primary_scenes = (
+            [*primary_groups["static"], *primary_groups["dynamic"]]
+            if config.task.name == "navigation"
+            else [config.scene.name]
+        )
+        light_config = OmegaConf.create(resolved)
+        light_config.mode = "checkpoint_eval"
+        light_config.benchmark.protocol = "diagnostic"
+        light_config.benchmark.record_replay = False
+        light_config.benchmark.record_trajectories = False
+        light_config.benchmark.episodes = 8
+        light_config.benchmark.scenes = primary_scenes
+        light_config.benchmark.seed_base = 1_000_000
+        evaluation_config.benchmark.scenes = primary_scenes
+        evaluation_config.benchmark.seed_base = 1_500_000
     environments = {}
     initial_interactions = int(state.interactions)
     checkpoint_path = record.directory / "checkpoints" / "latest.training.zip"
@@ -252,7 +296,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
         update = int(state.updates)
         frozen = checkpoint(state, export_policy=False)
         directory = frozen.parent
-        if (directory / "report.json").exists() or (directory / "episodes.csv").exists():
+        if (
+            (directory / "report.json").exists()
+            or (directory / "episodes.csv").exists()
+            or (not legacy and (directory / "screening").exists())
+        ):
             previous = Path(tempfile.mkdtemp(prefix="incomplete-", dir=directory))
             for item in directory.iterdir():
                 if item.name in {
@@ -261,6 +309,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     "trajectories.npz",
                     "decisions.json",
                     "replays",
+                    "screening",
                 }:
                     item.rename(previous / item.name)
             record.event(
@@ -268,22 +317,60 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 update=update,
                 previous_output=str(previous),
             )
-        report = evaluate(
-            evaluation_config,
-            directory,
-            actor=trainer.actor,
-            parameters=state.params,
-            evaluation_index=evaluation_index + 1,
-            environments=environments,
-        )
+        if legacy:
+            report = evaluate(
+                evaluation_config,
+                directory,
+                actor=trainer.actor,
+                parameters=state.params,
+                evaluation_index=evaluation_index + 1,
+                environments=environments,
+            )
+        else:
+            screening = evaluate(
+                light_config,
+                directory / "screening",
+                actor=trainer.actor,
+                parameters=state.params,
+                evaluation_index=evaluation_index + 1,
+                environments=environments,
+            )
+            suitable = screening_passed(screening, config.task.name, primary_scenes)
+            record.event(
+                "screening_evaluation",
+                update=update,
+                passed=suitable,
+                episodes=8,
+                scenes=primary_scenes,
+            )
+            report = {"passed": False}
+            if suitable:
+                report = evaluate(
+                    evaluation_config,
+                    directory,
+                    actor=trainer.actor,
+                    parameters=state.params,
+                    evaluation_index=evaluation_index + 1,
+                    environments=environments,
+                )
+                record.event(
+                    "full_validation",
+                    update=update,
+                    passed=bool(report["passed"]),
+                    scenes=primary_scenes,
+                    episodes=25 if config.task.name == "navigation" else 100,
+                )
         evaluation_index += 1
-        consecutive = consecutive + 1 if report["passed"] else 0
-        checkpoint(state)
+        consecutive = (
+            (consecutive + 1 if report["passed"] else 0) if legacy else int(bool(report["passed"]))
+        )
+        checkpoint(state, export_policy=legacy or bool(report["passed"]))
         record.event(
             "checkpoint_evaluation",
             update=update,
             passed=report["passed"],
             consecutive_passes=consecutive,
+            selection_rule=selection,
             checkpoint=str(frozen),
         )
 
@@ -352,12 +439,19 @@ def train(config: DictConfig, record: RunRecord) -> None:
             )
             return
         record.identity["selection"] = {
-            "rule": config.learning.selection,
+            "rule": selection,
             "checkpoint": str(frozen.relative_to(record.directory)),
             "update": int(state.updates),
             "consecutive_passes": consecutive,
             "evaluation_index": evaluation_index,
         }
+        if not legacy:
+            record.identity["selection"]["full_validation"] = str(
+                (frozen.parent / "report.json").relative_to(record.directory)
+            )
+            record.identity["selection"]["screening"] = str(
+                (frozen.parent / "screening" / "report.json").relative_to(record.directory)
+            )
         atomic_json(record.directory / "run.json", record.identity)
         benchmark_config = OmegaConf.create(resolved)
         benchmark_config.mode = "benchmark"

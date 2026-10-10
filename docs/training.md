@@ -184,8 +184,16 @@ state, environment, action, network and learning configuration. No missing optio
 filled from historical defaults. Standalone inference archives must declare the Actor
 specification; old v1 files are historical evidence, not loadable inputs.
 
-For mixed training, C5 evaluation and the final benchmark still evaluate all eight scenes
-separately, using nominal starts, the existing seed partitions and unchanged criteria.
+New mixed training follows [ADR-0013](adr/0013-three-stage-learning-acceptance.md):
+checkpoint screening uses six main scenes and eight episodes per scene (48
+rollouts), with permissive 6/8 per-scene candidate eligibility. A qualified
+checkpoint receives one full validation of 25 episodes in each main scene
+(150 rollouts) using disjoint checkpoint-validation seeds. On the first
+full C4 pass, the selected actor is frozen for an independent benchmark in
+all eight scenes (200 rollouts, S06/D06 reported but not graded).
+State-only Tracking/Racing uses 8/100/100 screening/validation/benchmark
+episodes and retains its original C2/C3 quality thresholds. Old in-flight
+three-consecutive-pass runs retain their recorded selection protocol.
 The CLI's `initial_checkpoint` remains optional (default null): supplying a frozen policy
 initializes validated Actor variables with fresh optimizer/episode state and records source
 checksum/provenance. `resume` instead restores full training state and sampling progress.
@@ -194,7 +202,8 @@ If a saved update was due for evaluation when the process stopped, resuming comp
 that evaluation before another update or scene switch. The evaluation seed index advances
 only after the complete evaluation returns. Existing partial output is retained under
 `checkpoints/step-<update>/incomplete-*`; a `checkpoint_evaluation_retry` event records its
-path. Partial output does not count toward the three consecutive complete evaluations.
+path. Partial output does not count as completed screening or validation;
+for old runs it does not count toward their original three-consecutive rule.
 
 ```bash
 pixi run train experiment=navigation_mixed_depth learning=apg seed=0
