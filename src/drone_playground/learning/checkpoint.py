@@ -20,6 +20,7 @@ import numpy as np
 import orbax.checkpoint as ocp
 from flax import serialization
 
+from drone_playground.learning.selection import screening_score
 from drone_playground.simulation.policy import CHECKPOINT_VERSION, read_checkpoint
 
 
@@ -125,6 +126,19 @@ def load_inference(path):
     }
 
 
+def _screening_score(path: Path) -> float | None:
+    """Read a completed lightweight validation without touching benchmark records."""
+    report_path = path / "screening" / "report.json"
+    if not report_path.is_file():
+        return None
+    report = json.loads(report_path.read_text())
+    if not report.get("complete"):
+        return None
+    scenes = list(report["reports"])
+    task = report["reports"][scenes[0]]["task"]
+    return screening_score(report, task, scenes)
+
+
 def save_model(path, state, *, config, provenance, kind, actor_spec, export_policy=False):
     """Write a version-three Orbax checkpoint under a model-NNNNNN folder.
 
@@ -177,9 +191,13 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
     # Keep the selected actor and a small rolling window of resumable states.
     # This avoids accumulating a full copy of the large LiDAR sensor history
     # at every scheduled checkpoint.
-    retention = config.get("experiment", {}).get("results", {}).get("keep_checkpoints", 3)
+    settings = config.get("experiment", {}).get("results", {})
+    retention = settings.get("keep_checkpoints", 3)
     if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
         raise ValueError("results.keep_checkpoints must be a positive integer")
+    keep_best = settings.get("keep_best_screening", False)
+    if type(keep_best) is not bool:
+        raise ValueError("results.keep_best_screening must be boolean")
     candidates = sorted(
         (
             candidate
@@ -192,6 +210,14 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
     )
     keep = set(candidates[-retention:])
     keep.update(candidate for candidate in candidates if (candidate / "actor").is_dir())
+    if keep_best:
+        ranked = [
+            (score, candidate)
+            for candidate in candidates
+            if (score := _screening_score(candidate)) is not None
+        ]
+        if ranked:
+            keep.add(max(ranked, key=lambda item: (item[0], item[1].name))[1])
     for candidate in candidates:
         if candidate not in keep:
             shutil.rmtree(candidate)

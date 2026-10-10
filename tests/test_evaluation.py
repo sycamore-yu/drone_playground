@@ -5,9 +5,30 @@ import json
 
 import numpy as np
 import pytest
+from omegaconf import OmegaConf
 
 from drone_playground.simulation.environment import make_environment
+from drone_playground.simulation.evaluation import _scene_seed
 from drone_playground.simulation.runner import rollout, save_evaluation
+
+
+def test_fixed_checkpoint_cohort_is_stable_and_benchmark_remains_held_out():
+    """Compare policies on identical initial states without changing final testing."""
+    config = OmegaConf.create(
+        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
+    )
+    initial = _scene_seed(config, 1_000_000, 1, 0)
+    assert initial == _scene_seed(config, 1_000_000, 20, 0)
+    assert initial != _scene_seed(config, 1_000_000, 20, 1)
+    assert initial != _scene_seed(config, 1_500_000, 1, 0)
+    config.mode = "benchmark"
+    assert _scene_seed(config, 2_000_000, 1, 0) != _scene_seed(config, 2_000_000, 20, 0)
+    config.mode = "checkpoint_eval"
+    config.benchmark.fixed_checkpoint_seeds = False
+    assert _scene_seed(config, 1_000_000, 1, 0) != _scene_seed(config, 1_000_000, 20, 0)
+    config.benchmark.fixed_checkpoint_seeds = "yes"
+    with pytest.raises(ValueError, match="must be boolean"):
+        _scene_seed(config, 1_000_000, 1, 0)
 
 
 def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):

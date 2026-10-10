@@ -15,6 +15,15 @@ from drone_playground.simulation.runner import rollout, rollout_host, save_evalu
 _NAVIGATION_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
+def _scene_seed(config, seed_base: int, evaluation_index: int, scene_index: int) -> int:
+    """Keep checkpoint cohorts fixed when requested; never change benchmark seeds."""
+    fixed = config.benchmark.get("fixed_checkpoint_seeds", False)
+    if type(fixed) is not bool:
+        raise ValueError("benchmark.fixed_checkpoint_seeds must be boolean")
+    cohort = 0 if fixed and config.mode == "checkpoint_eval" else evaluation_index
+    return int(seed_base + 10_000 * config.seed + 100 * cohort + scene_index)
+
+
 def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> BaseEnv:
     """Construct the physical input from the chosen method rather than its task name."""
     simulation = OmegaConf.to_container(config.simulation, resolve=True)
@@ -118,7 +127,7 @@ def evaluate(
         label = f"{label}:{type(method.controller).__name__}"
     try:
         for scene_index, scene in enumerate(scenes):
-            seed = int(seed_base + 10_000 * config.seed + 100 * evaluation_index + scene_index)
+            seed = _scene_seed(config, seed_base, evaluation_index, scene_index)
             batch = count if method.execution == "jax" else 1
             key = (scene, batch)
             if key not in environments:

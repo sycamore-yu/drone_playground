@@ -1,5 +1,7 @@
 """Test final JAX results layout without altering legacy training runs."""
 
+import json
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -107,6 +109,45 @@ def test_orbax_retains_last_three_plus_selected_actor(tmp_path):
         "model_000075",
         "model_000100",
         "model_000125",
+    ]
+
+
+def test_orbax_optionally_retains_best_incomplete_screening_checkpoint(tmp_path):
+    """Preserve measured PPO progress even when no checkpoint passes all scenes."""
+    config = {"experiment": {"results": {"keep_checkpoints": 2, "keep_best_screening": True}}}
+    actor = Actor(kind="state", action_size=4)
+    state = ExampleTrainingState(
+        params={"params": {"weight": jnp.ones(2)}},
+        optimizer_state={"actor": jnp.zeros(1)},
+        rng=jax.random.key(3),
+        updates=0,
+    )
+    for update, successes in ((10, 1), (20, 7), (30, 2), (40, 0), (50, 0)):
+        destination = tmp_path / f"model_{update:06d}"
+        save_model(
+            destination,
+            state.replace(updates=update),
+            config=config,
+            provenance={"updates": update},
+            kind="state",
+            actor_spec=actor.specification,
+        )
+        screening = destination / "screening"
+        screening.mkdir()
+        (screening / "report.json").write_text(
+            json.dumps(
+                {
+                    "complete": True,
+                    "reports": {
+                        "S01": {"task": "navigation", "episodes": 8, "successes": successes}
+                    },
+                }
+            )
+        )
+    assert sorted(path.name for path in tmp_path.glob("model_*")) == [
+        "model_000020",
+        "model_000040",
+        "model_000050",
     ]
 
 
