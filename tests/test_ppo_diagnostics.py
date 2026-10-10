@@ -4,7 +4,10 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from drone_playground.learning.ppo import advantage_progress_correlation
+from drone_playground.learning.ppo import (
+    advantage_progress_correlation,
+    completed_navigation_metrics,
+)
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import make_environment
 
@@ -20,6 +23,24 @@ def test_advantage_progress_detects_positive_negative_and_zero_variance():
         advantage_progress_correlation(advantage, -progress), -1.0, atol=1e-6
     )
     assert float(advantage_progress_correlation(advantage, progress * 0)) == 0.0
+
+
+def test_completed_episode_rates_use_episodes_not_rollout_steps():
+    """One success among two completed episodes is a 50% training success rate."""
+    terms = {
+        "navigation_success_fraction": jnp.array([[0, 0], [1, 0]], dtype=jnp.float32),
+        "navigation_collision_fraction": jnp.array([[0, 1], [0, 0]], dtype=jnp.float32),
+        "navigation_out_of_bounds_fraction": jnp.zeros((2, 2)),
+    }
+    done = jnp.array([[False, True], [True, False]])
+    metrics = jax.jit(completed_navigation_metrics)(done, terms)
+    assert float(metrics["navigation_completed_episodes"]) == 2.0
+    assert float(metrics["navigation_completed_success_rate"]) == 0.5
+    assert float(metrics["navigation_completed_collision_rate"]) == 0.5
+    empty = completed_navigation_metrics(
+        jnp.zeros_like(done), {k: jnp.zeros_like(v) for k, v in terms.items()}
+    )
+    assert float(empty["navigation_completed_success_rate"]) == 0.0
 
 
 def test_ppo_navigation_diagnostics_are_finite_on_real_simulation():
@@ -51,6 +72,10 @@ def test_ppo_navigation_diagnostics_are_finite_on_real_simulation():
         "navigation_collision_fraction",
         "navigation_out_of_bounds_fraction",
         "navigation_success_fraction",
+        "navigation_completed_episodes",
+        "navigation_completed_success_rate",
+        "navigation_completed_collision_rate",
+        "navigation_completed_out_of_bounds_rate",
         "advantage_progress_correlation",
         "advantage_positive_fraction",
         "critic_return_rmse_preupdate",

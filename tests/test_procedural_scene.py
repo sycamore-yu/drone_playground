@@ -81,6 +81,68 @@ def test_collision_free_start_sampler_provides_goal_distance_curriculum():
     assert (dx < 35.0).any()  # Some episodes begin near their terminal goal.
 
 
+def test_stratified_start_sampler_covers_nominal_start_and_rotates_cohorts():
+    """Every batch covers near-start, uniform and near-goal initial positions."""
+    scene = ProceduralScene({"max_obstacles": 24, "start_sampling": "stratified"})
+    first = scene.sample(jax.random.PRNGKey(21), 12)
+    repeated = scene.sample(jax.random.PRNGKey(21), 12)
+    np.testing.assert_allclose(first.start, repeated.start, atol=2e-6)
+    near_start = np.asarray(first.start)[::3]
+    assert np.all((near_start[:, 0] >= 1.8) & (near_start[:, 0] <= 5.5))
+    assert np.all(np.abs(near_start[:, 1]) <= 2.5)
+    assert np.all(np.asarray(scene.clearance(first.start, scene_state=first)) > 0.45)
+    second = scene.sample(jax.random.PRNGKey(21), 12, prior=first)
+    assert np.all(np.asarray(second.episode) == 1)
+    rotated_start = np.asarray(second.start)[2::3]
+    assert np.all((rotated_start[:, 0] >= 1.8) & (rotated_start[:, 0] <= 5.5))
+    assert scene.geometry_hash != ProceduralScene({"max_obstacles": 24}).geometry_hash
+
+
+def test_stratified_start_executes_native_crazyflow_step_under_jit():
+    """Keep the scene sampler compatible with the normal compiled Environment."""
+    from drone_playground.simulation.environment import make_environment
+
+    env = make_environment(
+        task="navigation",
+        scene="train/procedural",
+        num_envs=2,
+        device="cpu",
+        sensor="depth",
+        procedural={"max_obstacles": 6, "start_sampling": "stratified"},
+    )
+    before = env.reset(jax.random.key(7))
+    np.testing.assert_allclose(before.physics.states.pos[:, 0], before.scene_state.start)
+    after = env.step(before, jnp.zeros((2, env.action_size)))
+    assert np.isfinite(np.asarray(after.physics.states.pos)).all()
+
+
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_fixed_validation_cohort_and_stratified_start_experiments_are_paired(kind):
+    """Control and intervention differ only in the train-only start distribution."""
+    from pathlib import Path
+
+    import drone_playground
+
+    root = Path(drone_playground.__file__).parent / "configs"
+    with initialize_config_dir(version_base=None, config_dir=str(root)):
+        control = compose(
+            config_name="config",
+            overrides=[f"experiment=navigation_procedural_{kind}_ppo_validation"],
+        )
+        candidate = compose(
+            config_name="config",
+            overrides=[f"experiment=navigation_procedural_{kind}_ppo_stratified"],
+        )
+    assert control.scene.name == candidate.scene.name == "train/procedural"
+    assert control.learning.algorithm == candidate.learning.algorithm == "ppo"
+    assert control.simulation.procedural.start_sampling == "collision_free"
+    assert candidate.simulation.procedural.start_sampling == "stratified"
+    assert control.benchmark.fixed_checkpoint_seeds is True
+    assert candidate.benchmark.fixed_checkpoint_seeds is True
+    control.simulation.procedural.start_sampling = "stratified"
+    assert control == candidate
+
+
 def test_corridor_and_start_goal_are_collision_free_for_several_seeds():
     """Constructive outside lane remains traversable independently of obstacles."""
     scene = ProceduralScene()

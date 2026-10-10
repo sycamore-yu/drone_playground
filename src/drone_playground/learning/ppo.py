@@ -69,6 +69,24 @@ def advantage_progress_correlation(advantages, progress):
     )
 
 
+def completed_navigation_metrics(done, terms):
+    """Measure actual completed-episode outcomes instead of per-step event density."""
+    completed = jnp.sum(done)
+    denominator = jnp.maximum(completed, 1)
+    return {
+        "navigation_completed_episodes": completed.astype(jnp.float32),
+        "navigation_completed_success_rate": (
+            jnp.sum(terms["navigation_success_fraction"]) / denominator
+        ),
+        "navigation_completed_collision_rate": (
+            jnp.sum(terms["navigation_collision_fraction"]) / denominator
+        ),
+        "navigation_completed_out_of_bounds_rate": (
+            jnp.sum(terms["navigation_out_of_bounds_fraction"]) / denominator
+        ),
+    }
+
+
 def collect_rollout(trainer, state):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
@@ -255,5 +273,7 @@ def update(trainer, state):
     if "mask" in rollout.observations:
         metrics["lidar_valid_fraction"] = rollout.observations["mask"].mean()
     metrics["done_fraction"] = rollout.done.mean()
+    if "navigation_success_fraction" in terms:
+        metrics.update(completed_navigation_metrics(rollout.done, terms))
     metrics["loss"] = metrics["actor_loss"] + metrics["critic_loss"]
     return trainer._finish(state, metrics)

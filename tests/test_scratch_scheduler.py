@@ -170,10 +170,54 @@ def test_adaptive_procedural_candidate_never_switches_to_fixed_scenes(scheduler,
         case = cases[name]
         options, parent = scheduler.adaptive_overrides(case, 9, tmp_path, 0)
         assert parent == 0
-        assert f"experiment={case.experiment}" in options
+        assert f"experiment=navigation_procedural_{case.task}_ppo_validation" in options
         assert not any("navigation_lidar_scratch" in option for option in options)
         assert not any(option.startswith("learning.scene_updates=") for option in options)
         assert "initial_checkpoint=null" in options
+
+
+def test_ppo_candidate_ten_changes_only_start_distribution(scheduler, tmp_path):
+    """The two new scratch PPO trials have an identical optimizer and observation."""
+    case = {case.key: case for case in scheduler.cases("procedural")}["depth_ppo"]
+    control, parent = scheduler.adaptive_overrides(case, 9, tmp_path, 0)
+    assert parent == 0
+    write(
+        tmp_path / ".scheduler/proposals/depth_ppo_s0_trial9.json",
+        {
+            "initial_checkpoint": None,
+            "parent_variant": parent,
+            "command": [
+                "python",
+                "-m",
+                "drone_playground.cli",
+                "mode=train",
+                *control,
+                "seed=0",
+                "output=results/control",
+            ],
+        },
+    )
+    candidate, paired_parent = scheduler.adaptive_overrides(case, 10, tmp_path, 0)
+    assert paired_parent == 9
+    assert candidate[0] == "experiment=navigation_procedural_depth_ppo_stratified"
+    assert control[1:] == candidate[1:]
+
+
+def test_best_screening_score_survives_checkpoint_pruning(scheduler, tmp_path):
+    """Optimizing candidate selection must not forget deleted high-score screens."""
+    run = tmp_path / "depth_ppo_s0_trial3"
+    write(run / "run.json", {"status": "early_stopped", "best_screen_score": 0.0677083333})
+    write(
+        run / "checkpoints/model_002720/screening/report.json",
+        {
+            "complete": True,
+            "reports": {
+                scene: {"task": "navigation", "episodes": 8, "successes": 0, "success_rate": 0.0}
+                for scene in ("S01", "S02", "S03", "D01", "D02", "D03")
+            },
+        },
+    )
+    assert scheduler.best_evaluation_score(run) == pytest.approx(0.0677083333)
 
 
 def test_candidate_four_is_independent_old_motion_ppo_ablation(scheduler):

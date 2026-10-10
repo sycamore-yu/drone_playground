@@ -14,6 +14,7 @@ Example:
 import argparse
 import hashlib
 import json
+import math
 import os
 import random
 import re
@@ -321,6 +322,42 @@ def adaptive_overrides(case, variant, root, seed):
         return options, pilot.get("parent_variant")
     if variant < 9:
         return overrides(case, variant), None
+
+    if (
+        variant in (9, 10)
+        and case.algorithm == "ppo"
+        and case.task in ("depth", "lidar")
+        and "procedural" in case.experiment
+    ):
+        # Paired start-distribution test: keep all optimization settings fixed
+        # between the control and candidate, including PPO network/critic options.
+        if variant == 9:
+            evidence = [
+                (score, previous, proposal)
+                for previous in range(9)
+                if (score := best_evaluation_score(directory(root, case, previous, 0))) is not None
+                and (proposal := read_proposal(directory(root, case, previous, 0))) is not None
+                and not any("_ppo_velocity" in arg for arg in proposal["command"])
+            ]
+            if evidence:
+                _, parent_variant, parent = max(evidence, key=lambda item: (item[0], item[1]))
+                options = parent["command"][3:]
+            else:
+                parent_variant, options = 0, overrides(case, 0)
+        else:
+            parent_variant = 9
+            parent = read_proposal(directory(root, case, 9, 0))
+            if parent is None:
+                raise RuntimeError("Paired PPO trial requires its recorded control proposal")
+            options = parent["command"][3:]
+        options = [
+            arg
+            for arg in options
+            if not arg.startswith(("experiment=", "seed=", "output=")) and arg != "mode=train"
+        ]
+        label = "validation" if variant == 9 else "stratified"
+        options.insert(0, f"experiment=navigation_procedural_{case.task}_ppo_{label}")
+        return options, parent_variant
 
     history = []
     for previous in range(variant):
@@ -641,6 +678,10 @@ def best_evaluation_score(path):
     The score is for tuning, never for declaring C2-C5 acceptance.
     """
     values = []
+    manifest = read_json(path / "run.json") or {}
+    recorded_best = manifest.get("best_screen_score")
+    if isinstance(recorded_best, (float, int)) and math.isfinite(recorded_best):
+        values.append(float(recorded_best))
     reports = list((path / "checkpoints").glob("step-*/report.json"))
     reports.extend((path / "checkpoints").glob("step-*/screening/report.json"))
     reports.extend((path / "checkpoints").glob("model_*/report.json"))
@@ -667,7 +708,20 @@ def best_evaluation_score(path):
                 score *= min(1.0, 0.25 / rmse) if isinstance(rmse, (float, int)) and rmse > 0 else 0
             rates.append(score)
         if rates:
-            values.append(sum(rates) / len(rates))
+            average = sum(rates) / len(rates)
+            if (
+                report_path.parent.name == "screening"
+                and report.get("complete")
+                and all(
+                    item.get("task") == "navigation" and item.get("episodes") == 8
+                    for item in scene_reports.values()
+                )
+            ):
+                # Use the same score that drives navigation Patience. Historical
+                # best screens survive rolling checkpoint retention in run.json.
+                values.append(min(rates) + 0.25 * average)
+            else:
+                values.append(average)
     return max(values) if values else None
 
 

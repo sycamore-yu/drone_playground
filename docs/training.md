@@ -447,3 +447,48 @@ state gradients, incoming-physics decay versus action gradients, exact checkpoin
 continuation, inference equality, and interrupted-save preservation. These tests do not
 establish L3 convergence, L4 GPU throughput, or the 18-cell benchmark acceptance matrix;
 those remain the caller's independent training/evaluation work.
+
+## Procedural PPO: controlled start-distribution comparison
+
+Training uses `train/procedural`: obstacle geometry and movement are independently
+sampled by world and episode. Fixed S01–D03 scenes appear only in checkpoint
+validation and the final benchmark. Historical checkpoint screens varied their
+initialization seed with `evaluation_index`, so scores from different updates were
+measured on different initial-state samples.
+
+The new opt-in `benchmark.fixed_checkpoint_seeds=true` compares every checkpoint
+on the same eight initial states per scene. The screening and full-validation
+seed bases remain separate, and final benchmark seeds retain their independent
+partition. `evaluation_index` continues to identify each report. New runs may
+also set `results.keep_best_screening=true` to retain the best incomplete
+screening checkpoint in addition to the most recent resumable states. Selection
+still requires a passing full validation; a good screening score alone is not
+accepted as a model or frozen benchmark result.
+
+The old `start_sampling=collision_free` mixture places 35% of starts near the
+goal and draws the rest uniformly along the course. It covers nominal
+benchmark starts near x=2 m infrequently. The `stratified` preset divides
+worlds into near-start, uniform, and near-goal cohorts and rotates cohort
+assignments each episode. Collision checking, independent obstacle layouts,
+sensor models, dynamics and goal conditions remain unchanged.
+
+Paired, independently initialized configurations:
+
+| Sensor | Existing start distribution | Balanced start distribution |
+| --- | --- | --- |
+| Depth | `navigation_procedural_depth_ppo_validation` | `navigation_procedural_depth_ppo_stratified` |
+| LiDAR | `navigation_procedural_lidar_ppo_validation` | `navigation_procedural_lidar_ppo_stratified` |
+
+Run each pair with the same seed and training budget, in separate output
+directories; compare fixed-checkpoint screening trajectories and then a held-out
+full validation. Training metrics now include completed-episode counts, success
+rate, collision rate and out-of-bounds rate. They are distinct from per-step
+event frequencies and from checkpoint-validation success rates. Prior runs and
+their checkpoints retain the original seed and start-sampling contracts.
+
+The procedural scratch scheduler reserves PPO candidates 9 and 10 for this
+comparison. Candidate 9 copies the best recorded non-velocity trial's explicit
+optimization settings; candidate 10 reuses candidate 9's settings and changes
+only `simulation.procedural.start_sampling`. Both initialize new Actor/Critic
+weights. Historical `best_screen_score` in `run.json` remains usable for this
+choice after rolling checkpoint cleanup.

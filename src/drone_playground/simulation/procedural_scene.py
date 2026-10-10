@@ -50,8 +50,8 @@ class SceneDistribution:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
             raise ValueError("training_seed must be a nonnegative integer")
-        if self.start_sampling not in ("endpoints", "collision_free"):
-            raise ValueError("start_sampling must be endpoints or collision_free")
+        if self.start_sampling not in ("endpoints", "collision_free", "stratified"):
+            raise ValueError("start_sampling must be endpoints, collision_free or stratified")
 
 
 class ProceduralScene:
@@ -165,27 +165,35 @@ class ProceduralScene:
             goal,
             episodes,
         )
-        if self.distribution.start_sampling == "collision_free":
+        if self.distribution.start_sampling in ("collision_free", "stratified"):
             # The old successful training design used broad reset positions.
             # Reserve some near-goal starts for terminal-reward exploration,
             # but keep most episodes distributed throughout the whole course.
             trial_keys = jax.vmap(lambda key: jax.random.fold_in(key, 731))(keys)
 
-            def candidates(key):
+            def candidates(key, start_group):
                 near_key, coord_key = jax.random.split(key)
-                near = jax.random.bernoulli(near_key, 0.35)
                 coordinates = jax.random.uniform(coord_key, (16, 3))
-                xlow = jnp.where(near, 65.0, 2.0)
+                if self.distribution.start_sampling == "stratified":
+                    # Rotate three equally sized cohorts across episodes:
+                    # nominal benchmark starts, arbitrary starts, and near-goal starts.
+                    xlow = jnp.where(start_group == 0, 1.8, jnp.where(start_group == 2, 65.0, 2.0))
+                    xhigh = jnp.where(start_group == 0, 5.5, 93.0)
+                    half_y = jnp.where(start_group == 0, 2.5, 15.0)
+                else:
+                    near = jax.random.bernoulli(near_key, 0.35)
+                    xlow = jnp.where(near, 65.0, 2.0)
+                    xhigh, half_y = 93.0, 15.0
                 return jnp.stack(
                     [
-                        xlow + (93.0 - xlow) * coordinates[:, 0],
-                        -15.0 + 30.0 * coordinates[:, 1],
+                        xlow + (xhigh - xlow) * coordinates[:, 0],
+                        -half_y + 2.0 * half_y * coordinates[:, 1],
                         1.2 + 4.0 * coordinates[:, 2],
                     ],
                     axis=-1,
                 )
 
-            trial_positions = jax.vmap(candidates)(trial_keys)
+            trial_positions = jax.vmap(candidates)(trial_keys, (indices + episodes) % 3)
             distances = self.clearance(trial_positions, scene_state=scenario)
             valid = (distances > 0.45) & (
                 jnp.linalg.norm(trial_positions - scenario.goal[:, None, :], axis=-1) > 4.0
