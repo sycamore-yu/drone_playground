@@ -162,6 +162,10 @@ def test_task_reward_shaping_overrides_old_learning_parameters():
     task_cost, _, terms = left.objective.cost(
         first, shifted, action, left.objective.initialize_state(1)
     )
+    configured_cost, configured_terms = env.task_reward_components(first, shifted, action)
+    np.testing.assert_allclose(env.cost(first, shifted, action), task_cost, rtol=1e-6)
+    np.testing.assert_allclose(configured_cost, task_cost, rtol=1e-6)
+    np.testing.assert_allclose(configured_terms["progress_reward"], terms["progress_reward"])
     base_cost, _, _ = right.objective.cost(
         first, shifted, action, right.objective.initialize_state(1)
     )

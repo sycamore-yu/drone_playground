@@ -13,10 +13,9 @@ appear in a Task reward implementation.
 - `simulation/task_rewards.py` implements the task cost terms: progress,
   arrival, failure, clearance and height penalties, plus the optional
   older `legacy_motion_navigation_v2` formulation.
-- `NavigationEnv.cost` exposes the same configured task reward to
-  independent evaluation and the optional Brax Environment. The shared
-  `BaseEnv.task_reward_components` interface gives Learning the task cost
-  and named task metrics without inspecting `Task.name`.
+- `BaseEnv.cost` and `BaseEnv.task_reward_components` expose the same
+  Task-configured cost to independent evaluation, Learning and the optional
+  Brax Environment. Task-specific physical cost formulas remain internal.
 - `learning/objective.py` combines those task terms with explicitly
   selected Zhang/Liu perceptual prediction, acceleration and jerk losses.
   Learning algorithms update parameters and estimate advantages; they do
@@ -63,8 +62,9 @@ breaking migration, after their outstanding checkpoints are retired.
 2. A new reward profile must be chosen and recorded as part of the Task
    contract, not inferred from a particular PPO implementation.
 3. Independent `env.cost`, `env.task_reward_components` and
-   `EpisodeObjective.cost` return the same task cost when no auxiliary
-   Learning loss is enabled.
+   `EpisodeObjective.cost` return the same task cost when Task owns all shaping
+   coefficients and no auxiliary Learning loss is enabled. Historical
+   Learning-owned coefficients remain available to restore old training runs.
 4. Validation and training may use the same Task reward with different
    observation/Method/Actor choices; no Task imports anything under
    `learning/`.

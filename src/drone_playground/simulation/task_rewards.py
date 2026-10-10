@@ -80,7 +80,15 @@ def shaped_task_cost(env, before, after, action, shaping):
     options; new Task recipes can own it in their task configuration. This
     function deliberately knows nothing about Actor, Critic or perception.
     """
-    task_cost, task_terms = env.task_reward_components(before, after, action)
+    shaping = {
+        "task_weight": 1.0,
+        "progress_reward_scale": 0.0,
+        "failure_cost": 0.0,
+        "altitude_weight": 0.0,
+        "height_boundary_weight": 0.0,
+        **shaping,
+    }
+    task_cost, task_terms = env._base_task_reward_components(before, after, action)
     progress_reward = jnp.zeros_like(task_cost)
     if shaping["progress_reward_scale"]:
         if env.task.name == "racing":
@@ -119,10 +127,10 @@ def shaped_task_cost(env, before, after, action, shaping):
 
     cost = shaping["task_weight"] * task_cost
     terms = {
-        "task_cost": task_cost,
-        "failure_cost": extra_failure_cost,
-        "height_boundary_cost": height_boundary_cost,
-        "progress_reward": progress_reward,
         **task_terms,
+        "task_cost": task_cost,
+        "failure_cost": extra_failure_cost + task_terms.get("failure_cost", 0.0),
+        "height_boundary_cost": height_boundary_cost + task_terms.get("height_boundary_cost", 0.0),
+        "progress_reward": progress_reward + task_terms.get("progress_reward", 0.0),
     }
     return cost, terms
