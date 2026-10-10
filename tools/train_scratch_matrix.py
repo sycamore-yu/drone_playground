@@ -289,7 +289,10 @@ def adaptive_overrides(case, variant, root, seed):
     base_lr = numeric("learning.options.lr", case.learning_rate)
     chosen_lr = min(0.0015, max(0.00003, base_lr * rng.choice((0.4, 0.65, 0.8, 1.25, 1.6))))
     options.append(f"learning.options.lr={chosen_lr:.8f}")
-    options.append(f"learning.options.horizon={rng.choice((16, 32, 64))}")
+    horizon_space = (
+        (32, 64, 128) if case.task == "racing" and case.algorithm == "shac" else (16, 32, 64)
+    )
+    options.append(f"learning.options.horizon={rng.choice(horizon_space)}")
 
     if case.task == "racing":
         progress = rng.choice((2.0, 4.0, 6.0, 10.0, 15.0))
