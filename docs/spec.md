@@ -207,22 +207,30 @@ Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。**v
 ```text
 results/<run_id>/
   config.yaml
+  events.out.tfevents.*
   run.json
-  metrics.jsonl
   checkpoints/
-    latest.training.zip
-    step-000025/
-      policy.zip
-      report.json
-      episodes.csv
-  eval/001/
-    report.json
-    episodes.csv
-    trajectories.npz    # 按需保存
-    replays/             # 实际生成回放时创建
+    model_000025/
+      training/          # Orbax 训练状态
+      metadata.json
+    model_000050/
+      training/
+      metadata.json
+    model_000075/
+      training/
+      actor/             # 选模成功导出的 Orbax 策略
+      metadata.json
+      screening/         # 可选筛查记录
+      report.json        # 可选完整选模报告
+  episodes.csv           # 正式冻结评测后生成
+  report.json            # 正式冻结评测总表
+  replays/
+    best/                # 开启回放时生成 RScope
 ```
 
-输出真实训练/评测配置、权重、指标、成功和失败案例；回放在需要时记录。训练状态恢复和冻结推理分别保存完整所需参数。
+新训练使用 [ADR-0014](adr/0014-results-layout-orbax-tensorboard.md)；`run.json`
+仅保留训练来源、进度及完成状态，不复制 TensorBoard 指标流，取消 `metrics.jsonl` 与
+`eval/`。回放仅在请求时记录；历史 ZIP 结果不移动或改写。
 
 ## 10. 首发边界
 

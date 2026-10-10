@@ -8,6 +8,8 @@ defaults:
   - benchmark: default
   - _self_
   - optional experiment: null
+  - override hydra/job_logging: disabled
+  - override hydra/hydra_logging: disabled
 
 mode: sim
 seed: 0
@@ -28,8 +30,12 @@ observation:
 checkpoint: null
 initial_checkpoint: null
 resume: null
+results:
+  format: orbax
+  keep_checkpoints: 3
 replay_path: null
 hydra:
+  output_subdir: null
   run:
     dir: ${output}
   job:

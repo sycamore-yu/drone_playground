@@ -80,10 +80,12 @@ Simulation 管任务、场景、传感器、方法、控制执行、冻结策略
 详见 [架构决策](docs/adr/0001-simulation-learning-boundary.md)、
 [训练接口](docs/training.md)、[场景资产](assets/scenes/README.md) 和 [回放](docs/replay.md)。
 
-每次运行写入 `results/<run_id>/`：`config.yaml`、`run.json`、`metrics.jsonl`、
-`checkpoints/step-*/` 内的权重和选模成绩，以及 `eval/<编号>/` 内的报告、回合 CSV
-和按需保存的轨迹、回放。各场景共用一张回合表，不预建空回放目录。
-评测保留所有失败分母；checkpoint evaluation 与 benchmark 使用分离的种子区间。
+新训练的 `results/<run_id>/` 使用 `config.yaml`、TensorBoard
+`events.out.tfevents.*`、Orbax `checkpoints/model_*/`、正式 `episodes.csv`
+及按需生成的 `replays/best/`。保留单个 `run.json` 状态索引和
+`report.json` 成绩索引，但不再重复生成 `metrics.jsonl` 或多层 `eval/`。
+旧 ZIP 训练目录仍按原始布局恢复，不移动正在运行的 checkpoint。
+详见 [ADR-0014](docs/adr/0014-results-layout-orbax-tensorboard.md)。
 
 新增控制器、LOTF/PointMass 反向模型、延迟及随机化的命令见
 [控制模型使用说明](docs/control-models.md)。`method=controller controller=so3` 选择

@@ -24,6 +24,16 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
 
 ## 可训练 Method 与 Brax 互通
 
+### Results v3
+
+新 run 按 [ADR-0014](adr/0014-results-layout-orbax-tensorboard.md) 保存：
+`config.yaml`、TensorBoard 事件、`checkpoints/model_NNNNNN/`（Orbax
+`training/` + 选模通过才有的 `actor/`）、正式冻结 `episodes.csv`
+及按需生成的 `replays/best/`。唯一额外索引 `run.json` 保存完成性、来源和
+所选模型路径。每个模型目录的 `metadata.json` 保存其训练状态来源。
+旧 v2 ZIP 训练归档仍可以按原合同恢复；新 v3 推理加载直接指定
+`checkpoint=results/<run_id>/checkpoints/model_NNNNNN`。
+
 训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
 `method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；
 `PolicyMethod` 默认使用连续 tanh-Gaussian PPO 分布，而 PPO 更新调用

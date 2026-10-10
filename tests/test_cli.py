@@ -212,6 +212,53 @@ def test_three_stage_screening_only_promotes_a_complete_candidate(config, traini
     assert training.record.identity["status"] == "accepted"
 
 
+def test_three_stage_real_results_layout_writes_orbax_and_events(config, training, monkeypatch):
+    """The new run writes Orbax folders and one event stream, not zip/JSONL duplicates."""
+    from drone_playground.simulation.records import RunRecord
+
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.results.format = "orbax"
+    training.stop_at = None
+
+    def evaluate(config, directory, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        if config.mode == "benchmark":
+            (directory / "episodes.csv").write_text("episode,event\n0,SUCCESS\n")
+            (directory / "report.json").write_text('{"mode":"benchmark","passed":true}')
+            return {"passed": True}
+        if config.benchmark.protocol == "diagnostic":
+            return {
+                "complete": True,
+                "reports": {
+                    "empty": {
+                        "episodes": 8,
+                        "successes": 8,
+                        "successful_position_rmse": 0.05,
+                    }
+                },
+            }
+        (directory / "report.json").write_text('{"mode":"checkpoint_eval","passed":true}')
+        return {"passed": True}
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    record = RunRecord(training.record.directory / "orbax", config)
+    cli.train(config, record)
+    assert record.identity["status"] == "accepted"
+    models = sorted((record.directory / "checkpoints").glob("model_*"))
+    assert len(models) == 1
+    assert (models[0] / "training/commit_success.txt").is_file()
+    assert (models[0] / "actor/commit_success.txt").is_file()
+    assert (record.directory / "episodes.csv").is_file()
+    assert list(record.directory.glob("events.out.tfevents.*"))
+    assert not (record.directory / "metrics.jsonl").exists()
+    assert not (record.directory / "eval").exists()
+    assert record.identity["selected_checkpoint"].startswith("checkpoints/model_")
+    assert record.identity["selection"]["full_validation"] == (
+        f"{record.identity['selected_checkpoint']}/report.json"
+    )
+
+
 @pytest.mark.parametrize(
     "task,successes,rmse,expected",
     [

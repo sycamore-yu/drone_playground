@@ -1,8 +1,8 @@
 # ADR-0007：权重与选模成绩同目录，独立评测统一归档
 
-**Status:** Accepted · 2026-10-09
+**Status:** Superseded by [ADR-0014](0014-results-layout-orbax-tensorboard.md) for new runs · 2026-10-10
 
-**Implementation:** 新运行记录、CLI 和验收读取代码已支持本布局。当前程序只处理 v2 产物；历史结果保持只读，不提供兼容性迁移。
+**Implementation:** 本布局只描述 `layout_version=2` 历史产物；新 run 使用 Orbax/TensorBoard v3，原有 ZIP 结果保持只读或由已有进程按原格式续训，不批量迁移。
 
 ## Context
 

@@ -246,7 +246,7 @@ def adaptive_overrides(case, variant, root, seed):
     if variant < 9:
         return overrides(case, variant), None
     if seed > 0:
-        pilot = read_json(directory(root, case, variant, 0) / "proposal.json")
+        pilot = read_proposal(directory(root, case, variant, 0))
         if pilot is None or pilot.get("initial_checkpoint") is not None:
             raise RuntimeError(f"Missing seed-0 recipe for {case.key} candidate {variant}")
         options = [
@@ -262,7 +262,7 @@ def adaptive_overrides(case, variant, root, seed):
         value = best_evaluation_score(p)
         if value is None:
             continue
-        recipe = read_json(p / "proposal.json")
+        recipe = read_proposal(p)
         if recipe is not None:
             history.append((value, previous, recipe))
     history.sort(key=lambda item: (item[0], item[1]), reverse=True)
@@ -384,6 +384,13 @@ def read_json(path):
         return None
 
 
+def read_proposal(path):
+    """Find a trial proposal in the compact scheduler directory or old layout."""
+    return read_json(path.parent / ".scheduler" / "proposals" / f"{path.name}.json") or read_json(
+        path / "proposal.json"
+    )
+
+
 def active_runs(root):
     """Observe actual Python processes, including runs started before this manager."""
     processes = {}
@@ -412,7 +419,8 @@ def last_update(path):
     try:
         lines = path.read_text().splitlines()
     except OSError:
-        return 0
+        header = read_json(path.parent / "run.json") or {}
+        return int(header.get("last_update") or header.get("updates") or 0)
     for line in reversed(lines):
         try:
             data = json.loads(line)
@@ -428,7 +436,9 @@ def consecutive_passes(path):
     try:
         lines = path.read_text().splitlines()
     except OSError:
-        return 0
+        header = read_json(path.parent / "run.json") or {}
+        evaluation = header.get("last_evaluation", {})
+        return int(evaluation.get("consecutive_passes", 0))
     for line in reversed(lines):
         try:
             data = json.loads(line)
@@ -491,16 +501,16 @@ def trial_status(path, running):
                 return "accepted"
             return "invalid"
         if status == "interrupted":
-            proposal = read_json(path / "proposal.json")
+            proposal = read_proposal(path)
             restarts = read_json(path / "restarts.json") or {}
-            archive = path / "checkpoints" / "latest.training.zip"
+            archive = latest_training_checkpoint(path)
             stopped_by_budget = (path / "stop_requested.json").is_file()
             score = best_evaluation_score(path)
             promising = score is not None and score >= 0.65
             if (
                 stopped_by_budget
                 and proposal is not None
-                and archive.is_file()
+                and archive is not None
                 and promising
                 and restarts.get("attempts", 0) < 4
             ):
@@ -511,15 +521,22 @@ def trial_status(path, running):
         if active:
             return "running"
         if status == "running":
-            state_archive = path / "checkpoints" / "latest.training.zip"
-            proposal = read_json(path / "proposal.json")
+            state_archive = latest_training_checkpoint(path)
+            proposal = read_proposal(path)
             restarts = read_json(path / "restarts.json") or {}
-            if state_archive.is_file() and proposal is not None and restarts.get("attempts", 0) < 3:
+            if (
+                state_archive is not None
+                and proposal is not None
+                and restarts.get("attempts", 0) < 3
+            ):
                 return "recoverable"
             return "stale"
     if active:
         return "running"
-    if path.exists() and (path / "console.log").exists():
+    if path.exists() and (
+        (path / "console.log").exists()
+        or (path.parent / ".scheduler" / "logs" / f"{path.name}.log").exists()
+    ):
         return "stale"
     return "missing"
 
@@ -532,6 +549,8 @@ def best_evaluation_score(path):
     values = []
     reports = list((path / "checkpoints").glob("step-*/report.json"))
     reports.extend((path / "checkpoints").glob("step-*/screening/report.json"))
+    reports.extend((path / "checkpoints").glob("model_*/report.json"))
+    reports.extend((path / "checkpoints").glob("model_*/screening/report.json"))
     for report_path in reports:
         report = read_json(report_path)
         if report is None:
@@ -556,6 +575,20 @@ def best_evaluation_score(path):
         if rates:
             values.append(sum(rates) / len(rates))
     return max(values) if values else None
+
+
+def latest_training_checkpoint(path):
+    """Find a complete original zip or newest Orbax training state in this run."""
+    legacy = path / "checkpoints" / "latest.training.zip"
+    if legacy.is_file():
+        return legacy
+    candidates = sorted((path / "checkpoints").glob("model_*/training"), reverse=True)
+    for candidate in candidates:
+        if (candidate / "commit_success.txt").is_file() and (
+            candidate.parent / "metadata.json"
+        ).is_file():
+            return candidate.parent
+    return None
 
 
 def eligible(case, root, running, *, candidates):
@@ -645,10 +678,15 @@ def tmux_launch(project, path, runner, session_name, *, append=False):
         f"JAX_COMPILATION_CACHE_DIR={shlex.quote(str(project / '.cache' / 'jax'))} "
     )
     redirect = ">>" if append else ">"
+    logs = path.parent / ".scheduler" / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    logfile = logs / f"{path.name}.log"
+    if append and (path / "console.log").is_file() and not logfile.is_file():
+        logfile.write_bytes((path / "console.log").read_bytes())
     script = (
         f"cd {shlex.quote(str(project))} && "
         f"{environment}{shlex.join(runner)} "
-        f"{redirect} {shlex.quote(str(path / 'console.log'))} 2>&1"
+        f"{redirect} {shlex.quote(str(logfile))} 2>&1"
     )
     subprocess.run(["tmux", "new-session", "-d", "-s", session_name, script], check=True)
 
@@ -682,7 +720,9 @@ def launch(project, root, python, case, variant, seed):
     ):
         raise RuntimeError(f"Refusing to overwrite tmux session: {name}")
     runner = [str(python), "-m", "drone_playground.cli", *overrides_list]
-    (path / "proposal.json").write_text(
+    proposal_dir = root / ".scheduler" / "proposals"
+    proposal_dir.mkdir(parents=True, exist_ok=True)
+    (proposal_dir / f"{path.name}.json").write_text(
         json.dumps(
             {
                 "task": case.task,
@@ -705,9 +745,9 @@ def launch(project, root, python, case, variant, seed):
 def resume(project, root, case, variant, seed):
     """Restore only the same trial's complete own state after an abnormal stop."""
     path = directory(root, case, variant, seed)
-    proposal = read_json(path / "proposal.json")
-    archive = path / "checkpoints" / "latest.training.zip"
-    if proposal is None or not archive.is_file() or proposal.get("initial_checkpoint") is not None:
+    proposal = read_proposal(path)
+    archive = latest_training_checkpoint(path)
+    if proposal is None or archive is None or proposal.get("initial_checkpoint") is not None:
         raise RuntimeError(f"No valid scratch recovery state for {path}")
     runner = list(proposal["command"])
     if "resume=null" not in runner or "initial_checkpoint=null" not in runner:

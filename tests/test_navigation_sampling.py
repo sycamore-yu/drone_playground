@@ -163,6 +163,7 @@ def test_shared_mixed_recipes(kind, batch, algorithm):
 def test_cli_real_scene_switch_and_exact_midblock_boundary_resume(kind, monkeypatch, tmp_path):
     """Verify cli real scene switch and exact midblock boundary resume."""
     config = recipe(kind)
+    config.results.format = "legacy"
     # Preserve the original reset/sampling semantics independent of the new
     # three-stage screen/validation implementation.
     config.learning.selection = "last_of_first_three_consecutive_passes"

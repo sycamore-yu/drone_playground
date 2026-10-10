@@ -160,6 +160,12 @@ def evaluate(
                         replay_episodes=config.benchmark.replay_episodes,
                         write_tables=False,
                         record_trajectories=False,
+                        replay_directory=(
+                            "replays/best"
+                            if config.mode == "benchmark"
+                            and config.get("results", {}).get("format") == "orbax"
+                            else "replays"
+                        ),
                     )
                     replays.extend(saved["replays"])
             outcomes = Counter(row["event"] for row in scene_rows)

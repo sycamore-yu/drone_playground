@@ -20,10 +20,12 @@
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
 | [0012](adr/0012-rl-environment-and-method-interface.md) | Brax 环境与状态合同、网络／Method／动作解耦，Brax PPO/APG 作为可选对照 |
 | [0013](adr/0013-three-stage-learning-acceptance.md) | 轻量筛查→完整候选选模→独立冻结 Benchmark；旧 run 保留原协议；吞吐测量 |
+| [0014](adr/0014-results-layout-orbax-tensorboard.md) | 新 Results v3：Orbax + TensorBoard；旧 ZIP 训练保留原位置 |
 
-当前 `main` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
-反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究
-证据，不再由当前加载器自动兼容。最近验证状态见[验证记录](validation.md)。
+当前实验分支的新训练使用 Orbax/TensorBoard v3；已有 v2 ZIP 训练按原格式续训，
+不转换正在运行的 checkpoint。配置、控制器、延迟、随机化及反向模型见
+[控制模型说明](control-models.md)。历史结果属于独立研究证据，不能直接视为
+当前训练的收敛证明。
 
 2026-10-09 的数据清理移除了 `results/` 下 **75 个 v1 完整训练归档**（2.19 GiB）；
 **546 个冻结策略归档**、历史验收报告、轨迹与回放仍然保留。这些 v1 冻结策略只作

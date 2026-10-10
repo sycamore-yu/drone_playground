@@ -57,7 +57,13 @@ def screening_passed(report: dict, task: str, primary_scenes: list[str]) -> bool
 
 def train(config: DictConfig, record: RunRecord) -> None:
     """Train under a versioned evaluation contract with one common update lifecycle."""
-    from drone_playground.learning.checkpoint import load_state, save_inference, save_state
+    from drone_playground.learning.checkpoint import (
+        load_model_state,
+        load_state,
+        save_inference,
+        save_model,
+        save_state,
+    )
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
@@ -109,6 +115,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             ):
                 raise ValueError("Checkpoint has invalid training sampling progress")
     kind = config.method.actor.get("kind", "custom")
+    orbax_layout = getattr(record, "layout_version", 2) == 3
     trainers = {}
 
     def trainer_for(index):
@@ -173,7 +180,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
     previous_wall_seconds = 0.0
     pending_evaluation = False
     if config.resume:
-        state, metadata = load_state(config.resume, state)
+        if Path(config.resume).is_dir():
+            state, metadata = load_model_state(config.resume, state)
+        else:
+            state, metadata = load_state(config.resume, state)
         if "initialization" in metadata["config"]:
             identity["initialization"] = metadata["config"]["initialization"]
         previous = metadata["config"]["experiment"]
@@ -260,7 +270,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
         }
 
     def checkpoint(current, *, export_policy=True):
-        nonlocal last_checkpoint_update, last_frozen
+        nonlocal last_checkpoint_update, last_frozen, checkpoint_path
         provenance = {
             **record.identity,
             "updates": int(current.updates),
@@ -274,20 +284,34 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 "scene_index": scene_index,
                 "updates_in_scene": updates_in_scene,
             }
-        save_state(checkpoint_path, current, config=identity, provenance=provenance)
-        last_checkpoint_update = int(current.updates)
-        frozen = (
-            record.directory / "checkpoints" / f"step-{int(current.updates):06d}" / "policy.zip"
-        )
-        if export_policy:
-            save_inference(
+        if orbax_layout:
+            frozen = record.directory / "checkpoints" / f"model_{int(current.updates):06d}"
+            checkpoint_path = frozen
+            save_model(
                 frozen,
-                current.params,
-                kind=kind,
+                current,
                 config=identity,
                 provenance=provenance,
+                kind=kind,
                 actor_spec=trainer.actor.specification,
+                export_policy=export_policy,
             )
+        else:
+            save_state(checkpoint_path, current, config=identity, provenance=provenance)
+            frozen = (
+                record.directory / "checkpoints" / f"step-{int(current.updates):06d}" / "policy.zip"
+            )
+            if export_policy:
+                save_inference(
+                    frozen,
+                    current.params,
+                    kind=kind,
+                    config=identity,
+                    provenance=provenance,
+                    actor_spec=trainer.actor.specification,
+                )
+        last_checkpoint_update = int(current.updates)
+        if export_policy:
             last_frozen = frozen
         return frozen
 
@@ -295,7 +319,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
         nonlocal consecutive, evaluation_index
         update = int(state.updates)
         frozen = checkpoint(state, export_policy=False)
-        directory = frozen.parent
+        directory = frozen if orbax_layout else frozen.parent
         if (
             (directory / "report.json").exists()
             or (directory / "episodes.csv").exists()
@@ -427,7 +451,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
         frozen = (
             last_frozen
             if last_checkpoint_update == int(state.updates) and last_frozen is not None
-            else checkpoint(state)
+            else checkpoint(state, export_policy=not orbax_layout)
         )
         if consecutive < config.learning.required_consecutive_passes:
             record.finish(
@@ -446,11 +470,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "evaluation_index": evaluation_index,
         }
         if not legacy:
+            selected_directory = frozen if orbax_layout else frozen.parent
             record.identity["selection"]["full_validation"] = str(
-                (frozen.parent / "report.json").relative_to(record.directory)
+                (selected_directory / "report.json").relative_to(record.directory)
             )
             record.identity["selection"]["screening"] = str(
-                (frozen.parent / "screening" / "report.json").relative_to(record.directory)
+                (selected_directory / "screening" / "report.json").relative_to(record.directory)
             )
         atomic_json(record.directory / "run.json", record.identity)
         benchmark_config = OmegaConf.create(resolved)
@@ -459,7 +484,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
         benchmark_config.benchmark.episodes = None
         if scenes is not None:
             benchmark_config.benchmark.scenes = None
-        benchmark_directory = next_evaluation_directory(record.directory)
+        benchmark_directory = (
+            record.directory if orbax_layout else next_evaluation_directory(record.directory)
+        )
         report = evaluate(
             benchmark_config,
             benchmark_directory,
@@ -467,7 +494,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             parameters=state.params,
             environments=environments,
         )
-        checkpoint(state)
+        checkpoint(state, export_policy=not orbax_layout)
         record.finish(
             "accepted" if report["passed"] else "frozen_benchmark_failed",
             updates=int(state.updates),
@@ -616,7 +643,11 @@ def main(config: DictConfig) -> None:
                 )
             actor = instantiate(config.method.actor, action_size=requested_action.size)
             actor, parameters, _ = load_policy(config.checkpoint, actor=actor)
-        destination = next_evaluation_directory(record.directory)
+        destination = (
+            record.directory
+            if getattr(record, "layout_version", 2) == 3
+            else next_evaluation_directory(record.directory)
+        )
         report = evaluate(config, destination, actor=actor, parameters=parameters)
         record.finish(
             "completed",

@@ -8,12 +8,15 @@ its static Simulation metadata remains owned by the resolved environment config.
 import hashlib
 import json
 import os
+import re
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
 
 import jax
 import numpy as np
+import orbax.checkpoint as ocp
 from flax import serialization
 
 from drone_playground.simulation.policy import CHECKPOINT_VERSION, read_checkpoint
@@ -119,3 +122,81 @@ def load_inference(path):
         **metadata,
         "params": jax.tree.map(jax.device_put, serialization.msgpack_restore(payload)),
     }
+
+
+def save_model(path, state, *, config, provenance, kind, actor_spec, export_policy=False):
+    """Write a version-three Orbax checkpoint under a model-NNNNNN folder.
+
+    The full training state is saved once per update; the inference actor
+    is exported only when selected. Metadata stays human-readable.
+    """
+    directory = Path(path).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    state_path = directory / "training"
+    if state_path.exists() and not (state_path / "commit_success.txt").is_file():
+        raise ValueError(f"Incomplete Orbax training checkpoint: {state_path}")
+    if not state_path.exists():
+        with ocp.StandardCheckpointer() as checkpointer:
+            checkpointer.save(state_path, state)
+            checkpointer.wait_until_finished()
+    if export_policy and not (directory / "actor").exists():
+        with ocp.StandardCheckpointer() as checkpointer:
+            checkpointer.save(directory / "actor", state.params)
+            checkpointer.wait_until_finished()
+    metadata = {
+        "format_version": 3,
+        "purpose": "model",
+        "config": config,
+        "provenance": provenance,
+        "kind": kind,
+        "actor": actor_spec,
+        "has_inference_actor": (directory / "actor").is_dir(),
+    }
+    descriptor, temporary = tempfile.mkstemp(prefix=".metadata.", dir=directory)
+    try:
+        with os.fdopen(descriptor, "w") as stream:
+            json.dump(metadata, stream, allow_nan=False, sort_keys=True)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, directory / "metadata.json")
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    # Keep the selected actor and a small rolling window of resumable states.
+    # This avoids accumulating a full copy of the large LiDAR sensor history
+    # at every scheduled checkpoint.
+    retention = config.get("experiment", {}).get("results", {}).get("keep_checkpoints", 3)
+    if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
+        raise ValueError("results.keep_checkpoints must be a positive integer")
+    candidates = sorted(
+        (
+            candidate
+            for candidate in directory.parent.iterdir()
+            if candidate.is_dir()
+            and re.fullmatch(r"model_\d{6,}", candidate.name)
+            and (candidate / "training/commit_success.txt").is_file()
+        ),
+        key=lambda candidate: int(candidate.name.split("_")[1]),
+    )
+    keep = set(candidates[-retention:])
+    keep.update(candidate for candidate in candidates if (candidate / "actor").is_dir())
+    for candidate in candidates:
+        if candidate not in keep:
+            shutil.rmtree(candidate)
+    return directory
+
+
+def load_model_state(path, template):
+    """Restore the complete training PyTree into a matching Flax template."""
+    directory = Path(path).resolve()
+    _, metadata = read_checkpoint(directory, "training")
+    with ocp.StandardCheckpointer() as checkpointer:
+        restored = checkpointer.restore(directory / "training", template)
+    if jax.tree.structure(restored) != jax.tree.structure(template):
+        raise ValueError("Orbax training checkpoint structure differs from template")
+    for expected, actual in zip(jax.tree.leaves(template), jax.tree.leaves(restored), strict=True):
+        if np.shape(expected) != np.shape(actual) or getattr(expected, "dtype", None) != getattr(
+            actual, "dtype", None
+        ):
+            raise ValueError("Orbax training checkpoint leaf shape or dtype differs")
+    return restored, metadata

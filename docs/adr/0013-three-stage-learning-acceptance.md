@@ -12,11 +12,11 @@
 
 新训练选模规则为 `learning.selection=first_full_validation_pass`，使用单一训练器与环境：
 
-1. **训练中轻量筛查（screening）**：每次 `learning.evaluation_interval`，只评估 Navigation 六个主场景，各 **8 回合**；Tracking/Racing 评估对应场景 **8 回合**。筛查采用 `diagnostic` 协议，不记作 C2/C3/C4 达标。用于触发正式选模的宽松条件：Navigation 每主场景至少 6/8；Tracking 至少 7/8 且成功回合位置 RMSE ≤0.35 m；Racing 至少 7/8。结果放 `checkpoints/step-*/screening/`。
+1. **训练中轻量筛查（screening）**：每次 `learning.evaluation_interval`，只评估 Navigation 六个主场景，各 **8 回合**；Tracking/Racing 评估对应场景 **8 回合**。筛查采用 `diagnostic` 协议，不记作 C2/C3/C4 达标。用于触发正式选模的宽松条件：Navigation 每主场景至少 6/8；Tracking 至少 7/8 且成功回合位置 RMSE ≤0.35 m；Racing 至少 7/8。新运行的筛查记录放在 `checkpoints/model_*/screening/`；v2 历史 run 仍在 `checkpoints/step-*/screening/`。
 2. **完整候选选模（checkpoint validation）**：只对通过筛查的候选执行一次完整检查：Navigation 六个主场景各 **25 回合**；Tracking/Racing 各 **100 回合**。继续使用 C2/C3/C4 的硬门槛。筛查与正式选模采用不同的随机种子基段：筛查 `1_000_000`，完整选模 `1_500_000`；二者均区别于训练随机种子。首次完整通过者作为固定的候选权重，不要求连续三次完整评测。
 3. **独立冻结 Benchmark**：停止更新，固定上述候选，以 **≥2_000_000** 的独立种子基段做一次正式冻结评测。Navigation 六个主场景各 25 回合，另对 S06/D06 各 25 回合完整记录（扩展场景不作 C4 门槛）；Tracking/Racing 各 100 回合。最终是否通过仍由 C2/C3/C4 逐场景硬阈值决定。冻结 Benchmark 失败不反复使用相同测试集来挑选权重，应另开具名新训练试验。
 
-单一 run 的检查点仅保留一个完整训练状态 `latest.training.zip`；候选选模及冻结评测记录分别保存。首次正式通过的权重导出到所属 step 目录；不为每次筛查复制策略归档。筛查与完整选模可在同一次训练更新后连续发生，但不能共用评测种子。
+新 v3 run 的 `checkpoints/model_NNNNNN/training/` 使用 Orbax 保存完整训练状态，在该模型首次正式通过时向其 `actor/` 导出推理策略，详见 [ADR-0014](0014-results-layout-orbax-tensorboard.md)。历史 run 保留 `latest.training.zip`，不为每次筛查复制推理策略归档。筛查与完整选模可在同一次训练更新后连续发生，但不能共用评测种子。
 
 ## Migration of running experiments
 
