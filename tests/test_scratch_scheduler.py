@@ -163,6 +163,19 @@ def test_procedural_racing_uses_separate_stable_recipes(scheduler):
     assert jobs["racing_shac"].learning_rate == 0.0001
 
 
+def test_adaptive_procedural_candidate_never_switches_to_fixed_scenes(scheduler, tmp_path):
+    """After nine failures, train on procedural maps, not benchmark geometry."""
+    cases = {case.key: case for case in scheduler.cases("procedural")}
+    for name in ("lidar_ppo", "depth_ppo"):
+        case = cases[name]
+        options, parent = scheduler.adaptive_overrides(case, 9, tmp_path, 0)
+        assert parent == 0
+        assert f"experiment={case.experiment}" in options
+        assert not any("navigation_lidar_scratch" in option for option in options)
+        assert not any(option.startswith("learning.scene_updates=") for option in options)
+        assert "initial_checkpoint=null" in options
+
+
 def test_selected_procedural_queue_is_smaller_and_stable(scheduler, tmp_path):
     """Queue priority and comparison contracts are versioned separately."""
     selected = ("depth_ppo", "lidar_ppo", "racing_shac", "racing_ppo")

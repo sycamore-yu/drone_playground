@@ -328,7 +328,9 @@ def adaptive_overrides(case, variant, root, seed):
     else:
         parent_variant = 0
         options = overrides(case, 0)
-    if case.task == "lidar":
+    # Never leak fixed benchmark geometry into the procedural training pool.
+    # The legacy sparse LiDAR preset belongs exclusively to fixed-map runs.
+    if case.task == "lidar" and "procedural" not in case.experiment:
         sparse = (
             "navigation_lidar_scratch_ppo_asymmetric_sparse"
             if case.algorithm == "ppo"
@@ -367,7 +369,11 @@ def adaptive_overrides(case, variant, root, seed):
                 f"++learning.options.progress_reward_scale={rng.choice((0.25, 0.5, 1.0, 2.0))}",
                 f"++learning.options.height_boundary_weight={rng.choice((0.5, 1.0, 2.0, 4.0))}",
                 f"learning.options.perception_weight={rng.choice((0.25, 0.5, 0.75, 1.0))}",
-                f"learning.scene_updates={rng.choice((20, 40, 80))}",
+                *(
+                    [f"learning.scene_updates={rng.choice((20, 40, 80))}"]
+                    if "procedural" not in case.experiment
+                    else []
+                ),
             ]
         )
         if rng.random() < 0.75:
