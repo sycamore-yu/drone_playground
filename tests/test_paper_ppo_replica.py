@@ -1,6 +1,7 @@
 """Paper-policy contracts and safe long-distance training population."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import jax
 import jax.numpy as jnp
@@ -8,6 +9,8 @@ import numpy as np
 import pytest
 from hydra import compose, initialize_config_dir
 
+from drone_playground.simulation.environment import BaseEnv
+from drone_playground.simulation.methods import Action
 from drone_playground.simulation.networks import Actor, Critic
 from drone_playground.simulation.paper_fan_lidar import (
     clear_done_histories,
@@ -31,6 +34,52 @@ def test_fan_range_minimum_mask_history():
     assert history.shape == (1, 36, 36)
     np.testing.assert_array_equal(history[0, 0], features[0])
     np.testing.assert_array_equal(clear_done_histories(history, jnp.array([True])), 1)
+
+
+@pytest.mark.parametrize("configuration", [{"fan_lidar": {}}, {"visfly": True}])
+def test_paper_observation_broadcasts_static_fixed_scene_goal(configuration):
+    """Fixed scenes expose one [3] goal; a paper Actor still receives [B,*] inputs."""
+    batch = 8
+    orientation = jnp.tile(jnp.array([0.0, 0.0, 0.0, 1.0]), (batch, 1))
+    physics = SimpleNamespace(
+        states=SimpleNamespace(
+            pos=jnp.zeros((batch, 1, 3)),
+            vel=jnp.zeros((batch, 1, 3)),
+            quat=orientation[:, None, :],
+            ang_vel=jnp.zeros((batch, 1, 3)),
+        )
+    )
+    state = SimpleNamespace(
+        physics=physics,
+        previous_action=jnp.zeros((batch, 2)),
+    )
+    env = SimpleNamespace(
+        sensor=None,
+        observation_config=configuration,
+        _observe_state=lambda _: {"state": jnp.zeros((batch, 10))},
+        goal_for=lambda _: jnp.array([98.0, 0.0, 3.0]),
+    )
+    observation = BaseEnv._observe(env, state)
+    if "fan_lidar" in configuration:
+        assert observation["fan_command"].shape == (batch, 2)
+        np.testing.assert_allclose(observation["fan_command"][:, 0], 98.0)
+        mock_controller = SimpleNamespace(acceleration=lambda _, acceleration, yaw: acceleration)
+        action = SimpleNamespace(
+            level="horizontal_acceleration",
+            heading="fixed",
+            _acceleration=mock_controller,
+        )
+        setpoint = Action.setpoint(
+            action,
+            physics,
+            jnp.zeros((batch, 2)),
+            jnp.array([98.0, 0.0, 3.0]),
+        )
+        assert setpoint.shape == (batch, 3)
+        np.testing.assert_allclose(setpoint[:, 2], 3.0)
+    else:
+        assert observation["visfly_target"].shape == (batch, 3)
+        np.testing.assert_allclose(observation["visfly_target"][:, 0], 98.0)
 
 
 @pytest.mark.parametrize(("kind", "action_size"), [("fan_lidar", 2), ("visfly_depth", 4)])

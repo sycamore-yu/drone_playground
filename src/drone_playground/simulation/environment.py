@@ -469,7 +469,8 @@ class BaseEnv:
             observation["fan_state"] = jnp.concatenate(
                 [physics.vel[:, 0, :2], state.previous_action[:, :2] * 6.0], axis=-1
             )
-            observation["fan_command"] = self.goal_for(state)[:, :2] - physics.pos[:, 0, :2]
+            goal = jnp.broadcast_to(self.goal_for(state), physics.pos[:, 0].shape)
+            observation["fan_command"] = goal[:, :2] - physics.pos[:, 0, :2]
         if self.observation_config.get("visfly", False):
             physics = state.physics.states
             observation["visfly_state"] = jnp.concatenate(
@@ -481,7 +482,9 @@ class BaseEnv:
                 ],
                 axis=-1,
             )
-            observation["visfly_target"] = self.goal_for(state)
+            observation["visfly_target"] = jnp.broadcast_to(
+                self.goal_for(state), physics.pos[:, 0].shape
+            )
         return observation
 
     def observe_privileged(self, state: EnvState) -> Array:

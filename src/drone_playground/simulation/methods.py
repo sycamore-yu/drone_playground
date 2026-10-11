@@ -252,6 +252,7 @@ class Action:
                 raise ValueError(
                     "Horizontal acceleration needs a target altitude for stabilization"
                 )
+            target = jnp.broadcast_to(target, physics.states.pos[:, 0].shape)
             altitude_error = target[:, 2] - physics.states.pos[:, 0, 2]
             vertical_speed = physics.states.vel[:, 0, 2]
             z_acceleration = jnp.clip(2.0 * altitude_error - 1.5 * vertical_speed, -3.0, 3.0)
