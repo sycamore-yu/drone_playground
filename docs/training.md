@@ -464,6 +464,9 @@ also set `results.keep_best_screening=true` to retain the best incomplete
 screening checkpoint in addition to the most recent resumable states. Selection
 still requires a passing full validation; a good screening score alone is not
 accepted as a model or frozen benchmark result.
+With Orbax, ordinary periodic checkpoints save resumable state without exporting
+an inference Actor. This lets retention prune unselected checkpoints while
+keeping the best screening checkpoint and any accepted Actor.
 
 The old `start_sampling=collision_free` mixture places 35% of starts near the
 goal and draws the rest uniformly along the course. It covers nominal

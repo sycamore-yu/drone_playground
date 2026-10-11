@@ -286,7 +286,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "interactions_per_second": interactions / elapsed if elapsed > 0 else 0.0,
         }
 
-    def checkpoint(current, *, export_policy=True):
+    def checkpoint(current, *, export_policy=legacy):
         nonlocal last_checkpoint_update, last_frozen, checkpoint_path
         provenance = {
             **record.identity,
