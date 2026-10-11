@@ -73,7 +73,7 @@ def completed_navigation_metrics(done, terms):
     """Measure actual completed-episode outcomes instead of per-step event density."""
     completed = jnp.sum(done)
     denominator = jnp.maximum(completed, 1)
-    return {
+    results = {
         "navigation_completed_episodes": completed.astype(jnp.float32),
         "navigation_completed_success_rate": (
             jnp.sum(terms["navigation_success_fraction"]) / denominator
@@ -85,6 +85,22 @@ def completed_navigation_metrics(done, terms):
             jnp.sum(terms["navigation_out_of_bounds_fraction"]) / denominator
         ),
     }
+    if "navigation_timeout_fraction" in terms:
+        results["navigation_completed_timeout_rate"] = (
+            jnp.sum(terms["navigation_timeout_fraction"]) / denominator
+        )
+        results["navigation_completed_numerical_failure_rate"] = (
+            jnp.sum(terms["navigation_numerical_failure_fraction"]) / denominator
+        )
+        successes = jnp.sum(terms["navigation_success_fraction"])
+        results["navigation_completed_successes"] = successes
+        results["navigation_success_mean_flight_seconds"] = jnp.sum(
+            terms["navigation_success_flight_seconds"]
+        ) / jnp.maximum(successes, 1)
+        results["navigation_completed_min_clearance_mean_metres"] = (
+            jnp.sum(terms["navigation_episode_min_clearance_metres"]) / denominator
+        )
+    return results
 
 
 def collect_rollout(trainer, state):
@@ -118,6 +134,22 @@ def collect_rollout(trainer, state):
                 "navigation_success_fraction": (
                     (after.task.event == Event.SUCCESS) & ~env_state.done
                 ).astype(jnp.float32),
+                "navigation_timeout_fraction": (
+                    (after.task.event == Event.TIMEOUT) & ~env_state.done
+                ).astype(jnp.float32),
+                "navigation_numerical_failure_fraction": (
+                    (after.task.event == Event.NUMERICAL_FAILURE) & ~env_state.done
+                ).astype(jnp.float32),
+                "navigation_success_flight_seconds": jnp.where(
+                    (after.task.event == Event.SUCCESS) & ~env_state.done,
+                    after.time,
+                    0.0,
+                ),
+                "navigation_episode_min_clearance_metres": jnp.where(
+                    after.done & ~env_state.done,
+                    after.task.min_clearance,
+                    0.0,
+                ),
             }
         value = trainer.critic.apply(state.critic_params, observation)
         next_value = trainer.critic.apply(state.critic_params, trainer._observe(after))
