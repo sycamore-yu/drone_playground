@@ -230,6 +230,30 @@ def test_ppo_paired_presets_accept_saved_critic_override(sensor, variant):
     )
 
 
+def test_failed_preflight_keeps_candidate_directory_unclaimed(scheduler, tmp_path, monkeypatch):
+    """Hydra errors must not permanently consume an empty scratch trial."""
+    import subprocess
+
+    case = {case.key: case for case in scheduler.cases("procedural")}["depth_ppo"]
+    monkeypatch.setattr(
+        scheduler, "adaptive_overrides", lambda *_: (["learning.options.missing_key=1"], None)
+    )
+
+    def process(command, **kwargs):
+        if command[0] == "tmux":
+            return subprocess.CompletedProcess(command, 1)
+        assert command[3:5] == ["--cfg", "job"]
+        return subprocess.CompletedProcess(command, 1, stdout="", stderr="Hydra composition failed")
+
+    monkeypatch.setattr(scheduler.subprocess, "run", process)
+    project = tmp_path / "project"
+    project.mkdir()
+    with pytest.raises(ValueError, match="Hydra composition failed"):
+        scheduler.launch(project, tmp_path, Path("/usr/bin/python3"), case, 9, 0)
+    assert not (tmp_path / "depth_ppo_s0_trial9").exists()
+    assert not (tmp_path / ".scheduler").exists()
+
+
 def test_best_screening_score_survives_checkpoint_pruning(scheduler, tmp_path):
     """Optimizing candidate selection must not forget deleted high-score screens."""
     run = tmp_path / "depth_ppo_s0_trial3"

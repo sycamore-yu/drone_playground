@@ -856,7 +856,6 @@ def launch(project, root, python, case, variant, seed):
     path = directory(root, case, variant, seed)
     if path.exists():
         raise RuntimeError(f"Refusing to reuse an existing training directory: {path}")
-    path.mkdir(parents=True)
     suggested, parent_variant = adaptive_overrides(case, variant, root, seed)
     # Training hyperparameters stay identical to the accepted earlier seeds,
     # but a NEW independently initialized seed uses the current checkpoint
@@ -874,7 +873,25 @@ def launch(project, root, python, case, variant, seed):
         == 0
     ):
         raise RuntimeError(f"Refusing to overwrite tmux session: {name}")
+    # Hydra's composition contract must succeed before creating a run or
+    # consuming a trial number. --cfg never enters main() or starts training.
+    preflight = subprocess.run(
+        [str(python), "-m", "drone_playground.cli", "--cfg", "job", *overrides_list],
+        cwd=project,
+        env={
+            **os.environ,
+            "SCIPY_ARRAY_API": "1",
+            "JAX_PLATFORMS": "cpu",
+            "PYTHONPATH": "src",
+        },
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if preflight.returncode:
+        raise ValueError(f"Invalid trial {path.name}: {preflight.stderr[-3000:]}")
     runner = [str(python), "-m", "drone_playground.cli", *overrides_list]
+    path.mkdir(parents=True)
     proposal_dir = root / ".scheduler" / "proposals"
     proposal_dir.mkdir(parents=True, exist_ok=True)
     (proposal_dir / f"{path.name}.json").write_text(
