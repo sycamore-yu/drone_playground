@@ -17,7 +17,12 @@ import jax
 import jax.numpy as jnp
 from flax import linen as nn
 
-from drone_playground.simulation.paper_policies import FanPolicy, VisFlyPolicy, VisFlyValue
+from drone_playground.simulation.paper_policies import (
+    FanPolicy,
+    FanValue,
+    VisFlyPolicy,
+    VisFlyValue,
+)
 
 
 def reset_actor_memory(memory, done):
@@ -64,6 +69,7 @@ class Actor(nn.Module):
     kind: Literal["state", "depth", "lidar", "fan_lidar", "visfly_depth"] = "state"
     action_size: int = 4
     hidden_size: int = 192
+    initialization: str = "legacy"
 
     def initialize_memory(self, batch: int) -> jax.Array:
         """Return actor-owned recurrent state; the state MLP needs no memory."""
@@ -73,7 +79,14 @@ class Actor(nn.Module):
     @property
     def specification(self) -> dict:
         """Describe network dimensions independently from the sensor and action units."""
-        return {"kind": self.kind, "action_size": self.action_size, "hidden_size": self.hidden_size}
+        specification = {
+            "kind": self.kind,
+            "action_size": self.action_size,
+            "hidden_size": self.hidden_size,
+        }
+        if self.initialization != "legacy":
+            specification["initialization"] = self.initialization
+        return specification
 
     @nn.compact
     def __call__(
@@ -82,6 +95,10 @@ class Actor(nn.Module):
         """Compute raw actions, recurrent memory and auxiliary velocity."""
         if self.kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth"):
             raise ValueError(f"Unknown actor kind: {self.kind!r}")
+        if self.initialization not in {"legacy", "pytorch"} or (
+            self.initialization != "legacy" and self.kind != "visfly_depth"
+        ):
+            raise ValueError("PyTorch initialization is supported for the VisFly port only")
         state = obs["state"]
         if self.action_size < 1 or self.hidden_size < 1:
             raise ValueError("Network output and hidden sizes must be positive")
@@ -96,7 +113,13 @@ class Actor(nn.Module):
         if self.kind == "fan_lidar":
             return FanPolicy(self.action_size, name="fan_policy")(obs), memory, aux_velocity
         if self.kind == "visfly_depth":
-            return VisFlyPolicy(self.action_size, name="visfly_policy")(obs), memory, aux_velocity
+            return (
+                VisFlyPolicy(
+                    self.action_size, initialization=self.initialization, name="visfly_policy"
+                )(obs),
+                memory,
+                aux_velocity,
+            )
 
         slope = 0.05 if self.kind == "depth" else 0.01
         if self.kind == "depth":
@@ -174,7 +197,8 @@ class Critic(nn.Module):
     Privileged mode consumes only the explicit training-only state vector.
     """
 
-    kind: Literal["state", "depth", "lidar", "privileged", "visfly_depth"] = "state"
+    kind: Literal["state", "depth", "lidar", "privileged", "visfly_depth", "fan_lidar"] = "state"
+    initialization: str = "legacy"
 
     @nn.compact
     def __call__(self, obs: jax.Array | Mapping[str, jax.Array]) -> jax.Array:
@@ -182,7 +206,9 @@ class Critic(nn.Module):
         if self.kind == "visfly_depth":
             if not isinstance(obs, Mapping):
                 raise ValueError("VisFly value network requires visual observation mapping")
-            return VisFlyValue(name="visfly_value")(obs)
+            return VisFlyValue(initialization=self.initialization, name="visfly_value")(obs)
+        if self.kind == "fan_lidar":
+            return FanValue(name="fan_value")(obs)
         key = "privileged_state" if self.kind == "privileged" else "state"
         state = obs[key] if isinstance(obs, Mapping) else obs
         if state.ndim != 2:

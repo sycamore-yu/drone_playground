@@ -6,8 +6,26 @@ VisFly branches follow official 6/12/18 CNN + 128 feature, state/target
 128/64 MLP, and 64/64 PPO heads.
 """
 
+import math
+
+import jax
 import jax.numpy as jnp
 from flax import linen as nn
+
+
+def _torch_initializers(fan_in):
+    """Match torch Linear/Conv reset_parameters with a=sqrt(5), including bias."""
+    bound = 1.0 / math.sqrt(fan_in)
+
+    def initialize(key, shape, dtype=jnp.float32):
+        return jax.random.uniform(key, shape, dtype, minval=-bound, maxval=bound)
+
+    return {"kernel_init": initialize, "bias_init": initialize}
+
+
+def _visfly_dense(x, width, initialization, name=None):
+    kwargs = _torch_initializers(x.shape[-1]) if initialization == "pytorch" else {}
+    return nn.Dense(width, name=name, **kwargs)(x)
 
 
 class _FanResidual(nn.Module):
@@ -66,8 +84,22 @@ class FanPolicy(nn.Module):
         return nn.Dense(2, kernel_init=nn.initializers.orthogonal(0.01))(x)
 
 
+class FanValue(nn.Module):
+    """Reconstructed critic with the same observation access as the Fan actor."""
+
+    @nn.compact
+    def __call__(self, obs):
+        """Include goal distance and obstacle history in the learned value."""
+        x = FanFeatures()(obs)
+        for width in (128, 64):
+            x = nn.relu(nn.Dense(width)(x))
+        return nn.Dense(1)(x)[..., 0]
+
+
 class VisFlyFeatures(nn.Module):
     """Official VisFly cluttered_flight StateTargetImageExtractor (Flax port)."""
+
+    initialization: str = "legacy"
 
     @nn.compact
     def __call__(self, obs):
@@ -82,13 +114,24 @@ class VisFlyFeatures(nn.Module):
             raise ValueError("VisFly state=13 and absolute target=3")
         depth = jnp.where(jnp.isfinite(depth), depth, 0.0)
         for index, (width, kernel) in enumerate(((6, 5), (12, 3), (18, 3))):
-            depth = nn.relu(
-                nn.Conv(width, (kernel, kernel), padding="VALID", name=f"conv_{index}")(depth)
+            kwargs = (
+                _torch_initializers(kernel * kernel * depth.shape[-1])
+                if (self.initialization == "pytorch")
+                else {}
             )
-        image = nn.relu(nn.Dense(128, name="depth_projection")(depth.reshape(batch, -1)))
+            depth = nn.relu(
+                nn.Conv(width, (kernel, kernel), padding="VALID", name=f"conv_{index}", **kwargs)(
+                    depth
+                )
+            )
+        image = nn.relu(
+            _visfly_dense(depth.reshape(batch, -1), 128, self.initialization, "depth_projection")
+        )
         for prefix, branch in (("state", state), ("target", target)):
             for index, width in enumerate((128, 64)):
-                branch = nn.relu(nn.Dense(width, name=f"{prefix}_{index}")(branch))
+                branch = nn.relu(
+                    _visfly_dense(branch, width, self.initialization, f"{prefix}_{index}")
+                )
             if prefix == "state":
                 state_features = branch
             else:
@@ -100,25 +143,28 @@ class VisFlyPolicy(nn.Module):
     """SB3-style feedforward policy network for 4D body-rate control."""
 
     action_size: int
+    initialization: str = "legacy"
 
     @nn.compact
     def __call__(self, obs):
         """Encode the named paper observation into its policy or value features."""
         if self.action_size != 4:
             raise ValueError("VisFly cluttered_flight uses four body-rate controls")
-        x = VisFlyFeatures()(obs)
+        x = VisFlyFeatures(initialization=self.initialization)(obs)
         for width in (64, 64):
-            x = nn.relu(nn.Dense(width)(x))
-        return nn.Dense(self.action_size)(x)
+            x = nn.relu(_visfly_dense(x, width, self.initialization))
+        return _visfly_dense(x, self.action_size, self.initialization)
 
 
 class VisFlyValue(nn.Module):
     """Independent value branch with official-style sensor/state/target features."""
 
+    initialization: str = "legacy"
+
     @nn.compact
     def __call__(self, obs):
         """Encode the named paper observation into its policy or value features."""
-        x = VisFlyFeatures()(obs)
+        x = VisFlyFeatures(initialization=self.initialization)(obs)
         for width in (64, 64):
-            x = nn.relu(nn.Dense(width)(x))
-        return nn.Dense(1)(x)[..., 0]
+            x = nn.relu(_visfly_dense(x, width, self.initialization))
+        return _visfly_dense(x, 1, self.initialization)[..., 0]

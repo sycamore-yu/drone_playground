@@ -13,6 +13,7 @@ from drone_playground.simulation.paper_fan_lidar import (
     empty_history,
     encode_range_ring,
     push_history,
+    push_point_window,
 )
 from drone_playground.simulation.sensors import (
     Measurement,
@@ -38,7 +39,7 @@ class ObservationState:
     pending_points: jax.Array | None = None
     pending_poses: jax.Array | None = None
     pending_valid: jax.Array | None = None
-    paper_fan_history: jax.Array | None = None
+    paper_fan_history: jax.Array | dict | None = None
 
 
 class SensorObservation:
@@ -124,6 +125,13 @@ class SensorObservation:
                 batch, frames=self.paper_fan.history_frames, sectors=self.paper_fan.sectors
             )
         )
+        if self.paper_fan is not None and self.paper_fan.raw_history_frames > 1:
+            shape = (batch, self.paper_fan.raw_history_frames, self.captured_points)
+            fan_history = {
+                "ranges": fan_history,
+                "points_world": jnp.zeros((*shape, 3)),
+                "mask": jnp.zeros(shape, bool),
+            }
         if high == 0:
             return ObservationState(
                 measurement,
@@ -274,6 +282,30 @@ class SensorObservation:
                 # points_at_completion has already been motion-deskewed to frame end.
                 quaternion = result.acquisition_pose[:, 3:]
                 body_to_world = Rotation.from_quat(quaternion).as_matrix()
+                if self.paper_fan.raw_history_frames > 1:
+                    old = state.paper_fan_history
+                    position = result.acquisition_pose[:, :3]
+                    world_points = (
+                        jnp.einsum("bij,bnj->bni", body_to_world, result.points_at_completion)
+                        + position[:, None]
+                    )
+                    points, masks = push_point_window(
+                        old["points_world"], old["mask"], world_points, result.measurement.mask
+                    )
+                    relative = points.reshape(len(time), -1, 3) - position[:, None]
+                    ring = encode_range_ring(
+                        relative,
+                        masks.reshape(len(time), -1),
+                        sectors=self.paper_fan.sectors,
+                        max_range_m=self.paper_fan.max_range_m,
+                        half_height_m=self.paper_fan.half_height_m,
+                    )
+                    updated = {
+                        "ranges": push_history(old["ranges"], ring),
+                        "points_world": points,
+                        "mask": masks,
+                    }
+                    return jax.tree.map(choose, old, updated)
                 ring = encode_range_ring(
                     result.points_at_completion,
                     result.measurement.mask,
@@ -313,8 +345,13 @@ class SensorObservation:
         if self.ray_sampling != "policy":
             measurement = reduce_points(measurement, self.point_count)
         if self.paper_fan is not None:
+            ranges = (
+                state.paper_fan_history["ranges"]
+                if self.paper_fan.raw_history_frames > 1
+                else state.paper_fan_history
+            )
             return {
-                "fan_map": state.paper_fan_history[..., None],
+                "fan_map": ranges[..., None],
                 "acquisition_time": measurement.acquisition_time,
             }
         return {

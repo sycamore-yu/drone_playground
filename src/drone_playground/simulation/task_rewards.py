@@ -8,7 +8,197 @@ auxiliary losses remain under learning/.
 import jax
 import jax.numpy as jnp
 
+from drone_playground.simulation.scene import _distance, _norm
 from drone_playground.simulation.tasks import Event
+
+
+def visfly_reward_terms(
+    *,
+    position,
+    target,
+    velocity,
+    quaternion,
+    angular_velocity,
+    direction,
+    clearance,
+    collision_vector,
+    success,
+    step_count,
+    max_episode_steps,
+):
+    """Port VisFly NavigationEnv.get_reward at 6ff29bf, without extra shaping.
+
+    Quaternion is wxyz. Inputs are metres, m/s and rad/s. This is a reward
+    per decision, exactly as in the upstream source, not a dt-scaled cost.
+    """
+    delta = target - position
+    distance, speed = _norm(delta), _norm(velocity)
+    cosine = jnp.sum(direction * velocity, axis=-1) / (speed + 1e-6)
+    angle = jnp.arccos(jnp.clip(cosine, -1.0, 1.0))
+    terms = {
+        "target_velocity": 0.01
+        * jnp.minimum(jnp.sum(velocity * delta, axis=-1) / (distance + 1e-6), 10.0),
+        "view": -0.01 * jax.nn.relu(angle - jnp.pi / 18),
+        "orientation": -0.00001 * _norm(quaternion - jnp.array([1.0, 0.0, 0.0, 0.0])),
+        "speed": -0.002 * speed,
+        "angular_velocity": -0.002 * _norm(angular_velocity),
+        "clearance": -0.01 / (clearance + 0.2),
+        "approach": -0.005
+        * jax.nn.relu(1.0 - clearance)
+        * jax.nn.relu(jnp.sum(collision_vector * velocity, axis=-1) / (clearance + 1e-6)),
+        "success": success
+        * jnp.maximum(max_episode_steps - step_count, 0.0)
+        * 0.1
+        * (0.2 + 0.8 / (1.0 + speed)),
+    }
+    return sum(terms.values()), terms
+
+
+def fan_reward_terms(
+    *,
+    previous_distance,
+    distance,
+    velocity,
+    acceleration,
+    previous_acceleration,
+    static_clearance,
+    dynamic_clearance,
+    obstacle_to_drone,
+    obstacle_velocity,
+    dynamic_mask,
+    collision,
+    weights,
+    min_speed,
+    max_speed,
+    safe_distance,
+    hover_distance,
+):
+    """Evaluate Fan 2025 equations 5--16 with explicitly supplied weight hypotheses.
+
+    Numeric reward weights are not published in the paper. Dynamic obstacle
+    velocity and nearest surface distances are training-only geometry inputs.
+    """
+    speed = _norm(velocity)
+    obstacle_speed = _norm(obstacle_velocity)
+    displacement = _norm(obstacle_to_drone)
+    direction = obstacle_velocity / jnp.maximum(obstacle_speed[..., None], 1e-6)
+    along = jnp.sum(obstacle_to_drone * direction, axis=-1)
+    cosine = along / jnp.maximum(displacement, 1e-6)
+    # The value at parallel directions is exact; reward is not differentiated
+    # through true obstacle velocity by PPO.
+    theta = jnp.arccos(jnp.clip(cosine, -1.0, 1.0))
+    line_clearance = _norm(obstacle_to_drone - along[..., None] * direction)
+    dilation = 1.0 + obstacle_speed * jax.nn.relu(1.0 - 2.0 * theta / jnp.pi) * jnp.exp(
+        1.0 / (1.0 + line_clearance)
+    )
+    effective_distance = jnp.where(dynamic_mask, dynamic_clearance / dilation, jnp.inf)
+    dynamic_cost = jnp.sum(jnp.expm1(jax.nn.relu(safe_distance - effective_distance)), -1)
+    static_cost = jnp.expm1(jax.nn.relu(safe_distance - static_clearance))
+    velocity_cost = jnp.expm1(jax.nn.relu(speed - max_speed)) + jnp.expm1(
+        jax.nn.relu(min_speed - speed)
+    )
+    terms = {
+        "alive": weights["alive"] * (~collision),
+        "acceleration": -weights["acceleration"] * _norm(acceleration),
+        "velocity": -weights["velocity"] * velocity_cost,
+        "distance": -weights["distance"] * distance,
+        "progress": -weights["progress"] * jnp.expm1(distance - previous_distance),
+        "jerk": -weights["jerk"] * jnp.expm1(_norm(acceleration - previous_acceleration)),
+        "obstacle": -weights["obstacle"] * (static_cost + dynamic_cost),
+        "hover": weights["hover"] * jnp.expm1(jax.nn.relu(hover_distance - distance)),
+        "collision": -weights["collision"] * collision,
+    }
+    return sum(terms.values()), terms
+
+
+def obstacle_reward_geometry(env, after):
+    """Obtain per-object distances and velocities from the same collision geometry."""
+    position = after.physics.states.pos[:, 0]
+    if after.scene_state is not None:
+        state = after.scene_state
+        centers, velocities = jax.jvp(
+            lambda t: env.scene._centers_at(state, t), (after.time,), (jnp.ones_like(after.time),)
+        )
+        local = position[:, None] - centers
+        distances = jnp.where(
+            state.cylinder,
+            _distance("cylinder", local, state.sizes),
+            _distance("box", local, state.sizes),
+        )
+        return centers, velocities, distances, state.moving, state.active
+    centers, velocities = jax.jvp(env.scene.positions, (after.time,), (jnp.ones_like(after.time),))
+    distances = jnp.full(centers.shape[:-1], jnp.inf)
+    for kind, ids in env.scene._groups:
+        local = jnp.einsum(
+            "bgi,gij->bgj", position[:, None] - centers[:, ids], env.scene.rotations[ids]
+        )
+        distances = distances.at[:, ids].set(_distance(kind, local, env.scene.sizes[ids]))
+    active = jnp.broadcast_to(env.scene._contact, distances.shape)
+    moving = jnp.broadcast_to(env.scene._motion[:, 0] != 0, distances.shape)
+    return centers, velocities, distances, moving, active
+
+
+def paper_navigation_reward(env, before, after, action):
+    """Evaluate one paper reward profile with no legacy navigation surcharge."""
+    physics = after.physics.states
+    position, velocity = physics.pos[:, 0], physics.vel[:, 0]
+    target = jnp.broadcast_to(env.goal_for(after), position.shape)
+    if env.task.reward_profile == "fan2025":
+        centers, velocities, distances, moving, active = obstacle_reward_geometry(env, after)
+        options = env.task.reward_options
+        reward, terms = fan_reward_terms(
+            previous_distance=_norm(target[:, :2] - before.physics.states.pos[:, 0, :2]),
+            distance=_norm(target[:, :2] - position[:, :2]),
+            velocity=velocity[:, :2],
+            acceleration=env.action.decode(action),
+            previous_acceleration=env.action.decode(before.previous_action),
+            static_clearance=jnp.min(
+                jnp.where(active & ~moving, distances, jnp.inf), -1, initial=jnp.inf
+            ),
+            dynamic_clearance=jnp.maximum(distances, 0.0),
+            obstacle_to_drone=position[:, None, :2] - centers[..., :2],
+            obstacle_velocity=velocities[..., :2],
+            dynamic_mask=active & moving,
+            collision=after.task.event == Event.COLLISION,
+            **options,
+        )
+    else:
+
+        def clearance_at(p):
+            return env.scene_clearance(p, after.time, after.scene_state)
+
+        raw_clearance = clearance_at(position)
+        normal = jax.grad(lambda p: jnp.sum(clearance_at(p)))(position)
+        distance = jnp.maximum(raw_clearance, 0.0)
+        collision_vector = -normal * jnp.where(jnp.isfinite(distance), distance, 0.0)[:, None]
+        q = physics.quat[:, 0]
+        # Crazyflow uses xyzw; the original VisFly state uses wxyz.
+        direction = jnp.stack(
+            [
+                1 - 2 * (q[:, 1] ** 2 + q[:, 2] ** 2),
+                2 * (q[:, 0] * q[:, 1] + q[:, 3] * q[:, 2]),
+                2 * (q[:, 0] * q[:, 2] - q[:, 3] * q[:, 1]),
+            ],
+            -1,
+        )
+        reward, terms = visfly_reward_terms(
+            position=position,
+            target=target,
+            velocity=velocity,
+            quaternion=q[:, jnp.array([3, 0, 1, 2])],
+            angular_velocity=physics.ang_vel[:, 0],
+            direction=direction,
+            clearance=distance,
+            collision_vector=collision_vector,
+            success=after.task.event == Event.SUCCESS,
+            step_count=jnp.ceil(after.time / env.dt - 1e-5),
+            max_episode_steps=round(env.task.duration / env.dt),
+        )
+    terms = {
+        f"paper_{name}_reward": jnp.where(before.done, 0.0, term) for name, term in terms.items()
+    }
+    reward = jnp.where(before.done, 0.0, reward)
+    return reward, {**terms, "task_cost": -reward}
 
 
 def motion_navigation_reward(env, before, after, action):
@@ -80,6 +270,9 @@ def shaped_task_cost(env, before, after, action, shaping):
     options; new Task recipes can own it in their task configuration. This
     function deliberately knows nothing about Actor, Critic or perception.
     """
+    if env.task.reward_profile in {"fan2025", "visfly2025"}:
+        reward, terms = paper_navigation_reward(env, before, after, action)
+        return -reward, terms
     shaping = {
         "task_weight": 1.0,
         "progress_reward_scale": 0.0,

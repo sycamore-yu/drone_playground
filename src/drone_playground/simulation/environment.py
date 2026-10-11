@@ -167,6 +167,8 @@ class BaseEnv:
         }[self.control_level]
         self.sensor = None
         self.observation_config = dict(observation_config or {})
+        if self.observation_config.get("visfly_quaternion_order", "xyzw") not in {"xyzw", "wxyz"}:
+            raise ValueError("VisFly quaternion order must be xyzw or wxyz")
         position_scale = self.observation_config.get("visfly_position_scale", 1.0)
         if (
             isinstance(position_scale, bool)
@@ -481,11 +483,14 @@ class BaseEnv:
             observation["fan_command"] = goal[:, :2] - physics.pos[:, 0, :2]
         if self.observation_config.get("visfly", False):
             physics = state.physics.states
+            quaternion = physics.quat[:, 0]
+            if self.observation_config.get("visfly_quaternion_order", "xyzw") == "wxyz":
+                quaternion = quaternion[:, jnp.array([3, 0, 1, 2])]
             position_scale = self.observation_config.get("visfly_position_scale", 1.0)
             observation["visfly_state"] = jnp.concatenate(
                 [
                     physics.pos[:, 0] / position_scale,
-                    physics.quat[:, 0],
+                    quaternion,
                     physics.vel[:, 0],
                     physics.ang_vel[:, 0],
                 ],
@@ -757,6 +762,11 @@ class NavigationEnv(BaseEnv):
         self, before: EnvState, after: EnvState, action: Array
     ) -> tuple[Array, dict[str, Array]]:
         """Evaluate the selected Navigation reward before optional shaping."""
+        if self.task.reward_profile in {"fan2025", "visfly2025"}:
+            from drone_playground.simulation.task_rewards import paper_navigation_reward
+
+            reward, terms = paper_navigation_reward(self, before, after, action)
+            return -reward, terms
         if self.task.reward_profile == "legacy_motion_navigation_v2":
             reward, terms = motion_navigation_reward(self, before, after, action)
             return -reward, terms

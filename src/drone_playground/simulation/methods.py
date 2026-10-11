@@ -111,11 +111,24 @@ class Action:
         velocity_gain=(3.0, 3.0, 5.0),
         acceleration_limit=(6.0, 6.0, 6.0),
         tilt_limit=0.55,
+        thrust_to_weight_bounds=(0.4, 1.6),
+        body_rate_limit=6.0,
     ):
         """Resolve nominal limits once; physical randomization never changes them."""
         self.level, self.heading = level, heading
         self.mass = float(np.asarray(load_params("first_principles", drone)["mass"]).item())
         self.hover = self.mass * 9.81
+        thrust_low, thrust_high = thrust_to_weight_bounds
+        if (
+            not np.isfinite([thrust_low, thrust_high, body_rate_limit]).all()
+            or not 0 <= thrust_low < thrust_high
+            or body_rate_limit <= 0
+        ):
+            raise ValueError("Physical thrust/rate limits must be finite and ordered")
+        if (tuple(thrust_to_weight_bounds) != (0.4, 1.6) or body_rate_limit != 6.0) and (
+            level != "body_rate" or low is not None or high is not None
+        ):
+            raise ValueError("Thrust-to-weight/rate limits configure default body_rate bounds")
         defaults = {
             "acceleration": ([-6.0] * 3, [6.0] * 3),
             "horizontal_acceleration": ([-6.0] * 2, [6.0] * 2),
@@ -124,7 +137,10 @@ class Action:
                 [-0.6, -0.6, -np.pi, 0.4 * self.hover],
                 [0.6, 0.6, np.pi, 1.6 * self.hover],
             ),
-            "body_rate": ([0.4 * self.hover, -6.0, -6.0, -6.0], [1.6 * self.hover, 6.0, 6.0, 6.0]),
+            "body_rate": (
+                [thrust_low * self.hover, *([-body_rate_limit] * 3)],
+                [thrust_high * self.hover, *([body_rate_limit] * 3)],
+            ),
         }
         if level not in {*defaults, "force_torque", "rotor_vel"}:
             raise ValueError(f"Unknown action level: {level}")

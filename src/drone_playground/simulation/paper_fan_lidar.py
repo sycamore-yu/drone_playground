@@ -18,6 +18,7 @@ class FanLidarConfig:
     history_frames: int = 36
     max_range_m: float = 10.0
     half_height_m: float = 1.0
+    raw_history_frames: int = 1
 
     def __post_init__(self):
         """Reject nonphysical and undefined range-map settings."""
@@ -25,6 +26,8 @@ class FanLidarConfig:
             raise ValueError("Sector and history counts must be positive")
         if self.max_range_m <= 0 or self.half_height_m <= 0:
             raise ValueError("Range and altitude bounds must be positive")
+        if type(self.raw_history_frames) is not int or self.raw_history_frames < 1:
+            raise ValueError("Raw point history length must be a positive integer")
 
 
 def encode_range_ring(
@@ -69,6 +72,21 @@ def encode_range_ring(
 def empty_history(batch: int, *, frames: int = 36, sectors: int = 36) -> jax.Array:
     """Initialize empty scans as maximum range, not an obstacle at zero."""
     return jnp.ones((batch, frames, sectors), dtype=jnp.float32)
+
+
+def push_point_window(history, history_mask, world_points, valid):
+    """Keep raw hits in world coordinates, before spatial range compression."""
+    if history.shape[0] != world_points.shape[0] or history.shape[2:] != world_points.shape[1:]:
+        raise ValueError("Raw point window and current cloud dimensions disagree")
+    if history_mask.shape != history.shape[:-1] or valid.shape != world_points.shape[:-1]:
+        raise ValueError("Raw point masks must match their point arrays")
+    finite = valid & jnp.all(jnp.isfinite(world_points), axis=-1)
+    return (
+        jnp.concatenate(
+            (jnp.where(finite[..., None], world_points, 0.0)[:, None], history[:, :-1]), axis=1
+        ),
+        jnp.concatenate((finite[:, None], history_mask[:, :-1]), axis=1),
+    )
 
 
 def push_history(history: jax.Array, scan: jax.Array) -> jax.Array:

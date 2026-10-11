@@ -19,6 +19,7 @@ class _Env:
         self.dt = 0.1
         self.task = SimpleNamespace(
             name="navigation",
+            reward_profile="default",
             low=jnp.array([0.0, -20.0, 0.5]),
             high=jnp.array([100.0, 20.0, 6.0]),
             radius=0.0,
