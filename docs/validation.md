@@ -159,7 +159,7 @@ Python wheel 通过隔离式构建，共包含 12 个机器人资源文件，
 ## Sensor / render 功能分支：2026-10-10
 
 分支 `refactor/sensor-rendering` 从 `e3949a5` 开始实施 ADR-0012/0013。
-这是功能分支证据，尚未合并到 `v0.2`。现已补充 CUDA 实测和两种传感器的
+这是源功能分支当时的测试证据，现已通过 PR [#1](https://github.com/sycamore-yu/drone_playground/pull/1) 合入 `v0.2`。已补充 CUDA 实测和两种传感器的
 冻结整回合评测；来源权重的既有成绩与本分支复测结果分别记录。
 
 已接入 MuJoCo-LiDAR 软件包中的 MID360 扫描资源，实现每世界扫描相位、快照采集和精简延迟状态。
@@ -279,7 +279,7 @@ MuJoCo-LiDAR 0.3.5 原生 JAX 求交在 7 个边界案例中有 6 个与
 `mujoco.mj_ray` 不一致。因此**没有替换和删除当前 `Scene.raycast()`**，
 而正式训练只有这一条求交路径。此阻塞来自上游求交语义，与 GPU 可用性无关，
 证据保存在 `tmp/sensor-rendering/native-gate-gpu.json`。
-新 MID360 方案的从零训练收敛矩阵尚未重新完成；功能分支保持隔离，不合并到 `v0.2`。
+新 MID360 方案的从零训练收敛矩阵尚未完成；P0/P1 Sensor/Render 工程实现已合入 `v0.2`，但不代表 C1–C6 多种子收敛通过。原生 JAX 求交替换仍被门禁阻止。
 主工作区现有训练、权重和报告未被修改。
 
 ### 复现入口
