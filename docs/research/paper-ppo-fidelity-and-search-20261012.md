@@ -32,6 +32,7 @@ Sources:
 | VisFly actions | Thrust mapped to 0–3g, rates ±2rad/s | Corrected from 0.4–1.6g and ±6rad/s |
 | VisFly reward | Exact `NavigationEnv.get_reward` components | Ported; no inherited 20+160 terminal surcharge or Zhang/Liu loss |
 | VisFly feature sharing | Shared encoder and joint actor/value Adam update | Added as separate `navigation_paper_visfly2025_shared` configuration |
+| VisFly camera | Habitat camera with default zero orientation and `[0,0,-0.2]` position in Habitat coordinates | **Different:** retained D435i-style ray camera, including its 20-degree training pitch; camera extrinsics/rendering were not silently changed in the shared-encoder comparison |
 | VisFly training scene | Original Habitat garage, about 8m start-to-goal | **Different:** 80m+ procedural course; no original garage score is claimed |
 | VisFly clock/budget | 0.03s control step, 48 agents, rollout256 | 0.04s (25Hz) control, 500Hz Crazyflow physics, 16 agents, rollout256 |
 
@@ -39,6 +40,11 @@ The Fan 36×36 tensor is **time × azimuth**, not an occupancy map of 36×36
 spatial cells. Depth resolution, map geometry, physics and task distance are
 recorded separately. The long-course minimum remains at least 80m for all
 new candidates; no short episode is counted as an 80m navigation success.
+Source motor delay and vehicle dynamics are also different from Crazyflow's
+inner controller. Source episodes are 256 decisions; long-course episodes keep
+the project's 300-second cap. The success-bonus formula is unchanged, but its
+remaining-step argument therefore has a different range. These settings must
+remain visible when interpreting a transfer result.
 
 ## Implementation checks
 
@@ -84,6 +90,12 @@ The two baselines started from random weights on 12 October 2026 and have real
 GPU parameter updates. The former v03 25Hz trial was stopped after update2400
 with a preserved checkpoint and recorded as interrupted; it was not marked
 accepted or erased. Its reallocation record is in `source_alignment_reallocation.json`.
+The v04 independent-encoder VisFly control was then stopped at update407, after
+its completed six-scene screen at update240 was 0/48. It remains `interrupted`
+in `run.json`; `study_pruned.json` records the deliberate budget reallocation to
+the shared-encoder source correction. This is not an early-stopping convergence
+claim. `visfly_shared_s0` started from random weights and completed its first
+actual 4096-interaction PPO update at approximately 01:45 on 12 October 2026.
 
 `tools/optimize_paper_ppo.py` implements a finite measured-search loop. It adopts
 existing baselines and never starts duplicates. Its scalar objective is the
