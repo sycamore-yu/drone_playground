@@ -1,5 +1,41 @@
 # Navigation throughput evidence
 
+## 2026-10-10：Sensor / render 迁移后的 RTX 4090 实测
+
+`refactor/sensor-rendering` 采用 MuJoCo-LiDAR 非重复角度表及瞬时帧采集。
+GPU 恢复后，`JAX_PLATFORMS=cuda` 使用 RTX 4090（驱动 595.84、JAX 0.11.2），
+在独立 GPU 进程上执行完整 APG 更新。比较的原版是 `v0.2@6ec50c7` 的源码快照，
+两者均保持 Crazyflow 500 Hz、控制 10 Hz、相同射线数和 batch × horizon；
+不比较不同观察模型的数值损失是否相同。
+
+| 工作负载 | v0.2 中位 s/update | 新版中位 s/update | 完整更新吞吐提升 |
+|---|---:|---:|---:|
+| LiDAR / D01，32×32，20,000 rays | 0.81135 | 0.73041 | 11.1% |
+| Depth / S01，128×32，64×48@30Hz | 0.83697 | 0.77691 | 7.7% |
+
+每次排除第一次 JAX 编译更新，记录三次稳定更新并同步全部输出。
+`nvidia-smi` 在每次更新之后采样的显存占用分别为 LiDAR 2,685→2,693 MiB、
+Depth 1,159→1,161 MiB，不等同于峰值显存。
+以上为**局部最高精度几何矩阵变换修复后的最终实测**。此前的
+`0.71510 s / 0.76167 s` 是修复前的中间结果，不能与最终精度合同混用；
+精度修复由官方 `mujoco.Renderer` 的 GPU 深度对照触发并通过专项测试。
+六种 Depth/LiDAR × PPO/APG/SHAC 均完成 GPU 参数更新；
+冻结 Depth 全八场景 196/200 成功、LiDAR 175/200 成功，
+LiDAR S03 的 0/25 与原传感器上的相同权重复测一致。
+数值原始记录、性能对照范围、源文件版本、失败门禁和复现命令见
+[验证记录](validation.md)。
+
+这是**整体传感器模型迁移**的性能结果。MuJoCo-LiDAR 0.3.5 JAX 求交未通过
+几何正确性门禁，运行时仍为原有 `Scene.raycast()`；
+MJX-Warp Batch Renderer 没有安装或进行本项目基准测试。
+不同库的选型与扫描时间保真局限，见
+[raycasting fidelity review](research/sensor-raycasting-fidelity-review.md)。
+
+## 2026-10-08：迁移前历史测量
+
+以下历史测量采用逐射线时间与合成 MID360 扫描，
+不是本次快照模型的 GPU 性能结果。
+
 This record concerns bounded Navigation APG diagnostics on the RTX 4090 on
 2026-10-08. It does **not** complete C6 across the 18 training cells or establish
 time to convergence. The authoritative acceptance criteria remain in [spec.md](spec.md).

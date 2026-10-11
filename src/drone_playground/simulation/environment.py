@@ -155,7 +155,7 @@ class Environment:
         if "latency" in sensor_config:
             sensor_config["latency"] = latency_bounds[1]
         if sensor == "depth":
-            config = SensorConfig.d435i(sensor_config.pop("mode", "training64x48"), **sensor_config)
+            config = SensorConfig.d435i(**sensor_config)
             self.sensor = SensorObservation(
                 self.scene,
                 config,

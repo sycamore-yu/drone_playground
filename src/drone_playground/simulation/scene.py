@@ -261,6 +261,7 @@ class Scene:
                 "...gi,gij->...gj",
                 position[..., None, :] - centers[..., ids, :],
                 self.rotations[ids],
+                precision=jax.lax.Precision.HIGHEST,
             )
             distances = _distance(kind, local, self.sizes[ids])
             result = jnp.minimum(
@@ -306,9 +307,17 @@ class Scene:
             result = limit
             for kind, ids in self._groups:
                 local_p = jnp.einsum(
-                    "...gi,gij->...gj", p[..., None, :] - centers[..., ids, :], self.rotations[ids]
+                    "...gi,gij->...gj",
+                    p[..., None, :] - centers[..., ids, :],
+                    self.rotations[ids],
+                    precision=jax.lax.Precision.HIGHEST,
                 )
-                local_d = jnp.einsum("...i,gij->...gj", direction, self.rotations[ids])
+                local_d = jnp.einsum(
+                    "...i,gij->...gj",
+                    direction,
+                    self.rotations[ids],
+                    precision=jax.lax.Precision.HIGHEST,
+                )
                 hits = _intersection(kind, local_p, local_d, self.sizes[ids])
                 result = jnp.minimum(
                     result, jnp.min(jnp.where(self._visible[ids], hits, jnp.inf), axis=-1)

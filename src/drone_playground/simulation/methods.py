@@ -265,7 +265,7 @@ class PlannerController:
                     "goal": np.asarray(env.task.goal),
                     "measurement": state.observation.measurement,
                     "sensor_pose": np.asarray(state.observation.acquisition_pose[0]),
-                    "sensor_points": np.asarray(state.observation.points_at_completion[0]),
+                    "sensor_points": np.asarray(state.observation.measurement.points_body[0]),
                     "sensor_config": env.sensor.config,
                 }
                 trajectory = self.planner.plan(observation, time, force_replan=True)

@@ -242,6 +242,7 @@ class Trainer:
             "loss": self.loss_name,
             "backward_model": self.backward_model,
             "backward_options": self.backward_options,
+            "sensor": None if self.env.sensor is None else self.env.sensor.specification,
         }
 
     def initialize(self) -> TrainingState:

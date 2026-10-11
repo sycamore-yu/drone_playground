@@ -1,0 +1,17 @@
+<mujoco model="crazyflie-replay"><compiler angle="radian"/><asset>
+    <material name="cf_black" rgba="0.102 0.102 0.102 1"/>
+    <material name="cf_gray" rgba="0.3 0.3 0.3 1"/>
+    <material name="cf_light_gray" rgba="0.7 0.7 0.7 1"/>
+    <material name="cf_silver" rgba="0.898 0.898 0.898 1"/>
+    <material name="cf_white" rgba="1 1 1 0.3"/>
+    <material name="cf_gold" rgba="0.969 0.878 0.6 1"/>
+    <mesh name="cf_pcb" file="cf2x_pcb.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_motors" file="cf2xP_motors.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_motor_holder" file="cf2x_motor-holder.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_prop_l" file="cf2xP_PropL.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_prop_r" file="cf2xP_PropR.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_connectors" file="cf2x_connectors.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_connector_pins" file="cf2x_connector-pins.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_battery" file="cf2x_battery.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cf_battery_holder" file="cf2x_battery-holder.stl" scale="0.001 0.001 0.001"/>
+    </asset><worldbody><body name="drone" mocap="true" pos="0 0 2">  <geom name="drone_collision" type="sphere" size="0.07"         pos="0 0 0.005" rgba="0 0 0 0" contype="0" conaffinity="0" group="3"/>  <geom name="cf_pcb" type="mesh" mesh="cf_pcb" material="cf_gray" contype="0" conaffinity="0" group="2"/><geom name="cf_motors" type="mesh" mesh="cf_motors" material="cf_silver" contype="0" conaffinity="0" group="2"/><geom name="cf_motor_holder" type="mesh" mesh="cf_motor_holder" material="cf_white" contype="0" conaffinity="0" group="2"/><geom name="cf_connectors" type="mesh" mesh="cf_connectors" material="cf_black" contype="0" conaffinity="0" group="2"/><geom name="cf_connector_pins" type="mesh" mesh="cf_connector_pins" material="cf_gold" contype="0" conaffinity="0" group="2"/><geom name="cf_battery" type="mesh" mesh="cf_battery" material="cf_light_gray" contype="0" conaffinity="0" group="2"/><geom name="cf_battery_holder" type="mesh" mesh="cf_battery_holder" material="cf_black" contype="0" conaffinity="0" group="2"/><geom name="cf_prop_0" type="mesh" mesh="cf_prop_l" material="cf_black" pos="0.0325 -0.0325 0.012" euler="0 0 0.7853981633974483" contype="0" conaffinity="0" group="2"/><geom name="cf_prop_1" type="mesh" mesh="cf_prop_r" material="cf_black" pos="-0.0325 -0.0325 0.012" euler="0 0 2.356194490192345" contype="0" conaffinity="0" group="2"/><geom name="cf_prop_2" type="mesh" mesh="cf_prop_l" material="cf_black" pos="-0.0325 0.0325 0.012" euler="0 0 3.9269908169872414" contype="0" conaffinity="0" group="2"/><geom name="cf_prop_3" type="mesh" mesh="cf_prop_r" material="cf_black" pos="0.0325 0.0325 0.012" euler="0 0 5.497787143782138" contype="0" conaffinity="0" group="2"/></body></worldbody></mujoco>

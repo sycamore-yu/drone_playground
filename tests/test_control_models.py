@@ -88,7 +88,10 @@ def test_backward_model_preserves_forward_and_unmodeled_output(model, level):
 def test_delayed_depth_is_invisible_until_delivery():
     """A captured frame is not a delivered observation."""
     env = Environment(
-        task="navigation", scene="S01", sensor="depth", sensor_config={"latency": 0.04}
+        task="navigation",
+        scene="S01",
+        sensor="depth",
+        sensor_config={"width": 64, "height": 48, "max_range": 10, "latency": 0.04},
     )
     state = env.reset(jax.random.key(0))
     assert not np.asarray(state.observation.measurement.mask).any()

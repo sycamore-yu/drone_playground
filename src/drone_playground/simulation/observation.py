@@ -1,35 +1,62 @@
-"""Sensor timing, pose history and policy preprocessing, independent of learning."""
+"""Snapshot timing, delayed delivery and policy preprocessing."""
 
 import math
 
 import jax
 import jax.numpy as jnp
 from flax import struct
-from jax.scipy.spatial.transform import Rotation
 
 from drone_playground.simulation.delay import delay_range
-from drone_playground.simulation.sensors import (
-    Measurement,
-    SensorConfig,
-    measure,
-    preprocess_depth,
-    reduce_points,
-)
+from drone_playground.simulation.sensors import Measurement, SensorConfig, measure
+
+
+def preprocess_depth(
+    measurement: Measurement,
+    *,
+    near: float = 0.3,
+    far: float = 10.0,
+    scale: float = 3.0,
+    offset: float = -0.6,
+    pool: int = 4,
+) -> tuple[jax.Array, jax.Array]:
+    """Inverse axial depth and masked max-pooling for the depth policy."""
+    depth, mask = measurement.values, measurement.mask
+    height, width = depth.shape[-2:]
+    if pool < 1 or height % pool or width % pool or not 0 < near < far:
+        raise ValueError("Depth dimensions must be divisible by pool and 0 < near < far")
+    inverse = scale / jnp.clip(jnp.where(mask, depth, far), near, far) + offset
+    blocks = (*depth.shape[:-2], height // pool, pool, width // pool, pool)
+    pooled = jnp.max(jnp.where(mask, inverse, -jnp.inf).reshape(blocks), axis=(-3, -1))
+    valid = jnp.any(mask.reshape(blocks), axis=(-3, -1))
+    return jnp.where(valid, pooled, 0), valid
+
+
+def reduce_points(measurement: Measurement, count: int) -> Measurement:
+    """Subsample a scan at fixed indices, preserving values, masks and frame time."""
+    size = measurement.values.shape[-1]
+    if not isinstance(count, int) or not 0 < count <= size:
+        raise ValueError("Point count must be a positive integer no larger than the scan")
+    indices = jnp.linspace(0, size - 1, count).astype(jnp.int32)
+    return Measurement(
+        jnp.take(measurement.values, indices, axis=-1),
+        jnp.take(measurement.mask, indices, axis=-1),
+        jnp.take(measurement.points_body, indices, axis=-2),
+        measurement.acquisition_time,
+        measurement.available_time,
+    )
 
 
 @struct.dataclass
 class ObservationState:
-    """Latest completed measurement and physical poses needed to sample it."""
+    """Latest snapshot and instance-owned state for sampling and delivery."""
 
     measurement: Measurement
     frame: jax.Array
-    pose_history: jax.Array
-    points_at_completion: jax.Array
+    previous_pose: jax.Array
     acquisition_pose: jax.Array
     delay_s: jax.Array
     available: jax.Array
     pending: Measurement | None = None
-    pending_points: jax.Array | None = None
     pending_poses: jax.Array | None = None
     pending_valid: jax.Array | None = None
 
@@ -55,27 +82,36 @@ class SensorObservation:
         self.capacity = math.ceil(self.latency_bounds[1] * config.frequency_hz) + 2
         self.encoding = dict(encoding or {})
         self.scene, self.config = scene, config
-        self.history_length = math.ceil(physics_hz / config.frequency_hz) + 2
         self.point_count = point_count
 
-    @staticmethod
-    def _pose_at(history, times):
-        def interpolate(samples, query):
-            return jax.vmap(
-                lambda column: jnp.interp(query, samples[:, 0], column), in_axes=1, out_axes=-1
-            )(samples[:, 1:])
+    @property
+    def specification(self) -> dict:
+        """Identify measurement and preprocessing semantics for runs and checkpoints."""
+        return {
+            "config": self.config.specification,
+            "point_count": self.point_count,
+            "encoding": self.encoding,
+            "latency_bounds": list(self.latency_bounds),
+        }
 
-        poses = jax.vmap(interpolate)(history, times)
-        quat = poses[..., 3:]
+    @staticmethod
+    def _pose_at(previous, current, time):
+        """Interpolate adjacent physical poses at a noninteger-rate frame time."""
+        alpha = jnp.clip(
+            (time - previous[:, 0]) / jnp.maximum(current[:, 0] - previous[:, 0], 1e-8), 0, 1
+        )[:, None]
+        position = previous[:, 1:4] + alpha * (current[:, 1:4] - previous[:, 1:4])
+        first, last = previous[:, 4:], current[:, 4:]
+        last = jnp.where(jnp.sum(first * last, axis=-1, keepdims=True) < 0, -last, last)
+        quat = first + alpha * (last - first)
         quat = quat / jnp.maximum(jnp.linalg.norm(quat, axis=-1, keepdims=True), 1e-8)
-        return poses[..., :3], quat
+        return position, quat
 
     def reset(self, physics) -> ObservationState:
-        """Depth is available at reset; a scanning LiDAR needs one full scan period."""
+        """Depth samples at reset; LiDAR publishes its first snapshot after one period."""
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
         batch = len(p)
         pose = jnp.concatenate([jnp.zeros((batch, 1)), p, q], -1)
-        history = jnp.broadcast_to(pose[:, None], (batch, self.history_length, 8))
         if self.config.profile == "d435i":
             measurement = measure(self.scene, self.config, p, q, jnp.zeros(batch))
         else:
@@ -84,8 +120,6 @@ class SensorObservation:
                 jnp.zeros(shape),
                 jnp.zeros(shape, bool),
                 jnp.zeros((*shape, 3)),
-                jnp.zeros((*shape, 3)),
-                jnp.zeros(shape),
                 jnp.zeros(batch),
                 jnp.zeros(batch),
             )
@@ -95,16 +129,16 @@ class SensorObservation:
         )
         measurement = measurement._replace(available_time=measurement.acquisition_time + delay)
         acquisition_pose = jnp.concatenate([p, q], -1)
+        state = ObservationState(
+            measurement=measurement,
+            frame=jnp.zeros(batch, jnp.int32),
+            previous_pose=pose,
+            acquisition_pose=acquisition_pose,
+            delay_s=delay,
+            available=jnp.full(batch, self.config.profile == "d435i"),
+        )
         if high == 0:
-            return ObservationState(
-                measurement,
-                jnp.zeros(batch, jnp.int32),
-                history,
-                measurement.points_body,
-                acquisition_pose,
-                delay,
-                jnp.full(batch, self.config.profile == "d435i"),
-            )
+            return jax.tree.map(jax.lax.stop_gradient, state)
         empty = jax.tree.map(jnp.zeros_like, measurement)
         pending = jax.tree.map(
             lambda x: jnp.broadcast_to(x[:, None], (batch, self.capacity, *x.shape[1:])), empty
@@ -112,10 +146,6 @@ class SensorObservation:
         pending = jax.tree.map(lambda x, y: x.at[:, -1].set(y), pending, measurement)
         valid = jnp.zeros((batch, self.capacity), bool)
         valid = valid.at[:, -1].set(self.config.profile == "d435i")
-        pending_points = jnp.broadcast_to(
-            measurement.points_body[:, None],
-            (batch, self.capacity, *measurement.points_body.shape[1:]),
-        )
         pending_poses = jnp.broadcast_to(acquisition_pose[:, None], (batch, self.capacity, 7))
         visible = delay == 0
         delivered = jax.tree.map(
@@ -123,18 +153,15 @@ class SensorObservation:
             empty,
             measurement,
         )
-        return ObservationState(
-            delivered,
-            jnp.zeros(batch, jnp.int32),
-            history,
-            delivered.points_body,
-            acquisition_pose,
-            delay,
-            visible & (self.config.profile == "d435i"),
-            pending,
-            pending_points,
-            pending_poses,
-            valid,
+        return jax.tree.map(
+            jax.lax.stop_gradient,
+            state.replace(
+                measurement=delivered,
+                available=state.available & visible,
+                pending=pending,
+                pending_poses=pending_poses,
+                pending_valid=valid & ~visible[:, None],
+            ),
         )
 
     def update(self, state: ObservationState, physics, active) -> ObservationState:
@@ -142,8 +169,7 @@ class SensorObservation:
         time = physics.core.steps[:, 0] / physics.core.freq
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
         pose = jnp.concatenate([time[:, None], p, q], -1)
-        history = jnp.concatenate([state.pose_history[:, 1:], pose[:, None]], 1)
-        history = jnp.where(active[:, None, None], history, state.pose_history)
+        previous_pose = jnp.where(active[:, None], pose, state.previous_pose)
         next_time = (state.frame + 1) / self.config.frequency_hz
         due = (time + 1e-7 >= next_time) & active
 
@@ -154,85 +180,82 @@ class SensorObservation:
         def capture(_):
             capture_time = jnp.where(due, next_time, time)
 
-            def pose_at(t):
-                return self._pose_at(history, t)
-
-            positions, quaternions = pose_at(capture_time[:, None])
+            positions, quaternions = self._pose_at(state.previous_pose, pose, capture_time)
             measurement = measure(
                 self.scene,
                 self.config,
-                positions[:, 0],
-                quaternions[:, 0],
+                positions,
+                quaternions,
                 capture_time,
-                frame_index=state.frame + 1,
-                pose_at=pose_at,
+                frame_index=state.frame,
             )
             measurement = measurement._replace(
                 available_time=measurement.acquisition_time + state.delay_s
             )
-            if self.config.profile != "d435i":
-                ray_position, ray_quaternion = pose_at(measurement.times)
-                points = (
-                    Rotation.from_quat(ray_quaternion.reshape(-1, 4))
-                    .apply(measurement.points_body.reshape(-1, 3))
-                    .reshape(measurement.points_body.shape)
-                )
-                points = points + ray_position - positions
-                points = jax.vmap(
-                    lambda quat, cloud: Rotation.from_quat(quat).apply(cloud, inverse=True)
-                )(quaternions[:, 0], points)
-                points = jnp.where(measurement.mask[..., None], points, 0.0)
-            else:
-                points = measurement.points_body
-            # Select full frames only on capture ticks, preserving worlds that are not due.
-            return measurement, points, jnp.concatenate([positions[:, 0], quaternions[:, 0]], -1)
+            acquisition_pose = jnp.concatenate([positions, quaternions], -1)
+            return (
+                jax.tree.map(choose, state.measurement, measurement),
+                choose(state.acquisition_pose, acquisition_pose),
+            )
 
-        measurement, points, pose = jax.lax.cond(
+        measurement, acquisition_pose = jax.lax.cond(
             jnp.any(due),
             capture,
-            lambda _: (state.measurement, state.points_at_completion, state.acquisition_pose),
+            lambda _: (state.measurement, state.acquisition_pose),
             None,
         )
-        if state.pending is None:
-            result = state.replace(
-                measurement=jax.tree.map(choose, state.measurement, measurement),
-                points_at_completion=choose(state.points_at_completion, points),
-                acquisition_pose=choose(state.acquisition_pose, pose),
-                available=state.available | due,
-                frame=state.frame + due.astype(jnp.int32),
-                pose_history=history,
-            )
-        else:
+        pending, pending_poses, pending_valid = (
+            state.pending,
+            state.pending_poses,
+            state.pending_valid,
+        )
+        available = state.available | due
+        if pending is not None:
 
             def append(old, new):
                 return choose(old, jnp.concatenate([old[:, 1:], new[:, None]], axis=1))
 
-            pending = jax.tree.map(append, state.pending, measurement)
-            pending_points = append(state.pending_points, points)
-            pending_poses = append(state.pending_poses, pose)
-            valid = append(state.pending_valid, jnp.ones_like(due))
-            delivered = valid & (pending.available_time <= time[:, None] + 1e-7)
+            pending, pending_poses, pending_valid = jax.lax.cond(
+                jnp.any(due),
+                lambda: (
+                    jax.tree.map(append, pending, measurement),
+                    append(pending_poses, acquisition_pose),
+                    append(pending_valid, jnp.ones_like(due)),
+                ),
+                lambda: (pending, pending_poses, pending_valid),
+            )
+            delivered = (
+                pending_valid & (pending.available_time <= time[:, None] + 1e-7) & active[:, None]
+            )
             index = jnp.max(jnp.where(delivered, jnp.arange(self.capacity)[None], 0), axis=1)
-            available = jnp.any(delivered, axis=1) & active
+            publish = jnp.any(delivered, axis=1) & active
             row = jnp.arange(len(time))
 
             def take(old, new):
                 new = new[row, index]
-                mask = available.reshape((len(time),) + (1,) * (new.ndim - 1))
+                mask = publish.reshape((len(time),) + (1,) * (new.ndim - 1))
                 return jnp.where(mask, new, old)
 
-            result = state.replace(
-                measurement=jax.tree.map(take, state.measurement, pending),
-                points_at_completion=take(state.points_at_completion, pending_points),
-                acquisition_pose=take(state.acquisition_pose, pending_poses),
-                frame=state.frame + due.astype(jnp.int32),
-                pose_history=history,
-                pending=pending,
-                pending_points=pending_points,
-                pending_poses=pending_poses,
-                pending_valid=valid,
-                available=state.available | available,
+            measurement, acquisition_pose = jax.lax.cond(
+                jnp.any(publish),
+                lambda: (
+                    jax.tree.map(take, state.measurement, pending),
+                    take(state.acquisition_pose, pending_poses),
+                ),
+                lambda: (state.measurement, state.acquisition_pose),
             )
+            pending_valid = pending_valid & ~delivered
+            available = state.available | publish
+        result = state.replace(
+            measurement=measurement,
+            acquisition_pose=acquisition_pose,
+            frame=state.frame + due.astype(jnp.int32),
+            previous_pose=previous_pose,
+            pending=pending,
+            pending_poses=pending_poses,
+            pending_valid=pending_valid,
+            available=available,
+        )
         # Image/point acquisition is not part of the pathwise dynamics derivative.
         return jax.tree.map(jax.lax.stop_gradient, result)
 
@@ -245,12 +268,12 @@ class SensorObservation:
                 "depth_mask": mask,
                 "acquisition_time": state.measurement.acquisition_time,
             }
-        measurement = reduce_points(
-            state.measurement._replace(points_body=state.points_at_completion), self.point_count
-        )
+        measurement = reduce_points(state.measurement, self.point_count)
         return {
             "points": measurement.points_body,
             "mask": measurement.mask,
-            "point_times": measurement.times,
+            "point_times": jnp.broadcast_to(
+                measurement.acquisition_time[..., None], measurement.values.shape
+            ),
             "acquisition_time": measurement.acquisition_time,
         }
