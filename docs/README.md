@@ -2,6 +2,8 @@
 
 [功能规格](spec.md)定义研究范围；[验证记录](validation.md)和[验收说明](acceptance.md)描述已有执行证据。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
 
+**集成文档核对：2026-10-10T01:27:02Z（UTC）。** 当前集成分支为 `v0.2`。功能分支的 ADR 和文档仅是各自的 Git 快照；合并时要核对现有决策、编号和索引，不能以分支副本覆盖新决定。协作规则见 [AGENTS.md](../AGENTS.md)。
+
 ## 架构决策
 
 `Accepted` 表示用户已明确批准设计，提问或要求评估不构成批准。`Withdrawn` 表示提案已撤回，不作为实施依据。每份 ADR 的实现说明区分当前能力和待实现改动，不能用 ADR 代替运行证据。
@@ -13,15 +15,18 @@
 | [0003](adr/0003-project-scope.md) | 首发研究范围和验收 |
 | [0004](adr/0004-native-method-integration.md) | 原生 C++/ROS 接入 |
 | [0006](adr/0006-native-crazyflow-randomization.md) | 使用原生 reset/step pipeline 随机化物理 |
-| [0007](adr/0007-run-artifact-layout.md) | 权重与选模成绩同目录；统一独立评测；按需创建轨迹和回放 |
+| [0007](adr/0007-run-artifact-layout.md) | 当前 v2 结果约定；已批准后续 Orbax/TensorBoard v3，尚未并入本分支 |
 | [0008](adr/0008-independent-backward-dynamics-model.md) | 独立选择 `learning.backward_model`；模型数学实现与训练求导连接分工 |
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
 
-当前 `main` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
+当前集成分支 `v0.2` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
 反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究
 证据，不再由当前加载器自动兼容。最近验证状态见[验证记录](validation.md)。
+
+参考模型索引和历史评测报告见[研究资产](../research/checkpoints/README.md)。
+`research/checkpoints/reports/` 属于有来源的历史证据，不能把它和运行时缓存一起清除。
 
 2026-10-09 的数据清理移除了 `results/` 下 **75 个 v1 完整训练归档**（2.19 GiB）；
 **546 个冻结策略归档**、历史验收报告、轨迹与回放仍然保留。这些 v1 冻结策略只作

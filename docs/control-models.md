@@ -1,12 +1,20 @@
 # 控制器、反向模型与运行记录
 
-当前 `main` 使用独立的动作、控制器和反向动力学模型。只支持 v2 训练和冻结策略归档；
+当前 `v0.2` 使用独立的动作、控制器和反向动力学模型。只支持 v2 训练和冻结策略归档；
 新训练应从新配置开始，不能将历史 v1 Checkpoint 当作恢复入口。以下命令在仓库根目录执行。
 
 ## 控制接口与控制器
 
 `method` 选择 Policy 或 Planner/Controller 组合，`controller` 选择轨迹跟踪实现。
 Hydra 在构造时完成组合，Runner 不再按 EGO、SUPER 或具体控制器名字分派。
+
+**接口核对：2026-10-10T10:46:22+08:00，集成提交 `6ec50c7`。**
+`PlannerController` 可以注入 Mellinger、SO3、两种 MPC 和 IdealTracking。
+`PolicyMethod` 使用 `method.action` 选择控制输入；当动作是 `acceleration` 时，
+`Action` 使用 Crazyflow 的 Mellinger 位置控制转换将加速度映射为姿态和推力；
+直接输出姿态或角速度时则进入 Crazyflow 对应的低层控制链。
+`controller` 配置用于 Planner/Controller 跟踪组合，不用于更换 Policy 的动作接口转换。
+**2026-10-10 已确认该行为符合设计，不作为待解耦缺口。**
 
 | 配置 | 实现 | 执行方式 |
 |---|---|---|

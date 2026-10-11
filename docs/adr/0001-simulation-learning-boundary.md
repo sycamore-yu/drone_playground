@@ -38,6 +38,12 @@ Environment 保留物理时钟、命令执行、任务判定和传感采样。�
 
 当前入口为 `simulation/runner.py` 的 `rollout()` 和 `rollout_host()`。构造阶段生成调用函数，不另建两套 Runner 类。
 
+**设计确认（2026-10-10T10:46:22+08:00，核对 `v0.2@6ec50c7`）：**
+Planner/Controller 跟踪组合已实现外部注入。Policy 通过 `method.action` 指定动作接口：
+加速度使用 Crazyflow 的 Mellinger 转换生成姿态与推力；直接输出姿态或机体系角速度
+时走 Crazyflow 对应的低层控制链。用户确认此设计符合预期，无须额外将
+Policy 的加速度转换开放为任意 `controller` 配置；原先的“待解耦缺口”不再成立。
+
 ## 2026-10-09 控制接口与独立数学实现补充
 
 **Status:** Accepted。**Implementation:** 已实现 Action、Actor 输出/记忆和损失选择的解耦，SO3 与 Mellinger 通过同一 Controller 接口执行。
