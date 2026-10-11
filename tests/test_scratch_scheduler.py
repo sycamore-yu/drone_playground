@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from hydra import compose, initialize_config_dir
 
 
 @pytest.fixture
@@ -201,6 +202,32 @@ def test_ppo_candidate_ten_changes_only_start_distribution(scheduler, tmp_path):
     assert paired_parent == 9
     assert candidate[0] == "experiment=navigation_procedural_depth_ppo_stratified"
     assert control[1:] == candidate[1:]
+
+
+@pytest.mark.parametrize("sensor", ["depth", "lidar"])
+@pytest.mark.parametrize("variant", ["validation", "stratified"])
+def test_ppo_paired_presets_accept_saved_critic_override(sensor, variant):
+    """A former failed launch must compose with its literal saved Hydra override."""
+    config_dir = Path(__file__).resolve().parents[1] / "src/drone_playground/configs"
+    with initialize_config_dir(version_base=None, config_dir=str(config_dir)):
+        cfg = compose(
+            config_name="config",
+            overrides=[
+                f"experiment=navigation_procedural_{sensor}_ppo_{variant}",
+                "learning=ppo",
+                "learning.options.critic_uses_privileged=false",
+                "++learning.options.critic_uses_sensor=true",
+                "learning.options.lr=0.0001",
+            ],
+        )
+    assert cfg.scene.name == "train/procedural"
+    assert cfg.learning.options.critic_uses_privileged is False
+    assert cfg.learning.options.critic_uses_sensor is True
+    assert cfg.results.keep_best_screening is True
+    assert cfg.benchmark.fixed_checkpoint_seeds is True
+    assert cfg.simulation.procedural.start_sampling == (
+        "collision_free" if variant == "validation" else "stratified"
+    )
 
 
 def test_best_screening_score_survives_checkpoint_pruning(scheduler, tmp_path):

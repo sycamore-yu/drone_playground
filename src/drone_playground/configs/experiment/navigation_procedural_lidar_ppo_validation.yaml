@@ -1,7 +1,7 @@
 # @package _global_
 # Scratch PPO control: existing collision-free starts and a fixed validation cohort.
 defaults:
-  - navigation_procedural_lidar
+  - navigation_procedural_lidar_ppo
   - override /learning: ppo
 simulation:
   procedural:
