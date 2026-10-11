@@ -129,3 +129,12 @@ def test_scheduler_requires_real_benchmark_acceptance_for_repeat_seeds(tmp_path,
     accepted.write_text(json.dumps({"status": "accepted"}))
     state = scheduler.cases_status(tmp_path)
     assert scheduler.chosen_candidate(state) == ("depth", "b", 1)
+
+
+def test_scheduler_prioritizes_acceptance_replication_over_new_reward_pilots(tmp_path, scheduler):
+    """A formally passed seed-zero candidate gets the next free GPU slot."""
+    passed = tmp_path / "lidar_c_s0"
+    passed.mkdir()
+    (passed / "run.json").write_text(json.dumps({"status": "accepted"}))
+    state = scheduler.cases_status(tmp_path)
+    assert scheduler.chosen_candidate(state) == ("lidar", "c", 1)

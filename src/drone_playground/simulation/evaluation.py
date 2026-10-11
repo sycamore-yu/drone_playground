@@ -15,12 +15,16 @@ from drone_playground.simulation.runner import rollout, rollout_host, save_evalu
 _NAVIGATION_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
-def _scene_seed(config, seed_base: int, evaluation_index: int, scene_index: int) -> int:
-    """Keep checkpoint cohorts fixed when requested; never change benchmark seeds."""
+def _scene_seed(
+    config, seed_base: int, evaluation_index: int, scene_index: int, scene_name: str | None = None
+) -> int:
+    """Keep comparable checkpoint cohorts fixed even for partial scene probes."""
     fixed = config.benchmark.get("fixed_checkpoint_seeds", False)
     if type(fixed) is not bool:
         raise ValueError("benchmark.fixed_checkpoint_seeds must be boolean")
     cohort = 0 if fixed and config.mode == "checkpoint_eval" else evaluation_index
+    if fixed and config.mode == "checkpoint_eval" and scene_name in _NAVIGATION_SCENES:
+        scene_index = _NAVIGATION_SCENES.index(scene_name)
     return int(seed_base + 10_000 * config.seed + 100 * cohort + scene_index)
 
 
@@ -127,7 +131,7 @@ def evaluate(
         label = f"{label}:{type(method.controller).__name__}"
     try:
         for scene_index, scene in enumerate(scenes):
-            seed = _scene_seed(config, seed_base, evaluation_index, scene_index)
+            seed = _scene_seed(config, seed_base, evaluation_index, scene_index, scene)
             batch = count if method.execution == "jax" else 1
             key = (scene, batch)
             if key not in environments:

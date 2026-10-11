@@ -2,6 +2,11 @@
 # Identical Trial-9 LiDAR training cost, with Task-owned coefficients.
 defaults:
   - navigation_procedural_lidar_ppo_validation
+screening:
+  probe_between_full: true
+  full_every: 3
+early_stopping:
+  patience: 3
 task:
   options:
     reward_shaping:

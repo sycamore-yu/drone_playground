@@ -329,6 +329,70 @@ def test_light_screen_is_not_a_full_acceptance(task, successes, rmse, expected):
     assert cli.screening_passed(report, task, scenes) is expected
 
 
+def test_fast_probes_rotate_scene_pairs_and_cannot_claim_full_acceptance():
+    """Cheap probes cycle every scene without touching the frozen acceptance protocol."""
+    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
+    pairs = [cli.diagnostic_probe_scenes(scenes, index, 3) for index in (0, 1, 3, 4, 6, 7)]
+    assert pairs == [
+        ["S01", "D01"],
+        ["S02", "D02"],
+        ["S03", "D03"],
+        ["S01", "D01"],
+        ["S02", "D02"],
+        ["S03", "D03"],
+    ]
+    assert not cli.probe_justifies_full_screen(
+        {"complete": True, "reports": {"S01": {"episodes": 8, "successes": 0}}}
+    )
+    assert cli.probe_justifies_full_screen(
+        {"complete": True, "reports": {"D03": {"episodes": 8, "successes": 1}}}
+    )
+    assert not cli.probe_justifies_full_screen(
+        {"complete": False, "reports": {"D03": {"episodes": 8, "successes": 8}}}
+    )
+    with pytest.raises(ValueError):
+        cli.diagnostic_probe_scenes(scenes[:4], 0, 3)
+
+
+def test_fast_probe_integration_delays_full_screen_without_skipping_final_validation(
+    config, training, monkeypatch
+):
+    """Two failed probes still lead to a mandatory full validation opportunity."""
+    config.task.name = "navigation"
+    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    OmegaConf.update(
+        config, "screening", {"probe_between_full": True, "full_every": 3}, force_add=True
+    )
+    training.stop_at = None
+    calls = []
+
+    def evaluate(config, directory, *, evaluation_index=0, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        calls.append((config.mode, tuple(config.benchmark.scenes or ()), directory.name))
+        if config.mode == "benchmark":
+            return {"passed": True}
+        if config.benchmark.protocol == "learning":
+            return {"passed": True}
+        scenes = list(config.benchmark.scenes)
+        successes = 0 if directory.name == "probe" else 7
+        return {
+            "complete": True,
+            "reports": {scene: {"episodes": 8, "successes": successes} for scene in scenes},
+        }
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    cli.train(config, training.record)
+    assert [row[2] for row in calls[:3]] == ["probe", "probe", "screening"]
+    assert [row[0] for row in calls] == ["checkpoint_eval"] * 4 + ["benchmark"]
+    assert calls[0][1] == ("S01", "D01")
+    assert calls[1][1] == ("S02", "D02")
+    assert calls[2][1] == ("S01", "S02", "S03", "D01", "D02", "D03")
+    assert [item["event"] for item in training.record.events].count("checkpoint_probe") == 2
+    assert training.record.identity["status"] == "accepted"
+
+
 def test_checkpoint_evaluations_do_not_repeat_policy_serialization(config, training, monkeypatch):
     """Keep crash recovery and C5 provenance with two state writes per evaluation."""
     from collections import Counter

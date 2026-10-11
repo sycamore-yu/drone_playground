@@ -55,6 +55,31 @@ def screening_passed(report: dict, task: str, primary_scenes: list[str]) -> bool
     return True
 
 
+def probe_justifies_full_screen(report: dict, *, min_successes: int = 1) -> bool:
+    """Escalate a probe on genuine arrival evidence; never declare a pass here."""
+    if type(min_successes) is not int or min_successes < 1:
+        raise ValueError("Probe minimum successes must be a positive integer")
+    rows = report.get("reports", {})
+    if not rows or not report.get("complete"):
+        return False
+    return any(
+        isinstance(row, dict)
+        and row.get("episodes") == 8
+        and type(row.get("successes")) is int
+        and row["successes"] >= min_successes
+        for row in rows.values()
+    )
+
+
+def diagnostic_probe_scenes(primary_scenes: list[str], evaluation_index: int, full_every: int):
+    """Cycle through static/dynamic scene pairs between mandatory full screens."""
+    if len(primary_scenes) != 6 or full_every < 2 or evaluation_index < 0:
+        raise ValueError("Fast Navigation probes require six scenes and valid evaluation settings")
+    probe_round = evaluation_index - evaluation_index // full_every
+    index = probe_round % 3
+    return [primary_scenes[index], primary_scenes[index + 3]]
+
+
 def train(config: DictConfig, record: RunRecord) -> None:
     """Train under a versioned evaluation contract with one common update lifecycle."""
     from drone_playground.learning.checkpoint import (
@@ -90,6 +115,17 @@ def train(config: DictConfig, record: RunRecord) -> None:
     scene_updates = resolved["learning"].get("scene_updates", 20)
     scene_index, updates_in_scene = 0, 0
     sampling = None
+    screening_options = resolved.get("screening", {})
+    fast_probes = screening_options.get("probe_between_full", False)
+    full_every = screening_options.get("full_every", 3)
+    if type(fast_probes) is not bool or type(full_every) is not int or full_every < 2:
+        raise ValueError("screening requires boolean probe_between_full and full_every >= 2")
+    if fast_probes and (
+        config.task.name != "navigation"
+        or not config.benchmark.get("fixed_checkpoint_seeds", False)
+        or legacy
+    ):
+        raise ValueError("Fast probes require fixed-seed Navigation checkpoint selection")
     if scenes is not None:
         if (
             config.task.name != "navigation"
@@ -259,6 +295,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
         light_config.benchmark.seed_base = 1_000_000
         evaluation_config.benchmark.scenes = primary_scenes
         evaluation_config.benchmark.seed_base = 1_500_000
+        if fast_probes:
+            probe_config = OmegaConf.create(resolved)
+            probe_config.mode = "checkpoint_eval"
+            probe_config.benchmark.protocol = "diagnostic"
+            probe_config.benchmark.seed_base = 1_000_000
+            probe_config.benchmark.episodes = 8
+            probe_config.benchmark.record_replay = False
+            probe_config.benchmark.record_trajectories = False
     environments = {}
     initial_interactions = int(state.interactions)
     checkpoint_path = record.directory / "checkpoints" / "latest.training.zip"
@@ -356,6 +400,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     "decisions.json",
                     "replays",
                     "screening",
+                    "probe",
                 }:
                     item.rename(previous / item.name)
             record.event(
@@ -373,52 +418,80 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 environments=environments,
             )
         else:
-            screening = evaluate(
-                light_config,
-                directory / "screening",
-                actor=trainer.actor,
-                parameters=state.params,
-                evaluation_index=evaluation_index + 1,
-                environments=environments,
-            )
-            score = screening_score(screening, config.task.name, primary_scenes)
-            best_screen_score, stagnant_screens, improved, patience_exhausted = update_patience(
-                score,
-                update,
-                best_screen_score,
-                stagnant_screens,
-                settings=patience_settings,
-            )
-            suitable = screening_passed(screening, config.task.name, primary_scenes)
-            record.event(
-                "screening_evaluation",
-                update=update,
-                passed=suitable,
-                episodes=8,
-                scenes=primary_scenes,
-                score=score,
-                best_score=best_screen_score,
-                improved=improved,
-                stagnant_screens=stagnant_screens,
-                patience_exhausted=patience_exhausted,
-            )
             report = {"passed": False}
-            if suitable:
-                report = evaluate(
-                    evaluation_config,
-                    directory,
+            run_full_screen = not fast_probes or (evaluation_index + 1) % full_every == 0
+            if not run_full_screen:
+                # The same six canonical fixed seeds are used during full screens.
+                # Rotate three static/dynamic pairs rather than evaluating all six.
+                probe_config.benchmark.scenes = diagnostic_probe_scenes(
+                    primary_scenes, evaluation_index, full_every
+                )
+                probe_started = time.monotonic()
+                probe = evaluate(
+                    probe_config,
+                    directory / "probe",
                     actor=trainer.actor,
                     parameters=state.params,
                     evaluation_index=evaluation_index + 1,
                     environments=environments,
                 )
+                run_full_screen = probe_justifies_full_screen(probe)
                 record.event(
-                    "full_validation",
+                    "checkpoint_probe",
                     update=update,
-                    passed=bool(report["passed"]),
-                    scenes=primary_scenes,
-                    episodes=25 if config.task.name == "navigation" else 100,
+                    scenes=list(probe_config.benchmark.scenes),
+                    successes=sum(row["successes"] for row in probe["reports"].values()),
+                    promoted_to_full=run_full_screen,
+                    evaluation_seconds=time.monotonic() - probe_started,
                 )
+            if run_full_screen:
+                screening_started = time.monotonic()
+                screening = evaluate(
+                    light_config,
+                    directory / "screening",
+                    actor=trainer.actor,
+                    parameters=state.params,
+                    evaluation_index=evaluation_index + 1,
+                    environments=environments,
+                )
+                score = screening_score(screening, config.task.name, primary_scenes)
+                best_screen_score, stagnant_screens, improved, patience_exhausted = update_patience(
+                    score,
+                    update,
+                    best_screen_score,
+                    stagnant_screens,
+                    settings=patience_settings,
+                )
+                suitable = screening_passed(screening, config.task.name, primary_scenes)
+                record.event(
+                    "screening_evaluation",
+                    update=update,
+                    passed=suitable,
+                    episodes=8,
+                    scenes=primary_scenes,
+                    score=score,
+                    best_score=best_screen_score,
+                    improved=improved,
+                    stagnant_screens=stagnant_screens,
+                    patience_exhausted=patience_exhausted,
+                    evaluation_seconds=time.monotonic() - screening_started,
+                )
+                if suitable:
+                    report = evaluate(
+                        evaluation_config,
+                        directory,
+                        actor=trainer.actor,
+                        parameters=state.params,
+                        evaluation_index=evaluation_index + 1,
+                        environments=environments,
+                    )
+                    record.event(
+                        "full_validation",
+                        update=update,
+                        passed=bool(report["passed"]),
+                        scenes=primary_scenes,
+                        episodes=25 if config.task.name == "navigation" else 100,
+                    )
         evaluation_index += 1
         consecutive = (
             (consecutive + 1 if report["passed"] else 0) if legacy else int(bool(report["passed"]))

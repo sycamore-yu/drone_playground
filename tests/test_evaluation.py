@@ -31,6 +31,22 @@ def test_fixed_checkpoint_cohort_is_stable_and_benchmark_remains_held_out():
         _scene_seed(config, 1_000_000, 1, 0)
 
 
+def test_partial_checkpoint_probe_keeps_original_full_screen_initialization_seed():
+    """Selecting two scenes may not change either scene's fixed cohort identity."""
+    config = OmegaConf.create(
+        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
+    )
+    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
+    for index, scene in enumerate(scenes):
+        full_seed = _scene_seed(config, 1_000_000, 15, index, scene)
+        probe_seed = _scene_seed(config, 1_000_000, 1, 0, scene)
+        assert full_seed == probe_seed
+    config.mode = "benchmark"
+    assert _scene_seed(config, 2_000_000, 15, 3, "D01") != _scene_seed(
+        config, 2_000_000, 1, 0, "D01"
+    )
+
+
 def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
     """Keep every outcome while omitting unused trace computation and storage."""
     from drone_playground.simulation import runner

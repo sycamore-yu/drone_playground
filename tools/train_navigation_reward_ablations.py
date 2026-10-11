@@ -156,7 +156,17 @@ def gpu_memory_free_mib():
 
 
 def chosen_candidate(status):
-    """Screen seed 0 across all treatments before spending seeds 1 and 2."""
+    """Finish an accepted candidate's independent seeds before exploring more pilots."""
+    for sensor, letter in CASES:
+        trials = status[f"{sensor}_{letter}"]
+        if trials[0]["status"] != "accepted":
+            continue
+        for seed in (1, 2):
+            if (
+                all(item["status"] == "accepted" for item in trials[:seed])
+                and trials[seed]["status"] == "missing"
+            ):
+                return sensor, letter, seed
     for seed in (0, 1, 2):
         for sensor, letter in CASES:
             trials = status[f"{sensor}_{letter}"]

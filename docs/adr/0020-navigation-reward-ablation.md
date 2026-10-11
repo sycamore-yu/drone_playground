@@ -58,3 +58,51 @@ The new experiments use a separate results root,
 new_drone_playground/results/ppo_reward_ablation_v01.
 Never overwrite Trial 9/10, the old scheduler's accepted Racing results, or
 an existing checkpoint.
+
+## Efficient validation loop (versioned, opt-in)
+
+The first pilot budgets were dominated by repeated identical zero-success
+screens across six nominal scenes, not by reward computation. To shorten the
+feedback cycle, the A–D experiments alone use:
+
+- **Every 80 PPO updates:** run an eight-episode diagnostic on a rotating pair
+  of static/dynamic scenes (S01/D01, S02/D02, S03/D03).
+- **Every third checkpoint:** always run the complete six-scene × eight-episode
+  screening, even if recent probes were unsuccessful. Full screens therefore
+  occur at updates 240, 480, 720 and so on.
+- **If any diagnostic episode arrives:** immediately escalate that checkpoint
+  to the complete six-scene screen. Do not wait for the next periodic sweep.
+- Only a complete screen updates best-score/patience and can initiate the
+  25-episode-per-scene full validation. A two-scene probe cannot select or
+  accept a policy. A separate held-out benchmark remains the sole final test.
+- **Patience = 3 complete screens after minimum update 800:** weak candidates
+  are stopped sooner, but short diagnostic failures alone never trigger
+  early stopping. The historical Trial 9/10 recipes and run statuses are
+  unchanged.
+- Once one arm passes the actual frozen benchmark at seed 0, train seeds 1
+  and 2 of that arm ahead of other still-untried reward candidates. Do not
+  mistake a single successful seed for overall acceptance.
+
+The two-scene probes reuse the **same eight checkpoint-validation initial
+conditions for each named scene** as the six-scene screen. Fixed cohort seeds
+are now indexed by canonical scene identity instead of the enumeration
+position within a temporary subset; benchmark seeds are not modified.
+
+For always-zero probes, the nominal diagnostic episode count per three
+checkpoints falls from 144 to 80 (two × 16 plus one × 48), or **44% fewer
+screened episodes**. This is an episode-count bound, not a claimed measured
+wall-clock speedup; new events record `evaluation_seconds` separately.
+
+Real-shape independent CPU benchmarking (10 physical CPU cores, 16 worlds,
+horizon 32, 208 obstacle capacity) measured **19.7 interactions/s** after
+compilation. Previously recorded GPU runs achieved hundreds of interactions/s.
+Therefore run simulation/PPO on GPU, use the CPU for Hydra preflight, test
+execution, outcome aggregation and experiment orchestration; do not schedule
+a full CPU PPO training as an equal replacement for a GPU slot.
+
+The design borrows bounded, measured, multi-fidelity allocation from
+ASHA/SuccessiveHalving without adding Ray or Optuna as a framework
+dependency. Since a delayed-onset good RL policy is possible, every candidate
+receives periodic full screens and a generous minimum training budget before
+pruning. The search must stop after six pilot arms and explain negative
+results rather than silently launching dozens of new random trials.
