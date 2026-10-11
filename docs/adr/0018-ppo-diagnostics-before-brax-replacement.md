@@ -109,3 +109,61 @@ checkpoint recovery. New experiments select reward under Task.
 - DiffAero: https://github.com/flyingbitac/diffaero
 - VisFly: https://github.com/SJTU-ViSYS-team/VisFly
 - Stable-Baselines3 recurrent PPO: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_recurrent.html
+
+## 2026-10-11: Native Brax navigation replication (measured)
+
+Re-ran the unmodified old repository's `experiment=navigation/ppo` with
+`env=navigation/static`, source revision `da343fd`, Brax 0.14.2, JAX 0.9.2,
+Crazyflow 0.3.2 and a real RTX 4090. The old environment executes a
+50 Hz velocity/yaw policy over Crazyflow at 500 Hz, with a sensor-fusion
+64×64 feedforward network and the `motion-aware-v2` task reward. Training
+uses the **fixed S01/S02/S03/S06 geometry**, unlike the new procedural
+Navigation training distribution; checkpoint evaluation uses separate reset
+seeds but not unseen geometry. The original repository is left untouched.
+
+| Independent old run | Worlds | Real steps | Static checkpoint evaluations | Best arrivals |
+| --- | ---: | ---: | ---: | ---: |
+| `legacy-brax-nav-static-ppo-s0-20261011` | 16 | 131,072 | 5 × 8 episodes | 0/8 |
+| `legacy-brax-nav-static-full-s0-20261011` | 128 | 2,097,152 | 5 × 8 episodes | 0/8 |
+| `legacy-brax-nav-static-resetmix-s0-20261011` | 128 | 2,097,152 | 5 × 8 episodes | 0/8 |
+
+The full run completed normally, with a nonzero Actor parameter L2 change
+(3.462) and checkpoint updates at 0, 524,288, 1,048,576, 1,572,864 and
+2,097,152 interactions. At the final checkpoint, 6 of 8 episodes collided,
+2 left the boundary and none reached the goal. The corresponding mean
+evaluation returns were −10.266, −10.084, −10.204, −10.170 and −10.561.
+There is **no observed old native PPO navigation convergence**, and no
+justification for replacing the new recurrent PPO with Brax on this evidence.
+
+The old reward scaling is relevant for future controlled diagnosis. For a
+96 m nominal start-to-goal displacement, its progress contribution is only
+`0.01 * 0.2 * 96 = 0.192`, versus an arrival bonus of `+1` and a terminal
+failure cost of `-10`, before continuous motion/time penalties. This can
+incentivize risk avoidance without solving the task; it is a hypothesis, not
+a proved root cause. At 50 Hz, the old `discounting=0.995` discounts a bonus
+48 seconds away to approximately `0.995 ** (48 * 50) = 0.0000059` of its value;
+this long-horizon signal issue is also a hypothesis, not proven causation.
+
+The third run changed only `training.reset_randomization.position` to a
+0.25/0.25/0.50 mixture of departure, near-goal and free-course starts,
+retaining the old Brax learner, network, controller, reward and identical
+nominal evaluation cohorts. It completed at 2,097,152 interactions with
+a nonzero Actor parameter L2 change (3.444). All five checkpoint evaluations
+again recorded zero arrivals out of eight. All eight final episodes collided;
+final mean evaluation return was −10.141. Mixed starts alone **did not
+establish convergence**.
+
+The original three independent runs and their configurations are preserved
+under `drone_playground/results/runs/navigation/ppo/<run_id>/`. Because neither
+the original configuration nor this one-factor variant converged, no Brax
+PPO replacement or old-policy checkpoint transfer is justified. Further work
+should independently test the reward/time-horizon contract rather than
+mistaking Critic loss reduction for navigation success.
+
+The new repository's existing Brax compatibility smoke was also executed
+via the isolated old Python environment:
+`tools/smoke_brax.py --algorithm ppo --num-envs 4 --timesteps 64` passed
+with a nonzero native policy update.
+This checks only the **state-observation adapter**, not Depth/CNN/GRU or
+LiDAR/PointNet/GRU convergence. Do not merge their checkpoints or equate
+these different observation/action/training contracts.
