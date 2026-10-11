@@ -1,0 +1,9 @@
+# @package _global_
+# Single-variable control-frequency ablation: 10 Hz -> 25 Hz body-rate decisions.
+# VisFly upstream runs at 0.03 s control intervals; 25 Hz is a compatible
+# divisor of Crazyflow's 500 Hz physics clock. Keep all other v02 choices.
+defaults:
+  - navigation_paper_visfly2025_ppo_posscale10_staged
+
+simulation:
+  method_hz: 25
