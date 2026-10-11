@@ -13,6 +13,7 @@ from pathlib import Path
 import jax
 import numpy as np
 from omegaconf import OmegaConf
+from tensorboardX import SummaryWriter
 
 
 def atomic_json(path: Path, data: dict) -> None:
@@ -72,6 +73,24 @@ class RunRecord:
         if (self.directory / "run.json").exists() and not resume:
             raise FileExistsError(f"Run already exists: {self.directory}")
         self.directory.mkdir(parents=True, exist_ok=True)
+        previous = (
+            json.loads((self.directory / "run.json").read_text())
+            if resume and (self.directory / "run.json").exists()
+            else None
+        )
+        requested = config.get("results", {}).get("format", "orbax")
+        if requested not in ("legacy", "orbax"):
+            raise ValueError("results.format must be legacy or orbax")
+        self.layout_version = (
+            int(previous["layout_version"])
+            if previous is not None
+            else 2
+            if requested == "legacy"
+            else 3
+        )
+        self._writer = (
+            SummaryWriter(logdir=str(self.directory)) if self.layout_version == 3 else None
+        )
         resolved = OmegaConf.to_container(config, resolve=True)
         config_path = self.directory / "config.yaml"
         if not resume:
@@ -93,7 +112,7 @@ class RunRecord:
                 versions[package] = "source"
         self.identity = {
             "schema_version": 1,
-            "layout_version": 2,
+            "layout_version": self.layout_version,
             "status": "running",
             "started_unix": time.time(),
             "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
@@ -104,8 +123,8 @@ class RunRecord:
             **source_identity(),
         }
         session_identity = dict(self.identity)
-        if resume and (self.directory / "run.json").exists():
-            self.identity = json.loads((self.directory / "run.json").read_text())
+        if previous is not None:
+            self.identity = previous
             self.identity.update(status="running", resumed_unix=time.time())
         atomic_json(self.directory / "run.json", self.identity)
         self.event("session_started", resumed=resume, identity=session_identity)
@@ -113,13 +132,44 @@ class RunRecord:
     def event(self, event: str, **metrics) -> None:
         """Append one finite metric record, preserving earlier failed attempts."""
         data = {"event": event, "wall_seconds": time.monotonic() - self.start, **metrics}
-        with (self.directory / "metrics.jsonl").open("a") as stream:
-            stream.write(json.dumps(data, allow_nan=False) + "\n")
+        if self._writer is not None:
+            step = int(metrics.get("update", self.identity.get("last_update", 0)))
+            if event == "update":
+                for name, value in metrics.items():
+                    if isinstance(value, (int, float)) and np.isfinite(value):
+                        self._writer.add_scalar(f"train/{name}", value, step)
+                self.identity["last_update"] = step
+                self.identity["last_interactions"] = metrics.get("interactions")
+            elif event in ("screening_evaluation", "full_validation", "checkpoint_evaluation"):
+                self.identity["last_evaluation"] = {
+                    "event": event,
+                    **{key: value for key, value in metrics.items() if key != "scenes"},
+                }
+                if isinstance(metrics.get("passed"), bool):
+                    self._writer.add_scalar(
+                        f"evaluation/{event}_passed", int(metrics["passed"]), step
+                    )
+            else:
+                self._writer.add_text(f"event/{event}", json.dumps(data, default=str), step)
+            self._writer.flush()
+            if event in (
+                "update",
+                "screening_evaluation",
+                "full_validation",
+                "checkpoint_evaluation",
+            ):
+                atomic_json(self.directory / "run.json", self.identity)
+        else:
+            with (self.directory / "metrics.jsonl").open("a") as stream:
+                stream.write(json.dumps(data, allow_nan=False) + "\n")
 
     def finish(self, status: str, **metrics) -> None:
         """Record measured outcome; only the caller's acceptance checker may declare a pass."""
         self.identity.update(status=status, wall_seconds=time.monotonic() - self.start, **metrics)
         atomic_json(self.directory / "run.json", self.identity)
+        if self._writer is not None:
+            self._writer.flush()
+            self._writer.close()
 
 
 def write_episodes(path: Path, episodes: list[dict]) -> None:

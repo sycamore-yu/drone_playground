@@ -164,9 +164,19 @@ class Measurement(NamedTuple):
 
 
 def sensor_rays(
-    config: SensorConfig, t: Array | float = 0.0, frame_index: Array | int | None = None
+    config: SensorConfig,
+    t: Array | float = 0.0,
+    frame_index: Array | int | None = None,
+    *,
+    selected_count: int | None = None,
 ) -> tuple[Array, Array]:
     """Unit rays and zero snapshot offsets; each world has an explicit scan phase."""
+    if selected_count is not None and (
+        config.profile != "mid360"
+        or not isinstance(selected_count, int)
+        or not 0 < selected_count <= config.points_per_frame
+    ):
+        raise ValueError("Selected rays require a valid Mid-360 point count")
     if config.profile == "d435i":
         x = 2 * (jnp.arange(config.width) + 0.5) / config.width - 1
         y = 1 - 2 * (jnp.arange(config.height) + 0.5) / config.height
@@ -192,9 +202,13 @@ def sensor_rays(
             else jnp.asarray(frame_index)
         )
         angles, _ = _mid360_pattern()
+        ray_indices = (
+            jnp.arange(config.points_per_frame)
+            if selected_count is None
+            else jnp.linspace(0, config.points_per_frame - 1, selected_count).astype(jnp.int32)
+        )
         indices = (
-            frame.astype(jnp.int32)[..., None] * config.points_per_frame
-            + jnp.arange(config.points_per_frame)
+            frame.astype(jnp.int32)[..., None] * config.points_per_frame + ray_indices
         ) % len(angles)
         selected = jnp.asarray(angles)[indices]
         azimuth, elevation = selected[..., 0], selected[..., 1]
@@ -217,6 +231,8 @@ def measure(
     t: Array | float,
     *,
     frame_index: Array | int | None = None,
+    selected_count: int | None = None,
+    scene_state=None,
 ) -> Measurement:
     """Measure one scene/robot snapshot per world at ``t`` with fixed calibration.
 
@@ -226,7 +242,7 @@ def measure(
     position, quaternion = jnp.asarray(position), jnp.asarray(quaternion)
     batch = jnp.broadcast_shapes(position.shape[:-1], quaternion.shape[:-1])
     time = jnp.broadcast_to(jnp.asarray(t), batch)
-    rays, _ = sensor_rays(config, time, frame_index)
+    rays, _ = sensor_rays(config, time, frame_index, selected_count=selected_count)
     count = rays.shape[-2]
     rays = jnp.broadcast_to(rays, (*batch, count, 3))
     mounting = Rotation.from_euler(
@@ -250,7 +266,10 @@ def measure(
         if config.profile == "d435i"
         else config.max_range
     )
-    ranges = scene.raycast(origins, world_rays, time, limit)
+    if scene_state is None:
+        ranges = scene.raycast(origins, world_rays, time, limit)
+    else:
+        ranges = scene.raycast(origins, world_rays, time, limit, scene_state=scene_state)
     values = ranges * rays[..., 0] if config.profile == "d435i" else ranges
     hit = ranges < jnp.broadcast_to(jnp.asarray(limit), batch)[..., None]
     mask = hit & jnp.isfinite(values) & (values >= config.min_range) & (values < config.max_range)

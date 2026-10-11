@@ -380,6 +380,80 @@ def test_mid360_full_frame_and_snapshot_moving_geometry(make_scene):
     np.testing.assert_array_equal(reduced.points_body, result.points_body[indices])
 
 
+def test_mid360_selected_rays_match_full_scan_reduction_snapshot(make_scene):
+    """Sparse capture matches the selected subset of the released MID360 scan pattern."""
+    scene = make_scene('<geom type="sphere" size="20"/>')
+    device = SensorConfig.mid360(points_per_frame=257)
+    count = 64
+    positions = jnp.array([[0.3, 0.0, 0.0], [0.7, 0.0, 0.0]])
+    quaternion = jnp.array([0.0, 0.0, 0.0, 1.0])
+    frames = jnp.array([3, 6])
+
+    def capture(selection):
+        return measure(
+            scene,
+            device,
+            positions,
+            quaternion,
+            jnp.array([0.4, 0.7]),
+            frame_index=frames,
+            selected_count=selection,
+        )
+
+    full = jax.jit(lambda: capture(None))()
+    sparse = jax.jit(lambda: capture(count))()
+    reference = reduce_points(full, count)
+    for name in Measurement._fields:
+        np.testing.assert_allclose(
+            getattr(sparse, name), getattr(reference, name), atol=5e-4, rtol=1e-6
+        )
+    assert sparse.points_body.shape == (2, count, 3)
+    assert full.points_body.shape == (2, 257, 3)
+    with pytest.raises(ValueError, match="Selected rays"):
+        sensor_rays(SensorConfig.uniform_lidar_paper(), selected_count=64)
+
+
+def test_mid360_policy_sampling_changes_only_acquisition_workload():
+    """Policy-only capture computes fewer rays without changing the actor-visible points."""
+    from drone_playground.simulation.environment import make_environment
+
+    base = dict(
+        task="navigation",
+        scene="S01",
+        num_envs=1,
+        device="cpu",
+        physics_hz=100,
+        method_hz=10,
+        sensor="lidar",
+        sensor_config={"points_per_frame": 257},
+        point_count=64,
+        action={"level": "acceleration", "heading": "target"},
+    )
+    full = make_environment(**base, ray_sampling="full")
+    policy = make_environment(**base, ray_sampling="policy")
+    try:
+        key = jax.random.key(8)
+        initial_full, initial_sparse = full.reset(key), policy.reset(key)
+        assert initial_full.observation.measurement.points_body.shape == (1, 257, 3)
+        assert initial_sparse.observation.measurement.points_body.shape == (1, 64, 3)
+        action = jnp.zeros((1, 3))
+        measured_full = full.step(initial_full, action)
+        measured_sparse = policy.step(initial_sparse, action)
+        points_full = full.observe(measured_full)
+        points_sparse = policy.observe(measured_sparse)
+        assert points_full["points"].shape == points_sparse["points"].shape == (1, 64, 3)
+        np.testing.assert_allclose(points_sparse["points"], points_full["points"], atol=1e-3)
+        np.testing.assert_array_equal(points_sparse["mask"], points_full["mask"])
+        np.testing.assert_allclose(
+            points_sparse["point_times"], points_full["point_times"], atol=1e-6
+        )
+        assert "ray_sampling" not in full.sensor.specification
+        assert policy.sensor.specification["ray_sampling"] == "policy"
+    finally:
+        full.sim.close()
+        policy.sim.close()
+
+
 def test_snapshot_world_poses_and_mask_preservation(make_scene):
     """Independent world poses produce correct body points at one time per frame."""
     scene = make_scene('<geom type="sphere" size="20"/>')

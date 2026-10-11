@@ -6,21 +6,50 @@ import numpy as np
 import pytest
 
 from drone_playground.simulation.controllers import MellingerController
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import (
+    BaseEnv,
+    NavigationEnv,
+    RacingEnv,
+    TrackingEnv,
+    make_environment,
+)
 from drone_playground.simulation.methods import Setpoint, Trajectory
 from drone_playground.simulation.tasks import Event, first_event
+
+
+@pytest.mark.parametrize(
+    "task,scene,environment_type",
+    [
+        ("tracking", "empty", TrackingEnv),
+        ("racing", "racing", RacingEnv),
+        ("navigation", "S01", NavigationEnv),
+    ],
+)
+def test_concrete_environments_share_base_and_define_task(task, scene, environment_type):
+    """Each task has its own environment type and shared physical implementation."""
+    env = make_environment(task=task, scene=scene, num_envs=1)
+    try:
+        assert type(env) is environment_type
+        assert isinstance(env, BaseEnv)
+        state = env.reset(jax.random.key(9))
+        observation = env.observe(state)
+        assert observation["state"].shape[0] == 1
+        after = env.step(state, jnp.zeros((1, env.action_size)))
+        assert np.isfinite(env.cost(state, after, jnp.zeros((1, env.action_size)))).all()
+    finally:
+        env.sim.close()
 
 
 @pytest.mark.parametrize("duration", [0, -1, float("nan"), float("inf")])
 def test_episode_duration_rejects_invalid_values(duration):
     """Verify episode duration rejects invalid values."""
     with pytest.raises(ValueError, match="finite and positive"):
-        Environment(duration=duration)
+        make_environment(duration=duration)
 
 
 def test_navigation_contract_records_instantiated_task_rules():
     """Verify navigation contract records instantiated task rules."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"}, task="navigation", scene="S01"
     )
     contract = env.task.contract
@@ -34,8 +63,8 @@ def test_navigation_contract_records_instantiated_task_rules():
 
 def test_optional_goal_observation_exposes_height_and_remaining_distance():
     """Expose normalized goal quantities while retaining the original ten features."""
-    baseline = Environment(task="navigation", scene="S01")
-    informed = Environment(task="navigation", scene="S01", navigation_goal_observation=True)
+    baseline = make_environment(task="navigation", scene="S01")
+    informed = make_environment(task="navigation", scene="S01", navigation_goal_observation=True)
     state = baseline.reset(jax.random.key(7))
     physics = state.physics.replace(
         states=state.physics.states.replace(pos=jnp.array([[[97.0, 0.0, 2.0]]]))
@@ -51,7 +80,7 @@ def test_optional_goal_observation_exposes_height_and_remaining_distance():
 
 def test_forward_matches_official_crazyflow():
     """Verify forward matches official crazyflow."""
-    env = Environment(num_envs=3)
+    env = make_environment(num_envs=3)
     state = env.reset(jax.random.key(9))
     command = jnp.array(
         [[0.10, -0.05, 0.0, 0.32], [-0.08, 0.10, 0.04, 0.35], [0.0, 0.0, 0.0, 0.33]]
@@ -68,7 +97,7 @@ def test_forward_matches_official_crazyflow():
 
 def test_masked_reset_keeps_unfinished_worlds_and_clears_counters():
     """Verify masked reset keeps unfinished worlds and clears counters."""
-    env = Environment(num_envs=3)
+    env = make_environment(num_envs=3)
     before = env.step(env.reset(jax.random.key(3)), jnp.zeros((3, 4)))
     before = before.replace(task=before.task.replace(event=jnp.array([0, 1, 5], jnp.int32)))
     after = env.reset(jax.random.key(10), before)
@@ -88,7 +117,7 @@ def test_event_priority_and_termination_vs_truncation():
         jnp.ones(5, bool),
     )
     np.testing.assert_array_equal(result, [1, 2, 3, 4, 5])
-    env = Environment(num_envs=2)
+    env = make_environment(num_envs=2)
     state = env.reset(jax.random.key(1))
     state = state.replace(
         task=state.task.replace(event=jnp.array([Event.COLLISION, Event.TIMEOUT]))
@@ -99,7 +128,7 @@ def test_event_priority_and_termination_vs_truncation():
 
 def test_real_physics_action_gradient_is_finite_and_nonzero():
     """Verify real physics action gradient is finite and nonzero."""
-    env = Environment(num_envs=2)
+    env = make_environment(num_envs=2)
     state = env.reset(jax.random.key(1))
     gradient = jax.grad(lambda action: jnp.sum(env.step(state, action).physics.states.pos))(
         jnp.zeros((2, 4))
@@ -110,7 +139,7 @@ def test_real_physics_action_gradient_is_finite_and_nonzero():
 
 def test_upstream_acceleration_conversion_hover_and_forward():
     """Verify upstream acceleration conversion hover and forward."""
-    env = Environment()
+    env = make_environment()
     state = env.reset(jax.random.key(1))
     state = state.replace(
         physics=state.physics.replace(
@@ -131,7 +160,7 @@ def test_upstream_acceleration_conversion_hover_and_forward():
 )
 def test_each_task_runs_and_observations_do_not_expose_geometry(task, scene):
     """Verify each task runs and observations do not expose geometry."""
-    env = Environment(task=task, scene=scene)
+    env = make_environment(task=task, scene=scene)
     state = env.reset(jax.random.key(1))
     assert set(env.observe_state(state)) == {"state"}
     next_state = env.step(state, jnp.zeros((1, env.action_size)))
@@ -141,15 +170,15 @@ def test_each_task_runs_and_observations_do_not_expose_geometry(task, scene):
 
 def test_racing_requires_directed_aperture_crossing():
     """Verify racing requires directed aperture crossing."""
-    env = Environment(task="racing", scene="racing")
+    env = make_environment(task="racing", scene="racing")
     state = env.reset(jax.random.key(0))
     center = env.task.gate_positions[0]
     normal = env.task.gate_rotations[0, :, 0]
     before = state.physics.states.replace(pos=(center - 0.1 * normal)[None, None])
     after = before.replace(pos=(center + 0.1 * normal)[None, None])
-    result = env.task.update(state.task, before, after, jnp.array([1.0]), jnp.array([1.0]))
+    result = env.update_task(state.task, before, after, jnp.array([1.0]), jnp.array([1.0]))
     assert int(result.gates[0]) == 1
-    reverse = env.task.update(state.task, after, before, jnp.array([1.0]), jnp.array([1.0]))
+    reverse = env.update_task(state.task, after, before, jnp.array([1.0]), jnp.array([1.0]))
     assert int(reverse.gates[0]) == 0
 
 
@@ -166,7 +195,7 @@ def test_trajectory_validity_and_derivative_presence():
 
 def test_sensor_clock_and_masked_sensor_history_reset():
     """Verify sensor clock and masked sensor history reset."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
@@ -190,7 +219,7 @@ def test_sensor_clock_and_masked_sensor_history_reset():
 
 def test_finished_world_is_immutable_until_reset():
     """Verify finished world is immutable until reset."""
-    env = Environment(duration=0.02)
+    env = make_environment(duration=0.02)
     state = env.step(env.reset(jax.random.key(0)), jnp.zeros((1, 4)))
     assert bool(state.done[0])
     after = env.step(state, jnp.ones((1, 4)))

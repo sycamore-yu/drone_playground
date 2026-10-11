@@ -5,13 +5,13 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.networks import Actor
 
 
 def test_tracking_accepts_acceleration_interface():
     """Changing control quantities does not change the task."""
-    env = Environment(action={"level": "acceleration"}, num_envs=2)
+    env = make_environment(action={"level": "acceleration"}, num_envs=2)
     assert env.action_size == 3
     state = env.reset(jax.random.key(4))
     after = env.step(state, jnp.zeros((2, 3)))
@@ -33,7 +33,7 @@ def test_actor_owns_memory_and_output_size():
 
 def test_nominal_action_scale_does_not_read_random_mass():
     """An unknown mass disturbance cannot change the policy's command meaning."""
-    env = Environment()
+    env = make_environment()
     state = env.reset(jax.random.key(3))
     altered = state.replace(
         physics=state.physics.replace(
@@ -48,7 +48,7 @@ def test_nominal_action_scale_does_not_read_random_mass():
 
 def test_fixed_delay_preserves_command_history_and_reset():
     """Commands wait on the physics clock and each world resets independently."""
-    env = Environment(num_envs=2, action_delay_s=0.04)
+    env = make_environment(num_envs=2, action_delay_s=0.04)
     state = env.reset(jax.random.key(0))
     zero = env.step(state, jnp.zeros((2, 4)))
     changed = env.step(state, jnp.ones((2, 4)) * 0.1)
@@ -65,7 +65,7 @@ def test_backward_model_preserves_forward_and_unmodeled_output(model, level):
     """Substitute modeled derivatives while retaining real attitude or motor derivatives."""
     from drone_playground.learning.dynamics import training_step
 
-    env = Environment(action={"level": level})
+    env = make_environment(action={"level": level})
     state = env.reset(jax.random.key(4))
     action = jnp.zeros((1, env.action_size))
     step = training_step(env, model)
@@ -87,7 +87,7 @@ def test_backward_model_preserves_forward_and_unmodeled_output(model, level):
 
 def test_delayed_depth_is_invisible_until_delivery():
     """A captured frame is not a delivered observation."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="depth",
@@ -103,7 +103,7 @@ def test_delayed_depth_is_invisible_until_delivery():
 
 def test_physical_randomization_is_per_world_and_resettable():
     """Mass samples change real physics, not the controller's nominal mass."""
-    env = Environment(num_envs=3, randomization={"mass": [0.9, 1.1]})
+    env = make_environment(num_envs=3, randomization={"mass": [0.9, 1.1]})
     state = env.reset(jax.random.key(3))
     mass = np.asarray(state.physics.params.mass).reshape(-1)
     assert len(mass) == 3 and len(np.unique(mass)) == 3

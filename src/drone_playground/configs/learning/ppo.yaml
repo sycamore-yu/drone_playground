@@ -25,5 +25,5 @@ options:
 checkpoint_interval: 100
 evaluation_interval: 200
 log_interval: 10
-required_consecutive_passes: 3
-selection: last_of_first_three_consecutive_passes
+required_consecutive_passes: 1
+selection: first_full_validation_pass

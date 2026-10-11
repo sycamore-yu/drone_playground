@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from drone_playground.simulation.controllers import IdealTracking, SO3Controller, so3_control
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.methods import PlannerController
 from drone_playground.simulation.runner import rollout
 
@@ -31,14 +31,14 @@ def test_so3_hover_matches_original_force_and_rotation():
 def test_so3_can_use_existing_tracking_rollout():
     """Changing the tracker does not change Environment or Task."""
     controller = SO3Controller()
-    env = Environment(duration=0.1, control_level=controller.output_level)
+    env = make_environment(duration=0.1, control_level=controller.output_level)
     episodes, _ = rollout(env, seed=0, method=PlannerController(controller))
     assert len(episodes) == 1 and episodes[0]["flight_seconds"] >= 0.1 - 1e-6
 
 
 def test_ideal_tracking_advances_time_and_checks_task():
     """Ideal tracking is a declared response, not a hidden mutation in a controller."""
-    env = Environment(duration=0.1, reference="hover", control_level="ideal")
+    env = make_environment(duration=0.1, reference="hover", control_level="ideal")
     state = env.reset(jax.random.key(0))
     controller = IdealTracking()
     reference = env.task.target(state.time)
@@ -53,7 +53,7 @@ def test_sampling_mpc_executes_real_prediction():
     from drone_playground.simulation.mpc import SamplingMPC
 
     controller = SamplingMPC(samples=32, horizon=5, prediction_seconds=0.2)
-    env = Environment(duration=0.04)
+    env = make_environment(duration=0.04)
     state = env.reset(jax.random.key(0))
     reference = env.task.target(jnp.asarray(controller.reference_offsets)[None])
     command, memory = controller(state.physics, reference, controller.initialize_memory(1, 0))

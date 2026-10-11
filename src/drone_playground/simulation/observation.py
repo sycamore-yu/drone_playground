@@ -72,6 +72,7 @@ class SensorObservation:
         point_count: int = 1024,
         latency_bounds=None,
         encoding=None,
+        ray_sampling: str = "full",
     ):
         """Initialize SensorObservation state for the declared contract."""
         if config.frequency_hz > physics_hz:
@@ -83,16 +84,27 @@ class SensorObservation:
         self.encoding = dict(encoding or {})
         self.scene, self.config = scene, config
         self.point_count = point_count
+        if ray_sampling not in ("full", "policy"):
+            raise ValueError("LiDAR ray_sampling must be 'full' or 'policy'")
+        if ray_sampling == "policy" and (
+            config.profile != "mid360" or not 0 < point_count <= config.points_per_frame
+        ):
+            raise ValueError("Policy ray sampling requires Mid-360 and a valid point count")
+        self.ray_sampling = ray_sampling
+        self.captured_points = point_count if ray_sampling == "policy" else config.points_per_frame
 
     @property
     def specification(self) -> dict:
         """Identify measurement and preprocessing semantics for runs and checkpoints."""
-        return {
+        result = {
             "config": self.config.specification,
             "point_count": self.point_count,
             "encoding": self.encoding,
             "latency_bounds": list(self.latency_bounds),
         }
+        if self.ray_sampling == "policy":
+            result["ray_sampling"] = "policy"
+        return result
 
     @staticmethod
     def _pose_at(previous, current, time):
@@ -107,15 +119,17 @@ class SensorObservation:
         quat = quat / jnp.maximum(jnp.linalg.norm(quat, axis=-1, keepdims=True), 1e-8)
         return position, quat
 
-    def reset(self, physics) -> ObservationState:
+    def reset(self, physics, *, scene_state=None) -> ObservationState:
         """Depth samples at reset; LiDAR publishes its first snapshot after one period."""
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
         batch = len(p)
         pose = jnp.concatenate([jnp.zeros((batch, 1)), p, q], -1)
         if self.config.profile == "d435i":
-            measurement = measure(self.scene, self.config, p, q, jnp.zeros(batch))
+            measurement = measure(
+                self.scene, self.config, p, q, jnp.zeros(batch), scene_state=scene_state
+            )
         else:
-            shape = (batch, self.config.points_per_frame)
+            shape = (batch, self.captured_points)
             measurement = Measurement(
                 jnp.zeros(shape),
                 jnp.zeros(shape, bool),
@@ -164,7 +178,9 @@ class SensorObservation:
             ),
         )
 
-    def update(self, state: ObservationState, physics, active) -> ObservationState:
+    def update(
+        self, state: ObservationState, physics, active, *, scene_state=None
+    ) -> ObservationState:
         """Interpolate physical poses to exact, including noninteger-rate, capture times."""
         time = physics.core.steps[:, 0] / physics.core.freq
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
@@ -188,6 +204,8 @@ class SensorObservation:
                 quaternions,
                 capture_time,
                 frame_index=state.frame,
+                selected_count=self.point_count if self.ray_sampling == "policy" else None,
+                scene_state=scene_state,
             )
             measurement = measurement._replace(
                 available_time=measurement.acquisition_time + state.delay_s
@@ -268,7 +286,9 @@ class SensorObservation:
                 "depth_mask": mask,
                 "acquisition_time": state.measurement.acquisition_time,
             }
-        measurement = reduce_points(state.measurement, self.point_count)
+        measurement = state.measurement
+        if self.ray_sampling != "policy":
+            measurement = reduce_points(measurement, self.point_count)
         return {
             "points": measurement.points_body,
             "mask": measurement.mask,

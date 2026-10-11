@@ -11,18 +11,9 @@ import optax
 from flax import struct
 
 from drone_playground.learning.losses import liu_loss, temporal_gradient_decay, zhang_loss
+from drone_playground.learning.objective import EpisodeObjective, ObjectiveState
+from drone_playground.simulation.methods import PolicyMethod
 from drone_playground.simulation.networks import Actor, Critic
-
-
-@struct.dataclass
-class ObjectiveState:
-    """Episode-local history required by the common causal perception cost."""
-
-    velocity: jax.Array
-    count: jax.Array
-    acceleration: jax.Array
-    jerk_mean: jax.Array
-    jerk_m2: jax.Array
 
 
 @struct.dataclass
@@ -35,7 +26,7 @@ class TrainingState:
     optimizer_state: Any
     rng: jax.Array
     env_state: Any
-    recurrent_memory: jax.Array
+    recurrent_memory: Any
     objective_state: ObjectiveState
     updates: int
     interactions: int
@@ -52,6 +43,10 @@ _DEFAULTS = {
     "minibatches": 1,
     "critic_epochs": 4,
     "clip_epsilon": 0.2,
+    "ppo_target_kl": 0.0,
+    "ppo_value_clip": 0.0,
+    "bootstrap_weight": 1.0,
+    "report_terminal_critic_grad": False,
     "entropy_weight": 0.0,
     "max_grad_norm": 1.0,
     "target_alpha": 0.995,
@@ -69,6 +64,7 @@ _DEFAULTS = {
     "velocity_aux_weight": 0.0,
     "perception_loss": {},
     "randomize_navigation_start": False,
+    "reward_profile": "default",
 }
 
 
@@ -95,33 +91,56 @@ class Trainer:
         loss=None,
         backward_model=None,
         backward_options=None,
+        actor=None,
+        critic=None,
+        method=None,
+        objective=None,
     ):
         """Configure the shared actor, critic, optimizers and compiled update."""
-        if kind not in ("state", "depth", "lidar") or algorithm not in ("ppo", "apg", "shac"):
-            raise ValueError("Expected kind state/depth/lidar and algorithm ppo/apg/shac")
+        if algorithm not in ("ppo", "apg", "shac"):
+            raise ValueError("Expected algorithm ppo/apg/shac")
+        if actor is None and kind not in ("state", "depth", "lidar"):
+            raise ValueError("Default Actor kind must be state/depth/lidar")
+        if actor is not None and actor_config is not None:
+            raise ValueError("Pass an Actor or actor_config, not both")
         options = dict(config or {})
         unknown = options.keys() - _DEFAULTS.keys()
         if unknown:
             raise ValueError(f"Unknown learning options: {sorted(unknown)}")
         self.config = {**_DEFAULTS, **options}
+        if self.config["perception_loss"] is None:
+            self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         self.loss_name = loss
+        if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
+            raise ValueError("Unknown reward profile")
+        if self.config["reward_profile"] != "default" and (
+            env.task.reward_profile != self.config["reward_profile"]
+            or algorithm != "ppo"
+            or env.task.name != "navigation"
+            or env.action.level != "velocity_yaw"
+            or loss is not None
+        ):
+            raise ValueError(
+                "legacy_motion_navigation_v2 requires Navigation PPO, "
+                "velocity_yaw action and loss=null"
+            )
         self.backward_model, self.backward_options = backward_model, dict(backward_options or {})
         if not isinstance(self.config["randomize_navigation_start"], bool):
             raise ValueError("randomize_navigation_start must be boolean")
         if not isinstance(self.config["critic_uses_sensor"], bool):
             raise ValueError("critic_uses_sensor must be boolean")
-        if self.config["critic_uses_sensor"] and (algorithm != "ppo" or kind == "state"):
-            raise ValueError("Sensor-aware critic requires Depth/LiDAR PPO")
+        if self.config["critic_uses_sensor"] and (algorithm != "ppo" or env.sensor is None):
+            raise ValueError("Sensor-aware critic requires PPO and a sensor observation")
         if not isinstance(self.config["critic_uses_privileged"], bool):
             raise ValueError("critic_uses_privileged must be boolean")
         if self.config["critic_uses_privileged"]:
-            if algorithm != "ppo" or kind == "state" or env.task.name != "navigation":
-                raise ValueError("Privileged critic requires Depth/LiDAR Navigation PPO")
+            if algorithm != "ppo" or env.sensor is None or env.task.name != "navigation":
+                raise ValueError("Privileged critic requires sensor-based Navigation PPO")
             if self.config["critic_uses_sensor"]:
                 raise ValueError("Choose either sensor-aware or privileged critic")
-        if self.config["progress_reward_scale"] and env.task.name != "navigation":
-            raise ValueError("progress_reward_scale requires Navigation")
+        if self.config["progress_reward_scale"] and env.task.name not in ("navigation", "racing"):
+            raise ValueError("progress_reward_scale requires Navigation or Racing")
         self._reset_options = {}
         if self.config["randomize_navigation_start"]:
             if env.task.name != "navigation":
@@ -134,11 +153,25 @@ class Trainer:
         if env.num_envs % self.config["minibatches"]:
             raise ValueError("minibatches must divide env.num_envs (whole recurrent sequences)")
         for key, value in self.config.items():
-            if key != "perception_loss" and not math.isfinite(value):
+            if key not in ("perception_loss", "reward_profile") and not math.isfinite(value):
                 raise ValueError(f"{key} must be finite")
         for key in ("lr", "critic_lr", "max_grad_norm", "clip_epsilon"):
             if self.config[key] <= 0:
                 raise ValueError(f"{key} must be positive")
+        if self.config["ppo_target_kl"] < 0 or self.config["ppo_value_clip"] < 0:
+            raise ValueError("PPO target KL and value clipping must be nonnegative")
+        if algorithm != "ppo" and (
+            self.config["ppo_target_kl"] > 0 or self.config["ppo_value_clip"] > 0
+        ):
+            raise ValueError("PPO target KL and value clipping require PPO")
+        if not 0 <= self.config["bootstrap_weight"] <= 1:
+            raise ValueError("SHAC bootstrap_weight must be in [0,1]")
+        if algorithm != "shac" and (
+            self.config["bootstrap_weight"] != 1 or self.config["report_terminal_critic_grad"]
+        ):
+            raise ValueError("Terminal bootstrap ablation requires SHAC")
+        if not isinstance(self.config["report_terminal_critic_grad"], bool):
+            raise ValueError("report_terminal_critic_grad must be boolean")
         for key in ("gamma", "gae_lambda", "target_alpha"):
             if not 0 <= self.config[key] <= 1:
                 raise ValueError(f"{key} must be in [0,1]")
@@ -156,8 +189,8 @@ class Trainer:
         ):
             if self.config[key] < 0:
                 raise ValueError(f"{key} must be nonnegative")
-        if self.config["velocity_aux_weight"] and kind != "depth":
-            raise ValueError("velocity_aux_weight requires the depth actor")
+        if self.config["velocity_aux_weight"] and loss != "zhang":
+            raise ValueError("velocity_aux_weight requires the Zhang velocity prediction objective")
         if self.config["altitude_weight"] and env.task.name != "navigation":
             raise ValueError("altitude_weight requires a Navigation task")
         if self.config["height_boundary_weight"] and env.task.name != "navigation":
@@ -167,11 +200,25 @@ class Trainer:
         if loss is not None and env.action.level != "acceleration":
             raise ValueError("Named acceleration/jerk losses require acceleration commands")
         settings = dict(actor_config or {})
-        self.actor = Actor(kind=kind, action_size=env.action_size, **settings)
-        critic_kind = kind if self.config["critic_uses_sensor"] else "state"
-        self.critic = Critic(
-            kind="privileged" if self.config["critic_uses_privileged"] else critic_kind
+        if actor is not None:
+            self.actor = actor
+        elif "_target_" in settings:
+            from hydra.utils import instantiate
+
+            self.actor = instantiate(settings, action_size=env.action_size)
+        else:
+            self.actor = Actor(kind=kind, action_size=env.action_size, **settings)
+        critic_kind = "state"
+        if self.config["critic_uses_sensor"]:
+            critic_kind = "depth" if env.sensor.config.profile == "d435i" else "lidar"
+        self.critic = (
+            critic
+            if critic is not None
+            else Critic(kind="privileged" if self.config["critic_uses_privileged"] else critic_kind)
         )
+        self.method = method if method is not None else PolicyMethod()
+        if not self.method.trainable or self.method.execution != "jax":
+            raise ValueError("Training requires a JAX trainable Method")
         self._observe = (
             (
                 lambda state: {
@@ -205,8 +252,11 @@ class Trainer:
             if defaults[key] <= 0:
                 raise ValueError(f"{key} must be positive")
         self.config["perception_loss"] = defaults
-        self._recipe = recipe
-        self._window = defaults.get("velocity_window", 1)
+        self.objective = (
+            objective
+            if objective is not None
+            else EpisodeObjective(env, self.config, recipe=recipe, loss_name=loss)
+        )
         from drone_playground.learning.dynamics import training_step
 
         self._differentiable_step = (
@@ -253,19 +303,11 @@ class Trainer:
         memory = self.actor.initialize_memory(self.env.num_envs)
         params = self.actor.init(actor_key, observation, memory)
         critic_params = self.critic.init(critic_key, observation)
-        log_std = jnp.full(
-            (self.env.action_size,), self.config["initial_log_std"], dtype=memory.dtype
-        )
+        log_std = self.method.initial_log_std(self.env, self.config["initial_log_std"])
         actor_parameters = (
             {"params": params, "log_std": log_std} if self.algorithm == "ppo" else params
         )
-        history = ObjectiveState(
-            velocity=jnp.zeros((self.env.num_envs, self._window, 3)),
-            count=jnp.zeros(self.env.num_envs, jnp.int32),
-            acceleration=jnp.zeros((self.env.num_envs, 3)),
-            jerk_mean=jnp.zeros(self.env.num_envs),
-            jerk_m2=jnp.zeros(self.env.num_envs),
-        )
+        history = self.objective.initialize_state(self.env.num_envs)
         return TrainingState(
             params=params,
             critic_params=critic_params,
@@ -344,15 +386,14 @@ class Trainer:
                     before.physics, alpha=self.config["temporal_gradient_alpha"], dt=self.env.dt
                 )
             )
-        return (
-            self._differentiable_step(before, action)
-            if differentiable
-            else self.env.step(before, action)
-        )
+        step = self._differentiable_step if differentiable else self.env.step
+        return self.method.execute(self.env, before, action, step=step)
 
     def _reset(self, key, after, memory, history):
+        from drone_playground.simulation.networks import reset_actor_memory
+
         done = after.done
-        memory = jnp.where(done[:, None], 0, memory)
+        memory = reset_actor_memory(memory, done)
         history = jax.tree.map(
             lambda value: jnp.where(
                 done.reshape((done.shape[0],) + (1,) * (value.ndim - 1)), 0, value
@@ -365,124 +406,6 @@ class Trainer:
             lambda: after,
         )
         return env_state, memory, history
-
-    def _cost(self, before, after, action, history):
-        """Identical task and named perception reward costs for all three algorithms."""
-        from drone_playground.simulation.tasks import Event
-
-        task_cost = self.env.cost(before, after, action)
-        progress_reward = jnp.zeros_like(task_cost)
-        if self.config["progress_reward_scale"]:
-            goal = self.env.task.goal
-            previous_distance = jnp.linalg.norm(goal - before.physics.states.pos[:, 0], axis=-1)
-            distance = jnp.linalg.norm(goal - after.physics.states.pos[:, 0], axis=-1)
-            progress_reward = self.config["progress_reward_scale"] * (previous_distance - distance)
-            progress_reward = jnp.where(before.done, 0.0, progress_reward)
-            task_cost -= progress_reward
-        failure = after.done & (after.task.event != Event.SUCCESS) & ~before.done
-        extra_failure_cost = self.config["failure_cost"] * failure
-        task_cost += extra_failure_cost
-        height_boundary_cost = jnp.zeros_like(task_cost)
-        if self.config["altitude_weight"]:
-            altitude_error = after.physics.states.pos[:, 0, 2] - self.env.task.goal[2]
-            task_cost += self.config["altitude_weight"] * self.env.dt * altitude_error**2
-        if self.config["height_boundary_weight"]:
-            height = after.physics.states.pos[:, 0, 2]
-            edge_distance = jnp.minimum(
-                height - self.env.task.low[2], self.env.task.high[2] - height
-            )
-            height_boundary_cost = (
-                self.config["height_boundary_weight"]
-                * self.env.dt
-                * jax.nn.relu(1.0 - edge_distance) ** 2
-            )
-            height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
-            task_cost += height_boundary_cost
-        cost = self.config["task_weight"] * task_cost
-        terms = {
-            "task_cost": task_cost,
-            "failure_cost": extra_failure_cost,
-            "height_boundary_cost": height_boundary_cost,
-            "progress_reward": progress_reward,
-            "perception_cost": jnp.zeros_like(cost),
-        }
-        if self._recipe is None:
-            return cost, history, terms
-        velocity = after.physics.states.vel[:, 0]
-        position = after.physics.states.pos[:, 0]
-        delta = self.env.task.goal - position
-        distance = jnp.linalg.norm(delta, axis=-1, keepdims=True)
-        target = delta / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
-        velocities = jnp.concatenate((history.velocity[:, 1:], velocity[:, None]), axis=1)
-        count = history.count + 1
-        smoothed = velocities.sum(axis=1) / jnp.minimum(count, self._window)[:, None]
-        acceleration = self.env.action.decode(action)
-        previous = jnp.where((history.count > 0)[:, None], history.acceleration, acceleration)
-        clearance = self.env.scene.clearance(position, after.time) - self.env.task.radius
-        old_clearance = self.env.scene.clearance(before.physics.states.pos[:, 0], before.time)
-        old_clearance = old_clearance - self.env.task.radius
-        valid = jnp.isfinite(clearance) & jnp.isfinite(old_clearance)
-        approach = (
-            jnp.where(valid, old_clearance, 0) - jnp.where(valid, clearance, 0)
-        ) / self.env.dt
-        kwargs = {**self.config["perception_loss"], "velocity_window": 1}
-
-        def named_cost(velocity, target, previous, acceleration, clearance, approach, valid):
-            total, terms = self._recipe(
-                velocity[None, None],
-                target[None, None],
-                acceleration[None, None],
-                clearance[None, None],
-                approach[None, None],
-                clearance_mask=valid[None, None],
-                dt=self.env.dt,
-                **kwargs,
-            )
-
-            def repeat(value):
-                return jnp.broadcast_to(value, (2, 1, *value.shape))
-
-            # Extract only the two-sample jerk, retaining the current acceleration cost.
-            _, pair_terms = self._recipe(
-                repeat(velocity),
-                repeat(target),
-                jnp.stack((previous, acceleration))[:, None],
-                repeat(clearance),
-                repeat(approach),
-                clearance_mask=repeat(valid),
-                dt=self.env.dt,
-                **kwargs,
-            )
-            terms["jerk"] = pair_terms["jerk"]
-            if self.loss_name == "liu":
-                terms["jerk_mean"] = pair_terms["jerk_mean"]
-            return total + kwargs["jerk_weight"] * pair_terms["jerk"], terms
-
-        named, named_terms = jax.vmap(named_cost)(
-            smoothed, target, previous, acceleration, clearance, approach, valid
-        )
-        squared = jnp.sum(((acceleration - previous) / self.env.dt) ** 2, axis=-1)
-        jerk = jnp.where(squared > 0, jnp.sqrt(jnp.where(squared > 0, squared, 1)), 0)
-        jerk_count = jnp.maximum(count - 1, 1)
-        difference = jerk - history.jerk_mean
-        jerk_mean = history.jerk_mean + difference / jerk_count
-        jerk_m2 = history.jerk_m2 + difference * (jerk - jerk_mean)
-        if self.loss_name == "liu":
-            variance = jerk_m2 / jerk_count
-            named = named + kwargs["jerk_weight"] * kwargs["jerk_variance_weight"] * variance
-            named_terms["jerk_variance"] = variance
-            named_terms["jerk"] += kwargs["jerk_variance_weight"] * variance
-        history = ObjectiveState(velocities, count, acceleration, jerk_mean, jerk_m2)
-        cost = cost + self.config["perception_weight"] * named * self.env.dt
-        terms.update({f"named_{name}": value for name, value in named_terms.items()})
-        terms["perception_cost"] = named * self.env.dt
-        return cost, history, terms
-
-    def _auxiliary_cost(self, prediction, observation):
-        if not self.config["velocity_aux_weight"]:
-            return jnp.zeros(prediction.shape[:-1])
-        target = jax.lax.stop_gradient(observation["velocity_body"])
-        return self.config["velocity_aux_weight"] * jnp.mean((prediction - target) ** 2, axis=-1)
 
     def _apply_actor(self, state, gradients):
         variables = (
@@ -500,13 +423,26 @@ class Trainer:
             optimizer_state={**state.optimizer_state, "actor": optimizer},
         )
 
-    def _fit_critic(self, state, observations, targets, epochs):
+    def _fit_critic(self, state, observations, targets, epochs, *, old_values=None):
         observations = jax.tree.map(lambda x: x.reshape((-1, *x.shape[2:])), observations)
         targets = jax.lax.stop_gradient(targets.reshape(-1))
+        clipped_values = (
+            None if old_values is None else jax.lax.stop_gradient(old_values.reshape(-1))
+        )
 
         def fit(state, _):
             def objective(params):
-                return 0.5 * jnp.mean((self.critic.apply(params, observations) - targets) ** 2)
+                values = self.critic.apply(params, observations)
+                errors = (values - targets) ** 2
+                if clipped_values is not None and self.config["ppo_value_clip"] > 0:
+                    old = clipped_values
+                    clipped = old + jnp.clip(
+                        values - old,
+                        -self.config["ppo_value_clip"],
+                        self.config["ppo_value_clip"],
+                    )
+                    errors = jnp.maximum(errors, (clipped - targets) ** 2)
+                return 0.5 * jnp.mean(errors)
 
             loss, gradients = jax.value_and_grad(objective)(state.critic_params)
             updates, optimizer = self.critic_optimizer.update(

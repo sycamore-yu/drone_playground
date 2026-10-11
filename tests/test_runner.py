@@ -3,7 +3,7 @@
 import numpy as np
 
 from drone_playground.simulation.controllers import MellingerController
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.methods import PlannerController
 from drone_playground.simulation.ros_planner import RosTrajectory
 from drone_playground.simulation.runner import rollout_host
@@ -32,7 +32,7 @@ def test_native_clock_measurements_and_control_between_decisions():
                 len(self.calls),
             )
 
-    env = Environment(task="navigation", scene="S01", sensor="depth", duration=0.42)
+    env = make_environment(task="navigation", scene="S01", sensor="depth", duration=0.42)
     planner = PlannerFixture()
     episodes, traces, plans, decisions = rollout_host(
         env,

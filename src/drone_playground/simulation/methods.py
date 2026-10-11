@@ -108,6 +108,9 @@ class Action:
         frame=None,
         heading="fixed",
         frequency=50.0,
+        velocity_gain=(3.0, 3.0, 5.0),
+        acceleration_limit=(6.0, 6.0, 6.0),
+        tilt_limit=0.55,
     ):
         """Resolve nominal limits once; physical randomization never changes them."""
         self.level, self.heading = level, heading
@@ -115,6 +118,7 @@ class Action:
         self.hover = self.mass * 9.81
         defaults = {
             "acceleration": ([-6.0] * 3, [6.0] * 3),
+            "velocity_yaw": ([-4.0, -4.0, -4.0, -np.pi], [4.0, 4.0, 4.0, np.pi]),
             "attitude_thrust": (
                 [-0.6, -0.6, -np.pi, 0.4 * self.hover],
                 [0.6, 0.6, np.pi, 1.6 * self.hover],
@@ -139,12 +143,36 @@ class Action:
             raise ValueError("Action bounds must be finite vectors matching the control interface")
         if np.any(lower >= upper):
             raise ValueError("Each lower action limit must be smaller than its upper limit")
-        expected_frame = "world" if level in {"acceleration", "attitude_thrust"} else "body"
+        expected_frame = (
+            "world" if level in {"acceleration", "attitude_thrust", "velocity_yaw"} else "body"
+        )
         self.frame = expected_frame if frame is None else frame
         if self.frame != expected_frame or heading not in {"fixed", "target"}:
             raise ValueError("Unsupported action frame or heading convention")
         self.low, self.high, self.size = jnp.asarray(lower), jnp.asarray(upper), size
-        self.output_level = "attitude_thrust" if level == "acceleration" else level
+        self.output_level = (
+            "attitude_thrust" if level in {"acceleration", "velocity_yaw"} else level
+        )
+        if level != "velocity_yaw" and (
+            tuple(velocity_gain) != (3.0, 3.0, 5.0)
+            or tuple(acceleration_limit) != (6.0, 6.0, 6.0)
+            or tilt_limit != 0.55
+        ):
+            raise ValueError("Velocity tracking gains require velocity_yaw")
+        gains = np.asarray(velocity_gain, np.float32)
+        limits = np.asarray(acceleration_limit, np.float32)
+        if (
+            gains.shape != (3,)
+            or limits.shape != (3,)
+            or not np.isfinite([*gains, *limits, tilt_limit]).all()
+            or np.any(gains <= 0)
+            or np.any(limits <= 0)
+            or not 0 < tilt_limit < np.pi / 2
+        ):
+            raise ValueError("Velocity tracking gains/limits/tilt must be finite and positive")
+        self.velocity_gain = jnp.asarray(gains)
+        self.acceleration_limit = jnp.asarray(limits)
+        self.tilt_limit = float(tilt_limit)
         self._acceleration = None
         if level == "acceleration":
             from drone_playground.simulation.controllers import MellingerController
@@ -154,13 +182,20 @@ class Action:
     @property
     def contract(self):
         """Return the action meaning saved with network parameters."""
-        return {
+        result = {
             "level": self.level,
             "frame": self.frame,
             "heading": self.heading,
             "low": np.asarray(self.low).tolist(),
             "high": np.asarray(self.high).tolist(),
         }
+        if self.level == "velocity_yaw":
+            result.update(
+                velocity_gain=np.asarray(self.velocity_gain).tolist(),
+                acceleration_limit=np.asarray(self.acceleration_limit).tolist(),
+                tilt_limit=self.tilt_limit,
+            )
+        return result
 
     def decode(self, action):
         """Decode bounded policy output into the declared physical units."""
@@ -171,6 +206,34 @@ class Action:
 
     def setpoint(self, physics, physical, target=None):
         """Convert a physical request to the selected native control input."""
+        if self.level == "velocity_yaw":
+            # Explicitly selected four-dimensional high-level policy, adapted
+            # from the old project's velocity inner loop. Same Crazyflow rigid
+            # body model and native attitude/thrust executor as other actions.
+            requested = physical[..., :3]
+            velocity = physics.states.vel[:, 0]
+            acceleration = jnp.clip(
+                (requested - velocity) * self.velocity_gain,
+                -self.acceleration_limit,
+                self.acceleration_limit,
+            )
+            force = self.mass * (acceleration + jnp.array([0.0, 0.0, 9.81]))
+            magnitude = jnp.maximum(jnp.linalg.norm(force, axis=-1), 1e-6)
+            yaw = physical[..., 3]
+            forward = jnp.cos(yaw) * force[..., 0] + jnp.sin(yaw) * force[..., 1]
+            sideways = -jnp.sin(yaw) * force[..., 0] + jnp.cos(yaw) * force[..., 1]
+            roll = -jnp.arcsin(jnp.clip(sideways / magnitude, -0.999, 0.999))
+            pitch = jnp.arctan2(forward, force[..., 2])
+            value = jnp.stack(
+                [
+                    jnp.clip(roll, -self.tilt_limit, self.tilt_limit),
+                    jnp.clip(pitch, -self.tilt_limit, self.tilt_limit),
+                    yaw,
+                    jnp.clip(magnitude, 0.4 * self.hover, 1.6 * self.hover),
+                ],
+                -1,
+            )
+            return Setpoint(value, level="attitude_thrust", frame="world")
         if self.level == "body_rate":
             # Policy/model input is [thrust, wx, wy, wz]; Crazyflow stages rates first.
             return Setpoint(physical[..., jnp.array([1, 2, 3, 0])], level="body_rate", frame="body")
@@ -191,6 +254,38 @@ class PolicyMethod:
     execution = "jax"
     trainable = True
 
+    def initial_log_std(self, env, value):
+        """Initialize this method's stochastic continuous-action parameters."""
+        return jnp.full((env.action_size,), value, dtype=jnp.float32)
+
+    def sample(self, rng, raw, log_std):
+        """Return executable action, sampled policy variables and log probability."""
+        from drone_playground.simulation.networks import sample_tanh_gaussian
+
+        return sample_tanh_gaussian(rng, raw, log_std)
+
+    def log_probability(self, sample, raw, log_std, observation):
+        """Evaluate the probability of a previous sample under current weights."""
+        from drone_playground.simulation.networks import tanh_gaussian_log_prob
+
+        return tanh_gaussian_log_prob(sample, raw, log_std)
+
+    def entropy(self, rng, raw, log_std):
+        """Estimate transformed-action entropy using the same distribution."""
+        return -jnp.mean(self.sample(rng, raw, log_std)[2])
+
+    def deterministic(self, raw):
+        """Decode the mean network output for evaluation and differentiable training."""
+        return jnp.tanh(raw)
+
+    def execute(self, env, state, action, step=None):
+        """Execute this method's action through the selected JAX transition.
+
+        The caller selects the forward or backward dynamics step. A learnable
+        planner can supply a different physical action conversion here.
+        """
+        return (env.step if step is None else step)(state, action)
+
     def initialize(self, env, seed, actor=None):
         """Initialize only the memory required by this actor."""
         if actor is None:
@@ -203,9 +298,11 @@ class PolicyMethod:
             raise ValueError("Policy execution requires an Actor")
 
         def step(state, memory, parameters):
+            from drone_playground.simulation.networks import reset_actor_memory
+
             raw, memory, _ = actor.apply(parameters, env.observe(state), memory)
-            state = env.step(state, jnp.tanh(raw))
-            memory = jnp.where(state.done[:, None], 0.0, memory)
+            state = self.execute(env, state, self.deterministic(raw))
+            memory = reset_actor_memory(memory, state.done)
             return state, memory
 
         return step

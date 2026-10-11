@@ -1,0 +1,19 @@
+# @package _global_
+# New from-scratch Racing PPO candidate; the original recipe is unchanged.
+# Uses gate progress and a bounded actor update, independently validated.
+defaults:
+  - racing
+simulation:
+  num_envs: 512
+learning:
+  options:
+    horizon: 32
+    lr: 0.0003
+    critic_lr: 0.0005
+    initial_log_std: -1.5
+    entropy_weight: 0.001
+    progress_reward_scale: 1.0
+    ppo_target_kl: 0.02
+    ppo_value_clip: 10.0
+  checkpoint_interval: 50
+  evaluation_interval: 100

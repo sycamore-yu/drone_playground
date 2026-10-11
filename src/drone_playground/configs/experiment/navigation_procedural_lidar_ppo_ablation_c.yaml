@@ -1,0 +1,11 @@
+# @package _global_
+# C1: approach-weighted pre-contact risk only; Liu loss unchanged.
+defaults:
+  - navigation_procedural_lidar_ppo_ablation_base
+task:
+  options:
+    reward_shaping:
+      approach_risk:
+        weight: 0.5
+        margin: 2.0
+        speed_reference: 3.0

@@ -77,9 +77,9 @@ def test_empty_depth_does_not_turn_range_roundoff_into_hits():
 def test_trainer_records_sensor_semantics_and_source_hash():
     """A checkpoint identifies the snapshot model, scan table and observation budget."""
     from drone_playground.learning.trainer import Trainer
-    from drone_playground.simulation.environment import Environment
+    from drone_playground.simulation.environment import make_environment
 
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="lidar",

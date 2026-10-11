@@ -1,0 +1,10 @@
+# @package _global_
+# B: change only the full 3-D workspace boundary proximity term.
+defaults:
+  - navigation_procedural_depth_ppo_ablation_base
+task:
+  options:
+    reward_shaping:
+      boundary_proximity:
+        weight: 2.0
+        margin: 1.5

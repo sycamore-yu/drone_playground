@@ -171,6 +171,7 @@ def save_evaluation(
     name="",
     write_tables=True,
     record_trajectories=True,
+    replay_directory="replays",
 ) -> dict:
     """Persist the selected report, actual trajectories and success/failure examples."""
     directory = Path(directory).resolve()
@@ -221,7 +222,9 @@ def save_evaluation(
         else:
             episode_plans = None
         output = export_replay(
-            directory / "replays" / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
+            directory
+            / replay_directory
+            / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
             env.scene,
             times[frames],
             traces["position"][frames, index],

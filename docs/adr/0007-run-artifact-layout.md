@@ -1,22 +1,20 @@
 # ADR-0007：训练结果布局与后续 Orbax/TensorBoard 迁移
 
-**Status:** Accepted · 原决定 2026-10-09；新布局修订 2026-10-10。
+**Status:** Superseded by [ADR-0016](0016-results-layout-orbax-tensorboard.md) for new runs · 2026-10-10
 
-**Implementation:** 当前集成分支 `v0.2` 仍使用 v2 记录器；Orbax/TensorBoard v3
-已在独立 Scratch 功能分支开发，本 ADR 不声称这些代码已经合入 `v0.2`。
-正式实现应与对应代码、测试及 ADR-0014 一起集成并核对。
+**Implementation:** 本布局只描述 `layout_version=2` 历史产物；新 run 使用 Orbax/TensorBoard v3，原有 ZIP 结果保持只读或由已有进程按原格式续训，不批量迁移。
 
-## 当前已经实现：v2
+## 历史运行结果：v2
 
 `simulation/records.py`、`learning/checkpoint.py`、`simulation/evaluation.py`
-及 `tools/report_acceptance.py` 当前仍以 `run.json`、`metrics.jsonl`、
+及 `tools/report_acceptance.py` 旧运行使用 `run.json`、`metrics.jsonl`、
 `checkpoints/latest.training.zip`、`checkpoints/step-*/policy.zip`、
 `eval/<编号>/report.json` 与 `episodes.csv` 为运行合同。
 
 该合同在早期验收时记录了 C5 连续选模、C6 实际更新/耗时、独立随机种子、
 失败分母与配置来源。历史运行不重解释、不删除，也不把旧归档自动恢复为新状态。
 
-## 已批准但尚未在本分支落地：v3
+## 新运行结果：v3
 
 为了减少多级评测目录与重复模型导出，采用 Orbax Checkpoint 保存完整 Flax
 训练 PyTree，用 TensorBoard 事件文件记录指标。每个 run 采用一份小型机器状态索引，
@@ -52,12 +50,11 @@ results/<run_id>/
 
 ## 迁移原则与完成门禁
 
-- 只有**新运行**启用 v3。旧 v2 训练记录与 ZIP、报告保持原样；不对活动运行改写格式。
+- 新运行使用 v3。旧 v2 训练记录与 ZIP、报告保持原样；不对活动运行改写格式。
 - 同步替换所有真实读取方：训练、恢复、冻结推理、选模、验收、CLI 与脚本。
-- 在对应功能分支完成从保存到恢复、选中权重推理、三种子判据与打包测试后再合入。
+- 在主分支核对保存/恢复、冻结推理、筛选和评测测试。
 - 不因为结果目录迁移就声称 PPO/APG/SHAC 已经重新收敛。
-- 该修订的详细实现设计以 Scratch 分支的 ADR-0014 为准；合并时统一 ADR 索引，
-  不长期维护相互冲突的双份规格。
+- 详细合同见 Results v3 的 ADR，历史目录按来源保留。
 
 ## 源码依据
 

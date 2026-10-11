@@ -1,4 +1,4 @@
-"""Task references and first-event episode semantics in SI units."""
+"""Shared reference configurations and episode-event data in SI units."""
 
 from enum import IntEnum
 
@@ -49,7 +49,10 @@ def first_event(collision, finite, in_bounds, success, timeout):
 
 
 class Task:
-    """Task-specific references and rules, independent of the flight method."""
+    """Immutable task references, geometry limits and recording metadata.
+
+    Concrete environment classes implement observation, reward and event rules.
+    """
 
     def __init__(
         self,
@@ -59,11 +62,75 @@ class Task:
         duration: float | None = None,
         reference_seed: int = 0,
         gate_order=None,
+        reward_profile: str = "default",
+        reward_shaping: dict | None = None,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
             raise ValueError(f"Unknown task: {name}")
         self.name = name
+        if reward_profile not in {"default", "legacy_motion_navigation_v2"}:
+            raise ValueError("Unsupported Task reward profile")
+        if reward_profile != "default" and name != "navigation":
+            raise ValueError("Alternative Navigation reward requires navigation task")
+        self.reward_profile = reward_profile
+        self.reward_shaping = dict(reward_shaping or {})
+        accepted_shaping = {
+            "task_weight",
+            "progress_reward_scale",
+            "failure_cost",
+            "altitude_weight",
+            "height_boundary_weight",
+            "failure_cost_by_event",
+            "boundary_proximity",
+            "approach_risk",
+        }
+        if self.reward_shaping.keys() - accepted_shaping:
+            raise ValueError("Unsupported task reward-shaping option")
+        nested = {
+            "failure_cost_by_event": {"collision", "out_of_bounds", "timeout", "numerical_failure"},
+            "boundary_proximity": {"weight", "margin"},
+            "approach_risk": {"weight", "margin", "speed_reference"},
+        }
+        if any(
+            not isinstance(v, (float, int)) or isinstance(v, bool) or not np.isfinite(v) or v < 0
+            for key, v in self.reward_shaping.items()
+            if key not in nested
+        ):
+            raise ValueError("Task reward-shaping coefficients must be finite and nonnegative")
+        for profile_name, required in nested.items():
+            if profile_name not in self.reward_shaping:
+                continue
+            values = self.reward_shaping[profile_name]
+            if (
+                not isinstance(values, dict)
+                or set(values) != required
+                or any(
+                    not isinstance(value, (float, int))
+                    or isinstance(value, bool)
+                    or not np.isfinite(value)
+                    or value < 0
+                    for value in values.values()
+                )
+            ):
+                raise ValueError(f"Invalid Task reward-shaping {profile_name} contract")
+            if profile_name != "failure_cost_by_event" and any(
+                values[key] <= 0 for key in required - {"weight"}
+            ):
+                raise ValueError(f"Task reward-shaping {profile_name} distances must be positive")
+        if name == "tracking" and self.reward_shaping.get("progress_reward_scale", 0):
+            raise ValueError("Task progress reward requires Navigation or Racing")
+        if name != "navigation" and any(
+            self.reward_shaping.get(key, 0)
+            for key in (
+                "altitude_weight",
+                "height_boundary_weight",
+                "failure_cost_by_event",
+                "boundary_proximity",
+                "approach_risk",
+            )
+        ):
+            raise ValueError("Task safety shaping requires Navigation")
         self.reference = reference
         self.gate_order = jnp.zeros(0, jnp.int32)
         self.radius = 0.07
@@ -130,6 +197,10 @@ class Task:
                 "TIMEOUT",
             ],
         }
+        if self.reward_profile != "default":
+            result["reward_profile"] = self.reward_profile
+        if self.reward_shaping:
+            result["reward_shaping"] = dict(self.reward_shaping)
         if self.name == "navigation":
             result.update(
                 goal_metres=np.asarray(self.goal).tolist(), goal_radius_metres=self.goal_radius
@@ -180,52 +251,4 @@ class Task:
             jnp.zeros(batch),
             jnp.zeros(batch, jnp.int32),
             jnp.full(batch, jnp.inf),
-        )
-
-    def update(self, state: TaskState, before, after, time, clearance) -> TaskState:
-        """Judge every physics substep, retaining the first event and gate crossings."""
-        p = after.pos[:, 0]
-        finite = jnp.all(
-            jnp.isfinite(
-                jnp.concatenate([p, after.vel[:, 0], after.quat[:, 0], after.ang_vel[:, 0]], -1)
-            ),
-            -1,
-        )
-        collision = (clearance <= self.radius) | (p[:, 2] <= self.radius)
-        in_bounds = jnp.all((p >= self.low) & (p <= self.high), -1)
-        gates = state.gates
-        missed = jnp.zeros_like(finite)
-        if self.name == "racing":
-            total_gates = len(self.gate_order)
-            gate = self.gate_order[jnp.minimum(gates, total_gates - 1)]
-            center, rot = self.gate_positions[gate], self.gate_rotations[gate]
-            prev = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), before.pos[:, 0] - center)
-            curr = jnp.einsum("bij,bj->bi", jnp.swapaxes(rot, -1, -2), p - center)
-            crossed = (prev[:, 0] < 0) & (curr[:, 0] >= 0) & (gates < total_gates)
-            fraction = -prev[:, 0] / jnp.maximum(curr[:, 0] - prev[:, 0], 1e-8)
-            hit = prev + fraction[:, None] * (curr - prev)
-            aperture = jnp.all(jnp.abs(hit[:, 1:]) <= 0.2 - self.radius, -1)
-            gates = gates + (crossed & aperture).astype(jnp.int32)
-            # A far-away plane crossing is not a gate attempt.
-            missed = crossed & ~aperture & jnp.all(jnp.abs(hit[:, 1:]) < 0.36, -1)
-            success = gates == total_gates
-        elif self.name == "navigation":
-            success = jnp.linalg.norm(p - self.goal, axis=-1) <= self.goal_radius
-        else:
-            success = time >= self.duration - 1e-5
-        event = first_event(collision, finite, in_bounds, success, time >= self.duration - 1e-5)
-        event = jnp.where((event == Event.RUNNING) & missed, Event.MISSED_GATE, event)
-        active = state.event == Event.RUNNING
-        target, _, _ = self.target(time)
-        error = jnp.sum((p - target) ** 2, -1)
-        return TaskState(
-            event=jnp.where(active, event, state.event),
-            gates=jnp.where(active, gates, state.gates),
-            error_sum=state.error_sum + jnp.where(active, error, 0.0),
-            samples=state.samples + active.astype(jnp.int32),
-            min_clearance=jnp.where(
-                active,
-                jnp.minimum(state.min_clearance, clearance - self.radius),
-                state.min_clearance,
-            ),
         )

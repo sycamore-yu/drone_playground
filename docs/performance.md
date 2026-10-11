@@ -31,10 +31,88 @@ MJX-Warp Batch Renderer 没有安装或进行本项目基准测试。
 不同库的选型与扫描时间保真局限，见
 [raycasting fidelity review](research/sensor-raycasting-fidelity-review.md)。
 
-## 2026-10-08：迁移前历史测量
 
 以下历史测量采用逐射线时间与合成 MID360 扫描，
 不是本次快照模型的 GPU 性能结果。
+
+## v0.2：并行环境数与验收开销优化（2026-10-10）
+
+### MID360 策略射线优化（旧扫描模型实验，2026-10-10）
+
+MuJoCo 的 `mj_ray`/`mj_multiRay` 只计算**请求的射线**，没有强制每帧
+20,000 射线的引擎协议。20,000 是 Livox MID360 所公布的典型硬件吞吐
+`200,000 points/s ÷ 10 Hz`；本平台用非重复合成角度序列模拟该扫描，
+**不是**官方扫描器驱动或厂商真实非重复扫描轨迹重建。
+
+旧版实验每个 0.1 秒完整生成 20,000 条射线、在 JAX 中逐点求交及按时间插值，
+然后确定性抽取 1,024 个索引交给 PointNet/GRU。因此对只有 1,024 点输入的
+训练，约 94.88% 的射线计算不会进入网络。
+
+本次选定**显式、只针对新配方的稀疏策略射线模式**：
+`navigation_lidar_scratch_sparse.yaml` 和
+`navigation_lidar_scratch_ppo_asymmetric_sparse.yaml` 设置
+`sensor.ray_sampling=policy`。内部保留真实设备规格
+`points_per_frame=20000`，直接根据完整扫描的均匀选点索引只计算
+`point_count=1024` 条射线；**相位、每点采集时间、FOV、
+量程、deskew、运动障碍求交和有效掩码不变**。
+`ray_sampling=full` 保留原生 20,000 点全帧场景测试及 RScope 回放。
+
+这是一项**改变训练传感器取得的原始点云尺寸**的配方选择，不就地更改
+旧训练 run，也不得在同一个 checkpoint 恢复时混换新旧采样模式。
+CPU JAX 对移动障碍、机体运动条件下的独立结果进行了专项对照：
+策略所见 64 条稀疏射线与先计算完整 257 条再抽取的结果在位置/量程上
+不超过约 1 毫米的 float32/XLA 差异，方向误差不超过 2e-5，
+时间戳/掩码一致。训练实际使用 1024/20000；上述专项试验不是其
+RTX4090 稳态加速倍率。GPU 正被正式训练占用，未执行新的独占吞吐实验。
+
+优化策略优先级：先减掉不进入策略的射线计算，再在 GPU 空闲时
+根据同一训练配方比较 `num_envs` 的**稳态 interactions/s**
+和时间到收敛，而不是人为追求 24 GB 显存全部占满。
+MuJoCo Playground 的 JAX PPO 也允许减少中间评测和指标回调频率。
+
+已批准 [ADR-0015](adr/0015-three-stage-learning-acceptance.md)：训练期间使用
+每主场景 8 回合轻量筛查，正式候选检查保留各主场景 25 回合，冻结
+benchmark 还完整报告 S06/D06。此前每轮全八场景、每场景 25 回合的反复
+筛查已不再是新 run 的默认协议。该调整减少中途评测的计算量，但仍保留
+最终三种子 C2/C3/C4 原始阈值。
+
+GPU 性能方面保留 `XLA_PYTHON_CLIENT_PREALLOCATE=false`，**显存占用不是
+吞吐优化目标**。并发运行过程中 RTX 4090 经常报告约 100% 的 GPU 活跃时间，
+但不能据此推断 CUDA 核心达到理论峰值。下面原有的同步更新性能测量
+已表明 Crazyflow 500 Hz、多帧传感器和可微展开存在很大成本。
+
+本次新增专用入口 `tools/benchmark_training_throughput.py`，执行的是真实
+`Environment + Trainer.update`，不是只测物理空转；在 JIT 预热后
+使用 `jax.block_until_ready` 同步计时，记录每秒真实交互数、
+每次更新墙钟耗时、GPU 显存与功率。正式训练进程仍在运行时，
+**该入口会拒绝新 GPU 测试**，避免通过资源争抢得到无效对照数据。
+
+```bash
+# 显示计划，不占用 GPU
+python tools/benchmark_training_throughput.py --dry-run
+
+# 只在正式矩阵 GPU 训练暂时完全空闲时运行，不中断现有作业
+python tools/benchmark_training_throughput.py \
+  --experiment navigation_lidar_scratch --algorithm apg \
+  --worlds 32,64,128,256 --warmup 2 --updates 8 \
+  --output results/performance/lidar-apg-world-count.json
+
+python tools/benchmark_training_throughput.py \
+  --experiment navigation_depth_scratch_safe --algorithm shac \
+  --worlds 64,128,256,512 --warmup 2 --updates 8 \
+  --output results/performance/depth-shac-world-count.json
+```
+
+不提前认定 batch256 比 batch64 更快。增加 `num_envs` 同时改变每次更新的样本数；
+**需要同时报告 updates/s、interactions/s、显存与达到 L3 成功率门槛所需总时间**。
+跨算法或不同传感器的吞吐不可直接作为同算法扩 batch 的因果结论。
+参考 [JAX 官方计时建议](https://docs.jax.dev/en/latest/benchmarking.html)、
+[JAX GPU 显存分配](https://docs.jax.dev/en/latest/gpu_memory_allocation.html)、
+[Isaac Lab 训练性能建议](https://isaac-sim.github.io/IsaacLab/main/source/overview/reinforcement-learning/training_guide.html)。
+
+---
+
+## 旧版诊断（2026-10-08）
 
 This record concerns bounded Navigation APG diagnostics on the RTX 4090 on
 2026-10-08. It does **not** complete C6 across the 18 training cells or establish
@@ -192,11 +270,11 @@ without it, repetitions use a fixed state to hold work constant. Use a fresh
 workspace's untracked source files. `source-sha256.json` identifies the final
 supporting source and lockfile; the earlier runs' candidate source is retained.
 
-## C6 follow-through
+## L4 efficiency follow-through
 
 For each of the 18 cells, continued training must record
 actual interaction/update counts, compile and steady-state wall time, GPU memory,
-competing workloads, checkpoint evaluation results and compute to C1–C5 success.
+competing workloads, checkpoint evaluation results and compute to L3 success.
 Exercise all mixed-scene blocks, including asynchronous resets, before generalizing
 these short comparisons. Resume existing checkpoints only after loading the new
 source in a fresh process; running jobs do not reload Python source.
