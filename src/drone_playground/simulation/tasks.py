@@ -63,7 +63,7 @@ class Task:
         reference_seed: int = 0,
         gate_order=None,
         reward_profile: str = "default",
-        reward_shaping: dict[str, float] | None = None,
+        reward_shaping: dict | None = None,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
@@ -81,20 +81,56 @@ class Task:
             "failure_cost",
             "altitude_weight",
             "height_boundary_weight",
+            "failure_cost_by_event",
+            "boundary_proximity",
+            "approach_risk",
         }
         if self.reward_shaping.keys() - accepted_shaping:
             raise ValueError("Unsupported task reward-shaping option")
+        nested = {
+            "failure_cost_by_event": {"collision", "out_of_bounds", "timeout", "numerical_failure"},
+            "boundary_proximity": {"weight", "margin"},
+            "approach_risk": {"weight", "margin", "speed_reference"},
+        }
         if any(
-            not isinstance(v, (float, int)) or not np.isfinite(v) or v < 0
-            for v in self.reward_shaping.values()
+            not isinstance(v, (float, int)) or isinstance(v, bool) or not np.isfinite(v) or v < 0
+            for key, v in self.reward_shaping.items()
+            if key not in nested
         ):
             raise ValueError("Task reward-shaping coefficients must be finite and nonnegative")
+        for profile_name, required in nested.items():
+            if profile_name not in self.reward_shaping:
+                continue
+            values = self.reward_shaping[profile_name]
+            if (
+                not isinstance(values, dict)
+                or set(values) != required
+                or any(
+                    not isinstance(value, (float, int))
+                    or isinstance(value, bool)
+                    or not np.isfinite(value)
+                    or value < 0
+                    for value in values.values()
+                )
+            ):
+                raise ValueError(f"Invalid Task reward-shaping {profile_name} contract")
+            if profile_name != "failure_cost_by_event" and any(
+                values[key] <= 0 for key in required - {"weight"}
+            ):
+                raise ValueError(f"Task reward-shaping {profile_name} distances must be positive")
         if name == "tracking" and self.reward_shaping.get("progress_reward_scale", 0):
             raise ValueError("Task progress reward requires Navigation or Racing")
         if name != "navigation" and any(
-            self.reward_shaping.get(key, 0) for key in ("altitude_weight", "height_boundary_weight")
+            self.reward_shaping.get(key, 0)
+            for key in (
+                "altitude_weight",
+                "height_boundary_weight",
+                "failure_cost_by_event",
+                "boundary_proximity",
+                "approach_risk",
+            )
         ):
-            raise ValueError("Task altitude shaping requires Navigation")
+            raise ValueError("Task safety shaping requires Navigation")
         self.reference = reference
         self.gate_order = jnp.zeros(0, jnp.int32)
         self.radius = 0.07

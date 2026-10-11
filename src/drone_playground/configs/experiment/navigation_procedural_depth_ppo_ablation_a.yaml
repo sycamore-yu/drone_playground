@@ -1,0 +1,12 @@
+# @package _global_
+# A: change only the terminal-event penalty schedule.
+defaults:
+  - navigation_procedural_depth_ppo_ablation_base
+task:
+  options:
+    reward_shaping:
+      failure_cost_by_event:
+        collision: 160.0
+        out_of_bounds: 240.0
+        timeout: 40.0
+        numerical_failure: 160.0

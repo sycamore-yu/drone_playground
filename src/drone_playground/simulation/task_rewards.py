@@ -110,6 +110,27 @@ def shaped_task_cost(env, before, after, action, shaping):
 
     failure = after.done & (after.task.event != Event.SUCCESS) & ~before.done
     extra_failure_cost = shaping["failure_cost"] * failure
+    event_penalties = shaping.get("failure_cost_by_event")
+    if event_penalties is not None:
+        event = after.task.event
+        extra_failure_cost = (
+            jnp.select(
+                [
+                    event == Event.COLLISION,
+                    event == Event.OUT_OF_BOUNDS,
+                    event == Event.TIMEOUT,
+                    event == Event.NUMERICAL_FAILURE,
+                ],
+                [
+                    event_penalties["collision"],
+                    event_penalties["out_of_bounds"],
+                    event_penalties["timeout"],
+                    event_penalties["numerical_failure"],
+                ],
+                default=shaping["failure_cost"],
+            )
+            * failure
+        )
     task_cost += extra_failure_cost
     height_boundary_cost = jnp.zeros_like(task_cost)
     if shaping["altitude_weight"]:
@@ -125,6 +146,39 @@ def shaped_task_cost(env, before, after, action, shaping):
         height_boundary_cost = jnp.where(before.done, 0.0, height_boundary_cost)
         task_cost += height_boundary_cost
 
+    additional_terms = {}
+    boundary = shaping.get("boundary_proximity")
+    if boundary is not None:
+        position = after.physics.states.pos[:, 0]
+        signed_distances = jnp.minimum(position - env.task.low, env.task.high - position)
+        nearest = jnp.min(signed_distances, axis=-1)
+        penalty = boundary["weight"] * env.dt * jax.nn.relu(boundary["margin"] - nearest) ** 2
+        penalty = jnp.where(before.done, 0.0, penalty)
+        task_cost += penalty
+        additional_terms["boundary_proximity_cost"] = penalty
+
+    risk = shaping.get("approach_risk")
+    if risk is not None:
+        previous = before.physics.states.pos[:, 0]
+        current = after.physics.states.pos[:, 0]
+        old = env.scene_clearance(previous, before.time, before.scene_state) - env.task.radius
+        new = env.scene_clearance(current, after.time, after.scene_state) - env.task.radius
+        finite = jnp.isfinite(old) & jnp.isfinite(new)
+        old_safe = jnp.where(finite, old, risk["margin"] + 1.0)
+        new_safe = jnp.where(finite, new, risk["margin"] + 1.0)
+        closing = jax.lax.stop_gradient(
+            jnp.minimum(jax.nn.relu((old_safe - new_safe) / env.dt), 10.0)
+        )
+        penalty = (
+            risk["weight"]
+            * env.dt
+            * jax.nn.relu(risk["margin"] - new_safe) ** 2
+            * (1.0 + closing / risk["speed_reference"])
+        )
+        penalty = jnp.where(before.done, 0.0, penalty)
+        task_cost += penalty
+        additional_terms["approach_risk_cost"] = penalty
+
     cost = shaping["task_weight"] * task_cost
     terms = {
         **task_terms,
@@ -132,5 +186,6 @@ def shaped_task_cost(env, before, after, action, shaping):
         "failure_cost": extra_failure_cost + task_terms.get("failure_cost", 0.0),
         "height_boundary_cost": height_boundary_cost + task_terms.get("height_boundary_cost", 0.0),
         "progress_reward": progress_reward + task_terms.get("progress_reward", 0.0),
+        **additional_terms,
     }
     return cost, terms

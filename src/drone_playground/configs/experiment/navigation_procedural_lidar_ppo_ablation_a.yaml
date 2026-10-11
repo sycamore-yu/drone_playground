@@ -1,0 +1,12 @@
+# @package _global_
+# A: same physical terminal-event costs as Depth.
+defaults:
+  - navigation_procedural_lidar_ppo_ablation_base
+task:
+  options:
+    reward_shaping:
+      failure_cost_by_event:
+        collision: 240.0
+        out_of_bounds: 160.0
+        timeout: 40.0
+        numerical_failure: 160.0

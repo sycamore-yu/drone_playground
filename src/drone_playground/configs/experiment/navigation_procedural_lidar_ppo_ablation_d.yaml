@@ -1,0 +1,7 @@
+# @package _global_
+# D: only gamma changes from 0.99 to 0.995 at 10 Hz.
+defaults:
+  - navigation_procedural_lidar_ppo_ablation_base
+learning:
+  options:
+    gamma: 0.995
