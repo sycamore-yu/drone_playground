@@ -209,6 +209,9 @@ def test_real_crazyflow_step_uses_task_owned_reward_and_learning_loss(sensor, le
                 "simulation.num_envs=1",
                 "simulation.procedural.max_obstacles=6",
                 "learning.options.minibatches=1",
+                "learning.options.horizon=1",
+                "learning.options.ppo_epochs=1",
+                "learning.options.critic_epochs=1",
                 "++learning.options.progress_reward_scale=0.5",
                 "++learning.options.height_boundary_weight=0.5",
             ],
@@ -237,5 +240,9 @@ def test_real_crazyflow_step_uses_task_owned_reward_and_learning_loss(sensor, le
         term_name = "boundary_proximity_cost" if letter == "b" else "approach_risk_cost"
         np.testing.assert_allclose(task_terms[term_name], learning_terms[term_name])
         assert np.isfinite(np.asarray(total)).all()
+        _, metrics = trainer.update(trainer.initialize())
+        assert term_name in metrics
+        assert np.isfinite(np.asarray(metrics[term_name])).all()
+        assert np.isfinite(np.asarray(metrics["actor_loss"])).all()
     finally:
         environment.sim.close()
