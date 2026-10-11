@@ -101,18 +101,16 @@ class SensorObservation:
         )
         measurement = measurement._replace(available_time=measurement.acquisition_time + delay)
         acquisition_pose = jnp.concatenate([p, q], -1)
+        state = ObservationState(
+            measurement=measurement,
+            frame=jnp.zeros(batch, jnp.int32),
+            previous_pose=pose,
+            acquisition_pose=acquisition_pose,
+            delay_s=delay,
+            available=jnp.full(batch, self.config.profile == "d435i"),
+        )
         if high == 0:
-            return jax.tree.map(
-                jax.lax.stop_gradient,
-                ObservationState(
-                    measurement=measurement,
-                    frame=jnp.zeros(batch, jnp.int32),
-                    previous_pose=pose,
-                    acquisition_pose=acquisition_pose,
-                    delay_s=delay,
-                    available=jnp.full(batch, self.config.profile == "d435i"),
-                ),
-            )
+            return jax.tree.map(jax.lax.stop_gradient, state)
         empty = jax.tree.map(jnp.zeros_like, measurement)
         pending = jax.tree.map(
             lambda x: jnp.broadcast_to(x[:, None], (batch, self.capacity, *x.shape[1:])), empty
@@ -129,13 +127,9 @@ class SensorObservation:
         )
         return jax.tree.map(
             jax.lax.stop_gradient,
-            ObservationState(
+            state.replace(
                 measurement=delivered,
-                frame=jnp.zeros(batch, jnp.int32),
-                previous_pose=pose,
-                acquisition_pose=acquisition_pose,
-                delay_s=delay,
-                available=visible & (self.config.profile == "d435i"),
+                available=state.available & visible,
                 pending=pending,
                 pending_poses=pending_poses,
                 pending_valid=valid & ~visible[:, None],
@@ -182,56 +176,58 @@ class SensorObservation:
             lambda _: (state.measurement, state.acquisition_pose),
             None,
         )
-        if state.pending is None:
-            result = state.replace(
-                measurement=measurement,
-                acquisition_pose=acquisition_pose,
-                available=state.available | due,
-                frame=state.frame + due.astype(jnp.int32),
-                previous_pose=previous_pose,
-            )
-        else:
+        pending, pending_poses, pending_valid = (
+            state.pending,
+            state.pending_poses,
+            state.pending_valid,
+        )
+        available = state.available | due
+        if pending is not None:
 
             def append(old, new):
                 return choose(old, jnp.concatenate([old[:, 1:], new[:, None]], axis=1))
 
-            pending, pending_poses, valid = jax.lax.cond(
+            pending, pending_poses, pending_valid = jax.lax.cond(
                 jnp.any(due),
                 lambda: (
-                    jax.tree.map(append, state.pending, measurement),
-                    append(state.pending_poses, acquisition_pose),
-                    append(state.pending_valid, jnp.ones_like(due)),
+                    jax.tree.map(append, pending, measurement),
+                    append(pending_poses, acquisition_pose),
+                    append(pending_valid, jnp.ones_like(due)),
                 ),
-                lambda: (state.pending, state.pending_poses, state.pending_valid),
+                lambda: (pending, pending_poses, pending_valid),
             )
-            delivered = valid & (pending.available_time <= time[:, None] + 1e-7) & active[:, None]
+            delivered = (
+                pending_valid & (pending.available_time <= time[:, None] + 1e-7) & active[:, None]
+            )
             index = jnp.max(jnp.where(delivered, jnp.arange(self.capacity)[None], 0), axis=1)
-            available = jnp.any(delivered, axis=1) & active
+            publish = jnp.any(delivered, axis=1) & active
             row = jnp.arange(len(time))
 
             def take(old, new):
                 new = new[row, index]
-                mask = available.reshape((len(time),) + (1,) * (new.ndim - 1))
+                mask = publish.reshape((len(time),) + (1,) * (new.ndim - 1))
                 return jnp.where(mask, new, old)
 
             measurement, acquisition_pose = jax.lax.cond(
-                jnp.any(available),
+                jnp.any(publish),
                 lambda: (
                     jax.tree.map(take, state.measurement, pending),
                     take(state.acquisition_pose, pending_poses),
                 ),
                 lambda: (state.measurement, state.acquisition_pose),
             )
-            result = state.replace(
-                measurement=measurement,
-                acquisition_pose=acquisition_pose,
-                frame=state.frame + due.astype(jnp.int32),
-                previous_pose=previous_pose,
-                pending=pending,
-                pending_poses=pending_poses,
-                pending_valid=valid & ~delivered,
-                available=state.available | available,
-            )
+            pending_valid = pending_valid & ~delivered
+            available = state.available | publish
+        result = state.replace(
+            measurement=measurement,
+            acquisition_pose=acquisition_pose,
+            frame=state.frame + due.astype(jnp.int32),
+            previous_pose=previous_pose,
+            pending=pending,
+            pending_poses=pending_poses,
+            pending_valid=pending_valid,
+            available=available,
+        )
         # Image/point acquisition is not part of the pathwise dynamics derivative.
         return jax.tree.map(jax.lax.stop_gradient, result)
 

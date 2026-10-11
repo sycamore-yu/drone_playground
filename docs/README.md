@@ -32,6 +32,11 @@
 
 ## 设计原则
 
+[传感器求交成熟方案与高保真 Review](research/sensor-raycasting-fidelity-review.md)
+对照 P2M、NavRL、DiffAero、MuJoCo Playground、Omni-Perception、
+mjlab/Unitree 与官方 MJX/MJWarp。区分扫描角度、几何求交和传感器误差；
+解释未采用 `MjLidarJax` / MJX-JAX `ray()` 的直接证据和后续替换门禁。
+
 [ADR-0001](adr/0001-simulation-learning-boundary.md) 记录 Simulation/Learning 的职责与
 方法组合，数学模型与 Controller 可以独立调用。Trajectory 保持宿主 NumPy 表示，
 SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现役规格。

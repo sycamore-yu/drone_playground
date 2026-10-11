@@ -1,14 +1,67 @@
 # 验证与验收证据
 
+## 官方 MJX-JAX ray 求交适配评估：2026-10-10
+
+目标：对 `mujoco.mjx.ray()` (MuJoCo/MJX 3.15.0) 验证场景覆盖、
+与官方 C `mujoco.mj_ray()` 的测距一致性、Crazyflow 场景状态接入和
+批量 JAX/JIT 可用性。此次只在 `tmp/mjx-ray-eval/` 放置实验程序，
+不修改项目运行时几何代码、主工作树训练作业或系统驱动。
+
+**直接接入门禁失败：**
+
+1. 官方 MJX-JAX `ray._RAY_FUNC` 未列 Cylinder / HField，只有
+   Plane、Sphere、Capsule、Ellipsoid、Box、Mesh。八个固定 Navigation 场景
+   全有圆柱（例如 S01 41/45、S02 81/85、S03 162/166），因此直接替换漏检障碍物。
+2. S01、S02、D01 原样 `mjx.put_model()` 均因 `Cylinder–Box collisions not implemented`
+   失败；只是测距也会触发 MJX 动力学模型转换时的碰撞类型检查。
+3. 导航场景 `nmat=0`；临时构造的无材质单图元模型在官方
+   `mjx.ray()` 上全部抛出 JAX 空 `mat_rgba` gather 异常。
+   为隔离这项问题，给候选模型补一个未使用的材质资源后，
+   8 个边界案例中 6 个与 C `mj_ray` 一致，两个 Cylinder 案例仍未命中。
+
+**不进入正式代码的研究性绕行：** 仅在临时脚本中另外加载一份
+`MjModel`，将候选模型的接触对禁用以便转换成 MJX Model，再添加
+一个占位 `mat_rgba` 数组；`mjx.Data.replace(geom_xpos=Scene.positions(t))`
+可以接入 Crazyflow/JAX 场景动态更新。D01 移动 Box 的 0、0.5、1.0 秒射线
+距离为 0.600、0.632、0.665 米，三次都与本项目求交一致；
+未更新 MJX Data 时均返回约 89.96 米的陈旧值，说明手动同步不可省略。
+
+| 已绕行的 D01 小批量诊断 | 结果 | 说明 |
+|---|---:|---|
+| CPU，2 个世界 × 256 条射线 | 512/512 一致 | 这些方向未触发缺失的圆柱分支 |
+| GPU，默认矩阵乘法精度 | 430/512 一致 | 与局部高精度几何计算出现数值差异 |
+| GPU，`JAX_DEFAULT_MATMUL_PRECISION=highest` | 512/512 一致 | 仍仅覆盖已实现图元 |
+| CPU 诊断中位数 MJX / 现有路径 | 1.058 / 3.944 ms | 非几何功能等价对照；禁止推导加速倍数 |
+| GPU 高精度诊断中位数 MJX / 现有路径 | 2.342 / 2.402 ms | GPU 当时存在其它高负载训练，非独占性能验收 |
+
+该批量测试证明 `jax.jit`、`vmap` 和动态 JAX 位姿接口能够组合；
+并**不**证明 20,000 条 MID360 射线 × 多世界吞吐达标，
+也不能掩盖所有固定场景都含缺失的 Cylinder。
+本轮不替换 `Scene.raycast()`，不引入永久混合后端、
+额外 MuJoCo 模型副本、占位材质和碰撞禁用的生产适配层。
+依据和选型结论写入 [ADR-0012](adr/0012-sensor.md)。
+
+临时复现入口与结构化结果：
+`tmp/mjx-ray-eval/probe.py`、`probe.json`、
+`dynamic_batch.py`、`dynamic_batch_cpu.json`、
+`dynamic_batch_gpu.json`、
+`dynamic_batch_gpu_highest.json`。
+外部依据为已安装的官方 `mujoco/mjx/_src/ray.py` 和
+`mujoco/mjx/_src/io.py`；后一文件对不支持碰撞的检查发生在
+`put_model` 中。
+
 ## Sensor / render 功能分支：2026-10-10
 
 分支 `refactor/sensor-rendering` 从 `e3949a5` 开始实施 ADR-0012/0013。
-这是功能分支证据，不代表已合并到 `v0.2` 或已通过冻结任务验收。
+这是功能分支证据，尚未合并到 `v0.2`。现已补充 CUDA 实测和两种传感器的
+冻结整回合评测；来源权重的既有成绩与本分支复测结果分别记录。
 
 已接入 MuJoCo-LiDAR 软件包中的 MID360 扫描资源，实现每世界扫描相位、快照采集和精简延迟状态。
 删除了合成扫描方向、逐射线位姿回调、长位姿历史和重复去畸变点云。
 相机训练参数在 YAML 中显式声明，运行及 checkpoint 记录采集语义与资源身份。
-动力学、Actor、训练损失及 `Scene` 的求交/距离数学代码没有改动。
+动力学、Actor、训练损失和 `Scene` 的解析求交/距离公式没有改动；
+在本分支 GPU 渲染参照测试中已对相关几何坐标变换指定局部最高矩阵精度，
+不影响 Actor 的全局矩阵精度设置。
 
 ### 已完成的专项检查
 
@@ -57,12 +110,71 @@ LiDAR 学习集成测试改为完整 20,000 条采集，仅缩小策略输入；
 运行时没有增加候选后端、回退分支或上游副本。扫描资源已复用；原有唯一的求交
 实现保留，直到替换满足原先的“无退化后删除”条件。
 
-### 未完成的验收
+### GPU 恢复与完整更新吞吐：2026-10-10
 
-本轮 `nvidia-smi` 报 NVML 与驱动版本不匹配（NVML 595.99），独立 CUDA 初始化也报
-`No visible GPU devices`。没有运行 GPU 吞吐/显存对照，也没有完成新快照与新扫描模式
-的固定策略整回合、冻结 Benchmark 或重新训练收敛验收。因此不报告训练加速倍数，
-不把旧扫描模型的成功率沿用到新模型。主工作区的训练与已有结果未修改。
+NVIDIA RTX 4090，驱动 595.84，JAX 0.11.2 已识别 `CudaDevice(id=0)`。
+运行 `nvidia-smi` 时 GPU 处于空闲状态，完整更新采用独立进程、禁用 JAX 预分配，
+单进程先编译预热，再测量连续三次更新的中位数。原版代码固定为
+`v0.2@6ec50c7` 的独立源码快照；新版为本功能分支。两者各自从同样的算法、
+环境、批量和参数种子启动。LiDAR 扫描方向与采集时间语义发生变化，所以这些值是
+**完整模型迁移性能**，不是第三方求交内核加速倍数。
+
+| APG 工作负载 | v0.2 耗时/更新 | 新版耗时/更新 | 交互吞吐：v0.2 → 新版 | 加速 |
+|---|---:|---:|---:|---:|
+| D01 LiDAR，32 环境 × 32 步，20,000 射线/帧 | 0.81135 s | 0.73041 s | 1,262 → 1,402 /s | 1.111× |
+| S01 Depth，128 环境 × 32 步，64×48 @ 30 Hz | 0.83697 s | 0.77691 s | 4,894 → 5,272 /s | 1.077× |
+
+采样时 `nvidia-smi` 的显存占用分别为 LiDAR **2,685 → 2,693 MiB**、
+Depth **1,159 → 1,161 MiB**；这是同步后采样值，并非运行过程中的峰值。
+完整更新吞吐改善约 11.1% 和 7.7%，不包括首次 XLA 编译时间。
+此处采用**几何局部高精度修复后的最终结果**。
+此前的 13.5%/9.9% 是修复前的中间值，不代表最终代码的吞吐。
+原版和新版的每个计时样本、梯度范数、设备显存、环境规模和标签分别保存在
+`tmp/sensor-rendering/full_{lidar_D01,depth_S01}_{baseline,candidate}.json`。
+修复后的新版记录为 `full_{lidar_D01,depth_S01}_candidate_precise.json`，
+GPU 官方 Renderer 专项复测为
+`tmp/sensor-rendering/gpu_explicit_precision_tests.log`（12 项通过）。
+
+Depth/LiDAR × PPO/APG/SHAC 共六种组合另完成 GPU 实际参数更新：
+每组 2 环境 × 2 步展开，LiDAR 保持完整 20,000 条采集；分别执行首次编译与
+后续两次更新。六组 Actor 梯度有限且非零，网络参数发生变化，传感值有限，
+正式结果保存在 `tmp/sensor-rendering/gpu_update_*.json`。这些功能更新不构成
+从随机初始化训练至任务验收的证据。
+
+同数量射线/像素的单帧 GPU 前向测试，使用动态 JIT 位姿输入并同步全输出；
+四个场景组合差异较小、存在测量波动，因此不把单帧性能当成整条训练链的替代指标。
+对应记录在 `tmp/sensor-rendering/gpu_forward_dynamic_input.log`。
+
+### 冻结策略迁移评测：2026-10-10
+
+使用原版 `results/scratch_v02/` 中真实 v2 冻结策略，不重新训练，完整运行
+8 场景 × 25 回合。明确启用已有的 `benchmark.allow_environment_change=true`
+并设置独立 `resume=null`，承认扫描模式变更，同时保存实际传感器身份与相同的
+2,000,000 基准种子区间。未将迁移后的成功率冒充原模型的原始成绩。
+
+| 场景 | Depth/APG Seed 0，Step 480 | LiDAR/APG Seed 0，Step 3680 |
+|---|---:|---:|
+| S01 / S02 / S03 | 25 / 25 / 25 | 25 / 25 / **0** |
+| D01 / D02 / D03 | 25 / 25 / 25 | 25 / 25 / 25 |
+| S06 / D06 | 25 / 21 | 25 / 25 |
+| 合计 | **196/200** | **175/200** |
+
+Depth 在主六场景全部 25/25，D06 为 21/25，与原版归档的冻结报告一致。
+LiDAR S03 新扫描为 0/25；另用**相同权重、相同种子、原版传感器实现**
+重新跑 S03，原版同样 0/25。这一场景的失败不能归因于本次扫描资源替换。
+LiDAR 其余七场景均为 25/25。两份全场景报告位于
+`tmp/sensor-rendering/frozen_{depth,lidar}_apg_s0_all8/eval/001/report.json`；
+旧版 LiDAR S03 对照在 `frozen_lidar_apg_s0_S03_baseline/`。
+
+### 仍未满足的独立门禁
+
+重新启用 GPU 后，`tools/check_sensor_migration.py` 仍返回 1：
+MuJoCo-LiDAR 0.3.5 原生 JAX 求交在 7 个边界案例中有 6 个与
+`mujoco.mj_ray` 不一致。因此**没有替换和删除当前 `Scene.raycast()`**，
+而正式训练只有这一条求交路径。此阻塞来自上游求交语义，与 GPU 可用性无关，
+证据保存在 `tmp/sensor-rendering/native-gate-gpu.json`。
+新 MID360 方案的从零训练收敛矩阵尚未重新完成；功能分支保持隔离，不合并到 `v0.2`。
+主工作区现有训练、权重和报告未被修改。
 
 ### 复现入口
 

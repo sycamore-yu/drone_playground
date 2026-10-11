@@ -14,6 +14,7 @@ from functools import lru_cache
 from importlib import resources
 from typing import NamedTuple
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
@@ -185,7 +186,6 @@ def sensor_rays(
             ),
         )
         azimuth, elevation = azimuth.ravel(), elevation.ravel()
-        offsets = jnp.zeros(config.width * config.height)
     else:
         frame = (
             jnp.floor(jnp.asarray(t) * config.frequency_hz)
@@ -199,7 +199,6 @@ def sensor_rays(
         ) % len(angles)
         selected = jnp.asarray(angles)[indices]
         azimuth, elevation = selected[..., 0], selected[..., 1]
-        offsets = jnp.zeros(config.points_per_frame)
     rays = jnp.stack(
         (
             jnp.cos(elevation) * jnp.cos(azimuth),
@@ -208,7 +207,7 @@ def sensor_rays(
         ),
         axis=-1,
     )
-    return rays, offsets
+    return rays, jnp.zeros(rays.shape[-2])
 
 
 def measure(
@@ -235,11 +234,18 @@ def measure(
     mounting = Rotation.from_euler(
         "xyz", jnp.deg2rad(jnp.array([config.roll_deg, -config.pitch_deg, config.yaw_deg]))
     ).as_matrix()
-    body_rays = jnp.einsum("ij,...nj->...ni", mounting, rays)
+    body_rays = jnp.einsum("ij,...nj->...ni", mounting, rays, precision=jax.lax.Precision.HIGHEST)
     attitudes = jnp.broadcast_to(quaternion, (*batch, 4))
     rotation = Rotation.from_quat(attitudes.reshape(-1, 4)).as_matrix().reshape((*batch, 3, 3))
-    origins = position + jnp.einsum("...ij,j->...i", rotation, jnp.asarray(config.translation))
-    world_rays = jnp.einsum("...ij,...nj->...ni", rotation, body_rays)
+    origins = position + jnp.einsum(
+        "...ij,j->...i",
+        rotation,
+        jnp.asarray(config.translation),
+        precision=jax.lax.Precision.HIGHEST,
+    )
+    world_rays = jnp.einsum(
+        "...ij,...nj->...ni", rotation, body_rays, precision=jax.lax.Precision.HIGHEST
+    )
     # A depth cutoff is axial: off-axis rays must travel farther than max_range.
     limit = (
         config.max_range / jnp.min(rays[..., 0], axis=-1)
