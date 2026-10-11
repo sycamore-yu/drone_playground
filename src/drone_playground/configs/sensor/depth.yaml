@@ -1,5 +1,8 @@
 name: depth
 config:
+  width: 64
+  height: 48
+  frequency_hz: 30
   pitch_deg: 20.0
   min_range: 0.3
   max_range: 10.0

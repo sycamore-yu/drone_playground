@@ -90,7 +90,11 @@ def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
         scene="D01",
         num_envs=2,
         sensor=kind,
-        sensor_config={"points_per_frame": 32} if kind == "lidar" else {},
+        sensor_config=(
+            {"points_per_frame": 32}
+            if kind == "lidar"
+            else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+        ),
         point_count=32,
     )
     state = env.step(env.reset(jax.random.PRNGKey(1)), jnp.zeros((2, 3)))

@@ -395,6 +395,45 @@ def test_v2_policy_requires_explicit_actor_specification(tmp_path):
         )
 
 
+@pytest.mark.parametrize("archived", [{}, {"sensor": None}, {"sensor": {"acquisition": "rolling"}}])
+def test_frozen_evaluation_rejects_sensor_model_change(config, monkeypatch, tmp_path, archived):
+    """Old scan semantics cannot silently inherit a new frozen benchmark identity."""
+    config.mode = "benchmark"
+    config.benchmark.scenes = ["S01"]
+    config.benchmark.episodes = 1
+    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
+    env = SimpleNamespace(sensor=SimpleNamespace(specification={"acquisition": "snapshot"}))
+    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
+    monkeypatch.setattr(evaluation, "rollout", lambda *args, **kwargs: pytest.fail("ran mismatch"))
+    with pytest.raises(ValueError, match="sensor"):
+        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
+
+
+@pytest.mark.parametrize("allow_change", [False, True])
+def test_frozen_sensor_guard_allows_matched_or_explicit_comparison(
+    config, monkeypatch, tmp_path, allow_change
+):
+    """Matching snapshots and explicitly requested cross-model experiments reach execution."""
+    config.mode = "benchmark"
+    config.benchmark.scenes = ["S01"]
+    config.benchmark.episodes = 1
+    config.benchmark.allow_environment_change = allow_change
+    current = {"acquisition": "snapshot"}
+    archived = {} if allow_change else {"sensor": current}
+    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
+    env = SimpleNamespace(sensor=SimpleNamespace(specification=current))
+    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
+
+    def reached(*args, **kwargs):
+        raise RuntimeError("reached rollout")
+
+    monkeypatch.setattr(evaluation, "rollout", reached)
+    with pytest.raises(RuntimeError, match="reached rollout"):
+        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
+
+
 @pytest.mark.parametrize(
     "count, missing, failed_static, expected",
     [
@@ -424,7 +463,10 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     def create_environment(config, **kwargs):
         scene = SimpleNamespace(name=kwargs["scene"], geometry_identity={"name": kwargs["scene"]})
         return SimpleNamespace(
-            scene=scene, task=SimpleNamespace(contract={}), control_level="attitude_thrust"
+            scene=scene,
+            task=SimpleNamespace(contract={}),
+            control_level="attitude_thrust",
+            sensor=None,
         )
 
     monkeypatch.setattr(evaluation, "create_environment", create_environment)
@@ -447,6 +489,7 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     assert report["reports"]["D01"]["outcomes"] == {"COLLISION": count}
     assert report["reports"]["D01"]["passed"] is None
     diagnostic = json.loads((tmp_path / "report.json").read_text())["reports"]["D01"]
+    assert diagnostic["sensor"] is None
     assert diagnostic["criterion"] == "diagnostic" and diagnostic["passed"] is None
     assert (tmp_path / "decisions.json").is_file()
     assert (tmp_path / "episodes.csv").is_file()

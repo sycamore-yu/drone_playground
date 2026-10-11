@@ -170,6 +170,122 @@ def test_actual_sensor_hits_and_planner_points_reach_render_scene(tmp_path, monk
             np.testing.assert_allclose(rendered_plan[0].pos, plans[frame][0])
 
 
+def test_crazyflie_visual_meshes_follow_recorded_orientation(tmp_path, monkeypatch):
+    """Replay uses the packaged robot, not an approximation that replaces its appearance."""
+    path = export_replay(
+        tmp_path / "robot", ASSETS / "navigation/S01.xml", TIMES, POSITIONS, QUATERNIONS
+    )
+    record, model, data, meta = decode(path, monkeypatch)
+    drone_id = model.body("drone").id
+    for name in ("cf_pcb", "cf_motors", "cf_prop_0", "cf_prop_3"):
+        mesh = model.geom(name)
+        assert int(mesh.bodyid[0]) == drone_id
+        assert int(mesh.contype[0]) == 0
+        assert int(mesh.conaffinity[0]) == 0
+    assert int(model.geom("replay_drone").rgba[3] == 0)
+    assert any(name.endswith(".stl") for name in meta["model_assets"])
+    assert "crazyflie_LICENSE" in meta["model_assets"]
+    assert "crazyflie_SOURCE.txt" in meta["model_assets"]
+    restore(record, model, data, 0)
+    body_rotation = data.body("drone").xmat.reshape(3, 3)
+    mesh_rotation = data.geom("cf_pcb").xmat.reshape(3, 3)
+    mesh_offset = body_rotation.T @ mesh_rotation
+    render_scene = mujoco.MjvScene(model, maxgeom=model.ngeom + 200)
+    for index in range(len(TIMES)):
+        restore(record, model, data, index)
+        np.testing.assert_allclose(data.body("drone").xpos, POSITIONS[index], atol=1e-6)
+        np.testing.assert_allclose(
+            data.body("drone").xquat, QUATERNIONS[index, [3, 0, 1, 2]], atol=1e-6
+        )
+        np.testing.assert_allclose(
+            data.geom("cf_pcb").xmat.reshape(3, 3),
+            data.body("drone").xmat.reshape(3, 3) @ mesh_offset,
+            atol=1e-6,
+        )
+        mujoco.mjv_updateScene(
+            model,
+            data,
+            mujoco.MjvOption(),
+            None,
+            mujoco.MjvCamera(),
+            mujoco.mjtCatBit.mjCAT_ALL,
+            render_scene,
+        )
+        assert any(
+            geom.objtype == mujoco.mjtObj.mjOBJ_GEOM and geom.objid == model.geom("cf_pcb").id
+            for geom in render_scene.geoms[: render_scene.ngeom]
+        )
+
+
+def test_planner_segments_and_acquisition_times_are_causal(tmp_path, monkeypatch):
+    """Show connected plan segments only between their recorded validity times."""
+    positions = np.array([[4.0, 1, 3], [5.0, 2, 3], [6.0, 2, 3]])
+    plans = [
+        {"positions": positions, "received_time": 0.0, "valid_until": 0.2},
+        {"positions": positions, "received_time": 0.0, "valid_until": 0.2},
+        {"positions": positions, "received_time": 0.0, "valid_until": 0.2},
+    ]
+    sensor_times = np.array([0.0, 0.1, 0.3])
+    path = export_replay(
+        tmp_path / "causal",
+        ASSETS / "navigation/S01.xml",
+        TIMES,
+        POSITIONS,
+        QUATERNIONS,
+        plans=plans,
+        sensor_times=sensor_times,
+    )
+    record, model, data, _ = decode(path, monkeypatch)
+    np.testing.assert_array_equal(record.metrics["plan_segments"][:, 0], [2, 2, 0])
+    np.testing.assert_array_equal(record.metrics["sensor_acquisition_time"][:, 0], sensor_times)
+    assert int(model.tendon("replay_plan_line_0").id) >= 0
+    scene = mujoco.MjvScene(model, maxgeom=model.ngeom + 200)
+    for frame in (0, 1):
+        restore(record, model, data, frame)
+        np.testing.assert_allclose(data.body("replay_plan_segment_0_start").xpos, positions[0])
+        np.testing.assert_allclose(data.body("replay_plan_segment_0_end").xpos, positions[1])
+        np.testing.assert_allclose(data.body("replay_plan_segment_1_start").xpos, positions[1])
+        np.testing.assert_allclose(data.body("replay_plan_segment_1_end").xpos, positions[2])
+        mujoco.mjv_updateScene(
+            model,
+            data,
+            mujoco.MjvOption(),
+            None,
+            mujoco.MjvCamera(),
+            mujoco.mjtCatBit.mjCAT_ALL,
+            scene,
+        )
+        lines = [g for g in scene.geoms[: scene.ngeom] if g.objtype == mujoco.mjtObj.mjOBJ_TENDON]
+        assert len(lines) == 2
+        np.testing.assert_allclose(lines[0].pos, (positions[0] + positions[1]) / 2)
+    restore(record, model, data, 2)
+    assert data.body("replay_plan_segment_0_start").xpos[2] == -1e6
+    assert data.body("replay_plan_0").xpos[2] == -1e6
+
+
+def test_replay_rejects_uncausal_time_metadata(tmp_path):
+    """Plan and sensor timing violations must not silently make a believable replay."""
+    scene = ASSETS / "navigation/S01.xml"
+    with pytest.raises(ValueError, match="Sensor acquisition"):
+        export_replay(
+            tmp_path / "future-sensor",
+            scene,
+            TIMES,
+            POSITIONS,
+            QUATERNIONS,
+            sensor_times=[0.0, 0.2, 0.3],
+        )
+    with pytest.raises(ValueError, match="Plan reception"):
+        export_replay(
+            tmp_path / "bad-plan",
+            scene,
+            TIMES,
+            POSITIONS,
+            QUATERNIONS,
+            plans=[{"positions": [[1, 2, 3]], "received_time": 2, "valid_until": 1}, None, None],
+        )
+
+
 def test_lsy_embeds_textures_and_preserves_gate_orientations(tmp_path, monkeypatch):
     """Verify lsy embeds textures and preserves gate orientations."""
     source = ASSETS / "racing/lsy_level0.xml"
@@ -226,8 +342,17 @@ def test_included_mesh_is_portable(tmp_path, monkeypatch):
     path = export_replay(tmp_path / "portable", xml, TIMES, POSITIONS, QUATERNIONS)
     (source / "meshes/tetra.obj").unlink()
     _, model, _, meta = decode(path, monkeypatch)
-    np.testing.assert_array_equal(model.mesh_face, original.mesh_face)
-    np.testing.assert_allclose(model.mesh_vert, original.mesh_vert)
+    source_mesh, replay_mesh = original.mesh("tetra"), model.mesh("tetra")
+    start, size = int(replay_mesh.faceadr[0]), int(replay_mesh.facenum[0])
+    np.testing.assert_array_equal(
+        model.mesh_face[start : start + size],
+        original.mesh_face[int(source_mesh.faceadr[0]) : int(source_mesh.faceadr[0]) + size],
+    )
+    start, size = int(replay_mesh.vertadr[0]), int(replay_mesh.vertnum[0])
+    np.testing.assert_allclose(
+        model.mesh_vert[start : start + size],
+        original.mesh_vert[int(source_mesh.vertadr[0]) : int(source_mesh.vertadr[0]) + size],
+    )
     assert len([k for k in meta["model_assets"] if k.endswith(".obj")]) == 1
 
 

@@ -20,6 +20,8 @@
 | [0009](adr/0009-delayed-data-in-episode-state.md) | 命令和测量延迟缓冲归属对应环境实例，支持局部 reset 与恢复 |
 | [0010](adr/0010-training-only-privileged-ppo-critic.md) | 训练专用特权 PPO Critic；Actor 与冻结评测使用原设备观测 |
 | [0011](adr/0011-independent-ppo-goal-observation.md) | 独立 PPO 对照增加目标高度与距离；原验收批次保留十维观测 |
+| [0012: sensor](adr/0012-sensor.md) | Accepted：MID360 快照采集与 P0/P1 已集成到 `v0.2`；原生求交替换仍未通过门禁 |
+| [0013: render](adr/0013-render.md) | Accepted：显式相机参数与官方 Renderer 对照；单一求交路径，暂不引入 Warp/Mesh |
 
 当前集成分支 `v0.2` 的代码和训练产物使用 v2-only 合同。配置、控制器、延迟、随机化及
 反向模型见[控制模型说明](control-models.md)。历史结果与当时验证属于独立的研究
@@ -34,6 +36,11 @@
 `tmp/neat-freak/legacy-training-deleted-20261009.json`。不从该清单推导可恢复的训练参数。
 
 ## 设计原则
+
+[传感器求交成熟方案与高保真 Review](research/sensor-raycasting-fidelity-review.md)
+对照 P2M、NavRL、DiffAero、MuJoCo Playground、Omni-Perception、
+mjlab/Unitree 与官方 MJX/MJWarp。区分扫描角度、几何求交和传感器误差；
+解释未采用 `MjLidarJax` / MJX-JAX `ray()` 的直接证据和后续替换门禁。
 
 [ADR-0001](adr/0001-simulation-learning-boundary.md) 记录 Simulation/Learning 的职责与
 方法组合，数学模型与 Controller 可以独立调用。Trajectory 保持宿主 NumPy 表示，

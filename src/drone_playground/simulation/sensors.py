@@ -1,24 +1,37 @@
-"""Pure virtual sensors and separate training preprocessing.
+"""Snapshot depth and LiDAR measurements, separate from policy preprocessing.
 
-Body axes are Crazyflow's x-forward, y-left, z-up; attitudes are body-to-world
-xyzw quaternions. Depth is optical-axis distance, LiDAR values are radial ranges.
-Mid-360 uses a synthetic nonrepeating angular sequence, not a reconstruction of
-the vendor's physical scan. Its public envelope/timing are from
-https://www.livoxtech.com/mid-360/specs. All profiles explicitly use ideal errors.
+Body axes are x-forward, y-left, z-up; body-to-world quaternions are xyzw.
+Depth is optical-axis distance; LiDAR reports radial range. MID360 directions
+come from the released MuJoCo-LiDAR table. Every ray uses the frame pose/time;
+the angle resource does not provide calibrated per-ray acquisition times.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass, replace
+import hashlib
+from dataclasses import asdict, dataclass, replace
+from functools import lru_cache
+from importlib import resources
 from typing import NamedTuple
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
 from jax.scipy.spatial.transform import Rotation
 
 from drone_playground.simulation.scene import Scene
+
+
+@lru_cache(maxsize=1)
+def _mid360_pattern() -> tuple[np.ndarray, str]:
+    """Load the packaged scan once, without retaining a mutable generator cursor."""
+    from mujoco_lidar.scan_gen import LivoxGenerator
+
+    angles = np.asarray(LivoxGenerator("mid360").ray_angles, dtype=np.float32)
+    angles.setflags(write=False)
+    source = resources.files("mujoco_lidar").joinpath("scan_mode/mid360.npy")
+    return angles, hashlib.sha256(source.read_bytes()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -87,19 +100,13 @@ class SensorConfig:
             raise ValueError("Depth FoV must lie between 0 and 180 degrees")
 
     @classmethod
-    def d435i(cls, mode: str = "1280x720", **overrides) -> SensorConfig:
-        """30 Hz axial depth; training64x48 defaults to 20 degree upward pitch."""
-        if mode == "1280x720":
-            config = cls()
-        elif mode == "training64x48":
-            config = cls(width=64, height=48, pitch_deg=20.0, max_range=10.0)
-        else:
-            raise ValueError(f"Unsupported D435i mode {mode!r}")
-        return replace(config, **overrides)
+    def d435i(cls, **overrides) -> SensorConfig:
+        """D435i calibration; experiments supply image size, frequency and mounting."""
+        return replace(cls(), **overrides)
 
     @classmethod
     def mid360(cls, **overrides) -> SensorConfig:
-        """20,000 first returns / 0.1 s; ideal 40 m reflectivity-limited envelope."""
+        """20,000 ideal first-return queries per 10 Hz snapshot, with a 40 m cutoff."""
         return replace(
             cls(profile="mid360", frequency_hz=10, min_range=0.1, max_range=40), **overrides
         )
@@ -122,22 +129,36 @@ class SensorConfig:
             **overrides,
         )
 
+    @property
+    def specification(self) -> dict:
+        """Record calibration, acquisition semantics and scan-resource identity."""
+        result = {**asdict(self), "acquisition": "snapshot"}
+        result["translation"] = list(self.translation)
+        if self.profile == "mid360":
+            angles, digest = _mid360_pattern()
+            result.update(
+                scan_source="mujoco-lidar==0.3.5:scan_mode/mid360.npy",
+                scan_sha256=digest,
+                scan_length=len(angles),
+                scan_index="(frame_index * points_per_frame + ray_index) % scan_length",
+            )
+        return result
+
 
 class Measurement(NamedTuple):
     """JAX pytree of values, validity and acquisition metadata.
 
-    Invalid values and body points are zero; directions/timestamps remain valid.
+    Invalid values and body points are zero.
     Pixel fields have shape ``(..., height, width)``, point fields ``(..., N)``;
-    vectors append a 3-axis. Acquisition time is frame completion, available time
-    includes configured latency. Each LiDAR point is in its acquisition body
-    frame, not deskewed to the final frame.
+    vectors append a 3-axis. Acquisition time is the snapshot time and
+    available time includes configured latency. All points use the body frame
+    at acquisition. Per-ray times and directions are not retained because a
+    snapshot has one acquisition time and the scan pattern is reproducible.
     """
 
     values: Array
     mask: Array
     points_body: Array
-    directions_body: Array
-    times: Array
     acquisition_time: Array
     available_time: Array
 
@@ -145,12 +166,7 @@ class Measurement(NamedTuple):
 def sensor_rays(
     config: SensorConfig, t: Array | float = 0.0, frame_index: Array | int | None = None
 ) -> tuple[Array, Array]:
-    """Unit rays in sensor axes and time offsets relative to frame completion.
-
-    Depth/uniform grids are instantaneous. Mid-360 rays span the preceding
-    0.1 s, spaced by 5 us in the default profile. ``frame_index`` can carry an
-    explicit scan phase across resets; otherwise phase follows absolute time.
-    """
+    """Unit rays and zero snapshot offsets; each world has an explicit scan phase."""
     if config.profile == "d435i":
         x = 2 * (jnp.arange(config.width) + 0.5) / config.width - 1
         y = 1 - 2 * (jnp.arange(config.height) + 0.5) / config.height
@@ -169,28 +185,19 @@ def sensor_rays(
             ),
         )
         azimuth, elevation = azimuth.ravel(), elevation.ravel()
-        offsets = jnp.zeros(config.width * config.height)
     else:
         frame = (
             jnp.floor(jnp.asarray(t) * config.frequency_hz)
             if frame_index is None
             else jnp.asarray(frame_index)
         )
-        index = jnp.arange(config.points_per_frame, dtype=jnp.float32)
-        # Irrational rotations sample the published envelope without claiming optical fidelity.
-        azimuth = (
-            2
-            * jnp.pi
-            * jnp.mod(index * 0.61803398875 + jnp.mod(frame[..., None] * 0.41421356237, 1), 1)
-        )
-        fraction = jnp.mod(index * 0.75487766625 + jnp.mod(frame[..., None] * 0.73205080757, 1), 1)
-        elevation = jnp.deg2rad(
-            config.elevation_min_deg
-            + (config.elevation_max_deg - config.elevation_min_deg) * fraction
-        )
-        offsets = (index - (config.points_per_frame - 1)) / (
-            config.points_per_frame * config.frequency_hz
-        )
+        angles, _ = _mid360_pattern()
+        indices = (
+            frame.astype(jnp.int32)[..., None] * config.points_per_frame
+            + jnp.arange(config.points_per_frame)
+        ) % len(angles)
+        selected = jnp.asarray(angles)[indices]
+        azimuth, elevation = selected[..., 0], selected[..., 1]
     rays = jnp.stack(
         (
             jnp.cos(elevation) * jnp.cos(azimuth),
@@ -199,7 +206,7 @@ def sensor_rays(
         ),
         axis=-1,
     )
-    return rays, offsets
+    return rays, jnp.zeros(rays.shape[-2])
 
 
 def measure(
@@ -210,41 +217,43 @@ def measure(
     t: Array | float,
     *,
     frame_index: Array | int | None = None,
-    pose_at: Callable[[Array], tuple[Array, Array]] | None = None,
 ) -> Measurement:
-    """Measure batched worlds at frame-completion time ``t`` (one time per world).
+    """Measure one scene/robot snapshot per world at ``t`` with fixed calibration.
 
-    Position/quaternion are ``(..., 3/4)``. By default the supplied pose is held
-    throughout a scan while geometry moves at each ray's exact time. To account
-    for ego motion, supply a pure ``pose_at(times)->(positions, xyzw)`` function
-    accepting the full ``(..., rays)`` timestamp array. Static configs and scenes
-    should be closed over when applying JIT. There is no mutable sensor state.
+    Position/quaternion have shape ``(..., 3/4)``. Dynamic obstacle geometry is
+    evaluated at that world's acquisition time. Close over scene/config for JIT.
     """
     position, quaternion = jnp.asarray(position), jnp.asarray(quaternion)
     batch = jnp.broadcast_shapes(position.shape[:-1], quaternion.shape[:-1])
     time = jnp.broadcast_to(jnp.asarray(t), batch)
-    rays, offsets = sensor_rays(config, time, frame_index)
+    rays, _ = sensor_rays(config, time, frame_index)
     count = rays.shape[-2]
     rays = jnp.broadcast_to(rays, (*batch, count, 3))
-    times = time[..., None] + offsets
     mounting = Rotation.from_euler(
         "xyz", jnp.deg2rad(jnp.array([config.roll_deg, -config.pitch_deg, config.yaw_deg]))
     ).as_matrix()
-    body_rays = jnp.einsum("ij,...nj->...ni", mounting, rays)
-    if pose_at is None:
-        positions = jnp.broadcast_to(position[..., None, :], (*batch, count, 3))
-        attitudes = jnp.broadcast_to(quaternion[..., None, :], (*batch, count, 4))
-    else:
-        positions, attitudes = pose_at(times)
-    rotation = Rotation.from_quat(attitudes.reshape(-1, 4)).as_matrix()
-    rotation = rotation.reshape((*batch, count, 3, 3))
-    origins = positions + jnp.einsum("...nij,j->...ni", rotation, jnp.asarray(config.translation))
-    world_rays = jnp.einsum("...nij,...nj->...ni", rotation, body_rays)
+    body_rays = jnp.einsum("ij,...nj->...ni", mounting, rays, precision=jax.lax.Precision.HIGHEST)
+    attitudes = jnp.broadcast_to(quaternion, (*batch, 4))
+    rotation = Rotation.from_quat(attitudes.reshape(-1, 4)).as_matrix().reshape((*batch, 3, 3))
+    origins = position + jnp.einsum(
+        "...ij,j->...i",
+        rotation,
+        jnp.asarray(config.translation),
+        precision=jax.lax.Precision.HIGHEST,
+    )
+    world_rays = jnp.einsum(
+        "...ij,...nj->...ni", rotation, body_rays, precision=jax.lax.Precision.HIGHEST
+    )
     # A depth cutoff is axial: off-axis rays must travel farther than max_range.
-    limit = config.max_range / rays[..., 0] if config.profile == "d435i" else config.max_range
-    ranges = scene.raycast(origins, world_rays[..., None, :], times, limit)[..., 0]
+    limit = (
+        config.max_range / jnp.min(rays[..., 0], axis=-1)
+        if config.profile == "d435i"
+        else config.max_range
+    )
+    ranges = scene.raycast(origins, world_rays, time, limit)
     values = ranges * rays[..., 0] if config.profile == "d435i" else ranges
-    mask = jnp.isfinite(values) & (values >= config.min_range) & (ranges < limit)
+    hit = ranges < jnp.broadcast_to(jnp.asarray(limit), batch)[..., None]
+    mask = hit & jnp.isfinite(values) & (values >= config.min_range) & (values < config.max_range)
     points = jnp.asarray(config.translation) + body_rays * ranges[..., None]
     values = jnp.where(mask, values, 0)
     points = jnp.where(mask[..., None], points, 0)
@@ -253,55 +262,6 @@ def measure(
         values.reshape(shape),
         mask.reshape(shape),
         points.reshape((*shape, 3)),
-        body_rays.reshape((*shape, 3)),
-        times.reshape(shape),
         time,
         time + config.latency,
-    )
-
-
-def preprocess_depth(
-    measurement: Measurement,
-    *,
-    near: float = 0.3,
-    far: float = 10.0,
-    scale: float = 3.0,
-    offset: float = -0.6,
-    pool: int = 4,
-) -> tuple[Array, Array]:
-    """Inverse axial depth then 4x4 max pooling; 48x64 -> 12x16.
-
-    Implements the documented training recipe ``3/clip(depth,.3,10)-.6``.
-    Returns pooled values and masks; invalid pixels never win a pooled maximum,
-    and wholly invalid cells are zero. This is independent of device simulation.
-    """
-    depth, mask = measurement.values, measurement.mask
-    height, width = depth.shape[-2:]
-    if pool < 1 or height % pool or width % pool or not 0 < near < far:
-        raise ValueError("Depth dimensions must be divisible by pool and 0 < near < far")
-    inverse = scale / jnp.clip(jnp.where(mask, depth, far), near, far) + offset
-    blocks = (*depth.shape[:-2], height // pool, pool, width // pool, pool)
-    pooled = jnp.max(jnp.where(mask, inverse, -jnp.inf).reshape(blocks), axis=(-3, -1))
-    valid = jnp.any(mask.reshape(blocks), axis=(-3, -1))
-    return jnp.where(valid, pooled, 0), valid
-
-
-def reduce_points(measurement: Measurement, count: int) -> Measurement:
-    """Deterministically subsample a point scan, preserving masks and timestamps.
-
-    Evenly spaced acquisition indices preserve the scan's temporal span. Invalid
-    returns remain invalid rather than being relabelled or padded as real points.
-    """
-    size = measurement.values.shape[-1]
-    if not isinstance(count, int) or not 0 < count <= size:
-        raise ValueError("Point count must be a positive integer no larger than the scan")
-    indices = jnp.linspace(0, size - 1, count).astype(jnp.int32)
-    return Measurement(
-        jnp.take(measurement.values, indices, axis=-1),
-        jnp.take(measurement.mask, indices, axis=-1),
-        jnp.take(measurement.points_body, indices, axis=-2),
-        jnp.take(measurement.directions_body, indices, axis=-2),
-        jnp.take(measurement.times, indices, axis=-1),
-        measurement.acquisition_time,
-        measurement.available_time,
     )

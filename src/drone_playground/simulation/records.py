@@ -78,7 +78,15 @@ class RunRecord:
             OmegaConf.save(OmegaConf.create(resolved), config_path)
         self.start = time.monotonic()
         versions = {}
-        for package in ("drone-playground", "crazyflow", "jax", "flax", "mujoco", "rscope"):
+        for package in (
+            "drone-playground",
+            "crazyflow",
+            "jax",
+            "flax",
+            "mujoco",
+            "mujoco-lidar",
+            "rscope",
+        ):
             try:
                 versions[package] = importlib.metadata.version(package)
             except importlib.metadata.PackageNotFoundError:
