@@ -167,6 +167,14 @@ class BaseEnv:
         }[self.control_level]
         self.sensor = None
         self.observation_config = dict(observation_config or {})
+        position_scale = self.observation_config.get("visfly_position_scale", 1.0)
+        if (
+            isinstance(position_scale, bool)
+            or not isinstance(position_scale, (float, int))
+            or not math.isfinite(position_scale)
+            or position_scale <= 0
+        ):
+            raise ValueError("VisFly position scale must be finite and positive")
         sensor_config = dict(sensor_config or {})
         latency_bounds = delay_range(sensor_config.get("latency", 0.0))
         if "latency" in sensor_config:
@@ -473,17 +481,18 @@ class BaseEnv:
             observation["fan_command"] = goal[:, :2] - physics.pos[:, 0, :2]
         if self.observation_config.get("visfly", False):
             physics = state.physics.states
+            position_scale = self.observation_config.get("visfly_position_scale", 1.0)
             observation["visfly_state"] = jnp.concatenate(
                 [
-                    physics.pos[:, 0],
+                    physics.pos[:, 0] / position_scale,
                     physics.quat[:, 0],
                     physics.vel[:, 0],
                     physics.ang_vel[:, 0],
                 ],
                 axis=-1,
             )
-            observation["visfly_target"] = jnp.broadcast_to(
-                self.goal_for(state), physics.pos[:, 0].shape
+            observation["visfly_target"] = (
+                jnp.broadcast_to(self.goal_for(state), physics.pos[:, 0].shape) / position_scale
             )
         return observation
 

@@ -81,6 +81,38 @@ reward, dynamics, initialization and decision clock remain **identical**.
 The Hydra contract is covered by two tests. A 16-episode probe must never be
 reported as a 48-episode or formal 25-per-scene benchmark.
 
+## Next single-variable transfer study: VisFly position scale
+
+The original VisFly reference goal is about 9m in its small indoor scene,
+but Drone Playground's long course provides about 98m as an **absolute
+goal position**. The initial baseline has roughly 80% tanh action saturation,
+with frequent KL update skips and fixed-scene altitude failures.
+
+With frozen synthetic camera/self-state inputs and the same randomly
+initialized Flax Actor parameters per seed, replacing **only** world
+position and goal by position/10 and goal/10 produced:
+
+| Initialization seed | Direct world-coordinates tanh saturation | Position/goal divided by 10 |
+| --- | ---: | ---: |
+| 0 | 75% | 0% |
+| 1 | 75% | 0% |
+| 2 | 100% | 0% |
+
+This numerical test is **not** an evaluation rollout and does not predict
+success. It establishes a plausible observation-scale mismatch, independent
+of the velocity/angular-rate and depth inputs.
+
+An opt-in `observation.visfly_position_scale` (default 1.0, preserving
+existing experiments) and a new
+`navigation_paper_visfly2025_ppo_posscale10_staged` config implement
+this isolated hypothesis; the only training-input change relative to
+`navigation_paper_visfly2025_ppo_staged` is simultaneous division of the
+state's position and the absolute target by 10. The CNN, action head,
+exploration distribution, reward, optimizer, random-seed contract and
+control frequency are all unchanged. Static tensor and Hydra contracts
+passed. This is a **future distinct run**, never applied to currently
+running `visfly_depth_s0` or its saved checkpoints.
+
 Runtime diagnostic command (read-only):
 
 ```bash

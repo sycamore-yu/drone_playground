@@ -37,7 +37,10 @@ def test_fan_range_minimum_mask_history():
     np.testing.assert_array_equal(clear_done_histories(history, jnp.array([True])), 1)
 
 
-@pytest.mark.parametrize("configuration", [{"fan_lidar": {}}, {"visfly": True}])
+@pytest.mark.parametrize(
+    "configuration",
+    [{"fan_lidar": {}}, {"visfly": True}, {"visfly": True, "visfly_position_scale": 10.0}],
+)
 def test_paper_observation_broadcasts_static_fixed_scene_goal(configuration):
     """Fixed scenes expose one [3] goal; a paper Actor still receives [B,*] inputs."""
     batch = 8
@@ -80,7 +83,8 @@ def test_paper_observation_broadcasts_static_fixed_scene_goal(configuration):
         np.testing.assert_allclose(setpoint[:, 2], 3.0)
     else:
         assert observation["visfly_target"].shape == (batch, 3)
-        np.testing.assert_allclose(observation["visfly_target"][:, 0], 98.0)
+        scale = configuration.get("visfly_position_scale", 1.0)
+        np.testing.assert_allclose(observation["visfly_target"][:, 0], 98.0 / scale)
 
 
 @pytest.mark.parametrize(("kind", "action_size"), [("fan_lidar", 2), ("visfly_depth", 4)])
@@ -172,3 +176,23 @@ def test_staged_screening_changes_no_training_parameters(experiment):
     assert old.pop("screening", None) is None
     assert new.pop("screening") == {"probe_between_full": True, "full_every": 3}
     assert old == new
+
+
+def test_visfly_position_scaling_is_the_only_training_contract_change():
+    """Keep camera, network, reward, task and PPO settings identical."""
+    with initialize_config_dir(
+        version_base=None,
+        config_dir=str(Path(__file__).parents[1] / "src/drone_playground/configs"),
+    ):
+        original = compose(
+            config_name="config",
+            overrides=["experiment=navigation_paper_visfly2025_ppo_staged"],
+        )
+        scaled = compose(
+            config_name="config",
+            overrides=["experiment=navigation_paper_visfly2025_ppo_posscale10_staged"],
+        )
+    a = OmegaConf.to_container(original, resolve=True)
+    b = OmegaConf.to_container(scaled, resolve=True)
+    assert b["observation"].pop("visfly_position_scale") == 10.0
+    assert a == b
