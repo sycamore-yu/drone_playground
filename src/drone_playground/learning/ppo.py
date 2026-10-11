@@ -9,6 +9,26 @@ from drone_playground.simulation.networks import reset_actor_memory
 from drone_playground.simulation.tasks import Event
 
 
+def shared_critic_parameters(actor_parameters, critic_head):
+    """Bind VisFly's value head to the one actor-owned visual/state encoder."""
+    scope = dict(critic_head["params"]["visfly_value"])
+    scope["VisFlyFeatures_0"] = actor_parameters["params"]["visfly_policy"]["VisFlyFeatures_0"]
+    return {"params": {"visfly_value": scope}}
+
+
+def policy_variables(state, *, shared_visual_encoder=False):
+    """Return each parameter once for the joint actor/value optimizer."""
+    variables = {"params": state.params, "log_std": state.log_std}
+    if shared_visual_encoder:
+        head = {
+            key: value
+            for key, value in state.critic_params["params"]["visfly_value"].items()
+            if key != "VisFlyFeatures_0"
+        }
+        variables["critic_head"] = {"params": {"visfly_value": head}}
+    return variables
+
+
 @struct.dataclass
 class Rollout:
     """Carry sampled transitions and recurrent memory for PPO updates."""
@@ -210,6 +230,7 @@ def update(trainer, state):
     )
     advantages = normalize_advantages(advantages)
     batches = trainer.config["minibatches"]
+    shared = trainer.config["shared_visual_encoder"]
 
     def epoch(carry, _):
         state, halted = carry
@@ -245,16 +266,30 @@ def update(trainer, state):
                     trainer.objective.auxiliary_cost(auxiliary, data.observations)
                 )
                 loss = policy_loss - trainer.config["entropy_weight"] * entropy + auxiliary_loss
+                value_loss = jnp.zeros_like(loss)
+                if shared:
+                    critic_parameters = shared_critic_parameters(
+                        variables["params"], variables["critic_head"]
+                    )
+                    flattened = jax.tree.map(
+                        lambda value: value.reshape((-1, *value.shape[2:])), data.observations
+                    )
+                    values = trainer.critic.apply(critic_parameters, flattened)
+                    value_loss = 0.5 * jnp.mean(
+                        (values - jax.lax.stop_gradient(targets[:, indices].reshape(-1))) ** 2
+                    )
+                    loss = loss + value_loss
                 return loss, {
                     "policy_loss": policy_loss,
                     "entropy": entropy,
                     "auxiliary_loss": auxiliary_loss,
                     "approx_kl": jnp.mean((ratio - 1) - (log_prob - data.log_prob)),
                     "clip_fraction": jnp.mean(jnp.abs(ratio - 1) > trainer.config["clip_epsilon"]),
+                    "joint_value_loss": value_loss,
                 }
 
             (loss, metrics), gradients = jax.value_and_grad(objective, has_aux=True)(
-                {"params": state.params, "log_std": state.log_std}
+                policy_variables(state, shared_visual_encoder=shared)
             )
             skip_actor = halted | exceeds_kl_limit(
                 metrics["approx_kl"], trainer.config["ppo_target_kl"]
@@ -265,17 +300,19 @@ def update(trainer, state):
                 lambda current: trainer._apply_actor(current, gradients),
                 state,
             )
-            state, critic_metrics = trainer._fit_critic(
-                state,
-                data.observations,
-                targets[:, indices],
-                1,
-                old_values=data.values,
-            )
+            if shared:
+                critic_metrics = {
+                    "critic_loss": metrics["joint_value_loss"],
+                    "critic_grad_norm": optax.tree.norm(gradients["critic_head"]),
+                }
+            else:
+                state, critic_metrics = trainer._fit_critic(
+                    state, data.observations, targets[:, indices], 1, old_values=data.values
+                )
             return (state, skip_actor), {
                 **metrics,
                 **critic_metrics,
-                "actor_loss": loss,
+                "actor_loss": loss - metrics["joint_value_loss"],
                 "actor_grad_norm": optax.tree.norm(gradients),
                 "kl_actor_update_skipped": skip_actor.astype(jnp.float32),
             }

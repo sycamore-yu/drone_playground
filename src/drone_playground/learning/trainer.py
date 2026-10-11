@@ -65,6 +65,7 @@ _DEFAULTS = {
     "perception_loss": {},
     "randomize_navigation_start": False,
     "reward_profile": "default",
+    "shared_visual_encoder": False,
 }
 
 
@@ -108,6 +109,12 @@ class Trainer:
         if unknown:
             raise ValueError(f"Unknown learning options: {sorted(unknown)}")
         self.config = {**_DEFAULTS, **options}
+        if type(self.config["shared_visual_encoder"]) is not bool:
+            raise ValueError("shared_visual_encoder must be boolean")
+        if self.config["shared_visual_encoder"] and (
+            algorithm != "ppo" or kind != "visfly_depth" or self.config["ppo_value_clip"] != 0
+        ):
+            raise ValueError("Shared encoder requires VisFly PPO without value clipping")
         if self.config["perception_loss"] is None:
             self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
@@ -270,6 +277,15 @@ class Trainer:
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adamw(self.config["lr"], weight_decay=self.config["weight_decay"]),
         )
+        if self.config["shared_visual_encoder"]:
+            # VisFly supplies optimizer_kwargs(weight_decay), so torch Adam's
+            # default epsilon=1e-8 applies, with L2 decay inside the moments.
+            self.actor_optimizer = optax.chain(
+                optax.clip_by_global_norm(self.config["max_grad_norm"]),
+                optax.add_decayed_weights(self.config["weight_decay"]),
+                optax.scale_by_adam(eps=1e-8),
+                optax.scale(-self.config["lr"]),
+            )
         self.critic_optimizer = optax.chain(
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adam(self.config["critic_lr"]),
@@ -308,6 +324,16 @@ class Trainer:
         actor_parameters = (
             {"params": params, "log_std": log_std} if self.algorithm == "ppo" else params
         )
+        if self.config["shared_visual_encoder"]:
+            from drone_playground.learning.ppo import shared_critic_parameters
+
+            head = {
+                key: value
+                for key, value in critic_params["params"]["visfly_value"].items()
+                if key != "VisFlyFeatures_0"
+            }
+            actor_parameters["critic_head"] = {"params": {"visfly_value": head}}
+            critic_params = shared_critic_parameters(params, actor_parameters["critic_head"])
         history = self.objective.initialize_state(self.env.num_envs)
         return TrainingState(
             params=params,
@@ -315,7 +341,11 @@ class Trainer:
             target_critic_params=critic_params,
             optimizer_state={
                 "actor": self.actor_optimizer.init(actor_parameters),
-                "critic": self.critic_optimizer.init(critic_params),
+                "critic": (
+                    None
+                    if self.config["shared_visual_encoder"]
+                    else self.critic_optimizer.init(critic_params)
+                ),
             },
             rng=rng,
             env_state=env_state,
@@ -409,8 +439,10 @@ class Trainer:
         return env_state, memory, history
 
     def _apply_actor(self, state, gradients):
+        from drone_playground.learning.ppo import policy_variables, shared_critic_parameters
+
         variables = (
-            {"params": state.params, "log_std": state.log_std}
+            policy_variables(state, shared_visual_encoder=self.config["shared_visual_encoder"])
             if self.algorithm == "ppo"
             else state.params
         )
@@ -418,10 +450,16 @@ class Trainer:
             gradients, state.optimizer_state["actor"], variables
         )
         variables = optax.apply_updates(variables, updates)
+        critic_params = (
+            shared_critic_parameters(variables["params"], variables["critic_head"])
+            if self.config["shared_visual_encoder"]
+            else state.critic_params
+        )
         return state.replace(
             params=variables["params"] if self.algorithm == "ppo" else variables,
             log_std=variables["log_std"] if self.algorithm == "ppo" else state.log_std,
             optimizer_state={**state.optimizer_state, "actor": optimizer},
+            critic_params=critic_params,
         )
 
     def _fit_critic(self, state, observations, targets, epochs, *, old_values=None):
