@@ -99,7 +99,7 @@ class Trainer:
         """Configure the shared actor, critic, optimizers and compiled update."""
         if algorithm not in ("ppo", "apg", "shac"):
             raise ValueError("Expected algorithm ppo/apg/shac")
-        if actor is None and kind not in ("state", "depth", "lidar"):
+        if actor is None and kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth"):
             raise ValueError("Default Actor kind must be state/depth/lidar")
         if actor is not None and actor_config is not None:
             raise ValueError("Pass an Actor or actor_config, not both")
@@ -211,6 +211,8 @@ class Trainer:
         critic_kind = "state"
         if self.config["critic_uses_sensor"]:
             critic_kind = "depth" if env.sensor.config.profile == "d435i" else "lidar"
+        if self.kind == "visfly_depth" and not self.config["critic_uses_privileged"]:
+            critic_kind = "visfly_depth"
         self.critic = (
             critic
             if critic is not None

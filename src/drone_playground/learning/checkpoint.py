@@ -102,7 +102,7 @@ def load_state(path, template):
 
 def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
     """Save a configured Actor without a trainer or executable checkpoint payload."""
-    if kind not in ("state", "depth", "lidar") and actor_spec is None:
+    if kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth") and actor_spec is None:
         raise ValueError("Unknown actor kind")
     if not isinstance(actor_spec, dict) or actor_spec.get("kind") != kind:
         raise ValueError("Actor specification must match the frozen inference kind")

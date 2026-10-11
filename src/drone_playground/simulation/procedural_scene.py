@@ -41,6 +41,7 @@ class SceneDistribution:
     corridor_y: float = -17.5
     training_seed: int = 0
     start_sampling: str = "endpoints"
+    min_start_goal_distance_m: float = 0.0
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
@@ -52,6 +53,10 @@ class SceneDistribution:
             raise ValueError("training_seed must be a nonnegative integer")
         if self.start_sampling not in ("endpoints", "collision_free", "stratified"):
             raise ValueError("start_sampling must be endpoints, collision_free or stratified")
+        if not 0 <= self.min_start_goal_distance_m <= 80.0 or (
+            self.min_start_goal_distance_m > 0 and self.start_sampling != "collision_free"
+        ):
+            raise ValueError("Long-flight distance is supported only for collision_free, up to 80m")
 
 
 class ProceduralScene:
@@ -71,17 +76,23 @@ class ProceduralScene:
         self.distribution = (
             config if isinstance(config, SceneDistribution) else SceneDistribution(**(config or {}))
         )
+        generator = (
+            "procedural-navigation-v2-long-start"
+            if self.distribution.min_start_goal_distance_m > 0
+            else "procedural-navigation-v1"
+        )
+        # Keep v1's byte-for-byte identity compatible with historical checkpoints.
+        distribution_identity = vars(self.distribution).copy()
+        if self.distribution.min_start_goal_distance_m == 0:
+            distribution_identity.pop("min_start_goal_distance_m")
         self.geometry_hash = hashlib.sha256(
-            json.dumps(
-                {"generator": "procedural-navigation-v1", **vars(self.distribution)},
-                sort_keys=True,
-            ).encode()
+            json.dumps({"generator": generator, **distribution_identity}, sort_keys=True).encode()
         ).hexdigest()
         self.geometry_identity = {
             "name": self.name,
             "sha256": self.geometry_hash,
-            "generator": "procedural-navigation-v1",
-            "distribution": vars(self.distribution),
+            "generator": generator,
+            "distribution": distribution_identity,
         }
         self.geom_names = ()
         self.gate_positions = jnp.zeros((0, 3))
@@ -182,8 +193,11 @@ class ProceduralScene:
                     half_y = jnp.where(start_group == 0, 2.5, 15.0)
                 else:
                     near = jax.random.bernoulli(near_key, 0.35)
-                    xlow = jnp.where(near, 65.0, 2.0)
-                    xhigh, half_y = 93.0, 15.0
+                    long_flight = self.distribution.min_start_goal_distance_m > 0
+                    xlow = jnp.where(long_flight, 2.0, jnp.where(near, 65.0, 2.0))
+                    # Procedural goal_x >= 96.8, so start_x <= 16 yields >=80.8m.
+                    xhigh = 16.0 if long_flight else 93.0
+                    half_y = 15.0
                 return jnp.stack(
                     [
                         xlow + (xhigh - xlow) * coordinates[:, 0],

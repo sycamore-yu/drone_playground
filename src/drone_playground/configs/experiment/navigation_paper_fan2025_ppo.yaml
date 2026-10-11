@@ -1,0 +1,35 @@
+# @package _global_
+# Fan et al. 2025 representation/policy, transferred to the project's Navigation task.
+# Paper's Unity 10-20m arena and unreleased PPO configuration are not claimed.
+defaults:
+  - navigation_procedural_lidar_ppo_validation
+
+simulation:
+  procedural:
+    min_start_goal_distance_m: 80.0
+
+method:
+  action:
+    level: horizontal_acceleration
+    heading: target
+  actor:
+    kind: fan_lidar
+
+observation:
+  fan_lidar:
+    sectors: 36
+    history_frames: 36
+    max_range_m: 10.0
+    half_height_m: 1.0
+
+learning:
+  loss: null
+  options:
+    critic_uses_privileged: false
+    critic_uses_sensor: false
+    perception_loss: null
+    initial_log_std: -2.5
+    gamma: 0.99
+
+results:
+  keep_best_screening: true

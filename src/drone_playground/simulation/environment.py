@@ -189,6 +189,7 @@ class BaseEnv:
                 point_count,
                 latency_bounds=latency_bounds,
                 ray_sampling=ray_sampling,
+                paper_fan=self.observation_config.get("fan_lidar"),
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")
@@ -463,6 +464,24 @@ class BaseEnv:
         )
         if self.sensor is not None:
             observation.update(self.sensor.encode(state.observation))
+        if self.observation_config.get("fan_lidar") is not None:
+            physics = state.physics.states
+            observation["fan_state"] = jnp.concatenate(
+                [physics.vel[:, 0, :2], state.previous_action[:, :2] * 6.0], axis=-1
+            )
+            observation["fan_command"] = self.goal_for(state)[:, :2] - physics.pos[:, 0, :2]
+        if self.observation_config.get("visfly", False):
+            physics = state.physics.states
+            observation["visfly_state"] = jnp.concatenate(
+                [
+                    physics.pos[:, 0],
+                    physics.quat[:, 0],
+                    physics.vel[:, 0],
+                    physics.ang_vel[:, 0],
+                ],
+                axis=-1,
+            )
+            observation["visfly_target"] = self.goal_for(state)
         return observation
 
     def observe_privileged(self, state: EnvState) -> Array:
