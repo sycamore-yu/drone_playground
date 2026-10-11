@@ -228,6 +228,7 @@ def save_evaluation(
             traces["quaternion"][frames, index],
             measurements,
             episode_plans,
+            sensor_times=(traces["sensor_time"][frames, index] if env.sensor is not None else None),
         )
         replays.append(str(output.relative_to(directory)))
     report["replays"] = replays
@@ -267,7 +268,15 @@ def rollout_host(env, method, *, seed: int, method_name=None, record=True):
             break
         if record:
             records.append(jax.device_get(_sample(env, state, state.commands.applied)))
-        plans.append(None if trajectory is None else trajectory.positions)
+        plans.append(
+            None
+            if trajectory is None
+            else {
+                "positions": trajectory.positions,
+                "received_time": memory["last_plan"],
+                "valid_until": trajectory.valid_until,
+            }
+        )
         if bool(state.done[0]):
             break
     if not bool(state.done[0]):

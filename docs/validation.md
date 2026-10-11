@@ -1,5 +1,111 @@
 # 验证与验收证据
 
+## Sensor / Replay P1 现代化：2026-10-11
+
+**受控版本边界：**将 2026-10-10 已实现的精度修复、求交评估及传感器文档
+单独提交为 `0ea6203`，再迁移策略预处理、精简测量状态并复用旧版 Crazyflie
+模型和规划叠加。两个版本均只通过 `Scene.raycast()` 进行正式射线求交；
+Crazyflow 动力学、扫描表、采集时钟、设备配置与 Actor 均没有改动。
+
+**输入逐项对照：**在 `tmp/sensor-modernization/snapshot.py` 保存
+`0ea6203` 版本的 `baseline.npz`，修改后同位姿、场景 D01、帧时间、
+扫描相位运行生成 `candidate.npz`。共有 **19 组**仍属于测量、
+Actor 观测或配置身份的张量 / JSON 字节 **完全一致**，包括 Depth 64×48
+及 12×16 预处理、LiDAR 原始值与 32 点策略抽样、
+重建的 `point_times` 和配置规格。新 `Measurement` 不再持久保存
+`directions_body` 与 `times`：快照下方向仅用于生成命中点，逐点时间
+等于广播的 `acquisition_time`，因此这是内部状态缩减，不是修改观测模型。
+
+按 float32 数据及 bool 有效掩码计算，**32 环境 × 20,000 射线**时，
+单份 `Measurement` 的逻辑缓冲从 **21,120,256 B**
+降至 **10,880,256 B**，减少 **10,240,000 B（9.766 MiB，48.48%）**。
+这不是 GPU 峰值显存数值；采集延迟缓冲使用相同的紧凑结构，
+完整 GPU 显存和速度需要按独立工作负载另行解释。
+
+**RTX 4090 配对更新：**对 `0ea6203` 固定源码快照与本次 P1 代码分别
+启动独立进程，以相同场景、Actor 算法 APG、种子、batch、horizon 和传感器
+执行真实训练；首次 XLA 编译不计入稳定更新中位数。
+当时用户的其它任务同时占用 GPU（监测期间约 95%–100% 利用率），
+因此这是**竞争负载下的功能及无明显退化检查**，非可直接用于精确
+吞吐排名的独占 GPU 基准。
+
+| 完整 APG 更新 | `0ea6203` 基线中位数 | P1 中位数 | 变化 |
+|---|---:|---:|---:|
+| D01 LiDAR，32 环境 × 32 步，20,000 rays | 1.67822 s | 1.69729 s | +1.14% 时间 |
+| S01 Depth，128 环境 × 32 步，64×48 | 1.29005 s | 1.22067 s | −5.38% 时间 |
+
+两组更新都返回非零的 Actor 梯度并实际修改网络参数。
+数据在 `tmp/sensor-modernization/gpu_{baseline,candidate}_{lidar,depth}.json`。
+注意进程前后 `nvidia-smi` 的显存数字包含并发任务，不能直接归因于
+此次 PyTree 精简；对于显存节省，仅上述单份状态的数学大小可以确认。
+
+**测试与冻结：**最终代码的完整 CPU `pytest -q tests` 为
+**282 passed**，覆盖 MuJoCo 原生几何及深度参考、
+物理/扫描采集时钟、延迟/局部 reset、六种感知 PPO/APG/SHAC
+真实参数更新、训练 checkpoint 保存/恢复与无修改继续训练、完整 RScope
+原生数据解码和时间对照。日志：
+`tmp/sensor-modernization/all-cpu-tests.log`。
+最终修改后的回放/采集/规划接口另运行 **40 passed**：
+`tmp/sensor-modernization/final-targeted-tests.log`。
+
+**六种 GPU 算法更新：**Depth/LiDAR × PPO/APG/SHAC 均以
+2 个环境、2 步展开执行真正的 CUDA 更新（LiDAR 每帧保持 20,000 射线），
+首次编译后再次更新；六组 Actor 梯度有限且非零、网络参数真实变化、
+传感器观测有效。结果保存在
+`tmp/sensor-modernization/gpu_new_{depth,lidar}_{ppo,apg,shac}.json`，
+完整控制台记录为 `gpu-all-six.log`。
+小批量更新主要验证 GPU 代码路径，不能证明训练收敛或性能加速。
+
+对原训练库中的 Depth/APG Step 480、LiDAR/APG Step 3680
+各用 **8 场景 × 25 回合**执行新的冻结推理（未更新权重）：
+
+| 场景 | Depth/APG | LiDAR/APG |
+|---|---:|---:|
+| S01 / S02 | 25/25、25/25 | 25/25、25/25 |
+| S03 | 25/25 | 0/25 |
+| D01 / D02 | 25/25、25/25 | 25/25、25/25 |
+| D03 | 25/25 | 23/25 |
+| S06 / D06 | 25/25、21/25 | 25/25、25/25 |
+| **全场景总计** | **196/200** | **173/200** |
+
+LiDAR D03 对早先保存的 **25/25** 存在差异，因此另把
+`0ea6203` 的完整源文件恢复到隔离临时目录，
+用 **相同 checkpoint 和 D03 对应的完整八场景种子**
+`benchmark.seed_base=2000005` 重放：
+`0ea6203` 基线 **23/25**，本次 P1 **23/25**。
+说明**本次状态精简没有新增 D03 完成率损失**；
+此前的历史全场景报告生成于上一版几何精度修复之前，
+不能用作此次 P1 的数值等价基线。
+当前 D03 恰好满足主场景规定的 **≥23/25**，
+S03 的 LiDAR **0/25** 是该原训练权重已有的失败，
+不应被报告为本次代码重构带来的解决或退化。
+
+回放记录：
+`tmp/sensor-modernization/frozen-all8.log`、
+`tmp/sensor-modernization/d03-baseline-diff.log`；
+对应结构化冻结报告在
+`tmp/sensor-rendering/frozen_compact_{depth,lidar}_8/eval/001/report.json`。
+
+**回放与打包：**`tests/test_replay.py` 的 28 项回归及
+`tests/test_replay.py -k 'crazyflie_visual or planner_segments'`
+检查实际 MJCF/RScope 模型编译与解码、Crazyflie 可见 Mesh 和记录四元数、
+规划连续线段的 MuJoCo `MjvScene` 渲染及有效时间、绿色命中点、
+动态障碍、Racing 贴图和重复写入拒绝。
+复用旧仓库 Crazyflie 2.x 的 STL、原始 `replay.xml`、
+`LICENSE` 和 `SOURCE.txt`，仅追加可见 Mesh，保留新版的
+Freejoint/碰撞几何；支持序列化为独立 `.mj_unroll`。
+Python wheel 通过隔离式构建，共包含 12 个机器人资源文件，
+安装到干净的 target 后能从发布包导入并导出 RScope 回放。
+规划轨迹从真实 `trajectory.positions` 生成，可使用
+`received_time` / `valid_until` 控制逐帧可见性，不生成或推测 SFC。
+回放仍使用 Runner **真实记录的点云命中**，不会二次求交。
+
+**checkpoint：**冻结 Actor 推理归档的观测/传感器配置身份保持不变。
+完整训练状态的 `ObservationState` JAX PyTree 变更是有意的
+不兼容修改：迁移前的训练 checkpoint 不支持跨此结构恢复，
+训练必须使用迁移后重新保存的状态。对应真实 PPO/APG/SHAC
+更新、恢复及冻结评测结果以本节追加的最终测试记录为准。
+
 ## 官方 MJX-JAX ray 求交适配评估：2026-10-10
 
 目标：对 `mujoco.mjx.ray()` (MuJoCo/MJX 3.15.0) 验证场景覆盖、

@@ -11,13 +11,12 @@ import numpy as np
 import pytest
 from jax.scipy.spatial.transform import Rotation
 
+from drone_playground.simulation.observation import preprocess_depth, reduce_points
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import (
     Measurement,
     SensorConfig,
     measure,
-    preprocess_depth,
-    reduce_points,
     sensor_rays,
 )
 
@@ -325,7 +324,7 @@ def test_axial_depth_extrinsics_masks_jit_batches_and_gradient(make_scene):
     assert not missing.mask.any()
     np.testing.assert_array_equal(missing.points_body, 0)
     np.testing.assert_array_equal(missing.values, 0)
-    assert np.isfinite(missing.directions_body).all()
+    assert np.isfinite(sensor_rays(blind)[0]).all()
 
 
 def test_camera_pitch_yaw_and_range_cutoff(make_scene):
@@ -334,8 +333,10 @@ def test_camera_pitch_yaw_and_range_cutoff(make_scene):
     config = SensorConfig.d435i(width=1, height=1, pitch_deg=20, max_range=10)
     quat = Rotation.from_euler("z", jnp.pi / 2).as_quat()
     result = measure(scene, config, jnp.zeros(3), quat, 0.0)
+    direction_body = np.asarray(result.points_body[0, 0])
+    direction_body = direction_body / np.linalg.norm(direction_body)
     np.testing.assert_allclose(
-        result.directions_body[0, 0], [np.cos(np.deg2rad(20)), 0, np.sin(np.deg2rad(20))], atol=1e-6
+        direction_body, [np.cos(np.deg2rad(20)), 0, np.sin(np.deg2rad(20))], atol=1e-6
     )
     np.testing.assert_allclose(result.values, 5 / np.cos(np.deg2rad(20)), atol=2e-6)
     wall = make_scene('<geom type="box" pos="9.5 0 0" size=".5 50 50"/>')
@@ -368,13 +369,13 @@ def test_mid360_full_frame_and_snapshot_moving_geometry(make_scene):
     )(0.75)
     assert result.values.shape == (20000,)
     assert result.mask.all()
-    centers_x = -2 + 2 * np.asarray(result.times)
-    dx = np.asarray(result.directions_body[:, 0])
+    centers_x = -2 + 2 * np.asarray(result.acquisition_time)
+    dx = np.asarray(sensor_rays(config, 0.75)[0][:, 0])
     expected = centers_x * dx + np.sqrt(400 - centers_x**2 * (1 - dx**2))
     np.testing.assert_allclose(result.values, expected, atol=5e-6)
     reduced = jax.jit(lambda m: reduce_points(m, 64))(result)
     indices = np.linspace(0, 19999, 64).astype(int)
-    np.testing.assert_array_equal(reduced.times, result.times[indices])
+    np.testing.assert_array_equal(reduced.acquisition_time, result.acquisition_time)
     np.testing.assert_array_equal(reduced.mask, result.mask[indices])
     np.testing.assert_array_equal(reduced.points_body, result.points_body[indices])
 
@@ -393,7 +394,7 @@ def test_snapshot_world_poses_and_mask_preservation(make_scene):
     empty = measure(Scene("empty"), config, jnp.zeros(3), jnp.array([0.0, 0, 0, 1.0]), 0.0)
     reduced = reduce_points(empty, 16)
     assert not reduced.mask.any()
-    np.testing.assert_array_equal(reduced.times, 0)
+    np.testing.assert_array_equal(reduced.acquisition_time, 0)
 
 
 def test_preprocessing_inverse_pool_masks_and_gradient():
@@ -404,8 +405,6 @@ def test_preprocessing_inverse_pool_masks_and_gradient():
         depth,
         mask,
         jnp.zeros((48, 64, 3)),
-        jnp.zeros((48, 64, 3)),
-        jnp.zeros_like(depth),
         jnp.array(0.0),
         jnp.array(0.0),
     )

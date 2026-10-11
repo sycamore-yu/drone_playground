@@ -7,13 +7,43 @@ import jax.numpy as jnp
 from flax import struct
 
 from drone_playground.simulation.delay import delay_range
-from drone_playground.simulation.sensors import (
-    Measurement,
-    SensorConfig,
-    measure,
-    preprocess_depth,
-    reduce_points,
-)
+from drone_playground.simulation.sensors import Measurement, SensorConfig, measure
+
+
+def preprocess_depth(
+    measurement: Measurement,
+    *,
+    near: float = 0.3,
+    far: float = 10.0,
+    scale: float = 3.0,
+    offset: float = -0.6,
+    pool: int = 4,
+) -> tuple[jax.Array, jax.Array]:
+    """Inverse axial depth and masked max-pooling for the depth policy."""
+    depth, mask = measurement.values, measurement.mask
+    height, width = depth.shape[-2:]
+    if pool < 1 or height % pool or width % pool or not 0 < near < far:
+        raise ValueError("Depth dimensions must be divisible by pool and 0 < near < far")
+    inverse = scale / jnp.clip(jnp.where(mask, depth, far), near, far) + offset
+    blocks = (*depth.shape[:-2], height // pool, pool, width // pool, pool)
+    pooled = jnp.max(jnp.where(mask, inverse, -jnp.inf).reshape(blocks), axis=(-3, -1))
+    valid = jnp.any(mask.reshape(blocks), axis=(-3, -1))
+    return jnp.where(valid, pooled, 0), valid
+
+
+def reduce_points(measurement: Measurement, count: int) -> Measurement:
+    """Subsample a scan at fixed indices, preserving values, masks and frame time."""
+    size = measurement.values.shape[-1]
+    if not isinstance(count, int) or not 0 < count <= size:
+        raise ValueError("Point count must be a positive integer no larger than the scan")
+    indices = jnp.linspace(0, size - 1, count).astype(jnp.int32)
+    return Measurement(
+        jnp.take(measurement.values, indices, axis=-1),
+        jnp.take(measurement.mask, indices, axis=-1),
+        jnp.take(measurement.points_body, indices, axis=-2),
+        measurement.acquisition_time,
+        measurement.available_time,
+    )
 
 
 @struct.dataclass
@@ -90,8 +120,6 @@ class SensorObservation:
                 jnp.zeros(shape),
                 jnp.zeros(shape, bool),
                 jnp.zeros((*shape, 3)),
-                jnp.zeros((*shape, 3)),
-                jnp.zeros(shape),
                 jnp.zeros(batch),
                 jnp.zeros(batch),
             )
@@ -244,6 +272,8 @@ class SensorObservation:
         return {
             "points": measurement.points_body,
             "mask": measurement.mask,
-            "point_times": measurement.times,
+            "point_times": jnp.broadcast_to(
+                measurement.acquisition_time[..., None], measurement.values.shape
+            ),
             "acquisition_time": measurement.acquisition_time,
         }

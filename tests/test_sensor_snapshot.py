@@ -8,8 +8,22 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from drone_playground.simulation.observation import SensorObservation
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import SensorConfig, measure, sensor_rays
+
+
+def test_measurement_keeps_only_data_needed_after_capture():
+    """Per-ray directions and identical snapshot times are reconstructible, not state."""
+    assert tuple(
+        measure(
+            Scene("empty"),
+            SensorConfig.mid360(points_per_frame=8),
+            jnp.zeros(3),
+            jnp.array([0.0, 0.0, 0.0, 1.0]),
+            0.0,
+        )._fields
+    ) == ("values", "mask", "points_body", "acquisition_time", "available_time")
 
 
 def test_snapshot_measurement_has_one_acquisition_time():
@@ -19,8 +33,11 @@ def test_snapshot_measurement_has_one_acquisition_time():
     result = jax.jit(
         lambda t: measure(Scene("empty"), config, jnp.zeros((2, 3)), jnp.array([0.0, 0, 0, 1.0]), t)
     )(times)
+    encoded = SensorObservation(Scene("empty"), config, physics_hz=500, point_count=32).encode(
+        SimpleNamespace(measurement=result)
+    )
     np.testing.assert_array_equal(
-        result.times, np.broadcast_to(np.asarray(times)[:, None], (2, 32))
+        encoded["point_times"], np.broadcast_to(np.asarray(times)[:, None], (2, 32))
     )
     np.testing.assert_allclose(result.available_time, times + 0.04)
     assert not result.mask.any()
@@ -130,7 +147,7 @@ def test_snapshot_clock_motion_delay_and_acquisition_gradient(tmp_path, speed, l
     expected = 3.0 + 2 * acquired - speed * acquired
     np.testing.assert_allclose(result.measurement.values, expected, atol=2e-6)
     np.testing.assert_allclose(result.acquisition_pose[0, 0], speed * acquired, atol=2e-6)
-    np.testing.assert_array_equal(result.measurement.times, acquired)
+    np.testing.assert_array_equal(result.measurement.acquisition_time, acquired)
     derivative = jax.jit(jax.grad(lambda x: advance(x).measurement.values.sum()))(0.0)
     assert float(derivative) == 0
     assert np.linalg.norm(jax.grad(scene.clearance)(jnp.array([0.0, 0, 0]))) > 0

@@ -23,6 +23,15 @@
 复核 JAX/CPU 原生求交的约定差异、维护者公开 Issue，以及当前快照采集的真实性边界。
 它是后续评估证据，不自动替换此前已批准的快照模式。
 
+**2026-10-11 内部状态精简：**`Measurement` 不再持久保存帧内重复的
+`times` 和只用于生成点的 `directions_body`。
+每个快照只有 `acquisition_time`，策略所需的 `point_times` 由 Observation
+按原张量形状广播恢复；`SensorConfig`、扫描角度、实际深度/点云、
+冻结策略观测及报告的配置身份均不变。旧完整训练状态与精简后的
+JAX PyTree 不兼容，训练需使用新结构保存的 checkpoint；
+冻结 Actor 参数不需要转换。该次迁移的等价与更新验证见
+[验证记录](../validation.md)。
+
 本次核查的 `assets/scenes/` 没有 Mesh 或高度场声明；`Scene` 当前仅接受基本几何体。回放机器人外观不构成本次训练需要 Mesh 求交的证据。
 
 ## 决策

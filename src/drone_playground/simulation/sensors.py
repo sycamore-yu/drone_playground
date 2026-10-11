@@ -148,18 +148,17 @@ class SensorConfig:
 class Measurement(NamedTuple):
     """JAX pytree of values, validity and acquisition metadata.
 
-    Invalid values and body points are zero; directions/timestamps remain valid.
+    Invalid values and body points are zero.
     Pixel fields have shape ``(..., height, width)``, point fields ``(..., N)``;
-    vectors append a 3-axis. Acquisition time is frame completion, available time
-    includes configured latency. All points use the body frame at acquisition;
-    every entry in ``times`` equals the frame's ``acquisition_time``.
+    vectors append a 3-axis. Acquisition time is the snapshot time and
+    available time includes configured latency. All points use the body frame
+    at acquisition. Per-ray times and directions are not retained because a
+    snapshot has one acquisition time and the scan pattern is reproducible.
     """
 
     values: Array
     mask: Array
     points_body: Array
-    directions_body: Array
-    times: Array
     acquisition_time: Array
     available_time: Array
 
@@ -227,10 +226,9 @@ def measure(
     position, quaternion = jnp.asarray(position), jnp.asarray(quaternion)
     batch = jnp.broadcast_shapes(position.shape[:-1], quaternion.shape[:-1])
     time = jnp.broadcast_to(jnp.asarray(t), batch)
-    rays, offsets = sensor_rays(config, time, frame_index)
+    rays, _ = sensor_rays(config, time, frame_index)
     count = rays.shape[-2]
     rays = jnp.broadcast_to(rays, (*batch, count, 3))
-    times = time[..., None] + offsets
     mounting = Rotation.from_euler(
         "xyz", jnp.deg2rad(jnp.array([config.roll_deg, -config.pitch_deg, config.yaw_deg]))
     ).as_matrix()
@@ -264,55 +262,6 @@ def measure(
         values.reshape(shape),
         mask.reshape(shape),
         points.reshape((*shape, 3)),
-        body_rays.reshape((*shape, 3)),
-        times.reshape(shape),
         time,
         time + config.latency,
-    )
-
-
-def preprocess_depth(
-    measurement: Measurement,
-    *,
-    near: float = 0.3,
-    far: float = 10.0,
-    scale: float = 3.0,
-    offset: float = -0.6,
-    pool: int = 4,
-) -> tuple[Array, Array]:
-    """Inverse axial depth then 4x4 max pooling; 48x64 -> 12x16.
-
-    Implements the documented training recipe ``3/clip(depth,.3,10)-.6``.
-    Returns pooled values and masks; invalid pixels never win a pooled maximum,
-    and wholly invalid cells are zero. This is independent of device simulation.
-    """
-    depth, mask = measurement.values, measurement.mask
-    height, width = depth.shape[-2:]
-    if pool < 1 or height % pool or width % pool or not 0 < near < far:
-        raise ValueError("Depth dimensions must be divisible by pool and 0 < near < far")
-    inverse = scale / jnp.clip(jnp.where(mask, depth, far), near, far) + offset
-    blocks = (*depth.shape[:-2], height // pool, pool, width // pool, pool)
-    pooled = jnp.max(jnp.where(mask, inverse, -jnp.inf).reshape(blocks), axis=(-3, -1))
-    valid = jnp.any(mask.reshape(blocks), axis=(-3, -1))
-    return jnp.where(valid, pooled, 0), valid
-
-
-def reduce_points(measurement: Measurement, count: int) -> Measurement:
-    """Deterministically subsample a point scan, preserving masks and timestamps.
-
-    Evenly spaced acquisition indices preserve the scan pattern's coverage. Invalid
-    returns remain invalid rather than being relabelled or padded as real points.
-    """
-    size = measurement.values.shape[-1]
-    if not isinstance(count, int) or not 0 < count <= size:
-        raise ValueError("Point count must be a positive integer no larger than the scan")
-    indices = jnp.linspace(0, size - 1, count).astype(jnp.int32)
-    return Measurement(
-        jnp.take(measurement.values, indices, axis=-1),
-        jnp.take(measurement.mask, indices, axis=-1),
-        jnp.take(measurement.points_body, indices, axis=-2),
-        jnp.take(measurement.directions_body, indices, axis=-2),
-        jnp.take(measurement.times, indices, axis=-1),
-        measurement.acquisition_time,
-        measurement.available_time,
     )

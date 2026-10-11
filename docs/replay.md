@@ -2,7 +2,8 @@
 
 `simulation.replay.export_replay` 把已记录的飞行状态写成
 [RScope 0.0.8](https://github.com/Andrew-Luo1/rscope) 的 `rscope.rollout.Rollout`。
-它复制实际 MJCF、include、纹理和 mesh，添加无人机、实际轨迹、传感命中和规划采样点。
+它复制实际 MJCF、include、纹理和 mesh，附加 Crazyflie 2.x 可见外观、实际轨迹、
+传感命中和按有效时间显示的 Planner 轨迹线。
 导出不调用物理步进，不改变 Scene、传感器或输入数组。
 
 ```python
@@ -17,6 +18,7 @@ path = export_replay(
     quaternions_xyzw,  # (T, 4)，body-to-world 单位四元数
     measurements=world_hits,  # 长度 T，每帧 (N, 3) 世界坐标命中点
     plans=planned_positions,  # 长度 T，每帧 (M, 3) 世界坐标规划采样点
+    sensor_times=capture_times,  # 可选：长度 T，运行时真正的测量采集时刻
 )
 ```
 
@@ -29,7 +31,8 @@ path = export_replay(
 `measurements` 和 `plans` 都逐帧对齐 `times`，每帧点数可变。
 `None` 或空数组表示本帧无显示点，不会自动沿用上一帧。
 测量还可以使用 `{"points_world": points, "mask": boolean_mask}`；
-规划可以使用 `{"positions": sampled_positions}`。
+规划可以使用 `{"positions": sampled_positions}`，也可携带
+`received_time` 和 `valid_until`，导出器仅在对应采样时间落在有效区间时显示。
 无效测量先按 mask 去除；有效点、位姿和时间必须有限。
 
 Sensor 的 `Measurement.points_body` 不是世界坐标，调用方必须用采集时的机体位姿转换。
@@ -40,7 +43,9 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 world_hits = []
-for measurement, position, quaternion in zip(measurements, positions, quaternions_xyzw, strict=True):
+for measurement, position, quaternion in zip(
+    measurements, acquisition_positions, acquisition_quaternions_xyzw, strict=True
+):
     points = np.asarray(measurement.points_body).reshape(-1, 3)
     world_hits.append({
         "points_world": Rotation.from_quat(quaternion).apply(points) + position,
@@ -48,7 +53,9 @@ for measurement, position, quaternion in zip(measurements, positions, quaternion
     })
 ```
 
-运行循环从 `ObservationState.acquisition_pose` 取得该测量所属位姿，
+上例中的 `acquisition_positions` 和 `acquisition_quaternions_xyzw`
+应从每帧的 `ObservationState.acquisition_pose` 取得，而非使用飞行轨迹
+`positions` / `quaternions_xyzw`。运行循环从该字段取得测量所属位姿，
 显示 `measurement.points_body` 的有效点，不重新采样，也不使用送达时的机器人位姿。
 调用方决定测量何时可用、规划何时生效和失效；将实际可见内容放到对应回放帧。
 规划应传入求解器实际输出的轨迹采样，导出器不生成路线或补做规划。
@@ -57,12 +64,12 @@ for measurement, position, quaternion in zip(measurements, positions, quaternion
 
 | 内容 | 保存和显示方式 |
 |---|---|
-| 无人机 | `qpos[T,1,7]`：世界位置和 MuJoCo `wxyz` 四元数；0.07 m 球和机体 +x 朝向标记 |
+| 无人机 | `qpos[T,1,7]`：世界位置和 MuJoCo `wxyz` 四元数；Crazyflie 2.x STL 可见外观，0.07 m 球仅用于不可见惯量锚点 |
 | 实际飞行轨迹 | 蓝色 MJCF 胶囊线段，连接已记录位置；这是离散采样间的显示连线 |
 | 传感命中 | 绿色球形点云，mocap 按帧移动；仅包含有效命中 |
-| Planner 轨迹 | 红色球形采样点，mocap 按帧切换；显示当前传入的计划 |
+| Planner 轨迹 | 橙红色连续空间线段和采样点，mocap 按帧切换；只有记录的有效期内才显示 |
 | 动态障碍 | 在 `time[T,1]` 的原始时间上求值 Navigation8 `body.user` 运动规律 |
-| 标量 | `sensor_hits`、`plan_points`，可在 viewer 中绘图 |
+| 标量 | `sensor_hits`、`plan_points`、`plan_segments`，可在 viewer 中绘图；记录了采集时刻时还包含 `sensor_acquisition_time` |
 
 保留 LSY 门的位置、姿态、纹理和真实碰撞/可视几何。Navigation8 的静态障碍和边界
 保持原始几何；trefoil 与 linear bounce 使用 [资产说明](../assets/scenes/README.md)
@@ -76,7 +83,9 @@ reward 字段填零并在 metadata 中标明，不能作为评测得分使用。
 RScope 没有逐帧可见性字段；每种点云预留最大帧点数的 mocap 槽，未使用的槽移到
 世界坐标 `(0,0,-1e6)`。导出不截断或降采样；大量点和长回合会增大模型、记录和渲染成本。
 需要减小显示规模时，由调用方明确采样，并把采样规则保存在运行配置中。
-无人机和叠加几何都不参与碰撞。
+无人机可见 Mesh 和叠加几何都不参与碰撞。Crazyflie 外观的 `replay.xml`、
+STL、来源声明及许可证放在 Python 包的 `assets/robots/crazyflie2x/`，
+其内容也嵌入每份原生回放，独立 wheel 可正确装载。
 
 ## 打开 viewer
 
