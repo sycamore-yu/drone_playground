@@ -80,6 +80,15 @@ def diagnostic_probe_scenes(primary_scenes: list[str], evaluation_index: int, fu
     return [primary_scenes[index], primary_scenes[index + 3]]
 
 
+def training_budget_reached(interactions: int, limit: int | None) -> bool:
+    """Bound a pilot by collected transitions, independent of its PPO horizon."""
+    if limit is None:
+        return False
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("learning.max_interactions must be a positive integer or null")
+    return interactions >= limit
+
+
 def train(config: DictConfig, record: RunRecord) -> None:
     """Train under a versioned evaluation contract with one common update lifecycle."""
     from drone_playground.learning.checkpoint import (
@@ -111,6 +120,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
     if config.learning.required_consecutive_passes != (3 if legacy else 1):
         raise ValueError("Learning selection and required_consecutive_passes disagree")
     resolved = OmegaConf.to_container(config, resolve=True)
+    max_interactions = resolved["learning"].get("max_interactions")
+    training_budget_reached(0, max_interactions)
     scenes = resolved["learning"].get("scenes")
     scene_updates = resolved["learning"].get("scene_updates", 20)
     scene_index, updates_in_scene = 0, 0
@@ -380,7 +391,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             last_frozen = frozen
         return frozen
 
-    def evaluate_checkpoint():
+    def evaluate_checkpoint(*, force_full=False):
         nonlocal consecutive, evaluation_index
         nonlocal best_screen_score, stagnant_screens, patience_exhausted
         update = int(state.updates)
@@ -419,7 +430,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
             )
         else:
             report = {"passed": False}
-            run_full_screen = not fast_probes or (evaluation_index + 1) % full_every == 0
+            run_full_screen = (
+                force_full or not fast_probes or (evaluation_index + 1) % full_every == 0
+            )
             if not run_full_screen:
                 # The same six canonical fixed seeds are used during full screens.
                 # Rotate three static/dynamic pairs rather than evaluating all six.
@@ -523,6 +536,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             not stop_requested
             and not patience_exhausted
             and consecutive < config.learning.required_consecutive_passes
+            and not training_budget_reached(int(state.interactions), max_interactions)
         ):
             if scenes is not None and updates_in_scene == scene_updates:
                 next_index = (scene_index + 1) % len(scenes)
@@ -567,9 +581,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 and update % config.learning.evaluation_interval != 0
             ):
                 checkpoint(state)
-            if update % config.learning.evaluation_interval:
+            at_budget = training_budget_reached(int(state.interactions), max_interactions)
+            if update % config.learning.evaluation_interval and not at_budget:
                 continue
-            evaluate_checkpoint()
+            evaluate_checkpoint(force_full=at_budget)
         frozen = (
             last_frozen
             if last_checkpoint_update == int(state.updates) and last_frozen is not None
@@ -589,7 +604,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
             return
         if consecutive < config.learning.required_consecutive_passes:
             record.finish(
-                "interrupted",
+                (
+                    "budget_exhausted"
+                    if training_budget_reached(int(state.interactions), max_interactions)
+                    else "interrupted"
+                ),
                 updates=int(state.updates),
                 interactions=int(state.interactions),
                 resume_checkpoint=str(checkpoint_path),

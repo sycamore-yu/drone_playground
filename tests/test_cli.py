@@ -249,6 +249,29 @@ def test_six_unimproved_screens_stop_a_new_run_only_after_800(config, training, 
     assert [e["event"] for e in training.record.events].count("early_stopping") == 1
 
 
+def test_explicit_interaction_budget_stops_without_false_acceptance(config, training, monkeypatch):
+    """An exhausted pilot saves resumable state and never enters frozen benchmark."""
+    assert hasattr(cli, "training_budget_reached"), "Bounded training budget missing"
+    OmegaConf.update(config, "learning.max_interactions", 20, force_add=True)
+    training.stop_at = None
+    training.failed_evaluations = {1, 2, 3}
+    # This test harness chooses pass/fail by the named set below.
+    original = cli.evaluate
+
+    def fail_checkpoint(cfg, directory, **kwargs):
+        report = original(cfg, directory, **kwargs)
+        if cfg.mode == "checkpoint_eval":
+            report["passed"] = False
+        return report
+
+    monkeypatch.setattr(cli, "evaluate", fail_checkpoint)
+    cli.train(config, training.record)
+    assert training.record.identity["status"] == "budget_exhausted"
+    assert training.record.identity["interactions"] == 20
+    assert training.path.exists()
+    assert all(mode != "benchmark" for mode, _ in training.evaluations)
+
+
 def test_three_stage_real_results_layout_writes_orbax_and_events(config, training, monkeypatch):
     """The new run writes Orbax folders and one event stream, not zip/JSONL duplicates."""
     from drone_playground.simulation.records import RunRecord

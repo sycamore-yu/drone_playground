@@ -1,0 +1,21 @@
+# @package _global_
+# Preserve measured Depth-A learning/observation/reward settings. The new
+# >=80m training population is explicit; the historical checkpoint is not reused.
+defaults:
+  - navigation_procedural_depth_ppo_ablation_a
+
+simulation:
+  procedural:
+    min_start_goal_distance_m: 80.0
+
+learning:
+  options:
+    lr: 0.0002
+    critic_lr: 0.0005
+    perception_weight: 1.0
+    critic_uses_privileged: false
+    critic_uses_sensor: true
+    initial_log_std: -2.5
+    clip_epsilon: 0.15
+    progress_reward_scale: 0.5
+    height_boundary_weight: 0.5

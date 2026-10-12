@@ -1,8 +1,8 @@
 """Bounded measured search for paper-derived PPO, using real fixed-screen evidence.
 
-Four seed-zero candidates maximum. Existing v04 baselines are adopted, never
-restarted. Only an accepted frozen benchmark promotes a recipe to seeds 1/2.
-This implements the optim-agent sequential protocol without requiring its package.
+The navigation preset compares the original CNN/PointNet and paper policies.
+Existing v04 baselines are adopted, never restarted. Only an accepted frozen
+benchmark promotes a recipe to seeds 1/2. No model agent is launched.
 """
 
 import argparse
@@ -30,7 +30,149 @@ BASE_UNITS = {
     "fan_equations_s0": "dp-paper-fan-equations-s0-20261012",
     "visfly_source_s0": "dp-paper-visfly-source-s0-20261012",
 }
-FINISHED = {"early_stopped", "accepted", "frozen_benchmark_failed", "failed", "pruned"}
+FINISHED = {
+    "early_stopped",
+    "accepted",
+    "frozen_benchmark_failed",
+    "failed",
+    "pruned",
+    "budget_exhausted",
+}
+ADOPTED_RUNS = {}
+CASE_OPTIONS = {}
+NAVIGATION_SEARCH = False
+MODALITY = {"depth": "depth", "visfly": "depth", "lidar": "lidar", "fan": "lidar"}
+
+
+def configure_navigation_search(results_root):
+    """Add the two original architectures and retain verified paper baselines."""
+    global NAVIGATION_SEARCH, CASES, BASE_UNITS, ADOPTED_RUNS, CASE_OPTIONS
+    NAVIGATION_SEARCH = True
+    depth = "navigation_search_depth"
+    lidar = "navigation_search_lidar"
+    fan = "navigation_paper_fan2025_equations_margin2"
+    visfly = "navigation_paper_visfly2025_shared"
+    CASES = {
+        "depth_base": ("depth", depth, None),
+        "lidar_base": ("lidar", lidar, None),
+        "fan_base": ("fan", fan, None),
+        "visfly_base": ("visfly", visfly, None),
+        "depth_lowlr": ("depth", depth, "depth_base"),
+        "lidar_lowlr": ("lidar", lidar, "lidar_base"),
+        "fan_lowlr": ("fan", fan, "fan_base"),
+        "visfly_lowstd": ("visfly", visfly, "visfly_base"),
+        "depth_goal": ("depth", depth, "depth_base"),
+        "lidar_goal": ("lidar", lidar, "lidar_base"),
+        "fan_exploration": ("fan", fan, "fan_base"),
+        "visfly_hoverthrust": ("visfly", visfly, "visfly_base"),
+    }
+    CASE_OPTIONS = {
+        "depth_lowlr": ["learning.options.lr=0.00005"],
+        "lidar_lowlr": ["learning.options.lr=0.000025"],
+        "fan_lowlr": ["learning.options.lr=0.000025"],
+        "visfly_lowstd": ["learning.options.initial_log_std=-1.0"],
+        "depth_goal": ["simulation.navigation_goal_observation=true"],
+        "lidar_goal": ["simulation.navigation_goal_observation=true"],
+        "fan_exploration": ["learning.options.initial_log_std=-1.5"],
+        "visfly_hoverthrust": ["method.action.thrust_to_weight_bounds=[0.0,2.0]"],
+    }
+    ADOPTED_RUNS = {
+        "fan_base_s0": results_root / "paper_ppo_v04/fan_margin2_s0",
+        "visfly_base_s0": results_root / "paper_ppo_v04/visfly_shared_s0",
+    }
+    BASE_UNITS = {
+        "fan_base_s0": "dp-paper-study-fan-margin2-s0",
+        "visfly_base_s0": "dp-paper-study-visfly-shared-s0",
+    }
+
+
+def interaction_controls(family, *, num_envs, horizon):
+    """Convert measured family budgets to PPO updates, not arbitrary equal epochs."""
+    per_update = num_envs * horizon
+    # Fan's measured first fixed-scene success required approximately 4M
+    # transitions. Its minimum budget must not prune before that evidence.
+    minimum, maximum = {
+        "depth": (737_280, 2_211_840),
+        "lidar": (737_280, 2_211_840),
+        "fan": (4_423_680, 8_847_360),
+        "visfly": (1_474_560, 4_423_680),
+    }[family]
+    if 122_880 % per_update or minimum % per_update or maximum % per_update:
+        raise ValueError("Search budgets must be divisible by the rollout sample count")
+    return {
+        "evaluation_interval": 122_880 // per_update,
+        "checkpoint_interval": 61_440 // per_update,
+        "min_updates": minimum // per_update,
+        "max_interactions": maximum,
+    }
+
+
+def stable_modalities(records):
+    """Require all three independent seeds for one recipe, not mixed recipes."""
+    return {
+        MODALITY[family]
+        for case, (family, _, _) in CASES.items()
+        if all(records[f"{case}_s{i}"]["status"] == "accepted" for i in range(3))
+    }
+
+
+def navigation_candidate(records):
+    """Cover each architecture first, then prefer measured improvements fairly."""
+    stable = stable_modalities(records)
+    for case, (family, _, parent) in CASES.items():
+        key = f"{case}_s0"
+        if (
+            parent is None
+            and key not in ADOPTED_RUNS
+            and records[key]["status"] == "missing"
+            and MODALITY[family] not in stable
+        ):
+            return case, 0
+    candidates = []
+    for index, (case, (family, _, parent)) in enumerate(CASES.items()):
+        if parent is None or records[f"{case}_s0"]["status"] != "missing":
+            continue
+        if MODALITY[family] in stable or records[f"{parent}_s0"]["status"] not in FINISHED:
+            continue
+        peers = [other for other, spec in CASES.items() if spec[0] == family]
+        if any(records[f"{other}_s0"]["status"] == "running" for other in peers):
+            continue
+        count = sum(records[f"{other}_s0"]["status"] in FINISHED for other in peers)
+        evidence = records[f"{parent}_s0"].get("best")
+        score = evidence["value"] if evidence is not None else -1.0
+        candidates.append(((count, -score, index), case))
+    return (min(candidates)[1], 0) if candidates else None
+
+
+def trial_options(case, seed, output):
+    """Resolve each recipe as a new run with one declared parameter treatment."""
+    family, experiment, _ = CASES[case]
+    options = [
+        "mode=train",
+        f"experiment={experiment}",
+        f"output={output}",
+        f"seed={seed}",
+        "simulation.num_envs=16",
+        "initial_checkpoint=null",
+        "resume=null",
+        *CASE_OPTIONS.get(case, []),
+    ]
+    if NAVIGATION_SEARCH:
+        horizon = {"depth": 32, "lidar": 32, "fan": 128, "visfly": 256}[family]
+        settings = interaction_controls(family, num_envs=16, horizon=horizon)
+        options += [
+            f"learning.options.horizon={horizon}",
+            f"learning.evaluation_interval={settings['evaluation_interval']}",
+            f"learning.checkpoint_interval={settings['checkpoint_interval']}",
+            f"++learning.max_interactions={settings['max_interactions']}",
+            f"early_stopping.min_updates={settings['min_updates']}",
+            "early_stopping.patience=3",
+            "early_stopping.min_delta=0.005",
+            "++screening.probe_between_full=true",
+            "++screening.full_every=3",
+            "results.keep_best_screening=true",
+        ]
+    return options
 
 
 def full_screen_evidence(directory):
@@ -65,6 +207,8 @@ def next_trial(records):
                 records[f"{case}_s{seed}"]["status"] == "missing"
             ):
                 return case, seed
+    if NAVIGATION_SEARCH:
+        return navigation_candidate(records)
     for case, (family, _, parent) in CASES.items():
         if parent is None or records[f"{case}_s0"]["status"] != "missing":
             continue
@@ -84,7 +228,8 @@ def next_trial(records):
 
 def unit_name(identifier):
     """Keep one stable systemd identity per candidate, including existing baselines."""
-    return BASE_UNITS.get(identifier, f"dp-paper-study-{identifier.replace('_', '-')}")
+    prefix = "dp-nav-search" if NAVIGATION_SEARCH else "dp-paper-study"
+    return BASE_UNITS.get(identifier, f"{prefix}-{identifier.replace('_', '-')}")
 
 
 def active_units():
@@ -136,7 +281,7 @@ def collect(root, previous):
     for case in CASES:
         for seed in range(3):
             key = f"{case}_s{seed}"
-            directory = root / key
+            directory = ADOPTED_RUNS.get(key, root / key)
             identity = directory / "run.json"
             running = f"{unit_name(key)}.service" in units
             record = json.loads(identity.read_text()) if identity.exists() else {}
@@ -158,6 +303,8 @@ def collect(root, previous):
                 "configuration_sha256": record.get("config_sha256"),
                 "source_sha256": record.get("source_sha256"),
                 "directory": str(directory),
+                "adopted": key in ADOPTED_RUNS,
+                "error": record.get("error"),
             }
     return records
 
@@ -168,15 +315,7 @@ def launch(project, root, python, case, seed):
     out = root / key
     if out.exists():
         raise FileExistsError(f"Never overwrite a previous trial: {out}")
-    options = [
-        "mode=train",
-        f"experiment={CASES[case][1]}",
-        f"output={out}",
-        f"seed={seed}",
-        "simulation.num_envs=16",
-        "initial_checkpoint=null",
-        "resume=null",
-    ]
+    options = trial_options(case, seed, out)
     env = {
         **os.environ,
         "SCIPY_ARRAY_API": "1",
@@ -193,6 +332,17 @@ def launch(project, root, python, case, seed):
         text=True,
         timeout=90,
     )
+    if NAVIGATION_SEARCH:
+        from omegaconf import OmegaConf
+
+        resolved = OmegaConf.to_container(OmegaConf.create(checked.stdout), resolve=True)
+        if (
+            resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != 80.0
+            or not resolved["benchmark"]["fixed_checkpoint_seeds"]
+            or resolved["initial_checkpoint"] is not None
+            or resolved["resume"] is not None
+        ):
+            raise ValueError("Search changed long-course, fixed-cohort or scratch-init contract")
     out.mkdir()
     command = [str(python), "-u", "-m", "drone_playground.cli", *options]
     (out / "trial.json").write_text(
@@ -248,8 +398,17 @@ def main():
     parser.add_argument("mode", choices=("run", "status"))
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
+    parser.add_argument("--suite", choices=("paper", "navigation"), default="paper")
+    parser.add_argument("--max-parallel", type=int, default=2)
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
+    if args.max_parallel < 1:
+        raise ValueError("max-parallel must be positive")
+    if args.suite == "navigation":
+        configure_navigation_search(args.root.parent)
+        missing = [str(path) for path in ADOPTED_RUNS.values() if not (path / "run.json").exists()]
+        if missing:
+            raise FileNotFoundError(f"The adopted paper baselines are missing: {missing}")
     snapshot = args.root / "study.json"
     if args.mode == "status":
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}
@@ -267,7 +426,11 @@ def main():
                 "observed_at_utc": datetime.now(UTC).isoformat(),
                 "direction": "maximize",
                 "objective": "min(scene rates) + 0.25*mean(scene rates)",
-                "pilot_budget": 4,
+                "pilot_budget": len(CASES),
+                "suite": args.suite,
+                "stable_modalities": sorted(stable_modalities(records))
+                if NAVIGATION_SEARCH
+                else [],
                 "independent_training_seeds": [0, 1, 2],
                 "trials": records,
             }
@@ -286,7 +449,7 @@ def main():
             if blocked or complete:
                 print(json.dumps(status, indent=2), flush=True)
                 return
-            if candidate is not None and training_process_count() < 2:
+            if candidate is not None and training_process_count() < args.max_parallel:
                 memory = {
                     line.split(":")[0]: int(line.split()[1])
                     for line in Path("/proc/meminfo").read_text().splitlines()
@@ -297,9 +460,15 @@ def main():
                     text=True,
                     timeout=15,
                 )
+                pressure = next(
+                    float(line.split()[1].split("=")[1])
+                    for line in Path("/proc/pressure/io").read_text().splitlines()
+                    if line.startswith("full ")
+                )
                 if (
                     memory["MemAvailable"] >= 8 * 1024 * 1024
                     and int(free.strip().splitlines()[0]) >= 7000
+                    and pressure < 40.0
                 ):
                     launch(project, args.root, args.python, *candidate)
                     print(datetime.now(UTC).isoformat(), "launched", candidate, flush=True)
