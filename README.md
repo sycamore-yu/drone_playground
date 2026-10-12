@@ -13,7 +13,7 @@ Drone Playground builds on Crazyflow's differentiable simulation to support grad
 
 | [SUPER](https://doi.org/10.1126/scirobotics.ado6187) (MID360 LiDAR)                               | [EGO-Planner](https://doi.org/10.1109/LRA.2020.3047728) (D435 depth)                                  |
 | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| ![Follow-camera SUPER navigation with LiDAR surface hit points](docs/media/rscope-super-hits.gif) | ![Follow-camera EGO-Planner navigation with depth surface hit points](docs/media/rscope-ego-hits.gif) |
+| ![Follow-camera SUPER navigation with LiDAR surface hit points](media/rscope-super-hits.gif) | ![Follow-camera EGO-Planner navigation with depth surface hit points](media/rscope-ego-hits.gif) |
 
 
 **Task demonstrations**
@@ -21,8 +21,8 @@ Drone Playground builds on Crazyflow's differentiable simulation to support grad
 
 | Hovering                                                                                   | Racing                                                                                 | Static navigation                                                                                                | Dynamic navigation                                                                                                          |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| ![PPO and DiffRL hovering with a follow camera](docs/media/rscope-ppo-diffrl-hovering.gif) | ![PPO and DiffRL racing with a follow camera](docs/media/rscope-ppo-diffrl-racing.gif) | ![Successful S06 depth navigation with camera surface-hit visualization](docs/media/rscope-depth-static-s06.gif) | ![Successful D06 point-cloud navigation with LiDAR surface-hit visualization](docs/media/rscope-pointcloud-dynamic-d06.gif) |
-| PPO / DiffRL (BPTT)                                                                        | PPO / DiffRL (BPTT)                                                                    | [Depth policy](https://doi.org/10.1038/s42256-025-01048-0) · D435i                                               | [Point-cloud policy](https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf)                               |
+| ![PPO and DiffRL hovering with a follow camera](media/rscope-ppo-diffrl-hovering.gif) | ![PPO and DiffRL racing with a follow camera](media/rscope-ppo-diffrl-racing.gif) | ![Successful S06 depth navigation with camera surface-hit visualization](media/rscope-depth-static-s06.gif) | ![Successful D06 point-cloud navigation with LiDAR surface-hit visualization](media/rscope-pointcloud-dynamic-d06.gif) |
+| BPTT                                                                        | BPTT                                                                    | [Depth policy](https://doi.org/10.1038/s42256-025-01048-0) · D435i                                               | [Point-cloud policy](https://rasevents.org/uploads/documents/pdfviewer/a9/f4/233762-1123.pdf)                               |
 
 
 ## Design

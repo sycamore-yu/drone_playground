@@ -11,3 +11,5 @@ Deployment-specific patches stay with the deployment that owns them. In particul
 EGO-Planner and SUPER patches live in `docker/ros1/patches/` because they are
 applied while building that isolated ROS image, not while installing the Python
 package.
+
+Third-party licenses and source notices: [NOTICES.md](NOTICES.md).

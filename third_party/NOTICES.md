@@ -101,7 +101,7 @@ dependency and derived dynamics/gradient integration code.
 `01b2be4986a0851a952aa860afb4a5958e6676e2`. It preserves the algorithmic semantics of detached
 observations, differentiable action-dynamics-reward propagation, terminal value estimation, and a
 target critic while using Drone Playground's sensor encoders. The upstream MIT text is stored in
-`docs/licenses/DVA.txt`. The point-cloud path is a project extension and is not presented as
+`third_party/licenses/DVA.txt`. The point-cloud path is a project extension and is not presented as
 a reproduction of a LiDAR method from the original D.VA paper.
 
 EGO-Planner `bfda51284c8c1b476043255a8145ef925a3778a5` (GPLv3) and SUPER
@@ -115,19 +115,18 @@ and those patches; full planner source trees remain external dependencies.
 
 MuJoCo-LiDAR 0.3.5 is used as a pinned dependency for the MID-360 scan pattern. The active scene
 catalog and geometry qualification are under `assets/scenes/navigation/` and `benchmarks/navigation/`.
-The shared scene, sensor and collision contracts are described in `docs/architecture.md`.
 
 
 ## 版本 3 来源管理
 
-固定来源由 `third_party/sources.json` 声明，`scripts/tools/setup.py` 管理源码缓存；许可副本保存在 docs/licenses。Crazyflow 的 MuJoCo 依赖范围沿用既有本地修正；Crazyflow 与 LOTF 的静态打包元数据补丁解决 Pixi 对本地依赖版本识别的差异。LOTF 补丁还移除源码 full dynamics 中无开关的隐式推力随机化，并暴露外力／力矩输入；随机化由现役 reset 参数与条件配置显式控制。Brax 补丁修正 PPO 的截断奖励与末态 bootstrap；原生模型方程和网络结构沿用固定来源。
+固定来源由 `third_party/sources.json` 声明，`scripts/tools/setup.py` 管理源码缓存；许可副本保存在 `third_party/licenses/`。Crazyflow 的 MuJoCo 依赖范围沿用既有本地修正；Crazyflow 与 LOTF 的静态打包元数据补丁解决 Pixi 对本地依赖版本识别的差异。LOTF 补丁还移除源码 full dynamics 中无开关的隐式推力随机化，并暴露外力／力矩输入；随机化由现役 reset 参数与条件配置显式控制。Brax 补丁修正 PPO 的截断奖励与末态 bootstrap；原生模型方程和网络结构沿用固定来源。
 
 
 ## Point-cloud paper reconstruction
 
-`learning/algorithms/recurrent_bptt.py`, `networks/pointnet.py`, `dynamics/point_mass.py` and the corresponding sensor/task modules were integrated from this project's archived research snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity and source pointers are recorded in `third_party/sources.json`; inferred settings and the source audit are consolidated in `notes/research/pointcloud.md`. This work is recorded separately from Learning on the Fly.
+`learning/algorithms/recurrent_bptt.py`, `networks/pointnet.py`, `dynamics/point_mass.py` and the corresponding sensor/task modules were integrated from this project's archived research snapshot `dbb660c`. They implement a reconstruction from public information for *Learning to Fly from Point Clouds via Differentiable Simulation*. The reconstruction identity and source pointers are recorded in `third_party/sources.json`. This work is recorded separately from Learning on the Fly.
 
 
 ### 原生控制迁移补丁（2026-09-29）
 
-EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`docker/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。修改范围、构建摘要、原生执行证据和原配方差异见`artifacts/verification/final-acceptance/`与`docker/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。
+EGO-Planner与SUPER保持原固定来源和许可证。项目自有补丁位于`docker/ros1/patches/`：EGO交互目标保留z坐标；SUPER在显式控制迁移开关下改善初始时间猜测。对应部署补丁和构建说明见 `docker/ros1/README.md`。点云控制迁移的输入坐标条件化由独立网络预设声明，原论文重建默认保持1.0尺度。

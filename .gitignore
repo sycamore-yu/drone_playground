@@ -7,12 +7,14 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-tmp/*
-!tmp/README.md
-results/*
-!results/README.md
-!results/selected/
-!results/selected/**
+# Local-only development files and generated outputs
+/AGENTS.md
+/CONTEXT.md
+/STYLEGUIDE.md
+/docs/
+/tmp/
+/results/
+/artifacts/verification/
 .env
 .env.*
 secrets/
