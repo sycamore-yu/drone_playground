@@ -1,7 +1,7 @@
 # Third-party source pins
 
 `sources.json` records the upstream repository/revision used by reproducible local
-source caches and records provenance for reconstructed or planned methods.
+source caches and records provenance for implemented integrations.
 
 `patches/` contains only repository-wide patches applied to pinned Python/JAX
 dependencies by `scripts/tools/setup.py`. Patch filenames describe their purpose,

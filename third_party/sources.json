@@ -22,7 +22,6 @@
     "integration": "public-paper-reconstruction",
     "reference_branch": "research/pointcloud-paper-navigation8",
     "reference_revision": "dbb660c",
-    "reference_document": "docs/notes/research/pointcloud.md",
     "qualification": "author's undisclosed settings remain explicit reconstruction assumptions"
   },
   "ego_planner": {
@@ -44,23 +43,5 @@
     "title": "Crazyflow elite-sampling MPC",
     "integration": "native-jax-sampling-adapter",
     "qualification": "elite-mean sampling; distinct from AERO-MPPI"
-  },
-  "loong": {
-    "title": "LOONG: Online Time-Optimal Autonomous Flight for MAVs in Cluttered Environments",
-    "source": "https://arxiv.org/abs/2601.07434",
-    "integration": "planned-jax-native",
-    "executable": false
-  },
-  "aero_mppi": {
-    "title": "AERO-MPPI",
-    "source": "https://arxiv.org/abs/2509.17340",
-    "integration": "planned-jax-native",
-    "executable": false
-  },
-  "ac_mpc": {
-    "title": "Actor-Critic Model Predictive Control",
-    "repository": "https://github.com/uzh-rpg/acmpc_public",
-    "integration": "planned-jax-native",
-    "executable": false
   }
 }

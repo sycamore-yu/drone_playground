@@ -14,6 +14,5 @@ implementations. It contains no Python adapter or replacement planning algorithm
 bundle to the existing container and starts it. The worker translates data; the
 actual executables remain under `/opt/drone_playground/planners/`.
 
-This is a ROS1 environment, not a generic ROS2 runtime for SANDO/MIGHTY.
 `setup.sh` replaces the configured container. Only run it for an explicitly
 requested rebuild. Ordinary evaluation does not rebuild or restart the container.
