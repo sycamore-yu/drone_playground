@@ -67,7 +67,7 @@ pixi run train experiment=control/ppo env=hovering runtime.device=gpu run_id=ppo
 
 ## References
 
-The following papers describe the simulation foundation, planners, and learning methods used or adapted in the demos:
+We draw on the following papers:
 
 - Schuck et al. (2026), [Crazyflow: An Accurate, GPU-Accelerated, Differentiable Drone Simulator in JAX](https://arxiv.org/abs/2606.01478).
 - Zhou et al. (2021), [EGO-Planner: An ESDF-Free Gradient-Based Local Planner for Quadrotors](https://doi.org/10.1109/LRA.2020.3047728).
