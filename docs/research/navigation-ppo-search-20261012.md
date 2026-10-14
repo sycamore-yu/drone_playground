@@ -375,6 +375,33 @@ benchmark and three-training-seed requirement are unchanged. An unmeasured
 canceled proposal is recorded as pruned with no objective, not as zero success.
 No action, reward, physics, network or checkpoint contract changes in this step.
 
+Runtime confirmation at `2026-10-14T10:49:44Z`: `depth_mixed_goal_s0` completed
+its first full screen at update720 with8/48 (D01:8; all other scenes:0).
+`depth_mixed_privileged_s0` started at `2026-10-14T10:46:55Z` and has performed
+finite GPU updates; its first full screen is pending. Resolved configuration
+diffs against `depth_mixed_s0` contain only the declared factor and output path.
+Evidence is in `tmp/navigation-ppo-replan-20261014/{first,critic}-worker-contract.json`
+in the primary checkout. Neither result establishes stable convergence.
+
+Fan's native patience starts counting at its minimum, so it would continue
+through two further full screens after update2160. At `2026-10-14T10:46:05Z`
+the optimizer instead requested a measured prune: twelve full screens were
+all0/48 and4,485,120 training transitions had already been observed. The worker
+saved update2209 (4,524,032 transitions); its original status is `interrupted`,
+while the optimizer records `pruned` with the measured zero objective. This
+released the Critic control's slot. The stop reason and signal timestamp are
+preserved in `fan_base_s0/study_pruned.json`.
+
+A separate CPU check of the actual Fan reward function found a task-incentive
+conflict: at0.6m planar goal distance, zero speed/acceleration and safe clearance,
+the current weights give+1.083049 per decision, although the0.5m goal sphere
+ends the episode. With gamma0.995,1000 such decisions yield a discounted215.17
+before any later terminal contribution. This is an analytical safe-hover
+counterexample, not a simulated trajectory or proof of the held-out collision
+cause. It motivates checking arrival incentives before further Fan learning-rate
+or exploration sweeps. No reward change has been applied; the exact terms and
+assumptions are saved in `tmp/navigation-ppo-replan-20261014/fan-hover-reward-audit.json`.
+
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
 workers all performed real GPU PPO updates with finite losses and gradients.
