@@ -61,13 +61,14 @@ remain fixed. This parameter decision does not approve a new observation or mode
 
 | Family | Matched control | Single-variable candidates |
 | --- | --- | --- |
-| Depth CNN/GRU | Depth A, >=80m starts, actor LR 2e-4 | Mixed starts; fixed heading; LR 5e-5; existing 12-feature goal input |
-| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; fixed heading; LR 2.5e-5; existing 12-feature goal input |
+| Depth CNN/GRU | Depth A, >=80m starts, actor LR 2e-4 | Mixed starts; world rotation input; fixed heading; LR 5e-5; existing 12-feature goal input |
+| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; world rotation input; fixed heading; LR 2.5e-5; existing 12-feature goal input |
 | Fan | Margin2 equations, fresh current-sensor control | Actor LR 2.5e-5; initial log std -1.5 |
 | VisFly | Shared visual encoder, fresh current-sensor control | Initial log std -1; thrust range 0–2 times weight |
 
-There are 16 seed-zero slots. Original Depth/LiDAR controls run first. Their
-mixed-start and fixed-heading diagnostics take priority once their matched controls finish.
+There are 18 seed-zero slots. Original Depth/LiDAR controls run first. Their
+mixed-start, world-rotation and fixed-heading diagnostics take priority once their
+matched controls finish.
 A frozen-benchmark pass promotes the same recipe to independent seeds1 and2.
 Once a sensor modality has three accepted seeds of one recipe, no competing
 recipe or replication for that modality is launched. Interrupted trials remain
@@ -87,6 +88,12 @@ inputs but need different world actions. The existing `heading=fixed` option
 is a narrow test of this issue; it also changes where the camera points and
 does not prove that the ambiguity caused convergence failure. This test changes
 only heading; it retains >=80m training starts and is separate from mixed starts.
+
+The user approved keeping world-frame actions and adding Actor orientation,
+recorded at `2026-10-14T03:53:53Z`; see [ADR-0023](../adr/0023-navigation-world-rotation-observation.md).
+The `world_rotation` candidates append the body-to-world rotation matrix through
+the existing observation configuration. They retain target heading and >=80m
+training starts, so each differs from its original control by only this input.
 
 CPU replay of a copied Depth update2160 and LiDAR update2880 training state
 reproduced behavior-policy GRU memory exactly. Replaying the same 32-step rollout

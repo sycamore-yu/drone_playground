@@ -205,6 +205,15 @@ The Actor ignores `privileged_state`; its architecture and frozen input contract
 remain the same. Only Actor variables are exported for inference. See
 [ADR-0010](adr/0010-training-only-privileged-ppo-critic.md).
 
+Independent Navigation PPO runs can set `++observation.navigation_world_rotation=true`
+to append the row-major body-to-world rotation matrix to `observation['state']`.
+The original 10 features become 19 (21 with the separate goal-observation option).
+Actions remain world-frame accelerations. This changes the checkpoint input contract;
+start a separately named run from random initialization. Frozen evaluation rejects
+switching this flag even when `benchmark.allow_environment_change=true`.
+See [ADR-0023](adr/0023-navigation-world-rotation-observation.md); this option is
+implemented on the paper experiment branch, not yet integrated into `v0.2`.
+
 `TrainingState` is a Flax dataclass containing full actor variables (`params`, including
 its `params` collection), critic and target critic variables, both Optax states, RNG,
 complete environment PyTree, recurrent memory, perception objective history, trainable
