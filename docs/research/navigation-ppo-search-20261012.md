@@ -375,13 +375,20 @@ benchmark and three-training-seed requirement are unchanged. An unmeasured
 canceled proposal is recorded as pruned with no objective, not as zero success.
 No action, reward, physics, network or checkpoint contract changes in this step.
 
-Runtime confirmation at `2026-10-14T10:49:44Z`: `depth_mixed_goal_s0` completed
-its first full screen at update720 with8/48 (D01:8; all other scenes:0).
-`depth_mixed_privileged_s0` started at `2026-10-14T10:46:55Z` and has performed
-finite GPU updates; its first full screen is pending. Resolved configuration
-diffs against `depth_mixed_s0` contain only the declared factor and output path.
-Evidence is in `tmp/navigation-ppo-replan-20261014/{first,critic}-worker-contract.json`
-in the primary checkout. Neither result establishes stable convergence.
+Runtime confirmation at `2026-10-14T10:58:48Z`: `depth_mixed_goal_s0` scored8/48
+at update720 (D01:8), then0/48 at update1440 (43 collisions,5 out-of-bounds).
+`depth_mixed_privileged_s0`, started at `2026-10-14T10:46:55Z`, scored8/48 at
+update240 (S01:8),17/48 at update480 (S01:8,S02:8,D01:1), then0/48 at update720
+(27 out-of-bounds,21 collisions). Both remain running within the original
+budgets; neither individual factor has demonstrated stable convergence.
+The early successes cannot be added across methods or checkpoints. Resolved
+configuration diffs against `depth_mixed_s0` contain only the declared factor
+and output path. Evidence is in
+`tmp/navigation-ppo-replan-20261014/{first,critic}-worker-contract.json` in the
+primary checkout. The original mixed control's full-screen counts at updates
+720/1440/2160/2880/3600/4320 were0/0/14/26/0/0, recovered from worker stdout
+and cross-checked against retained reports. Its later first improvement is
+why these new pilots are not stopped solely on their first regression.
 
 Fan's native patience starts counting at its minimum, so it would continue
 through two further full screens after update2160. At `2026-10-14T10:46:05Z`
@@ -401,6 +408,21 @@ counterexample, not a simulated trajectory or proof of the held-out collision
 cause. It motivates checking arrival incentives before further Fan learning-rate
 or exploration sweeps. No reward change has been applied; the exact terms and
 assumptions are saved in `tmp/navigation-ppo-replan-20261014/fan-hover-reward-audit.json`.
+
+Historical comparison audit at `2026-10-14T10:57:46Z`: the accepted seed0
+`scratch_depth_apg`, `scratch_safe_depth_shac`, `scratch_safe_lidar_apg` and
+`scratch_safe_lidar_shac` configurations rotate through
+S01/S02/S03/D01/D02/D03/S06/D06 during training. Their environment batches are
+128 for Depth and64 for LiDAR. Their recorded training budgets are respectively
+2,621,440;3,276,800;1,310,720;3,932,160 transitions. The current PPO pilots use
+`train/procedural`, no fixed training-scene list and16 environments. Earlier
+75-update acceptance runs additionally load APG initialization policies; their
+reported new interactions exclude shared initialization and discarded trials.
+These historical passes are therefore not algorithm-only controls for the
+current procedural-to-fixed-map PPO question. This audit reads preserved
+configuration/run records only, without loading historical v1 policies or
+changing the current training/benchmark split. Exact paths and extracted values:
+`tmp/navigation-ppo-replan-20261014/historical-comparison-configs.json`.
 
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
