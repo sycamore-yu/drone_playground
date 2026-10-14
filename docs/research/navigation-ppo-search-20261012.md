@@ -218,6 +218,31 @@ failed its worker-warmup check, was discarded, and was repeated with a barrier.
 Raw evidence is in the primary checkout's
 `tmp/navigation-ppo-review-20261014/concurrency-fixed-v2.json`.
 
+### Train/screen consistency audit
+
+The 14 October audit instantiated the saved Depth mixed, Depth lower-LR and
+LiDAR privileged-Critic environments and compared their training and S01
+screening contracts. Action conversion, timestep, physics frequency, sensor
+specification, observation options and Task contracts matched. For each run,
+best-versus-final checkpoint configurations matched, as did all six screens'
+geometry, Task contracts, sensors, episode counts, seed partition and training
+seed. Screening uses the current actor parameters directly and the same
+environment observation and transition functions; PPO samples actions during
+training, while screening uses `tanh(raw)` deterministically.
+
+The deliberate distribution differences remain substantial. In this diagnostic
+eight-world reset sample, mixed starts had distances 8.67–84.61m, long-start
+training 82.13–94.13m, and fixed S01 starts 95.79–96.24m. These are sampled ranges,
+not distribution bounds. Procedural training resamples geometry; each screening
+scene uses one fixed map and eight small start/velocity/yaw perturbations.
+Therefore the eight outcomes within a scene are correlated, and jumps by several
+successes do not establish stable generalization. This audit found no contract
+drift; it does not separate optimization collapse from distribution-generalization
+failure. A same-checkpoint deterministic comparison on training-distribution and
+fixed maps is the next diagnostic if this distinction remains unresolved.
+Evidence: primary checkout
+`tmp/navigation-ppo-review-20261014/screening-contract-audit.json`.
+
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
 workers all performed real GPU PPO updates with finite losses and gradients.
