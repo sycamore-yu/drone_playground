@@ -98,6 +98,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
         save_model,
         save_state,
     )
+    from drone_playground.learning.progress_guard import (
+        ProgressGuardConfig,
+        evaluate_progress_guard,
+    )
     from drone_playground.learning.selection import (
         PatienceConfig,
         screening_score,
@@ -129,6 +133,27 @@ def train(config: DictConfig, record: RunRecord) -> None:
     screening_options = resolved.get("screening", {})
     fast_probes = screening_options.get("probe_between_full", False)
     full_every = screening_options.get("full_every", 3)
+    progress_guard_options = screening_options.get("progress_aware")
+    progress_guard_policy = None
+    if progress_guard_options is not None and progress_guard_options is not False:
+        if (
+            type(progress_guard_options) is not dict
+            or not progress_guard_options
+            or config.task.name != "navigation"
+            or legacy
+            or not config.benchmark.get("fixed_checkpoint_seeds", False)
+            or not config.results.get("keep_best_screening", False)
+            or max_interactions is None
+        ):
+            raise ValueError(
+                "Progress-aware screening requires an explicit Navigation "
+                "configuration, finite training budget, fixed screening seeds "
+                "and best checkpoint retention"
+            )
+        progress_guard_policy = ProgressGuardConfig(
+            **progress_guard_options,
+            min_score_delta=patience_settings.min_delta,
+        )
     if type(fast_probes) is not bool or type(full_every) is not int or full_every < 2:
         raise ValueError("screening requires boolean probe_between_full and full_every >= 2")
     if fast_probes and (
@@ -239,6 +264,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
     best_screen_score = None
     stagnant_screens = 0
     patience_exhausted = False
+    progress_guard_state = None
     if config.resume:
         if Path(config.resume).is_dir():
             state, metadata = load_model_state(config.resume, state)
@@ -247,6 +273,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
         if "initialization" in metadata["config"]:
             identity["initialization"] = metadata["config"]["initialization"]
         previous = metadata["config"]["experiment"]
+        if previous.get("screening", {}).get("progress_aware") != screening_options.get(
+            "progress_aware"
+        ):
+            raise ValueError("Resume changes the progress-aware screening contract")
         for field in (
             "task",
             "scene",
@@ -274,6 +304,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
             screening_progress = progress.get("screening_progress", {})
             best_screen_score = screening_progress.get("best_score")
             stagnant_screens = int(screening_progress.get("stagnant_screens", 0))
+            if progress_guard_policy is not None:
+                if "progress_guard" not in screening_progress:
+                    raise ValueError("Resume checkpoint predates progress guard evidence")
+                progress_guard_state = screening_progress["progress_guard"]
         interval = config.learning.evaluation_interval
         at_budget = training_budget_reached(int(state.interactions), max_interactions)
         expected_evaluations = int(state.updates) // interval + int(
@@ -318,6 +352,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
             probe_config.benchmark.episodes = 8
             probe_config.benchmark.record_replay = False
             probe_config.benchmark.record_trajectories = False
+            if progress_guard_policy is not None:
+                # Only full six-scene screens affect progress-aware patience.
+                probe_config.screening.progress_aware = None
     environments = {}
     initial_interactions = int(state.interactions)
     checkpoint_path = record.directory / "checkpoints" / "latest.training.zip"
@@ -356,6 +393,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "screening_progress": {
                 "best_score": best_screen_score,
                 "stagnant_screens": stagnant_screens,
+                **(
+                    {"progress_guard": progress_guard_state}
+                    if progress_guard_policy is not None
+                    else {}
+                ),
             },
             **cost(current),
         }
@@ -398,6 +440,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
     def evaluate_checkpoint(*, force_full=False):
         nonlocal consecutive, evaluation_index
         nonlocal best_screen_score, stagnant_screens, patience_exhausted
+        nonlocal progress_guard_state
         update = int(state.updates)
         frozen = checkpoint(state, export_policy=False)
         directory = frozen if orbax_layout else frozen.parent
@@ -472,13 +515,50 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     environments=environments,
                 )
                 score = screening_score(screening, config.task.name, primary_scenes)
-                best_screen_score, stagnant_screens, improved, patience_exhausted = update_patience(
-                    score,
-                    update,
-                    best_screen_score,
-                    stagnant_screens,
-                    settings=patience_settings,
-                )
+                progress_decision = None
+                if progress_guard_policy is not None:
+                    progress_guard_state, progress_decision = evaluate_progress_guard(
+                        screening,
+                        primary_scenes,
+                        update=update,
+                        previous=progress_guard_state,
+                        best_screen_score=score,
+                        settings=progress_guard_policy,
+                        min_updates=patience_settings.min_updates,
+                        patience=patience_settings.patience,
+                    )
+                    best_screen_score = progress_guard_state["best_score"]
+                    stagnant_screens = progress_guard_state["stagnant_screens"]
+                    improved = (
+                        progress_decision["score_improved"]
+                        or progress_decision["progress_improved"]
+                    )
+                    patience_exhausted = progress_decision["patience_exhausted"]
+                    if (
+                        progress_decision["regression_streak"]
+                        == progress_guard_policy.regression_patience
+                    ):
+                        record.event(
+                            "policy_regression",
+                            update=update,
+                            best_checkpoint_update=progress_guard_state["best_checkpoint_update"],
+                            best_successes=progress_guard_state["best_successes"],
+                            current_successes=progress_decision["successes"],
+                            lower_height_failures=progress_decision["lower_height_out_of_bounds"],
+                        )
+                else:
+                    (
+                        best_screen_score,
+                        stagnant_screens,
+                        improved,
+                        patience_exhausted,
+                    ) = update_patience(
+                        score,
+                        update,
+                        best_screen_score,
+                        stagnant_screens,
+                        settings=patience_settings,
+                    )
                 suitable = screening_passed(screening, config.task.name, primary_scenes)
                 record.event(
                     "screening_evaluation",
@@ -492,6 +572,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     improved=improved,
                     stagnant_screens=stagnant_screens,
                     patience_exhausted=patience_exhausted,
+                    **(
+                        {"progress_decision": progress_decision}
+                        if progress_decision is not None
+                        else {}
+                    ),
                     evaluation_seconds=time.monotonic() - screening_started,
                 )
                 if suitable:

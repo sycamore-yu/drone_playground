@@ -2,8 +2,12 @@
 
 **Status:** Accepted · 2026-10-14（用户明确同意两项筛选原则）
 
-**Implementation:** 本 ADR 先固定决策和验收合同；尚未修改运行中的调度器、
-训练器、奖励或已启动的实验。所有历史 `run.json`、checkpoint、冻结测试保持不变。
+**Implementation:** 可选实现已增加到新的 Navigation 训练筛查：
+`learning/progress_guard.py`、`simulation/runner.py`、
+`simulation/evaluation.py`、`cli.py` 与 checkpoint 保留逻辑。
+本次只实现并验证**显式启用**的进展感知早停、指标留存与退化提示；
+没有修改正在运行的调度器配置、PPO 梯度、奖励和已启动的实验，
+也没有更改历史 `run.json`、checkpoint 或冻结测试。
 
 ## Context and measured evidence
 
@@ -87,6 +91,38 @@
   另外检验 16/48/150 回合分母、种子隔离和一次性冻结协议不变。
 - 训练完成后报告最佳、最新、各场景失败原因、进度/飞行距离趋势、
   高度稳定性、价值误差、每秒交互量以及硬预算/早停依据。
+
+### 可选实现及尚待独立校准的输入
+
+只有新实验显式设置 `screening.progress_aware`（同时提供
+`min_progress_delta` 与 `max_unsafe_increase`）才启用本规则。
+两项数值**没有项目级默认值**：必须使用与新试验匹配的重复筛查，
+事先评估进度波动与可接受的失败比例变化，再写入冻结的解析配置；
+不能把文档中的单元测试数值误当为经验证的运行超参数。
+同时要求训练预算有限、训练筛查种子固定、保留最佳 checkpoint，
+续训禁止切换此配置。未配置时继续执行 ADR-0018。
+
+新的轻量评测在 JAX 设备端逐步累积目标的最终/最小距离、
+起点到终点的归一化进度、累计实际飞行长度、最大/最小高度及高度边界
+余量；不额外采样、传输或存储点云/深度回放。逐回合数值写入
+`screening/episodes.csv`，逐场景汇总进入 `screening/report.json`。
+完整六场景评分、25 回合正式验证以及独立冻结 benchmark 的门槛和种子
+**均未改变**。
+
+只有完整的 6×8 筛查可更新进度等待计数；在全部零成功时，
+真实归一化末端进度超过事先声明的变化阈值，并且总体不安全事件
+以及高度下边界失败没有超过可接受增量，才会重置 patience。
+已经取得成功以后，进度改善不能掩盖成功率倒退。
+持续两轮完整筛查丢失已取得的成功会记录一次
+`policy_regression` 事件，保存最佳成功/最佳安全进度两种 checkpoint
+身份，且不执行网络参数回滚。
+
+**尚未完成的独立验证：**逐回合固定筛查 Critic 预测与完整折扣
+实现回报的配对校准，当前仍依赖训练侧现有的
+`critic_return_rmse_preupdate`、`critic_explained_variance_preupdate`
+与保存轨迹的离线诊断，不把它们冒充冻结场景上的无偏估计。
+新增规则尚未在真实 GPU 多随机种子训练中校准或验证收敛效果，
+因此不能标记为新的正式验收通过。
 
 ## Clarification: Navigation mission speed
 

@@ -82,6 +82,41 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
     assert json.loads((tmp_path / "report.json").read_text())["replays"] == []
 
 
+def test_opt_in_navigation_progress_uses_lightweight_rollout_without_sensor_traces(
+    monkeypatch,
+):
+    """The new progress measurements must not trigger costly replay sensor sampling."""
+    from drone_playground.simulation import runner
+    from drone_playground.simulation.evaluation import navigation_progress_summary
+
+    env = make_environment(
+        task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06
+    )
+
+    def no_sensor_samples(*args):
+        raise AssertionError("Progress screening must not collect image/point-cloud replays")
+
+    monkeypatch.setattr(runner, "_sample", no_sensor_samples)
+    episodes, traces = runner.rollout(
+        env, seed=11, chunk_steps=2, record=False, progress_diagnostics=True
+    )
+    assert traces == {}
+    assert len(episodes) == 3
+    for row in episodes:
+        assert row["initial_goal_distance_metres"] > 80
+        assert row["final_goal_distance_metres"] >= 0
+        assert 0 <= row["minimum_goal_distance_metres"] <= row["initial_goal_distance_metres"]
+        assert row["path_length_metres"] >= 0
+        assert row["min_height_metres"] <= row["max_height_metres"]
+        assert row["minimum_lower_boundary_margin_metres"] >= -1
+        assert row["lower_height_out_of_bounds"] in (0, 1)
+    data = navigation_progress_summary(episodes)
+    assert data["mean_normalized_final_progress"] < 1
+    assert data["mean_normalized_best_progress"] >= 0
+    assert data["mean_path_length_metres"] >= 0
+    assert 0 <= data["lower_height_out_of_bounds"] <= 3
+
+
 def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
     """Do not allocate an archive when a completed evaluation has no requested replay."""
     env = make_environment(duration=0.02)

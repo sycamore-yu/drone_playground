@@ -249,6 +249,78 @@ def test_six_unimproved_screens_stop_a_new_run_only_after_800(config, training, 
     assert [e["event"] for e in training.record.events].count("early_stopping") == 1
 
 
+def test_opt_in_progress_screening_preserves_learning_zero_successes(config, training, monkeypatch):
+    """New bounded Navigation runs may learn genuine safe progress before first arrival."""
+    config.task.name = "navigation"
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.learning.evaluation_interval = 1
+    config.learning.checkpoint_interval = 1
+    config.early_stopping.min_updates = 2
+    config.early_stopping.patience = 2
+    config.early_stopping.min_delta = 0.005
+    OmegaConf.update(config, "results.keep_best_screening", True, force_add=True)
+    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
+    OmegaConf.update(config, "learning.max_interactions", 50, force_add=True)
+    OmegaConf.update(
+        config,
+        "screening",
+        {
+            "probe_between_full": False,
+            "full_every": 3,
+            "progress_aware": {"min_progress_delta": 0.03, "max_unsafe_increase": 0.0},
+        },
+        force_add=True,
+    )
+    training.stop_at = None
+    seen = []
+    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
+
+    def improving_screen(cfg, directory, *, evaluation_index=0, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        assert cfg.mode == "checkpoint_eval"
+        assert cfg.benchmark.protocol == "diagnostic"
+        seen.append(evaluation_index)
+        value = evaluation_index * 0.1
+        return {
+            "complete": True,
+            "protocol": "diagnostic",
+            "reports": {
+                scene: {
+                    "episodes": 8,
+                    "successes": 0,
+                    "outcomes": {"COLLISION": 8, "SUCCESS": 0, "OUT_OF_BOUNDS": 0},
+                    "progress_diagnostics": {
+                        "mean_normalized_final_progress": value,
+                        "mean_normalized_best_progress": value,
+                        "mean_final_distance_metres": 96 * (1 - value),
+                        "mean_path_length_metres": 120 * value,
+                        "minimum_height_metres": 2.0,
+                        "minimum_lower_boundary_margin_metres": 1.5,
+                        "lower_height_out_of_bounds": 0,
+                    },
+                }
+                for scene in scenes
+            },
+        }
+
+    monkeypatch.setattr(cli, "evaluate", improving_screen)
+    cli.train(config, training.record)
+    assert seen == [1, 2, 3, 4, 5]
+    assert training.record.identity["status"] == "budget_exhausted"
+    assert not any(item["event"] == "early_stopping" for item in training.record.events)
+    evaluations = [
+        event for event in training.record.events if event["event"] == "screening_evaluation"
+    ]
+    assert all(event["score"] == 0.0 for event in evaluations)
+    assert all(not event["patience_exhausted"] for event in evaluations)
+    assert all(item["progress_decision"]["progress_improved"] for item in evaluations[1:])
+    _, metadata = load_state(training.path, SmallState())
+    guard = metadata["provenance"]["screening_progress"]["progress_guard"]
+    assert guard["best_progress_checkpoint_update"] == 5
+    assert guard["best_progress"] == pytest.approx(0.5)
+
+
 def test_explicit_interaction_budget_stops_without_false_acceptance(config, training, monkeypatch):
     """An exhausted pilot saves resumable state and never enters frozen benchmark."""
     assert hasattr(cli, "training_budget_reached"), "Bounded training budget missing"

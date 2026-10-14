@@ -218,6 +218,17 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
         ]
         if ranked:
             keep.add(max(ranked, key=lambda item: (item[0], item[1].name))[1])
+        # A new opt-in run retains its *safe* progress peak separately from
+        # the checkpoint with the highest fixed-scene success score.
+        if config.get("experiment", {}).get("screening", {}).get("progress_aware"):
+            guard = provenance.get("screening_progress", {}).get("progress_guard") or {}
+            update = guard.get("best_progress_checkpoint_update")
+            if type(update) is int:
+                keep.update(
+                    candidate
+                    for candidate in candidates
+                    if int(candidate.name.split("_")[1]) == update
+                )
     for candidate in candidates:
         if candidate not in keep:
             shutil.rmtree(candidate)
