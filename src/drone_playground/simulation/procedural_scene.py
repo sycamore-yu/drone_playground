@@ -44,11 +44,18 @@ class SceneDistribution:
     start_sampling: str = "endpoints"
     min_start_goal_distance_m: float = 0.0
     start_goal_distance_range_m: tuple[float, float] | None = None
+    static_obstacle_scale: float = 1.0
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
         if type(self.max_obstacles) is not int or self.max_obstacles < 3:
             raise ValueError("max_obstacles must be at least 3")
+        if (
+            type(self.static_obstacle_scale) not in (int, float)
+            or not math.isfinite(self.static_obstacle_scale)
+            or not 0 < self.static_obstacle_scale <= 1
+        ):
+            raise ValueError("static_obstacle_scale must be finite and in (0, 1]")
         if not -19.0 < self.corridor_y < -16.0:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
@@ -100,6 +107,8 @@ class ProceduralScene:
         )
         # Keep v1's byte-for-byte identity compatible with historical checkpoints.
         distribution_identity = vars(self.distribution).copy()
+        if self.distribution.static_obstacle_scale == 1:
+            distribution_identity.pop("static_obstacle_scale")
         if self.distribution.start_goal_distance_range_m is None:
             distribution_identity.pop("start_goal_distance_range_m")
         if self.distribution.min_start_goal_distance_m == 0:
@@ -142,6 +151,14 @@ class ProceduralScene:
             dynamic_count = jnp.array([50, 100, 200])[difficulty]
             nominal = jnp.where(dynamic, dynamic_count, static_count)
             count = jnp.clip(nominal + jax.random.randint(c, (), -8, 9), 1, capacity)
+            if self.distribution.static_obstacle_scale != 1:
+                count = jnp.where(
+                    dynamic,
+                    count,
+                    jnp.maximum(
+                        1, (count * self.distribution.static_obstacle_scale).astype(jnp.int32)
+                    ),
+                )
             enabled = slot < count
             moving = dynamic & (slot < (count * 65 // 100))
             cylinder = ~moving & (slot % 2 == 0)

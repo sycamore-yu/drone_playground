@@ -6,8 +6,15 @@ from types import SimpleNamespace
 
 import jax.numpy as jnp
 import orbax.checkpoint as ocp
+from flax import struct
 
 from drone_playground.learning.checkpoint import save_model
+
+
+@struct.dataclass
+class _SmallState:
+    params: dict
+    recurrent_memory: object = None
 
 
 def _screen(directory, successes=0):
@@ -108,3 +115,47 @@ def test_original_retention_does_not_keep_progress_only_checkpoint(tmp_path, mon
     )
     retained = sorted(path.name for path in root.glob("model_*"))
     assert retained == ["model_000500", "model_000600"]
+
+
+def test_retention_keeps_best_training_completion_separately_from_fixed_scene_score(tmp_path):
+    """Zero long-distance success must not erase a learned short-distance arrival policy."""
+    root = tmp_path / "checkpoints"
+    for update, successes in ((100, 6), (200, 1), (300, 2)):
+        directory = root / f"model_{update:06d}"
+        (directory / "training").mkdir(parents=True)
+        (directory / "training/commit_success.txt").write_text("committed")
+        _screen(directory / "screening")
+        probe = directory / "training_distribution"
+        probe.mkdir()
+        (probe / "report.json").write_text(
+            json.dumps(
+                {
+                    "complete": True,
+                    "reports": {
+                        "train/procedural": {
+                            "task": "navigation",
+                            "episodes": 8,
+                            "successes": successes,
+                        }
+                    },
+                }
+            )
+        )
+    save_model(
+        root / "model_000400",
+        _SmallState(params={"x": jnp.zeros(1)}),
+        config={
+            "experiment": {
+                "results": {"keep_checkpoints": 1, "keep_best_screening": True},
+                "screening": {"training_distribution_probe": True},
+            }
+        },
+        provenance={},
+        kind="state",
+        actor_spec={"kind": "state"},
+    )
+    assert sorted(path.name for path in root.glob("model_*")) == [
+        "model_000100",  # Best procedural arrival rate: 6/8.
+        "model_000300",  # Latest completed fixed-scene score tie.
+        "model_000400",  # Latest recovery state.
+    ]

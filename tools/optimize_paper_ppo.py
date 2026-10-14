@@ -195,6 +195,23 @@ def configure_distance_search():
     }
 
 
+def configure_static_density_search():
+    """Change only static obstacle counts in the matched speed-free 20m recipes."""
+    global CASES, CASE_OPTIONS, ALLOCATION_POLICY
+    configure_distance_search()
+    cases = ("depth_d20", "lidar_d20")
+    options = CASE_OPTIONS
+    CASES = {case.replace("_d20", "_static_light_d20"): CASES[case] for case in cases}
+    CASE_OPTIONS = {
+        case.replace("_d20", "_static_light_d20"): [
+            *options[case],
+            "++simulation.procedural.static_obstacle_scale=0.7",
+        ]
+        for case in cases
+    }
+    ALLOCATION_POLICY = "navigation-static-density-0.7-fixed-budget-20261014"
+
+
 def stable_modalities(records):
     """Require all three independent seeds for one recipe, not mixed recipes."""
     return {
@@ -769,7 +786,9 @@ def main():
     parser.add_argument("mode", choices=("run", "status"))
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
-    parser.add_argument("--suite", choices=("paper", "navigation", "distance"), default="paper")
+    parser.add_argument(
+        "--suite", choices=("paper", "navigation", "distance", "static-density"), default="paper"
+    )
     parser.add_argument("--max-parallel", type=int, default=2)
     parser.add_argument("--optim-directory", type=Path)
     args = parser.parse_args()
@@ -780,6 +799,8 @@ def main():
         configure_navigation_search()
     elif args.suite == "distance":
         configure_distance_search()
+    elif args.suite == "static-density":
+        configure_static_density_search()
     snapshot = args.root / "study.json"
     if args.mode == "status":
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}

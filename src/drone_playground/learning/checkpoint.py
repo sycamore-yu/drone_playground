@@ -126,9 +126,9 @@ def load_inference(path):
     }
 
 
-def _screening_score(path: Path) -> float | None:
+def _screening_score(path: Path, folder: str = "screening") -> float | None:
     """Read a completed lightweight validation without touching benchmark records."""
-    report_path = path / "screening" / "report.json"
+    report_path = path / folder / "report.json"
     if not report_path.is_file():
         return None
     report = json.loads(report_path.read_text())
@@ -218,6 +218,14 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
         ]
         if ranked:
             keep.add(max(ranked, key=lambda item: (item[0], item[1].name))[1])
+        if config.get("experiment", {}).get("screening", {}).get("training_distribution_probe"):
+            training_ranked = [
+                (score, candidate)
+                for candidate in candidates
+                if (score := _screening_score(candidate, "training_distribution")) is not None
+            ]
+            if training_ranked:
+                keep.add(max(training_ranked, key=lambda item: (item[0], item[1].name))[1])
         # A new opt-in run retains its *safe* progress peak separately from
         # the checkpoint with the highest fixed-scene success score.
         if config.get("experiment", {}).get("screening", {}).get("progress_aware"):
