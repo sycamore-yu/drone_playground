@@ -1,0 +1,112 @@
+# ADR-0024：Navigation PPO 早停必须考虑实际进度与能力退化
+
+**Status:** Accepted · 2026-10-14（用户明确同意两项筛选原则）
+
+**Implementation:** 本 ADR 先固定决策和验收合同；尚未修改运行中的调度器、
+训练器、奖励或已启动的实验。所有历史 `run.json`、checkpoint、冻结测试保持不变。
+
+## Context and measured evidence
+
+现有 Navigation PPO 的轻量筛查主指标是六个固定场景的
+`min(scene success rate) + 0.25 × mean(scene success rate)`。
+低成本探针为两场景各 8 回合，完整筛查为六场景各 8 回合。
+连续多次评分没有改善可以提前停止，从而节省 GPU。
+但 **0/48 不足以证明策略没有学习到任何东西**：长航程可能先改善真实进度、
+失败前的飞行距离、高度稳定性，之后才产生首次完整抵达。
+此前 Fan 候选在长期零成功后曾单独达到 D02 8/8，也不能仅以早期零分淘汰所有 Fan 配方。
+
+保存的 Depth mixed-start seed0 在 update 2880 的固定筛查为 26/48，
+在 update 4320 变为 0/48。配对的 48 次固定任务及 8 次程序化任务回放确认
+存在真实能力退化，且所有 26 次失去的成功都转为下高度边界失败
+（证据：`new_drone_playground/tmp/navigation-ppo-review-20261014/regression-cause/`）。
+调整 Actor 学习率并没有消除此类现象；不能以 KL 跳过率作为唯一解释。
+
+## Decision 1 — Progress-aware early stopping
+
+1. **保留以真实完成率为优先级最高的筛查与正式验收指标**，
+   不修改 [ADR-0015](0015-three-stage-learning-acceptance.md) 的候选晋级、
+   独立冻结 Benchmark、每场景门槛或三个独立训练种子的要求。
+2. 在固定且可重放的轻量筛查中，除 `success/event` 外还必须收集：
+   - **目标进度：**起终点距离、终点剩余距离及其相对初始距离的比例，
+     以及飞行过程中达到的最小剩余距离；
+   - **失败前的运动：**累计实际路径长度、第一次碰撞/越界前的前向进度、
+     失败时间和 `COLLISION/OUT_OF_BOUNDS/TIMEOUT` 类型；
+   - **高度稳定性：**最小和最大高度、到上下边界的最小安全余量、
+     目标高度误差及高度越界次数；单独记录下边界退出；
+   - **价值质量：**Critic 的 return-target RMSE、explained variance 与
+     可复现轨迹的折扣回报校准误差，注明估计方式、折扣与样本分布。
+3. 在完整成功数仍为 0 时，**不能仅因数次筛查为 0/48 而终止训练**。
+   若同一批筛查任务上的真实进度持续改善，且碰撞/越界风险未明显恶化，
+   可继续分配有上限的训练预算，直到后续完整筛查或硬预算边界。
+   仅奖励增加、无真实位移的飞行时间延长、或者 Critic explained variance
+   提高，都不能单独认定为导航进展。
+4. 仍可早停确实没有学会基本运动的候选：达到明示最小交互预算后，
+   如果在匹配的重复筛查中完成率、向目标移动、失败前距离和高度稳定性
+   都没有持续改善，则按原有限预算策略停下并存档。
+   数值改善阈值须在**新训练开始前**根据匹配基线的重复性设定并写入
+   `config.yaml`；不能在查看同一候选结果后随意调门槛。
+5. 二场景 probe 只能用于调度的早期诊断；其 16 回合不能冒充
+   六场景 48 回合，更不能替代正式 25 回合/场景与冻结测试。
+   进度辅助诊断只用训练筛查种子，不允许利用冻结测试表现调参。
+
+## Decision 2 — Detect and preserve learned abilities
+
+1. 每轮完整筛查后都存储和对照 **best checkpoint 与 latest checkpoint**，
+   保留它们的模型、优化器恢复状态、每场景成功与失败事件、目标进度、
+   高度范围和 Critic 校准摘要；不能只保留最后权重。
+2. 一旦曾完成部分场景，后续同种子相同配方若出现明显退化
+   （尤其是整场景成功骤降、0/48、越界增加或高度控制崩溃），
+   标记为 `policy_regression` 诊断事件，并保留当次及历史最佳证据。
+   至少比较两次独立时间点的完整筛查，区分单轮采样噪声与持续退化；
+   **能力退化不自动证明某个 PPO 超参数存在缺陷**。
+3. 已经学会的成功轨迹和高度保持能力必须纳入候选排序与训练预算分配。
+   即使最近权重在训练奖励或 Critic 拟合上更好，也不能因此覆盖
+   在真实成功率和安全性上更好的 best checkpoint。
+   连续退化后应优先做价值校准、垂直动作、观测与奖励因果诊断，
+   而不是继续盲目增加训练步数。
+4. 回滚到 best checkpoint 后继续学习属于**另一个有实验身份的干预**；
+   不在原实验中偷偷替换优化器、随机数、回放状态或网络。
+   混合两个 checkpoint 的水平／垂直动作仅是反事实诊断，
+   不作为可部署的有效策略。
+5. “稳定”是跨时间、跨场景且跨独立训练种子的表现。
+   筛查趋势的稳定性只影响预算与候选优先级，**不额外改变**原有
+   “首次完整 validation 通过后只做一次冻结 Benchmark”的防泄漏协议。
+
+## Scope / implementation gates
+
+- **当前已运行/已保存的试验不追溯更改算法、配置、早停或最佳模型**；
+  ADR-0018 的旧式成功率 patience 对这些试验仍依其保存的配置执行。
+- 后续实现应在 Task/evaluation 保存逐 episode 原始指标，
+  并由独立 scheduler 判断有限预算、停滞与回退；PPO Trainer 不应
+  用诊断分数直接改变奖励梯度。
+- 必须用合成进度轨迹/冻结回放覆盖至少四种确定性回归检查：
+  `0 success + safe progress improves` 不能仅凭零成功被早停；
+  `0 success + no meaningful progress` 到预算后可早停；
+  `best>0 -> latest=0 + lower-height violations` 标记退化且 best 完整保留；
+  `progress improves + unsafe failures rise` 不能误晋级。
+  另外检验 16/48/150 回合分母、种子隔离和一次性冻结协议不变。
+- 训练完成后报告最佳、最新、各场景失败原因、进度/飞行距离趋势、
+  高度稳定性、价值误差、每秒交互量以及硬预算/早停依据。
+
+## Clarification: Navigation mission speed
+
+用户的任务意图是**在满足安全与动力学限制的前提下尽可能快到达目标**，
+**没有批准固定 3 m/s 的巡航速度上限或速度目标**。
+当前 `NavigationEnv._observe_state()` 的目标方向特征使用
+`min(3.0, distance)`，`_base_task_reward_components()` 与
+Zhang/Liu 学习代价还有同类的 3 m/s 参考速度；Fan 配方单独具有
+`max_speed: 3.0` 的软惩罚参数。这些是既有实现/实验假设，不能
+表述为用户设定的任务硬限速。
+
+改变既有 3 m/s 参考、速度奖励或飞行时长目标，应另起具名单变量/因果
+实验，保留快照结果与原先 10/12 维观测输入的 checkpoint 合同。
+本 ADR 只决定训练筛查和退化保护，不在现有训练中暗改速度权重。
+
+## Related decisions and evidence
+
+- [ADR-0015](0015-three-stage-learning-acceptance.md)：三阶段验收与冻结选模。
+- [ADR-0018](0018-training-patience-and-frozen-selection.md)：旧的成功率 patience。
+- [ADR-0011](0011-independent-ppo-goal-observation.md)：独立 10/12 维目标观测试验。
+- [ADR-0023](0023-navigation-world-rotation-observation.md)：世界系动作与朝向输入。
+- [复现诊断记录](../research/navigation-ppo-search-20261012.md)：固定场景与
+  程序化场景的配对回放、特权 Critic、价值预测及网络更新比较。
