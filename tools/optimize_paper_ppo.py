@@ -64,6 +64,8 @@ def configure_navigation_search():
         "lidar_goal": ("lidar", lidar, "lidar_base"),
         "depth_mixed": ("depth", depth, "depth_base"),
         "lidar_mixed": ("lidar", lidar, "lidar_base"),
+        "depth_fixed_heading": ("depth", depth, "depth_base"),
+        "lidar_fixed_heading": ("lidar", lidar, "lidar_base"),
         "fan_exploration": ("fan", fan, "fan_base"),
         "visfly_hoverthrust": ("visfly", visfly, "visfly_base"),
     }
@@ -76,6 +78,8 @@ def configure_navigation_search():
         "lidar_goal": ["simulation.navigation_goal_observation=true"],
         "depth_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "lidar_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
+        "depth_fixed_heading": ["method.action.heading=fixed"],
+        "lidar_fixed_heading": ["method.action.heading=fixed"],
         "fan_exploration": ["learning.options.initial_log_std=-1.5"],
         "visfly_hoverthrust": ["method.action.thrust_to_weight_bounds=[0.0,2.0]"],
     }
@@ -115,8 +119,8 @@ def stable_modalities(records):
 def navigation_candidate(records):
     """Cover each architecture first, then prefer measured improvements fairly."""
     stable = stable_modalities(records)
-    # The approved sampling diagnostic takes priority after its own matched control.
-    for case in ("depth_mixed", "lidar_mixed"):
+    # Test observed sampling/frame gaps before spending more on paper transfers.
+    for case in ("depth_mixed", "lidar_mixed", "depth_fixed_heading", "lidar_fixed_heading"):
         family, _, parent = CASES[case]
         if (
             MODALITY[family] not in stable

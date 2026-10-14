@@ -23,7 +23,7 @@ def test_four_architectures_require_fresh_matched_baselines(search):
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
     search.configure_navigation_search()
     assert {value[0] for value in search.CASES.values()} == {"depth", "lidar", "fan", "visfly"}
-    assert len(search.CASES) == 14
+    assert len(search.CASES) == 16
     assert search.BASE_UNITS == {}
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["fan_base_s0"]["status"] = "running"
@@ -100,6 +100,8 @@ def test_parameter_changes_are_isolated_per_candidate(search):
         "lidar_goal",
         "depth_mixed",
         "lidar_mixed",
+        "depth_fixed_heading",
+        "lidar_fixed_heading",
         "fan_exploration",
         "visfly_hoverthrust",
     ],

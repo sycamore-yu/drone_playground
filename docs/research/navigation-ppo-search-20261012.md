@@ -48,13 +48,13 @@ remain fixed. This parameter decision does not approve a new observation or mode
 
 | Family | Matched control | Single-variable candidates |
 | --- | --- | --- |
-| Depth CNN/GRU | Depth A, >=80m starts, actor LR 2e-4 | Mixed starts; LR 5e-5; existing 12-feature goal input |
-| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; LR 2.5e-5; existing 12-feature goal input |
+| Depth CNN/GRU | Depth A, >=80m starts, actor LR 2e-4 | Mixed starts; fixed heading; LR 5e-5; existing 12-feature goal input |
+| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; fixed heading; LR 2.5e-5; existing 12-feature goal input |
 | Fan | Margin2 equations, fresh current-sensor control | Actor LR 2.5e-5; initial log std -1.5 |
 | VisFly | Shared visual encoder, fresh current-sensor control | Initial log std -1; thrust range 0–2 times weight |
 
-There are 14 seed-zero slots. Original Depth/LiDAR controls run first. Their
-approved mixed-start diagnostics take priority once their matched controls finish.
+There are 16 seed-zero slots. Original Depth/LiDAR controls run first. Their
+mixed-start and fixed-heading diagnostics take priority once their matched controls finish.
 A frozen-benchmark pass promotes the same recipe to independent seeds1 and2.
 Once a sensor modality has three accepted seeds of one recipe, no competing
 recipe or replication for that modality is launched. Interrupted trials remain
@@ -64,6 +64,16 @@ state is preserved for explicit contract-checked CLI resumption.
 Existing privileged Critic support already includes goal-relative position,
 time, clearance and ideal rays. It remains available for a later evidence-based
 ablation without introducing another network interface.
+
+The frame diagnostic follows a reproduced ambiguity: the original navigation
+state encodes body-frame velocity, target direction and up, while acceleration
+is decoded in world coordinates. `heading=target` changes vehicle yaw without
+providing world yaw to the Actor. In empty returns, two rotated positions with
+matching body-relative targets can therefore have identical instantaneous policy
+inputs but need different world actions. The existing `heading=fixed` option
+is a narrow test of this issue; it also changes where the camera points and
+does not prove that the ambiguity caused convergence failure. This test changes
+only heading; it retains >=80m training starts and is separate from mixed starts.
 
 ## Screening and budgets
 
