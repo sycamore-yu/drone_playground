@@ -1,12 +1,14 @@
 """Test final JAX results layout without altering legacy training runs."""
 
 import json
+import struct as binary
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from flax import struct
 from omegaconf import OmegaConf
+from tensorboardX.proto.event_pb2 import Event
 
 from drone_playground.learning.checkpoint import load_model_state, save_model
 from drone_playground.simulation.networks import Actor
@@ -72,13 +74,42 @@ def test_tensorboard_records_do_not_duplicate_jsonl_metrics(tmp_path):
     config = OmegaConf.create({"seed": 0, "results": {"format": "orbax"}})
     record = RunRecord(tmp_path / "run", config)
     record.event("update", update=2, interactions=16, reward=-0.3, actor_grad_norm=0.12)
-    record.event("screening_evaluation", update=2, passed=False, episodes=8)
+    scenes = {"S01": {"episodes": 8, "successes": 3}}
+    record.event(
+        "screening_evaluation",
+        update=2,
+        passed=False,
+        episodes=8,
+        per_scene=scenes,
+        score=0.3,
+        best_score=0.4,
+        stagnant_screens=2,
+    )
+    record.event("checkpoint_evaluation", update=2, passed=False)
     record.finish("interrupted", updates=2)
     assert record.layout_version == 3
     assert (record.directory / "config.yaml").is_file()
     assert list(record.directory.glob("events.out.tfevents.*"))
     assert not (record.directory / "metrics.jsonl").exists()
     assert OmegaConf.load(record.directory / "config.yaml").seed == 0
+    events = {}
+    for path in record.directory.glob("events.out.tfevents.*"):
+        with path.open("rb") as stream:
+            while header := stream.read(12):
+                length = binary.unpack("<Q", header[:8])[0]
+                event = Event.FromString(stream.read(length))
+                assert len(stream.read(4)) == 4
+                events.update({value.tag: value for value in event.summary.value})
+    screening = json.loads(events["event/screening_evaluation/text_summary"].tensor.string_val[0])
+    assert screening["per_scene"] == scenes
+    assert screening["stagnant_screens"] == 2
+    np.testing.assert_allclose(events["evaluation/score"].simple_value, 0.3)
+    np.testing.assert_allclose(events["evaluation/best_score"].simple_value, 0.4)
+    assert events["evaluation/stagnant_screens"].simple_value == 2
+    assert (
+        json.loads((record.directory / "run.json").read_text())["last_evaluation"]["event"]
+        == "checkpoint_evaluation"
+    )
 
 
 def test_orbax_retains_last_three_plus_selected_actor(tmp_path):

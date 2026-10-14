@@ -486,6 +486,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     passed=suitable,
                     episodes=8,
                     scenes=primary_scenes,
+                    per_scene=screening["reports"],
                     score=score,
                     best_score=best_screen_score,
                     improved=improved,
@@ -526,7 +527,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             record.event(
                 "early_stopping",
                 update=update,
-                reason="six_light_screens_without_significant_improvement",
+                reason="light_screens_without_significant_improvement",
                 best_score=best_screen_score,
                 stagnant_screens=stagnant_screens,
                 min_updates=patience_settings.min_updates,
@@ -604,7 +605,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 best_screen_score=best_screen_score,
                 stagnant_screens=stagnant_screens,
                 resume_checkpoint=str(checkpoint_path),
-                reason="six_light_screens_without_significant_improvement",
+                reason="light_screens_without_significant_improvement",
                 **cost(state),
             )
             return

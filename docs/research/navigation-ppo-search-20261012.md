@@ -100,6 +100,14 @@ VRAM and I/O pressure, without adding per-service CPU, memory or swap quotas.
 The scheduler preserves the best complete screening checkpoint and the recent
 resumable states through the existing Results policy. Missing scores stay unknown.
 
+New workers also preserve each full screen's per-scene report, score and patience
+in the existing TensorBoard event stream before checkpoint retention can remove
+its directory. The prior writer recorded only the pass flag and overwrote its
+single latest-evaluation index; pruned historical reports cannot be reconstructed
+from those flags. The already-running controls keep their original writer;
+available reports were copied read-only to `tmp/navigation-ppo-review-20261014/`
+for this audit. This recording fix does not change optimization or acceptance.
+
 ## Acceptance and execution
 
 A candidate must pass full validation: each S01/S02/S03/D01/D02/D03 scene at
