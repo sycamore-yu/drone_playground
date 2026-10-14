@@ -6,8 +6,8 @@
 `e261127` 的时间；原始批准时刻未单独保存，不将提交时间冒充消息时间。
 本轮用户再次明确同意两项原则，重申记录时间为 `2026-10-14T12:20:24Z`。
 
-**Last checked:** `2026-10-14T13:24:00Z`（UTC）；集成决策基线 `d5710d1`，
-功能实现依据 `f9eb5c0`。集成分支现已收录同编号决策文档，功能代码尚未合入。
+**Last checked:** `2026-10-14T14:41:37Z`（UTC）；集成决策基线 `05aca1e`，
+功能实现依据 `60eb27b`。集成分支现已收录同编号决策文档，功能代码尚未合入。
 
 **Implementation:** 可选实现仅在功能分支 `d586425`，增加到新的 Navigation 训练筛查：
 `learning/progress_guard.py`、`simulation/runner.py`、
@@ -169,6 +169,12 @@ Zhang/Liu 学习代价还有同类的 3 m/s 参考速度；Fan 配方单独具�
 要求保持不变；本次启动和早期成绩不表示正式收敛。
 
 ## Related decisions and evidence
+
+本轮 `60eb27b` 为显式训练分布探针批次另保留最高完成率checkpoint，
+修复固定六场景全零时已学短距离抵达权重被滚动清理的缺口；不修改正式选模
+或自动回滚Actor。D01及20 m程序化任务已完成有限的配对回放与实际回报校准。
+完整六场景、多种子校准及稳定更新的唯一根因仍未完成；具体数值与本轮批准的
+静态数量调整见下方研究记录，参数调整不另立架构决定。
 
 - [ADR-0015](0015-three-stage-learning-acceptance.md)：三阶段验收与冻结选模。
 - [ADR-0018](0018-training-patience-and-frozen-selection.md)：旧的成功率 patience。

@@ -557,3 +557,121 @@ the launcher explicitly sets this worktree's `src` as its import path. Commands,
 resolved configurations, source identity and per-scene outcomes are stored per
 run; `study.json` is the scheduler snapshot. The finite queue ends with acceptance
 or an explicit negative/incomplete result, not an unbounded parameter sweep.
+
+## Follow-up: completion retention, hover and lighter static scenes
+
+Checked at `2026-10-14T14:41:37Z`. The analyzed speed-free baseline is
+`f9eb5c0`; implementation fixes and the independent static-density cohort are
+`60eb27b`, still outside integrated `v0.2`. Evidence below is from actual
+frozen-policy rollouts and Task/physics counterfactuals, not reward-based acceptance.
+Primary-worktree evidence: `tmp/navigation-stability-20261014/`.
+
+### Measured capability loss
+
+Depthu240 andu2160 were replayed from identical initial state hashes with
+separate whole policies. No horizontal/vertical checkpoint splicing was used.
+
+| Matched diagnostic | u240 | u2160 |
+|---|---:|---:|
+| D01, deterministic,8 episodes | 8/8 | 0/8 |
+| D01, sampled actions,8 episodes | 5/8 | 0/8 |
+| 20m procedural, deterministic,8 episodes | 6/8 | 6/8 |
+| D01 realized-return Critic RMSE | 10.42 | 73.18 |
+
+Late D01 failures are all collisions, mean flight5.54s, with height2.91–3.99m;
+this is distinct from the historical lower-height collapse. Initial world
+acceleration changed from about `[0.335,-0.119,-0.071]` to
+`[0.926,-0.685,-0.147]`m/s² in the first matched episode. The policy became
+more aggressive and its measured long-distance avoidance capability disappeared.
+The sampled-action control also failed, so the late failure is not explained
+solely by deterministic evaluation.
+
+Equal short-distance totals conceal a lost capability: only5 of the6 previously
+successful procedural episodes remain successful; world4 changes success to
+collision, while world0 gains a success. Report the paired success-set retention
+alongside completion count, not just6/8 versus6/8.
+
+The late Critic predicts initial D01 value−69.07; sampled realized return is
+−118.32. On1.6s prefixes it assigns higher bootstrapped returns to the ultimately
+colliding late policy in all8 pairs than to the successful old deterministic
+policy. At3.2s that ordering holds in only2/8 pairs, so it is evidence of a
+short-prefix calibration problem, not proof of one universal value-ranking error.
+Current PPO horizon32 at10Hz gives3.2s rollouts; gamma0.99/GAE lambda0.95 gives
+an approximately1.6s exponential trace scale. Long avoidance therefore depends
+strongly on value estimates beyond these short windows.
+
+Realized-return calibration is conditional on the recorded policy, and differs
+from stochastic, timeout-bootstrapped training targets. These diagnostics support
+distribution coverage, conservative actor updates and value calibration as next
+controlled experiments; they do not isolate a unique optimizer defect. LiDAR
+also loses long-distance completion with much lower KL-skip rates, and both
+policies have zero measured tanh saturation, ruling out either as a sufficient
+common explanation. Both20m pilots have now completed their4320-update budgets
+without acceptance.
+
+### Two separate near-goal findings
+
+The observed Fan u720/D01 policy settles near0.97m and times out. At recorded
+poses, setting unrecorded acceleration/jerk costs to zero gives a reward upper
+bound of−0.2101 per decision; those actual costs are nonpositive. The observed
+hover cannot be described as collecting a positive immediate reward there.
+
+Real-physics controllers initialized at those recorded final positions give:
+
+| Initial distance | Hold for remaining10s: discounted return | Approach and terminate: discounted return |
+|---|---:|---:|
+| about0.97m | −16.57 | +4.48; arrival in1.52s |
+| 0.51m | +81.98 | +4.18; arrival in0.37s |
+
+Both counterfactual controllers share freshly initialized attitude, velocity and
+controller history. This establishes reachability from the position and an
+objective conflict; it is not a replay of the exact unavailable internal
+controller state. The0.97m behavior is a suboptimal policy equilibrium. Its
+unique learning cause is not yet isolated.
+
+The0.51m counterexample independently proves a Fan reward defect: positive
+`alive` and `hover` reward continues outside the0.5m success sphere, while
+arrival terminates that reward stream without a separate arrival bonus. Correcting
+this terminal incentive requires a named reward experiment. It is not a complete
+explanation of the observed0.97m equilibrium and does not apply to the new
+minimum-time Depth/LiDAR profile, which has elapsed-time cost and arrival reward.
+
+Evidence files: `paired-summary.json`, `paired-old-stochastic-summary.json`,
+`bootstrap-ranking.json`, `training-metrics-summary.json`,
+`fan-reward-diagnosis.json`, `fan-boundary-diagnosis.json`, `findings.json`,
+`diagnosis.png`, and the underlying full traces.
+
+### Implemented retention fix and approved density reduction
+
+The old rolling checkpoint policy retains fixed-scene best, but can delete a
+procedural completion peak when all fixed scores are zero. Early LiDARu7205/8
+was lost this way; its append-only event evidence remains, and deleted weights
+cannot be reconstructed from it. Lateru36006/8 survives because it also scored
+1/48 on fixed scenes; incidental overlap does not ensure capability retention.
+`60eb27b` additionally
+retains the best completed training-distribution checkpoint in explicitly opted-in
+cohorts. It stays separate from formal selection. This is evidence preservation,
+not an actor rollback or a claim that future updates are stable.
+
+The generator already samples easy/medium/hard uniformly and static/dynamic with
+equal probability; it is not an ordered curriculum. Original static counts are
+41/81/162 with±8 jitter; dynamic50/100/200 with±8 jitter and about65% moving.
+User-approved static-world counts are now multiplied by0.7, giving ranges
+23–34,51–62,107–119. Dynamic worlds, obstacle sizes and sampled RNG remain
+unchanged. Default scale1 preserves historical geometry identity.
+
+Independent `--suite static-density` uses the two20m recipes and changes only
+`simulation.procedural.static_obstacle_scale=0.7`; it is recorded through
+optim-agent in primary `results/navigation_static_density_v01` and
+`.optim-agent-runs/navigation_static_density_v01`. Original80m jobs were paused
+with recovery checkpointsu241/u480;80/10/30/50m comparisons remain pending.
+New lighter-static Depth/LiDAR pilots are running. Early shorter-distance gains
+have not produced formal long-distance acceptance.
+
+The three real density previews contain23/58/111 static obstacles and use the
+existing Depthu240 actor only to inspect the new geometry. All installed-viewer
+and native-decoder checks passed after trimming each replay directory to
+`episode.mj_unroll` and `rscope_meta.pkl`. The branch's temporary viewing entry
+`tmp/rscope-inspection-navigation-distance-v01/` lists the three lighter static
+grades, a dynamic flight and the Fan hover. The complete preview index remains
+at primary `results/navigation_distance_v01/inspection/README.md`.
