@@ -308,6 +308,32 @@ independent terminal-control defect in the unmodified late policy: combining
 policies changes visited states and control coordination. They show that fixing
 the observed height symptom alone does not establish task acceptance.
 
+Trace clarification at `2026-10-14T12:20:24Z`: representative S01 hybrid episode0
+ends at `[95.2832,1.0376,2.5728]`, with goal `[98,0,3]`. Its remaining distance
+is2.9394m:2.9082m horizontally and0.4272m vertically. During the final100
+decisions the newer policy's mean normalized horizontal action is approximately
+`[0.000117,0.000000666]`; the executed older vertical action is approximately
+`0.00000147`. Under the saved +/-6m/s² action contract these requests are near
+zero. At the same state, the newer policy's vertical request is about+0.97m/s²,
+but the intervention suppresses it; the older horizontal request is about
+`[2.03,-0.48]`m/s² and is also not executed. Thus the observed hybrid has a
+near-hover closed-loop equilibrium even though its components disagree on how
+to proceed. This is evidence about the mixed controller, not proof that the
+unaltered newer policy lacks horizontal terminal control. Both GRUs see the
+live hybrid states; no prerecorded action time series is substituted.
+
+There is no configured2.94m stopping radius: the success radius is0.5m.
+The old goal feature equals a body-frame version of
+`delta / distance * min(3.0,distance)`. Below3m it is still a nonzero goal-error
+vector, so the encoding itself does not command a stop at3m. The actual
+stationary policy output is directly observable; a causal claim that the3m
+feature transition creates that equilibrium needs a separate matched experiment.
+The3m/s reference was introduced in implementation commit `b377e13` and is
+also used by the default Task velocity cost and named perception cost. It is an
+implementation assumption, not a user-imposed mission speed. The mission is
+safe arrival as quickly as physically feasible; reference/reward changes must
+remain separately identified experiments.
+
 Reward did penalize these failures. Immediately before the 35 lower-bound
 terminations, the final Critic predicted values from -91.63 to -33.57 (mean
 -62.75), whereas the next terminal reward was -260.77 to -260.59 (mean -260.69).

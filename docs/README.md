@@ -32,6 +32,7 @@
 | [0021](adr/0021-task-owned-reward-contract.md) | Task/Environment 拥有任务奖励、进度和失败惩罚；Learning 只组合任务成本与网络辅助损失 |
 | [0022](adr/0022-navigation-reward-ablation.md) | Navigation PPO 单变量奖励消融与配对验证 |
 | [0023](adr/0023-navigation-world-rotation-observation.md) | Accepted：独立 Navigation PPO 补充世界朝向；仅本功能分支实现并通过定向检查，未合入 `v0.2`，收敛未验收 |
+| [0024](adr/0024-navigation-ppo-progress-regression-screening.md) | Accepted：真实目标进度补充成功率早停，已学能力退化纳入选择；决策文档已收录集成索引，可选实现仅本功能分支，运行校准及收敛验收未完成 |
 
 当前 `v0.2` 合入 Sensor P0/P1 与 RL/Brax、Scratch Matrix、奖励消融。
 新训练使用 Orbax/TensorBoard v3；旧 v2 ZIP 产物和冻结报告按原协议读取，
