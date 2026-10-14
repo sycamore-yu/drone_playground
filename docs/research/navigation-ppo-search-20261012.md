@@ -188,6 +188,11 @@ manager calls `tell` once when real results finish, including recovery after a
 manager restart. Intentional stops are `pruned` with the latest valid full-screen
 metric; the best retained checkpoint remains separately recorded. Partial probes
 and absent evaluations never become zero-valued objective observations.
+Reserved-but-unlaunched proposals reuse their exact saved command and must
+resolve to the same config hash. Launcher timeouts are recorded separately and
+never overwrite worker-owned `run.json`; an ambiguous launch without a worker
+record is held for reconciliation. Pending pruning requests are retried after
+manager restart until the signal is acknowledged.
 
 Native LiDAR pilots now have an additional scheduler stop: after at least
 1,105,920 interactions, stop if two complete screens have failed to improve by
@@ -237,9 +242,18 @@ not distribution bounds. Procedural training resamples geometry; each screening
 scene uses one fixed map and eight small start/velocity/yaw perturbations.
 Therefore the eight outcomes within a scene are correlated, and jumps by several
 successes do not establish stable generalization. This audit found no contract
-drift; it does not separate optimization collapse from distribution-generalization
-failure. A same-checkpoint deterministic comparison on training-distribution and
-fixed maps is the next diagnostic if this distinction remains unresolved.
+drift. Actual episode-table seed/world/geometry identifiers also matched between
+best and final weights for all 48 screening episodes in each audited run.
+
+A subsequent frozen-policy diagnostic evaluated Depth mixed checkpoints 2880 and
+4320 on the same eight procedural episodes, seed base 1,000,000, deterministic
+actions, and unchanged training distribution. Success dropped from 7/8 to 4/8
+(the final failures were three out-of-bounds and one collision), alongside the
+fixed-screen drop from 26/48 to 0/48. This supports in-distribution policy
+regression as well as a generalization gap; eight diagnostic episodes do not
+quantify the contribution of either. No optimization updates or formal acceptance
+results were changed. Reports are under the primary checkout's
+`tmp/navigation-ppo-review-20261014/training-distribution-probe/`.
 Evidence: primary checkout
 `tmp/navigation-ppo-review-20261014/screening-contract-audit.json`.
 

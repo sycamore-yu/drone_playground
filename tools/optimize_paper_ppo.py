@@ -259,6 +259,10 @@ def full_screen_evidence(directory):
 def next_trial(records):
     """Prioritize independent confirmations, then one informed candidate per family."""
     stable = stable_modalities(records) if NAVIGATION_SEARCH else set()
+    for key, record in records.items():
+        if record["status"] == "reserved":
+            case, seed = key.rsplit("_s", 1)
+            return case, int(seed)
     for case in CASES:
         if MODALITY[CASES[case][0]] in stable:
             continue
@@ -301,7 +305,7 @@ def active_units():
             "--user",
             "list-units",
             "--type=service",
-            "--state=running",
+            "--state=running,activating",
             "--no-legend",
             "--plain",
             "--no-pager",
@@ -347,6 +351,13 @@ def collect(root, previous):
             running = f"{unit_name(key)}.service" in units
             record = json.loads(identity.read_text()) if identity.exists() else {}
             status = record.get("status", "running" if running else "missing")
+            if not identity.exists() and not running and (directory / "trial.json").exists():
+                error = directory / "launch_error.json"
+                status = (
+                    ("failed" if json.loads(error.read_text())["status"] == "failed" else "stale")
+                    if error.exists()
+                    else "reserved"
+                )
             actual_status = status
             if status == "interrupted" and (directory / "study_pruned.json").is_file():
                 status = "pruned"
@@ -407,19 +418,23 @@ def apply_search_pruning(records):
     for key, record in records.items():
         case = key.rsplit("_s", 1)[0]
         marker = Path(record["directory"]) / "study_pruned.json"
-        if marker.exists() or not prune_lidar_candidate(case, record):
+        if record["status"] != "running":
             continue
-        write_json(
-            marker,
-            {
+        request = json.loads(marker.read_text()) if marker.exists() else None
+        if request is None:
+            if not prune_lidar_candidate(case, record):
+                continue
+            request = {
                 "policy": ALLOCATION_POLICY,
                 "observed_at_utc": datetime.now(UTC).isoformat(),
                 "reason": "two_stagnant_full_screens_after_lidar_minimum",
                 "latest": record["latest"],
                 "updates_at_request": record["updates"],
                 "interactions_at_request": record["interactions"],
-            },
-        )
+            }
+            write_json(marker, request)
+        if request.get("signal_sent_at_utc"):
+            continue
         try:
             subprocess.run(
                 [
@@ -433,9 +448,11 @@ def apply_search_pruning(records):
                 check=True,
                 timeout=15,
             )
-        except subprocess.SubprocessError:
-            # A worker can finish between collection and signaling; allow a later retry.
-            marker.rename(marker.with_name("study_prune_signal_failed.json"))
+        except subprocess.SubprocessError as error:
+            request["last_signal_error"] = str(error)
+        else:
+            request["signal_sent_at_utc"] = datetime.now(UTC).isoformat()
+        write_json(marker, request)
 
 
 def sync_optim_study(study, directory, records):
@@ -491,9 +508,19 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
     """Validate Hydra, reserve a new run, and launch without CPU/memory/swap quotas."""
     key = f"{case}_s{seed}"
     out = root / key
+    saved_launch = None
     if out.exists():
-        raise FileExistsError(f"Never overwrite a previous trial: {out}")
-    options = trial_options(case, seed, out)
+        if (
+            not (out / "trial.json").exists()
+            or (out / "run.json").exists()
+            or (out / "launch_error.json").exists()
+            or f"{unit_name(key)}.service" in active_units()
+        ):
+            raise FileExistsError(f"Never overwrite a previous trial: {out}")
+        saved_launch = json.loads((out / "trial.json").read_text())
+    options = saved_launch["argv"][4:] if saved_launch else trial_options(case, seed, out)
+    if saved_launch:
+        python = Path(saved_launch["argv"][0])
     env = {
         **os.environ,
         "SCIPY_ARRAY_API": "1",
@@ -510,6 +537,12 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
         text=True,
         timeout=90,
     )
+    if (
+        saved_launch
+        and hashlib.sha256(checked.stdout.encode()).hexdigest()
+        != saved_launch["composed_yaml_sha256"]
+    ):
+        raise ValueError("Reserved proposal now resolves to a different configuration")
     if NAVIGATION_SEARCH:
         from omegaconf import OmegaConf
 
@@ -526,9 +559,9 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
             raise ValueError(
                 "Search changed declared starts, fixed-cohort or scratch-init contract"
             )
-    out.mkdir()
+    out.mkdir(exist_ok=saved_launch is not None)
     command = [str(python), "-u", "-m", "drone_playground.cli", *options]
-    launch_record = {
+    launch_record = saved_launch or {
         "case": case,
         "seed": seed,
         "family": CASES[case][0],
@@ -541,26 +574,33 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
         ).strip(),
         "allocation_policy": ALLOCATION_POLICY if NAVIGATION_SEARCH else None,
     }
-    write_json(out / "trial.json", launch_record)
+    if saved_launch is None:
+        write_json(out / "trial.json", launch_record)
     trial = None
     if study is not None:
         params = {"case_id": key, "family": CASES[case][0], "seed": seed, "overrides": options}
         trial_dir = optim_directory / key
         trial_dir.mkdir(exist_ok=True)
-        write_json(
-            trial_dir / "manifest.json",
-            {
-                "parameters": params,
-                "launch": launch_record,
-                "cwd": str(project),
-                "output": str(out),
-                "selection_evidence": selection,
-                "allocation_policy": ALLOCATION_POLICY,
-                "status": "proposed",
-                "observed_at_utc": datetime.now(UTC).isoformat(),
-            },
-        )
-        trial = study.ask(params)
+        manifest_path = trial_dir / "manifest.json"
+        if not manifest_path.exists():
+            write_json(
+                manifest_path,
+                {
+                    "parameters": params,
+                    "launch": launch_record,
+                    "cwd": str(project),
+                    "output": str(out),
+                    "selection_evidence": selection,
+                    "allocation_policy": ALLOCATION_POLICY,
+                    "status": "proposed",
+                    "observed_at_utc": datetime.now(UTC).isoformat(),
+                },
+            )
+        trial = next((t for t in study.trials if t.params["case_id"] == key), None)
+        if trial is None:
+            trial = study.ask(params)
+        elif trial.state != "running" or trial.params != params:
+            raise ValueError("Reserved proposal conflicts with optimizer history")
     log = root / ".scheduler" / f"{key}.log"
     exported = [
         "env",
@@ -590,18 +630,14 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
             timeout=30,
         )
     except subprocess.SubprocessError as error:
-        (out / "run.json").write_text(
-            json.dumps(
-                {
-                    "status": "failed",
-                    "error": f"Worker launch failed: {error}",
-                }
-            )
-            + "\n"
+        # A timeout can occur after systemd accepted the request. Worker records are authoritative.
+        worker_owned = (out / "run.json").exists() or f"{unit_name(key)}.service" in active_units()
+        status = (
+            "unknown" if worker_owned or isinstance(error, subprocess.TimeoutExpired) else "failed"
         )
-        if trial is not None:
+        write_json(out / "launch_error.json", {"status": status, "error": str(error)})
+        if trial is not None and status == "failed":
             study.tell(trial, state="failed")
-        raise
 
 
 def main():

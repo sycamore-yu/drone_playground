@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -255,6 +256,68 @@ def test_optimizer_recovers_once_and_records_pruned_latest_not_peak(search, tmp_
     assert resumed.trials[0].state == "pruned"
     assert resumed.trials[0].value == 0.0
     assert resumed.trials[0].intermediate[-1] == (2160, 0.0)
+
+
+def test_restart_retries_pending_prune_signal_once(search, tmp_path, monkeypatch):
+    """A crash between writing the request and signaling cannot lose the stop request."""
+    search.configure_navigation_search()
+    marker = tmp_path / "study_pruned.json"
+    marker.write_text(json.dumps({"policy": search.ALLOCATION_POLICY}))
+    calls = []
+    monkeypatch.setattr(search.subprocess, "run", lambda argv, **kwargs: calls.append(argv))
+    records = {"lidar_base_s0": {"status": "running", "directory": str(tmp_path)}}
+    search.apply_search_pruning(records)
+    search.apply_search_pruning(records)
+    assert len(calls) == 1 and "--signal=SIGINT" in calls[0]
+    assert json.loads(marker.read_text())["signal_sent_at_utc"]
+
+
+def test_launch_timeout_preserves_worker_identity(search, tmp_path, monkeypatch):
+    """A timed-out systemd client is not proof that the trainer failed to start."""
+    root = tmp_path / "results"
+    root.mkdir()
+    identity = root / "fan_margin2_s0/run.json"
+    worker = {"status": "running", "config_sha256": "worker-config", "git_commit": "source"}
+
+    def run(argv, **kwargs):
+        if argv[0] == "systemd-run":
+            identity.write_text(json.dumps(worker))
+            raise subprocess.TimeoutExpired(argv, 30)
+        return subprocess.CompletedProcess(argv, 0, stdout="resolved")
+
+    monkeypatch.setattr(search.subprocess, "run", run)
+    monkeypatch.setattr(search.subprocess, "check_output", lambda *a, **k: "source\n")
+    search.launch(tmp_path, root, Path("/python"), "fan_margin2", 0)
+    assert json.loads(identity.read_text()) == worker
+    assert json.loads((identity.parent / "launch_error.json").read_text())["status"] == "unknown"
+
+
+def test_reserved_proposal_reuses_exact_command_after_restart(search, tmp_path, monkeypatch):
+    """An interrupted ask/launch window resumes its saved configuration without overwrite."""
+    root = tmp_path / "results"
+    root.mkdir()
+    commands = []
+
+    def run(argv, **kwargs):
+        if argv[0] == "systemd-run":
+            commands.append(argv)
+            if len(commands) == 1:
+                raise KeyboardInterrupt
+        return subprocess.CompletedProcess(argv, 0, stdout="resolved")
+
+    monkeypatch.setattr(search.subprocess, "run", run)
+    monkeypatch.setattr(search.subprocess, "check_output", lambda *a, **k: "source\n")
+    monkeypatch.setattr(search, "active_units", set)
+    with pytest.raises(KeyboardInterrupt):
+        search.launch(tmp_path, root, Path("/python"), "fan_margin2", 0)
+    trial = root / "fan_margin2_s0/trial.json"
+    original = trial.read_bytes()
+    records = search.collect(root, {})
+    assert records["fan_margin2_s0"]["status"] == "reserved"
+    assert search.next_trial(records) == ("fan_margin2", 0)
+    search.launch(tmp_path, root, Path("/different-python"), "fan_margin2", 0)
+    assert trial.read_bytes() == original
+    assert commands[0] == commands[1]
 
 
 def test_stable_acceptance_requires_three_seeds_of_the_same_recipe(search):
