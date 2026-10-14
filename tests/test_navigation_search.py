@@ -18,14 +18,13 @@ def search():
     return module
 
 
-def test_four_architectures_are_explicit_without_restarting_external_baselines(search):
-    """The new preset includes old CNN/PointNet and both paper representations."""
+def test_four_architectures_require_fresh_matched_baselines(search):
+    """Historical Fan/VisFly runs with different controls cannot replace fresh controls."""
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
-    search.configure_navigation_search(Path("/results"))
+    search.configure_navigation_search()
     assert {value[0] for value in search.CASES.values()} == {"depth", "lidar", "fan", "visfly"}
-    assert len(search.CASES) == 12
-    assert search.ADOPTED_RUNS["fan_base_s0"].name == "fan_margin2_s0"
-    assert search.ADOPTED_RUNS["visfly_base_s0"].name == "visfly_shared_s0"
+    assert len(search.CASES) == 14
+    assert search.BASE_UNITS == {}
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["fan_base_s0"]["status"] = "running"
     records["visfly_base_s0"]["status"] = "early_stopped"
@@ -34,10 +33,28 @@ def test_four_architectures_are_explicit_without_restarting_external_baselines(s
     assert search.next_trial(records) == ("lidar_base", 0)
 
 
+def test_accepted_modality_stops_competing_recipe_replication(search):
+    """Three accepted Depth seeds prevent another visual recipe from consuming seeds."""
+    search.configure_navigation_search()
+    records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
+    for seed in range(3):
+        records[f"depth_base_s{seed}"]["status"] = "accepted"
+    records["visfly_base_s0"]["status"] = "accepted"
+    assert search.next_trial(records) == ("lidar_base", 0)
+
+
+def test_interrupted_family_does_not_prevent_independent_baseline(search):
+    """Preserve the interrupted run while allowing unrelated sensor work."""
+    search.configure_navigation_search()
+    records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
+    records["depth_base_s0"]["status"] = "interrupted"
+    assert search.next_trial(records) == ("lidar_base", 0)
+
+
 def test_search_confirms_real_acceptance_before_other_candidates(search):
     """An accepted seed gets replication; failures and probe scores do not."""
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
-    search.configure_navigation_search(Path("/results"))
+    search.configure_navigation_search()
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["depth_base_s0"]["status"] = "accepted"
     assert search.next_trial(records) == ("depth_base", 1)
@@ -66,7 +83,7 @@ def test_unobserved_candidate_scores_stay_unknown(search, tmp_path):
 def test_parameter_changes_are_isolated_per_candidate(search):
     """A candidate changes one recipe field, not an undisclosed parameter bundle."""
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
-    search.configure_navigation_search(Path("/results"))
+    search.configure_navigation_search()
     for case, (_, _, parent) in search.CASES.items():
         if parent is not None:
             assert len(search.CASE_OPTIONS[case]) == 1, case
@@ -81,13 +98,15 @@ def test_parameter_changes_are_isolated_per_candidate(search):
         "visfly_lowstd",
         "depth_goal",
         "lidar_goal",
+        "depth_mixed",
+        "lidar_mixed",
         "fan_exploration",
         "visfly_hoverthrust",
     ],
 )
 def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
     """Check resolved configs rather than only trusting override strings."""
-    search.configure_navigation_search(Path("/results"))
+    search.configure_navigation_search()
     parent = search.CASES[case][2]
     config_dir = str(Path(__file__).parents[1] / "src/drone_playground/configs")
     with initialize_config_dir(version_base=None, config_dir=config_dir):
@@ -108,9 +127,18 @@ def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
     assert candidate["initial_checkpoint"] is None and candidate["resume"] is None
 
 
+def test_sampling_diagnostic_precedes_more_architecture_trials(search):
+    """After a failed matched control, spend the next pilot on the approved sampling test."""
+    search.configure_navigation_search()
+    records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
+    records["depth_base_s0"]["status"] = "early_stopped"
+    records["lidar_base_s0"]["status"] = "running"
+    assert search.next_trial(records) == ("depth_mixed", 0)
+
+
 def test_stable_acceptance_requires_three_seeds_of_the_same_recipe(search):
     """Do not combine unrelated lucky seeds into a supposedly stable policy."""
-    search.configure_navigation_search(Path("/results"))
+    search.configure_navigation_search()
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     for key in ("depth_base_s0", "depth_lowlr_s1", "visfly_lowstd_s2"):
         records[key]["status"] = "accepted"

@@ -495,6 +495,45 @@ def test_failed_evaluation_keeps_index_for_resume(config, training, monkeypatch)
     assert state.updates == 1 and state.interactions == 10
 
 
+@pytest.mark.parametrize("interval", [2, 4])
+def test_resume_retries_full_budget_screen_without_another_update(
+    config, training, monkeypatch, interval
+):
+    """A budget screen survives interruption both on and between scheduled evaluations."""
+    config.task.name = "navigation"
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.learning.evaluation_interval = interval
+    OmegaConf.update(config, "learning.max_interactions", 20, force_add=True)
+    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
+    OmegaConf.update(
+        config, "screening", {"probe_between_full": True, "full_every": 3}, force_add=True
+    )
+    training.stop_at = None
+    calls = []
+
+    def evaluate(cfg, directory, *, evaluation_index=0, **kwargs):
+        calls.append((directory.name, evaluation_index, list(cfg.benchmark.scenes)))
+        if len(calls) == 1:
+            raise RuntimeError("budget screen interrupted")
+        return {
+            "complete": True,
+            "reports": {scene: {"episodes": 8, "successes": 0} for scene in cfg.benchmark.scenes},
+        }
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    with pytest.raises(RuntimeError, match="budget screen interrupted"):
+        cli.train(config, training.record)
+    config.resume = str(training.path)
+    cli.train(config, training.record)
+    assert calls == [("screening", 1, ["S01", "S02", "S03", "D01", "D02", "D03"])] * 2
+    state, metadata = load_state(training.path, SmallState())
+    assert state.updates == 2 and state.interactions == 20
+    assert metadata["provenance"]["evaluation_index"] == 1
+    assert training.record.identity["status"] == "budget_exhausted"
+    assert training.record.identity["session_interactions"] == 0
+
+
 def test_failed_evaluation_resets_saved_consecutive_count(config, training):
     """Verify failed evaluation resets saved consecutive count."""
     training.failed_evaluations = {2}

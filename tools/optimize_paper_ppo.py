@@ -1,7 +1,7 @@
 """Bounded measured search for paper-derived PPO, using real fixed-screen evidence.
 
 The navigation preset compares the original CNN/PointNet and paper policies.
-Existing v04 baselines are adopted, never restarted. Only an accepted frozen
+Each navigation baseline uses the same controls as its treatments. An accepted frozen
 benchmark promotes a recipe to seeds 1/2. No model agent is launched.
 """
 
@@ -38,15 +38,14 @@ FINISHED = {
     "pruned",
     "budget_exhausted",
 }
-ADOPTED_RUNS = {}
 CASE_OPTIONS = {}
 NAVIGATION_SEARCH = False
 MODALITY = {"depth": "depth", "visfly": "depth", "lidar": "lidar", "fan": "lidar"}
 
 
-def configure_navigation_search(results_root):
-    """Add the two original architectures and retain verified paper baselines."""
-    global NAVIGATION_SEARCH, CASES, BASE_UNITS, ADOPTED_RUNS, CASE_OPTIONS
+def configure_navigation_search():
+    """Compare all four architectures with fresh, matched family baselines."""
+    global NAVIGATION_SEARCH, CASES, BASE_UNITS, CASE_OPTIONS
     NAVIGATION_SEARCH = True
     depth = "navigation_search_depth"
     lidar = "navigation_search_lidar"
@@ -63,6 +62,8 @@ def configure_navigation_search(results_root):
         "visfly_lowstd": ("visfly", visfly, "visfly_base"),
         "depth_goal": ("depth", depth, "depth_base"),
         "lidar_goal": ("lidar", lidar, "lidar_base"),
+        "depth_mixed": ("depth", depth, "depth_base"),
+        "lidar_mixed": ("lidar", lidar, "lidar_base"),
         "fan_exploration": ("fan", fan, "fan_base"),
         "visfly_hoverthrust": ("visfly", visfly, "visfly_base"),
     }
@@ -73,17 +74,12 @@ def configure_navigation_search(results_root):
         "visfly_lowstd": ["learning.options.initial_log_std=-1.0"],
         "depth_goal": ["simulation.navigation_goal_observation=true"],
         "lidar_goal": ["simulation.navigation_goal_observation=true"],
+        "depth_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
+        "lidar_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "fan_exploration": ["learning.options.initial_log_std=-1.5"],
         "visfly_hoverthrust": ["method.action.thrust_to_weight_bounds=[0.0,2.0]"],
     }
-    ADOPTED_RUNS = {
-        "fan_base_s0": results_root / "paper_ppo_v04/fan_margin2_s0",
-        "visfly_base_s0": results_root / "paper_ppo_v04/visfly_shared_s0",
-    }
-    BASE_UNITS = {
-        "fan_base_s0": "dp-paper-study-fan-margin2-s0",
-        "visfly_base_s0": "dp-paper-study-visfly-shared-s0",
-    }
+    BASE_UNITS = {}
 
 
 def interaction_controls(family, *, num_envs, horizon):
@@ -119,11 +115,19 @@ def stable_modalities(records):
 def navigation_candidate(records):
     """Cover each architecture first, then prefer measured improvements fairly."""
     stable = stable_modalities(records)
+    # The approved sampling diagnostic takes priority after its own matched control.
+    for case in ("depth_mixed", "lidar_mixed"):
+        family, _, parent = CASES[case]
+        if (
+            MODALITY[family] not in stable
+            and records[f"{case}_s0"]["status"] == "missing"
+            and records[f"{parent}_s0"]["status"] in FINISHED
+        ):
+            return case, 0
     for case, (family, _, parent) in CASES.items():
         key = f"{case}_s0"
         if (
             parent is None
-            and key not in ADOPTED_RUNS
             and records[key]["status"] == "missing"
             and MODALITY[family] not in stable
         ):
@@ -200,7 +204,10 @@ def full_screen_evidence(directory):
 
 def next_trial(records):
     """Prioritize independent confirmations, then one informed candidate per family."""
+    stable = stable_modalities(records) if NAVIGATION_SEARCH else set()
     for case in CASES:
+        if MODALITY[CASES[case][0]] in stable:
+            continue
         for seed in (1, 2):
             earlier = [records[f"{case}_s{i}"]["status"] for i in range(seed)]
             if all(status == "accepted" for status in earlier) and (
@@ -281,7 +288,7 @@ def collect(root, previous):
     for case in CASES:
         for seed in range(3):
             key = f"{case}_s{seed}"
-            directory = ADOPTED_RUNS.get(key, root / key)
+            directory = root / key
             identity = directory / "run.json"
             running = f"{unit_name(key)}.service" in units
             record = json.loads(identity.read_text()) if identity.exists() else {}
@@ -293,7 +300,7 @@ def collect(root, previous):
                 status = "stale"
             candidate = full_screen_evidence(directory)
             best = previous.get(key, {}).get("best")
-            if candidate is not None and (best is None or candidate["value"] > best["value"]):
+            if candidate is not None and (best is None or candidate["value"] >= best["value"]):
                 best = candidate
             records[key] = {
                 "status": status,
@@ -303,7 +310,6 @@ def collect(root, previous):
                 "configuration_sha256": record.get("config_sha256"),
                 "source_sha256": record.get("source_sha256"),
                 "directory": str(directory),
-                "adopted": key in ADOPTED_RUNS,
                 "error": record.get("error"),
             }
     return records
@@ -336,13 +342,16 @@ def launch(project, root, python, case, seed):
         from omegaconf import OmegaConf
 
         resolved = OmegaConf.to_container(OmegaConf.create(checked.stdout), resolve=True)
+        minimum_distance = 0.0 if case in {"depth_mixed", "lidar_mixed"} else 80.0
         if (
-            resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != 80.0
+            resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != minimum_distance
             or not resolved["benchmark"]["fixed_checkpoint_seeds"]
             or resolved["initial_checkpoint"] is not None
             or resolved["resume"] is not None
         ):
-            raise ValueError("Search changed long-course, fixed-cohort or scratch-init contract")
+            raise ValueError(
+                "Search changed declared starts, fixed-cohort or scratch-init contract"
+            )
     out.mkdir()
     command = [str(python), "-u", "-m", "drone_playground.cli", *options]
     (out / "trial.json").write_text(
@@ -405,10 +414,7 @@ def main():
     if args.max_parallel < 1:
         raise ValueError("max-parallel must be positive")
     if args.suite == "navigation":
-        configure_navigation_search(args.root.parent)
-        missing = [str(path) for path in ADOPTED_RUNS.values() if not (path / "run.json").exists()]
-        if missing:
-            raise FileNotFoundError(f"The adopted paper baselines are missing: {missing}")
+        configure_navigation_search()
     snapshot = args.root / "study.json"
     if args.mode == "status":
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}
@@ -420,6 +426,10 @@ def main():
     with (directory / "study.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}
+        if any(record.get("adopted") for record in previous.values()):
+            raise ValueError(
+                "Historical adopted-control studies are read-only; use a new result root"
+            )
         while True:
             records = collect(args.root, previous)
             status = {
@@ -442,11 +452,14 @@ def main():
                 if record["status"] in {"stale", "interrupted"}
             ]
             complete = candidate is None and not active
-            status["status"] = "blocked" if blocked else "finished" if complete else "running"
+            status["status"] = (
+                "blocked" if blocked and complete else "finished" if complete else "running"
+            )
+            status["interrupted_trials"] = blocked
             temporary = snapshot.with_suffix(".tmp")
             temporary.write_text(json.dumps(status, indent=2) + "\n")
             temporary.replace(snapshot)
-            if blocked or complete:
+            if complete:
                 print(json.dumps(status, indent=2), flush=True)
                 return
             if candidate is not None and training_process_count() < args.max_parallel:

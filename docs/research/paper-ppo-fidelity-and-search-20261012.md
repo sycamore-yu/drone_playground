@@ -1,5 +1,10 @@
 # Paper PPO: source audit and measured search
 
+This records the 12 October transfers. The current matched-control study and
+14 October source/sensor audit are in
+[Navigation PPO convergence](navigation-ppo-search-20261012.md). Historical
+service states below describe that earlier run, not current live processes.
+
 ## Finding
 
 Earlier Fan/VisFly experiments changed policy representations but retained the
@@ -129,9 +134,8 @@ and VRAM before adding a job. Existing machine/account-level limits are unchange
 
 ```bash
 cd /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/paper-ppo-fan-visfly-v01
-PY=/home/tong/tongworkspace/simulation_dev/new_drone_playground/.pixi/envs/default/bin/python
 ROOT=/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/paper_ppo_v04
-PYTHONPATH=src "$PY" tools/optimize_paper_ppo.py status --root "$ROOT" --python "$PY"
+pixi run python tools/optimize_paper_ppo.py status --root "$ROOT"
 ```
 
 The read-only status command is safe while the manager is running. Full training

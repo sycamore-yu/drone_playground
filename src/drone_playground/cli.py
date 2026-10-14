@@ -274,10 +274,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
             screening_progress = progress.get("screening_progress", {})
             best_screen_score = screening_progress.get("best_score")
             stagnant_screens = int(screening_progress.get("stagnant_screens", 0))
-        pending_evaluation = (
-            int(state.updates) % config.learning.evaluation_interval == 0
-            and evaluation_index < int(state.updates) // config.learning.evaluation_interval
+        interval = config.learning.evaluation_interval
+        at_budget = training_budget_reached(int(state.interactions), max_interactions)
+        expected_evaluations = int(state.updates) // interval + int(
+            at_budget and int(state.updates) % interval != 0
         )
+        pending_evaluation = (
+            int(state.updates) % interval == 0 or at_budget
+        ) and evaluation_index < expected_evaluations
         record.event("resumed", checkpoint=str(config.resume), update=int(state.updates))
     if sampling is not None:
         record.identity["training_sampling"] = sampling
@@ -531,7 +535,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
 
     try:
         if pending_evaluation:
-            evaluate_checkpoint()
+            evaluate_checkpoint(
+                force_full=training_budget_reached(int(state.interactions), max_interactions)
+            )
         while (
             not stop_requested
             and not patience_exhausted
