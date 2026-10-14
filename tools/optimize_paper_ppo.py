@@ -129,6 +129,8 @@ def navigation_candidate(records):
         "lidar_mixed",
         "depth_world_rotation",
         "lidar_world_rotation",
+        "depth_lowlr",
+        "lidar_lowlr",
         "depth_fixed_heading",
         "lidar_fixed_heading",
     ):

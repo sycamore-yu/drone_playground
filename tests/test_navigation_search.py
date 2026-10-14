@@ -150,6 +150,12 @@ def test_approved_rotation_input_precedes_fixed_heading_workaround(search):
     for case in ("depth_base", "lidar_base", "depth_mixed", "lidar_mixed"):
         records[f"{case}_s0"]["status"] = "early_stopped"
     assert search.next_trial(records) == ("depth_world_rotation", 0)
+    for case in ("depth_world_rotation", "lidar_world_rotation"):
+        records[f"{case}_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("depth_lowlr", 0)
+    for case in ("depth_lowlr", "lidar_lowlr"):
+        records[f"{case}_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("depth_fixed_heading", 0)
 
 
 def test_stable_acceptance_requires_three_seeds_of_the_same_recipe(search):

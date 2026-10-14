@@ -67,8 +67,10 @@ remain fixed. This parameter decision does not approve a new observation or mode
 | VisFly | Shared visual encoder, fresh current-sensor control | Initial log std -1; thrust range 0–2 times weight |
 
 There are 18 seed-zero slots. Original Depth/LiDAR controls run first. Their
-mixed-start, world-rotation and fixed-heading diagnostics take priority once their
-matched controls finish.
+mixed-start, world-rotation, lower-Actor-LR and fixed-heading diagnostics take
+priority in that order once their matched controls finish. The observed Depth
+screening regression and frequent KL skips justify evaluating its existing LR
+treatment before spending more interactions on the paper transfers.
 A frozen-benchmark pass promotes the same recipe to independent seeds1 and2.
 Once a sensor modality has three accepted seeds of one recipe, no competing
 recipe or replication for that modality is launched. Interrupted trials remain
