@@ -19,12 +19,18 @@ path = export_replay(
     measurements=world_hits,  # 长度 T，每帧 (N, 3) 世界坐标命中点
     plans=planned_positions,  # 长度 T，每帧 (M, 3) 世界坐标规划采样点
     sensor_times=capture_times,  # 可选：长度 T，运行时真正的测量采集时刻
+    scene_body_positions=recorded_obstacle_positions,  # 可选：{mocap body名称: (T,3)}
 )
 ```
 
 `directory` 必须不存在或为空；每个回合独立目录，已有记录不会覆盖。
 返回 `episode.mj_unroll` 的绝对路径。同目录包含 `rscope_meta.pkl`、`scene.xml`
 和重命名后的资源文件。Metadata 也嵌入全部资源，因此整个目录可以搬到另一台机器。
+
+程序化场景先保存本回合实际抽样的障碍几何MJCF，再以
+`scene_body_positions` 传入已记录的逐帧动态障碍世界位置；body须为场景
+mocap且不能使用无人机或回放叠加物名称。记录必须有限并与飞行帧对齐。
+极小位移不生成小于1微米的轨迹显示胶囊，所有原始无人机位姿仍完整保存。
 
 ## 测量与规划输入
 

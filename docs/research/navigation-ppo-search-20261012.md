@@ -479,6 +479,59 @@ for this audit. This recording fix does not change optimization or acceptance.
 
 ## Acceptance and execution
 
+### Speed-free start-distance controls (2026-10-14)
+
+User-authorized distance controls are implemented in `f9eb5c0`, outside the
+integrated `v0.2` code. `--suite distance` launches separate Depth/LiDAR seed0
+runs in order 20m, 80m, 10m, 30m, 50m. Within each sensor family only
+`simulation.procedural.start_goal_distance_range_m=[d,d]` differs. This samples
+actual 3D goal distance with collision-free starts and matched obstacle RNG.
+Changing the old `min_start_goal_distance_m` to20 did not give20m starts.
+
+All controls use relative goal position, world rotation input, privileged critic,
+world acceleration commands, and Task `minimum_time_navigation`. The common
+baseline removes the3m/s reference and velocity-tracking learning loss; elapsed
+time, progress, clearance, action smoothness and safety penalties remain. Comparing
+these runs with old recipes cannot isolate distance or reward effects. The matched
+20m-versus80m controls provide that comparison within the new baseline.
+
+Each pilot has2,211,840 transitions (4320 updates). Zero-success patience starts
+only at that hard budget; external zero-only pruning is disabled. Uncalibrated
+progress thresholds stay disabled. Every240 updates, an additional8-episode
+procedural probe uses fixed seed_base1100000, separately saved under
+`checkpoints/model_XXXXXX/training_distribution`. Actual initial distances are
+recorded alongside goal progress, path length, height and failure events. Fixed
+long-distance probes still rotate two scenes; a full six-scene6x8 screen runs
+every720 updates or after a promising probe. The original23/25 and frozen
+three-training-seed acceptance requirements remain unchanged.
+
+The old Fan low-LR and VisFly hover-thrust jobs were paused at resume checkpoints
+u786/u268, without pruning or altering historical configuration/results. New Depth
+and LiDAR20m jobs have actually started. At the first Depthu240 checkpoint the
+procedural probe was6/8 and the full screen15/48 (S01/S02/S03:0 each;
+D01:8, D02:6, D03:1). LiDARu480 procedural probe was4/8; its rotating fixed
+two-scene probe remained0/16. These are early results, not stable convergence.
+
+Atu720 the matched procedural probe became Depth3/8 and LiDAR5/8, while both
+complete fixed six-scene screens were0/48. Depth had40 collisions and8 S03
+timeouts; LiDAR had48 collisions. Depthu240's15/48 checkpoint remains preserved.
+The early drop therefore persists in the speed-free recipe and differs from the
+historical lower-height collapse: no out-of-bounds event occurred in these full
+screens. These observations establish a loss of measured long-distance capability,
+without isolating its optimizer or representation cause.
+
+Actual procedural recordings are in the primary worktree's
+`results/navigation_distance_v01/inspection`: static, dynamic and dense scenes
+with167/58/208 active obstacles, including0/37/135 moving obstacles. Their
+recorded geometry and mocap motion were checked through the native RScope decoder.
+These three recordings use historical Depthu2880 for scene inspection. A separate
+recent Fan u720/D01 single-policy recording reaches about0.97m from the goal,
+then times out at300s with near-zero final speed; this is distinct from the
+earlier2.94m hybrid-policy diagnosis. Export now tolerates one float32 timestamp
+ULP and skips submicrometre display capsules; actual recorded poses are preserved.
+
+### Existing acceptance protocol
+
 A candidate must pass full validation: each S01/S02/S03/D01/D02/D03 scene at
 least23/25 safe arrivals. The same selected checkpoint then runs a separate
 frozen benchmark using independent seeds. Stable acceptance requires three
