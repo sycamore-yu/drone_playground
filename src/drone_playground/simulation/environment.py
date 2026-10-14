@@ -116,6 +116,12 @@ class BaseEnv:
         if navigation_goal_observation and not self.allows_goal_observation:
             raise ValueError("Goal observation requires Navigation")
         self.navigation_goal_observation = navigation_goal_observation
+        self.observation_config = dict(observation_config or {})
+        world_rotation = self.observation_config.get("navigation_world_rotation", False)
+        if type(world_rotation) is not bool:
+            raise ValueError("navigation_world_rotation must be boolean")
+        if world_rotation and self.task.name != "navigation":
+            raise ValueError("navigation_world_rotation requires Navigation")
         self.num_envs, self.method_hz = num_envs, method_hz
         self.substeps = physics_hz // method_hz
         self.dt = 1 / method_hz
@@ -166,7 +172,6 @@ class BaseEnv:
             "ideal": None,
         }[self.control_level]
         self.sensor = None
-        self.observation_config = dict(observation_config or {})
         if self.observation_config.get("visfly_quaternion_order", "xyzw") not in {"xyzw", "wxyz"}:
             raise ValueError("VisFly quaternion order must be xyzw or wxyz")
         position_scale = self.observation_config.get("visfly_position_scale", 1.0)
@@ -708,6 +713,9 @@ class NavigationEnv(BaseEnv):
             start = self.task.start if state.scene_state is None else state.scene_state.start
             remaining = distance / jnp.linalg.norm(goal - start, axis=-1)
             features = jnp.concatenate([features, height_error[:, None], remaining[:, None]], -1)
+        if self.observation_config.get("navigation_world_rotation", False):
+            # World acceleration needs body-to-world attitude beyond body-frame up.
+            features = jnp.concatenate([features, rot.as_matrix().reshape(len(p), 9)], -1)
         return {"state": features}
 
     def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):

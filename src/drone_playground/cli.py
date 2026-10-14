@@ -771,6 +771,12 @@ def main(config: DictConfig) -> None:
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
                     raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             physical = OmegaConf.to_container(config.simulation, resolve=True)
+            if previous["observation"].get("navigation_world_rotation", False) != (
+                config.observation.get("navigation_world_rotation", False)
+            ):
+                raise ValueError(
+                    "Frozen evaluation changes checkpoint navigation_world_rotation contract"
+                )
             if (
                 previous["simulation"]["navigation_goal_observation"]
                 != physical["navigation_goal_observation"]

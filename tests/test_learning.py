@@ -305,8 +305,11 @@ def test_racing_shac_bootstrap_diagnostic_is_explicit_and_finite():
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
-def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
-    """Train the expanded goal input with immediate velocity and continuous height cost."""
+@pytest.mark.parametrize(
+    "goal,rotation,width", [(True, False, 12), (False, True, 19), (True, True, 21)]
+)
+def test_navigation_observation_ppo_updates_and_restores(kind, goal, rotation, width, tmp_path):
+    """Both sensor actors can update and restore their declared navigation inputs."""
     env = make_environment(
         task="navigation",
         scene="S01",
@@ -316,7 +319,8 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         else {},
         num_envs=2,
         duration=0.02,
-        navigation_goal_observation=True,
+        navigation_goal_observation=goal,
+        observation_config={"navigation_world_rotation": True} if rotation else {},
         action={"level": "acceleration", "heading": "target"},
     )
     trainer = Trainer(
@@ -333,7 +337,7 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         },
     )
     state = trainer.initialize()
-    assert env.observe(state.env_state)["state"].shape == (2, 12)
+    assert env.observe(state.env_state)["state"].shape == (2, width)
     updated, metrics = trainer.update(state)
     assert all(np.isfinite(float(value)) for value in metrics.values())
     assert tree_changed(state.params, updated.params)

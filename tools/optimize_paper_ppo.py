@@ -64,6 +64,8 @@ def configure_navigation_search():
         "lidar_goal": ("lidar", lidar, "lidar_base"),
         "depth_mixed": ("depth", depth, "depth_base"),
         "lidar_mixed": ("lidar", lidar, "lidar_base"),
+        "depth_world_rotation": ("depth", depth, "depth_base"),
+        "lidar_world_rotation": ("lidar", lidar, "lidar_base"),
         "depth_fixed_heading": ("depth", depth, "depth_base"),
         "lidar_fixed_heading": ("lidar", lidar, "lidar_base"),
         "fan_exploration": ("fan", fan, "fan_base"),
@@ -78,6 +80,8 @@ def configure_navigation_search():
         "lidar_goal": ["simulation.navigation_goal_observation=true"],
         "depth_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "lidar_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
+        "depth_world_rotation": ["++observation.navigation_world_rotation=true"],
+        "lidar_world_rotation": ["++observation.navigation_world_rotation=true"],
         "depth_fixed_heading": ["method.action.heading=fixed"],
         "lidar_fixed_heading": ["method.action.heading=fixed"],
         "fan_exploration": ["learning.options.initial_log_std=-1.5"],
@@ -120,7 +124,14 @@ def navigation_candidate(records):
     """Cover each architecture first, then prefer measured improvements fairly."""
     stable = stable_modalities(records)
     # Test observed sampling/frame gaps before spending more on paper transfers.
-    for case in ("depth_mixed", "lidar_mixed", "depth_fixed_heading", "lidar_fixed_heading"):
+    for case in (
+        "depth_mixed",
+        "lidar_mixed",
+        "depth_world_rotation",
+        "lidar_world_rotation",
+        "depth_fixed_heading",
+        "lidar_fixed_heading",
+    ):
         family, _, parent = CASES[case]
         if (
             MODALITY[family] not in stable

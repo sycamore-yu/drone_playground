@@ -23,7 +23,7 @@ def test_four_architectures_require_fresh_matched_baselines(search):
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
     search.configure_navigation_search()
     assert {value[0] for value in search.CASES.values()} == {"depth", "lidar", "fan", "visfly"}
-    assert len(search.CASES) == 16
+    assert len(search.CASES) == 18
     assert search.BASE_UNITS == {}
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["fan_base_s0"]["status"] = "running"
@@ -100,6 +100,8 @@ def test_parameter_changes_are_isolated_per_candidate(search):
         "lidar_goal",
         "depth_mixed",
         "lidar_mixed",
+        "depth_world_rotation",
+        "lidar_world_rotation",
         "depth_fixed_heading",
         "lidar_fixed_heading",
         "fan_exploration",
@@ -116,12 +118,15 @@ def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
         candidate = compose(config_name="config", overrides=search.trial_options(case, 0, "/same"))
     control = OmegaConf.to_container(control, resolve=True)
     candidate = OmegaConf.to_container(candidate, resolve=True)
-    setting = search.CASE_OPTIONS[case][0].split("=", 1)[0].split(".")
+    setting = search.CASE_OPTIONS[case][0].split("=", 1)[0].lstrip("+").split(".")
     old, new = control, candidate
     for part in setting[:-1]:
         old, new = old[part], new[part]
-    assert old[setting[-1]] != new[setting[-1]]
-    new[setting[-1]] = old[setting[-1]]
+    assert old.get(setting[-1]) != new[setting[-1]]
+    if setting[-1] in old:
+        new[setting[-1]] = old[setting[-1]]
+    else:
+        del new[setting[-1]]
     assert control == candidate
     assert candidate["simulation"]["procedural"]["min_start_goal_distance_m"] == 80.0
     assert candidate["benchmark"]["fixed_checkpoint_seeds"] is True
@@ -136,6 +141,15 @@ def test_sampling_diagnostic_precedes_more_architecture_trials(search):
     records["depth_base_s0"]["status"] = "early_stopped"
     records["lidar_base_s0"]["status"] = "running"
     assert search.next_trial(records) == ("depth_mixed", 0)
+
+
+def test_approved_rotation_input_precedes_fixed_heading_workaround(search):
+    """Keep sampling controls independent, then isolate the missing orientation input."""
+    search.configure_navigation_search()
+    records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
+    for case in ("depth_base", "lidar_base", "depth_mixed", "lidar_mixed"):
+        records[f"{case}_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("depth_world_rotation", 0)
 
 
 def test_stable_acceptance_requires_three_seeds_of_the_same_recipe(search):
