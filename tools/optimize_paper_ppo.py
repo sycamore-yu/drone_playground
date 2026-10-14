@@ -187,8 +187,10 @@ def navigation_candidate(records):
             continue
         if parent is not None and records[f"{parent}_s0"]["status"] not in FINISHED:
             continue
-        if case == "depth_mixed_goal_privileged" and (
-            records["depth_mixed_privileged_s0"]["status"] not in FINISHED
+        if case == "depth_mixed_goal_privileged" and not all(
+            records[f"{factor}_s0"]["status"] in FINISHED
+            and records[f"{factor}_s0"].get("latest") is not None
+            for factor in ("depth_mixed_goal", "depth_mixed_privileged")
         ):
             continue
         control = records[f"{parent}_s0"] if parent is not None else {}
