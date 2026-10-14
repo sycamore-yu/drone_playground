@@ -109,7 +109,7 @@ Navigation 基准：目标半径 `0.5 m`、机体碰撞球半径 `0.07 m`、最�
 
 相机内外参、深度定义、有效值、LiDAR 射线方向、扫描相位、量程与误差模型属于 Sensor；降采样、历史堆叠和网络归一化属于 Observation。记录物理时间、传感采集时间、观测可用时间、方法调用周期及动作延迟；非整数频率按实际时间调度。Mid-360 的 20k 全帧来自设备公开点率而非 MuJoCo 内置约定；`sensor.ray_sampling=policy` 仅计算全帧中供 1024 点策略使用的确定性选定射线，保留原全帧时序并显式区分训练配方。回放/传感器完整性仍支持 `full` 模式。
 
-D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体模式和模拟误差由配置声明，详见 [设备与框架研究](research/robotics-architecture.md)。
+D435i 预设提供设备标定；训练的 `64×48、30 Hz、20°、10 m` 由 Sensor 配置明确声明。Mid-360 使用 MuJoCo-LiDAR 0.3.5 的角度表，默认每帧连续读取 20,000 条。两种传感器均以同一帧时刻的机器人和动态障碍位姿生成快照，各点时间相同；延迟交付与采集时间分别记录。扫描相位、源文件哈希及快照语义随运行和 checkpoint 保存。详见 [sensor](adr/0012-sensor.md) 与 [render](adr/0013-render.md)。本功能分支的模型变化尚未完成冻结任务验收。
 
 ## 6. Learning：算法与具名方法
 
@@ -148,7 +148,7 @@ D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体�
 
 **训练未达标时的调整规则：**先通过训练诊断核查观测和动作量纲、损失、reset、终止处理及梯度传播。若未达到 L3，可参考 DiffAero、VisFly、VisFly-Lab、Zhang 和 Liu 的原始配置，调整 Actor／Critic 层数与宽度、GRU、输入预处理、学习率、batch size、rollout 长度、归一化、奖励／损失权重和梯度衰减等。
 
-每次调整保存独立的实验配置、参数差异、调整原因及训练／评测记录。**进行训练算法的受控比较时，应在相同的新 Actor 配置下重新对照各算法**，并明确记录算法特有的 Critic、优化目标及梯度差异。使用轻量筛查和正式 `checkpoint_eval` 选模，以 `benchmark` 做独立冻结验证；每次验收记录其使用的协议版本，详见 [ADR-0013](adr/0013-three-stage-learning-acceptance.md)。
+每次调整保存独立的实验配置、参数差异、调整原因及训练／评测记录。**进行训练算法的受控比较时，应在相同的新 Actor 配置下重新对照各算法**，并明确记录算法特有的 Critic、优化目标及梯度差异。使用轻量筛查和正式 `checkpoint_eval` 选模，以 `benchmark` 做独立冻结验证；每次验收记录其使用的协议版本，详见 [ADR-0015](adr/0015-three-stage-learning-acceptance.md)。
 
 ### 6.3 L3 的收敛测量指标（不再独立编号）
 
@@ -162,7 +162,7 @@ D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体�
 | 三阶段 | 训练中轻量筛查：导航六主场景各 8 回合、状态任务 8 回合；通过后完整 checkpoint validation；固定通过的权重，以独立测试种子执行一次冻结 benchmark |
 
 
-筛查、完整选模与最终冻结测试使用不重叠的随机种子区间。训练过程记录失败和未达标状态，三个算法均需真实参数更新、保存与冻结闭环。旧 run 保留原始合同及参数，不混改历史结论；新训练使用 [ADR-0013](adr/0013-three-stage-learning-acceptance.md) 与 [ADR-0016](adr/0016-training-patience-and-frozen-selection.md)：首次完整达标立即独立冻结一次；≥800 updates 后连续 6 次轻量筛查无明显改善则以 `early_stopped` 结束配方。上表用于 L3 的研究结论，不构成第三套验收编号。GPU 吞吐、墙钟时间、显存与到达门槛的计算成本归 **L4** 统一记录。
+筛查、完整选模与最终冻结测试使用不重叠的随机种子区间。训练过程记录失败和未达标状态，三个算法均需真实参数更新、保存与冻结闭环。旧 run 保留原始合同及参数，不混改历史结论；新训练使用 [ADR-0015](adr/0015-three-stage-learning-acceptance.md) 与 [ADR-0018](adr/0018-training-patience-and-frozen-selection.md)：首次完整达标立即独立冻结一次；≥800 updates 后连续 6 次轻量筛查无明显改善则以 `early_stopped` 结束配方。上表用于 L3 的研究结论，不构成第三套验收编号。GPU 吞吐、墙钟时间、显存与到达门槛的计算成本归 **L4** 统一记录。
 
 ## 7. Simulation 验收 S1—S4
 
@@ -188,7 +188,7 @@ D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体�
 | **L4** | **计算效率与证据**：真实 JAX/Crazyflow 吞吐、训练耗时、GPU 资源、权重/优化器恢复、收敛所需交互数 | TensorBoard、Orbax、Results 与独占吞吐对照；不要求填满 VRAM |
 
 
-Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。**v0.2 的 18 单元正式验收全部从随机网络参数训练**，不得用旧仓库、参考项目或历史 run 权重初始化。DiffAero、旧仓库和论文只用于参考奖励、网络、观测和超参数。现行矩阵结果由被 Git 忽略的 `results/scratch_v02/matrix.json` 汇总，历史验收数据不能替代。八项验收的合并决策参见 [ADR-0015](adr/0015-eight-acceptance-gates.md)；旧 C1–C6、L1–L6、S1–S8 仅用于解读历史记录。
+Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。**v0.2 的 18 单元正式验收全部从随机网络参数训练**，不得用旧仓库、参考项目或历史 run 权重初始化。DiffAero、旧仓库和论文只用于参考奖励、网络、观测和超参数。现行矩阵结果由被 Git 忽略的 `results/scratch_v02/matrix.json` 汇总，历史验收数据不能替代。八项验收的合并决策参见 [ADR-0017](adr/0017-eight-acceptance-gates.md)；旧 C1–C6、L1–L6、S1–S8 仅用于解读历史记录。
 
 ## 9. 工具、配置与交付
 
@@ -221,7 +221,7 @@ results/<run_id>/
     best/                # 开启回放时生成 RScope
 ```
 
-新训练使用 [ADR-0014](adr/0014-results-layout-orbax-tensorboard.md)；`run.json`
+新训练使用 [ADR-0016](adr/0016-results-layout-orbax-tensorboard.md)；`run.json`
 仅保留训练来源、进度及完成状态，不复制 TensorBoard 指标流，取消 `metrics.jsonl` 与
 `eval/`。回放仅在请求时记录；历史 ZIP 结果不移动或改写。
 

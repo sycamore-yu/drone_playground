@@ -1,4 +1,4 @@
-# ADR-0019 — Task-owned rewards, Learning-owned auxiliary losses
+# ADR-0021 — Task-owned rewards, Learning-owned auxiliary losses
 
 **Status:** Accepted · 2026-10-10
 
@@ -73,6 +73,6 @@ breaking migration, after their outstanding checkpoints are retired.
    new reward logic.
 
 Supersedes the temporary reward file placement documented in
-[ADR-0018](0018-ppo-diagnostics-before-brax-replacement.md), and implements
+[ADR-0020](0020-ppo-diagnostics-before-brax-replacement.md), and implements
 the existing ownership decision in
-[ADR-0012](0012-rl-environment-and-method-interface.md).
+[ADR-0014](0014-rl-environment-and-method-interface.md).

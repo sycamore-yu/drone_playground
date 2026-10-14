@@ -9,7 +9,7 @@ description = "Crazyflow quadrotor simulation, learning and reproducible experim
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "crazyflow", "jax", "flax", "optax", "hydra-core", "numpy", "scipy",
-  "mujoco", "mujoco-mjx", "rscope", "grpcio", "protobuf", "PyYAML",
+  "mujoco", "mujoco-mjx", "mujoco-lidar==0.3.5", "rscope", "grpcio", "protobuf", "PyYAML",
   "orbax-checkpoint>=0.12,<0.13", "tensorboardX>=2.6.4,<3",
 ]
 
@@ -48,6 +48,7 @@ build = "*"
 grpcio-tools = "*"
 
 [tool.pixi.activation.env]
+SCIPY_ARRAY_API = "1"
 XLA_PYTHON_CLIENT_PREALLOCATE = "false"
 MUJOCO_GL = "egl"
 PYTHONPATH = ""

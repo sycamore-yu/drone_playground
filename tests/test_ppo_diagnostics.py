@@ -49,6 +49,7 @@ def test_ppo_navigation_diagnostics_are_finite_on_real_simulation():
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=2,
         device="cpu",
         duration=0.2,

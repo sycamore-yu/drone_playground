@@ -1,4 +1,4 @@
-# ADR-0014：精简 Results 目录（Orbax + TensorBoard）
+# ADR-0016：精简 Results 目录（Orbax + TensorBoard）
 
 **Status:** Accepted · 2026-10-10
 

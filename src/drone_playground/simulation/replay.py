@@ -8,6 +8,7 @@ import pickle
 import tempfile
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping, Sequence
+from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -131,6 +132,30 @@ def _motion(model: mujoco.MjModel, times: np.ndarray, mocap: np.ndarray) -> None
         mocap[:, 0, slot] = model.body_pos[body] + offset
 
 
+def _attach_drone_mesh(root: ET.Element, assets: dict[str, bytes], body: ET.Element) -> None:
+    """Attach the existing Crazyflie 2.x visuals to the recorded free-joint body."""
+    source = resources.files("drone_playground").joinpath("assets/robots/crazyflie2x")
+    model = ET.fromstring(source.joinpath("replay.xml").read_bytes())
+    mesh_assets = root.find("asset")
+    if mesh_assets is None:
+        mesh_assets = ET.SubElement(root, "asset")
+    for element in model.find("asset"):
+        visual = ET.fromstring(ET.tostring(element))
+        if visual.tag == "mesh":
+            filename = visual.get("file")
+            bundled_name = f"crazyflie_{filename}"
+            assets[bundled_name] = source.joinpath(filename).read_bytes()
+            visual.set("file", bundled_name)
+        mesh_assets.append(visual)
+    for geom in model.find("worldbody/body"):
+        if geom.tag == "geom" and geom.get("type") == "mesh":
+            visual = ET.fromstring(ET.tostring(geom))
+            visual.set("mass", "0")
+            body.append(visual)
+    for filename in ("LICENSE", "SOURCE.txt"):
+        assets[f"crazyflie_{filename}"] = source.joinpath(filename).read_bytes()
+
+
 def export_replay(
     directory: str | Path,
     scene: Scene | str | Path,
@@ -139,6 +164,8 @@ def export_replay(
     quaternions_xyzw: ArrayLike,
     measurements: Sequence | None = None,
     plans: Sequence | None = None,
+    *,
+    sensor_times: ArrayLike | None = None,
 ) -> Path:
     """Export one recorded episode without stepping or mutating its simulation.
 
@@ -151,7 +178,8 @@ def export_replay(
         measurements: T world-point arrays (N, 3), None entries, or mappings containing
             points_world and an optional boolean mask. Only valid hits are displayed.
         plans: T world-position arrays (N, 3), None entries, or mappings containing
-            positions. Each entry is the sampled plan visible at that timestamp.
+            positions and optional received_time/valid_until. Only a valid plan is shown.
+        sensor_times: Actual acquisition times for recorded sensor hits, when available.
 
     Returns:
         Path to episode.mj_unroll, beside scene.xml, assets and rscope_meta.pkl.
@@ -182,6 +210,23 @@ def export_replay(
     quaternions = quaternions / np.linalg.norm(quaternions, axis=1, keepdims=True)
     hits = _points(measurements, count, "points_world")
     trajectories = _points(plans, count, "positions")
+    if plans is not None:
+        for i, entry in enumerate(plans):
+            if not isinstance(entry, Mapping):
+                continue
+            received = float(entry.get("received_time", times[i]))
+            valid_until = float(entry.get("valid_until", times[i]))
+            if not np.isfinite([received, valid_until]).all() or received > valid_until:
+                raise ValueError("Plan reception and validity times must be finite and ordered")
+            if not received - 1e-7 <= times[i] <= valid_until + 1e-7:
+                trajectories[i] = np.empty((0, 3))
+    if sensor_times is not None:
+        sensor_times = np.asarray(sensor_times, dtype=float)
+        if sensor_times.shape != (count,) or not np.isfinite(sensor_times).all():
+            raise ValueError("Sensor acquisition times must be finite and frame-aligned")
+        if np.any(sensor_times > times + 1e-7):
+            raise ValueError("Sensor acquisition cannot be later than its replay frame")
+    plan_segments = [np.stack((p[:-1], p[1:]), axis=1) for p in trajectories]
     root, assets = _scene_xml(scene)
     if any(
         e.get("name", "").startswith("replay_") or (e.tag == "body" and e.get("name") == "drone")
@@ -197,22 +242,13 @@ def export_replay(
         name="replay_drone",
         type="sphere",
         size="0.07",
-        rgba="0.1 0.6 1 1",
+        rgba="0 0 0 0",
         contype="0",
         conaffinity="0",
+        group="3",
         mass="0.027",
     )
-    ET.SubElement(
-        drone,
-        "geom",
-        name="replay_heading",
-        type="capsule",
-        size="0.008",
-        fromto="0 0 0 0.12 0 0",
-        rgba="1 0.2 0.1 1",
-        contype="0",
-        conaffinity="0",
-    )
+    _attach_drone_mesh(root, assets, drone)
     for i, (start, end) in enumerate(itertools.pairwise(positions)):
         if np.array_equal(start, end):
             continue
@@ -241,6 +277,28 @@ def export_replay(
                 contype="0",
                 conaffinity="0",
             )
+    segment_count = max(map(len, plan_segments))
+    if segment_count:
+        tendons = root.find("tendon")
+        if tendons is None:
+            tendons = ET.SubElement(root, "tendon")
+        for i in range(segment_count):
+            endpoints = []
+            for end in ("start", "end"):
+                name = f"replay_plan_segment_{i}_{end}"
+                marker = ET.SubElement(world, "body", name=name, mocap="true")
+                site = f"{name}_site"
+                ET.SubElement(marker, "site", name=site, size=".001", rgba="0 0 0 0")
+                endpoints.append(site)
+            line = ET.SubElement(
+                tendons,
+                "spatial",
+                name=f"replay_plan_line_{i}",
+                width=".015",
+                rgba="1 .35 .1 .9",
+            )
+            for site in endpoints:
+                ET.SubElement(line, "site", site=site)
     assets["scene.xml"] = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     model = mujoco.MjModel.from_xml_string(assets["scene.xml"].decode(), assets=assets)
     if model.nq != 7 or model.nv != 6:
@@ -260,6 +318,15 @@ def export_replay(
         mocap_pos[:, 0, slots] = [0, 0, -1e6]
         for t, points in enumerate(frames):
             mocap_pos[t, 0, slots[: len(points)]] = points
+    if segment_count:
+        slots = [
+            model.body(f"replay_plan_segment_{i}_{end}").mocapid[0]
+            for i in range(segment_count)
+            for end in ("start", "end")
+        ]
+        mocap_pos[:, 0, slots] = [0, 0, -1e6]
+        for t, segments in enumerate(plan_segments):
+            mocap_pos[t, 0, slots[: 2 * len(segments)]] = segments.reshape(-1, 3)
     record = Rollout(
         qpos=qpos,
         qvel=qvel,
@@ -271,6 +338,12 @@ def export_replay(
         metrics={
             "sensor_hits": np.array([len(p) for p in hits])[:, None],
             "plan_points": np.array([len(p) for p in trajectories])[:, None],
+            "plan_segments": np.array([len(p) for p in plan_segments])[:, None],
+            **(
+                {"sensor_acquisition_time": sensor_times[:, None]}
+                if sensor_times is not None
+                else {}
+            ),
         },
     )
     meta = {

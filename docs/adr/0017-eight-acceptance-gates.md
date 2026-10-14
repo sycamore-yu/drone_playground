@@ -1,4 +1,4 @@
-# ADR-0015：统一八项验收（四项 Simulation，四项 Learning）
+# ADR-0017：统一八项验收（四项 Simulation，四项 Learning）
 
 **Status:** Accepted · 2026-10-10
 
@@ -47,8 +47,8 @@ L3 是实际 18 单元研究验收，L4 从相同运行证据汇总性能和资�
 不再单独要求重复试验。
 
 三阶段的随机种子、模型选择和独立冻结测试遵循
-[ADR-0013](0013-three-stage-learning-acceptance.md)，结果布局遵循
-[ADR-0014](0014-results-layout-orbax-tensorboard.md)。历史的
+[ADR-0015](0015-three-stage-learning-acceptance.md)，结果布局遵循
+[ADR-0016](0016-results-layout-orbax-tensorboard.md)。历史的
 S6 原生规划器验收明确迁入 S3；历史 C2/C3/C4 数值门槛
 明确迁入 L3，不允许通过重新编号降低成功率标准。
 

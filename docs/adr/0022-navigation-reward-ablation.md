@@ -1,4 +1,4 @@
-# ADR-0020 — Navigation PPO reward ablations against Trial 9/10
+# ADR-0022 — Navigation PPO reward ablations against Trial 9/10
 
 **Status:** Experimental · 2026-10-11
 

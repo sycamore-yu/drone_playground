@@ -1,10 +1,10 @@
-# ADR-0016：训练诊断 Patience 与一次性冻结选模
+# ADR-0018：训练诊断 Patience 与一次性冻结选模
 
 **Status:** Accepted · 2026-10-10
 
 ## Decision
 
-新的随机初始化训练遵循 [ADR-0013](0013-three-stage-learning-acceptance.md)：
+新的随机初始化训练遵循 [ADR-0015](0015-three-stage-learning-acceptance.md)：
 
 1. 使用轻量筛查判断训练进展，而不是在训练中反复运行 200 回合完整冻结测试。
 2. **首次完整 checkpoint validation 达到 L3 的正式门槛**，立即选择此权重并运行

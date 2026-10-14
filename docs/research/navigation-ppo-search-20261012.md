@@ -68,6 +68,37 @@ be combined. Once a sensor modality has one such recipe, competing candidates
 for that modality are no longer launched. Missing scores remain unknown.
 Budget exhaustion preserves the checkpoint and is not acceptance.
 
+## Branch and evidence audit — 14 October 2026
+
+Checked at `2026-10-14T02:57:00Z`. The integration branch is `v0.2` at
+`3345f03`; reward ablations (`c60ab63`) and Scratch Matrix (`6480bc9`) are
+already ancestors. Their clean worktrees were removed after verifying that
+neither contained results and archiving every temporary evidence file with
+SHA-256 verification. The manifest is at
+`new_drone_playground/tmp/branch-organization-20261014/manifest.json`.
+SANDO and the independent Brax branch remain separate.
+
+This paper branch now merges the integration snapshot, including its canonical
+ADR numbering and snapshot sensor contract. Fan raw point history consumes
+snapshot hits at their acquisition pose; it no longer accesses removed rolling
+scan fields. The merge passed 55 targeted paper/sensor/search tests and two
+additional Fan snapshot history tests. These checks establish implementation
+compatibility, not training convergence. Paper experiments remain unmerged into
+`v0.2`.
+
+The old study summaries still say `running`, but actual run records identify
+Depth at update1190 and Fan margin2 at update3359 as `interrupted`; no live
+trainers were found. Preserved full screens show Depth 1/48 and Fan margin2
+8/48, with the remaining episodes all colliding. VisFly shared remains 0/48,
+with both collisions and boundary exits. Historical Depth 17/48 used shorter
+training starts and is not a matched >=80m control. No accepted recipe exists.
+
+The source/sensor contract changed at integration, so new runs must use a new
+result root and random initialization. Old checkpoints and reports retain their
+original source and configuration identity. Existing privileged Critic support
+already includes goal-relative position, time, clearance and ideal rays; it
+does not require a second Critic architecture to test that hypothesis.
+
 ## Execution
 
 The active result root is `new_drone_playground/results/navigation_ppo_search_v01`.

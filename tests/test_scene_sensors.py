@@ -11,13 +11,12 @@ import numpy as np
 import pytest
 from jax.scipy.spatial.transform import Rotation
 
+from drone_playground.simulation.observation import preprocess_depth, reduce_points
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import (
     Measurement,
     SensorConfig,
     measure,
-    preprocess_depth,
-    reduce_points,
     sensor_rays,
 )
 
@@ -272,7 +271,7 @@ def test_geometry_hash_changes_with_shape_transform_and_motion(make_scene):
 def test_device_profiles_fov_timing_phase_and_immutability():
     """Verify device profiles fov timing phase and immutability."""
     full = SensorConfig.d435i()
-    training = SensorConfig.d435i("training64x48")
+    training = SensorConfig.d435i(width=64, height=48, pitch_deg=20, max_range=10)
     assert (full.width, full.height, full.frequency_hz) == (1280, 720, 30)
     assert (training.width, training.height, training.pitch_deg) == (64, 48, 20)
     assert (training.horizontal_fov_deg, training.vertical_fov_deg) == (87, 58)
@@ -285,10 +284,9 @@ def test_device_profiles_fov_timing_phase_and_immutability():
     assert rays.shape == (2, 20000, 3)
     assert not np.allclose(rays[0], rays[1])
     np.testing.assert_allclose(np.linalg.norm(rays, axis=-1), 1, atol=1e-6)
-    np.testing.assert_allclose(np.diff(offsets), 1 / 200000, atol=1e-8)
-    assert float(offsets[-1]) == 0
+    np.testing.assert_array_equal(offsets, 0)
     elevation = np.rad2deg(np.arcsin(rays[..., 2]))
-    assert elevation.min() >= -7.0001 and elevation.max() <= 52.0001
+    assert elevation.min() >= -7.3 and elevation.max() <= 52.3
     azimuth = np.rad2deg(np.arctan2(rays[..., 1], rays[..., 0]))
     assert azimuth.max() - azimuth.min() > 359
     uniform, offsets = sensor_rays(SensorConfig.uniform_lidar_paper())
@@ -302,7 +300,9 @@ def test_device_profiles_fov_timing_phase_and_immutability():
 def test_axial_depth_extrinsics_masks_jit_batches_and_gradient(make_scene):
     """Verify axial depth extrinsics masks jit batches and gradient."""
     scene = make_scene('<geom type="box" pos="5.5 0 0" size=".5 50 50"/>')
-    config = SensorConfig.d435i("training64x48", pitch_deg=0, translation=(0.5, 0, 0), latency=0.02)
+    config = SensorConfig.d435i(
+        width=64, height=48, max_range=10, translation=(0.5, 0, 0), latency=0.02
+    )
     positions = jnp.array([[0.0, 0, 0], [1.0, 0, 0]])
     quaternion = jnp.array([0.0, 0, 0, 1.0])
     render = jax.jit(lambda p: measure(scene, config, p, quaternion, jnp.array([1.0, 2.0])))
@@ -324,17 +324,19 @@ def test_axial_depth_extrinsics_masks_jit_batches_and_gradient(make_scene):
     assert not missing.mask.any()
     np.testing.assert_array_equal(missing.points_body, 0)
     np.testing.assert_array_equal(missing.values, 0)
-    assert np.isfinite(missing.directions_body).all()
+    assert np.isfinite(sensor_rays(blind)[0]).all()
 
 
 def test_camera_pitch_yaw_and_range_cutoff(make_scene):
     """Verify camera pitch yaw and range cutoff."""
     scene = make_scene('<geom type="box" pos="0 5.5 0" size="50 .5 50"/>')
-    config = SensorConfig.d435i("training64x48", width=1, height=1, pitch_deg=20)
+    config = SensorConfig.d435i(width=1, height=1, pitch_deg=20, max_range=10)
     quat = Rotation.from_euler("z", jnp.pi / 2).as_quat()
     result = measure(scene, config, jnp.zeros(3), quat, 0.0)
+    direction_body = np.asarray(result.points_body[0, 0])
+    direction_body = direction_body / np.linalg.norm(direction_body)
     np.testing.assert_allclose(
-        result.directions_body[0, 0], [np.cos(np.deg2rad(20)), 0, np.sin(np.deg2rad(20))], atol=1e-6
+        direction_body, [np.cos(np.deg2rad(20)), 0, np.sin(np.deg2rad(20))], atol=1e-6
     )
     np.testing.assert_allclose(result.values, 5 / np.cos(np.deg2rad(20)), atol=2e-6)
     wall = make_scene('<geom type="box" pos="9.5 0 0" size=".5 50 50"/>')
@@ -356,9 +358,8 @@ def test_full_resolution_depth(make_scene):
     np.testing.assert_allclose(result.values, 1, atol=1e-6)
 
 
-def test_mid360_full_frame_and_per_ray_moving_geometry(make_scene):
-    # A growing offset between sensor and a moving sphere makes timestamp errors observable.
-    """Verify mid360 full frame and per ray moving geometry."""
+def test_mid360_full_frame_and_snapshot_moving_geometry(make_scene):
+    """The full scan uses geometry at frame time; reduction preserves the selected points."""
     scene = make_scene(
         '<body pos="0 0 0" mocap="true" user="2 2 0 0 4 0"><geom type="sphere" size="20"/></body>'
     )
@@ -368,68 +369,52 @@ def test_mid360_full_frame_and_per_ray_moving_geometry(make_scene):
     )(0.75)
     assert result.values.shape == (20000,)
     assert result.mask.all()
-    centers_x = -2 + 2 * np.asarray(result.times)
-    dx = np.asarray(result.directions_body[:, 0])
+    centers_x = -2 + 2 * np.asarray(result.acquisition_time)
+    dx = np.asarray(sensor_rays(config, 0.75)[0][:, 0])
     expected = centers_x * dx + np.sqrt(400 - centers_x**2 * (1 - dx**2))
     np.testing.assert_allclose(result.values, expected, atol=5e-6)
     reduced = jax.jit(lambda m: reduce_points(m, 64))(result)
     indices = np.linspace(0, 19999, 64).astype(int)
-    np.testing.assert_array_equal(reduced.times, result.times[indices])
+    np.testing.assert_array_equal(reduced.acquisition_time, result.acquisition_time)
     np.testing.assert_array_equal(reduced.mask, result.mask[indices])
     np.testing.assert_array_equal(reduced.points_body, result.points_body[indices])
 
 
-def test_mid360_selected_rays_match_full_scan_reduction_with_motion(make_scene):
-    """Cast policy-visible rays only, preserving full-scan phase and exact ray times."""
-    scene = make_scene(
-        '<body pos="0 0 0" mocap="true" user="2 2 0 0 4 0"><geom type="sphere" size="20"/></body>'
-    )
+def test_mid360_selected_rays_match_full_scan_reduction_snapshot(make_scene):
+    """Sparse capture matches the selected subset of the released MID360 scan pattern."""
+    scene = make_scene('<geom type="sphere" size="20"/>')
     device = SensorConfig.mid360(points_per_frame=257)
     count = 64
+    positions = jnp.array([[0.3, 0.0, 0.0], [0.7, 0.0, 0.0]])
+    quaternion = jnp.array([0.0, 0.0, 0.0, 1.0])
+    frames = jnp.array([3, 6])
 
-    def pose_at(times):
-        positions = jnp.stack((0.3 * times, jnp.zeros_like(times), jnp.zeros_like(times)), -1)
-        quaternions = jnp.broadcast_to(jnp.array([0.0, 0.0, 0.0, 1.0]), (*times.shape, 4))
-        return positions, quaternions
-
-    def capture(t, selection):
+    def capture(selection):
         return measure(
             scene,
             device,
-            jnp.zeros((2, 3)),
-            jnp.array([0.0, 0.0, 0.0, 1.0]),
-            t,
-            frame_index=jnp.array([3, 6]),
-            pose_at=pose_at,
+            positions,
+            quaternion,
+            jnp.array([0.4, 0.7]),
+            frame_index=frames,
             selected_count=selection,
         )
 
-    times = jnp.array([0.4, 0.7])
-    full = jax.jit(lambda t: capture(t, None))(times)
-    sparse = jax.jit(lambda t: capture(t, count))(times)
+    full = jax.jit(lambda: capture(None))()
+    sparse = jax.jit(lambda: capture(count))()
     reference = reduce_points(full, count)
     for name in Measurement._fields:
-        # XLA emits a different fusion for 64 rays than for the sliced 257-ray
-        # scan. Its float32 geometry rounding stays within 0.5 mm.
-        tolerance = (
-            5e-4
-            if name in ("values", "points_body")
-            else 2e-5
-            if name == "directions_body"
-            else 1e-6
-        )
         np.testing.assert_allclose(
-            getattr(sparse, name), getattr(reference, name), atol=tolerance, rtol=1e-6
+            getattr(sparse, name), getattr(reference, name), atol=5e-4, rtol=1e-6
         )
     assert sparse.points_body.shape == (2, count, 3)
     assert full.points_body.shape == (2, 257, 3)
-    assert np.diff(np.asarray(sparse.times[0])).min() > 0.0
     with pytest.raises(ValueError, match="Selected rays"):
         sensor_rays(SensorConfig.uniform_lidar_paper(), selected_count=64)
 
 
 def test_mid360_policy_sampling_changes_only_acquisition_workload():
-    """The real Environment receives a smaller scan with the same actor-visible shape."""
+    """Policy-only capture computes fewer rays without changing the actor-visible points."""
     from drone_playground.simulation.environment import make_environment
 
     base = dict(
@@ -444,12 +429,10 @@ def test_mid360_policy_sampling_changes_only_acquisition_workload():
         point_count=64,
         action={"level": "acceleration", "heading": "target"},
     )
-    full, policy = (
-        make_environment(**base, ray_sampling="full"),
-        make_environment(**base, ray_sampling="policy"),
-    )
+    full = make_environment(**base, ray_sampling="full")
+    policy = make_environment(**base, ray_sampling="policy")
     try:
-        key = jax.random.PRNGKey(8)
+        key = jax.random.key(8)
         initial_full, initial_sparse = full.reset(key), policy.reset(key)
         assert initial_full.observation.measurement.points_body.shape == (1, 257, 3)
         assert initial_sparse.observation.measurement.points_body.shape == (1, 64, 3)
@@ -459,39 +442,33 @@ def test_mid360_policy_sampling_changes_only_acquisition_workload():
         points_full = full.observe(measured_full)
         points_sparse = policy.observe(measured_sparse)
         assert points_full["points"].shape == points_sparse["points"].shape == (1, 64, 3)
-        # Different JIT fusion shapes alter float32 intersection roundoff
-        # by up to about 0.6 mm in the populated obstacle scene.
         np.testing.assert_allclose(points_sparse["points"], points_full["points"], atol=1e-3)
         np.testing.assert_array_equal(points_sparse["mask"], points_full["mask"])
         np.testing.assert_allclose(
             points_sparse["point_times"], points_full["point_times"], atol=1e-6
         )
+        assert "ray_sampling" not in full.sensor.specification
+        assert policy.sensor.specification["ray_sampling"] == "policy"
     finally:
         full.sim.close()
         policy.sim.close()
 
 
-def test_scan_ego_motion_and_mask_preservation(make_scene):
-    """Verify scan ego motion and mask preservation."""
+def test_snapshot_world_poses_and_mask_preservation(make_scene):
+    """Independent world poses produce correct body points at one time per frame."""
     scene = make_scene('<geom type="sphere" size="20"/>')
     config = SensorConfig.mid360(points_per_frame=257)
 
-    def pose_at(times):
-        positions = jnp.stack((times, jnp.zeros_like(times), jnp.zeros_like(times)), axis=-1)
-        quats = jnp.broadcast_to(jnp.array([0.0, 0, 0, 1.0]), (*times.shape, 4))
-        return positions, quats
-
-    result = jax.jit(
-        lambda t: measure(
-            scene, config, jnp.zeros((2, 3)), jnp.array([0.0, 0, 0, 1.0]), t, pose_at=pose_at
-        )
-    )(jnp.array([1.0, 2.0]))
-    world = result.points_body + pose_at(result.times)[0]
+    positions = jnp.array([[1.0, 0, 0], [2.0, 0, 0]])
+    result = jax.jit(lambda t: measure(scene, config, positions, jnp.array([0.0, 0, 0, 1.0]), t))(
+        jnp.array([1.0, 2.0])
+    )
+    world = result.points_body + positions[:, None]
     np.testing.assert_allclose(np.linalg.norm(world, axis=-1), 20, atol=4e-6)
     empty = measure(Scene("empty"), config, jnp.zeros(3), jnp.array([0.0, 0, 0, 1.0]), 0.0)
     reduced = reduce_points(empty, 16)
     assert not reduced.mask.any()
-    assert (np.diff(reduced.times) > 0).all()
+    np.testing.assert_array_equal(reduced.acquisition_time, 0)
 
 
 def test_preprocessing_inverse_pool_masks_and_gradient():
@@ -502,8 +479,6 @@ def test_preprocessing_inverse_pool_masks_and_gradient():
         depth,
         mask,
         jnp.zeros((48, 64, 3)),
-        jnp.zeros((48, 64, 3)),
-        jnp.zeros_like(depth),
         jnp.array(0.0),
         jnp.array(0.0),
     )

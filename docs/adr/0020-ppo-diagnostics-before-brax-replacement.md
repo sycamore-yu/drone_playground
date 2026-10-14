@@ -1,10 +1,10 @@
-# ADR-0018: Diagnose perceptual PPO before replacing the learner
+# ADR-0020: Diagnose perceptual PPO before replacing the learner
 
 **Status:** Accepted for an isolated experiment, 2026-10-10
 
 ## Findings
 
-The existing [ADR-0012](0012-rl-environment-and-method-interface.md) already
+The existing [ADR-0014](0014-rl-environment-and-method-interface.md) already
 establishes a standard Brax \`Env.reset/step/State\` adapter. It explicitly keeps
 native Brax PPO/APG as **optional baseline algorithms**, not replacements for
 the in-house PPO/APG/SHAC. \`learning/brax_adapter.py\` and
@@ -82,7 +82,7 @@ current navigation failure.
 7. The automatic loop is not proof of convergence. Only the existing
    three-independent-seed frozen protocol may increase a formal matrix cell.
 
-**Reward ownership clarification:** [ADR-0019](0019-task-owned-reward-contract.md)
+**Reward ownership clarification:** [ADR-0021](0021-task-owned-reward-contract.md)
 supersedes the temporary Learning-side reward implementation. Existing
 in-flight Trial-4 settings retain their original configuration for exact
 checkpoint recovery. New experiments select reward under Task.

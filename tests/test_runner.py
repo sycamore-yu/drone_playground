@@ -48,4 +48,13 @@ def test_native_clock_measurements_and_control_between_decisions():
     assert len(decisions) == 3
     assert len(plans) == len(traces["time"]) == 22
     assert all(plan is not None for plan in plans[1:])
+    assert all(plan["positions"].shape == (2, 3) for plan in plans[1:])
+    np.testing.assert_allclose(
+        [plans[1]["received_time"], plans[11]["received_time"], plans[21]["received_time"]],
+        [0.0, 0.2, 0.4],
+    )
+    np.testing.assert_allclose(
+        [plans[1]["valid_until"], plans[11]["valid_until"], plans[21]["valid_until"]],
+        [0.5, 0.7, 0.9],
+    )
     assert np.isfinite(traces["position"]).all()

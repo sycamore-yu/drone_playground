@@ -6,7 +6,7 @@ There is no total interaction cap and an update does not indicate convergence.
 
 ```python
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import TrackingEnv
+from drone_playground.simulation.environment import TrackingEnv, make_environment
 
 env = TrackingEnv(num_envs=32, device="gpu")
 trainer = Trainer(env, kind="state", algorithm="ppo", seed=0,
@@ -22,11 +22,28 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
 
+For a Navigation depth recipe, construct the sensor with explicit image settings:
+
+```python
+env = make_environment(
+    task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"},
+    sensor_config={"width": 64, "height": 48, "frequency_hz": 30,
+                   "pitch_deg": 20, "min_range": 0.3, "max_range": 10},
+)
+trainer = Trainer(env, kind="depth", loss="zhang")
+```
+
+LiDAR recipes select `sensor="lidar"`, `kind="lidar"` and `loss="liu"`. Device
+constructors no longer infer a training image mode. Sensor/Experiment YAML holds these
+settings. Both devices produce snapshots; checkpoint identity records acquisition
+semantics, the MID360 resource hash, point budget, preprocessing and latency bounds.
+Full training archives require the current state structure and matching identity.
+
 ## 可训练 Method 与 Brax 互通
 
 ### Results v3
 
-新的长时间训练按照 [ADR-0016](adr/0016-training-patience-and-frozen-selection.md)
+新的长时间训练按照 [ADR-0018](adr/0018-training-patience-and-frozen-selection.md)
 启用训练诊断早停：`early_stopping.min_updates=800`，
 `patience=6`，`min_delta=0.02`。Patience 从第 800 次更新后的
 轻量筛查累计，最差场景优先。若首次通过完整候选选模，则只进行一次
@@ -34,7 +51,7 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
 的其他 checkpoint。旧 v2 已有单次达标候选只允许使用
 `tools/freeze_legacy_candidate.py --run <旧 run 目录>` 独立审查一次。
 
-新 run 按 [ADR-0014](adr/0014-results-layout-orbax-tensorboard.md) 保存：
+新 run 按 [ADR-0016](adr/0016-results-layout-orbax-tensorboard.md) 保存：
 `config.yaml`、TensorBoard 事件、`checkpoints/model_NNNNNN/`（Orbax
 `training/` + 选模通过才有的 `actor/`）、正式冻结 `episodes.csv`
 及按需生成的 `replays/best/`。唯一额外索引 `run.json` 保存完成性、来源和
@@ -44,7 +61,7 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
 
 ## Navigation 程序化训练 / 固定 Benchmark
 
-根据 [ADR-0017](adr/0017-procedural-training-fixed-navigation-benchmark.md)，
+根据 [ADR-0019](adr/0019-procedural-training-fixed-navigation-benchmark.md)，
 程序化训练使用 `scene=train/procedural`，每个并行世界独立持有
 `EnvState.scene_state`：障碍位置、形状、掩码、动态运动目标、
 速度/相位，以及无人机起终点。每次 reset 使用 JAX PRNG 采样；
@@ -91,10 +108,10 @@ Critic target std、动作饱和度与探索方差。
 
 ### PPO 诊断与旧版本控制接口的受控对照
 
-[ADR-0012](adr/0012-rl-environment-and-method-interface.md) 已实现
+[ADR-0014](adr/0014-rl-environment-and-method-interface.md) 已实现
 `BraxTrainingEnv` 标准交互合同；Brax 原生 PPO/APG 属于 **可选对照**，
 不是当前带 CNN/PointNet+GRU 感知策略的无缝替换。
-[ADR-0018](adr/0018-ppo-diagnostics-before-brax-replacement.md)
+[ADR-0020](adr/0020-ppo-diagnostics-before-brax-replacement.md)
 记录旧仓库 Brax PPO、DiffAero、VisFly 与新自研 PPO 的差异和验收。
 
 `navigation_procedural_depth_ppo_velocity` 和
@@ -116,8 +133,8 @@ PPO 训练记录额外提供 `navigation_progress_metres`、
 ### Task 奖励与 Learning 损失的归属
 
 根据 [ADR-0001](adr/0001-simulation-learning-boundary.md)、
-[ADR-0012](adr/0012-rl-environment-and-method-interface.md) 与
-[ADR-0019](adr/0019-task-owned-reward-contract.md)，Task 参数归
+[ADR-0014](adr/0014-rl-environment-and-method-interface.md) 与
+[ADR-0021](adr/0021-task-owned-reward-contract.md)，Task 参数归
 Simulation 管理，任务奖励数学在 simulation/task_rewards.py。
 NavigationEnv 通过 cost() 和 task_reward_components() 对所有方法
 暴露相同的 Task 奖励；learning/objective.py 仅负责组合任务成本
@@ -291,7 +308,7 @@ state, environment, action, network and learning configuration. No missing optio
 filled from historical defaults. Standalone inference archives must declare the Actor
 specification; old v1 files are historical evidence, not loadable inputs.
 
-New mixed training follows [ADR-0013](adr/0013-three-stage-learning-acceptance.md):
+New mixed training follows [ADR-0015](adr/0015-three-stage-learning-acceptance.md):
 checkpoint screening uses six main scenes and eight episodes per scene (48
 rollouts), with permissive 6/8 per-scene candidate eligibility. A qualified
 checkpoint receives one full validation of 25 episodes in each main scene

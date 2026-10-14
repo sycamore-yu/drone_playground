@@ -753,10 +753,12 @@ def main(config: DictConfig) -> None:
         if config.mode not in {"sim", "checkpoint_eval", "benchmark"}:
             raise ValueError(f"Unknown execution mode: {config.mode}")
         actor = parameters = None
+        checkpoint_config = None
         if get_class(config.method.implementation._target_).trainable:
             if not config.checkpoint:
                 raise ValueError("Frozen policy execution requires checkpoint=<policy.zip>")
             _, metadata = read_checkpoint(config.checkpoint, "inference")
+            checkpoint_config = metadata["config"]
             previous = metadata["config"]["experiment"]
             for field in ("task",):
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
@@ -801,7 +803,13 @@ def main(config: DictConfig) -> None:
             if getattr(record, "layout_version", 2) == 3
             else next_evaluation_directory(record.directory)
         )
-        report = evaluate(config, destination, actor=actor, parameters=parameters)
+        report = evaluate(
+            config,
+            destination,
+            actor=actor,
+            parameters=parameters,
+            checkpoint_config=checkpoint_config,
+        )
         record.finish(
             "completed",
             acceptance_passed=report["passed"],

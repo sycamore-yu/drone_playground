@@ -1,4 +1,4 @@
-# ADR-0012：Brax 环境合同与可训练 Method 解耦
+# ADR-0014：Brax 环境合同与可训练 Method 解耦
 
 **Status:** Accepted · 2026-10-09
 

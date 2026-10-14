@@ -1,0 +1,5 @@
+Source: https://github.com/learnsyslab/crazyflow
+Pinned commit: 36f584d114d9d331f0cee0fe4b9066f821c0fbfd
+Model: Crazyflie 2.x P250 visual meshes from crazyflow/drones/assets/cf2x
+License: MIT (see LICENSE)
+Purpose here: replay-only visual geometry; flight dynamics remain owned by the selected experiment model.

@@ -1,4 +1,4 @@
-# ADR-0017 — Procedural Navigation Training vs Fixed Benchmark
+# ADR-0019 — Procedural Navigation Training vs Fixed Benchmark
 
 **Status:** Accepted; staged implementation and CPU verification, 2026-10-10
 
