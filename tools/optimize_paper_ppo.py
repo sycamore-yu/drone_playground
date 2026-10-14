@@ -14,10 +14,11 @@ import shlex
 import subprocess
 import sys
 import time
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
-from drone_playground.learning.selection import screening_score
+from drone_playground.learning.selection import PatienceConfig, screening_score, update_patience
 
 SCENES = ["S01", "S02", "S03", "D01", "D02", "D03"]
 CASES = {
@@ -41,6 +42,14 @@ FINISHED = {
 CASE_OPTIONS = {}
 NAVIGATION_SEARCH = False
 MODALITY = {"depth": "depth", "visfly": "depth", "lidar": "lidar", "fan": "lidar"}
+ALLOCATION_POLICY = "navigation-feedback-20261014"
+
+
+def write_json(path, value):
+    """Replace scheduler evidence atomically so restart never reads half a manifest."""
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n")
+    temporary.replace(path)
 
 
 def configure_navigation_search():
@@ -136,54 +145,36 @@ def stable_modalities(records):
 
 
 def navigation_candidate(records):
-    """Cover each architecture first, then prefer measured improvements fairly."""
+    """Cover idle modalities, then rank the declared candidates by real evidence."""
     stable = stable_modalities(records)
-    # Test observed sampling/frame gaps before spending more on paper transfers.
-    for case in (
-        "depth_mixed",
-        "lidar_mixed",
-        "depth_world_rotation",
-        "lidar_world_rotation",
-        "lidar_batch64",
-        "lidar_privileged",
-        "depth_mixed_lowlr",
-        "depth_lowlr",
-        "lidar_lowlr",
-        "lidar_velocity1",
-        "lidar_goal",
-        "lidar_horizon128",
-        "lidar_task_only",
-        "depth_fixed_heading",
-        "lidar_fixed_heading",
-    ):
-        family, _, parent = CASES[case]
-        if (
-            MODALITY[family] not in stable
-            and records[f"{case}_s0"]["status"] == "missing"
-            and records[f"{parent}_s0"]["status"] in FINISHED
-        ):
-            return case, 0
-    for case, (family, _, parent) in CASES.items():
-        key = f"{case}_s0"
-        if (
-            parent is None
-            and records[key]["status"] == "missing"
-            and MODALITY[family] not in stable
-        ):
-            return case, 0
+    active = Counter(
+        MODALITY[CASES[key.rsplit("_s", 1)[0]][0]]
+        for key, row in records.items()
+        if row["status"] == "running"
+    )
     candidates = []
     for index, (case, (family, _, parent)) in enumerate(CASES.items()):
-        if parent is None or records[f"{case}_s0"]["status"] != "missing":
+        modality = MODALITY[family]
+        if modality in stable or records[f"{case}_s0"]["status"] != "missing":
             continue
-        if MODALITY[family] in stable or records[f"{parent}_s0"]["status"] not in FINISHED:
+        if parent is not None and records[f"{parent}_s0"]["status"] not in FINISHED:
             continue
-        peers = [other for other, spec in CASES.items() if spec[0] == family]
-        if any(records[f"{other}_s0"]["status"] == "running" for other in peers):
-            continue
-        count = sum(records[f"{other}_s0"]["status"] in FINISHED for other in peers)
-        evidence = records[f"{parent}_s0"].get("best")
-        score = evidence["value"] if evidence is not None else -1.0
-        candidates.append(((count, -score, index), case))
+        control = records[f"{parent}_s0"] if parent is not None else {}
+        best, latest = control.get("best"), control.get("latest")
+        score = best["value"] if best else 0.0
+        priority = 2
+        outcomes = latest.get("outcomes", {}) if latest else {}
+        if best and latest and latest["value"] < best["value"] and case.endswith("_lowlr"):
+            priority = 0
+        elif outcomes.get("OUT_OF_BOUNDS", 0) > outcomes.get("COLLISION", 0):
+            priority = 0 if case.endswith(("_goal", "_world_rotation")) else 2
+        elif outcomes.get("COLLISION", 0):
+            priority = 0 if case.endswith(("_goal", "_task_only", "_horizon128")) else 2
+        # Original sensor baselines are prerequisites for interpreting any treatment.
+        baseline = parent is None and family in {"depth", "lidar"}
+        candidates.append(
+            ((active[modality] > 0, not baseline, -score, priority, active[modality], index), case)
+        )
     return (min(candidates)[1], 0) if candidates else None
 
 
@@ -231,7 +222,7 @@ def trial_options(case, seed, output):
     return options
 
 
-def full_screen_evidence(directory):
+def full_screen_history(directory):
     """Read only complete six-scene, eight-episode reports; unknown remains None."""
     evidence = []
     for path in directory.glob("checkpoints/model_*/screening/report.json"):
@@ -249,9 +240,20 @@ def full_screen_evidence(directory):
                 "per_scene": {key: report["reports"][key]["successes"] for key in SCENES},
                 "checkpoint_update": int(path.parents[1].name.split("_")[-1]),
                 "report": str(path),
+                "outcomes": dict(
+                    sum(
+                        (Counter(row.get("outcomes", {})) for row in report["reports"].values()),
+                        Counter(),
+                    )
+                ),
             }
         )
-    return max(evidence, key=lambda row: row["value"], default=None)
+    return sorted(evidence, key=lambda row: row["checkpoint_update"])
+
+
+def full_screen_evidence(directory):
+    """Return the best complete measured screen, leaving unknown scores unset."""
+    return max(full_screen_history(directory), key=lambda row: row["value"], default=None)
 
 
 def next_trial(records):
@@ -350,7 +352,14 @@ def collect(root, previous):
                 status = "pruned"
             if status == "running" and not running:
                 status = "stale"
-            candidate = full_screen_evidence(directory)
+            screens = {
+                row["checkpoint_update"]: row for row in previous.get(key, {}).get("screens", [])
+            }
+            screens.update(
+                {row["checkpoint_update"]: row for row in full_screen_history(directory)}
+            )
+            screens = [screens[update] for update in sorted(screens)]
+            candidate = max(screens, key=lambda row: row["value"], default=None)
             best = previous.get(key, {}).get("best")
             if candidate is not None and (best is None or candidate["value"] >= best["value"]):
                 best = candidate
@@ -358,7 +367,10 @@ def collect(root, previous):
                 "status": status,
                 "run_status": actual_status,
                 "best": best,
+                "latest": screens[-1] if screens else None,
+                "screens": screens,
                 "updates": record.get("updates", record.get("last_update")),
+                "interactions": record.get("interactions", record.get("last_interactions")),
                 "configuration_sha256": record.get("config_sha256"),
                 "source_sha256": record.get("source_sha256"),
                 "directory": str(directory),
@@ -367,7 +379,115 @@ def collect(root, previous):
     return records
 
 
-def launch(project, root, python, case, seed):
+def prune_lidar_candidate(case, record):
+    """Shorten only stagnant native LiDAR pilots after 1,105,920 interactions."""
+    if CASES[case][0] != "lidar" or record["status"] != "running":
+        return False
+    if not record.get("updates") or not record.get("interactions"):
+        return False
+    per_update = record["interactions"] / record["updates"]
+    screens = record.get("screens", [])
+    if not screens or screens[-1]["checkpoint_update"] * per_update < 1_105_920:
+        return False
+    best, stagnant, stop = None, 0, False
+    settings = PatienceConfig(min_updates=737_280, patience=2, min_delta=0.005)
+    for row in screens:
+        best, stagnant, _, stop = update_patience(
+            row["value"],
+            int(row["checkpoint_update"] * per_update),
+            best,
+            stagnant,
+            settings=settings,
+        )
+    return stop
+
+
+def apply_search_pruning(records):
+    """Request a graceful checkpointed stop; retain the original worker run record."""
+    for key, record in records.items():
+        case = key.rsplit("_s", 1)[0]
+        marker = Path(record["directory"]) / "study_pruned.json"
+        if marker.exists() or not prune_lidar_candidate(case, record):
+            continue
+        write_json(
+            marker,
+            {
+                "policy": ALLOCATION_POLICY,
+                "observed_at_utc": datetime.now(UTC).isoformat(),
+                "reason": "two_stagnant_full_screens_after_lidar_minimum",
+                "latest": record["latest"],
+                "updates_at_request": record["updates"],
+                "interactions_at_request": record["interactions"],
+            },
+        )
+        try:
+            subprocess.run(
+                [
+                    "systemctl",
+                    "--user",
+                    "kill",
+                    "--signal=SIGINT",
+                    "--kill-whom=all",
+                    f"{unit_name(key)}.service",
+                ],
+                check=True,
+                timeout=15,
+            )
+        except subprocess.SubprocessError:
+            # A worker can finish between collection and signaling; allow a later retry.
+            marker.rename(marker.with_name("study_prune_signal_failed.json"))
+
+
+def sync_optim_study(study, directory, records):
+    """Recover real completed outputs once, and persist running-trial evidence."""
+    known = {trial.params["case_id"]: trial for trial in study.trials}
+    for key, record in records.items():
+        output = Path(record["directory"])
+        source = output / "trial.json"
+        if not source.exists():
+            continue
+        launch_record = json.loads(source.read_text())
+        params = {
+            "case_id": key,
+            "family": launch_record["family"],
+            "seed": launch_record["seed"],
+            "overrides": launch_record["argv"][4:],
+        }
+        trial_dir = directory / key
+        trial_dir.mkdir(exist_ok=True)
+        path = trial_dir / "manifest.json"
+        manifest = json.loads(path.read_text()) if path.exists() else {}
+        manifest.update(
+            {
+                "parameters": params,
+                "launch": launch_record,
+                "output": str(output),
+                "record": record,
+                "status": record["status"],
+                "best": record["best"],
+                "observed_at_utc": datetime.now(UTC).isoformat(),
+            }
+        )
+        write_json(path, manifest)
+        trial = known.get(key)
+        if record["status"] not in FINISHED or (trial is not None and trial.state != "running"):
+            continue
+        latest = record.get("latest")
+        if record["status"] != "failed" and latest is None:
+            continue  # An interrupted evaluation cannot provide a fabricated objective.
+        trial = trial if trial is not None else study.ask(params)
+        trial.intermediate = []
+        for screen in record.get("screens", []):
+            trial.report(screen["value"], screen["checkpoint_update"])
+        if record["status"] == "failed":
+            study.tell(trial, state="failed")
+        elif record["status"] in {"pruned", "early_stopped"}:
+            study.tell(trial, state="pruned")
+        else:
+            study.tell(trial, record["best"]["value"])
+
+
+def launch(project, root, python, case, seed, *, study=None, optim_directory=None, selection=None):
     """Validate Hydra, reserve a new run, and launch without CPU/memory/swap quotas."""
     key = f"{case}_s{seed}"
     out = root / key
@@ -408,24 +528,39 @@ def launch(project, root, python, case, seed):
             )
     out.mkdir()
     command = [str(python), "-u", "-m", "drone_playground.cli", *options]
-    (out / "trial.json").write_text(
-        json.dumps(
+    launch_record = {
+        "case": case,
+        "seed": seed,
+        "family": CASES[case][0],
+        "parent": CASES[case][2],
+        "from_scratch": True,
+        "argv": command,
+        "composed_yaml_sha256": hashlib.sha256(checked.stdout.encode()).hexdigest(),
+        "git_commit": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=project, text=True
+        ).strip(),
+        "allocation_policy": ALLOCATION_POLICY if NAVIGATION_SEARCH else None,
+    }
+    write_json(out / "trial.json", launch_record)
+    trial = None
+    if study is not None:
+        params = {"case_id": key, "family": CASES[case][0], "seed": seed, "overrides": options}
+        trial_dir = optim_directory / key
+        trial_dir.mkdir(exist_ok=True)
+        write_json(
+            trial_dir / "manifest.json",
             {
-                "case": case,
-                "seed": seed,
-                "family": CASES[case][0],
-                "parent": CASES[case][2],
-                "from_scratch": True,
-                "argv": command,
-                "composed_yaml_sha256": hashlib.sha256(checked.stdout.encode()).hexdigest(),
-                "git_commit": subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], cwd=project, text=True
-                ).strip(),
+                "parameters": params,
+                "launch": launch_record,
+                "cwd": str(project),
+                "output": str(out),
+                "selection_evidence": selection,
+                "allocation_policy": ALLOCATION_POLICY,
+                "status": "proposed",
+                "observed_at_utc": datetime.now(UTC).isoformat(),
             },
-            indent=2,
         )
-        + "\n"
-    )
+        trial = study.ask(params)
     log = root / ".scheduler" / f"{key}.log"
     exported = [
         "env",
@@ -438,21 +573,35 @@ def launch(project, root, python, case, seed):
         f"JAX_COMPILATION_CACHE_DIR={project / '.cache/jax'}",
     ]
     shell = shlex.join([*exported, *command]) + f" > {shlex.quote(str(log))} 2>&1"
-    subprocess.run(
-        [
-            "systemd-run",
-            "--user",
-            "--collect",
-            f"--unit={unit_name(key)}",
-            "--property=RuntimeMaxSec=21600",
-            f"--working-directory={project}",
-            "/bin/bash",
-            "-lc",
-            shell,
-        ],
-        check=True,
-        timeout=30,
-    )
+    try:
+        subprocess.run(
+            [
+                "systemd-run",
+                "--user",
+                "--collect",
+                f"--unit={unit_name(key)}",
+                "--property=RuntimeMaxSec=21600",
+                f"--working-directory={project}",
+                "/bin/bash",
+                "-lc",
+                shell,
+            ],
+            check=True,
+            timeout=30,
+        )
+    except subprocess.SubprocessError as error:
+        (out / "run.json").write_text(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "error": f"Worker launch failed: {error}",
+                }
+            )
+            + "\n"
+        )
+        if trial is not None:
+            study.tell(trial, state="failed")
+        raise
 
 
 def main():
@@ -463,6 +612,7 @@ def main():
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
     parser.add_argument("--suite", choices=("paper", "navigation"), default="paper")
     parser.add_argument("--max-parallel", type=int, default=2)
+    parser.add_argument("--optim-directory", type=Path)
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
     if args.max_parallel < 1:
@@ -474,6 +624,16 @@ def main():
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}
         print(json.dumps({"trials": collect(args.root, previous)}, indent=2))
         return
+    study = None
+    if NAVIGATION_SEARCH:
+        if args.optim_directory is None:
+            parser.error("Navigation run requires --optim-directory for ask/tell evidence")
+        import optim_agent
+
+        args.optim_directory.mkdir(parents=True, exist_ok=True)
+        study = optim_agent.create_study(
+            direction="maximize", storage=args.optim_directory / "study.json", seed=0
+        )
     args.root.mkdir(parents=True, exist_ok=True)
     directory = args.root / ".scheduler"
     directory.mkdir(exist_ok=True)
@@ -486,6 +646,9 @@ def main():
             )
         while True:
             records = collect(args.root, previous)
+            if study is not None:
+                sync_optim_study(study, args.optim_directory, records)
+                apply_search_pruning(records)
             status = {
                 "observed_at_utc": datetime.now(UTC).isoformat(),
                 "direction": "maximize",
@@ -497,6 +660,9 @@ def main():
                 else [],
                 "independent_training_seeds": [0, 1, 2],
                 "trials": records,
+                "allocation_policy": ALLOCATION_POLICY if NAVIGATION_SEARCH else None,
+                "max_parallel": args.max_parallel,
+                "optim_directory": str(args.optim_directory) if study is not None else None,
             }
             candidate = next_trial(records)
             active = any(record["status"] == "running" for record in records.values())
@@ -537,7 +703,19 @@ def main():
                     and int(free.strip().splitlines()[0]) >= 7000
                     and pressure < 40.0
                 ):
-                    launch(project, args.root, args.python, *candidate)
+                    launch(
+                        project,
+                        args.root,
+                        args.python,
+                        *candidate,
+                        study=study,
+                        optim_directory=args.optim_directory,
+                        selection={
+                            key: {field: row.get(field) for field in ("status", "best", "latest")}
+                            for key, row in records.items()
+                            if row["status"] != "missing"
+                        },
+                    )
                     print(datetime.now(UTC).isoformat(), "launched", candidate, flush=True)
             previous = records
             time.sleep(30)

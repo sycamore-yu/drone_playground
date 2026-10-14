@@ -171,6 +171,53 @@ VRAM and I/O pressure, without adding per-service CPU, memory or swap quotas.
 The scheduler preserves the best complete screening checkpoint and the recent
 resumable states through the existing Results policy. Missing scores stay unknown.
 
+### Feedback allocation, 14 October
+
+The user approved the acceleration work on 14 October. The feature-branch
+scheduler policy `navigation-feedback-20261014` replaces the fixed candidate
+priority list. It gives an idle modality first access to an available slot,
+preserves accepted-recipe seed confirmation, and ranks the existing bounded
+candidate pool using its parent's measured best/latest complete screen and
+collision/out-of-bounds outcomes. A regressing parent prioritizes its lower-LR
+candidate; collision failures prioritize goal/task-reward/horizon diagnostics.
+This is a local, explicit proposal policy; no model sampler or new backend runs.
+
+Each launch writes its parameters, command, output, source commit and selection
+evidence under `--optim-directory` before `optim_agent.Study.ask(params)`. The
+manager calls `tell` once when real results finish, including recovery after a
+manager restart. Intentional stops are `pruned` with the latest valid full-screen
+metric; the best retained checkpoint remains separately recorded. Partial probes
+and absent evaluations never become zero-valued objective observations.
+
+Native LiDAR pilots now have an additional scheduler stop: after at least
+1,105,920 interactions, stop if two complete screens have failed to improve by
+0.005 since the 737,280-interaction minimum. A new improvement retains the
+original 2,211,840 maximum. Depth, Fan and VisFly retain their previous budgets.
+This applies to running LiDAR workers without rewriting their saved configs:
+`study_pruned.json` records the policy and evidence, SIGINT requests a resumable
+checkpoint, and the worker's original interrupted run record is preserved.
+The scheduler records it as pruned after the process exits. Comparisons against
+older pilots must use matched interaction counts and identify the budget policy.
+
+A controlled comparison used the same v2 native-LiDAR checkpoint for 96 repeated
+updates at each concurrency, with warmed workers and explicit synchronization:
+
+| Concurrent workers | Transitions/s | Mean four-update job seconds |
+| --- | ---: | ---: |
+| 2 | 1274.85 | 3.20 |
+| 3 | 1256.08 | 4.86 |
+| 4 | 1248.27 | 6.51 |
+
+The selected limit is two: choose the smallest concurrency within 5% of the best
+measured throughput. This measures one fixed LiDAR training workload, not full
+mixed-sensor training or convergence. Existing excess workers drain normally;
+the manager does not terminate useful jobs to meet the lower limit. All live
+trainers were temporarily suspended and resumed during measurement. Frozen
+checkpoint files were hash-verified unchanged. An initial measurement attempt
+failed its worker-warmup check, was discarded, and was repeated with a barrier.
+Raw evidence is in the primary checkout's
+`tmp/navigation-ppo-review-20261014/concurrency-fixed-v2.json`.
+
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
 workers all performed real GPU PPO updates with finite losses and gradients.
@@ -211,8 +258,14 @@ From the experiment worktree, the supported Pixi task is:
 
 ```bash
 pixi run navigation-ppo-search status --root /absolute/path/to/results/navigation_ppo_convergence_v02
-pixi run navigation-ppo-search run --root /absolute/path/to/results/navigation_ppo_convergence_v02 --max-parallel 4
+pixi run navigation-ppo-search run --root /absolute/path/to/results/navigation_ppo_convergence_v02 --max-parallel 2 --optim-directory /absolute/path/to/.optim-agent-runs/navigation_ppo_convergence_v02
 ```
+
+The manager interpreter must provide `optim_agent` and `omegaconf`; `--python`
+can separately select the existing training interpreter. These are operator-tool
+requirements, not new runtime dependencies of the drone package. On this host,
+the existing `tmp/optim-agent-venv` is reused with the shared Pixi site-packages
+on its manager-only `PYTHONPATH`; worker `PYTHONPATH` remains the feature `src`.
 
 The task accepts `--python` to reuse an existing Pixi interpreter across worktrees;
 the launcher explicitly sets this worktree's `src` as its import path. Commands,

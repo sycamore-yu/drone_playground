@@ -1,6 +1,7 @@
 """Four-architecture search must preserve real evidence and bounded budgets."""
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -165,37 +166,95 @@ def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
     assert candidate["initial_checkpoint"] is None and candidate["resume"] is None
 
 
-def test_sampling_diagnostic_precedes_more_architecture_trials(search):
-    """After a failed matched control, spend the next pilot on the approved sampling test."""
+def test_idle_depth_slot_precedes_more_lidar_trials(search):
+    """A busy LiDAR queue cannot starve an eligible Depth treatment."""
     search.configure_navigation_search()
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
-    records["depth_base_s0"]["status"] = "early_stopped"
+    records["depth_base_s0"] = {
+        "status": "early_stopped",
+        "best": {"value": 0.1},
+        "latest": {"value": 0.0, "outcomes": {"OUT_OF_BOUNDS": 31, "COLLISION": 17}},
+    }
+    records["depth_lowlr_s0"]["status"] = "early_stopped"
     records["lidar_base_s0"]["status"] = "running"
-    assert search.next_trial(records) == ("depth_mixed", 0)
+    assert search.next_trial(records) == ("depth_goal", 0)
 
 
-def test_approved_rotation_input_precedes_fixed_heading_workaround(search):
-    """Keep sampling controls independent, then isolate the missing orientation input."""
+def test_measured_parent_and_failure_mode_change_candidate_order(search):
+    """Changing evidence, not the candidate list, changes the next proposal."""
     search.configure_navigation_search()
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
-    for case in ("depth_base", "lidar_base", "depth_mixed", "lidar_mixed"):
-        records[f"{case}_s0"]["status"] = "early_stopped"
-    assert search.next_trial(records) == ("depth_world_rotation", 0)
-    for case in ("depth_world_rotation", "lidar_world_rotation"):
-        records[f"{case}_s0"]["status"] = "early_stopped"
-    assert search.next_trial(records) == ("lidar_batch64", 0)
-    records["lidar_batch64_s0"]["status"] = "running"
-    assert search.next_trial(records) == ("lidar_privileged", 0)
-    records["lidar_privileged_s0"]["status"] = "running"
+    for case in ("depth_base", "lidar_base"):
+        records[f"{case}_s0"] = {
+            "status": "early_stopped",
+            "best": {"value": 0.0},
+            "latest": {"value": 0.0, "outcomes": {"COLLISION": 48}},
+        }
+    records["depth_mixed_s0"] = {"status": "early_stopped", "best": {"value": 0.13}}
     assert search.next_trial(records) == ("depth_mixed_lowlr", 0)
     records["depth_mixed_lowlr_s0"]["status"] = "running"
-    assert search.next_trial(records) == ("depth_lowlr", 0)
-    for case in ("depth_lowlr", "lidar_lowlr"):
-        records[f"{case}_s0"]["status"] = "early_stopped"
-    assert search.next_trial(records) == ("lidar_velocity1", 0)
-    for case in ("lidar_velocity1", "lidar_goal", "lidar_horizon128", "lidar_task_only"):
-        records[f"{case}_s0"]["status"] = "early_stopped"
-    assert search.next_trial(records) == ("depth_fixed_heading", 0)
+    assert search.next_trial(records) == ("lidar_goal", 0)
+
+
+def test_lidar_budget_uses_full_screens_and_preserves_late_depth_learning(search):
+    """Two stagnant screens stop LiDAR at equal samples, never a late-learning Depth run."""
+    search.configure_navigation_search()
+    for per_update in (512, 2048):
+        record = {
+            "status": "running",
+            "updates": 1_105_920 // per_update,
+            "interactions": 1_105_920,
+            "screens": [
+                {"checkpoint_update": steps // per_update, "value": 0.0}
+                for steps in (368_640, 737_280, 1_105_920)
+            ],
+        }
+        assert search.prune_lidar_candidate("lidar_base", record)
+        assert not search.prune_lidar_candidate("depth_mixed", record)
+        assert not search.prune_lidar_candidate("fan_base", record)
+        record["screens"][-1]["value"] = 0.01
+        assert not search.prune_lidar_candidate("lidar_base", record)
+        record["screens"] = record["screens"][:2]
+        assert not search.prune_lidar_candidate("lidar_base", record)
+
+
+def test_optimizer_recovers_once_and_records_pruned_latest_not_peak(search, tmp_path):
+    """Recovery must retain the failed tail and must not duplicate a completed trial."""
+    oa = pytest.importorskip("optim_agent")
+    search.configure_navigation_search()
+    directory = tmp_path / "ledger"
+    directory.mkdir()
+    run = tmp_path / "lidar_base_s0"
+    run.mkdir()
+    (run / "trial.json").write_text(
+        json.dumps(
+            {
+                "family": "lidar",
+                "seed": 0,
+                "argv": ["python", "-u", "-m", "drone_playground.cli"],
+            }
+        )
+    )
+    records = {
+        "lidar_base_s0": {
+            "directory": str(run),
+            "status": "pruned",
+            "best": {"value": 0.1},
+            "latest": {"value": 0.0},
+            "screens": [
+                {"checkpoint_update": 1200, "value": 0.1},
+                {"checkpoint_update": 2160, "value": 0.0},
+            ],
+        }
+    }
+    study = oa.create_study(direction="maximize", storage=directory / "study.json", seed=0)
+    search.sync_optim_study(study, directory, records)
+    resumed = oa.create_study(direction="maximize", storage=directory / "study.json", seed=0)
+    search.sync_optim_study(resumed, directory, records)
+    assert len(resumed.trials) == 1
+    assert resumed.trials[0].state == "pruned"
+    assert resumed.trials[0].value == 0.0
+    assert resumed.trials[0].intermediate[-1] == (2160, 0.0)
 
 
 def test_stable_acceptance_requires_three_seeds_of_the_same_recipe(search):
