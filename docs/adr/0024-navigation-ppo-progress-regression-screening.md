@@ -6,8 +6,8 @@
 `e261127` 的时间；原始批准时刻未单独保存，不将提交时间冒充消息时间。
 本轮用户再次明确同意两项原则，重申记录时间为 `2026-10-14T12:20:24Z`。
 
-**Last checked:** `2026-10-14T14:41:37Z`（UTC）；集成决策基线 `05aca1e`，
-功能实现依据 `60eb27b`。集成分支现已收录同编号决策文档，功能代码尚未合入。
+**Last checked:** `2026-10-14T17:32:52Z`（UTC）；集成决策基线 `e915568`，
+功能实现依据 `60eb27b`、`c6f3da5`、`1e1dac6`。集成分支现已收录同编号决策文档，功能代码尚未合入。
 
 **Implementation:** 可选实现仅在功能分支 `d586425`，增加到新的 Navigation 训练筛查：
 `learning/progress_guard.py`、`simulation/runner.py`、
@@ -17,6 +17,17 @@
 也没有更改历史 `run.json`、checkpoint 或冻结测试。
 
 ## Context and measured evidence
+
+2026-10-15核对：新的静态0.7/混合起点试验中Depth最佳21/48→最终2/48，
+LiDAR最佳11/48→最终0/48。S01随机整策略回放确认Depth8/8→0/8，
+Critic对同一策略的实测回报误差12.44→55.13。新实验批次
+`results/navigation_stability_fixes_v01/` 逐回合核对成功集合，并独立复制满足
+训练探针与六场景参考能力保持条件的整份候选权重；每次正成功训练探针立即归档恢复点，
+不等待六场景筛查。启用归档前已删除的新Depth u240权重缺口明确记录；
+不回滚训练状态或替代正式验收。
+Actor LR、rollout长度、λ、价值裁剪分开对照；128步再只改变λ。
+独立Task配方 `fan2025_arrival` 的0.51m/约0.97m物理对照已消除已测悬停激励冲突，
+PPO学习效果和三种子验收仍待新训练结果。详见研究日志本轮补充与批次README。
 
 现有 Navigation PPO 的轻量筛查主指标是六个固定场景的
 `min(scene success rate) + 0.25 × mean(scene success rate)`。
