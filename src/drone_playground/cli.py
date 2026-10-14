@@ -131,6 +131,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
     scene_index, updates_in_scene = 0, 0
     sampling = None
     screening_options = resolved.get("screening", {})
+    training_probe_enabled = screening_options.get("training_distribution_probe", False)
+    if type(training_probe_enabled) is not bool or (
+        training_probe_enabled and (config.task.name != "navigation" or legacy)
+    ):
+        raise ValueError("Training-distribution probe requires nonlegacy Navigation evaluation")
     fast_probes = screening_options.get("probe_between_full", False)
     full_every = screening_options.get("full_every", 3)
     progress_guard_options = screening_options.get("progress_aware")
@@ -342,6 +347,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
         light_config.benchmark.episodes = 8
         light_config.benchmark.scenes = primary_scenes
         light_config.benchmark.seed_base = 1_000_000
+        if training_probe_enabled:
+            training_probe_config = OmegaConf.create(
+                OmegaConf.to_container(light_config, resolve=True)
+            )
+            training_probe_config.benchmark.scenes = ["train/procedural"]
+            training_probe_config.benchmark.seed_base = 1_100_000
         evaluation_config.benchmark.scenes = primary_scenes
         evaluation_config.benchmark.seed_base = 1_500_000
         if fast_probes:
@@ -459,12 +470,26 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     "replays",
                     "screening",
                     "probe",
+                    "training_distribution",
                 }:
                     item.rename(previous / item.name)
             record.event(
                 "checkpoint_evaluation_retry",
                 update=update,
                 previous_output=str(previous),
+            )
+        if training_probe_enabled:
+            training_report = evaluate(
+                training_probe_config,
+                directory / "training_distribution",
+                actor=trainer.actor,
+                parameters=state.params,
+                environments=environments,
+            )
+            record.event(
+                "training_distribution_probe",
+                update=update,
+                per_scene=training_report["reports"],
             )
         if legacy:
             report = evaluate(
@@ -856,12 +881,11 @@ def main(config: DictConfig) -> None:
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
                     raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             physical = OmegaConf.to_container(config.simulation, resolve=True)
-            if previous["observation"].get("navigation_world_rotation", False) != (
-                config.observation.get("navigation_world_rotation", False)
-            ):
-                raise ValueError(
-                    "Frozen evaluation changes checkpoint navigation_world_rotation contract"
-                )
+            for field in ("navigation_world_rotation", "navigation_relative_goal"):
+                if previous["observation"].get(field, False) != config.observation.get(
+                    field, False
+                ):
+                    raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             if (
                 previous["simulation"]["navigation_goal_observation"]
                 != physical["navigation_goal_observation"]

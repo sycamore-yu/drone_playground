@@ -117,6 +117,9 @@ class BaseEnv:
             raise ValueError("Goal observation requires Navigation")
         self.navigation_goal_observation = navigation_goal_observation
         self.observation_config = dict(observation_config or {})
+        relative_goal = self.observation_config.get("navigation_relative_goal", False)
+        if type(relative_goal) is not bool or (relative_goal and self.task.name != "navigation"):
+            raise ValueError("navigation_relative_goal requires boolean Navigation configuration")
         world_rotation = self.observation_config.get("navigation_world_rotation", False)
         if type(world_rotation) is not bool:
             raise ValueError("navigation_world_rotation must be boolean")
@@ -702,10 +705,13 @@ class NavigationEnv(BaseEnv):
         goal = self.goal_for(state)
         delta = goal - p
         distance = jnp.linalg.norm(delta, axis=-1)
-        goal_velocity = delta / jnp.maximum(distance[:, None], 1e-6)
-        goal_velocity = goal_velocity * jnp.minimum(3.0, distance)[:, None]
+        if self.observation_config.get("navigation_relative_goal", False):
+            goal_feature = delta / 100.0
+        else:
+            goal_feature = delta / jnp.maximum(distance[:, None], 1e-6)
+            goal_feature = goal_feature * jnp.minimum(3.0, distance)[:, None]
         body_v = rot.apply(v, inverse=True)
-        body_target = rot.apply(goal_velocity, inverse=True)
+        body_target = rot.apply(goal_feature, inverse=True)
         up = rot.apply(jnp.broadcast_to(jnp.array([0.0, 0.0, 1.0]), p.shape), inverse=True)
         features = jnp.concatenate([body_v, body_target, up, jnp.full((len(p), 1), 0.07)], -1)
         if self.navigation_goal_observation:
@@ -782,11 +788,19 @@ class NavigationEnv(BaseEnv):
         velocity = after.physics.states.vel[:, 0]
         direction = self.goal_for(after) - position
         distance = jnp.linalg.norm(direction, axis=-1, keepdims=True)
-        desired = direction / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
-        error = jnp.sum((velocity - desired) ** 2, -1)
+        if self.task.reward_profile == "minimum_time_navigation":
+            error = jnp.ones(position.shape[0])
+        else:
+            desired = direction / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
+            error = jnp.sum((velocity - desired) ** 2, -1)
         clearance = self.scene_clearance(position, after.time, after.scene_state) - self.task.radius
         error = error + 5 * jax.nn.softplus((0.5 - clearance) * 8) / 8
-        return self._shared_cost(before, after, action, error), {}
+        terms = (
+            {"navigation_time_cost": jnp.where(before.done, 0.0, self.dt)}
+            if self.task.reward_profile == "minimum_time_navigation"
+            else {}
+        )
+        return self._shared_cost(before, after, action, error), terms
 
 
 def make_environment(*, task: str = "tracking", **kwargs) -> BaseEnv:

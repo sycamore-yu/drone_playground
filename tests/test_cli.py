@@ -670,6 +670,7 @@ def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
         "action_delay_s",
         "navigation_goal_observation",
         "navigation_world_rotation",
+        "navigation_relative_goal",
     ],
 )
 def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch, field):
@@ -681,8 +682,8 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
         config.simulation.action_delay_s = 0.1
     elif field == "navigation_goal_observation":
         config.simulation.navigation_goal_observation = True
-    elif field == "navigation_world_rotation":
-        OmegaConf.update(config, "observation.navigation_world_rotation", True, force_add=True)
+    elif field in ("navigation_world_rotation", "navigation_relative_goal"):
+        OmegaConf.update(config, f"observation.{field}", True, force_add=True)
         config.benchmark.allow_environment_change = True
     else:
         config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123

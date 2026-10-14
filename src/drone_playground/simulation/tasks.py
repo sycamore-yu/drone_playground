@@ -72,6 +72,7 @@ class Task:
         self.name = name
         if reward_profile not in {
             "default",
+            "minimum_time_navigation",
             "legacy_motion_navigation_v2",
             "fan2025",
             "visfly2025",

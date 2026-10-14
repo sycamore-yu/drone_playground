@@ -41,6 +41,61 @@ def restore(record, model, data, frame):
     mujoco.mj_forward(model, data)
 
 
+def test_recorded_scene_motion_roundtrips_actual_positions(tmp_path, monkeypatch):
+    """Keep prescribed procedural motion in the native RScope data."""
+    source = tmp_path / "procedural.xml"
+    source.write_text(
+        '<mujoco><worldbody><body name="moving" mocap="true">'
+        '<geom type="box" size=".3 .3 .3"/></body></worldbody></mujoco>'
+    )
+    movement = np.array([[8, 0, 3], [9, 0.5, 3], [8.5, -0.2, 3.2]])
+    path = export_replay(
+        tmp_path / "recorded",
+        source,
+        TIMES,
+        POSITIONS,
+        QUATERNIONS,
+        scene_body_positions={"moving": movement},
+    )
+    record, model, data, _ = decode(path, monkeypatch)
+    for frame in range(3):
+        restore(record, model, data, frame)
+        np.testing.assert_allclose(data.body("moving").xpos, movement[frame])
+
+
+def test_float32_capture_roundoff_is_allowed_but_future_capture_is_rejected(tmp_path):
+    """Permit one native float32 ULP without allowing a genuine future capture."""
+    times = np.array([1, 2, 3], dtype=np.float32)
+    captures = np.nextafter(times, np.float32(np.inf))
+    export_replay(
+        tmp_path / "rounded",
+        ASSETS / "navigation/S01.xml",
+        times,
+        POSITIONS,
+        QUATERNIONS,
+        sensor_times=captures,
+    )
+    with pytest.raises(ValueError, match="later"):
+        export_replay(
+            tmp_path / "future",
+            ASSETS / "navigation/S01.xml",
+            times,
+            POSITIONS,
+            QUATERNIONS,
+            sensor_times=times + 0.01,
+        )
+
+
+def test_near_stationary_hover_preserves_poses_without_invalid_capsules(tmp_path, monkeypatch):
+    """Hover jitter must decode, even when a path segment is too short to draw."""
+    positions = np.array([[98, 1, 3], [98, 1 + 6e-8, 3], [98, 1 + 2e-7, 3]])
+    path = export_replay(
+        tmp_path / "hover", ASSETS / "navigation/D01.xml", TIMES, positions, QUATERNIONS
+    )
+    record, _, _, _ = decode(path, monkeypatch)
+    np.testing.assert_array_equal(record.qpos[:, 0, :3], positions)
+
+
 @pytest.mark.parametrize("scene_name", ["S01", "S02", "S03", "S06", "D01", "D02", "D03", "D06"])
 def test_navigation_geometry_and_three_frame_roundtrip(tmp_path, monkeypatch, scene_name):
     """Verify navigation geometry and three frame roundtrip."""

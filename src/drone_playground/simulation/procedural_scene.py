@@ -7,6 +7,7 @@ corridor; start/goal are placed outside the occupied x-range.
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 
 import jax
@@ -42,6 +43,7 @@ class SceneDistribution:
     training_seed: int = 0
     start_sampling: str = "endpoints"
     min_start_goal_distance_m: float = 0.0
+    start_goal_distance_range_m: tuple[float, float] | None = None
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
@@ -57,6 +59,19 @@ class SceneDistribution:
             self.min_start_goal_distance_m > 0 and self.start_sampling != "collision_free"
         ):
             raise ValueError("Long-flight distance is supported only for collision_free, up to 80m")
+        interval = self.start_goal_distance_range_m
+        if interval is not None and (
+            self.start_sampling != "collision_free"
+            or self.min_start_goal_distance_m != 0
+            or not isinstance(interval, (tuple, list))
+            or len(interval) != 2
+            or any(type(v) not in (int, float) or not math.isfinite(v) for v in interval)
+            or not 5 <= interval[0] <= interval[1] <= 90
+        ):
+            raise ValueError(
+                "Distance range requires collision_free starts, legacy minimum=0, "
+                "and 5<=low<=high<=90m"
+            )
 
 
 class ProceduralScene:
@@ -77,12 +92,16 @@ class ProceduralScene:
             config if isinstance(config, SceneDistribution) else SceneDistribution(**(config or {}))
         )
         generator = (
-            "procedural-navigation-v2-long-start"
+            "procedural-navigation-v3-distance-range"
+            if self.distribution.start_goal_distance_range_m is not None
+            else "procedural-navigation-v2-long-start"
             if self.distribution.min_start_goal_distance_m > 0
             else "procedural-navigation-v1"
         )
         # Keep v1's byte-for-byte identity compatible with historical checkpoints.
         distribution_identity = vars(self.distribution).copy()
+        if self.distribution.start_goal_distance_range_m is None:
+            distribution_identity.pop("start_goal_distance_range_m")
         if self.distribution.min_start_goal_distance_m == 0:
             distribution_identity.pop("min_start_goal_distance_m")
         self.geometry_hash = hashlib.sha256(
@@ -182,9 +201,16 @@ class ProceduralScene:
             # but keep most episodes distributed throughout the whole course.
             trial_keys = jax.vmap(lambda key: jax.random.fold_in(key, 731))(keys)
 
-            def candidates(key, start_group):
+            def candidates(key, start_group, goal):
                 near_key, coord_key = jax.random.split(key)
                 coordinates = jax.random.uniform(coord_key, (16, 3))
+                interval = self.distribution.start_goal_distance_range_m
+                if interval is not None:
+                    radius = interval[0] + (interval[1] - interval[0]) * coordinates[:, 0]
+                    y_offset = (2 * coordinates[:, 1] - 1) * jnp.minimum(12.0, radius / 2)
+                    height = 1.2 + 4.0 * coordinates[:, 2]
+                    x_offset = jnp.sqrt(radius**2 - y_offset**2 - (height - goal[2]) ** 2)
+                    return jnp.stack([goal[0] - x_offset, goal[1] + y_offset, height], -1)
                 if self.distribution.start_sampling == "stratified":
                     # Rotate three equally sized cohorts across episodes:
                     # nominal benchmark starts, arbitrary starts, and near-goal starts.
@@ -207,15 +233,30 @@ class ProceduralScene:
                     axis=-1,
                 )
 
-            trial_positions = jax.vmap(candidates)(trial_keys, (indices + episodes) % 3)
+            trial_positions = jax.vmap(candidates)(
+                trial_keys, (indices + episodes) % 3, scenario.goal
+            )
             distances = self.clearance(trial_positions, scene_state=scenario)
             valid = (distances > 0.45) & (
                 jnp.linalg.norm(trial_positions - scenario.goal[:, None, :], axis=-1) > 4.0
             )
             best = jnp.argmax(valid, axis=1)
             start = jnp.take_along_axis(trial_positions, best[:, None, None], axis=1)[:, 0, :]
+            fallback = scenario.start
+            if self.distribution.start_goal_distance_range_m is not None:
+                radius = jnp.linalg.norm(trial_positions[:, 0] - scenario.goal, axis=-1)
+                # The clear end zone joins the reserved outside lane at the same distance.
+                y_offset = jnp.minimum(radius, scenario.goal[:, 1] - self.distribution.corridor_y)
+                fallback = scenario.goal - jnp.stack(
+                    [
+                        jnp.sqrt(jnp.maximum(radius**2 - y_offset**2, 0)),
+                        y_offset,
+                        jnp.zeros_like(radius),
+                    ],
+                    -1,
+                )
             scenario = scenario.replace(
-                start=jnp.where(jnp.any(valid, axis=1)[:, None], start, scenario.start)
+                start=jnp.where(jnp.any(valid, axis=1)[:, None], start, fallback)
             )
         return scenario
 

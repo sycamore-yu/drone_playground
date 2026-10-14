@@ -163,7 +163,10 @@ def evaluate(
     progress_diagnostics = bool(
         protocol == "diagnostic"
         and config.mode == "checkpoint_eval"
-        and config.get("screening", {}).get("progress_aware", False)
+        and (
+            config.get("screening", {}).get("progress_aware", False)
+            or config.get("screening", {}).get("training_distribution_probe", False)
+        )
     )
     if progress_diagnostics and (task != "navigation" or method.execution != "jax"):
         raise ValueError("Progress-aware screening requires JAX Navigation evaluation")

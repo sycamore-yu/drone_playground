@@ -44,6 +44,7 @@ FINISHED = {
 }
 CASE_OPTIONS = {}
 NAVIGATION_SEARCH = False
+DISTANCE_SEARCH = False
 MODALITY = {"depth": "depth", "visfly": "depth", "lidar": "lidar", "fan": "lidar"}
 ALLOCATION_POLICY = "navigation-regression-controls-20261014"
 REGRESSION_CONTROLS = {
@@ -67,8 +68,10 @@ def write_json(path, value):
 
 def configure_navigation_search():
     """Compare all four architectures with fresh, matched family baselines."""
-    global NAVIGATION_SEARCH, CASES, BASE_UNITS, CASE_OPTIONS
+    global NAVIGATION_SEARCH, CASES, BASE_UNITS, CASE_OPTIONS, DISTANCE_SEARCH, ALLOCATION_POLICY
     NAVIGATION_SEARCH = True
+    DISTANCE_SEARCH = False
+    ALLOCATION_POLICY = "navigation-regression-controls-20261014"
     depth = "navigation_search_depth"
     lidar = "navigation_search_lidar"
     fan = "navigation_paper_fan2025_equations_margin2"
@@ -162,6 +165,36 @@ def interaction_controls(family, *, num_envs, horizon):
     }
 
 
+def configure_distance_search():
+    """Pair sensor policies across start distances under one speed-free objective."""
+    global CASES, CASE_OPTIONS, BASE_UNITS, NAVIGATION_SEARCH, DISTANCE_SEARCH, ALLOCATION_POLICY
+    NAVIGATION_SEARCH = DISTANCE_SEARCH = True
+    ALLOCATION_POLICY = "navigation-distance-fixed-budget-20261014"
+    CASES = {
+        f"{family}_d{distance}": (family, f"navigation_search_{family}", None)
+        for distance in (20, 80, 10, 30, 50)
+        for family in ("depth", "lidar")
+    }
+    BASE_UNITS = {}
+    CASE_OPTIONS = {
+        case: [
+            "simulation.procedural.min_start_goal_distance_m=0.0",
+            f"++simulation.procedural.start_goal_distance_range_m=[{case.split('_d')[1]},{case.split('_d')[1]}]",
+            "simulation.navigation_goal_observation=true",
+            "++observation.navigation_relative_goal=true",
+            "++observation.navigation_world_rotation=true",
+            "++task.options.reward_profile=minimum_time_navigation",
+            "learning.loss=null",
+            "~learning.options.perception_loss",
+            "learning.options.perception_weight=0.0",
+            "learning.options.critic_uses_sensor=false",
+            "learning.options.critic_uses_privileged=true",
+            "++screening.training_distribution_probe=true",
+        ]
+        for case in CASES
+    }
+
+
 def stable_modalities(records):
     """Require all three independent seeds for one recipe, not mixed recipes."""
     return {
@@ -180,6 +213,13 @@ def navigation_candidate(records):
         if row["status"] == "running"
     )
     candidates = []
+    if DISTANCE_SEARCH:
+        candidates = [
+            (active[MODALITY[family]] > 0, index, case)
+            for index, (case, (family, _, _)) in enumerate(CASES.items())
+            if records[f"{case}_s0"]["status"] == "missing"
+        ]
+        return (min(candidates)[2], 0) if candidates else None
     mixed = records["depth_mixed_s0"]
     regression = (
         all(records[f"{case}_s0"]["status"] in FINISHED for case in ("depth_base", "lidar_base"))
@@ -249,7 +289,7 @@ def trial_options(case, seed, output):
         *treatments,
     ]
     if NAVIGATION_SEARCH:
-        overrides = dict(option.lstrip("+").split("=", 1) for option in options)
+        overrides = dict(option.lstrip("+").split("=", 1) for option in options if "=" in option)
         horizon = int(
             overrides.get(
                 "learning.options.horizon",
@@ -259,12 +299,17 @@ def trial_options(case, seed, output):
         settings = interaction_controls(
             family, num_envs=int(overrides["simulation.num_envs"]), horizon=horizon
         )
+        minimum_updates = settings["min_updates"]
+        if DISTANCE_SEARCH:
+            minimum_updates = settings["max_interactions"] // (
+                horizon * int(overrides["simulation.num_envs"])
+            )
         options += [
             f"learning.options.horizon={horizon}",
             f"learning.evaluation_interval={settings['evaluation_interval']}",
             f"learning.checkpoint_interval={settings['checkpoint_interval']}",
             f"++learning.max_interactions={settings['max_interactions']}",
-            f"early_stopping.min_updates={settings['min_updates']}",
+            f"early_stopping.min_updates={minimum_updates}",
             "early_stopping.patience=3",
             "early_stopping.min_delta=0.005",
             "++screening.probe_between_full=true",
@@ -317,7 +362,7 @@ def next_trial(records):
             case, seed = key.rsplit("_s", 1)
             return case, int(seed)
     for case in CASES:
-        if MODALITY[CASES[case][0]] in stable:
+        if not DISTANCE_SEARCH and MODALITY[CASES[case][0]] in stable:
             continue
         for seed in (1, 2):
             earlier = [records[f"{case}_s{i}"]["status"] for i in range(seed)]
@@ -462,7 +507,7 @@ def collect(root, previous):
 
 def prune_lidar_candidate(case, record):
     """Shorten only stagnant native LiDAR pilots after 1,105,920 interactions."""
-    if record.get("progress_aware"):
+    if DISTANCE_SEARCH or record.get("progress_aware"):
         return False  # Its bounded PPO worker owns physical-progress patience.
     if CASES[case][0] != "lidar" or record["status"] != "running":
         return False
@@ -620,6 +665,14 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
 
         resolved = OmegaConf.to_container(OmegaConf.create(checked.stdout), resolve=True)
         minimum_distance = 0.0 if case.startswith("depth_mixed") or case == "lidar_mixed" else 80.0
+        if DISTANCE_SEARCH:
+            minimum_distance = 0.0
+            distance = int(case.split("_d")[1])
+            if resolved["simulation"]["procedural"].get("start_goal_distance_range_m") != [
+                distance,
+                distance,
+            ]:
+                raise ValueError("Distance control changed its declared start radius")
         if (
             resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != minimum_distance
             or not resolved["benchmark"]["fixed_checkpoint_seeds"]
@@ -716,7 +769,7 @@ def main():
     parser.add_argument("mode", choices=("run", "status"))
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
-    parser.add_argument("--suite", choices=("paper", "navigation"), default="paper")
+    parser.add_argument("--suite", choices=("paper", "navigation", "distance"), default="paper")
     parser.add_argument("--max-parallel", type=int, default=2)
     parser.add_argument("--optim-directory", type=Path)
     args = parser.parse_args()
@@ -725,6 +778,8 @@ def main():
         raise ValueError("max-parallel must be positive")
     if args.suite == "navigation":
         configure_navigation_search()
+    elif args.suite == "distance":
+        configure_distance_search()
     snapshot = args.root / "study.json"
     if args.mode == "status":
         previous = json.loads(snapshot.read_text()).get("trials", {}) if snapshot.exists() else {}
