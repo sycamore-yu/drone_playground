@@ -171,6 +171,25 @@ VRAM and I/O pressure, without adding per-service CPU, memory or swap quotas.
 The scheduler preserves the best complete screening checkpoint and the recent
 resumable states through the existing Results policy. Missing scores stay unknown.
 
+Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
+Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
+workers all performed real GPU PPO updates with finite losses and gradients.
+Saved configurations match their declared factors; batch64 additionally changes
+only the derived evaluation/checkpoint/pruning update counts. The four-worker
+window after initial compilation and Depth's full screen measured about
+1,445 training transitions/s, versus about 1,360 in the earlier two-worker
+window. These 60-second windows contain different recipes and checkpoint work;
+they establish useful concurrent execution, not a controlled 6% speedup claim.
+An intervening window with Depth evaluating measured 1,190 transitions/s.
+GPU busy was 99–100%, observed VRAM about 11.1 GiB of 24 GiB, and available
+host RAM about 41 GiB. The manager remains at max-parallel4; no higher-count
+throughput claim is made. Measurements and resolved-config comparisons are in
+`new_drone_playground/tmp/navigation-ppo-review-20261014/gpu-load-*.json` and
+`lidar-expansion-live-config-diff.json`. The queue/config tests passed 30 cases;
+Standards and Spec code reviews each found no actionable proved defect.
+These checks do not establish LiDAR convergence. Depth orientation's best
+complete screen is 1/48 at update2400; its update3600 screen is 0/48.
+
 New workers also preserve each full screen's per-scene report, score and patience
 in the existing TensorBoard event stream before checkpoint retention can remove
 its directory. The prior writer recorded only the pass flag and overwrote its
