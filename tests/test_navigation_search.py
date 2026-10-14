@@ -255,6 +255,90 @@ def test_lidar_budget_uses_full_screens_and_preserves_late_depth_learning(search
         assert not search.prune_lidar_candidate("lidar_base", record)
 
 
+def test_progress_aware_lidar_disables_legacy_success_only_pruner(search):
+    """New 0/48 pilots with physical progress use their own bounded Trainer guard."""
+    search.configure_navigation_search()
+    candidate = {
+        "status": "running",
+        "updates": 2160,
+        "interactions": 1_105_920,
+        "screens": [{"checkpoint_update": update, "value": 0.0} for update in (720, 1440, 2160)],
+    }
+    assert search.prune_lidar_candidate("lidar_base", candidate)
+    candidate["progress_aware"] = True
+    assert not search.prune_lidar_candidate("lidar_base", candidate)
+    candidate["progress_aware"] = False
+    assert search.prune_lidar_candidate("lidar_base", candidate)
+
+
+def test_progress_aware_study_evidence_survives_checkpoint_pruning(search, tmp_path):
+    """Scheduler recognizes recorded progress without treating it as a success event."""
+    search.configure_navigation_search()
+    run = tmp_path / "lidar_base_s0"
+    report_file = run / "checkpoints/model_000720/screening/report.json"
+    report_file.parent.mkdir(parents=True)
+    from drone_playground.learning.progress_guard import screen_evidence
+
+    report = {
+        "complete": True,
+        "protocol": "diagnostic",
+        "reports": {
+            scene: {
+                "task": "navigation",
+                "episodes": 8,
+                "successes": 0,
+                "outcomes": {"COLLISION": 8, "SUCCESS": 0},
+                "progress_diagnostics": {
+                    "mean_normalized_final_progress": 0.24,
+                    "mean_normalized_best_progress": 0.31,
+                    "mean_final_distance_metres": 73.0,
+                    "mean_path_length_metres": 30.0,
+                    "minimum_height_metres": 2.0,
+                    "minimum_lower_boundary_margin_metres": 1.5,
+                    "lower_height_out_of_bounds": 0,
+                },
+            }
+            for scene in search.SCENES
+        },
+    }
+    report_file.write_text(json.dumps(report))
+    evidence = search.full_screen_history(run)
+    assert len(evidence) == 1
+    assert evidence[0]["successes"] == 0
+    assert evidence[0]["value"] == 0.0
+    assert evidence[0]["progress"] == screen_evidence(report, search.SCENES)
+    report_file.unlink()
+    assert search.full_screen_history(run) == []
+
+
+def test_scheduler_restores_progress_guard_identity_from_saved_worker_config(
+    search, tmp_path, monkeypatch
+):
+    """The supervisor recovers the opt-in status independently of the last report."""
+    search.configure_navigation_search()
+    run = tmp_path / "lidar_base_s0"
+    run.mkdir()
+    (run / "run.json").write_text(json.dumps({"status": "running", "last_update": 2160}))
+    OmegaConf.save(
+        OmegaConf.create(
+            {
+                "screening": {
+                    "progress_aware": {
+                        "min_progress_delta": 0.03,
+                        "max_unsafe_increase": 0.0,
+                    }
+                }
+            }
+        ),
+        run / "config.yaml",
+    )
+    monkeypatch.setattr(search, "active_units", lambda: set())
+    rec = search.collect(tmp_path, {})
+    assert rec["lidar_base_s0"]["status"] == "stale"
+    assert rec["lidar_base_s0"]["progress_aware"] is True
+    assert rec["depth_base_s0"]["progress_aware"] is False
+
+
 def test_optimizer_recovers_once_and_records_pruned_latest_not_peak(search, tmp_path):
     """Recovery must retain the failed tail and must not duplicate a completed trial."""
     oa = pytest.importorskip("optim_agent")

@@ -18,6 +18,9 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
+from omegaconf import OmegaConf
+
+from drone_playground.learning.progress_guard import screen_evidence
 from drone_playground.learning.selection import PatienceConfig, screening_score, update_patience
 
 SCENES = ["S01", "S02", "S03", "D01", "D02", "D03"]
@@ -282,21 +285,22 @@ def full_screen_history(directory):
         if not report.get("complete") or set(report.get("reports", {})) != set(SCENES):
             continue
         value = screening_score(report, "navigation", SCENES)
-        evidence.append(
-            {
-                "value": value,
-                "successes": sum(row["successes"] for row in report["reports"].values()),
-                "per_scene": {key: report["reports"][key]["successes"] for key in SCENES},
-                "checkpoint_update": int(path.parents[1].name.split("_")[-1]),
-                "report": str(path),
-                "outcomes": dict(
-                    sum(
-                        (Counter(row.get("outcomes", {})) for row in report["reports"].values()),
-                        Counter(),
-                    )
-                ),
-            }
-        )
+        row = {
+            "value": value,
+            "successes": sum(row["successes"] for row in report["reports"].values()),
+            "per_scene": {key: report["reports"][key]["successes"] for key in SCENES},
+            "checkpoint_update": int(path.parents[1].name.split("_")[-1]),
+            "report": str(path),
+            "outcomes": dict(
+                sum(
+                    (Counter(row.get("outcomes", {})) for row in report["reports"].values()),
+                    Counter(),
+                )
+            ),
+        }
+        if any("progress_diagnostics" in scene for scene in report["reports"].values()):
+            row["progress"] = screen_evidence(report, SCENES)
+        evidence.append(row)
     return sorted(evidence, key=lambda row: row["checkpoint_update"])
 
 
@@ -412,6 +416,22 @@ def collect(root, previous):
                 status = "pruned"
             if status == "running" and not running:
                 status = "stale"
+            # The opt-in progress guard is a *worker* stopping contract.
+            # Legacy scheduler-level success-only LiDAR pruning must not
+            # override it. Read the saved recipe rather than guessing from
+            # whether the newest report contains progress fields.
+            config_path = directory / "config.yaml"
+            progress_aware = (
+                bool(
+                    OmegaConf.select(
+                        OmegaConf.load(config_path),
+                        "screening.progress_aware",
+                        default=None,
+                    )
+                )
+                if identity.is_file() and config_path.is_file()
+                else False
+            )
             screens = {
                 row["checkpoint_update"]: row for row in previous.get(key, {}).get("screens", [])
             }
@@ -433,6 +453,7 @@ def collect(root, previous):
                 "interactions": record.get("interactions", record.get("last_interactions")),
                 "configuration_sha256": record.get("config_sha256"),
                 "source_sha256": record.get("source_sha256"),
+                "progress_aware": progress_aware,
                 "directory": str(directory),
                 "error": record.get("error"),
             }
@@ -441,6 +462,8 @@ def collect(root, previous):
 
 def prune_lidar_candidate(case, record):
     """Shorten only stagnant native LiDAR pilots after 1,105,920 interactions."""
+    if record.get("progress_aware"):
+        return False  # Its bounded PPO worker owns physical-progress patience.
     if CASES[case][0] != "lidar" or record["status"] != "running":
         return False
     if not record.get("updates") or not record.get("interactions"):
