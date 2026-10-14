@@ -62,24 +62,60 @@ remain fixed. This parameter decision does not approve a new observation or mode
 | Family | Matched control | Single-variable candidates |
 | --- | --- | --- |
 | Depth CNN/GRU | Depth A, >=80m starts, actor LR 2e-4 | Mixed starts; world rotation input; fixed heading; LR 5e-5; existing 12-feature goal input |
-| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; world rotation input; fixed heading; LR 2.5e-5; existing 12-feature goal input |
+| LiDAR PointNet/GRU | LiDAR D, >=80m starts, actor LR 1e-4 | Mixed starts; world rotation input; fixed heading; LR 2.5e-5; existing 12-feature goal input; batch64; privileged Critic; velocity window1; horizon128; task-only reward |
 | Fan | Margin2 equations, fresh current-sensor control | Actor LR 2.5e-5; initial log std -1.5 |
 | VisFly | Shared visual encoder, fresh current-sensor control | Initial log std -1; thrust range 0–2 times weight |
 
-There are 18 seed-zero slots. Original Depth/LiDAR controls run first. Their
-mixed-start, world-rotation, lower-Actor-LR and fixed-heading diagnostics take
-priority in that order once their matched controls finish. The observed Depth
-screening regression and frequent KL skips justify evaluating its existing LR
-treatment before spending more interactions on the paper transfers.
+There are 24 seed-zero slots. Original Depth/LiDAR controls run first. Their
+mixed-start and world-rotation diagnostics have first priority, followed by
+LiDAR batch64 and privileged Critic, the Depth mixed-start lower-LR follow-up,
+the original Depth/LiDAR lower-Actor-LR candidates,
+LiDAR velocity-window1, goal input, horizon128 and task-only reward, then fixed
+heading. The observed Depth screening regression and frequent KL skips justify
+evaluating its existing LR treatment before spending more interactions on the
+paper transfers. All priorities require a finished matched control.
 A frozen-benchmark pass promotes the same recipe to independent seeds1 and2.
 Once a sensor modality has three accepted seeds of one recipe, no competing
 recipe or replication for that modality is launched. Interrupted trials remain
 visible and do not prevent independent candidates from running; their saved
 state is preserved for explicit contract-checked CLI resumption.
 
-Existing privileged Critic support already includes goal-relative position,
-time, clearance and ideal rays. It remains available for a later evidence-based
-ablation without introducing another network interface.
+The user requested additional LiDAR convergence candidates and higher GPU
+utilization on 14 October 2026. These candidates reuse existing options:
+
+| Candidate | Change from `lidar_base` | Question tested |
+| --- | --- | --- |
+| `lidar_batch64` | 16 to 64 environments | Does a larger sample batch improve PPO learning and GPU throughput? |
+| `lidar_privileged` | Sensor Critic to existing privileged Critic | Does true state/geometry improve value estimation while Actor input stays fixed? |
+| `lidar_velocity1` | Causal velocity window 30 to 1 | Does an immediate velocity target improve credit assignment? |
+| `lidar_horizon128` | Rollout 32 to 128 steps | Does longer recurrent context/bootstrap spacing help? This also increases samples per update. |
+| `lidar_task_only` | Named Liu cost weight 0.5 to 0 | Does the existing Task reward suffice without the adapted differentiable cost? |
+
+The Critic choice needs two mutually exclusive existing flags, sensor=false
+and privileged=true; it is one categorical treatment. The privileged input
+already contains goal-relative position, time, clearance and ideal rays.
+No network interface, dynamics or new reward formula is introduced.
+Task-only retains Task-owned progress, clearance, altitude and terminal terms;
+it does not remove collision termination or change benchmark success.
+
+Batch and horizon treatments keep evaluation/pruning/sample budgets equal in
+environment interactions. They consequently perform fewer optimizer updates.
+The batch64 and horizon128 candidates both collect 2,048 samples per update,
+versus 512 for the control, enabling a secondary comparison of independent
+worlds and temporal context. They do not isolate these effects from update count.
+Only the explicit candidate factor and the derived update cadence differ.
+All candidates start from random weights, keep >=80m procedural training starts,
+and retain the fixed six-scene benchmark. Combinations require subsequent,
+separately identified runs after individual evidence is available.
+
+Depth mixed-start training reached 26/48 at update2880 but ended its budget at
+update4320 with 0/48; its best checkpoint is retained. The independent
+`depth_mixed_lowlr` follow-up inherits that mixed-start recipe and changes only
+Actor LR from 2e-4 to 5e-5, starting from random weights with the same interaction
+budget. Its parent is `depth_mixed`, not the long-start baseline. This targets
+the observed regression and frequent KL skips without silently resuming the
+finished run or combining observation changes. The orientation-only trial
+continues independently.
 
 The frame diagnostic follows a reproduced ambiguity: the original navigation
 state encodes body-frame velocity, target direction and up, while acceleration
@@ -125,7 +161,12 @@ interactions; a maximum observed score alone is not an ablation conclusion.
 | Fan | 4,423,680 | 8,847,360 |
 | VisFly | 1,474,560 | 4,423,680 |
 
-At most two GPU training processes run concurrently. Admission checks RAM,
+The initial run used two GPU training processes. The 14 October expansion
+measures warmed throughput with up to four concurrent training processes,
+including the ongoing Depth trials; concurrency is an execution setting,
+not a training recipe change. Compare actual end-to-end samples/s and warmed
+update time, excluding first compilation from the latter. GPU busy percentage
+alone is not evidence of higher throughput. Admission checks RAM,
 VRAM and I/O pressure, without adding per-service CPU, memory or swap quotas.
 The scheduler preserves the best complete screening checkpoint and the recent
 resumable states through the existing Results policy. Missing scores stay unknown.
@@ -151,7 +192,7 @@ From the experiment worktree, the supported Pixi task is:
 
 ```bash
 pixi run navigation-ppo-search status --root /absolute/path/to/results/navigation_ppo_convergence_v02
-pixi run navigation-ppo-search run --root /absolute/path/to/results/navigation_ppo_convergence_v02 --max-parallel 2
+pixi run navigation-ppo-search run --root /absolute/path/to/results/navigation_ppo_convergence_v02 --max-parallel 4
 ```
 
 The task accepts `--python` to reuse an existing Pixi interpreter across worktrees;

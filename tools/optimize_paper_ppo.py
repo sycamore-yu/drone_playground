@@ -63,9 +63,15 @@ def configure_navigation_search():
         "depth_goal": ("depth", depth, "depth_base"),
         "lidar_goal": ("lidar", lidar, "lidar_base"),
         "depth_mixed": ("depth", depth, "depth_base"),
+        "depth_mixed_lowlr": ("depth", depth, "depth_mixed"),
         "lidar_mixed": ("lidar", lidar, "lidar_base"),
         "depth_world_rotation": ("depth", depth, "depth_base"),
         "lidar_world_rotation": ("lidar", lidar, "lidar_base"),
+        "lidar_batch64": ("lidar", lidar, "lidar_base"),
+        "lidar_privileged": ("lidar", lidar, "lidar_base"),
+        "lidar_velocity1": ("lidar", lidar, "lidar_base"),
+        "lidar_horizon128": ("lidar", lidar, "lidar_base"),
+        "lidar_task_only": ("lidar", lidar, "lidar_base"),
         "depth_fixed_heading": ("depth", depth, "depth_base"),
         "lidar_fixed_heading": ("lidar", lidar, "lidar_base"),
         "fan_exploration": ("fan", fan, "fan_base"),
@@ -79,9 +85,18 @@ def configure_navigation_search():
         "depth_goal": ["simulation.navigation_goal_observation=true"],
         "lidar_goal": ["simulation.navigation_goal_observation=true"],
         "depth_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
+        "depth_mixed_lowlr": ["learning.options.lr=0.00005"],
         "lidar_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "depth_world_rotation": ["++observation.navigation_world_rotation=true"],
         "lidar_world_rotation": ["++observation.navigation_world_rotation=true"],
+        "lidar_batch64": ["simulation.num_envs=64"],
+        "lidar_privileged": [
+            "learning.options.critic_uses_sensor=false",
+            "learning.options.critic_uses_privileged=true",
+        ],
+        "lidar_velocity1": ["++learning.options.perception_loss.velocity_window=1"],
+        "lidar_horizon128": ["learning.options.horizon=128"],
+        "lidar_task_only": ["learning.options.perception_weight=0.0"],
         "depth_fixed_heading": ["method.action.heading=fixed"],
         "lidar_fixed_heading": ["method.action.heading=fixed"],
         "fan_exploration": ["learning.options.initial_log_std=-1.5"],
@@ -129,8 +144,15 @@ def navigation_candidate(records):
         "lidar_mixed",
         "depth_world_rotation",
         "lidar_world_rotation",
+        "lidar_batch64",
+        "lidar_privileged",
+        "depth_mixed_lowlr",
         "depth_lowlr",
         "lidar_lowlr",
+        "lidar_velocity1",
+        "lidar_goal",
+        "lidar_horizon128",
+        "lidar_task_only",
         "depth_fixed_heading",
         "lidar_fixed_heading",
     ):
@@ -168,6 +190,11 @@ def navigation_candidate(records):
 def trial_options(case, seed, output):
     """Resolve each recipe as a new run with one declared parameter treatment."""
     family, experiment, _ = CASES[case]
+    treatments = []
+    ancestor = case
+    while ancestor is not None:
+        treatments = CASE_OPTIONS.get(ancestor, []) + treatments
+        ancestor = CASES[ancestor][2]
     options = [
         "mode=train",
         f"experiment={experiment}",
@@ -176,11 +203,19 @@ def trial_options(case, seed, output):
         "simulation.num_envs=16",
         "initial_checkpoint=null",
         "resume=null",
-        *CASE_OPTIONS.get(case, []),
+        *treatments,
     ]
     if NAVIGATION_SEARCH:
-        horizon = {"depth": 32, "lidar": 32, "fan": 128, "visfly": 256}[family]
-        settings = interaction_controls(family, num_envs=16, horizon=horizon)
+        overrides = dict(option.lstrip("+").split("=", 1) for option in options)
+        horizon = int(
+            overrides.get(
+                "learning.options.horizon",
+                {"depth": 32, "lidar": 32, "fan": 128, "visfly": 256}[family],
+            )
+        )
+        settings = interaction_controls(
+            family, num_envs=int(overrides["simulation.num_envs"]), horizon=horizon
+        )
         options += [
             f"learning.options.horizon={horizon}",
             f"learning.evaluation_interval={settings['evaluation_interval']}",
@@ -359,7 +394,9 @@ def launch(project, root, python, case, seed):
         from omegaconf import OmegaConf
 
         resolved = OmegaConf.to_container(OmegaConf.create(checked.stdout), resolve=True)
-        minimum_distance = 0.0 if case in {"depth_mixed", "lidar_mixed"} else 80.0
+        minimum_distance = (
+            0.0 if case in {"depth_mixed", "depth_mixed_lowlr", "lidar_mixed"} else 80.0
+        )
         if (
             resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != minimum_distance
             or not resolved["benchmark"]["fixed_checkpoint_seeds"]

@@ -23,7 +23,7 @@ def test_four_architectures_require_fresh_matched_baselines(search):
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
     search.configure_navigation_search()
     assert {value[0] for value in search.CASES.values()} == {"depth", "lidar", "fan", "visfly"}
-    assert len(search.CASES) == 18
+    assert len(search.CASES) == 24
     assert search.BASE_UNITS == {}
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["fan_base_s0"]["status"] = "running"
@@ -86,7 +86,14 @@ def test_parameter_changes_are_isolated_per_candidate(search):
     search.configure_navigation_search()
     for case, (_, _, parent) in search.CASES.items():
         if parent is not None:
-            assert len(search.CASE_OPTIONS[case]) == 1, case
+            if case == "lidar_privileged":
+                # Mutually exclusive flags encode one choice of Critic input.
+                assert search.CASE_OPTIONS[case] == [
+                    "learning.options.critic_uses_sensor=false",
+                    "learning.options.critic_uses_privileged=true",
+                ]
+            else:
+                assert len(search.CASE_OPTIONS[case]) == 1, case
 
 
 @pytest.mark.parametrize(
@@ -99,9 +106,15 @@ def test_parameter_changes_are_isolated_per_candidate(search):
         "depth_goal",
         "lidar_goal",
         "depth_mixed",
+        "depth_mixed_lowlr",
         "lidar_mixed",
         "depth_world_rotation",
         "lidar_world_rotation",
+        "lidar_batch64",
+        "lidar_privileged",
+        "lidar_velocity1",
+        "lidar_horizon128",
+        "lidar_task_only",
         "depth_fixed_heading",
         "lidar_fixed_heading",
         "fan_exploration",
@@ -118,17 +131,35 @@ def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
         candidate = compose(config_name="config", overrides=search.trial_options(case, 0, "/same"))
     control = OmegaConf.to_container(control, resolve=True)
     candidate = OmegaConf.to_container(candidate, resolve=True)
-    setting = search.CASE_OPTIONS[case][0].split("=", 1)[0].lstrip("+").split(".")
-    old, new = control, candidate
-    for part in setting[:-1]:
-        old, new = old[part], new[part]
-    assert old.get(setting[-1]) != new[setting[-1]]
-    if setting[-1] in old:
-        new[setting[-1]] = old[setting[-1]]
-    else:
-        del new[setting[-1]]
+    control_samples = control["simulation"]["num_envs"] * control["learning"]["options"]["horizon"]
+    candidate_samples = (
+        candidate["simulation"]["num_envs"] * candidate["learning"]["options"]["horizon"]
+    )
+    for field in ("evaluation_interval", "checkpoint_interval"):
+        assert (
+            control["learning"][field] * control_samples
+            == candidate["learning"][field] * candidate_samples
+        )
+        candidate["learning"][field] = control["learning"][field]
+    assert (
+        candidate["early_stopping"]["min_updates"] * candidate_samples
+        == control["early_stopping"]["min_updates"] * control_samples
+    )
+    candidate["early_stopping"]["min_updates"] = control["early_stopping"]["min_updates"]
+    for option in search.CASE_OPTIONS[case]:
+        setting = option.split("=", 1)[0].lstrip("+").split(".")
+        old, new = control, candidate
+        for part in setting[:-1]:
+            old, new = old[part], new[part]
+        assert old.get(setting[-1]) != new[setting[-1]]
+        if setting[-1] in old:
+            new[setting[-1]] = old[setting[-1]]
+        else:
+            del new[setting[-1]]
     assert control == candidate
-    assert candidate["simulation"]["procedural"]["min_start_goal_distance_m"] == 80.0
+    assert candidate["simulation"]["procedural"]["min_start_goal_distance_m"] == (
+        0.0 if case == "depth_mixed_lowlr" else 80.0
+    )
     assert candidate["benchmark"]["fixed_checkpoint_seeds"] is True
     assert candidate["results"]["keep_best_screening"] is True
     assert candidate["initial_checkpoint"] is None and candidate["resume"] is None
@@ -152,8 +183,17 @@ def test_approved_rotation_input_precedes_fixed_heading_workaround(search):
     assert search.next_trial(records) == ("depth_world_rotation", 0)
     for case in ("depth_world_rotation", "lidar_world_rotation"):
         records[f"{case}_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("lidar_batch64", 0)
+    records["lidar_batch64_s0"]["status"] = "running"
+    assert search.next_trial(records) == ("lidar_privileged", 0)
+    records["lidar_privileged_s0"]["status"] = "running"
+    assert search.next_trial(records) == ("depth_mixed_lowlr", 0)
+    records["depth_mixed_lowlr_s0"]["status"] = "running"
     assert search.next_trial(records) == ("depth_lowlr", 0)
     for case in ("depth_lowlr", "lidar_lowlr"):
+        records[f"{case}_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("lidar_velocity1", 0)
+    for case in ("lidar_velocity1", "lidar_goal", "lidar_horizon128", "lidar_task_only"):
         records[f"{case}_s0"]["status"] = "early_stopped"
     assert search.next_trial(records) == ("depth_fixed_heading", 0)
 
