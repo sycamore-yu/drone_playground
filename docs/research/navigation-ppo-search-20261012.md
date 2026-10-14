@@ -38,6 +38,19 @@ and `config.yaml`. Changes after this commit repair scheduler selection and
 interrupted budget-screen recovery; the sensor, reward, networks and PPO update
 used by these controls are unchanged.
 
+Both long-start controls finished by `2026-10-14T03:51:26Z`:
+
+| Control | Stop update | Best checkpoint | S01 | S02 | S03 | D01 | D02 | D03 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Depth seed0 | 3600, early stopped | 2160 | 8/8 | 8/8 | 0/8 | 0/8 | 0/8 | 0/8 |
+| LiDAR seed0 | 2880, early stopped | 2880, tied zero | 0/8 | 0/8 | 0/8 | 0/8 | 0/8 | 0/8 |
+
+Depth's final screen fell to 0/48 (29 collisions, 19 boundary exits); its
+16/48 checkpoint remains retained. LiDAR's final screen has the same outcome
+counts. These are diagnostics, not full validation or frozen acceptance.
+Mixed-start trials now run independently from random initialization. Their saved
+recipes are checked against each control, excluding only output location.
+
 The user approved a training-start-distribution ablation on 14 October 2026,
 recorded at `2026-10-14T03:03:09Z`. It uses the existing collision-free mixed
 sampling by setting `min_start_goal_distance_m=0`. About 35% of sampling draws
@@ -74,6 +87,14 @@ inputs but need different world actions. The existing `heading=fixed` option
 is a narrow test of this issue; it also changes where the camera points and
 does not prove that the ambiguity caused convergence failure. This test changes
 only heading; it retains >=80m training starts and is separate from mixed starts.
+
+CPU replay of a copied Depth update2160 and LiDAR update2880 training state
+reproduced behavior-policy GRU memory exactly. Replaying the same 32-step rollout
+after one PPO update changed the next normalized action by mean/max
+0.00157/0.00684 (Depth) and 0.00127/0.00949 (LiDAR). Older boundary memory stayed
+fixed, so this does not rule out accumulated drift. It provides no current basis
+for changing recurrent-state handling. Raw diagnostics and scripts are in
+`new_drone_playground/tmp/navigation-ppo-review-20261014/memory-drift`.
 
 ## Screening and budgets
 
