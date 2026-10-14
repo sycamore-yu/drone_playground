@@ -115,6 +115,11 @@ def test_paper_reward_terms_are_finite_with_zero_speed_and_empty_dynamic_set():
     )
     reward, terms = jax.jit(task_rewards.fan_reward_terms)(**kwargs)
     assert np.isfinite(reward).all()
+    disabled = {**kwargs, "weights": {**kwargs["weights"], "velocity": 0.0}}
+    disabled["velocity"] = jnp.array([[1_000.0, 0.0]])
+    reward, disabled_terms = jax.jit(task_rewards.fan_reward_terms)(**disabled)
+    assert np.isfinite(reward).all()
+    np.testing.assert_array_equal(disabled_terms["velocity"], 0.0)
     assert all(np.isfinite(value).all() for value in terms.values())
     gradient = jax.grad(
         lambda acceleration: task_rewards.fan_reward_terms(

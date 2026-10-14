@@ -96,9 +96,8 @@ def fan_reward_terms(
     static_cost = jnp.expm1(jax.nn.relu(safe_distance - static_clearance))
     # A disabled speed penalty must not evaluate an overflowing exponential.
     velocity_cost = (
-        jnp.expm1(jax.nn.relu(speed - max_speed)) + jnp.expm1(jax.nn.relu(min_speed - speed))
-        if weights["velocity"] > 0
-        else jnp.zeros_like(speed)
+        jnp.expm1(jax.nn.relu(jnp.where(weights["velocity"] > 0, speed - max_speed, 0.0)))
+        + jnp.expm1(jax.nn.relu(jnp.where(weights["velocity"] > 0, min_speed - speed, 0.0)))
     )
     terms = {
         "alive": weights["alive"] * (~collision),
