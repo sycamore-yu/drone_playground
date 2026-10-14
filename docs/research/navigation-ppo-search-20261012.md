@@ -257,6 +257,88 @@ results were changed. Reports are under the primary checkout's
 Evidence: primary checkout
 `tmp/navigation-ppo-review-20261014/screening-contract-audit.json`.
 
+### Paired regression diagnosis, 14 October
+
+Audited at `2026-10-14T08:34:07Z`, feature source `8ca73c8`, using the retained
+Depth mixed-start checkpoints at updates 2880 and 4320. These are frozen-policy
+diagnostics, not additional optimization or acceptance results. `7/8` means
+seven successes in eight fresh procedural episodes, one per evaluation world;
+this is re-evaluation on the training distribution, not eight saved training
+trajectories. The training run itself used sixteen parallel environments.
+`26/48` means the sum over six fixed maps, eight perturbed episodes per map.
+Neither denominator counts training seeds, updates or independent fixed maps.
+
+| Fixed scene | Update 2880 | Update 4320 | Final failure events |
+| --- | ---: | ---: | --- |
+| S01 | 8/8 | 0/8 | 8 below the lower height bound |
+| S02 | 8/8 | 0/8 | 8 below the lower height bound |
+| S03 | 0/8 | 0/8 | 8 collisions |
+| D01 | 8/8 | 0/8 | 8 below the lower height bound |
+| D02 | 2/8 | 0/8 | 8 below the lower height bound |
+| D03 | 0/8 | 0/8 | 3 below the lower height bound, 5 collisions |
+
+All 26 previously successful episodes became lower-height violations. All 35
+out-of-bounds events in the final screen crossed z=0.5m; none crossed a lateral
+or upper-height bound. This establishes loss of altitude control as the direct
+failure mechanism accounting for the observed screen-score regression. It does
+not identify the unique optimizer-level cause of that policy change.
+
+The diagnostic runner uses the existing actor, public method execution,
+environment transition and episode objective. It asserts that the instrumented
+original policies reproduce every recorded episode event. Added instrumentation
+changes XLA fusion: fixed-scene flight times differ by up to 0.521 seconds, so
+the traces are not claimed to be bitwise identical. Paired procedural starts and
+sampled scene-state arrays were additionally fingerprinted. Checkpoint/config
+digests, scripts, traces and aggregate assertions are retained under the primary
+checkout's `tmp/navigation-ppo-review-20261014/regression-cause/`.
+
+| Diagnostic intervention | Procedural cohort | Fixed S01 cohort |
+| --- | ---: | ---: |
+| Original update2880, deterministic | 7/8 | 8/8 |
+| Original update4320, deterministic | 4/8 | 0/8, all lower-height violations |
+| Update4320 with sampled actions | 4/8 | 0/8, all lower-height violations |
+| Update4320 horizontal actions, update2880 vertical action | 7/8 | 0/8, all timeouts |
+
+The vertical-action intervention maintains a separate GRU for each policy while
+both observe the same visited states. It restores the lost procedural successes
+and removes all eight S01 height violations. In S01, however, this hybrid settles
+about 2.94m from the goal until the 300s deadline. Resetting only the newer
+policy's GRU once at 45s still gives eight timeouts. Switching the horizontal
+actions to the earlier policy at 45s instead gives eight collisions near the far
+wall. These interventions do not provide a deployable repair or establish an
+independent terminal-control defect in the unmodified late policy: combining
+policies changes visited states and control coordination. They show that fixing
+the observed height symptom alone does not establish task acceptance.
+
+Reward did penalize these failures. Immediately before the 35 lower-bound
+terminations, the final Critic predicted values from -91.63 to -33.57 (mean
+-62.75), whereas the next terminal reward was -260.77 to -260.59 (mean -260.69).
+The total includes the base failure cost 20 and configured out-of-bounds cost 240.
+On the paired deterministic episodes, mean discounted return also deteriorated:
+procedural -22.46 to -68.82; S01 -12.91 to -167.36. Thus these probes do not support
+the claim that the late policy improved its actual objective by exploiting a
+missing failure penalty. A sampled-action replay also failed on all S01 cases;
+one action-noise seed does not estimate the full stochastic-policy value.
+
+The leading upstream concern is inaccurate value/advantage estimation with
+limited state information. The original ten-feature observation has no explicit
+absolute height or goal distance; the goal-vector magnitude is capped beyond 3m,
+and the Critic is feedforward. At 10Hz, rollout horizon 32 covers 3.2s, while direct
+GAE residual weights decay as `(0.99 * 0.95)^k`; later effects depend heavily on
+the learned bootstrap. These code facts and the observed prediction errors
+motivate separate goal-input and privileged-Critic controls; they are not causal
+proof that either change will prevent regression. Actor KL skipping is also not
+a sufficient explanation: the long-start lower-LR run still fell from 20/48 to 0
+with a mean post-peak skip fraction of 5.05%, versus 56.25% for Depth mixed.
+
+Sparse training logs agree with deterioration in the mixed run: the logged
+completed-episode success fraction falls from 60.3% in the 600-update window before
+the peak to 52.8% afterward, and the out-of-bounds event fraction rises
+from 7.1% to 26.8%. These are summaries of every tenth logged update, not exact
+whole-run episode rates. LiDAR's persistent collision-dominated zero scores
+remain a separate failure mode; this Depth diagnosis is not evidence of a shared
+root cause or convergence for LiDAR/Fan/VisFly.
+
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic
 workers all performed real GPU PPO updates with finite losses and gradients.
