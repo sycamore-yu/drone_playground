@@ -75,6 +75,7 @@ class Task:
             "minimum_time_navigation",
             "legacy_motion_navigation_v2",
             "fan2025",
+            "fan2025_arrival",
             "visfly2025",
         }:
             raise ValueError("Unsupported Task reward profile")
@@ -83,10 +84,12 @@ class Task:
         self.reward_profile = reward_profile
         self.reward_shaping = dict(reward_shaping or {})
         self.reward_options = dict(reward_options or {})
-        if reward_profile in {"fan2025", "visfly2025"} and self.reward_shaping:
+        if reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"} and self.reward_shaping:
             raise ValueError("Paper task profiles cannot add legacy reward shaping")
-        if reward_profile == "fan2025":
+        if reward_profile in {"fan2025", "fan2025_arrival"}:
             required = {"weights", "min_speed", "max_speed", "safe_distance", "hover_distance"}
+            if reward_profile == "fan2025_arrival":
+                required.add("success_reward")
             coefficients = {
                 "alive",
                 "acceleration",
@@ -120,6 +123,8 @@ class Task:
                 and self.reward_options["safe_distance"] > 0
             ):
                 raise ValueError("Invalid Fan speed or safety range")
+            if reward_profile == "fan2025_arrival" and self.reward_options["success_reward"] <= 0:
+                raise ValueError("Fan arrival reward must be positive")
         elif self.reward_options:
             raise ValueError("Only Fan's unpublished reward weights require reward_options")
         accepted_shaping = {

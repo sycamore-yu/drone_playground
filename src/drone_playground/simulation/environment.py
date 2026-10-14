@@ -776,7 +776,7 @@ class NavigationEnv(BaseEnv):
         self, before: EnvState, after: EnvState, action: Array
     ) -> tuple[Array, dict[str, Array]]:
         """Evaluate the selected Navigation reward before optional shaping."""
-        if self.task.reward_profile in {"fan2025", "visfly2025"}:
+        if self.task.reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"}:
             from drone_playground.simulation.task_rewards import paper_navigation_reward
 
             reward, terms = paper_navigation_reward(self, before, after, action)

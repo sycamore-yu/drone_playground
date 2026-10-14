@@ -17,15 +17,15 @@ from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.tasks import Event, Task
 
 
-@pytest.mark.parametrize("profile", ["fan2025", "visfly2025"])
+@pytest.mark.parametrize("profile", ["fan2025", "fan2025_arrival", "visfly2025"])
 @pytest.mark.parametrize("procedural", [True, False])
 def test_paper_reward_uses_real_geometry_without_legacy_failure_surcharge(profile, procedural):
     """Check geometric consistency, no duplicate terminal cost and the done mask."""
-    cfg_name = (
-        "navigation_paper_fan2025_equations"
-        if profile == "fan2025"
-        else ("navigation_paper_visfly2025_source")
-    )
+    cfg_name = {
+        "fan2025": "navigation_paper_fan2025_equations",
+        "fan2025_arrival": "navigation_paper_fan2025_arrival",
+        "visfly2025": "navigation_paper_visfly2025_source",
+    }[profile]
     root = str(Path(__file__).parents[1] / "src/drone_playground/configs")
     with initialize_config_dir(version_base=None, config_dir=root):
         config = compose(config_name="config", overrides=[f"experiment={cfg_name}"])
@@ -33,7 +33,9 @@ def test_paper_reward_uses_real_geometry_without_legacy_failure_surcharge(profil
     scene = ProceduralScene({"max_obstacles": 8}) if procedural else Scene("S01")
     state = scene.sample(jax.random.key(4), 2) if procedural else None
     positions = state.start if procedural else jnp.array([[2.0, 0.0, 3.0], [2.0, 1.0, 3.0]])
-    action = Action(level="horizontal_acceleration" if profile == "fan2025" else "body_rate")
+    action = Action(
+        level="horizontal_acceleration" if profile.startswith("fan2025") else "body_rate"
+    )
     physics = SimpleNamespace(
         states=SimpleNamespace(
             pos=positions[:, None],
@@ -81,3 +83,12 @@ def test_paper_reward_uses_real_geometry_without_legacy_failure_surcharge(profil
     assert np.isfinite(cost).all()
     assert float(cost[1]) == 0.0
     assert set(terms) == set(direct_terms)
+    if profile == "fan2025_arrival":
+        after.task.event = jnp.array([Event.SUCCESS, Event.SUCCESS])
+        physics.states.vel = jnp.full((2, 1, 3), 1_000.0)
+        reward, terms = task_rewards.paper_navigation_reward(env, before, after, actions)
+        assert np.isfinite(reward).all()
+        np.testing.assert_array_equal(terms["paper_velocity_reward"], 0.0)
+        np.testing.assert_array_equal(terms["paper_hover_reward"], 0.0)
+        np.testing.assert_allclose(terms["paper_alive_reward"], [-0.1, 0.0])
+        np.testing.assert_array_equal(terms["paper_arrival_reward"], [5.0, 0.0])

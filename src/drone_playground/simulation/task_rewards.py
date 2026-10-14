@@ -94,8 +94,11 @@ def fan_reward_terms(
     effective_distance = jnp.where(dynamic_mask, dynamic_clearance / dilation, jnp.inf)
     dynamic_cost = jnp.sum(jnp.expm1(jax.nn.relu(safe_distance - effective_distance)), -1)
     static_cost = jnp.expm1(jax.nn.relu(safe_distance - static_clearance))
-    velocity_cost = jnp.expm1(jax.nn.relu(speed - max_speed)) + jnp.expm1(
-        jax.nn.relu(min_speed - speed)
+    # A disabled speed penalty must not evaluate an overflowing exponential.
+    velocity_cost = (
+        jnp.expm1(jax.nn.relu(speed - max_speed)) + jnp.expm1(jax.nn.relu(min_speed - speed))
+        if weights["velocity"] > 0
+        else jnp.zeros_like(speed)
     )
     terms = {
         "alive": weights["alive"] * (~collision),
@@ -143,7 +146,7 @@ def paper_navigation_reward(env, before, after, action):
     physics = after.physics.states
     position, velocity = physics.pos[:, 0], physics.vel[:, 0]
     target = jnp.broadcast_to(env.goal_for(after), position.shape)
-    if env.task.reward_profile == "fan2025":
+    if env.task.reward_profile in {"fan2025", "fan2025_arrival"}:
         centers, velocities, distances, moving, active = obstacle_reward_geometry(env, after)
         options = env.task.reward_options
         reward, terms = fan_reward_terms(
@@ -160,8 +163,14 @@ def paper_navigation_reward(env, before, after, action):
             obstacle_velocity=velocities[..., :2],
             dynamic_mask=active & moving,
             collision=after.task.event == Event.COLLISION,
-            **options,
+            **{key: value for key, value in options.items() if key != "success_reward"},
         )
+        if env.task.reward_profile == "fan2025_arrival":
+            # Arrival ends this task; positive occupancy rewards favor delaying it.
+            terms["alive"] = -terms["alive"]
+            terms["hover"] = jnp.zeros_like(reward)
+            terms["arrival"] = options["success_reward"] * (after.task.event == Event.SUCCESS)
+            reward = sum(terms.values())
     else:
 
         def clearance_at(p):
@@ -270,7 +279,7 @@ def shaped_task_cost(env, before, after, action, shaping):
     options; new Task recipes can own it in their task configuration. This
     function deliberately knows nothing about Actor, Critic or perception.
     """
-    if env.task.reward_profile in {"fan2025", "visfly2025"}:
+    if env.task.reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"}:
         reward, terms = paper_navigation_reward(env, before, after, action)
         return -reward, terms
     shaping = {
