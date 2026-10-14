@@ -25,7 +25,7 @@ def test_four_architectures_require_fresh_matched_baselines(search):
     assert hasattr(search, "configure_navigation_search"), "Unified search preset missing"
     search.configure_navigation_search()
     assert {value[0] for value in search.CASES.values()} == {"depth", "lidar", "fan", "visfly"}
-    assert len(search.CASES) == 24
+    assert len(search.CASES) == 28
     assert search.BASE_UNITS == {}
     records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
     records["fan_base_s0"]["status"] = "running"
@@ -88,7 +88,11 @@ def test_parameter_changes_are_isolated_per_candidate(search):
     search.configure_navigation_search()
     for case, (_, _, parent) in search.CASES.items():
         if parent is not None:
-            if case == "lidar_privileged":
+            if case in {
+                "lidar_privileged",
+                "depth_mixed_privileged",
+                "depth_mixed_goal_privileged",
+            }:
                 # Mutually exclusive flags encode one choice of Critic input.
                 assert search.CASE_OPTIONS[case] == [
                     "learning.options.critic_uses_sensor=false",
@@ -109,11 +113,15 @@ def test_parameter_changes_are_isolated_per_candidate(search):
         "lidar_goal",
         "depth_mixed",
         "depth_mixed_lowlr",
+        "depth_mixed_goal",
+        "depth_mixed_privileged",
+        "depth_mixed_goal_privileged",
         "lidar_mixed",
         "depth_world_rotation",
         "lidar_world_rotation",
         "lidar_batch64",
         "lidar_privileged",
+        "lidar_goal_privileged",
         "lidar_velocity1",
         "lidar_horizon128",
         "lidar_task_only",
@@ -160,7 +168,7 @@ def test_hydra_resolves_one_treatment_with_unchanged_acceptance(search, case):
             del new[setting[-1]]
     assert control == candidate
     assert candidate["simulation"]["procedural"]["min_start_goal_distance_m"] == (
-        0.0 if case == "depth_mixed_lowlr" else 80.0
+        0.0 if case.startswith("depth_mixed_") else 80.0
     )
     assert candidate["benchmark"]["fixed_checkpoint_seeds"] is True
     assert candidate["results"]["keep_best_screening"] is True
@@ -195,6 +203,28 @@ def test_measured_parent_and_failure_mode_change_candidate_order(search):
     assert search.next_trial(records) == ("depth_mixed_lowlr", 0)
     records["depth_mixed_lowlr_s0"]["status"] = "running"
     assert search.next_trial(records) == ("lidar_goal", 0)
+
+
+def test_regression_controls_precede_more_paper_trials_and_wait_for_both_factors(search):
+    """Measured regression promotes its controls; combinations wait for main effects."""
+    search.configure_navigation_search()
+    records = {f"{case}_s{i}": {"status": "missing"} for case in search.CASES for i in range(3)}
+    for case in ("depth_base", "lidar_base", "lidar_privileged"):
+        records[f"{case}_s0"]["status"] = "early_stopped"
+    records["depth_mixed_s0"] = {
+        "status": "budget_exhausted",
+        "best": {"value": 0.1354166667},
+        "latest": {"value": 0.0, "outcomes": {"OUT_OF_BOUNDS": 35, "COLLISION": 13}},
+    }
+    assert search.next_trial(records) == ("depth_mixed_goal", 0)
+    records["depth_mixed_goal_s0"]["status"] = "running"
+    assert search.next_trial(records) == ("depth_mixed_privileged", 0)
+    records["depth_mixed_goal_s0"]["status"] = "early_stopped"
+    records["depth_mixed_privileged_s0"]["status"] = "running"
+    assert search.next_trial(records) == ("lidar_goal_privileged", 0)
+    records["lidar_goal_privileged_s0"]["status"] = "running"
+    records["depth_mixed_privileged_s0"]["status"] = "early_stopped"
+    assert search.next_trial(records) == ("depth_mixed_goal_privileged", 0)
 
 
 def test_lidar_budget_uses_full_screens_and_preserves_late_depth_learning(search):
@@ -256,6 +286,36 @@ def test_optimizer_recovers_once_and_records_pruned_latest_not_peak(search, tmp_
     assert resumed.trials[0].state == "pruned"
     assert resumed.trials[0].value == 0.0
     assert resumed.trials[0].intermediate[-1] == (2160, 0.0)
+
+
+def test_reallocation_before_first_screen_has_no_fabricated_optimizer_score(search, tmp_path):
+    """An intentionally canceled pilot remains unmeasured, including after recovery."""
+    oa = pytest.importorskip("optim_agent")
+    directory = tmp_path / "ledger"
+    directory.mkdir()
+    run = tmp_path / "visfly_lowstd_s0"
+    run.mkdir()
+    (run / "trial.json").write_text(
+        json.dumps(
+            {"family": "visfly", "seed": 0, "argv": ["python", "-u", "-m", "drone_playground.cli"]}
+        )
+    )
+    records = {
+        "visfly_lowstd_s0": {
+            "directory": str(run),
+            "status": "pruned",
+            "best": None,
+            "latest": None,
+            "screens": [],
+        }
+    }
+    for _ in range(2):
+        study = oa.create_study(direction="maximize", storage=directory / "study.json", seed=0)
+        search.sync_optim_study(study, directory, records)
+    assert len(study.trials) == 1
+    assert study.trials[0].state == "pruned"
+    assert study.trials[0].value is None
+    assert study.trials[0].intermediate == []
 
 
 def test_restart_retries_pending_prune_signal_once(search, tmp_path, monkeypatch):

@@ -66,14 +66,12 @@ remain fixed. This parameter decision does not approve a new observation or mode
 | Fan | Margin2 equations, fresh current-sensor control | Actor LR 2.5e-5; initial log std -1.5 |
 | VisFly | Shared visual encoder, fresh current-sensor control | Initial log std -1; thrust range 0–2 times weight |
 
-There are 24 seed-zero slots. Original Depth/LiDAR controls run first. Their
-mixed-start and world-rotation diagnostics have first priority, followed by
-LiDAR batch64 and privileged Critic, the Depth mixed-start lower-LR follow-up,
-the original Depth/LiDAR lower-Actor-LR candidates,
-LiDAR velocity-window1, goal input, horizon128 and task-only reward, then fixed
-heading. The observed Depth screening regression and frequent KL skips justify
-evaluating its existing LR treatment before spending more interactions on the
-paper transfers. All priorities require a finished matched control.
+There are 28 seed-zero slots after the regression-guided extension below.
+Original Depth/LiDAR controls run first. The two new Depth mixed-start
+observation/value controls have priority after a measured mixed-start regression.
+Their combination waits for both controls to finish. Subsequent allocation uses
+the parent score, failure events and idle sensor modality. All candidates require
+a finished matched control; the earlier 24-slot history remains preserved.
 A frozen-benchmark pass promotes the same recipe to independent seeds1 and2.
 Once a sensor modality has three accepted seeds of one recipe, no competing
 recipe or replication for that modality is launched. Interrupted trials remain
@@ -338,6 +336,44 @@ from 7.1% to 26.8%. These are summaries of every tenth logged update, not exact
 whole-run episode rates. LiDAR's persistent collision-dominated zero scores
 remain a separate failure mode; this Depth diagnosis is not evidence of a shared
 root cause or convergence for LiDAR/Fan/VisFly.
+
+### Experiment response to the regression diagnosis
+
+On 14 October the user requested revised experiments and continued work toward
+convergence. Policy `navigation-regression-controls-20261014` adds four pilots
+using existing options. The matched parent specifies the full training recipe;
+each child adds one experimental factor, with fresh weights and training seed0.
+
+| Candidate | Matched parent | Only added factor |
+| --- | --- | --- |
+| `depth_mixed_goal` | `depth_mixed` | Explicit normalized height error and remaining goal distance |
+| `depth_mixed_privileged` | `depth_mixed` | Privileged Critic replacing the sensor Critic |
+| `depth_mixed_goal_privileged` | `depth_mixed_goal` | Privileged Critic replacing the sensor Critic |
+| `lidar_goal_privileged` | `lidar_privileged` | Explicit normalized height error and remaining goal distance |
+
+The three Depth cases retain the approved mixed start distribution. The LiDAR
+case retains its parent's >=80m starts. Goal input is available to both the
+Actor and the configured Critic; privileged information remains Critic-only.
+The standalone long-start Depth goal trial reached4/48 and ended0/48, so it
+does not answer the mixed-start question. The new combination tests interaction
+between observation and value estimation after both Depth main effects have
+been measured. The first two controls temporarily precede idle-modality
+allocation; independent accepted-seed confirmations retain higher priority.
+
+At `2026-10-14T10:31:59Z`, the just-started `visfly_lowstd_s0` trial received a
+graceful checkpointed stop request to release one slot. This is resource
+reallocation, not a measured failure: it had no complete six-scene screen and
+its optimizer value must remain null. The worker's original `run.json` is
+preserved; the scheduler records the reason in `study_pruned.json`. Fan keeps
+its existing minimum budget of4,423,680 transitions before its native stopping
+rule can stop the zero-score run. Concurrency remains two.
+
+Depth pilots retain the2,211,840-transition ceiling and existing early stopping;
+LiDAR retains its existing measured pruning rule. All six-scene screening seeds,
+best-checkpoint retention,25-episode full validation, independent frozen
+benchmark and three-training-seed requirement are unchanged. An unmeasured
+canceled proposal is recorded as pruned with no objective, not as zero success.
+No action, reward, physics, network or checkpoint contract changes in this step.
 
 Runtime check at `2026-10-14T04:55:10Z`, scheduler source `600246a`:
 Depth world-rotation plus LiDAR world-rotation, batch64 and privileged-Critic

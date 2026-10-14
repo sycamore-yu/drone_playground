@@ -42,7 +42,13 @@ FINISHED = {
 CASE_OPTIONS = {}
 NAVIGATION_SEARCH = False
 MODALITY = {"depth": "depth", "visfly": "depth", "lidar": "lidar", "fan": "lidar"}
-ALLOCATION_POLICY = "navigation-feedback-20261014"
+ALLOCATION_POLICY = "navigation-regression-controls-20261014"
+REGRESSION_CONTROLS = {
+    "depth_mixed_goal": 0,
+    "depth_mixed_privileged": 0,
+    "depth_mixed_goal_privileged": 1,
+    "lidar_goal_privileged": 1,
+}
 
 
 def write_json(path, value):
@@ -73,11 +79,15 @@ def configure_navigation_search():
         "lidar_goal": ("lidar", lidar, "lidar_base"),
         "depth_mixed": ("depth", depth, "depth_base"),
         "depth_mixed_lowlr": ("depth", depth, "depth_mixed"),
+        "depth_mixed_goal": ("depth", depth, "depth_mixed"),
+        "depth_mixed_privileged": ("depth", depth, "depth_mixed"),
+        "depth_mixed_goal_privileged": ("depth", depth, "depth_mixed_goal"),
         "lidar_mixed": ("lidar", lidar, "lidar_base"),
         "depth_world_rotation": ("depth", depth, "depth_base"),
         "lidar_world_rotation": ("lidar", lidar, "lidar_base"),
         "lidar_batch64": ("lidar", lidar, "lidar_base"),
         "lidar_privileged": ("lidar", lidar, "lidar_base"),
+        "lidar_goal_privileged": ("lidar", lidar, "lidar_privileged"),
         "lidar_velocity1": ("lidar", lidar, "lidar_base"),
         "lidar_horizon128": ("lidar", lidar, "lidar_base"),
         "lidar_task_only": ("lidar", lidar, "lidar_base"),
@@ -95,6 +105,15 @@ def configure_navigation_search():
         "lidar_goal": ["simulation.navigation_goal_observation=true"],
         "depth_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "depth_mixed_lowlr": ["learning.options.lr=0.00005"],
+        "depth_mixed_goal": ["simulation.navigation_goal_observation=true"],
+        "depth_mixed_privileged": [
+            "learning.options.critic_uses_sensor=false",
+            "learning.options.critic_uses_privileged=true",
+        ],
+        "depth_mixed_goal_privileged": [
+            "learning.options.critic_uses_sensor=false",
+            "learning.options.critic_uses_privileged=true",
+        ],
         "lidar_mixed": ["simulation.procedural.min_start_goal_distance_m=0.0"],
         "depth_world_rotation": ["++observation.navigation_world_rotation=true"],
         "lidar_world_rotation": ["++observation.navigation_world_rotation=true"],
@@ -103,6 +122,7 @@ def configure_navigation_search():
             "learning.options.critic_uses_sensor=false",
             "learning.options.critic_uses_privileged=true",
         ],
+        "lidar_goal_privileged": ["simulation.navigation_goal_observation=true"],
         "lidar_velocity1": ["++learning.options.perception_loss.velocity_window=1"],
         "lidar_horizon128": ["learning.options.horizon=128"],
         "lidar_task_only": ["learning.options.perception_weight=0.0"],
@@ -153,11 +173,23 @@ def navigation_candidate(records):
         if row["status"] == "running"
     )
     candidates = []
+    mixed = records["depth_mixed_s0"]
+    regression = (
+        all(records[f"{case}_s0"]["status"] in FINISHED for case in ("depth_base", "lidar_base"))
+        and mixed.get("best") is not None
+        and mixed.get("latest") is not None
+        and mixed["latest"]["value"] < mixed["best"]["value"]
+        and mixed["latest"].get("outcomes", {}).get("OUT_OF_BOUNDS", 0) > 0
+    )
     for index, (case, (family, _, parent)) in enumerate(CASES.items()):
         modality = MODALITY[family]
         if modality in stable or records[f"{case}_s0"]["status"] != "missing":
             continue
         if parent is not None and records[f"{parent}_s0"]["status"] not in FINISHED:
+            continue
+        if case == "depth_mixed_goal_privileged" and (
+            records["depth_mixed_privileged_s0"]["status"] not in FINISHED
+        ):
             continue
         control = records[f"{parent}_s0"] if parent is not None else {}
         best, latest = control.get("best"), control.get("latest")
@@ -173,7 +205,18 @@ def navigation_candidate(records):
         # Original sensor baselines are prerequisites for interpreting any treatment.
         baseline = parent is None and family in {"depth", "lidar"}
         candidates.append(
-            ((active[modality] > 0, not baseline, -score, priority, active[modality], index), case)
+            (
+                (
+                    REGRESSION_CONTROLS.get(case, 2) if regression else 2,
+                    active[modality] > 0,
+                    not baseline,
+                    -score,
+                    priority,
+                    active[modality],
+                    index,
+                ),
+                case,
+            )
         )
     return (min(candidates)[1], 0) if candidates else None
 
@@ -490,7 +533,7 @@ def sync_optim_study(study, directory, records):
         if record["status"] not in FINISHED or (trial is not None and trial.state != "running"):
             continue
         latest = record.get("latest")
-        if record["status"] != "failed" and latest is None:
+        if record["status"] not in {"failed", "pruned"} and latest is None:
             continue  # An interrupted evaluation cannot provide a fabricated objective.
         trial = trial if trial is not None else study.ask(params)
         trial.intermediate = []
@@ -547,9 +590,7 @@ def launch(project, root, python, case, seed, *, study=None, optim_directory=Non
         from omegaconf import OmegaConf
 
         resolved = OmegaConf.to_container(OmegaConf.create(checked.stdout), resolve=True)
-        minimum_distance = (
-            0.0 if case in {"depth_mixed", "depth_mixed_lowlr", "lidar_mixed"} else 80.0
-        )
+        minimum_distance = 0.0 if case.startswith("depth_mixed") or case == "lidar_mixed" else 80.0
         if (
             resolved["simulation"]["procedural"]["min_start_goal_distance_m"] != minimum_distance
             or not resolved["benchmark"]["fixed_checkpoint_seeds"]
