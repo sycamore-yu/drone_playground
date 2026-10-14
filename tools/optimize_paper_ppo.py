@@ -49,6 +49,10 @@ REGRESSION_CONTROLS = {
     "depth_mixed_goal_privileged": 1,
     "lidar_goal_privileged": 1,
 }
+COMBINATION_CONTROLS = {
+    "depth_mixed_goal_privileged": ("depth_mixed_goal", "depth_mixed_privileged"),
+    "lidar_goal_privileged": ("lidar_goal", "lidar_privileged"),
+}
 
 
 def write_json(path, value):
@@ -187,10 +191,10 @@ def navigation_candidate(records):
             continue
         if parent is not None and records[f"{parent}_s0"]["status"] not in FINISHED:
             continue
-        if case == "depth_mixed_goal_privileged" and not all(
+        if not all(
             records[f"{factor}_s0"]["status"] in FINISHED
             and records[f"{factor}_s0"].get("latest") is not None
-            for factor in ("depth_mixed_goal", "depth_mixed_privileged")
+            for factor in COMBINATION_CONTROLS.get(case, ())
         ):
             continue
         control = records[f"{parent}_s0"] if parent is not None else {}

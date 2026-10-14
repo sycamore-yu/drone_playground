@@ -222,6 +222,9 @@ def test_regression_controls_precede_more_paper_trials_and_wait_for_both_factors
     records["depth_mixed_goal_s0"]["status"] = "early_stopped"
     records["depth_mixed_goal_s0"]["latest"] = {"value": 0.0}
     records["depth_mixed_privileged_s0"]["status"] = "running"
+    assert search.next_trial(records) != ("lidar_goal_privileged", 0)
+    records["lidar_goal_s0"] = {"status": "pruned", "latest": {"value": 0.0}}
+    records["lidar_privileged_s0"]["latest"] = {"value": 0.0}
     assert search.next_trial(records) == ("lidar_goal_privileged", 0)
     records["lidar_goal_privileged_s0"]["status"] = "running"
     records["depth_mixed_privileged_s0"]["status"] = "early_stopped"
