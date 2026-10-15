@@ -1,0 +1,17 @@
+{
+  "scope": "Shared Racing p1/f0 recipe check, scratch seed0; no completed three-seed cell claim",
+  "trigger": "SHAC p1/f0 reached three consecutive passes at1400/1500/1600, then automatic development benchmark100/100",
+  "changes": "APG/PPO change only task progress2->1 and additional failure40->0 plus output from their existing p2/f40 parents. All optimizer differences kept explicit.",
+  "budget": 67108864,
+  "selection": "last_of_first_three_consecutive_passes, evaluation every100 updates",
+  "frozen_tests": "Automatic2million cohort is development. Reserve unused4million cohort for final matched recipe after candidate selection; never tune against that cohort.",
+  "common_inputs_verified": [
+    "task",
+    "sensor",
+    "observation",
+    "controller",
+    "method",
+    "simulation except batch/device"
+  ],
+  "launch_order": "APG seed0 first in the released Racing slot; PPO seed0 and remaining seeds after resource check. Navigation paired comparison retains priority."
+}
