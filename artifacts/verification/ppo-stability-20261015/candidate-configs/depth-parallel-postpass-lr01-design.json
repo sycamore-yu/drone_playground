@@ -1,0 +1,38 @@
+{
+  "status": "registered",
+  "scope": "Matched post-first-pass Actor learning-rate diagnostic; no new algorithm or teacher",
+  "hypothesis": "Smaller Actor steps may retain the lateral avoidance response while continuing PPO on all eight parallel scenes. Full-batch updates reduced optimizer counts but still changed the critical path, so that candidate is not retained.",
+  "prior_negative": "Read depth-postpass-lr-design.json and comparison: sequential-sourceu144 0.1xLR failed all seven checks139/126/62/136/144/130/139. This is the first LR-only continuation from parallel-sourceu176, with full-scene coverage every update. No claim that the previous LR failure was a different numerical implementation.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "intervention": {
+    "actor_lr_before": 0.0002,
+    "actor_lr_after": 2e-05,
+    "actor_lr_scale": 0.1
+  },
+  "unchanged": "Restore complete originalu176 state; native811,64x512sampling,parallel8scenes,four epochs/fourminibatches,criticLR.0005,entropy.005,Adam moments,RNG and GRU state, reward,3D action and fixed evaluation cases. No full-batch, MC-tail or rehearsal.",
+  "budget": {
+    "updates": 28,
+    "actual_interactions": 917504,
+    "check_updates": [
+      180,
+      184,
+      188,
+      192,
+      196,
+      200,
+      204
+    ],
+    "cases_per_check": 150,
+    "early_stop": false,
+    "rollback": false
+  },
+  "criterion": "Every one of seven checks must have>=23/25 in each primary scene and preserve>=143/150 original successes. Any failed check rejects stability. Actual finalu204 and all checks retained; do not use peak model.",
+  "correctness": "Reuse existing tested LR-only config and optimizer restoration path (12original tests and current33regression checks already passed). Verify first15raw rollout/target metrics against matched control; every Actor update finite/nonzero, optimizersteps16andunchangedRNGsplitstructure.",
+  "interpretation": "Positive evidence would require a predeclared after-first-full-pass LR drop as part of the scratch recipe, three independent seeds and independent frozen tests of actual final models. This diagnostic itself remains excluded from acceptance.",
+  "reference": "https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_continuous_action.py",
+  "reference_limit": "Learning-rate annealing is standard in this implementation; a discrete10x drop after a validation pass is our experimental choice, not its exact schedule.",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-postpass-lr01.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01 --actor-lr-scale 0.1 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-postpass-lr01.log 2>&1"
+}

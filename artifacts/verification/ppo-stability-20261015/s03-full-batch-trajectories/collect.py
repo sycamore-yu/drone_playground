@@ -46,8 +46,12 @@ def main():
             config.benchmark.record_replay = False
             before = time.monotonic()
             report = evaluate(
-                config, directory, actor=actor, parameters=parameters,
-                environments=environments, checkpoint_config=metadata["config"],
+                config,
+                directory,
+                actor=actor,
+                parameters=parameters,
+                environments=environments,
+                checkpoint_config=metadata["config"],
             )
             assert report["complete"] and report["reports"]["S03"]["episodes"] == 25
             tables = []
@@ -59,16 +63,20 @@ def main():
             assert tables[0].keys() == tables[1].keys()
             env = environments[("S03", 25)]
             result["runs"][label] = {
-                "source": source, "wall_seconds": time.monotonic() - before,
+                "source": source,
+                "wall_seconds": time.monotonic() - before,
                 "successes": report["reports"]["S03"]["successes"],
                 "case_events_match": tables[0] == tables[1],
                 "changed_events": [
                     {"case": key, "original": tables[0][key], "recorded": event}
-                    for key, event in tables[1].items() if tables[0][key] != event
+                    for key, event in tables[1].items()
+                    if tables[0][key] != event
                 ],
                 "goal_metres": np.asarray(env.task.goal).tolist(),
-                "bounds_metres": [np.asarray(env.task.low).tolist(),
-                                  np.asarray(env.task.high).tolist()],
+                "bounds_metres": [
+                    np.asarray(env.task.low).tolist(),
+                    np.asarray(env.task.high).tolist(),
+                ],
             }
             atomic_json(OUTPUT / "comparison.json", result)
             print(label, result["runs"][label], flush=True)

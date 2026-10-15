@@ -1614,3 +1614,25 @@ First failed S03 collision is world4 at15.892s; all nine S03 failures occur14.70
 15.998s. D03 failures occur19.776-20.310s. These early clustered failures justify
 recording a paired critical-obstacle trajectory rather than inferring behavior from
 aggregate loss. No such new trace evaluation has yet been registered or executed.
+
+### Paired S03 trajectory measurement complete; parallel LR-only window registered
+
+Fifty recorded frozen episodes reproduce every original case identity/event: controlu180
+25/25 and full-batchu18016/25. All seven collisions hit obstacle_154; two failures cross
+the6mupperboundary. At x~15.5m, focusedworld4 control has vy=-0.3696m/s while candidate
+has+0.1704m/s. The candidate collides15.892s at[15.912,.094,5.734], still82.134mfromgoal;
+control completes109.38s at0.499m. Minimum control clearance0.212m. Native recorded
+commands are roll/pitch/yaw/thrust, not normalized Actor actions. Measurement54.423s,
+no new training, no other scenes or final cases. Raw traces and all50case summaries
+remain s03-full-batch-trajectories/; the matched picture localizes behavior but does
+not identify a unique optimization cause. First-terminal truncation and finite-cylinder
+distance analytic self-checks pass; all recorded events/times/initial positions match.
+
+The minimal untested setting for the current parallel source is the existing0.1xActorLR
+continuation. Prior sequentialu144 0.1xLR failed every check and is explicitly retained;
+this measures interaction with eight-scene coverage every update, not a repeat from
+that sequential source. Keep original4x4updates, all other settings, and full28update
+917504window with seven150-casechecks. Every check must pass allsix>=23/25 and retain
+>=143/150. No earlystop/rollback or finaltest. Existing LR-only correctness tests are
+reused; no new optimizer/regularizer/code needed. Exact command and rejection rule are
+candidate-configs/depth-parallel-postpass-lr01-design.json.
