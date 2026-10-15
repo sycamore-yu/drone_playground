@@ -2428,11 +2428,1293 @@
       ],
       "report": "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000096/screening/report.json",
       "training_state_retained": true
+    },
+    {
+      "update": 112,
+      "interactions": 3670016,
+      "successes": 8,
+      "per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 110.70400000000001
+        }
+      },
+      "baseline_update": 16,
+      "baseline_successes": 6,
+      "retained_baseline_successes": 0,
+      "retained_previous_successes": 0,
+      "previous_successes": 31,
+      "new_since_previous": 8,
+      "lost_baseline_cases": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7"
+        ]
+      ],
+      "case_events": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "7",
+          "TIMEOUT"
+        ]
+      ],
+      "report": "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000112/screening/report.json",
+      "training_state_retained": true
+    },
+    {
+      "update": 128,
+      "interactions": 4194304,
+      "successes": 40,
+      "per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 104.702
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 111.116
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 93.305
+        },
+        "D02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 97.485
+        },
+        "D03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 103.366
+        }
+      },
+      "baseline_update": 16,
+      "baseline_successes": 6,
+      "retained_baseline_successes": 6,
+      "retained_previous_successes": 8,
+      "previous_successes": 8,
+      "new_since_previous": 32,
+      "lost_baseline_cases": [],
+      "case_events": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "7",
+          "TIMEOUT"
+        ]
+      ],
+      "report": "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000128/screening/report.json",
+      "training_state_retained": true
+    },
+    {
+      "update": 144,
+      "interactions": 4718592,
+      "successes": 7,
+      "per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S03": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 135.418
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D03": {
+          "successes": 1,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 7,
+            "SUCCESS": 1
+          },
+          "median_flight_seconds": 300.0
+        }
+      },
+      "baseline_update": 16,
+      "baseline_successes": 6,
+      "retained_baseline_successes": 0,
+      "retained_previous_successes": 1,
+      "previous_successes": 40,
+      "new_since_previous": 6,
+      "lost_baseline_cases": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7"
+        ]
+      ],
+      "case_events": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "7",
+          "COLLISION"
+        ]
+      ],
+      "report": "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000144/screening/report.json",
+      "training_state_retained": true
     }
   ],
   "run_status": {
     "status": "running",
-    "last_update": 110,
-    "last_interactions": 3604480.0
+    "last_update": 152,
+    "last_interactions": 4980736.0
   }
 }

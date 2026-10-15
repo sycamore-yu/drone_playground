@@ -1069,3 +1069,88 @@ Habitat navigation:
 https://aihabitat.org/docs/habitat-lab/habitat.tasks.nav.nav.DistanceToGoalReward.html
 and https://aihabitat.org/docs/habitat-lab/habitat.config.default_structured_configs.html .
 Our grid is an approximate geometric diagnostic, not Habitat's navigation implementation.
+
+### Reset benefit did not persist; per-scene training evidence
+
+Nominal resets u80 scored26/48 (8/2/0/8/8/0), retaining26/38 source successes versus
+the unchanged control30/48 and30/38. Thus the first-check improvement did not persist.
+The final u96 remains required. The original parallel scratch u112 fell to8/48, only
+D03 successful, retaining6/38 source-u48 cases; the other five scenes all timed out.
+Its actual training u97--112 recorded565 successes among810 completed episodes,
+69.8%, so that aggregate cannot stand in for full-route evaluation. Altitude-PD u176
+scored18/48 (0/8/0/8/0/2), with0/6 first-screen successes retained.
+
+`nominal-starts/rollout_by_scene.py` (8dcdf4e) restored both intact u64 states and
+collected one native512x64 frozen stochastic rollout each, with no optimizer update.
+It adds missing per-scene observability for the concrete S03 failures; it does not
+repeat an acceptance evaluation or model-hash audit. Both probes completed, with
+finite arrays and exact agreement between done masks and the sum of event masks.
+Aggregate event counts match the original u65 scalar records: random resets20success,
+20collision,1out-of-bounds; nominal resets13success,5collision,1out-of-bounds. This
+agreement is not a claim of exact trajectory equality under separate compilation.
+
+S03 contributed six collisions and no successes with random resets; nominal resets
+contributed one collision and no successes. Other scenes did complete successfully.
+These small frozen samples expose a training gap in this segment, not a long-run
+S03 success estimate. Source S03 x positions span28.39--97.13m versus5.96--88.85m;
+the different in-flight states are a consequence of prior reset-distribution changes.
+
+With gamma=lambda=1, every sample preceding the last actual termination in its world
+uses an observed terminal return; the remaining tail uses the last Critic estimate.
+The S03 bootstrap fractions are76.78% (random) and94.29% (nominal). Target RMSE is
+0.8631/0.4384, but these are errors against bootstrapped targets, not full Monte Carlo
+returns. Across all scenes230/41 of32768 predictions exceed the loose success-return
+upper bound1+remaining_distance/20; this establishes some impossible value estimates,
+not a unique explanation of the regressions. Raw arrays, world positions/clocks,
+per-scene counts and target coverage are in `nominal-starts/training-rollout/`.
+
+The next controlled change uses the same original parallel u48 full state and changes
+only horizon512->2048, retaining random resets.204.8s covers typical160--184s successful
+routes better than51.2s. Previous procedural h512 and critic-fit8 negative results are
+explicitly retained; no old experiment is rerun. The1,572,864-interaction diagnostic
+contains12updates and checks at u52/u56/u60, matched by interactions to the cached
+controlu64/u80/u96. Final gate remains S03>=6/8, retention>=37/38, other primary scenes
+>=7/8. All three checks must finish. A missing final gate rejects this change as a
+sufficient repair at this budget, without an automatic horizon sweep.
+
+Larger rollout also means four times the batch and one quarter the update count;
+improvement would not uniquely isolate bootstrap error. Existing runner defaults retain
+the nominal-reset behavior; argument/budget setup checks confirm identical three
+interaction milestones and reject unchanged-control or combined-intervention requests.
+No native learner/network code changed. Registration: `long-rollout/design.json`.
+Reference: OpenAI Spinning Up's PPOBuffer distinguishes true terminal returns from
+value bootstrap at a sampling cutoff:
+https://spinningup.openai.com/en/latest/_modules/spinup/algos/pytorch/ppo/ppo.html .
+It supplies estimator semantics, not evidence that2048 will solve this task.
+
+The nominal-reset branch then completed all48updates and1,572,864 additional
+interactions, exiting0. Final u96=38/48 (8/8/0/8/8/6), retains37/38 source successes,
+loses one old case and gains one new case. Control u96=31/48, retains31/38. The
+three-check comparison is40/26/38 versus32/30/31, but S03 never succeeds and final
+D03 remains6/8, so the registered final pilot gate fails. Complete state is preserved
+at `depth_ppo_s0_nominal_starts/model_000096`. Wall time after restoration2626.206s;
+shared-GPU setup/throughput is not an isolated cost comparison. No final frozen test
+or additional scratch seeds are launched for this failed intervention.
+
+After that process completed, the registered horizon2048 continuation launched from
+dbc62df (PID2580615), using the same u48 full state and original random resets.
+The default runner behavior was preserved while budgeting checks by actual interactions.
+Its new12-update run is `results/fixed_scenes_parallel/depth_ppo_s0_h2048`; no first-update
+or convergence result is claimed at launch. The two existing scratch candidates continue:
+PD u192=25/48 (8/8/0/8/1/0), initial6/6 successes regained; parallel u128=40/48,
+all primary scenes8/8 except S03 eight timeouts. Their earlier collapses remain recorded.
+
+Horizon2048 first actual update u49 completed131072 interactions, Actor gradient norm
+0.37937066 and no KL skip.104 training episodes ended,70 successfully; this aggregate
+is execution evidence only. The165.587s update includes compilation. A device-wide
+sample afterward was6890MiB including the other two scratch jobs, not a peak measure.
+Complete-state restoration and resolved configuration checks passed: only the two
+saved horizon fields and output path differ from the original source. No rematerialization
+or other native code change was needed. Evidence: `long-rollout/first-update.json`.
+
+Parallel scratch u144 subsequently completed7/48: S03 six successes/two collisions,
+D03 one success/seven timeouts, and S01/S02/D01/D02 all timeouts. All six initial
+successes were lost while six previously unsuccessful S03 cases became successful.
+This adds evidence of cross-scene regression; it does not establish gradient conflict
+as the unique mechanism. The matched original sequential u144 was48/48. No new
+matrix cell is promoted and the registered scratch budget continues.

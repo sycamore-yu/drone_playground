@@ -4,8 +4,8 @@
   "source_successes": 38,
   "control_cache": "artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-progress.json",
   "treatment_report": "results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts/report.json",
-  "treatment_status": "running",
-  "last_update": 69,
+  "treatment_status": "completed",
+  "last_update": 96,
   "planned_additional_interactions": 1572864,
   "checks": [
     {
@@ -108,8 +108,271 @@
         ]
       ],
       "treatment_pilot_gate": false
+    },
+    {
+      "update": 80,
+      "additional_interactions": 1048576,
+      "control_successes": 30,
+      "treatment_successes": 26,
+      "control_retained_source_successes": 30,
+      "treatment_retained_source_successes": 26,
+      "control_per_scene": {
+        "S01": 8,
+        "S02": 2,
+        "S03": 0,
+        "D01": 8,
+        "D02": 8,
+        "D03": 4
+      },
+      "treatment_per_scene": {
+        "S01": 8,
+        "S02": 2,
+        "S03": 0,
+        "D01": 8,
+        "D02": 8,
+        "D03": 0
+      },
+      "control_events": {
+        "SUCCESS": 30,
+        "COLLISION": 3,
+        "TIMEOUT": 15
+      },
+      "treatment_events": {
+        "SUCCESS": 26,
+        "COLLISION": 15,
+        "TIMEOUT": 6,
+        "OUT_OF_BOUNDS": 1
+      },
+      "treatment_only_success_cases": [
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6"
+        ]
+      ],
+      "control_only_success_cases": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1"
+        ]
+      ],
+      "treatment_lost_source_successes": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7"
+        ]
+      ],
+      "treatment_new_source_successes": [],
+      "treatment_pilot_gate": false
+    },
+    {
+      "update": 96,
+      "additional_interactions": 1572864,
+      "control_successes": 31,
+      "treatment_successes": 38,
+      "control_retained_source_successes": 31,
+      "treatment_retained_source_successes": 37,
+      "control_per_scene": {
+        "S01": 8,
+        "S02": 8,
+        "S03": 0,
+        "D01": 8,
+        "D02": 7,
+        "D03": 0
+      },
+      "treatment_per_scene": {
+        "S01": 8,
+        "S02": 8,
+        "S03": 0,
+        "D01": 8,
+        "D02": 8,
+        "D03": 6
+      },
+      "control_events": {
+        "SUCCESS": 31,
+        "COLLISION": 10,
+        "TIMEOUT": 7
+      },
+      "treatment_events": {
+        "SUCCESS": 38,
+        "COLLISION": 9,
+        "TIMEOUT": 1
+      },
+      "treatment_only_success_cases": [
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7"
+        ]
+      ],
+      "control_only_success_cases": [],
+      "treatment_lost_source_successes": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1"
+        ]
+      ],
+      "treatment_new_source_successes": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5"
+        ]
+      ],
+      "treatment_pilot_gate": false
     }
   ],
   "interpretation": "Report all three scheduled checks and judge the actual final u96 against the preregistered pilot gate. An intermediate retention improvement is not S03 convergence, scratch replication or formal acceptance.",
-  "training_update_seconds": 549.2354047150002
+  "actual_additional_interactions": 1572864,
+  "pilot_passed": false,
+  "total_wall_seconds": 2626.2060683190066,
+  "training_update_seconds": 1205.6364811088133,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts/model_000096"
 }

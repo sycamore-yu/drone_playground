@@ -681,6 +681,340 @@
           "median_flight_seconds": 23.024
         }
       }
+    },
+    {
+      "update": 112,
+      "interactions": 3670016,
+      "sequential_successes": 37,
+      "parallel_successes": 8,
+      "shared_success_cases": 6,
+      "sequential_only_successes": 31,
+      "parallel_only_successes": 2,
+      "sequential_per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 220.894
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 211.861
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 168.004
+        },
+        "D02": {
+          "successes": 7,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 7,
+            "COLLISION": 1
+          },
+          "median_flight_seconds": 166.986
+        },
+        "D03": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 193.68099999999998
+        }
+      },
+      "parallel_per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 110.70400000000001
+        }
+      }
+    },
+    {
+      "update": 128,
+      "interactions": 4194304,
+      "sequential_successes": 32,
+      "parallel_successes": 40,
+      "shared_success_cases": 32,
+      "sequential_only_successes": 0,
+      "parallel_only_successes": 8,
+      "sequential_per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 214.517
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 209.607
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 211.519
+        },
+        "D02": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 188.243
+        },
+        "D03": {
+          "successes": 2,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 5,
+            "OUT_OF_BOUNDS": 1,
+            "SUCCESS": 2
+          },
+          "median_flight_seconds": 59.122
+        }
+      },
+      "parallel_per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 104.702
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 111.116
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 93.305
+        },
+        "D02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 97.485
+        },
+        "D03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 103.366
+        }
+      }
+    },
+    {
+      "update": 144,
+      "interactions": 4718592,
+      "sequential_successes": 48,
+      "parallel_successes": 7,
+      "shared_success_cases": 7,
+      "sequential_only_successes": 41,
+      "parallel_only_successes": 0,
+      "sequential_per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 184.017
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 180.971
+        },
+        "S03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 160.537
+        },
+        "D01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 162.464
+        },
+        "D02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 178.32
+        },
+        "D03": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 180.794
+        }
+      },
+      "parallel_per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S03": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 135.418
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D03": {
+          "successes": 1,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 7,
+            "SUCCESS": 1
+          },
+          "median_flight_seconds": 300.0
+        }
+      }
     }
   ],
   "interpretation": "Development only: parallel sampling scores6/39/38/32/30 at u16/32/48/64/80, versus sequential30/0/4/40/23 at matched budgets. Parallel retains its first six successes but loses part of its later successful set; S03 remains0/8. No stable convergence established; predeclared budget continues."

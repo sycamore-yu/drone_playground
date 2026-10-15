@@ -1,5 +1,5 @@
 {
-  "status": "planned",
+  "status": "training",
   "problem": "Current parallel fixed-scene PPO still loses learned routes. The u64 frozen training probes contain no S03 successes (6/1 completed failures), and 76.78%/94.29% of S03 gamma=lambda=1 targets end in Critic bootstrap under random/nominal resets. Existing procedural h512 and critic-fit8 diagnostics also failed retention; they are not rerun.",
   "hypothesis": "Collecting204.8s per world before each PPO update, rather than51.2s, may expose more terminal outcomes and improve long-route credit assignment and retention. Previous successful full-route flight times are around160-184s. More observed termination is not proof of accurate values or convergence.",
   "intervention": {
@@ -64,5 +64,11 @@
     "two_unsupported_or_unchanged_argument_combinations": "rejected before source/output handling",
     "method": "Executed actual argument and budget setup via AST, without model loading or output creation",
     "ruff": "passed"
-  }
+  },
+  "runtime_commit": "dbc62df",
+  "pid": 2580615,
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_h2048",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/long-rollout/continue.log",
+  "first_update": "artifacts/verification/ppo-stability-20261015/long-rollout/first-update.json",
+  "cost_scope": "total_wall_seconds starts after restoration; first update includes compilation; shared GPU, no isolated throughput comparison"
 }

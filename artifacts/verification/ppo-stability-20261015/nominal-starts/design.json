@@ -1,5 +1,5 @@
 {
-  "status": "training",
+  "status": "completed_failed",
   "problem": "Current policies fail S03 by interior stalling/oscillation rather than final-goal settling. PD u112 remains84.49m away; parallel u48 two cases remain58.30m away and six23.25m away. Current fixed-scene training randomizes starts over x[2,94], y[-18,18], z[1,5.5], whereas the task starts near(2,0,3).",
   "hypothesis": "Training more actual full-route episodes from the task start may improve on-policy coverage of recurrent route failures and retention. The observed paths do not establish reset distribution as the cause.",
   "intervention": {
@@ -42,5 +42,20 @@
   "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/nominal-starts/continue.log",
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts",
   "first_update": "artifacts/verification/ppo-stability-20261015/nominal-starts/first-update.json",
-  "cost_scope": "Continuation total_wall_seconds starts after state restoration; setup is excluded. First update_seconds includes compilation. GPU is shared with the two scratch runs; no isolated cost comparison."
+  "cost_scope": "Continuation total_wall_seconds starts after state restoration; setup is excluded. First update_seconds includes compilation. GPU is shared with the two scratch runs; no isolated cost comparison.",
+  "actual_updates": 48,
+  "actual_additional_interactions": 1572864,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts/model_000096",
+  "total_wall_seconds_after_restoration": 2626.2060683190066,
+  "final_successes": 38,
+  "final_retained_source_successes": 37,
+  "final_per_scene": {
+    "S01": 8,
+    "S02": 8,
+    "S03": 0,
+    "D01": 8,
+    "D02": 8,
+    "D03": 6
+  },
+  "comparison": "artifacts/verification/ppo-stability-20261015/nominal-starts/comparison.json"
 }
