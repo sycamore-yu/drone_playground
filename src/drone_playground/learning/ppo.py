@@ -123,7 +123,7 @@ def completed_navigation_metrics(done, terms):
     return results
 
 
-def collect_rollout(trainer, state):
+def collect_rollout(trainer, state, *, sampling_progress=None):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
     def step(carry, _):
@@ -176,7 +176,17 @@ def collect_rollout(trainer, state):
         data = Rollout(
             observation, pre_tanh, log_prob, -cost, value, next_value, after.terminated, after.done
         )
-        env_state, memory, history = trainer._reset(reset_key, after, memory, history)
+        env_state, memory, history = trainer._reset(
+            reset_key, after, memory, history, sampling_progress=sampling_progress
+        )
+        if trainer.distance_sampling:
+            distance = jnp.linalg.norm(
+                env_state.scene_state.start - env_state.scene_state.goal, axis=-1
+            )
+            for metres in (20, 50, 80):
+                terms[f"reset_distance_{metres}m_count"] = (
+                    after.done & (jnp.abs(distance - metres) < 0.01)
+                ).astype(jnp.float32)
         return (env_state, memory, history, rng), (data, terms)
 
     carry, (rollout, terms) = jax.lax.scan(
@@ -203,10 +213,10 @@ def recurrent_policy(trainer, params, observations, initial_memory, done):
     return jax.lax.scan(step, initial_memory, (observations, done))
 
 
-def update(trainer, state):
+def update(trainer, state, *, sampling_progress=None):
     """Collect recurrent samples and update actor and critic parameters with PPO."""
     initial_memory = state.recurrent_memory
-    state, rollout, terms = collect_rollout(trainer, state)
+    state, rollout, terms = collect_rollout(trainer, state, sampling_progress=sampling_progress)
     advantages, targets = generalized_advantage_estimate(
         rollout.rewards,
         rollout.values,
@@ -324,6 +334,15 @@ def update(trainer, state):
     )
     metrics = jax.tree.map(jnp.mean, metrics)
     metrics.update(jax.tree.map(jnp.mean, terms))
+    if trainer.distance_sampling:
+        for metres in (20, 50, 80):
+            name = f"reset_distance_{metres}m_count"
+            metrics[name] = jnp.sum(terms[name])
+        metrics["distance_curriculum_phase"] = (
+            jnp.minimum(jnp.floor(sampling_progress * 3), 2)
+            if sampling_progress is not None
+            else -1.0
+        )
     metrics["reward"] = rollout.rewards.mean()
     metrics["advantage_std"] = advantage_std
     metrics["advantage_positive_fraction"] = advantage_positive_fraction

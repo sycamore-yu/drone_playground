@@ -227,7 +227,13 @@ class BaseEnv:
         return self.task.start + jax.random.uniform(key, (count, 3), minval=-0.05, maxval=0.05)
 
     def _reset(
-        self, key, state: EnvState | None = None, mask=None, *, randomize_position=False
+        self,
+        key,
+        state: EnvState | None = None,
+        mask=None,
+        *,
+        randomize_position=False,
+        sampling_progress=None,
     ) -> EnvState:
         """Reset selected worlds; wide position sampling is opt-in Navigation training."""
         batch = self.num_envs
@@ -238,6 +244,7 @@ class BaseEnv:
                 jax.random.fold_in(key, 99),
                 batch,
                 None if state is None else state.scene_state,
+                sampling_progress=sampling_progress,
             )
             if isinstance(self.scene, ProceduralScene)
             else None

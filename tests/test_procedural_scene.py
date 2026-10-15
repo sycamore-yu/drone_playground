@@ -10,6 +10,7 @@ from drone_playground.simulation.evaluation import create_environment
 from drone_playground.simulation.procedural_scene import (
     ProceduralScene,
     SceneDistribution,
+    distance_sampling_weights,
 )
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import SensorConfig, measure
@@ -114,6 +115,60 @@ def test_stratified_start_executes_native_crazyflow_step_under_jit():
     np.testing.assert_allclose(before.physics.states.pos[:, 0], before.scene_state.start)
     after = env.step(before, jnp.zeros((2, env.action_size)))
     assert np.isfinite(np.asarray(after.physics.states.pos)).all()
+
+
+def test_distance_curriculum_rehearses_old_distances_and_has_stationary_probe():
+    """Only training start proportions change; probes and obstacle RNG stay paired."""
+    phases = np.asarray([distance_sampling_weights(p) for p in (0.0, 1 / 3, 2 / 3, 1.0)])
+    np.testing.assert_allclose(phases[:3].mean(axis=0), distance_sampling_weights(), atol=1e-7)
+    assert np.all(phases > 0)
+    assert phases[0, 0] > phases[-1, 0] and phases[0, 2] < phases[-1, 2]
+    control = ProceduralScene({"max_obstacles": 12, "start_sampling": "distance_mixture"})
+    treatment = ProceduralScene({"max_obstacles": 12, "start_sampling": "distance_curriculum"})
+    key = jax.random.key(29)
+    baseline = control.sample(key, 128)
+    probe = treatment.sample(key, 128)
+    np.testing.assert_array_equal(baseline.start, probe.start)
+    early = treatment.sample(key, 128, sampling_progress=0.0)
+    late = jax.jit(lambda p: treatment.sample(key, 128, sampling_progress=p))(jnp.array(1.0))
+    for state in (early, late):
+        distances = np.linalg.norm(np.asarray(state.goal - state.start), axis=-1)
+        assert np.max(np.min(np.abs(distances[:, None] - [20.0, 50.0, 80.0]), axis=1)) < 1e-4
+        assert np.all(np.asarray(treatment.clearance(state.start, scene_state=state)) > 0.45)
+        np.testing.assert_allclose(state.centers, baseline.centers, atol=1e-5, rtol=1e-6)
+    assert np.mean(np.linalg.norm(np.asarray(early.goal - early.start), axis=-1)) < 35
+    assert np.mean(np.linalg.norm(np.asarray(late.goal - late.start), axis=-1)) > 50
+
+
+def test_ppo_curriculum_progress_survives_host_counter_reset_and_world_masks():
+    """Actual PPO update uses the supplied phase; live worlds keep their geometry."""
+    from drone_playground.learning.trainer import Trainer
+    from drone_playground.simulation.environment import make_environment
+
+    env = make_environment(
+        task="navigation",
+        scene="train/procedural",
+        num_envs=2,
+        device="cpu",
+        duration=0.02,
+        procedural={"max_obstacles": 6, "start_sampling": "distance_curriculum"},
+    )
+    trainer = Trainer(env, config={"horizon": 1, "ppo_epochs": 1, "minibatches": 1})
+    before = trainer.initialize().replace(updates=1000, interactions=2000)
+    with pytest.raises(ValueError, match="explicit finite progress"):
+        trainer.update(before)
+    after, metrics = trainer.update(before, sampling_progress=0.8)
+    assert after.updates == 1001 and after.interactions == 2002
+    assert metrics["distance_curriculum_phase"] == 2
+    assert sum(float(metrics[f"reset_distance_{d}m_count"]) for d in (20, 50, 80)) == 2
+    assert all(np.isfinite(v) for v in metrics.values())
+    masked = env.reset(
+        jax.random.key(99), before.env_state, mask=jnp.array([True, False]), sampling_progress=1.0
+    )
+    np.testing.assert_array_equal(
+        masked.scene_state.start[1], before.env_state.scene_state.start[1]
+    )
+    assert masked.scene_state.episode[0] == before.env_state.scene_state.episode[0] + 1
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])

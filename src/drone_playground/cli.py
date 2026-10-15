@@ -126,7 +126,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
     resolved = OmegaConf.to_container(config, resolve=True)
     max_interactions = resolved["learning"].get("max_interactions")
     training_budget_reached(0, max_interactions)
+    distance_curriculum = (resolved.get("simulation", {}).get("procedural") or {}).get(
+        "start_sampling"
+    ) == "distance_curriculum"
+    if distance_curriculum and (max_interactions is None or config.learning.algorithm != "ppo"):
+        raise ValueError("Distance curriculum requires PPO and a finite interaction budget")
     scenes = resolved["learning"].get("scenes")
+    if distance_curriculum and scenes is not None:
+        raise ValueError("Distance curriculum requires one procedural training distribution")
     scene_updates = resolved["learning"].get("scene_updates", 20)
     scene_index, updates_in_scene = 0, 0
     sampling = None
@@ -278,6 +285,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
         if "initialization" in metadata["config"]:
             identity["initialization"] = metadata["config"]["initialization"]
         previous = metadata["config"]["experiment"]
+        if distance_curriculum and previous["learning"].get("max_interactions") != max_interactions:
+            raise ValueError("Resume changes the distance curriculum interaction budget")
         if previous.get("screening", {}).get("progress_aware") != screening_options.get(
             "progress_aware"
         ):
@@ -673,7 +682,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     reset_worlds=trainer.env.num_envs,
                 )
             update_started = time.monotonic()
-            candidate, metrics = trainer.update(state)
+            candidate, metrics = trainer.update(
+                state,
+                **(
+                    {"sampling_progress": min(int(state.interactions) / max_interactions, 1.0)}
+                    if distance_curriculum
+                    else {}
+                ),
+            )
             metrics = {name: float(value) for name, value in jax.device_get(metrics).items()}
             if not all(np.isfinite(list(metrics.values()))):
                 checkpoint(state)

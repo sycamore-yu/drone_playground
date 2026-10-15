@@ -293,7 +293,21 @@ class Trainer:
         from drone_playground.learning import apg, ppo, shac
 
         implementation = {"ppo": ppo.update, "apg": apg.update, "shac": shac.update}[algorithm]
-        self._update = jax.jit(lambda state: implementation(self, state))
+        distribution = getattr(env.scene, "distribution", None)
+        self.distance_sampling = distribution is not None and distribution.start_sampling in (
+            "distance_mixture",
+            "distance_curriculum",
+        )
+        self.distance_curriculum = (
+            self.distance_sampling and distribution.start_sampling == "distance_curriculum"
+        )
+        if self.distance_sampling and algorithm != "ppo":
+            raise ValueError("Distance schedule experiments require PPO")
+        self._update = (
+            jax.jit(lambda state, progress: ppo.update(self, state, sampling_progress=progress))
+            if self.distance_curriculum
+            else jax.jit(lambda state: implementation(self, state))
+        )
 
     @property
     def resolved_config(self):
@@ -316,7 +330,11 @@ class Trainer:
     def initialize(self) -> TrainingState:
         """Initialize variables, optimizers, physical episodes and recurrent history."""
         rng, reset_key, actor_key, critic_key = jax.random.split(jax.random.PRNGKey(self.seed), 4)
-        env_state = self.env.reset(reset_key, **self._reset_options)
+        env_state = self.env.reset(
+            reset_key,
+            **self._reset_options,
+            **({"sampling_progress": 0.0} if self.distance_curriculum else {}),
+        )
         observation = self._observe(env_state)
         memory = self.actor.initialize_memory(self.env.num_envs)
         params = self.actor.init(actor_key, observation, memory)
@@ -367,10 +385,22 @@ class Trainer:
             objective_state=jax.tree.map(jnp.zeros_like, state.objective_state),
         )
 
-    def update(self, state: TrainingState) -> tuple[TrainingState, dict[str, jax.Array]]:
+    def update(
+        self, state: TrainingState, *, sampling_progress=None
+    ) -> tuple[TrainingState, dict[str, jax.Array]]:
         """Run one compiled update; scalar metrics remain on device until consumed."""
         # Host integers avoid device int32 counter overflow without enabling global float64.
-        result, metrics = self._update(state.replace(updates=0, interactions=0))
+        local = state.replace(updates=0, interactions=0)
+        if self.distance_curriculum:
+            if (
+                sampling_progress is None
+                or not math.isfinite(sampling_progress)
+                or not 0 <= sampling_progress <= 1
+            ):
+                raise ValueError("Distance curriculum requires explicit finite progress in [0, 1]")
+            result, metrics = self._update(local, jnp.asarray(sampling_progress, jnp.float32))
+        else:
+            result, metrics = self._update(local)
         result = result.replace(
             updates=state.updates + 1,
             interactions=state.interactions + self.config["horizon"] * self.env.num_envs,
@@ -421,7 +451,7 @@ class Trainer:
         step = self._differentiable_step if differentiable else self.env.step
         return self.method.execute(self.env, before, action, step=step)
 
-    def _reset(self, key, after, memory, history):
+    def _reset(self, key, after, memory, history, *, sampling_progress=None):
         from drone_playground.simulation.networks import reset_actor_memory
 
         done = after.done
@@ -434,7 +464,9 @@ class Trainer:
         )
         env_state = jax.lax.cond(
             jnp.any(done),
-            lambda: self.env.reset(key, after, **self._reset_options),
+            lambda: self.env.reset(
+                key, after, **self._reset_options, sampling_progress=sampling_progress
+            ),
             lambda: after,
         )
         return env_state, memory, history

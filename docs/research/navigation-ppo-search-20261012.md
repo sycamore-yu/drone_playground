@@ -676,6 +676,64 @@ and native-decoder checks passed after trimming each replay directory to
 grades, a dynamic flight and the Fan hover. The complete preview index remains
 at primary `results/navigation_distance_v01/inspection/README.md`.
 
+## Forgetting research and matched distance curriculum, 2026-10-15
+
+The user requested a literature/blog/community review, an independent curriculum
+comparison, and an inventory based on all extant experiment records. This is a
+training-sampling experiment, not an approved replacement of PPO or Crazyflow.
+The integrated decision index remains the `v0.2` ADR directory; this feature is
+not merged there.
+
+Florensa et al.'s [Reverse Curriculum paper](https://proceedings.mlr.press/v78/florensa17a.html)
+and [author blog](https://bair.berkeley.edu/blog/2017/12/20/reverse-curriculum/)
+retain earlier start states and collect fresh trajectories from them to avoid
+forgetting. The implementation here is a smaller fixed distance schedule, not
+their adaptive SoID/Brownian algorithm. CLEAR's
+[replay and cloning method](https://arxiv.org/html/1811.11682v2) uses V-trace for
+off-policy corrections; inserting historical trajectories into the existing
+PPO loss would not reproduce CLEAR. Teacher KL/cloning is a possible later
+independent intervention, not part of the present curriculum comparison.
+
+Two recipes are compared separately for Depth and LiDAR:
+
+| Training budget fraction | Stationary control: 20/50/80 m | Curriculum: 20/50/80 m |
+| --- | --- | --- |
+| [0, 1/3) | .4 / .3 / .3 | .8 / .1 / .1 |
+| [1/3, 2/3) | .4 / .3 / .3 | .2 / .6 / .2 |
+| [2/3, 1] | .4 / .3 / .3 | .2 / .2 / .6 |
+
+Each pair changes only `simulation.procedural.start_sampling` and output path.
+Both use the same 2,211,840-interaction ceiling, current minimum-time Task
+reward, world acceleration and heading observation, static scale .7, optimizers
+and evaluation seeds. The stage is passed explicitly from saved host
+interaction counts; it changes only future episode resets and never restarts
+optimizer state or live-world recurrent memory. Resuming with a different
+curriculum budget is rejected. The sampler uses the existing collision-free
+candidate and clear-corridor fallback construction at exact Euclidean distance.
+
+Training-distribution evaluation omits sampling progress and therefore always
+uses the stationary mixture for both recipes. Six fixed long-distance scenes,
+25 episodes per scene, at least23/25 per scene and three independent training
+seeds remain the formal acceptance rule. Curriculum phase and actual reset
+counts for each distance are logged. Equal nominal mean weights across three
+interaction phases do not guarantee equal reset counts: episode durations
+depend on the policy. Diagnostic comparisons must disclose observed counts.
+
+The four seed0 cases are `depth_distance_mixture`, `lidar_distance_mixture`,
+`depth_distance_curriculum`, `lidar_distance_curriculum` in the existing finite
+`navigation_stability_fixes_v01` queue, before pending value-clipping controls.
+Current workers continue. Seed1/2 promotion still requires accepted seed0;
+short-horizon integration checks do not constitute convergence evidence.
+
+The full read-only inventory and literature/action matrix are in the primary
+checkout's `results/navigation_research_audit_20261015/{README.md,runs.csv,runs.json}`.
+It separates actual updates from queued configurations, from-scratch from
+initialized policies, six-scene48/150 reports from historical eight-scene64/200
+reports, and extant reports from scores surviving only in scheduler history.
+Historical configuration defaults are not reconstructed and old weights are
+not loaded. A score such as initial VisFly1/48 must not be rounded down to the
+later variants'0/48; all remain below acceptance.
+
 
 ## Follow-up: matched stability repairs and research, 2026-10-15
 

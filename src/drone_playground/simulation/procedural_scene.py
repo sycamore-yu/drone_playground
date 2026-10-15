@@ -17,6 +17,14 @@ from flax import struct
 from drone_playground.simulation.scene import _distance, _intersection
 
 
+def distance_sampling_weights(progress=None):
+    """Fixed probe mixture, or three training phases that retain earlier distances."""
+    if progress is None:
+        return jnp.array([0.4, 0.3, 0.3])
+    phase = jnp.clip(jnp.floor(progress * 3).astype(jnp.int32), 0, 2)
+    return jnp.array([[0.8, 0.1, 0.1], [0.2, 0.6, 0.2], [0.2, 0.2, 0.6]])[phase]
+
+
 @struct.dataclass
 class SceneState:
     """Episode geometry; B worlds, N static-capacity obstacle slots."""
@@ -60,8 +68,14 @@ class SceneDistribution:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
             raise ValueError("training_seed must be a nonnegative integer")
-        if self.start_sampling not in ("endpoints", "collision_free", "stratified"):
-            raise ValueError("start_sampling must be endpoints, collision_free or stratified")
+        if self.start_sampling not in (
+            "endpoints",
+            "collision_free",
+            "stratified",
+            "distance_mixture",
+            "distance_curriculum",
+        ):
+            raise ValueError("Unsupported procedural start_sampling")
         if not 0 <= self.min_start_goal_distance_m <= 80.0 or (
             self.min_start_goal_distance_m > 0 and self.start_sampling != "collision_free"
         ):
@@ -99,7 +113,9 @@ class ProceduralScene:
             config if isinstance(config, SceneDistribution) else SceneDistribution(**(config or {}))
         )
         generator = (
-            "procedural-navigation-v3-distance-range"
+            "procedural-navigation-v4-distance-schedule"
+            if self.distribution.start_sampling in ("distance_mixture", "distance_curriculum")
+            else "procedural-navigation-v3-distance-range"
             if self.distribution.start_goal_distance_range_m is not None
             else "procedural-navigation-v2-long-start"
             if self.distribution.min_start_goal_distance_m > 0
@@ -128,7 +144,14 @@ class ProceduralScene:
         self.gate_order = ()
         self.numeric = {}
 
-    def sample(self, key: jax.Array, worlds: int, prior: SceneState | None = None):
+    def sample(
+        self,
+        key: jax.Array,
+        worlds: int,
+        prior: SceneState | None = None,
+        *,
+        sampling_progress=None,
+    ):
         """Sample episode state using training seed, world index and episode."""
         if not isinstance(worlds, int) or worlds < 1:
             raise ValueError("worlds must be positive")
@@ -212,7 +235,14 @@ class ProceduralScene:
             goal,
             episodes,
         )
-        if self.distribution.start_sampling in ("collision_free", "stratified"):
+        distance_schedule = self.distribution.start_sampling in (
+            "distance_mixture",
+            "distance_curriculum",
+        )
+        if (
+            self.distribution.start_sampling in ("collision_free", "stratified")
+            or distance_schedule
+        ):
             # The old successful training design used broad reset positions.
             # Reserve some near-goal starts for terminal-reward exploration,
             # but keep most episodes distributed throughout the whole course.
@@ -222,6 +252,15 @@ class ProceduralScene:
                 near_key, coord_key = jax.random.split(key)
                 coordinates = jax.random.uniform(coord_key, (16, 3))
                 interval = self.distribution.start_goal_distance_range_m
+                if distance_schedule:
+                    weights = distance_sampling_weights(
+                        sampling_progress
+                        if self.distribution.start_sampling == "distance_curriculum"
+                        else None
+                    )
+                    group = jax.random.categorical(near_key, jnp.log(weights))
+                    radius = jnp.array([20.0, 50.0, 80.0])[group]
+                    interval = (radius, radius)
                 if interval is not None:
                     radius = interval[0] + (interval[1] - interval[0]) * coordinates[:, 0]
                     y_offset = (2 * coordinates[:, 1] - 1) * jnp.minimum(12.0, radius / 2)
@@ -260,7 +299,7 @@ class ProceduralScene:
             best = jnp.argmax(valid, axis=1)
             start = jnp.take_along_axis(trial_positions, best[:, None, None], axis=1)[:, 0, :]
             fallback = scenario.start
-            if self.distribution.start_goal_distance_range_m is not None:
+            if self.distribution.start_goal_distance_range_m is not None or distance_schedule:
                 radius = jnp.linalg.norm(trial_positions[:, 0] - scenario.goal, axis=-1)
                 # The clear end zone joins the reserved outside lane at the same distance.
                 y_offset = jnp.minimum(radius, scenario.goal[:, 1] - self.distribution.corridor_y)
