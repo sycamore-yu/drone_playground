@@ -1,0 +1,142 @@
+benchmark:
+  allow_environment_change: false
+  chunk_steps: 25
+  episodes: null
+  fixed_checkpoint_seeds: true
+  primary_scenes:
+    dynamic:
+    - D01
+    - D02
+    - D03
+    static:
+    - S01
+    - S02
+    - S03
+  protocol: learning
+  record_replay: false
+  record_trajectories: false
+  replay_episodes: 2
+  scenes: null
+  seed_base: null
+checkpoint: null
+controller:
+  _target_: drone_playground.simulation.controllers.MellingerController
+  drone: cf21B_500
+  frequency: 10
+  yaw: 0.0
+early_stopping:
+  min_delta: 0.005
+  min_updates: 257
+  patience: 1
+initial_checkpoint: null
+learning:
+  algorithm: ppo
+  backward_model: null
+  backward_options: {}
+  checkpoint_interval: 16
+  evaluation_interval: 16
+  log_interval: 1
+  loss: null
+  max_interactions: 8388608
+  options:
+    altitude_weight: 0.0
+    clip_epsilon: 0.15
+    critic_epochs: 4
+    critic_lr: 0.0005
+    critic_uses_privileged: true
+    critic_uses_sensor: false
+    entropy_weight: 0.005
+    failure_cost: 0.0
+    gae_lambda: 1.0
+    gamma: 1.0
+    height_boundary_weight: 0.0
+    horizon: 512
+    initial_log_std: -2.5
+    lr: 0.0002
+    max_grad_norm: 1.0
+    minibatches: 4
+    perception_weight: 0.0
+    ppo_epochs: 4
+    ppo_target_kl: 0.025
+    ppo_value_clip: 10.0
+    progress_reward_scale: 0.0
+    randomize_navigation_start: true
+    target_alpha: 0.995
+    task_weight: 1.0
+    temporal_gradient_alpha: 0.916290731874155
+    velocity_aux_weight: 0.0
+    weight_decay: 0.0
+  required_consecutive_passes: 1
+  scene_updates: 2
+  scenes:
+  - S01
+  - S02
+  - S03
+  - D01
+  - D02
+  - D03
+  - S06
+  - D06
+  selection: first_full_validation_pass
+  scene_sampling: parallel
+method:
+  action:
+    heading: target
+    level: acceleration
+  actor:
+    _target_: drone_playground.simulation.networks.Actor
+    hidden_size: 192
+    kind: depth
+  implementation:
+    _target_: drone_playground.simulation.methods.PolicyMethod
+  name: policy
+  protocol: learning
+mode: train
+observation:
+  depth: {}
+  navigation_relative_goal: true
+  navigation_world_rotation: true
+output: /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0
+replay_path: null
+results:
+  format: orbax
+  keep_best_screening: true
+  keep_checkpoints: 20
+resume: null
+scene:
+  name: S01
+screening:
+  full_every: 3
+  probe_between_full: false
+  training_distribution_probe: false
+seed: 0
+sensor:
+  config:
+    frequency_hz: 30
+    height: 48
+    latency: 0.0
+    max_range: 10.0
+    min_range: 0.3
+    pitch_deg: 20.0
+    width: 64
+  name: depth
+  point_count: 1024
+simulation:
+  action_delay_s: 0.0
+  device: gpu
+  disturbance: {}
+  drone: cf21B_500
+  dynamics: first_principles
+  method_hz: 10
+  navigation_goal_observation: true
+  num_envs: 64
+  physics_hz: 500
+  randomization: {}
+task:
+  duration: 300.0
+  name: navigation
+  options:
+    reward_profile: goal_reaching
+    finite_horizon: true
+  reference: goal
+  reference_seed: 0

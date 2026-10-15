@@ -137,6 +137,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
     if distance_curriculum and max_interactions is None:
         raise ValueError("Distance curriculum requires a finite interaction budget")
     scenes = resolved["learning"].get("scenes")
+    scene_sampling = resolved["learning"].get("scene_sampling", "sequential")
+    if scene_sampling not in ("sequential", "parallel") or (
+        scene_sampling == "parallel" and scenes is None
+    ):
+        raise ValueError("learning.scene_sampling requires sequential or parallel fixed scenes")
+    parallel_scenes = None
     if distance_curriculum and scenes is not None:
         raise ValueError("Distance curriculum requires one procedural training distribution")
     scene_updates = resolved["learning"].get("scene_updates", 20)
@@ -144,6 +150,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
     sampling = None
     screening_options = resolved.get("screening", {})
     training_probe_enabled = screening_options.get("training_distribution_probe", False)
+    if scene_sampling == "parallel" and training_probe_enabled:
+        raise ValueError("Training-distribution probe currently requires procedural geometry")
     if type(training_probe_enabled) is not bool or (
         training_probe_enabled and (config.task.name != "navigation" or legacy)
     ):
@@ -188,7 +196,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             or len(set(scenes)) != len(scenes)
         ):
             raise ValueError("learning.scenes requires a nonempty unique Navigation8 scene list")
-        if (
+        if scene_sampling == "sequential" and (
             not isinstance(scene_updates, int)
             or isinstance(scene_updates, bool)
             or scene_updates < 1
@@ -196,34 +204,45 @@ def train(config: DictConfig, record: RunRecord) -> None:
             raise ValueError("learning.scene_updates must be a positive integer")
         sampling = {
             "scenes": scenes,
-            "scene_updates": scene_updates,
             "geometry_sha256": {scene: Scene(scene).geometry_hash for scene in scenes},
         }
+        if scene_sampling == "parallel":
+            count = config.simulation.num_envs
+            if type(count) is not int or count < len(scenes) or count % len(scenes):
+                raise ValueError("Parallel scenes require equal nonempty world groups")
+            parallel_scenes = scenes
+            sampling.update(scene_sampling="parallel", worlds_per_scene=count // len(scenes))
+        else:
+            sampling["scene_updates"] = scene_updates
         if config.resume:
             _, metadata = read_checkpoint(config.resume, "training")
             if metadata["config"].get("training_sampling") != sampling:
                 raise ValueError("Resume changes the saved training sampling schedule or geometry")
-            progress = metadata["provenance"].get("training_sampling", {})
-            scene_index = progress.get("scene_index")
-            updates_in_scene = progress.get("updates_in_scene")
-            if (
-                type(scene_index) is not int
-                or not 0 <= scene_index < len(scenes)
-                or type(updates_in_scene) is not int
-                or not 0 <= updates_in_scene <= scene_updates
-            ):
-                raise ValueError("Checkpoint has invalid training sampling progress")
+            if parallel_scenes is None:
+                progress = metadata["provenance"].get("training_sampling", {})
+                scene_index = progress.get("scene_index")
+                updates_in_scene = progress.get("updates_in_scene")
+                if (
+                    type(scene_index) is not int
+                    or not 0 <= scene_index < len(scenes)
+                    or type(updates_in_scene) is not int
+                    or not 0 <= updates_in_scene <= scene_updates
+                ):
+                    raise ValueError("Checkpoint has invalid training sampling progress")
+        if parallel_scenes is not None:
+            scenes = None
     kind = config.method.actor.get("kind", "custom")
     orbax_layout = getattr(record, "layout_version", 2) == 3
     trainers = {}
 
     def trainer_for(index):
         if index not in trainers:
-            env = (
-                create_environment(config)
-                if scenes is None
-                else create_environment(config, scene=scenes[index])
-            )
+            if parallel_scenes is not None:
+                env = create_environment(config, scene=parallel_scenes)
+            elif scenes is not None:
+                env = create_environment(config, scene=scenes[index])
+            else:
+                env = create_environment(config)
             trainers[index] = Trainer(
                 env,
                 kind=kind,

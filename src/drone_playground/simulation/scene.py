@@ -331,3 +331,78 @@ class Scene:
             result = jax.lax.map(jax.checkpoint(cast), inputs, batch_size=8192)
         result = result.reshape((*batch, count))
         return result[..., 0] if single_ray else result
+
+
+class SceneBatch:
+    """Fixed Navigation scenes assigned to equal contiguous groups of worlds.
+
+    Queries use the world axis first. Geometry and motion remain in each original
+    Scene; only query dispatch changes. Episode state stays in the Environment.
+    """
+
+    name = "navigation_batch"
+
+    def __init__(self, names: list[str] | tuple[str, ...], num_envs: int):
+        """Assign every world to one existing scene without changing its geometry."""
+        if (
+            not names
+            or any(name not in _NAVIGATION for name in names)
+            or len(set(names)) != len(names)
+            or type(num_envs) is not int
+            or num_envs < len(names)
+            or num_envs % len(names)
+        ):
+            raise ValueError("SceneBatch requires unique Navigation scenes and equal world groups")
+        self.scenes = tuple(Scene(name) for name in names)
+        self.num_envs = num_envs
+        self.worlds_per_scene = num_envs // len(names)
+        self.geometry_identity = {
+            "name": self.name,
+            "worlds_per_scene": self.worlds_per_scene,
+            "scenes": [scene.geometry_identity for scene in self.scenes],
+        }
+
+    def scene_for_world(self, index: int) -> Scene:
+        """Return the actual geometry for episode records and replay."""
+        if not 0 <= index < self.num_envs:
+            raise IndexError("World index outside scene batch")
+        return self.scenes[index // self.worlds_per_scene]
+
+    def clearance(self, position: Array, t: Array | float = 0.0) -> Array:
+        """Query per-world clearance; a shared nominal point must be safe in all scenes."""
+        position = jnp.asarray(position)
+        if position.shape == (3,):
+            return jnp.min(jnp.stack([scene.clearance(position, t) for scene in self.scenes]))
+        if position.shape != (self.num_envs, 3):
+            raise ValueError("SceneBatch clearance requires positions [worlds,3]")
+        times = jnp.broadcast_to(jnp.asarray(t), position.shape[:-1])
+        width = self.worlds_per_scene
+        return jnp.concatenate(
+            [
+                scene.clearance(
+                    position[i * width : (i + 1) * width], times[i * width : (i + 1) * width]
+                )
+                for i, scene in enumerate(self.scenes)
+            ]
+        )
+
+    def raycast(self, origin, directions, t=0.0, max_range=40.0):
+        """Cast sensor or privileged rays against each world's assigned scene."""
+        origin, directions = jnp.asarray(origin), jnp.asarray(directions)
+        if origin.shape != (self.num_envs, 3):
+            raise ValueError("SceneBatch ray origins must be [worlds,3]")
+        single_ray = directions.ndim == 1
+        if single_ray:
+            directions = directions[None, :]
+        directions = jnp.broadcast_to(directions, (self.num_envs, directions.shape[-2], 3))
+        times = jnp.broadcast_to(jnp.asarray(t), (self.num_envs,))
+        ranges = jnp.broadcast_to(jnp.asarray(max_range), (self.num_envs,))
+        width = self.worlds_per_scene
+        values = []
+        for i, scene in enumerate(self.scenes):
+            group = slice(i * width, (i + 1) * width)
+            values.append(
+                scene.raycast(origin[group], directions[group], times[group], ranges[group])
+            )
+        result = jnp.concatenate(values)
+        return result[..., 0] if single_ray else result

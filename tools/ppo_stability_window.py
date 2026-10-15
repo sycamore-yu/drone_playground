@@ -162,9 +162,12 @@ def main():
         assert revision == runtime_provenance["git_commit"] and not changes
     assert original_report["passed"] and quality(baseline, baseline)["passed"]
     scenes = list(config.learning.scenes)
-    scene_updates = config.learning.scene_updates
-    progress = metadata["provenance"]["training_sampling"]
-    scene_index, updates_in_scene = progress["scene_index"], progress["updates_in_scene"]
+    parallel = config.learning.get("scene_sampling", "sequential") == "parallel"
+    scene_updates = config.learning.get("scene_updates", 20)
+    scene_index, updates_in_scene = 0, 0
+    if not parallel:
+        progress = metadata["provenance"]["training_sampling"]
+        scene_index, updates_in_scene = progress["scene_index"], progress["updates_in_scene"]
     output.mkdir(exist_ok=False)
     trainers, environments = {}, {}
     started = time.monotonic()
@@ -172,7 +175,7 @@ def main():
     def trainer_for(index):
         if index not in trainers:
             trainers[index] = Trainer(
-                create_environment(config, scene=scenes[index]),
+                create_environment(config, scene=scenes if parallel else scenes[index]),
                 kind=config.method.actor.kind,
                 algorithm="ppo",
                 seed=config.seed,
@@ -185,7 +188,15 @@ def main():
             )
             assert trainers[index].resolved_config == metadata["config"]["learning"]
             geometry = metadata["config"]["training_sampling"]["geometry_sha256"]
-            assert trainers[index].env.scene.geometry_hash == geometry[scenes[index]]
+            if parallel:
+                batch_scene = trainers[index].env.scene
+                assert {scene.name: scene.geometry_hash for scene in batch_scene.scenes} == geometry
+                assert (
+                    batch_scene.worlds_per_scene
+                    == metadata["config"]["training_sampling"]["worlds_per_scene"]
+                )
+            else:
+                assert trainers[index].env.scene.geometry_hash == geometry[scenes[index]]
         return trainers[index]
 
     trainer = trainer_for(scene_index)
@@ -260,10 +271,6 @@ def main():
             "status": result["status"],
             "consecutive_passes": int(result["checks"][-1]["passed"]) if result["checks"] else 1,
             "last_evaluation": result["checks"][-1] if result["checks"] else original_report,
-            "training_sampling": {
-                "scene_index": scene_index,
-                "updates_in_scene": updates_in_scene,
-            },
             "stability_source_checkpoint": str(source),
             "stability_window_report": str(output / "report.json"),
             "continuation_actor_lr_scale": args.actor_lr_scale,
@@ -272,6 +279,11 @@ def main():
             + time.monotonic()
             - started,
         }
+        if not parallel:
+            provenance["training_sampling"] = {
+                "scene_index": scene_index,
+                "updates_in_scene": updates_in_scene,
+            }
         if args.actor_lr_scale != 1.0:
             provenance["source_config_sha256"] = provenance.pop("config_sha256")
         checkpoint.save_model(
@@ -286,10 +298,11 @@ def main():
 
     try:
         for offset in range(1, updates + 1):
-            assert (int(state.updates) - updates_in_scene) % (scene_updates * len(scenes)) == (
-                scene_index * scene_updates
-            )
-            if updates_in_scene == scene_updates:
+            if not parallel:
+                assert (int(state.updates) - updates_in_scene) % (scene_updates * len(scenes)) == (
+                    scene_index * scene_updates
+                )
+            if not parallel and updates_in_scene == scene_updates:
                 scene_index = (scene_index + 1) % len(scenes)
                 trainer = trainer_for(scene_index)
                 truncated = int(jax.device_get((~state.env_state.done).sum()))
@@ -313,14 +326,15 @@ def main():
                 measured["actor_parameter_delta_norm"] = float(delta)
                 assert np.isfinite(measured["actor_parameter_delta_norm"]) and delta > 0
             state = candidate
-            updates_in_scene += 1
+            if not parallel:
+                updates_in_scene += 1
             assert int(state.updates) == origin_update + offset
             assert int(state.interactions) == origin_interactions + offset * batch
             measured.update(
                 update=int(state.updates),
-                scene=scenes[scene_index],
                 update_seconds=time.monotonic() - before,
             )
+            measured.update({"scenes": scenes} if parallel else {"scene": scenes[scene_index]})
             result["training_update_seconds"] += measured["update_seconds"]
             with (output / "metrics.jsonl").open("a") as stream:
                 stream.write(json.dumps(measured) + "\n")

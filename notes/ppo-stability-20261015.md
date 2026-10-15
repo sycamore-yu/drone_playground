@@ -827,3 +827,48 @@ experiment, not that exact linear schedule or a known convergence guarantee.
 The altitude-PD scratch u32 screen completed37/48:8,8,0,8,8,5; all six initial
 successes remain. S03 has8 timeouts, D03 has3 collisions. This is developer-screening
 improvement, not a full25-case validation or stable-window pass.
+
+### Parallel fixed-scene sampling with continuing episodes
+
+Existing sequential configuration changes scene every2x512x0.1=102.4s. The completed
+original28-update stability window forced896 unfinished worlds to reset at14 switches,
+and sampled no actual300s task timeout. Its source successful full-validation median
+flight times were160.652--183.598s across primary scenes. Source minimum body clearances
+were0.04163m(D02) and0.08395m(D03), indicating fragile trajectories, not a proven cause.
+The matched0.1x Actor-LR continuation produced139/126/62 out of150 at148/152/156;
+all failed. In the third check S03/D03 were0/25,D01=7,D02=5. Continue its registered
+window; these results do not support a simple excessive-Actor-step explanation.
+
+The new intervention uses64 worlds with8 worlds on each original Navigation8 scene
+at every update, instead of2 full-batch updates per scene. Per16updates each scene
+still receives65536 interactions. Independent world states continue until actual
+episode termination/truncation. Parallel batching jointly changes temporal scene
+distribution and removes forced early resets; this experiment cannot isolate their
+individual contributions. It changes neither geometry nor physical task deadlines.
+The [MuJoCo Playground wrapper](https://raw.githubusercontent.com/google-deepmind/mujoco_playground/main/mujoco_playground/_src/wrapper.py)
+and [Gymnasium vector environments](https://gymnasium.farama.org/api/vector/sync_vector_env/)
+provide the common semantics of independent batched worlds and per-world episode resets.
+SceneBatch dispatches to existing Scene clearance/raycast without another physics
+backend, training state or wrapper hierarchy. Fixed Navigation geometry only;
+unsupported procedural/per-object reward combinations fail at construction.
+
+Paired fresh seed0 config changes only learning.scene_sampling=parallel and output
+relative to the original full3D Depth long-return config. It retains256 updates,
+8388608 interactions and16-update screening; no teacher, replay training data or weights.
+The registered option2 quality, three-seed, retention and independent-final-test
+requirements remain unchanged. Training success alone cannot replace those checks.
+
+Implementation spans scene dispatch, environment construction, CLI sampling/resume,
+actual per-world episode/replay identities and the stability continuation runner.
+26 distinct targeted tests passed across three runs after fixing new test fixtures:
+float32 JIT/eager ray tolerance, gamma=1 for goal-reaching, static sampling provenance,
+and typed PRNG key comparison. Last run4/4 passed in29.13s. Real physical PPO updates
+continue past the old two-update boundary, restore exactly, and reach actual finite
+task timeout; masked reset preserves the live world. Existing sequential resume,
+screening selection and stability/LR gates pass. Config comparison confirms only
+the two registered changes. No BPTT/SHAC rerun, historical payload/hash audit, matrix
+regeneration or packaging regression. GPU feasibility and convergence remain unproven.
+
+New completed screens only were ingested: LiDAR96/112/128=0,144=39/48 with all12 initial
+successes retained; Depth altitude-PD48=16/48 with0/6 initial successes retained.
+These results retain their original run identities and budgets; neither is accepted.

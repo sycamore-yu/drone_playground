@@ -14,6 +14,7 @@ from drone_playground.simulation.controllers import MellingerController
 from drone_playground.simulation.methods import PlannerController
 from drone_playground.simulation.records import atomic_json, write_episodes
 from drone_playground.simulation.replay import export_replay
+from drone_playground.simulation.scene import SceneBatch
 from drone_playground.simulation.tasks import Event
 
 
@@ -223,6 +224,7 @@ def episode_records(env, state, seed, method, elapsed, failure=None):
     """Build one row per actual episode, independent of execution or transport."""
     episodes = []
     for index in range(env.num_envs):
+        scene = env.scene.scene_for_world(index) if isinstance(env.scene, SceneBatch) else env.scene
         event = Event(int(state.task.event[index]))
         clearance = float(state.task.min_clearance[index])
         episodes.append(
@@ -230,8 +232,8 @@ def episode_records(env, state, seed, method, elapsed, failure=None):
                 "episode": index,
                 "initialization_seed": seed,
                 "world_index": index,
-                "scene": env.scene.name,
-                "geometry_sha256": env.scene.geometry_hash,
+                "scene": scene.name,
+                "geometry_sha256": scene.geometry_hash,
                 "method": method,
                 "event": event.name,
                 "terminated": bool(state.terminated[index]),
@@ -298,6 +300,7 @@ def save_evaluation(
             indices.append(eligible[0])
     indices += [i for i in range(len(episodes)) if i not in indices]
     for index in indices[:replay_episodes]:
+        scene = env.scene.scene_for_world(index) if isinstance(env.scene, SceneBatch) else env.scene
         times = traces["time"][:, index]
         keep = np.r_[True, np.diff(times) > 0]
         positions, quaternions = traces["position"][keep, index], traces["quaternion"][keep, index]
@@ -325,7 +328,7 @@ def save_evaluation(
             directory
             / replay_directory
             / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
-            env.scene,
+            scene,
             times[frames],
             traces["position"][frames, index],
             traces["quaternion"][frames, index],

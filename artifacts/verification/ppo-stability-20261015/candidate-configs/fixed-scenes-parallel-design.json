@@ -1,0 +1,34 @@
+{
+  "status": "implementation_checked_pending_training",
+  "problem": "Sequential fixed-scene training resets all64 worlds every2x512x0.1=102.4 seconds. The completed917504-interaction control forcibly truncated896 live worlds across14 switches and saw0 task timeouts. Source successful evaluation median durations were160.652--183.598seconds.",
+  "hypothesis": "Uniform parallel scene sampling with normal episode completion reduces distribution switching and provides long-flight/finite-horizon coverage missing from current sequential sampling. This is a coherent sampling intervention, not proof of a unique root cause.",
+  "scope": "Reuse Scene clearance/raycast, Crazyflow vectorized physics, existing Trainer/TrainingState and CLI. Add SceneBatch for balanced fixed world groups and learning.scene_sampling=parallel. Preserve existing sequential behavior, actual per-world geometry identities, full checkpoint state and ordinary frozen single-scene evaluation.",
+  "implementation_limits": "Fixed Navigation8 scene batch only. The current goal-reaching task uses clearance/raycast. Paper reward profiles requiring per-object geometry are outside this change and must reject unsupported mixtures explicitly.",
+  "configuration_changes": {
+    "learning.scene_sampling": "parallel",
+    "output": "results/fixed_scenes_parallel/depth_ppo_s0"
+  },
+  "initialization": "Independent random seed0, no source weights/teacher. Same original full3D actor and all other fixed-scenes-long-return options.",
+  "coverage": "64worlds =>8per scene at every update. Over16updates each scene still receives65536interactions, exactly matching the sequential2updatesx64worlds case. Remove schedule-induced resets; only actual terminal/truncated episodes reset.",
+  "budget": {
+    "updates": 256,
+    "interactions": 8388608,
+    "horizon": 512,
+    "screen_interval": 16
+  },
+  "checks": [
+    "Batched collision/ray queries equal original Scene queries at independent world times; finite gradients and shared ray broadcasting",
+    "Depth and LiDAR measurements preserve assigned scene geometry",
+    "Actual physical rollout retains world episode time across updates and reaches the true finite task deadline",
+    "Checkpoint resume preserves every world and the exact scene assignment",
+    "CLI parallel mode performs no training_scene_switch and fixed benchmark still uses individual scenes"
+  ],
+  "quality": "Same option2 selection, >=23/25 per primary scene, registered >=900000-interaction post-pass stability, three scratch seeds and independent final frozen testing. No acceptance substitution by training reward.",
+  "comparison_limit": "Parallel batching jointly removes sequential task shifts and forced early reset. It does not isolate those two mechanisms separately; both changed semantics and exact interaction fractions will be recorded.",
+  "references": [
+    "https://raw.githubusercontent.com/google-deepmind/mujoco_playground/main/mujoco_playground/_src/wrapper.py",
+    "https://gymnasium.farama.org/api/vector/sync_vector_env/"
+  ],
+  "reference_semantics": "Independent batched worlds retain their own model/scene and episode state; reset on episode completion. Use the common semantics, not the upstream wrapper hierarchy.",
+  "config": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/depth_fixed_scenes_parallel_s0.yaml"
+}

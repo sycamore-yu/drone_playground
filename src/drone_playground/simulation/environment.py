@@ -22,7 +22,7 @@ from drone_playground.simulation.methods import Action, Setpoint
 from drone_playground.simulation.observation import ObservationState, SensorObservation
 from drone_playground.simulation.procedural_scene import ProceduralScene, SceneState
 from drone_playground.simulation.randomization import install_randomization
-from drone_playground.simulation.scene import Scene
+from drone_playground.simulation.scene import Scene, SceneBatch
 from drone_playground.simulation.sensors import SensorConfig
 from drone_playground.simulation.task_rewards import motion_navigation_reward, shaped_task_cost
 from drone_playground.simulation.tasks import Event, Task, TaskState, first_event
@@ -76,7 +76,7 @@ class BaseEnv:
     def __init__(
         self,
         task: str | None = None,
-        scene: str = "empty",
+        scene: str | list[str] | tuple[str, ...] = "empty",
         num_envs: int = 1,
         device: str = "cpu",
         dynamics: str = "first_principles",
@@ -109,7 +109,20 @@ class BaseEnv:
             raise ValueError(
                 "Positive batch and method frequency dividing physics frequency required"
             )
-        self.scene = ProceduralScene(procedural) if scene == "train/procedural" else Scene(scene)
+        if isinstance(scene, (list, tuple)):
+            if task != "navigation" or procedural is not None:
+                raise ValueError("Parallel scene batches require fixed Navigation geometry")
+            self.scene = SceneBatch(scene, num_envs)
+        else:
+            self.scene = (
+                ProceduralScene(procedural) if scene == "train/procedural" else Scene(scene)
+            )
+        if isinstance(self.scene, SceneBatch) and (task_config or {}).get("reward_profile") in {
+            "fan2025",
+            "fan2025_arrival",
+            "visfly2025",
+        }:
+            raise ValueError("Paper per-object reward geometry does not support scene batches")
         self.task = Task(
             task, self.scene, reference, duration, reference_seed, **(task_config or {})
         )

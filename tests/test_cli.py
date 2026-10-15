@@ -129,6 +129,39 @@ def training(monkeypatch, tmp_path):
     return harness
 
 
+def test_parallel_scene_schedule_resumes_without_forced_resets(config, training, monkeypatch):
+    """Parallel worlds keep one Trainer and their static assignment across resume."""
+    config.task.name = "navigation"
+    config.simulation.num_envs = 4
+    OmegaConf.update(config, "learning.scenes", ["S01", "D03"], force_add=True)
+    OmegaConf.update(config, "learning.scene_sampling", "parallel", force_add=True)
+    calls = []
+
+    def environment(config, *, scene):
+        calls.append(scene)
+        return object()
+
+    monkeypatch.setattr(cli, "create_environment", environment)
+    cli.train(config, training.record)
+    state, metadata = load_state(training.path, SmallState())
+    assert state.updates == 2
+    assert calls == [["S01", "D03"]]
+    sampling = metadata["config"]["training_sampling"]
+    assert metadata["provenance"]["training_sampling"] == sampling
+    assert "scene_index" not in sampling and "updates_in_scene" not in sampling
+    assert sampling["scene_sampling"] == "parallel"
+    assert sampling["worlds_per_scene"] == 2
+    assert set(sampling["geometry_sha256"]) == {"S01", "D03"}
+    config.resume = str(training.path)
+    training.stop_at = None
+    cli.train(config, training.record)
+    assert calls == [["S01", "D03"], ["S01", "D03"]]
+    assert not any(event["event"] == "training_scene_switch" for event in training.record.events)
+    config.learning.scenes = ["D03", "S01"]
+    with pytest.raises(ValueError, match="sampling schedule or geometry"):
+        cli.train(config, training.record)
+
+
 def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     """Verify resume preserves c5 selection seeds and cost."""
     cli.train(config, training.record)

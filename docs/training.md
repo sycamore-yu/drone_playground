@@ -347,6 +347,20 @@ length; resuming performs the pending switch before the next update. A checkpoin
 after a switch but before a successful update has progress zero in the new scene.
 Mid-block resumes restore the active scene's template and continue its existing episodes.
 Schedule, geometry and progress validation prevent silently continuing a different run.
+
+For fixed Navigation geometry, `learning.scene_sampling: parallel` instead assigns an
+equal, contiguous group of worlds to each entry in `learning.scenes`. The environment
+count must be divisible by the scene count. Every update samples all groups; each world
+keeps its own physics, obstacle clock, sensor history and recurrent state until its
+episode ends. `scene_updates` is unused in this mode. For example, 64 worlds over eight
+scenes produce eight worlds per scene on every rollout, without scheduler-induced resets.
+Checkpoint configuration records the ordered scenes, worlds per scene and original
+geometry identities; resume rejects a changed assignment. Episode tables and replays
+identify each world's actual scene. Evaluation continues to construct individual scenes.
+Parallel batches currently exclude procedural geometry, procedural training probes and
+paper reward profiles requiring per-object geometry; the goal-reaching reward uses the
+existing clearance and ray queries. This sampling option does not imply convergence.
+
 The current archive format is **v2 only**. Training resume requires matching complete
 state, environment, action, network and learning configuration. No missing options are
 filled from historical defaults. Standalone inference archives must declare the Actor
