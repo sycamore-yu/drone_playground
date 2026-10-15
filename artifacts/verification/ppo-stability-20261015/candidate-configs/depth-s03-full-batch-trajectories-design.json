@@ -1,0 +1,36 @@
+{
+  "status": "registered",
+  "scope": "Frozen development trajectory measurement, not training or acceptance",
+  "question": "Locate the concrete path/height/action change in full-batchu180 S03 failures relative to originalu180, which passed the same25cases.",
+  "sources": {
+    "control": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
+    "full_batch": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000180"
+  },
+  "cases": {
+    "scene": "S03",
+    "batch": 25,
+    "seed_base": 1500000,
+    "actual_scene_seed": 1500002,
+    "expected_successes": {
+      "control": 25,
+      "full_batch": 16
+    },
+    "focused_world_index": 4,
+    "expected_candidate_failed_worlds": [
+      4,
+      7,
+      8,
+      9,
+      12,
+      19,
+      20,
+      22,
+      23
+    ]
+  },
+  "measurement": "Native frozen load_policy and evaluate on original811runtime. Keep25worldbatch, original learning protocol and chunk size, enable trajectories only. Goal and task boundaries copied from the constructed environment. Fifty new recorded episodes; no other scenes or independent final cases.",
+  "validity": "Verify all25caseidentities/events against original records before attributing paths. Recording can change GPU compilation numerics; record any drift without claiming identical replay. Truncate each trace at first terminal event.",
+  "limits": "A matched path comparison localizes behavior, not the unique learning cause. No reward/optimizer changes selected automatically.",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/s03-full-batch-trajectories",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+}
