@@ -427,3 +427,45 @@ additional20,360 active collection interactions explicitly charged to the
 diagnostic corpus. Keep the weight, data and protocol unchanged through u480;
 the prespecified final80%-retention gate and later formal95% stability requirement
 remain in force. Do not promote this intermediate result to convergence.
+
+The policy-cloning diagnostic finished: u300/360/420/480 successes21/22/9/4,
+source retention21/18/8/3. The final3/21 fails its80% gate. Its complete training
+ZIP payload hash was verified; preserve the short positive result and subsequent
+failure together. This fixed-corpus weight.1 mechanism is not retained in the
+next learning candidate. All four batch64 goal-reaching pilots also completed
+2,211,840 interactions and their final48-case screens were0/48. Their complete
+Orbax training states remain available; failed pilots do not have separate Actor
+exports. File hashes and exact terminal status are in `completed-goal-pilots.json`.
+
+`critic_target_audit.py` replays the first512 recorded actions of every calibration
+episode under the original full states. Positions and rewards matched exactly
+(max error0), all terminal events matched, and independent NumPy GAE computation
+agreed with the production function. The shared preparation helper reproduces
+the original complete initial-state hash after its extraction from the collector.
+No new policy actions, parameter fitting or evaluation cases enter this audit.
+
+Mean absolute per-state target bias (u300/u480): h32/lambda.95=.910/.935;
+h32/lambda1=.854/.728; h128/lambda.95=.890/.911; h128/lambda1=.405/.139;
+h512/lambda.95=.890/.911; h512/lambda1=.048/.002. These estimates refer to these
+eight training states and16 stochastic replicas, not a general guarantee that
+longer returns improve optimization. Raw values and all six target arrays per
+policy are retained in `depth-critic-targets/`.
+
+The resulting preregistered paired continuation uses h512,64 worlds,64 minibatches,
+four epochs and the same sourceu300 complete state. Both arms retain512 frames
+per optimizer minibatch, but recurrent sequence composition/horizon differs from
+the earlier h32 run. Only lambda differs between the new pair (.95 versus1).
+Run12 updates (393,216 learning interactions), full48-case checks every4updates;
+actual final update312 must retain>=80% source successes before promotion. Both
+arms replayed the original21/48 case events. No rehearsal or calibration examples
+enter their training. The long-lambda1 actual-update audit verified finite metrics
+and identical repeated/production/diagnostic full-state hash
+70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee. Every subsequent
+update's metrics are retained, including the actual KL-based actor skip fraction;
+configured optimizer steps alone do not establish equal executed actor updates.
+
+Racing's new APG scratch control changes only actor lr.001 to.0001 (plus output),
+keeping the existing p1/f0 task and67,108,864-interaction/three-pass protocol. The
+existing higher-rate run's97/100 at8100 then0/100 at8192 motivates testing a
+smaller step size. It is one seed's controlled candidate, not a unique causal
+explanation or a completed cell; other algorithms' evidence is not transferred.

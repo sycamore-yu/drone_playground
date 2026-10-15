@@ -353,5 +353,27 @@
     "raw_hashes_verified": true,
     "source_state_immutable": true,
     "scope": "Calibration on eight fixed training initial states, not a root-cause or convergence claim"
+  },
+  "critic_target_audit": {
+    "report": "depth-critic-targets/report.json",
+    "models": 2,
+    "initial_states_per_model": 8,
+    "replicas_per_state": 16,
+    "max_replay_position_error_m": 0,
+    "max_replay_reward_error": 0,
+    "terminal_events_exact": true,
+    "production_gae_matches_independent_numpy": true,
+    "scope": "Fixed trajectories, six estimators per model; no actual training outcome claimed"
+  },
+  "long_return_update": {
+    "audit": "restore-long-return.json",
+    "horizon": 512,
+    "minibatches": 64,
+    "gae_lambda": 1.0,
+    "source_state_exact": true,
+    "repeated_and_both_entrypoints_exact": true,
+    "production_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
+    "metrics_finite": true,
+    "scope": "Actual GPU update, not long-run convergence"
   }
 }
