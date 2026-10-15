@@ -1393,3 +1393,38 @@ compilation, added32768 interactions. All15 registered pre-optimization rollout/
 statistics exactly match the original control; Actor parameter delta norm0.493405,
 gradient norm0.810575, no KL skip. This confirms matched execution, not stable quality.
 Evidence: `depth-parallel-postpass-entropy0-first-update.json`.
+
+
+### Entropy removal completes and fails; frozen component diagnosis registered
+
+The entropy0 branch completed all28 updates/917504 added interactions. Checks at
+180/184/188/192/196/200/204 are134,137,150,145,150,150,150. At u180 D03=9/25;
+u184 S03=19 and D03=18; u192 D03=20. The actual final model recovers all150,
+but the registered all-check gate fails. No later subwindow substitution, entropy
+sweep, independent final test or scratch-seed promotion. Completed paired scores,
+retention and actual parameter-update range are in
+`depth-parallel-postpass-entropy0-comparison.json`. Every update changes Actor
+parameters with no KL skip. Previous full-sized velocity/yaw and horizontal-action
+trials already failed; their existing records were read, not rerun.
+
+The next diagnosis changes frozen parameter blocks instead of another optimizer
+setting. Existing native Actor modules provide a natural boundary: CNN plus state/
+perception projections and GRU produce features; a bias-free action_head maps them
+to three accelerations. The auxiliary velocity head does not control frozen actions.
+Reuse the original parallel full-pass u176 and its first failed control checku184,
+including their validated150/150 and124/150 case records. Evaluate exactly two new
+hybrids: u176 representation with u184 action_head, and the reverse. No original
+model replay, weight hash, training, scene change or new final-test cases.
+
+The300 new development episodes use the exact original150 identities per hybrid.
+For both, report all scenes, recovered original losses and newly lost previously
+retained cases. A sufficient frozen block-only repair needs every scene23/25 and
+source-case retention143/150; failure rejects that block restoration as sufficient.
+Cross-model feature/head co-adaptation may matter, so even a positive result does
+not establish a unique cause or prove that freezing a block will train stably.
+Only then consider a targeted learning intervention, without automatic architecture
+changes. Prelaunch design and reproduction command are in
+`candidate-configs/depth-parallel-components-design.json`; the one-off script reuses
+native load_policy/evaluate and existing new-table scoring. Three identity-based
+assembly self-checks prove source dictionaries and all other parameter references
+remain unchanged; Ruff passes. No production code or dependency change.
