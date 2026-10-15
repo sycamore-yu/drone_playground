@@ -872,3 +872,15 @@ regeneration or packaging regression. GPU feasibility and convergence remain unp
 New completed screens only were ingested: LiDAR96/112/128=0,144=39/48 with all12 initial
 successes retained; Depth altitude-PD48=16/48 with0/6 initial successes retained.
 These results retain their original run identities and budgets; neither is accepted.
+
+Parallel scratch launched from811eabe(PID2452923), and completed its first full64x512
+GPU update:32768 interactions, finite metrics, Actor gradient norm0.76566, KL-skipped
+fraction0, update time86.10s including compilation. Device-wide sampled6948MiB includes
+the three other live jobs and is not a peak bound. Run metadata records8worlds for
+each of8scenes. Evidence is `fixed-scenes-parallel-first-update.json`; copied identities
+come from the run recorder, with no extra digest calculation. This establishes execution,
+not learning stability; the seed0 run continues under its original registered budget.
+
+Subsequent newly completed screens: LiDAR160=8/48(D01only), retention0/12;
+altitude-PD64=24/48(S01/S02/D01), retention6/6. S03 has8collisions, D02/D03 each8timeouts.
+No new full validation, independent benchmark or matrix credit from these screens.
