@@ -414,6 +414,7 @@
     "minibatches": 64,
     "gae_lambda": 0.95
   },
-  "status": "running",
-  "rehearsal": null
+  "status": "completed",
+  "rehearsal": null,
+  "final_update": 312
 }
