@@ -1386,3 +1386,10 @@ checks. Every check must satisfy23/25 in each scene and143/150 retention; any fa
 rejects removal alone at this state/budget. Preserve the actual last model and report
 all checks, with no coefficient sweep or later-window substitution. A positive result
 would still need a declared scratch recipe, three seeds and final independent tests.
+
+Entropy-removal continuation launched from runner cd5a0b8 with pinned native811eabe,
+PID2693576. Full restoration/setup115.830s; first actual update177 took59.243s including
+compilation, added32768 interactions. All15 registered pre-optimization rollout/target
+statistics exactly match the original control; Actor parameter delta norm0.493405,
+gradient norm0.810575, no KL skip. This confirms matched execution, not stable quality.
+Evidence: `depth-parallel-postpass-entropy0-first-update.json`.
