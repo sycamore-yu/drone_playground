@@ -620,3 +620,18 @@ source identities and dependencies but no git_commit field. They establish histo
 three-seed scratch success, not a newly verified exact historical source checkout.
 The newer scratch_v02/depth_apg_s0/1/2 batch also has accepted results and explicit
 source commits; it has not replaced the already audited cohort or caused retraining.
+
+The critic8 comparison completed all12 updates and393216 interactions. Checks were
+19/48(retained15/21),11/48(retained8/21),14/48(retained7/21). Every actual Optax
+critic count advanced128. Last pre-update explained variance0.15766 and returnRMSE1.0984
+show no clear value-quality improvement over the control (0.15783 and1.0525).
+Extra regression does not meet the17/21 retention gate; no candidate is promoted.
+Final complete state and per-case outcomes are preserved. No training remains active.
+
+Outstanding PPO diagnosis: low long-return value accuracy remains observed, but neither
+longer lambda1 targets, increased regression, larger minibatches nor broader reset
+coverage has prevented regression. A future architectural/value-information intervention
+needs evidence of which missing state/history predicts return before starting another
+scratch cohort. Actor uses GRU192 while the privileged critic remains a stateless MLP;
+this is a potential information mismatch, not a proven cause. Existing MC diagnostics
+start actor memory at zero and cannot establish effects of in-flight history aliasing.
