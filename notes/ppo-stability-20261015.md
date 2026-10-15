@@ -694,3 +694,52 @@ Thus the bundled fixed-scene recipe has already shown regression and is not prom
 This does not isolate training distribution as a cause because reward/observations/
 horizon also differ from the historical fixed-scene reference. The run continues to
 its registered budget or first full pass; no successful final/stability result exists.
+
+## First full scratch pass and unchanged continuation window
+
+The fixed-scene Depth run subsequently screened4/48 atu48,40 atu64,23 atu80,
+12 atu96,37 atu112,32 atu128 and48 atu144. Retention of the first30 successes
+was0,29,13,2,27,23 and30 respectively. All completed screen rows are cached in
+`fixed-scenes-long-return-progress.json`; no earlier model/CSV hashes were repeated.
+Atu144/4718592 interactions the first full validation passed150/150,25/25 in
+every primary scene. Its actual full-validation seed base is1500000, distinct from
+the1million eight-case screens. The original full3D action interface remains used.
+
+During this run, a concrete sampling support gap was identified: scene switches
+reset after102.4s while task duration is300s and the Actor observes remaining time.
+The frozen model32 clock clamp left S01/D01 at0/16, all timeouts, so that intervention
+was rejected. This does not establish that episode coverage is irrelevant; it fails
+to support a direct clock-input repair. Remaining-time observation and partial-episode
+bootstrapping are standard distinctions described by
+https://proceedings.mlr.press/v80/pardo18a.html; the paper is not a project root-cause proof.
+
+Those recorded trajectories ended nearx98m butz3.9m, missing the goal[98,0,3]
+and0.5m sphere: mean final distances0.956m/0.932m, maxima1.209m/1.081m.
+A separately preregistered frozen intervention retained learned horizontal actions
+and used the existing goal-altitude PD. Scores became8,8,8,7,6,3, or40/48;
+all8 failures were collisions. This supports a vertical-control contribution for
+this failed model, not universal stability or a unique cause. It intentionally
+changes the action interface. The proposed scratch two-action config is saved but
+not launched because the original3D run then achieved its first full pass.
+Historical horizontal-action Fan-reward trials and velocity/yaw trials also failed;
+these were read before choosing the diagnostic, not repeated.
+
+`tools/ppo_stability_window.py` restores the complete selected learner, including
+optimizer/RNG/world/recurrent state and current scene index. It uses unchanged
+production Trainer.update and the same2updates-per-scene reset/switch schedule.
+The registered900000 minimum rounds to28updates/917504 interactions;122880 cadence
+rounds to4updates/131072. Checks areu148/152/156/160/164/168/172 on the same150
+full-validation cases. Every scene must retain>=23/25 and at least143/150 original
+successes must remain. The entire window completes even if an intermediate check
+fails; actual final model172 is saved. Original150-case outcomes are read once and
+reused; the source is not evaluated again. Four targeted gate/identity tests and Ruff
+passed. The direct runtime verifies resolved learning config, geometry, source identity,
+and actual interaction/update counters. No production learning implementation changed.
+
+The window runs in `results/fixed_scenes_long_return/depth_ppo_s0_stability`, launched
+fromfbae846. An independent LiDAR seed0 trial was also launched from that commit in
+the same result group. Its config differs from Depth only in sensor, Actor kind and
+output, verified by a structural comparison; every parameter starts randomly.
+Three-seed evidence, per-seed stability and independent testing of actual final
+models remain outstanding. The automatic original2million benchmark does not replace
+that final test. The14/18 reused matrix is unchanged.
