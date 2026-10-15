@@ -88,6 +88,9 @@ def main():
         "setup_seconds": time.monotonic() - started,
         "scenes": scenes,
         "sampling_interactions": 0,
+        "new_sampling_interactions": 0,
+        "gradient_numerics": "highest matmul precision; deterministic compiler options "
+        "scoped to gradient/loss; collection unchanged",
         "replicates": [],
         "scope": design["scope"],
     }
@@ -97,88 +100,128 @@ def main():
     all_actor_gradients = []
 
     def loss(parameters, indices, rollout, advantages, noise):
-        values = unravel(parameters)
-        data = rollout
-        memory = state.recurrent_memory
-        _, (mean, auxiliary) = ppo.recurrent_policy(
-            trainer,
-            values["params"],
-            data.observations,
-            memory,
-            data.done,
-        )
-        log_prob = trainer.method.log_probability(
-            data.pre_tanh,
-            mean,
-            values["log_std"],
-            data.observations,
-        )
-        ratio = jnp.exp(log_prob - data.log_prob)
-        clipped = jnp.clip(
-            ratio,
-            1 - trainer.config["clip_epsilon"],
-            1 + trainer.config["clip_epsilon"],
-        )
-        surrogate = -jnp.minimum(
-            ratio * advantages,
-            clipped * advantages,
-        )
-        sample = mean + jnp.exp(values["log_std"]) * noise
-        negative_entropy = trainer.method.log_probability(
-            sample,
-            mean,
-            values["log_std"],
-            data.observations,
-        )
-        auxiliary_loss = trainer.objective.auxiliary_cost(auxiliary, data.observations)
-        costs = surrogate + trainer.config["entropy_weight"] * negative_entropy + auxiliary_loss
-        return jnp.mean(costs[:, indices])
+        with jax.default_matmul_precision("highest"):
+            values = unravel(parameters)
+            data = rollout
+            memory = state.recurrent_memory
+            _, (mean, auxiliary) = ppo.recurrent_policy(
+                trainer,
+                values["params"],
+                data.observations,
+                memory,
+                data.done,
+            )
+            log_prob = trainer.method.log_probability(
+                data.pre_tanh,
+                mean,
+                values["log_std"],
+                data.observations,
+            )
+            ratio = jnp.exp(log_prob - data.log_prob)
+            clipped = jnp.clip(
+                ratio,
+                1 - trainer.config["clip_epsilon"],
+                1 + trainer.config["clip_epsilon"],
+            )
+            surrogate = -jnp.minimum(
+                ratio * advantages,
+                clipped * advantages,
+            )
+            sample = mean + jnp.exp(values["log_std"]) * noise
+            negative_entropy = trainer.method.log_probability(
+                sample,
+                mean,
+                values["log_std"],
+                data.observations,
+            )
+            auxiliary_loss = trainer.objective.auxiliary_cost(auxiliary, data.observations)
+            costs = surrogate + trainer.config["entropy_weight"] * negative_entropy + auxiliary_loss
+            return jnp.mean(costs[:, indices])
 
-    value_gradient = jax.jit(jax.value_and_grad(loss))
-    value_only = jax.jit(loss)
+    compiler = {"xla_gpu_exclude_nondeterministic_ops": True, "xla_gpu_autotune_level": 0}
+    value_gradient = jax.jit(jax.value_and_grad(loss), compiler_options=compiler)
+    value_only = jax.jit(loss, compiler_options=compiler)
     apply_actor = jax.jit(trainer._apply_actor)
 
     try:
         for replicate in range(2):
             before = time.monotonic()
-            rng = state.rng if replicate == 0 else jax.random.fold_in(state.rng, 810002)
-            after, rollout, terms = collect(state.replace(rng=rng))
-            jax.block_until_ready(rollout.rewards)
+            reused = replicate in design.get("reuse_saved_rollouts", [])
+            if reused:
+                with np.load(
+                    output / f"replicate_{replicate}_rollout.npz", allow_pickle=False
+                ) as data:
+                    rollout = ppo.Rollout(
+                        observations={
+                            key[5:]: jnp.asarray(data[key])
+                            for key in data.files
+                            if key.startswith("obs__")
+                        },
+                        **{
+                            key: jnp.asarray(data[key])
+                            for key in (
+                                "pre_tanh",
+                                "log_prob",
+                                "rewards",
+                                "values",
+                                "next_values",
+                                "terminated",
+                                "done",
+                            )
+                        },
+                    )
+                    advantages, noise = (
+                        jnp.asarray(data["advantages"]),
+                        jnp.asarray(data["entropy_noise"]),
+                    )
+                    completed_successes = (
+                        int(data["completed_successes"]) if "completed_successes" in data else None
+                    )
+            else:
+                rng = state.rng if replicate == 0 else jax.random.fold_in(state.rng, 810002)
+                after, rollout, terms = collect(state.replace(rng=rng))
+                jax.block_until_ready(rollout.rewards)
+                advantages, _ = ppo.generalized_advantage_estimate(
+                    rollout.rewards,
+                    rollout.values,
+                    rollout.next_values,
+                    rollout.terminated,
+                    rollout.done,
+                    gamma=trainer.config["gamma"],
+                    gae_lambda=trainer.config["gae_lambda"],
+                )
+                advantages = ppo.normalize_advantages(advantages)
+                noise = jax.random.normal(
+                    jax.random.fold_in(after.rng, 810003),
+                    rollout.pre_tanh.shape,
+                    dtype=rollout.pre_tanh.dtype,
+                )
+                completed_successes = int(terms["navigation_success_fraction"].sum())
+                np.savez_compressed(
+                    output / f"replicate_{replicate}_rollout.npz",
+                    **{
+                        f"obs__{key}": np.asarray(value)
+                        for key, value in rollout.observations.items()
+                    },
+                    **{
+                        key: np.asarray(getattr(rollout, key))
+                        for key in (
+                            "pre_tanh",
+                            "log_prob",
+                            "rewards",
+                            "values",
+                            "next_values",
+                            "terminated",
+                            "done",
+                        )
+                    },
+                    advantages=np.asarray(advantages),
+                    entropy_noise=np.asarray(noise),
+                    completed_successes=completed_successes,
+                )
+                result["new_sampling_interactions"] += 512 * 64
             result["sampling_interactions"] += 512 * 64
             atomic_json(output / "report.json", result)
-            advantages, _ = ppo.generalized_advantage_estimate(
-                rollout.rewards,
-                rollout.values,
-                rollout.next_values,
-                rollout.terminated,
-                rollout.done,
-                gamma=trainer.config["gamma"],
-                gae_lambda=trainer.config["gae_lambda"],
-            )
-            advantages = ppo.normalize_advantages(advantages)
-            noise = jax.random.normal(
-                jax.random.fold_in(after.rng, 810003),
-                rollout.pre_tanh.shape,
-                dtype=rollout.pre_tanh.dtype,
-            )
-            np.savez_compressed(
-                output / f"replicate_{replicate}_rollout.npz",
-                **{f"obs__{key}": np.asarray(value) for key, value in rollout.observations.items()},
-                **{
-                    key: np.asarray(getattr(rollout, key))
-                    for key in (
-                        "pre_tanh",
-                        "log_prob",
-                        "rewards",
-                        "values",
-                        "next_values",
-                        "terminated",
-                        "done",
-                    )
-                },
-                advantages=np.asarray(advantages),
-                entropy_noise=np.asarray(noise),
-            )
 
             before_losses, gradients, actor_gradients = [], [], []
             for indices in groups:
@@ -194,6 +237,10 @@ def main():
             full_loss, full_gradient = value_gradient(
                 flat_variables, jnp.arange(64), rollout, advantages, noise
             )
+            _, repeated_gradient = value_gradient(
+                flat_variables, jnp.arange(64), rollout, advantages, noise
+            )
+            np.testing.assert_array_equal(full_gradient, repeated_gradient)
             relative_error = np.linalg.norm(
                 gradients.mean(axis=0) - full_gradient
             ) / np.linalg.norm(full_gradient)
@@ -241,7 +288,9 @@ def main():
                 "adam_actual_loss_change": actual.tolist(),
                 "reward": float(rollout.rewards.mean()),
                 "completed_episodes": int(rollout.done.sum()),
-                "completed_successes": int(terms["navigation_success_fraction"].sum()),
+                "completed_successes": completed_successes,
+                "reused_saved_rollout": reused,
+                "full_gradient_exact_repeat": True,
                 "seconds": time.monotonic() - before,
             }
             np.savez_compressed(

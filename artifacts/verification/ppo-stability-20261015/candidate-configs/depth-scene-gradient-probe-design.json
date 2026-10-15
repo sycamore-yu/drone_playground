@@ -1,5 +1,5 @@
 {
-  "status": "registered_corrected_execution",
+  "status": "registered_saved_data_numerical_recheck",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
   "runtime_worktree": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference",
   "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
@@ -47,5 +47,18 @@
   "implementation_checks": "Three analytic cosine self-checks passed; Ruff passes. Actual gradient reconstruction assertion remains to be checked during sampling.",
   "failed_attempt_interactions": 32768,
   "retry_reason": "Keep64-world forward shape for every masked group to remove group-size dependent numerical variation; retain original5e-5 identity tolerance. Preserve rollout/gradient arrays before assertion so subsequent numerical diagnosis does not require resampling.",
-  "actual_sampling_budget_including_failed_attempt": 98304
+  "actual_sampling_budget_including_failed_attempt": 98304,
+  "reuse_saved_rollouts": [
+    0
+  ],
+  "gradient_numerics": {
+    "matmul_precision": "highest",
+    "compiler_options": {
+      "xla_gpu_exclude_nondeterministic_ops": true,
+      "xla_gpu_autotune_level": 0
+    },
+    "scope": "Only differentiated loss and value-only probes; keep collector original. Same5e-5 reconstruction threshold and require exact repeated full-batch gradient."
+  },
+  "second_execution_failure": "Fixed64-world masking reduced relative gradient discrepancy to8.360139e-5, still above5e-5. Preserve attempt1 report,log,gradients and raw rollout. Reuse this batch; total sampling budget remains98304.",
+  "wall_time_limitation": "Earlier failed attempts did not store complete elapsed wall time; do not claim an exact cumulative wall cost."
 }

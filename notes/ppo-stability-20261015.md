@@ -1545,3 +1545,15 @@ Failed-attempt data were not saved before its assert, so the repeated32768sampli
 interactions are explicitly charged (98304total including two final draws). New raw
 rollout/gradient arrays will be saved before assertions to allow diagnosis without
 more sampling. This is an execution correction, not an outcome-dependent gate change.
+
+The fixed64-world masking attempt reduced reconstruction error to8.360139e-5, still
+above5e-5. Full gradient norm0.441662, absolute discrepancy3.69218e-5; float64 host
+reduction does not remove it. The saved attempt1-gradient-identity.npz and rollout
+allow a no-resampling numerical recheck. Reuse the already supported scoped compiler
+options (exclude_nondeterministic_ops=true,autotune_level=0), with highest matmul
+precision only inside the differentiated loss. Collecting physics remains original.
+Require exact repeated full gradients and retain5e-5 decomposition tolerance.
+Replicate0 is reused; only replicate1 needs new32768samples, so total physical work
+including the lost attempt0 remains98304. Old attempts did not record full elapsed
+wall time; cumulative wall cost is unavailable. This measures gradients with explicit
+numerical settings, not a claim of bit-identical native minibatch optimization.
