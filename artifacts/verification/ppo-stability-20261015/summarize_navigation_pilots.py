@@ -174,6 +174,7 @@ if __name__ == "__main__":
                 "depth-clearance-minimum",
                 "depth-deterministic-control",
                 "depth-deterministic-update",
+                "depth-rehearsal",
             )
             if (Path(__file__).parent / name / "experiment.json").exists()
         },

@@ -325,3 +325,66 @@ switch implements exactly this scope; no production-wide setting is changed.
 The same180-update/48-case/60-update/80%-retention decision remains in force,
 with a new source replay required before learning. Reference:
 https://github.com/jax-ml/jax/blob/main/docs/201/controlling-xla.md .
+
+Both clearance branches completed the preregistered180 updates (368,640 additional
+interactions). Control u300/360/420/480 =21/8/0/0 successes. Minimum-clearance
+=21/20/22/4, retaining21/10/8/4 of the original21 successes. Its peak did not
+persist and final retention4/21 rejects this objective as a sufficient remedy.
+Both final full training states and complete48-case CSVs are retained. The scoped
+deterministic-update branch replayed all source case events exactly before
+learning; its long-run effect remains unmeasured.
+
+The policy-cloning diagnostic was preregistered in
+`candidate-configs/rehearsal-diagnostic-design.json` before collecting any data.
+It uses only fresh stochastic train/procedural episodes from the frozen Depth
+u300 PPO policy; no evaluation cases, other algorithm weights, historical PPO
+advantages, or critic targets are reused.47 of64 episodes succeeded, yielding
+188 windows of64 steps with32-step burn-in. Collection cost was20,360 active
+interactions,94,400 allocated simulation slots and394.87 wall seconds. Source
+policy mean recomputation max error was0.0000614822. Data and source-state hashes
+are in `depth-success-rehearsal/corpus.json`; source state remained unchanged.
+
+The diagnostic adds0.1*KL(old policy || current policy) to executed actor updates
+before existing gradient clipping/Adam. This adopts the policy-cloning term idea
+from CLEAR, not its full algorithm, V-trace or value cloning. Stored teacher GRU
+memory plus32-step burn-in approximates changed-policy history. The sampled PPO
+actor loss and gradient norm do not include this extra term; the KL probe is
+logged separately. Analytic zero-loss and restoring-gradient tests passed (2
+tests,4.59s). The zero-weight real GPU audit reproduced the unchanged production,
+diagnostic and repeated full-state hash28a8b4379af435fc862d1374ec11417e7e53feffd0bcd6a0cf7b3e480619cd63;
+initial KL was1.35e-8, post-update probe0.00417205. Positive-weight correctness
+and controlled continuation are still required before claiming benefit.
+
+Racing p1/f0 PPO seed0 completed67,108,864 interactions with status
+budget_exhausted and final0/100. SHAC's single-seed success therefore does not
+establish a usable three-algorithm recipe. A historical PPOu200 frozen replay
+through today's formal loader was rejected because its old resolved learning
+metadata lacks a sensor contract. Preserve that failed run; a separate direct
+forward diagnostic checks the state-only actor and absent sensor explicitly,
+using the original consumed100-case cohort. It does not relax the production
+loader or count as a new acceptance result.
+
+The first direct Racing replay omitted the historical evaluation_index=2, so
+its100/100 was on seed1500000 rather than1500200. The case-identity assertion
+rejected that comparison; the run and explicit invalid_case_replay note remain.
+The corrected replay matched all100 source case identities/events and100/100
+successes, actor parameter hash0521989a63b109a99cd66b8c223527d2ae3e86667c046e90cd40d83b7535fb56.
+This confirms forward execution for that frozen policy, not identical training
+numerics. Racing APG also exhausted67,108,864 interactions: u8100=97/100 then
+actual finalu8192=0/100, without the required consecutive triple.
+
+The0.1 policy-cloning real update produced identical repeated/production/
+diagnostic full states and finite metrics. Its same-sample post-update KL was
+0.00346153 versus zero-weight0.00417205. The nonzero intervention changes actor
+updates as intended; this single-step check does not establish retention. The
+preregistered180-update branch is running as `depth-rehearsal` with the same
+scoped deterministic compilation as its control.
+
+While those continuations run, `critic-calibration-design.json` fixes a separate
+read-only mechanism check: eight new procedural initial states,16 stochastic
+replicas each, for frozen sourceu300 and unchanged-reward finalu480. Both use
+the same initial states, curriculum fraction and action random stream. The
+criterion compares initial critic predictions to complete undiscounted returns
+and reports every state's uncertainty. No evaluator cases, actor fitting or
+critic training enter this check. It tests calibration at initial states only;
+any observed bias cannot by itself establish a unique cause of collapse.

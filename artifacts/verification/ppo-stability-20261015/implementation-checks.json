@@ -47,6 +47,11 @@
       "test": "test_acceptance_report.py test_cli.py -k acceptance_report or frozen (external model identity, fixed cohort semantics)",
       "result": "51 passed, 50 deselected",
       "seconds": 9.84
+    },
+    {
+      "test": "test_ppo_rehearsal_diagnostic.py (analytic policy KL and restoring gradient)",
+      "result": "2 passed",
+      "seconds": 4.59
     }
   ],
   "legacy_checkpoint_replay": {
@@ -319,5 +324,22 @@
       ],
       "independent_seed_sets": true
     }
+  },
+  "rehearsal_zero_weight_update": {
+    "audit": "restore-rehearsal-zero.json",
+    "source_repeated_and_both_entrypoints_exact": true,
+    "unchanged_production_state_sha256": "28a8b4379af435fc862d1374ec11417e7e53feffd0bcd6a0cf7b3e480619cd63",
+    "initial_kl": 1.3504177331924438e-08,
+    "scope": "One actual GPU update with scoped deterministic compilation; no long-run benefit claim"
+  },
+  "rehearsal_positive_weight_update": {
+    "audit": "restore-rehearsal-positive.json",
+    "weight": 0.1,
+    "repeated_and_both_entrypoints_exact": true,
+    "production_state_sha256": "d32a41ff63748ab409ee7b551eb6e474af3a7b077dc6aa854afb271f54a74cce",
+    "initial_kl": 1.3504177331924438e-08,
+    "post_update_probe_kl": 0.0034615329932421446,
+    "zero_weight_post_update_probe_kl": 0.004172049462795258,
+    "scope": "One actual GPU update, finite metrics and exercised policy regularizer; no long-run benefit claim"
   }
 }
