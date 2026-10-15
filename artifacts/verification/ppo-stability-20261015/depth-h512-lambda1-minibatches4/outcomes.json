@@ -1,0 +1,29 @@
+{
+  "scope": "Completed matched continuation; source checks reused, new evaluation cases summarized once.",
+  "source_successes": 21,
+  "checks": [
+    {
+      "update": 304,
+      "successes": 26,
+      "retained_source_successes": 16,
+      "new_successes": 10,
+      "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1-minibatches4/update-000304/report.json"
+    },
+    {
+      "update": 308,
+      "successes": 26,
+      "retained_source_successes": 16,
+      "new_successes": 10,
+      "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1-minibatches4/update-000308/report.json"
+    },
+    {
+      "update": 312,
+      "successes": 21,
+      "retained_source_successes": 10,
+      "new_successes": 11,
+      "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1-minibatches4/update-000312/report.json"
+    }
+  ],
+  "final_retention_passed": false,
+  "final_training_state": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1-minibatches4/final.training.zip"
+}

@@ -720,3 +720,134 @@ def test_saved_physics_change_cannot_pass(tmp_path):
     _, report = run_collector(tmp_path, [path])
     assert report["runs"][0]["physics_config"]["passed"] is False
     assert report["cells"][0]["seeds"]["0"]["status"] == "failed"
+
+
+@pytest.mark.parametrize("damage", [None, "screening", "earlier_pass", "orbax", "truncated_log"])
+def test_first_full_orbax_evidence(tmp_path, damage):
+    """Read actual TensorBoard events and preserve screening/selection/save requirements."""
+    from tensorboardX import SummaryWriter
+
+    path = make_run(tmp_path, task="racing", passes=(True,))
+    config = yaml.safe_load((path / "config.yaml").read_text())
+    config["learning"].update(selection="first_full_validation_pass", required_consecutive_passes=1)
+    (path / "config.yaml").write_text(yaml.safe_dump(config))
+    model = path / "checkpoints/model_000100"
+    model.mkdir()
+    write_json(
+        model / "metadata.json",
+        {
+            "format_version": 3,
+            "purpose": "model",
+            "has_inference_actor": True,
+            "kind": "state",
+            "actor": {"kind": "state"},
+            "config": {"experiment": config},
+            "provenance": {"updates": 100},
+        },
+    )
+    for part in ("actor", "training"):
+        (model / part).mkdir()
+        (model / part / "commit_success.txt").touch()
+    evaluation(model, task="racing", index=1, seed_base=1_500_000)
+    evaluation(model / "screening", task="racing", index=1, successes=8, count=8)
+    screen = json.loads((model / "screening/report.json").read_text())
+    screen["complete"] = True
+    if damage == "screening":
+        screen["reports"]["racing"]["successes"] = 0
+    write_json(model / "screening/report.json", screen)
+    header = json.loads((path / "run.json").read_text())
+    header.update(layout_version=3, selected_checkpoint="checkpoints/model_000100")
+    header["config_sha256"] = hashlib.sha256((path / "config.yaml").read_bytes()).hexdigest()
+    header["selection"].update(
+        rule="first_full_validation_pass",
+        checkpoint="checkpoints/model_000100",
+        consecutive_passes=1,
+        full_validation="checkpoints/model_000100/report.json",
+        screening="checkpoints/model_000100/screening/report.json",
+    )
+    write_json(path / "run.json", header)
+    (path / "metrics.jsonl").unlink()
+    with SummaryWriter(str(path)) as writer:
+        for key, value in {
+            "update": 100,
+            "interactions": 3000,
+            "gpu_memory_mib": 120,
+            "gpu_utilization_percent": 65,
+        }.items():
+            writer.add_scalar(f"train/{key}", value, 100)
+        if damage == "earlier_pass":
+            writer.add_text(
+                "event/full_validation",
+                json.dumps({"event": "full_validation", "passed": True, "update": 50}),
+                50,
+            )
+    if damage == "orbax":
+        (model / "actor/commit_success.txt").unlink()
+    if damage == "truncated_log":
+        event_file = next(path.glob("events.out.tfevents.*"))
+        event_file.write_bytes(b"partial")
+    completed, report = run_collector(tmp_path, [path], selection="first_full_validation_pass")
+    assert completed.returncode == 0, completed.stderr
+    run = report["runs"][0]
+    if damage is None:
+        assert run["C5"]["passed"] is True
+        assert run["C6"]["passed"] is True
+        assert report["cells"][1]["seeds"]["0"]["status"] == "passed"
+    elif damage in {"screening", "earlier_pass"}:
+        assert run["C5"]["passed"] is False
+    elif damage == "orbax":
+        assert run["checkpoint"]["integrity"]["passed"] is False
+    else:
+        assert run["actual_updates"]["passed"] is None
+        assert run["issues"]
+
+
+def test_legacy_one_time_frozen_audit_reuses_interrupted_run(tmp_path):
+    """A completed frozen audit governs selection without rewriting the old run record."""
+    path = make_run(tmp_path, task="racing", passes=(True,))
+    header = json.loads((path / "run.json").read_text())
+    header.update(status="interrupted")
+    header.pop("selection")
+    header.pop("selected_checkpoint")
+    write_json(path / "run.json", header)
+    audit_dir = path.parent / ".scheduler/frozen_audits" / path.name
+    evaluation(audit_dir, task="racing")
+    write_json(
+        audit_dir / "audit.json",
+        {
+            "status": "accepted",
+            "source_run": str(path),
+            "benchmark_attempts": 1,
+            "benchmark_passed": True,
+            "checkpoint": "checkpoints/step-000100/policy.zip",
+            "source_validation": "checkpoints/step-000100/report.json",
+        },
+    )
+    completed, report = run_collector(tmp_path, [path], selection="first_full_validation_pass")
+    assert completed.returncode == 0, completed.stderr
+    assert report["runs"][0]["recorded_status"] == "interrupted"
+    assert report["runs"][0]["C5"]["passed"] is True
+    assert report["cells"][1]["seeds"]["0"]["status"] == "passed"
+
+
+def test_full_navigation_validation_requires_six_but_benchmark_requires_eight(tmp_path):
+    """Extensions are recorded in frozen tests, not a requirement for candidate validation."""
+    spec = importlib.util.spec_from_file_location("collector_scenes", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for mode, index in [("checkpoint_eval", 1), ("benchmark", 0)]:
+        path = tmp_path / mode
+        evaluation(path, task="navigation", index=index, count=25, successes=25)
+        data = json.loads((path / "report.json").read_text())
+        for scene in ("S06", "D06"):
+            del data["reports"][scene]
+        write_json(path / "report.json", data)
+        rewrite_csv(
+            path / "episodes.csv",
+            lambda rows: rows.__setitem__(
+                slice(None), [r for r in rows if r["scene"] not in ("S06", "D06")]
+            ),
+        )
+        result = module.evaluate(path, "navigation", 0, mode)
+        assert result["partition"]["passed"] is (mode == "checkpoint_eval")
+        assert result["quality"]["passed"] is True

@@ -1,0 +1,81 @@
+{
+  "scope": "Completed paired continuation, not scratch convergence. Earlier checks reuse the per-case calculations already inspected in this session; only the final cases are newly summarized here.",
+  "source_csv": "artifacts/verification/ppo-stability-20261015/depth-batch64-retention-pair/model_000300/screening/episodes.csv",
+  "source_successes": 21,
+  "minimum_retained_for_promotion": 17,
+  "runs": {
+    "depth-h512-lambda095": {
+      "status": "completed",
+      "additional_interactions": 393216,
+      "final_state": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda095/final.training.zip",
+      "checks": [
+        {
+          "update": 300,
+          "successes": 21,
+          "retained_source_successes": 21,
+          "new_successes": 0,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda095/update-000300/report.json"
+        },
+        {
+          "update": 304,
+          "successes": 24,
+          "retained_source_successes": 14,
+          "new_successes": 10,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda095/update-000304/report.json"
+        },
+        {
+          "update": 308,
+          "successes": 6,
+          "retained_source_successes": 5,
+          "new_successes": 1,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda095/update-000308/report.json"
+        },
+        {
+          "update": 312,
+          "successes": 4,
+          "retained_source_successes": 1,
+          "new_successes": 3,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda095/update-000312/report.json"
+        }
+      ],
+      "promoted": false
+    },
+    "depth-h512-lambda1": {
+      "status": "completed",
+      "additional_interactions": 393216,
+      "final_state": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1/final.training.zip",
+      "checks": [
+        {
+          "update": 300,
+          "successes": 21,
+          "retained_source_successes": 21,
+          "new_successes": 0,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1/update-000300/report.json"
+        },
+        {
+          "update": 304,
+          "successes": 28,
+          "retained_source_successes": 18,
+          "new_successes": 10,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1/update-000304/report.json"
+        },
+        {
+          "update": 308,
+          "successes": 28,
+          "retained_source_successes": 16,
+          "new_successes": 12,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1/update-000308/report.json"
+        },
+        {
+          "update": 312,
+          "successes": 8,
+          "retained_source_successes": 8,
+          "new_successes": 0,
+          "report": "artifacts/verification/ppo-stability-20261015/depth-h512-lambda1/update-000312/report.json"
+        }
+      ],
+      "promoted": false
+    }
+  },
+  "conclusion": "Both variants fail the prespecified final80% retention gate. Longer-return target calibration alone was not sufficient to prevent degradation."
+}

@@ -22,6 +22,13 @@
 
 启动前已有的 `last_of_first_three_consecutive_passes` 训练保留原始规格及三次连续结果，不重写历史评分；同一 run 的续训必须显式保留旧 `learning.selection` 与 `required_consecutive_passes=3`，否则严格 checkpoint 合同不允许恢复。新增训练默认三阶段协议及 `required_consecutive_passes=1`。不同协议的成绩标注规则，不能假装完全相同的选模成本。
 
+2026-10-15 用户在 PPO 稳定性任务中再次选择本协议，并明确允许复用各历史源码
+版本的从零收敛证据、允许算法间不同训练奖励，任务目标与阈值保持一致。
+已完成的旧连续三次验证、以及 `.scheduler/frozen_audits/` 中一次性首个完整
+候选冻结审计可以纳入矩阵；不改写原配置或选模记录。PPO Navigation 额外保留
+至少 900,000 次交互的续训稳定性窗口和预定的原成功案例保持门槛。
+本轮汇总器已支持这些记录；训练算法的稳定收敛仍以实测结果判断。
+
 ## GPU performance
 
 保留 `XLA_PYTHON_CLIENT_PREALLOCATE=false`；GPU 活跃率和显存使用率不当成训练效率的唯一目标。对照真实 Crazyflow 训练，分别在稳定预热后测量：

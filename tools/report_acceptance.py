@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import statistics
+import struct
 import zipfile
 from collections import Counter
 from datetime import UTC, datetime
@@ -24,6 +25,7 @@ CONDITIONS = (
 )
 NAV_SCENES = ("S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06")
 RULE = "last_of_first_three_consecutive_passes"
+SINGLE_RULE = "first_full_validation_pass"
 EVENTS = {
     "SUCCESS",
     "COLLISION",
@@ -81,6 +83,8 @@ def read_mapping(path, issues):
 
 def read_events(path, issues):
     """Read recorded events while retaining malformed-line evidence."""
+    if not path.exists() and list(path.parent.glob("events.out.tfevents.*")):
+        return read_tensorboard_events(path.parent, issues)
     try:
         lines = path.read_text().splitlines()
     except OSError as error:
@@ -98,6 +102,35 @@ def read_events(path, issues):
     return events
 
 
+def read_tensorboard_events(directory, issues):
+    """Read existing v3 scalar updates and selection events without simulation imports."""
+    from tensorboardX.proto.event_pb2 import Event
+
+    events, updates = [], {}
+    for path in sorted(directory.glob("events.out.tfevents.*")):
+        try:
+            with path.open("rb") as stream:
+                while header := stream.read(12):
+                    if len(header) != 12:
+                        raise ValueError("Incomplete TensorBoard record header")
+                    length = struct.unpack("<Q", header[:8])[0]
+                    payload = stream.read(length)
+                    if len(payload) != length or len(stream.read(4)) != 4:
+                        raise ValueError("Incomplete TensorBoard record")
+                    event = Event.FromString(payload)
+                    for value in event.summary.value:
+                        if value.tag.startswith("train/") and value.HasField("simple_value"):
+                            update = updates.setdefault(
+                                event.step, {"event": "update", "update": event.step}
+                            )
+                            update[value.tag.removeprefix("train/")] = value.simple_value
+                        elif value.tag.startswith("event/") and value.tensor.string_val:
+                            events.append(json.loads(value.tensor.string_val[0]))
+        except (OSError, ValueError) as error:
+            issues.append(f"{path}: {error}")
+    return events + [updates[step] for step in sorted(updates)]
+
+
 def resolve_run_path(value, run):
     """Resolve the current run's checkpoint or evaluation location."""
     path = Path(value)
@@ -107,6 +140,24 @@ def resolve_run_path(value, run):
 def checkpoint(path):
     """Inspect the persisted archive and payload checksum without loading an Actor."""
     result = {"path": str(path), "archive_sha256": None, "metadata": None}
+    if path.is_dir():
+        issues = []
+        metadata = read_mapping(path / "metadata.json", issues)
+        result["metadata"] = metadata
+        result["integrity"] = check(
+            not issues
+            and metadata.get("format_version") == 3
+            and metadata.get("purpose") == "model"
+            and metadata.get("has_inference_actor") is True
+            and isinstance(metadata.get("actor"), dict)
+            and all(
+                (path / part / "commit_success.txt").is_file() for part in ("actor", "training")
+            ),
+            "Recorded v3 model identity and completed Orbax actor/training saves; "
+            "payload bytes are not rehashed or replayed",
+            *issues,
+        )
+        return result
     try:
         result["archive_sha256"] = digest(path)
         with zipfile.ZipFile(path) as archive:
@@ -235,6 +286,12 @@ def evaluate(directory, task, seed, mode, *, fixed_checkpoint_seeds=False):
         issues.append("fixed_checkpoint_seeds must be boolean")
     report = read_mapping(directory / "report.json", issues)
     scenes = NAV_SCENES if task == "navigation" else ("empty" if task == "tracking" else "racing",)
+    if (
+        task == "navigation"
+        and mode == "checkpoint_eval"
+        and set(report.get("reports", {})) == set(NAV_SCENES[:6])
+    ):
+        scenes = NAV_SCENES[:6]
     evidence = {
         scene: scene_evidence(directory, scene, task, report.get("reports", {}).get(scene, {}))
         for scene in scenes
@@ -285,6 +342,10 @@ def cost_evidence(header, events, source):
     """Attribute actual counters, elapsed time and GPU samples to their records."""
     updates = [event for event in events if event.get("event") == "update"]
     last = updates[-1] if updates else {}
+    event_source = str(
+        Path(source)
+        / ("events.out.tfevents.*" if header.get("layout_version") == 3 else "metrics.jsonl")
+    )
     result = {}
     for key in (
         "updates",
@@ -299,7 +360,7 @@ def cost_evidence(header, events, source):
         origin = f"{source}/run.json"
         if value is None:
             value = number(last.get("update" if key == "updates" else key))
-            origin = f"{Path(source) / 'metrics.jsonl'}:last update (lower bound while running)"
+            origin = f"{event_source}:last update (lower bound while running)"
         result[key] = metric(value, origin)
     result["logged_update_events"] = len(updates)
     result["last_logged_update"] = last or None
@@ -315,7 +376,7 @@ def cost_evidence(header, events, source):
             }
             if samples
             else None,
-            str(Path(source) / "metrics.jsonl"),
+            event_source,
         )
     result["gpu_scope"] = GPU_SCOPE
     result["isolated_gpu_seconds"] = metric(None, None, GPU_SCOPE)
@@ -338,7 +399,92 @@ def initialization_cost_id(path):
     return str(path)
 
 
-def collect_run(path, root, *, benchmark_run=None):
+def check_single_full(result, screening, events):
+    """Grade selection using saved episode evidence; no model or CSV reread."""
+    path = Path(result["path"])
+    config, header = result["config"], result["run_record"]
+    task, seed = result["task"], result["seed"]
+    selection = result["selection"]
+    audit = result.get("selection_audit")
+    cp = result["checkpoint"]
+    metadata = cp.get("metadata") or {}
+    evaluations, benchmark = result["checkpoint_evaluations"], result["benchmark"]
+    independent = result["C5"]["independent_seed_sets"]
+    chosen = next((e for e in evaluations if e["update"] == selection["update"]), None)
+    prior_passes = [
+        e
+        for e in evaluations
+        if e["update"] < selection["update"] and e["quality"]["passed"] is True
+    ]
+    screened = bool(audit) or (
+        screening is not None
+        and screening.get("complete") is True
+        and screening.get("seed_base") == 1_000_000
+        and chosen is not None
+        and chosen["seed_base"] == 1_500_000
+        and screening.get("training_seed") == seed
+        and screening.get("evaluation_index") == selection["evaluation_index"]
+        and all(
+            screening.get("reports", {}).get(scene, {}).get("episodes") == 8
+            and screening["reports"][scene].get("successes", 0)
+            >= (6 if task == "navigation" else 7)
+            and (
+                task != "tracking"
+                or (
+                    number(screening["reports"][scene].get("successful_position_rmse")) is not None
+                    and screening["reports"][scene]["successful_position_rmse"] <= 0.35
+                )
+            )
+            for scene in (
+                NAV_SCENES[:6]
+                if task == "navigation"
+                else ("empty" if task == "tracking" else "racing",)
+            )
+        )
+    )
+    selected_path = audit.get("checkpoint") if audit else header.get("selected_checkpoint")
+    c5_ok = (
+        chosen is not None
+        and chosen["quality"]["passed"] is True
+        and chosen["partition"]["passed"] is True
+        and not prior_passes
+        and not any(
+            e.get("event") == "full_validation"
+            and e.get("passed") is True
+            and e.get("update", selection["update"]) < selection["update"]
+            for e in events
+        )
+        and screened
+        and (
+            bool(audit)
+            or (
+                config.get("learning", {}).get("selection") == SINGLE_RULE
+                and config.get("learning", {}).get("required_consecutive_passes") == 1
+            )
+        )
+        and selection.get("consecutive_passes") == 1
+        and selection.get("evaluation_index") == chosen["evaluation_index"]
+        and metadata.get("provenance", {}).get("updates") == selection["update"]
+        and selected_path is not None
+        and resolve_run_path(selected_path, path) == Path(cp["path"])
+        and independent is True
+        and benchmark["partition"]["passed"] is True
+        and benchmark.get("checkpoint_link", {"passed": True})["passed"] is True
+    )
+    result["C5"] = check(
+        c5_ok,
+        "First full validation and independent frozen benchmark; "
+        "historical audit or recorded screening, without repeated training",
+    )
+    result["C5"].update(
+        first_passing_updates=[selection["update"]],
+        independent_seed_sets=independent,
+        protocol=SINGLE_RULE,
+        screening=screening,
+    )
+
+
+def collect_run(path, root, *, benchmark_run=None, allow_first_full=False):
     """Collect one selected run without replacing failures from another run."""
     issues = []
     config = read_mapping(path / "config.yaml", issues)
@@ -359,7 +505,7 @@ def collect_run(path, root, *, benchmark_run=None):
         "issues": issues,
         "cost": cost_evidence(header, events, path),
     }
-    if header.get("layout_version") != 2:
+    if header.get("layout_version") not in (2, 3):
         message = f"Unsupported run layout version: {header.get('layout_version')!r}"
         issues.append(message)
         result["identity"] = check(False, message)
@@ -379,6 +525,23 @@ def collect_run(path, root, *, benchmark_run=None):
         else check(None, "run.json config_sha256 unavailable")
     )
     selection = header.get("selection", {})
+    audit_directory = path.parent / ".scheduler" / "frozen_audits" / path.name
+    audit = (
+        read_mapping(audit_directory / "audit.json", issues)
+        if allow_first_full and (audit_directory / "audit.json").is_file()
+        else None
+    )
+    if audit:
+        selected_report = read_mapping(path / audit["source_validation"], issues)
+        selection = {
+            "rule": SINGLE_RULE,
+            "checkpoint": audit["checkpoint"],
+            "update": int(Path(audit["checkpoint"]).parent.name.removeprefix("step-")),
+            "evaluation_index": selected_report.get("evaluation_index"),
+            "consecutive_passes": 1,
+            "full_validation": audit["source_validation"],
+        }
+        result["selection_audit"] = audit
     result["selection"] = selection or None
     cp = (
         checkpoint(resolve_run_path(selection["checkpoint"], path))
@@ -408,8 +571,18 @@ def collect_run(path, root, *, benchmark_run=None):
         for p in folder.glob(f"{prefix}*")
         if p.is_dir() and p.name.removeprefix(prefix).isdigit() and (p / "report.json").is_file()
     }
+    if header.get("layout_version") == 3:
+        directories.update(
+            (int(p.name.removeprefix("model_")), p)
+            for p in folder.glob("model_*")
+            if (p / "report.json").is_file()
+        )
     for event in events:
-        if event.get("event") == "checkpoint_evaluation" and type(event.get("update")) is int:
+        if (
+            header.get("layout_version") == 2
+            and event.get("event") == "checkpoint_evaluation"
+            and type(event.get("update")) is int
+        ):
             update = event["update"]
             name = f"step-{update:06d}"
             directories.setdefault(update, folder / name)
@@ -425,7 +598,16 @@ def collect_run(path, root, *, benchmark_run=None):
         entry["update"] = update
         evaluations.append(entry)
     result["checkpoint_evaluations"] = evaluations
-    if benchmark_run is not None:
+    if audit:
+        benchmark = evaluate(audit_directory, task, seed, "benchmark")
+        benchmark["checkpoint_link"] = check(
+            audit.get("status") == "accepted"
+            and audit.get("source_run") == str(path)
+            and audit.get("benchmark_attempts") == 1
+            and audit.get("benchmark_passed") is True,
+            "Reuse completed one-time frozen audit of its recorded first validation candidate",
+        )
+    elif benchmark_run is not None:
         benchmark_issues = []
         frozen_config = read_mapping(benchmark_run / "config.yaml", benchmark_issues)
         frozen_header = read_mapping(benchmark_run / "run.json", benchmark_issues)
@@ -536,6 +718,13 @@ def collect_run(path, root, *, benchmark_run=None):
         else "Missing/invalid consecutive evaluations, selection or holdout",
     )
     result["C5"].update(first_passing_updates=first, independent_seed_sets=independent)
+    if allow_first_full and selection.get("rule") == SINGLE_RULE:
+        screening = (
+            read_mapping(path / selection["screening"], issues)
+            if selection.get("screening")
+            else None
+        )
+        check_single_full(result, screening, events)
     target_event = next(
         (
             event
@@ -677,7 +866,7 @@ def collect_initialization_costs(runs, root):
     return shared
 
 
-def recipe(config):
+def recipe(config, *, allow_first_full=False):
     """Select configuration fields that define the three-seed training recipe."""
     result = {
         key: value
@@ -690,6 +879,15 @@ def recipe(config):
         }
         if not result["benchmark"]:
             del result["benchmark"]
+    if allow_first_full:
+        # Historical stopping/serialization rules do not change the optimization recipe.
+        for key in ("results", "early_stopping"):
+            result.pop(key, None)
+        result["learning"] = {
+            k: v
+            for k, v in result.get("learning", {}).items()
+            if k not in {"selection", "required_consecutive_passes"}
+        }
     return result
 
 
@@ -762,7 +960,11 @@ def seed_result(run, condition):
         if terminal_failure or (passed is False and run["recorded_status"] != "running")
         else (
             "passed"
-            if passed is True and run["recorded_status"] in {"accepted", "frozen_benchmark_failed"}
+            if passed is True
+            and (
+                run["recorded_status"] in {"accepted", "frozen_benchmark_failed"}
+                or run.get("selection_audit", {}).get("status") == "accepted"
+            )
             else "incomplete"
         )
     )
@@ -817,10 +1019,18 @@ def collect(manifest_path):
     if set(reuse) - set(paths):
         raise ValueError("reuse_reports contains an unselected run")
     snapshots = {p: json.loads(p.read_text()) for p in set(reuse.values())}
+    allow_first_full = manifest.get("selection") == SINGLE_RULE
     runs = []
     for path in paths:
         if path not in reuse:
-            runs.append(collect_run(path, root, benchmark_run=benchmarks.get(path)))
+            runs.append(
+                collect_run(
+                    path,
+                    root,
+                    benchmark_run=benchmarks.get(path),
+                    allow_first_full=allow_first_full,
+                )
+            )
             continue
         snapshot = snapshots[reuse[path]]
         run = next((r for r in snapshot["runs"] if r["path"] == str(path)), None)
@@ -872,7 +1082,9 @@ def collect(manifest_path):
         for condition in CONDITIONS:
             task, sensor, partition = condition
             selected = [indexed.get((task, sensor, algorithm, seed)) for seed in seeds]
-            recipes = [recipe(run["config"]) for run in selected if run]
+            recipes = [
+                recipe(run["config"], allow_first_full=allow_first_full) for run in selected if run
+            ]
             same_recipe = check(
                 False
                 if recipes and any(r != recipes[0] for r in recipes)

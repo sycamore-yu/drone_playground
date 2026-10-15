@@ -573,3 +573,34 @@ recovery checkpoint with status interrupted. Its old three-seed p0/f0 evidence s
 for Racing BPTT acceptance. Existing SHAC p1/f0 seed1/2 runs remain active because that
 cohort still lacks three consecutive full checks. The h512/lambda.95 Depth continuation
 finished at4/48; h512/lambda1 had28/48 at308 and was still finishing its bounded window.
+
+## Protocol choice and completed continuation comparisons
+
+User explicitly chose screening + one full validation + independent frozen benchmark.
+Three scratch seeds remain mandatory; different algorithms may use different rewards for
+identical task objectives. Historical accepted runs keep their actual selection rules.
+The collector now reads existing v3 metadata/TensorBoard and one-time legacy frozen audits.
+All 30 selected runs are now cached for future collection, with 14/18 accepted cells.
+The five new v3 Navigation full reports contained six primary scenes, correctly omitting
+extensions; the old collector's demand for S06/D06 at selection was wrong. The recorded
+primary CSV evidence was reused to correct selection scope without replay or rehash;
+`correct-primary-validation.py` records that one-time correction. Frozen eight-scene
+reports still include the extensions. The 18 earlier valid audits were never repeated.
+Different early-stopping/serialization/selection rules are disclosed; optimization recipe
+comparison still includes reward, environment, sensor, actor and optimizer configuration.
+
+Long-return same-state branches completed393216 new interactions, all from update300:
+- h512 lambda.95 minibatches64: final4/48, retains1/21.
+- h512 lambda1 minibatches64: final8/48, retains8/21.
+- h512 lambda1 minibatches4: final21/48, retains10/21; first two checks26/48.
+- Same minibatches4 with stratified reset sampling: checks10/48 (retains7),16/48
+  (retains11),3/48 (retains0). Active starts actually reached96.638m, with19–35 of64
+  worlds starting beyond90m. The rollout likelihood and recurrent checks both had0 error.
+None meets the preregistered17/21 short diagnostic promotion threshold. Better calibrated
+long-return targets and broader starting coverage are each insufficient to prevent collapse.
+The final stratified model and every failed branch's full training state remain on disk.
+
+The newly finished Racing rewardp1/f0 SHAC cohort: seed0 accepted1600, seed2 accepted1900,
+seed1 budget exhausted2048 with final53/100 (u1900=100 thenu2000=0). These exploratory
+runs are not substituted into the older, internally consistent accepted p2/f40 cohort.
+The redundant Racing BPTT h128 run was stopped after1115 updates, preserving its full state.

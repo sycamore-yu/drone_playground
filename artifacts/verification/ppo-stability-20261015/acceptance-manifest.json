@@ -23,7 +23,19 @@
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2",
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0",
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1",
-    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2"
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s0",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s0",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s0_trial11",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11"
   ],
   "benchmark_runs": {
     "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/frozen4m/ppo_s0",
@@ -48,6 +60,19 @@
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/reuse-frozen-link-audit.json",
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/acceptance/scratch.json",
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/acceptance/scratch.json",
-    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/acceptance/scratch.json"
-  }
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/acceptance/scratch.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s1": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s0": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s0": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s0_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json"
+  },
+  "selection": "first_full_validation_pass"
 }

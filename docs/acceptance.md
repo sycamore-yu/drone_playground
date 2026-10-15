@@ -1,15 +1,16 @@
-# Acceptance evidence collector (historical v0.1)
+# Acceptance evidence collector
 
 本轮 PPO 稳定性任务按用户在 2026-10-15 的澄清执行：已有可复现的随机初始化
 训练结果可以复用，不要求全部在当前源码版本重训；不同算法可以采用不同奖励，
-任务目标与成功判据保持一致。每个算法自身的三种子配方、连续三次完整验证与
-独立冻结测试仍须有证据；PPO Navigation 还须完成约定的续训能力保持检查。
+任务目标与成功判据保持一致。用户已选定轻量筛查→一次完整验证→独立冻结测试，
+每个算法仍须有三个独立训练种子；PPO Navigation 还须完成约定的续训能力保持检查。
 跨算法 Actor/配置差异作为对照信息单独报告，不再将其他算法的缺项算作本算法
-不收敛。历史单次完整验证结果保留原结论，不自动提升为三次连续达标。
+不收敛。历史三次连续达标和一次性候选冻结审计可复用，保留各自原始协议与成本；
+不要求旧模型补做筛查或补训。当前为 14/18 格通过，缺 PPO Navigation 四格。
 
 当前工作清单与复用结果见
 [验收清单](../artifacts/verification/ppo-stability-20261015/acceptance-manifest.json) 和
-[本轮矩阵](../artifacts/verification/ppo-stability-20261015/acceptance-reused.md)。
+[本轮矩阵](../artifacts/verification/ppo-stability-20261015/acceptance-protocol2.md)。
 清单的 `reuse_reports` 将选定运行映射到已有完整核对报告；收集器复用其中的
 逐回合、选模和模型完整性检查，并确认保存的配置、运行记录与冻结批次选择没有
 变化。该模式不重复读取模型或逐回合 CSV，也不重新计算它们的哈希。只应指定
@@ -23,8 +24,8 @@ EGO/SUPER 原生运行范围已纳入 **S3**。本文原来的 20 项标签只�
 **当前 v0.2 的选模标准改为 [ADR-0015](adr/0015-three-stage-learning-acceptance.md)：**
 六个主场景各 8 回合轻量筛查（不能当成 C4 达标），通过后只做一次 25 回合／
 主场景的完整 checkpoint validation，再对三个独立随机初始化种子分别运行
-冻结 benchmark。C2/C3/C4 的任务质量门槛不变；下面的 C5 表属于历史采集器，
-原 `last_of_first_three_consecutive_passes` 的 18/18 成绩不得挪作新协议结果。
+冻结 benchmark。C2/C3/C4 的任务质量门槛不变；旧初始化训练的 18/18 成绩不能
+作为随机初始化证明。选模协议与初始化来源分别保留，不改写历史运行。
 
 [Current 18-cell table](../results/acceptance/current.md) ·
 [Full evidence JSON](../results/acceptance/current.json) ·
@@ -170,7 +171,7 @@ The thresholds are the unchanged [spec C1–C6](spec.md#63-收敛标准-c1c6):
 | C2 | Exactly 100 Tracking CSV episodes, at least 95 successes, mean successful-episode position RMSE at most 0.25 m. |
 | C3 | Exactly 100 Racing CSV episodes, at least 90 successes; each success records five gates in order `1,2,3,4,2` and positive finite completion time. |
 | C4 | Exactly 25 episodes per main Navigation scene, at least 23 successes in each; S01/S02/S03 and D01/D02/D03 graded separately, S06/D06 fully reported. |
-| C5 | First three consecutive passing checkpoint evaluations, the configured `last_of_first_three_consecutive_passes` selection, matching selected archive update, and independent frozen benchmark CSV seeds. |
+| C5 | Recorded first full validation after screening and independent frozen benchmark. Historical consecutive triples and completed one-time frozen audits retain their original selection rule. Selected model update and disjoint case seeds must agree. |
 | C6 | Actual logged updates, interaction counters, elapsed time, throughput, GPU memory and utilization samples, and initialization cost attribution. No training budget cap is introduced. |
 
 CSV rows determine the denominator and outcome counts. Unknown/nonterminal outcomes,
@@ -187,21 +188,28 @@ C5 reads every persisted `checkpoints/step-*/report.json` directory, including f
 evaluations and directories referenced by events. Missing evaluations break the
 verifiable history. Checkpoint seeds must lie in `[1000000,2000000)`, benchmark
 seeds in `[2000000,infinity)`, and actual CSV seeds must match the saved seed formula
-and be disjoint across those partitions. The current mixed-training selection rule
-requires three full evaluations passing all six main scenes; its frozen static
-and dynamic benchmark results are still graded separately.
+and be disjoint across those partitions. With manifest `selection=first_full_validation_pass`,
+full Navigation selection requires six main scenes; frozen evaluation still records all
+eight. Static and dynamic benchmark results are graded separately. Historical complete
+triples remain accepted without rewriting their selected checkpoint.
 
-The current collector accepts only v2 run headers and inference archives with an explicit
-Actor specification. It hashes the selected archive, verifies its payload SHA-256 and inference
-purpose, and compares its saved experiment and Actor kind to `config.yaml`. Archive
-SHA and payload SHA are distinct fields. Per-seed metrics and unavailable reasons,
+The collector reads v2 ZIP evidence and v3 Orbax model directories. Previously audited
+runs use `reuse_reports`, without repeated model/CSV checks. For a newly collected v2
+archive it verifies the payload checksum; for v3 it reads saved metadata and the completed
+Actor/training save markers, without rehashing or restoring parameter arrays. This records
+save completion, not a new byte-integrity or replay claim. Saved experiment and Actor kind
+must match `config.yaml`. TensorBoard supplies v3 update/resource events using the existing
+tensorboardX dependency. Archive SHA and payload SHA are distinct fields. Per-seed metrics and unavailable reasons,
 per-scene outcomes and successful flight times, checkpoint history, configurations,
 versions and source identities are retained in JSON.
 
 The common Actor **configuration** check compares saved task/reference, sensor/input
 settings, Actor kind and physical control settings across the three algorithms and
 three seeds. It excludes batch size/device and algorithm-specific learning options;
-full learning recipes are retained and must match within each three-seed group.
+full learning recipes are retained and must match within each three-seed group. Under
+the single-full protocol, serialization, historical selection count and stopping policy
+are disclosed but excluded from optimization-recipe equality. Rewards, observations,
+physics, sampling, learning rates and other optimizer options remain in that comparison.
 The expected architectures remain State MLP `[256,128]` LayerNorm/ELU, Depth
 CNN `32/64/128` with GRU192, and LiDAR PointNet `64/128/1024` with GRU192.
 Source hashes may differ across training sessions.
