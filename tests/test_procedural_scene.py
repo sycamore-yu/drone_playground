@@ -140,8 +140,9 @@ def test_distance_curriculum_rehearses_old_distances_and_has_stationary_probe():
     assert np.mean(np.linalg.norm(np.asarray(late.goal - late.start), axis=-1)) > 50
 
 
-def test_ppo_curriculum_progress_survives_host_counter_reset_and_world_masks():
-    """Actual PPO update uses the supplied phase; live worlds keep their geometry."""
+@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
+def test_curriculum_progress_survives_host_counter_reset_and_world_masks(algorithm):
+    """Each real algorithm uses the supplied phase and preserves live worlds."""
     from drone_playground.learning.trainer import Trainer
     from drone_playground.simulation.environment import make_environment
 
@@ -153,7 +154,11 @@ def test_ppo_curriculum_progress_survives_host_counter_reset_and_world_masks():
         duration=0.02,
         procedural={"max_obstacles": 6, "start_sampling": "distance_curriculum"},
     )
-    trainer = Trainer(env, config={"horizon": 1, "ppo_epochs": 1, "minibatches": 1})
+    trainer = Trainer(
+        env,
+        algorithm=algorithm,
+        config={"horizon": 1, "ppo_epochs": 1, "minibatches": 1, "critic_epochs": 1},
+    )
     before = trainer.initialize().replace(updates=1000, interactions=2000)
     with pytest.raises(ValueError, match="explicit finite progress"):
         trainer.update(before)

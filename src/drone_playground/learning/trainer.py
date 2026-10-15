@@ -301,10 +301,8 @@ class Trainer:
         self.distance_curriculum = (
             self.distance_sampling and distribution.start_sampling == "distance_curriculum"
         )
-        if self.distance_sampling and algorithm != "ppo":
-            raise ValueError("Distance schedule experiments require PPO")
         self._update = (
-            jax.jit(lambda state, progress: ppo.update(self, state, sampling_progress=progress))
+            jax.jit(lambda state, progress: implementation(self, state, sampling_progress=progress))
             if self.distance_curriculum
             else jax.jit(lambda state: implementation(self, state))
         )

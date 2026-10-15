@@ -129,8 +129,8 @@ def train(config: DictConfig, record: RunRecord) -> None:
     distance_curriculum = (resolved.get("simulation", {}).get("procedural") or {}).get(
         "start_sampling"
     ) == "distance_curriculum"
-    if distance_curriculum and (max_interactions is None or config.learning.algorithm != "ppo"):
-        raise ValueError("Distance curriculum requires PPO and a finite interaction budget")
+    if distance_curriculum and max_interactions is None:
+        raise ValueError("Distance curriculum requires a finite interaction budget")
     scenes = resolved["learning"].get("scenes")
     if distance_curriculum and scenes is not None:
         raise ValueError("Distance curriculum requires one procedural training distribution")

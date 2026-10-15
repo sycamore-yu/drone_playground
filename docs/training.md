@@ -74,6 +74,14 @@ Full training archives require the current state structure and matching identity
 轮换 S01–D06；原 S01–D06 冻结 MJCF、种子基段与正式门槛不变。
 S06/D06 只作扩展报告，不作为已见几何的泛化证明。
 
+`simulation.procedural.start_sampling=distance_mixture` 使用固定的20/50/80米
+起终距离混合；`distance_curriculum` 根据已完成交互数占总预算的比例改变
+三个距离的采样权重，并保留旧距离。PPO、APG/BPTT、SHAC 均通过同一个
+环境 reset 接收该进度，只影响下一次重置的世界。直接调用课程训练时须向
+`Trainer.update(state, sampling_progress=...)` 传入 `[0,1]` 进度；CLI 使用保存的
+交互计数和 `learning.max_interactions` 计算，恢复时禁止改变课程总预算。
+评测不传训练进度，始终使用固定混合分布；每次更新记录实际重置距离计数。
+
 原 12/18 已通过矩阵继续保存在 `results/scratch_v02/`；
 新协议必须使用独立的 `results/procedural_v01/`：
 
