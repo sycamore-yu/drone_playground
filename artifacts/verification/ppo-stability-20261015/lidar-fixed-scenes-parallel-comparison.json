@@ -1,0 +1,123 @@
+{
+  "scope": "Same LiDAR scratch seed0 and per-scene interaction budget; sampling changed, compare cached case records only",
+  "control": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/lidar_ppo_s0_remat",
+  "candidate": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/lidar_ppo_s0",
+  "configuration": "Only scene_sampling and output differ; parallel scene groups jointly remove scheduled resets and temporal scene switches",
+  "comparisons": [
+    {
+      "update": 16,
+      "interactions": 524288,
+      "sequential_successes": 0,
+      "parallel_successes": 0,
+      "shared_successes": 0,
+      "sequential_only_success_cases": [],
+      "parallel_only_success_cases": [],
+      "sequential_per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 145.48700000000002
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 56.394
+        },
+        "D03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 81.082
+        }
+      },
+      "parallel_per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 167.772
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 173.09
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 84.25999999999999
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 52.381
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 118.509
+        },
+        "D03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 19.182
+        }
+      }
+    }
+  ],
+  "candidate_status": {
+    "status": "running",
+    "last_update": 24,
+    "last_interactions": 786432.0
+  },
+  "interpretation": "Scratch development screening only. Continue registered budget; do not infer stable convergence or shared sensor outcomes from a temporary peak."
+}

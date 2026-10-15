@@ -1154,3 +1154,44 @@ successes were lost while six previously unsuccessful S03 cases became successfu
 This adds evidence of cross-scene regression; it does not establish gradient conflict
 as the unique mechanism. The matched original sequential u144 was48/48. No new
 matrix cell is promoted and the registered scratch budget continues.
+
+### First long-rollout screening and independent LiDAR parallel run
+
+The horizon2048 branch's first registered check completed at modelu52, after524288
+additional interactions. It scores40/48: five primary scenes8/8, S03 eight timeouts.
+All38 source-u48 successes remain, with the two previously failed D03 cases newly
+successful. Matched original controlu64 is32/48 and retains32/38. These are compared
+by interactions, not by update count, in `long-rollout/comparison.json`. This reproduces
+the nominal-reset branch's first-check success set but does not imply identical policies
+or sustained benefit; the later two checks and actual-final pilot gate remain required.
+
+LiDAR's completed sequential rematerialized run had a concrete final0/48 failure,
+and no LiDAR training was active. The same parallel-sampling change is now independently
+tested for LiDAR rather than inferring its outcome from Depth. The new candidate source
+YAML exactly matched the completed control's resolved config before changing only
+scene_sampling and output. Original reward,64x512 batch,1024points, GRU192, optimization,
+random-start distribution and random seed0 are preserved. No checkpoint/teacher is used.
+Existing sensor/SceneBatch and rematerialization checks are reused, with no native-code
+change or repeated acceptance/model audit. Registration and config committedfc55cc8;
+PID2596335 writes `results/fixed_scenes_parallel/lidar_ppo_s0`.
+
+The first actual LiDAR update completed32768 interactions in57.978s including compilation.
+Actor gradient norm22.7521 triggered the KL guard after one of16 actor minibatches;
+the following15 updates(u2--16) executed all16 actor minibatches each. Thus execution
+was verified without claiming the first optimizer schedule had no skipped steps.
+Device-wide memory was9190MiB including three other training runs, not a peak or
+isolated cost comparison. Actual config differs only in the two registered fields,
+and existing per-scene geometry identifiers match the completed control. Evidence:
+`lidar-fixed-scenes-parallel-first-update.json`.
+
+Its first screening u16 is0/48, all collisions; median flight times for the six primary
+scenes are167.772/173.09/84.260/52.381/118.509/19.182s. The completed sequential
+control also had0/48 at these524288 interactions. This is early development evidence,
+not proof of improvement or convergence. Each new case table is summarized once and
+comparison reuses the control cache. The full8388608-interaction budget, option2 selection,
+post-pass stability, three scratch seeds and independent actual-final test still apply.
+
+Other newly completed screens: altitude-PD u208=24/48 andu224=33/48, retaining6/6 first
+successes; parallel Depth u160=8/48, exclusively S03 success, while the other five
+primary scenes all time out and its first six successes are lost. The continued task
+is joint success and retention, not combining these different checkpoints' best scenes.
