@@ -1,0 +1,819 @@
+{
+  "scope": "Development screening only; complete new episode tables are summarized once. Existing case records and model identities are reused; no rehashing or replay.",
+  "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/lidar_ppo_s0_remat",
+  "config_sha256": "691bf564b9b31345e5f8ecc4d89790d917406d5ff35063835224b16660b36eea",
+  "source_sha256": "b5007aeee223e0863b6d2ab06607fbd6ae5ff9c467a049138d0184147d582ceb",
+  "runtime_commit": "2cde4fcce2cc72c02b4b91f23d4468bd5c84c4b5",
+  "checks": [
+    {
+      "update": 16,
+      "interactions": 524288,
+      "successes": 0,
+      "per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 145.48700000000002
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 56.394
+        },
+        "D03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 81.082
+        }
+      },
+      "baseline_update": 16,
+      "baseline_successes": 0,
+      "retained_baseline_successes": 0,
+      "retained_previous_successes": 0,
+      "previous_successes": 0,
+      "new_since_previous": 0,
+      "lost_baseline_cases": [],
+      "case_events": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7",
+          "TIMEOUT"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "7",
+          "TIMEOUT"
+        ]
+      ],
+      "report": "results/fixed_scenes_long_return/lidar_ppo_s0_remat/checkpoints/model_000016/screening/report.json",
+      "training_state_retained": true
+    },
+    {
+      "update": 32,
+      "interactions": 1048576,
+      "successes": 12,
+      "per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 207.70600000000002
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 147.793
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 115.827
+        },
+        "D02": {
+          "successes": 4,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 4,
+            "SUCCESS": 4
+          },
+          "median_flight_seconds": 105.71199999999999
+        },
+        "D03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 68.217
+        }
+      },
+      "baseline_update": 32,
+      "baseline_successes": 12,
+      "retained_baseline_successes": 12,
+      "retained_previous_successes": 0,
+      "previous_successes": 0,
+      "new_since_previous": 12,
+      "lost_baseline_cases": [],
+      "case_events": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "0",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "4",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "6",
+          "SUCCESS"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7",
+          "SUCCESS"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "0",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "1",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6",
+          "COLLISION"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7",
+          "COLLISION"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "0",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "1",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "2",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "3",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "4",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "5",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "6",
+          "TIMEOUT"
+        ],
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1000002",
+          "7",
+          "TIMEOUT"
+        ]
+      ],
+      "report": "results/fixed_scenes_long_return/lidar_ppo_s0_remat/checkpoints/model_000032/screening/report.json",
+      "training_state_retained": true
+    }
+  ],
+  "run_status": {
+    "status": "running",
+    "last_update": 34,
+    "last_interactions": 1114112.0
+  }
+}

@@ -768,3 +768,22 @@ The fresh `lidar_ppo_s0_remat` run completed full-sized update1:32768 interactio
 Depth. This proves the original batch can execute; it is neither a peak-memory
 bound nor convergence. The first update skipped15/16 actor steps under its KL
 guard; subsequent learning and scene-level quality remain empirical questions.
+
+The full unchanged Depth window completed all28 updates and917504 interactions
+with exit0. Scores at148/152/156/160/164/168/172 were144/128/117/148/122/146/134
+out of150; only160 and168 met both gates. Actual final172 has25/25 on five scenes
+and9/25 onD03, with16 collisions;134/150 original successes remain(89.33%). Training
+updates took553.09s; total window wall time2038.96s includes evaluation, setup and
+concurrent LiDAR/Depth candidate work. Full report was copied unchanged to
+`artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-stability-report.json`.
+New episode tables alone were aggregated in `fixed-scenes-stability-failures.json`;
+source/cached cases and hashes were reused. No final independent test is warranted
+for this failed stability candidate. No matrix regeneration or historical reruns.
+
+The LiDAR rematerialization candidate completed a full16-step actor optimizer
+schedule without KL skips or OOM as well as its initial guarded update. Its first
+two complete screens were0/48 then12/48 at32(1048576 interactions):S01=8,D02=4,
+others0. Those12 actual success identities now form the retention baseline.
+The altitude-PD scratch candidate launched from9953183; it is still within its
+registered budget and has no complete first-screen result yet. Both candidates
+retain their original stopping and validation rules; neither is accepted.

@@ -27,6 +27,14 @@
       "update_seconds": 38.417985220003175,
       "device_total_memory_mib": 3895.0,
       "co_running": "Depth stability job; device-wide sample is not the allocation peak"
+    },
+    "gpu_full_optimizer_schedule": {
+      "update": 2,
+      "interactions": 65536.0,
+      "kl_actor_update_skipped": 0.0,
+      "update_seconds": 17.6763132380147,
+      "gpu_memory_mib": 3895.0,
+      "meaning": "All16 configured actor minibatch steps executed; no OOM, finite metrics."
     }
   },
   "git_commit": "2cde4fcce2cc72c02b4b91f23d4468bd5c84c4b5"
