@@ -985,3 +985,43 @@ this local improvement does not establish stable convergence. Both current Depth
 candidates continue their predeclared budgets. No new hyperparameter sweep launched.
 
 Parallel u48 completed during reporting:38/48, S03 eight timeouts, D03 two collisions, other four scenes8/8; initial six successes retained. Matched sequential u48 was4/48. Cache/comparison and status updated from the newly completed screening table.
+
+## S03 trajectory diagnosis and nominal-reset comparison
+
+The new u112 altitude-PD screen40/48 and u48 parallel screen38/48 both had eight
+S03 timeouts, but existing CSVs contained no terminal positions. Two frozen
+diagnostic replays retained the exact eight development cases, task, sensor and
+Actor, adding only existing progress/trajectory recording. The first CLI attempts
+failed before simulation because unselected models lack separate Actor exports.
+The preserved full states were then loaded through load_model_state; shape/dtype,
+resolved configuration and update counters passed. No original model was altered
+or manually rehashed. Both completed diagnostics reproduce all original case events.
+
+PD u112 ends at approximately(13.51,-0.53,3.00),84.49m from the goal. Its final30s
+net displacement is0.002--0.012m and mean speed0.0011--0.0044m/s. The nearest
+terminal cylinder clearance is1.756--1.764m. Parallel u48 has two near-stationary
+cases around(40.86,-11.40,4.93),58.30m from goal; six cases finish around
+(76.95,-9.80,4.25),23.25m from goal, with4.69--5.28m traveled but only1.93--2.18m
+net displacement in the last30s. These establish interior stalling/oscillation, not
+near-goal settling, but not its unique cause. The goal remains0.5m and deadline300s.
+Measured rows, source provenance, raw trajectories and standalone figure are under
+`artifacts/verification/ppo-stability-20261015/s03-timeout-diagnostic/`.
+
+Meanwhile PD u128 fell40->0/48, losing all six initial successful cases: S03 eight
+collisions, D03 one collision/seven timeouts, other four scenes eight timeouts each.
+Parallel u64 is32/48, retaining its initial six successes: S03 five collisions/one
+out-of-bounds/two timeouts; D03 only1/8; D02 7/8; S01/S02/D01 each8/8. Thus neither
+altitude control nor currently observed parallel mixing establishes stable convergence.
+
+The next registered48-update continuation uses the intact parallel u48 state. Only
+future episode resets switch from whole-map random starts to the existing nominal
+start jitter. Current physical episodes, RNG and optimizer are retained. This tests
+coverage of the actual task's full routes; the mixed failure locations do not establish
+an exclusively early-route coverage problem. The live unchanged run supplies matched
+u64/u80/u96 checks. A final pilot pass needs S03>=6/8, retention>=37/38 and other
+main scenes>=7/8; temporary peaks do not count. No final-test cases or training from
+evaluation data are introduced. Details and falsifier are in `nominal-starts/design.json`.
+Start-state distribution is a standard curriculum variable; reference: Florensa et al.,
+https://proceedings.mlr.press/v78/florensa17a.html . This comparison is not their
+adaptive reverse-curriculum algorithm. A beneficial continuation would still need
+a from-scratch recipe and the unchanged formal stability/independent-test protocol.

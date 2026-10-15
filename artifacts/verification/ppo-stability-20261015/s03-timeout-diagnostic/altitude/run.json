@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "layout_version": 3,
+  "status": "failed",
+  "started_unix": 1792089782.8111098,
+  "config_sha256": "862a5aa76472bfab70d07c33c116574249709b43ff13154c97fd489a2acaddc0",
+  "versions": {
+    "drone-playground": "0.2.0.dev0",
+    "crazyflow": "0.3.2",
+    "jax": "0.11.2",
+    "flax": "0.12.10",
+    "mujoco": "3.15.0",
+    "mujoco-lidar": "0.3.5",
+    "rscope": "0.0.8"
+  },
+  "python": "3.12.15",
+  "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+  "devices": [
+    "cuda:0"
+  ],
+  "source_sha256": "6b17993bb6dbb0db1f7b1bf9c0fe63ae37057ed1b08099dd907a671bb569024b",
+  "git_commit": "d292b5f503ef37d4c53e3b6b2c23e65da0da720a",
+  "wall_seconds": 0.4568624079984147,
+  "error": "ValueError: Orbax model has no inference payload"
+}
