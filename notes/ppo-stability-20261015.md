@@ -388,3 +388,28 @@ criterion compares initial critic predictions to complete undiscounted returns
 and reports every state's uncertainty. No evaluator cases, actor fitting or
 critic training enter this check. It tests calibration at initial states only;
 any observed bias cannot by itself establish a unique cause of collapse.
+
+The paired frozen-policy calibration completed256 full stochastic episodes,
+68,585 active interactions and329,600 allocated slots (302.51s before,
+151.47s after). The u300/u480 policies succeeded107/128 and98/128 respectively.
+Raw rewards/actions/events/positions are in `depth-critic-calibration/{u300,u480}.npz`.
+An independent NumPy recomputation matched every full return and raw-file hash;
+initial replica equality, finite rewards, terminal semantics and unchanged
+learner-state hashes passed the runtime assertions.
+
+All eight states are reported. At state5, success fell13/16 to2/16 and mean
+return1.38677 to-0.46872 (paired delta-1.85549; descriptive bootstrap95% interval
+[-2.40547,-1.14384]), while predicted value rose0.86337 to1.43388. State6 fell
+5/16 to0/16; its return-change interval includeszero. Other states mostly
+improved, so aggregate training progress cannot establish preservation of old
+capabilities. At state3 both policies succeeded16/16, but predicted values
+1.159/2.097 remained far below complete returns4.929/4.944.
+
+These are fixed training-state calibration errors, not proof of a unique critic
+implementation defect. The privileged critic sees26 geometry rays rather than
+the whole world, and this experiment does not separate observation aliasing,
+function approximation, policy drift and bootstrap bias. The GAE paper explicitly
+describes the value-based variance/bias tradeoff:
+https://arxiv.org/abs/1506.02438 . Future return-target interventions must retain
+the same source state, reward and interaction budget, and be compared by actual
+case retention rather than lower critic training loss.

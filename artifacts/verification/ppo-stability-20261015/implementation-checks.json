@@ -341,5 +341,17 @@
     "post_update_probe_kl": 0.0034615329932421446,
     "zero_weight_post_update_probe_kl": 0.004172049462795258,
     "scope": "One actual GPU update, finite metrics and exercised policy regularizer; no long-run benefit claim"
+  },
+  "critic_mc_calibration": {
+    "report": "depth-critic-calibration/report.json",
+    "audit": "depth-critic-calibration/audit.json",
+    "complete_episodes": 256,
+    "active_interactions": 68585,
+    "allocated_simulation_slots": 329600,
+    "grouped_initial_states_identical": true,
+    "complete_returns_independently_recomputed": true,
+    "raw_hashes_verified": true,
+    "source_state_immutable": true,
+    "scope": "Calibration on eight fixed training initial states, not a root-cause or convergence claim"
   }
 }
