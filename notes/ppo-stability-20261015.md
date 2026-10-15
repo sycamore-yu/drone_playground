@@ -1535,3 +1535,13 @@ PCGrad paper section2.2 explicitly says conflict alone need not be harmful. No n
 learner change or PCGrad integration is made for this probe. Three analytic cosine
 self-checks and Ruff pass; full gradient identity will be checked on the actual data.
 The exact design and command are candidate-configs/depth-scene-gradient-probe-design.json.
+
+The first probe attempt collected32768transitions then failed gradient reconstruction:
+relative error0.00033434236 exceeded5e-5. No conflict conclusion was accepted. Original
+report/log are retained as attempt0-report.json/attempt0.log. Group forward shape4
+versus full64 is a suspected numerical source, not yet proven. The corrected probe
+keeps the complete64-world forward and masks group losses; tolerance stays5e-5.
+Failed-attempt data were not saved before its assert, so the repeated32768sampling
+interactions are explicitly charged (98304total including two final draws). New raw
+rollout/gradient arrays will be saved before assertions to allow diagnosis without
+more sampling. This is an execution correction, not an outcome-dependent gate change.

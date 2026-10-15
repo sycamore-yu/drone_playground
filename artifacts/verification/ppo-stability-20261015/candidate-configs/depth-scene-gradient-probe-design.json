@@ -1,5 +1,5 @@
 {
-  "status": "registered_before_sampling",
+  "status": "registered_corrected_execution",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
   "runtime_worktree": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference",
   "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
@@ -44,5 +44,8 @@
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe",
   "runner": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.py",
   "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.py > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.log 2>&1",
-  "implementation_checks": "Three analytic cosine self-checks passed; Ruff passes. Actual gradient reconstruction assertion remains to be checked during sampling."
+  "implementation_checks": "Three analytic cosine self-checks passed; Ruff passes. Actual gradient reconstruction assertion remains to be checked during sampling.",
+  "failed_attempt_interactions": 32768,
+  "retry_reason": "Keep64-world forward shape for every masked group to remove group-size dependent numerical variation; retain original5e-5 identity tolerance. Preserve rollout/gradient arrays before assertion so subsequent numerical diagnosis does not require resampling.",
+  "actual_sampling_budget_including_failed_attempt": 98304
 }

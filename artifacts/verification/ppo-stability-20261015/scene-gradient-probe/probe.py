@@ -98,8 +98,8 @@ def main():
 
     def loss(parameters, indices, rollout, advantages, noise):
         values = unravel(parameters)
-        data = jax.tree.map(lambda x: x[:, indices], rollout)
-        memory = jax.tree.map(lambda x: x[indices], state.recurrent_memory)
+        data = rollout
+        memory = state.recurrent_memory
         _, (mean, auxiliary) = ppo.recurrent_policy(
             trainer,
             values["params"],
@@ -120,10 +120,10 @@ def main():
             1 + trainer.config["clip_epsilon"],
         )
         surrogate = -jnp.minimum(
-            ratio * advantages[:, indices],
-            clipped * advantages[:, indices],
+            ratio * advantages,
+            clipped * advantages,
         )
-        sample = mean + jnp.exp(values["log_std"]) * noise[:, indices]
+        sample = mean + jnp.exp(values["log_std"]) * noise
         negative_entropy = trainer.method.log_probability(
             sample,
             mean,
@@ -131,9 +131,8 @@ def main():
             data.observations,
         )
         auxiliary_loss = trainer.objective.auxiliary_cost(auxiliary, data.observations)
-        return jnp.mean(
-            surrogate + trainer.config["entropy_weight"] * negative_entropy + auxiliary_loss
-        )
+        costs = surrogate + trainer.config["entropy_weight"] * negative_entropy + auxiliary_loss
+        return jnp.mean(costs[:, indices])
 
     value_gradient = jax.jit(jax.value_and_grad(loss))
     value_only = jax.jit(loss)
@@ -144,6 +143,9 @@ def main():
             before = time.monotonic()
             rng = state.rng if replicate == 0 else jax.random.fold_in(state.rng, 810002)
             after, rollout, terms = collect(state.replace(rng=rng))
+            jax.block_until_ready(rollout.rewards)
+            result["sampling_interactions"] += 512 * 64
+            atomic_json(output / "report.json", result)
             advantages, _ = ppo.generalized_advantage_estimate(
                 rollout.rewards,
                 rollout.values,
@@ -158,6 +160,24 @@ def main():
                 jax.random.fold_in(after.rng, 810003),
                 rollout.pre_tanh.shape,
                 dtype=rollout.pre_tanh.dtype,
+            )
+            np.savez_compressed(
+                output / f"replicate_{replicate}_rollout.npz",
+                **{f"obs__{key}": np.asarray(value) for key, value in rollout.observations.items()},
+                **{
+                    key: np.asarray(getattr(rollout, key))
+                    for key in (
+                        "pre_tanh",
+                        "log_prob",
+                        "rewards",
+                        "values",
+                        "next_values",
+                        "terminated",
+                        "done",
+                    )
+                },
+                advantages=np.asarray(advantages),
+                entropy_noise=np.asarray(noise),
             )
 
             before_losses, gradients, actor_gradients = [], [], []
@@ -177,6 +197,13 @@ def main():
             relative_error = np.linalg.norm(
                 gradients.mean(axis=0) - full_gradient
             ) / np.linalg.norm(full_gradient)
+            np.savez_compressed(
+                output / f"replicate_{replicate}_gradient_identity.npz",
+                half_gradients=gradients,
+                full_gradient=np.asarray(full_gradient),
+                before_losses=before_losses,
+                full_loss=np.asarray(full_loss),
+            )
             assert relative_error < 5e-5, relative_error
             np.testing.assert_allclose(np.mean(before_losses), full_loss, atol=1e-6, rtol=1e-5)
             candidate = apply_actor(state, unravel(full_gradient))
@@ -228,7 +255,6 @@ def main():
             )
             all_scene_gradients.append(scene_gradients)
             all_actor_gradients.append(actor_gradients)
-            result["sampling_interactions"] += 512 * 64
             result["replicates"].append(report)
             atomic_json(output / "report.json", result)
             print(json.dumps(report), flush=True)
@@ -264,6 +290,8 @@ def main():
             cross_replicate_actor_only_cosines=np.diag(cosine(*all_actor_gradients)).tolist(),
             eligible_pairs=eligible,
             pcgrad_selection_gate_passed=bool(eligible),
+            total_sampling_interactions_including_failed_attempt=result["sampling_interactions"]
+            + design.get("failed_attempt_interactions", 0),
         )
         atomic_json(output / "report.json", result)
         print(
@@ -275,6 +303,10 @@ def main():
             ),
             flush=True,
         )
+    except BaseException as error:
+        result.update(status="interrupted", error=repr(error))
+        atomic_json(output / "report.json", result)
+        raise
     finally:
         trainer.env.sim.close()
 
