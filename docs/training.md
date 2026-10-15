@@ -140,6 +140,20 @@ PPO 训练记录额外提供 `navigation_progress_metres`、
 
 ### Task 奖励与 Learning 损失的归属
 
+Navigation 的可选 `task.options.reward_profile=goal_reaching` 采用有限时域的
+安全到达目标，要求 `task.options.finite_horizon=true`、`learning.options.gamma=1`
+和 `learning.loss=null`，不叠加旧奖励 shaping。每步距离进度为
+`(distance_before-distance_after)/20`，首次成功奖励 +1，首次失败奖励 -1。
+时间、障碍净空、边界与动作代价的整回合总和上界为 0.5；同一起点下，
+0.5 m 目标球内的成功回报比任一失败至少高 1.475。这是任务目标的性质，
+不能替代训练收敛证据，也不声称保留旧奖励的最优策略。
+
+`finite_horizon=true` 时，任务截止时间产生 `terminated=true`，不再 bootstrap；
+Actor 的状态输入末尾加入归一化剩余时间。有限 rollout 的非终止末端仍正常
+bootstrap。该区分遵循 [Gymnasium 的时间限制语义](https://gymnasium.farama.org/v0.26.3/tutorials/handling_time_limits/)。
+此选项目前用于 Navigation；默认 false 保留已有模型的观测与时间截断合同。
+它作为 Task 配置和 EnvState 静态元数据恢复，不增加 checkpoint 数组字段。
+
 根据 [ADR-0001](adr/0001-simulation-learning-boundary.md)、
 [ADR-0014](adr/0014-rl-environment-and-method-interface.md) 与
 [ADR-0021](adr/0021-task-owned-reward-contract.md)，Task 参数归

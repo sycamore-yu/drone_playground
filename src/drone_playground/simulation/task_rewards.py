@@ -12,6 +12,35 @@ from drone_playground.simulation.scene import _distance, _norm
 from drone_playground.simulation.tasks import Event
 
 
+def goal_reaching_reward(env, before, after, action):
+    """Prefer arrival to any failure under an undiscounted finite-horizon return.
+
+    Success/failure pay +1/-1. Distance progress telescopes in units of 20 m;
+    the total time, clearance, boundary and action costs cannot exceed 0.5.
+    With a 0.5 m goal radius, any success beats any failure from the same
+    start by at least 2 - 0.5 - 0.5/20 = 1.475, regardless of flight time.
+    This is task shaping, not a claim of policy-invariant terminal potentials.
+    """
+    position = after.physics.states.pos[:, 0]
+    target = env.goal_for(after)
+    progress = (_norm(target - before.physics.states.pos[:, 0]) - _norm(target - position)) / 20.0
+    clearance = env.scene_clearance(position, after.time, after.scene_state) - env.task.radius
+    boundary = jnp.min(jnp.minimum(position - env.task.low, env.task.high - position), axis=-1)
+    fraction = jnp.clip(env.task.duration - before.time, 0.0, env.dt) / env.task.duration
+    terms = {
+        "progress_reward": progress,
+        "arrival_reward": (after.task.event == Event.SUCCESS).astype(jnp.float32),
+        "failure_reward": -(after.done & (after.task.event != Event.SUCCESS)).astype(jnp.float32),
+        "time_reward": -0.25 * fraction,
+        "clearance_reward": -0.1 * fraction * jax.nn.sigmoid(8.0 * (0.5 - clearance)),
+        "boundary_reward": -0.1 * fraction * jax.nn.sigmoid(8.0 * (0.5 - boundary)),
+        "action_reward": -0.05 * fraction * jnp.mean(jnp.clip(action, -1.0, 1.0) ** 2, axis=-1),
+    }
+    terms = {name: jnp.where(before.done, 0.0, value) for name, value in terms.items()}
+    reward = sum(terms.values())
+    return reward, {**terms, "task_cost": -reward}
+
+
 def visfly_reward_terms(
     *,
     position,
@@ -95,10 +124,9 @@ def fan_reward_terms(
     dynamic_cost = jnp.sum(jnp.expm1(jax.nn.relu(safe_distance - effective_distance)), -1)
     static_cost = jnp.expm1(jax.nn.relu(safe_distance - static_clearance))
     # A disabled speed penalty must not evaluate an overflowing exponential.
-    velocity_cost = (
-        jnp.expm1(jax.nn.relu(jnp.where(weights["velocity"] > 0, speed - max_speed, 0.0)))
-        + jnp.expm1(jax.nn.relu(jnp.where(weights["velocity"] > 0, min_speed - speed, 0.0)))
-    )
+    velocity_cost = jnp.expm1(
+        jax.nn.relu(jnp.where(weights["velocity"] > 0, speed - max_speed, 0.0))
+    ) + jnp.expm1(jax.nn.relu(jnp.where(weights["velocity"] > 0, min_speed - speed, 0.0)))
     terms = {
         "alive": weights["alive"] * (~collision),
         "acceleration": -weights["acceleration"] * _norm(acceleration),
@@ -278,6 +306,9 @@ def shaped_task_cost(env, before, after, action, shaping):
     options; new Task recipes can own it in their task configuration. This
     function deliberately knows nothing about Actor, Critic or perception.
     """
+    if env.task.reward_profile == "goal_reaching":
+        reward, terms = goal_reaching_reward(env, before, after, action)
+        return -reward, terms
     if env.task.reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"}:
         reward, terms = paper_navigation_reward(env, before, after, action)
         return -reward, terms

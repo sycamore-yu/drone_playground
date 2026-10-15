@@ -39,6 +39,7 @@ class EnvState:
     commands: CommandState | None = None
     acceleration: Array | None = None
     scene_state: SceneState | None = None
+    finite_horizon: bool = struct.field(pytree_node=False, default=False)
 
     @property
     def time(self):
@@ -48,12 +49,14 @@ class EnvState:
     @property
     def terminated(self):
         """Identify episodes that reached a terminal task outcome."""
-        return (self.task.event != Event.RUNNING) & (self.task.event != Event.TIMEOUT)
+        return (self.task.event != Event.RUNNING) & (
+            (self.task.event != Event.TIMEOUT) | self.finite_horizon
+        )
 
     @property
     def truncated(self):
-        """Identify episodes that reached the task deadline."""
-        return self.task.event == Event.TIMEOUT
+        """Identify an external time limit that still permits value bootstrapping."""
+        return (self.task.event == Event.TIMEOUT) & (not self.finite_horizon)
 
     @property
     def done(self):
@@ -295,6 +298,7 @@ class BaseEnv:
             commands,
             jnp.zeros_like(pos),
             scene_state,
+            finite_horizon=self.task.finite_horizon,
         )
         # Persisted arrays have explicit dtypes; avoid a different JIT specialization on restore.
         fresh = jax.tree.map(
@@ -331,7 +335,16 @@ class BaseEnv:
                 state.scene_state,
                 scene_state,
             )
-        return EnvState(physics, task, action, observation, commands, acceleration, scene_state)
+        return EnvState(
+            physics,
+            task,
+            action,
+            observation,
+            commands,
+            acceleration,
+            scene_state,
+            finite_horizon=self.task.finite_horizon,
+        )
 
     def goal_for(self, state: EnvState) -> Array:
         """Return static task goal or procedural per-world target."""
@@ -729,6 +742,9 @@ class NavigationEnv(BaseEnv):
         if self.observation_config.get("navigation_world_rotation", False):
             # World acceleration needs body-to-world attitude beyond body-frame up.
             features = jnp.concatenate([features, rot.as_matrix().reshape(len(p), 9)], -1)
+        if self.task.finite_horizon:
+            remaining_time = jnp.clip(1.0 - state.time / self.task.duration, 0.0, 1.0)
+            features = jnp.concatenate([features, remaining_time[:, None]], -1)
         return {"state": features}
 
     def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
@@ -783,6 +799,11 @@ class NavigationEnv(BaseEnv):
         self, before: EnvState, after: EnvState, action: Array
     ) -> tuple[Array, dict[str, Array]]:
         """Evaluate the selected Navigation reward before optional shaping."""
+        if self.task.reward_profile == "goal_reaching":
+            from drone_playground.simulation.task_rewards import goal_reaching_reward
+
+            reward, terms = goal_reaching_reward(self, before, after, action)
+            return -reward, terms
         if self.task.reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"}:
             from drone_playground.simulation.task_rewards import paper_navigation_reward
 

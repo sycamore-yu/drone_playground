@@ -65,6 +65,7 @@ class Task:
         reward_profile: str = "default",
         reward_shaping: dict | None = None,
         reward_options: dict | None = None,
+        finite_horizon: bool = False,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
@@ -77,15 +78,23 @@ class Task:
             "fan2025",
             "fan2025_arrival",
             "visfly2025",
+            "goal_reaching",
         }:
             raise ValueError("Unsupported Task reward profile")
         if reward_profile != "default" and name != "navigation":
             raise ValueError("Alternative Navigation reward requires navigation task")
         self.reward_profile = reward_profile
+        if type(finite_horizon) is not bool or (finite_horizon and name != "navigation"):
+            raise ValueError("finite_horizon requires boolean Navigation configuration")
+        self.finite_horizon = finite_horizon
+        if reward_profile == "goal_reaching" and not finite_horizon:
+            raise ValueError("Goal-reaching reward requires a finite-horizon task")
         self.reward_shaping = dict(reward_shaping or {})
         self.reward_options = dict(reward_options or {})
         if reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"} and self.reward_shaping:
             raise ValueError("Paper task profiles cannot add legacy reward shaping")
+        if reward_profile == "goal_reaching" and self.reward_shaping:
+            raise ValueError("Goal-reaching reward cannot add unbounded legacy shaping")
         if reward_profile in {"fan2025", "fan2025_arrival"}:
             required = {"weights", "min_speed", "max_speed", "safe_distance", "hover_distance"}
             if reward_profile == "fan2025_arrival":
@@ -251,6 +260,8 @@ class Task:
         }
         if self.reward_profile != "default":
             result["reward_profile"] = self.reward_profile
+        if self.finite_horizon:
+            result["finite_horizon"] = True
         if self.reward_shaping:
             result["reward_shaping"] = dict(self.reward_shaping)
         if self.reward_options:

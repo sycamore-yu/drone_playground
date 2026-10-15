@@ -98,3 +98,35 @@ Reuse Trainer/TrainingState, checkpoint loaders, evaluate/rollout and the origin
 acceptance collector. The bounded script in tmp is a diagnostic harness, not a
 replacement public training lifecycle. Changes to real training behavior must
 reach the existing Trainer, CLI, configuration and appropriate tests.
+
+## Paired results and next intervention
+
+All four LiDAR continuations completed at u2880 from the same full-state SHA256.
+At u2640/2700/2760/2820/2880, successes out of 32 were control 29/0/8/0/0,
+memory refresh 29/3/0/2/0, frozen critic 29/0/0/0/0, quarter actor LR
+29/11/3/0/0. None retained a source success at the end. These interventions
+failed the diagnostic criterion; they are not retained in the candidate recipe.
+`artifacts/verification/ppo-stability-20261015/recompute_audit.py` reconstructs
+individual losses, new successes, scene outcomes and raw input hashes.
+
+The stochastic calibration D01, seed 1000003, world 4 has identical initial
+state hashes. Its u2640 success at 183.644 s yields -44.5679 under gamma .995;
+u4320 collision at 95.960 s yields -17.1618. This proves a realized reward-order
+counterexample, not an ordering of expected policy returns or a unique cause.
+
+The next scratch intervention changes the task objective as a coherent bundle:
+bounded goal-reaching reward, undiscounted return, finite-horizon deadline and
+remaining-time observation. With progress measured per 20 m, success/failure
+pay +1/-1 and all time/safety/action costs sum to at most .5. A success must
+therefore exceed any failure from the same start by at least 1.475. For the
+recorded D01 pair the analytic difference is at least 1.78366. The existing
+NPZ lacks full position/action traces for exact rescoring, so this is a bound,
+not an executed replay. Shaping is not claimed to preserve the old objective.
+
+Candidate configs are fully resolved under the verification directory. Keep
+the original seed, architecture, optimizer, physics, sampling and 2,211,840
+interaction budget. Remove superseded legacy reward coefficients explicitly.
+Run independent Depth/LiDAR pilots through the existing CLI and treat every
+automatic pilot validation/benchmark as development information. This joint
+intervention cannot identify which individual objective change is responsible
+for any improvement; component ablations require a positive result first.

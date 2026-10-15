@@ -119,6 +119,10 @@ class Trainer:
             self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         self.loss_name = loss
+        if env.task.reward_profile == "goal_reaching" and (
+            self.config["gamma"] != 1.0 or loss is not None
+        ):
+            raise ValueError("Goal-reaching reward requires gamma=1 and no auxiliary task loss")
         if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
             raise ValueError("Unknown reward profile")
         if self.config["reward_profile"] != "default" and (
