@@ -1,6 +1,7 @@
 """Run a bounded, paired continuation from an intact PPO training checkpoint."""
 
 import argparse
+import copy
 import csv
 import hashlib
 import json
@@ -33,6 +34,28 @@ def tree_hash(tree):
     return digest.hexdigest()
 
 
+def reuse_source_checks(directory, source, config, branch_config):
+    """Reuse completed source checks for the same checkpoint and rollout length."""
+    identity = json.loads((directory / "experiment.json").read_text())
+    checks = json.loads((directory / "rollout-checks.json").read_text())
+    previous = identity["branch_config"]
+    current = copy.deepcopy(branch_config)
+    for candidate in (previous, current):
+        for key in ("minibatches", "gae_lambda"):
+            candidate["learning"]["options"].pop(key, None)
+    if (
+        identity.get("status") != "completed"
+        or Path(identity["checkpoint"]).resolve() != source.resolve()
+        or identity["source_config"] != config
+        or previous != current
+        or checks["reward_finite"] != 1
+        or not checks["log_probability_max_error"] < 1e-4
+        or not checks["recurrent_memory_max_error"] < 1e-5
+    ):
+        raise ValueError("Existing source verification does not match this checkpoint/rollout")
+    return identity["restored_state_sha256"], checks
+
+
 def main():
     """Check behavior likelihoods, replay the source, and continue actual updates."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -51,6 +74,7 @@ def main():
     parser.add_argument("--horizon", type=int)
     parser.add_argument("--minibatches", type=int)
     parser.add_argument("--gae-lambda", type=float)
+    parser.add_argument("--reuse-source-checks", type=Path)
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -87,7 +111,16 @@ def main():
     )
     state, _ = checkpoint.load_model_state(args.checkpoint, trainer.initialize())
     origin_update = int(state.updates)
-    origin_hash = tree_hash(state)
+    reused_checks = None
+    if args.reuse_source_checks is not None:
+        origin_hash, reused_checks = reuse_source_checks(
+            args.reuse_source_checks,
+            args.checkpoint,
+            metadata["config"]["experiment"],
+            resolved,
+        )
+    else:
+        origin_hash = tree_hash(state)
     rehearsal_loss, rehearsal_contract = None, None
     if args.rehearsal is not None:
         from ppo_rehearsal_diagnostic import install_rehearsal
@@ -111,6 +144,9 @@ def main():
         "arguments": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         "status": "running",
         "rehearsal": rehearsal_contract,
+        "source_checks_reused_from": (
+            str(args.reuse_source_checks) if args.reuse_source_checks is not None else None
+        ),
     }
     atomic_json(args.output / "experiment.json", identity)
     print("restored", origin_update, origin_hash, flush=True)
@@ -130,11 +166,13 @@ def main():
             "reward_finite": jnp.all(jnp.isfinite(batch.rewards)),
         }
 
-    checks = {k: float(v) for k, v in check_rollout(state, state.interactions / budget).items()}
+    checks = reused_checks
+    if checks is None:
+        checks = {k: float(v) for k, v in check_rollout(state, state.interactions / budget).items()}
+        assert tree_hash(state) == origin_hash
     assert checks["log_probability_max_error"] < 1e-4, checks
     assert checks["recurrent_memory_max_error"] < 1e-5, checks
     assert checks["reward_finite"], checks
-    assert tree_hash(state) == origin_hash
     atomic_json(args.output / "rollout-checks.json", checks)
     print("rollout_checks", checks, flush=True)
 
@@ -185,7 +223,9 @@ def main():
     started = time.monotonic()
     try:
         for offset in range(args.updates + 1):
-            if offset % args.interval == 0 or offset == args.updates:
+            if (offset % args.interval == 0 or offset == args.updates) and not (
+                offset == 0 and args.reuse_source_checks is not None
+            ):
                 report = evaluate(
                     evaluation,
                     args.output / f"update-{int(state.updates):06d}",
