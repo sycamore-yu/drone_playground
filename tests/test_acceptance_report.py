@@ -152,6 +152,7 @@ def stable_ppo_evidence(tmp_path, uncertainty_collector):
         "recipe",
         "diagnostic",
         "entropy_diagnostic",
+        "full_batch_diagnostic",
         "case_identity",
         "failed_retention",
         "skipped_updates",
@@ -184,6 +185,8 @@ def test_ppo_stability_requires_complete_final_chain(
         report["actor_lr_scale"] = 0.1
     elif damage == "entropy_diagnostic":
         report.update(diagnostic=True, entropy_weight=0.0, entropy_bonus_disabled=True)
+    elif damage == "full_batch_diagnostic":
+        report.update(diagnostic=True, full_batch=True, optimizer_steps_per_update=4)
     elif damage == "case_identity":
         report["baseline_cases"][0][2] = "changed"
     elif damage == "failed_retention":

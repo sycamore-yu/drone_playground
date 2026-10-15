@@ -1,5 +1,5 @@
 {
-  "status": "registered_saved_data_numerical_recheck",
+  "status": "completed_pcgrad_gate_failed",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
   "runtime_worktree": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference",
   "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
@@ -60,5 +60,34 @@
     "scope": "Only differentiated loss and value-only probes; keep collector original. Same5e-5 reconstruction threshold and require exact repeated full-batch gradient."
   },
   "second_execution_failure": "Fixed64-world masking reduced relative gradient discrepancy to8.360139e-5, still above5e-5. Preserve attempt1 report,log,gradients and raw rollout. Reuse this batch; total sampling budget remains98304.",
-  "wall_time_limitation": "Earlier failed attempts did not store complete elapsed wall time; do not claim an exact cumulative wall cost."
+  "wall_time_limitation": "Earlier failed attempts did not store complete elapsed wall time; do not claim an exact cumulative wall cost.",
+  "result": {
+    "report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/report.json",
+    "cross_replicate_scene_cosines": [
+      0.33255064487457275,
+      -0.010215784423053265,
+      0.48906752467155457,
+      0.21339721977710724,
+      -0.08340723067522049,
+      0.034939270466566086,
+      -0.11442561447620392,
+      -0.14369381964206696
+    ],
+    "within_scene_negative_counts": [
+      5,
+      4
+    ],
+    "gradient_reconstruction_relative_errors": [
+      4.6542990617126634e-07,
+      5.566126333178545e-07
+    ],
+    "repeated_gradients_exact": true,
+    "local_adam_loss_decreased_in_all_scenes_both_draws": true,
+    "eligible_pairs": [],
+    "total_actual_sampling_interactions": 98304,
+    "unique_sampling_interactions": 65536,
+    "last_execution_wall_seconds": 172.8257792989898,
+    "cumulative_wall_seconds": null
+  },
+  "decision": "Do not implement PCGrad. Scene gradient directions are not repeatable enough under the registered gate, and both aggregate-descent and full-batch Adam probes locally improve every scene. Next test the existing full optimizer batch at unchanged rollout size; this is not proof of a unique variance cause."
 }

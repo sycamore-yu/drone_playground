@@ -1,0 +1,68 @@
+{
+  "status": "registered_before_training",
+  "problem": "The completed original parallel continuation loses26/150 cases at u184. Entropy removal, parameter-block swaps and complete-return tails fail registered retention gates. Two last-goodu180 training draws show weak same-scene gradient coherence, but a local full-batch Adam step lowers every scene surrogate in both draws. No PCGrad gate passes.",
+  "hypothesis": "Using the whole64-world rollout in each PPO optimizer pass may reduce noisy small-minibatch update effects and preserve successful behavior. Fewer Actor/Critic Adam steps also change optimization dynamics; this pilot cannot uniquely attribute any benefit to gradient variance.",
+  "prior_negative": "Earlier64-world procedural pilots and sequential0.1xActorLR continuation failed. This is a current parallel fixed-scene/full-pass continuation with unchanged LR, not a repeat of those conditions. The earlier complete-return pilot had145/148 but failed its first scene gate.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json",
+  "runtime_worktree": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "intervention": {
+    "learning.minibatches": "4 -> 1",
+    "experiment.learning.options.minibatches": "4 -> 1"
+  },
+  "unchanged": "Native811eabe,64x512 rollout, four PPO epochs, original Actor/Critic rates, Adam moments, RNG/GRU/physical state, task/reward,8parallel training scenes, entropy0.005, full3D action and Actor inputs. No MC-tail or gradient projection.",
+  "cost_difference": {
+    "rollout_samples_per_update": 32768,
+    "optimizer_worlds_per_minibatch": [
+      16,
+      64
+    ],
+    "actor_adam_steps_per_update": [
+      16,
+      4
+    ],
+    "critic_adam_steps_per_update": [
+      16,
+      4
+    ],
+    "sample_epochs_per_update": [
+      4,
+      4
+    ],
+    "interpretation": "Equal environment samples and PPO epochs; not equal optimizer step counts. Report actual wall cost."
+  },
+  "budget": {
+    "updates": 8,
+    "interactions": 262144,
+    "check_updates": [
+      180,
+      184
+    ],
+    "early_stop": false,
+    "rollback": false
+  },
+  "gate": "Both checks: each six primary scenes>=23/25, retain>=143/150 original successful cases. Report all losses, recoveries, terminal events and actual finalu184. Any failed check rejects sufficiency at this pilot budget.",
+  "acceptance_scope": "Short altered-setting diagnostic, not full917504interaction stability or new scratch seed. Passing would only justify a separately registered full window and reproducible three-seed recipe; no automatic final tests.",
+  "evaluation": "Reuse original150development cases, baseline and complete control scores; no source replay or model hash, no independent3mcohort.",
+  "correctness": [
+    "Only two saved minibatches values change; source config immutable; incompatible simultaneous interventions rejected",
+    "Native CPU update preserves rollout sample counts while Actor/Critic optimizer counters change as intended",
+    "All actual GPU updates have finite metrics and nonzero Actor parameter changes; first rollout/target statistics match existing control",
+    "Acceptance collector rejects this full-batch diagnostic even if its scores pass"
+  ],
+  "references": [
+    {
+      "url": "https://arxiv.org/abs/1707.06347",
+      "claim": "Multiple optimization epochs and minibatches are standard PPO mechanisms; this full-batch choice is an experiment, not an authority-backed convergence guarantee."
+    }
+  ],
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-full-batch-pilot.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot --full-batch --diagnostic-updates 8 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-full-batch-pilot.log 2>&1",
+  "preflight": {
+    "targeted_suite": "33 passed in25.70s",
+    "expanded_optimizer_counter_test": "1 passed in19.20s; both Actor and Critic Adam counters verified",
+    "lint": "Ruff and diff check passed"
+  }
+}

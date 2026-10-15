@@ -14,11 +14,16 @@ SCENES = ("S01", "S02", "S03", "D01", "D02", "D03")
 CASE_FIELDS = ("scene", "geometry_sha256", "initialization_seed", "world_index")
 
 
-def window_steps(batch):
+def window_steps(batch, diagnostic_updates=None):
     """Round the registered interaction budget and cadence up to whole updates."""
     if type(batch) is not int or batch <= 0:
         raise ValueError("Rollout batch must be a positive integer")
-    return math.ceil(900_000 / batch), math.ceil(122_880 / batch)
+    updates = math.ceil(900_000 / batch)
+    if diagnostic_updates is not None:
+        if type(diagnostic_updates) is not int or not 0 < diagnostic_updates <= updates:
+            raise ValueError("Diagnostic updates must be a positive integer within the full window")
+        updates = diagnostic_updates
+    return updates, math.ceil(122_880 / batch)
 
 
 def quality(cases, baseline):
@@ -75,11 +80,11 @@ def read_cases(directory):
     return cases, report
 
 
-def continuation_config(config, scale, disable_entropy=False):
-    """Change Actor LR or remove its entropy bonus in both saved representations."""
+def continuation_config(config, scale, disable_entropy=False, full_batch=False):
+    """Change one optimizer setting in both saved representations."""
     if not math.isfinite(scale) or not 0 < scale <= 1:
         raise ValueError("Actor LR scale must be finite and in (0,1]")
-    if disable_entropy and scale != 1:
+    if sum((scale != 1, disable_entropy, full_batch)) > 1:
         raise ValueError("Change only one learning setting per matched diagnostic")
     result = copy.deepcopy(config)
     rate = result["learning"]["lr"] * scale
@@ -94,6 +99,18 @@ def continuation_config(config, scale, disable_entropy=False):
             raise ValueError("Entropy removal requires a consistent positive source coefficient")
         result["learning"]["entropy_weight"] = 0.0
         result["experiment"]["learning"]["options"]["entropy_weight"] = 0.0
+    if full_batch:
+        batches = result["learning"]["minibatches"]
+        if (
+            type(batches) is not int
+            or batches <= 1
+            or batches != result["experiment"]["learning"]["options"]["minibatches"]
+        ):
+            raise ValueError(
+                "Full-batch diagnostic requires consistent multiple source minibatches"
+            )
+        result["learning"]["minibatches"] = 1
+        result["experiment"]["learning"]["options"]["minibatches"] = 1
     return result
 
 
@@ -134,15 +151,19 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--actor-lr-scale", type=float, default=1.0)
     parser.add_argument("--disable-entropy-bonus", action="store_true")
+    parser.add_argument("--full-batch", action="store_true")
+    parser.add_argument("--diagnostic-updates", type=int)
     parser.add_argument("--reuse-window", type=Path)
     args = parser.parse_args()
     source, output = args.checkpoint.resolve(), args.output.resolve()
     metadata = json.loads((source / "metadata.json").read_text())
-    diagnostic = args.actor_lr_scale != 1.0 or args.disable_entropy_bonus
+    diagnostic = args.actor_lr_scale != 1.0 or args.disable_entropy_bonus or args.full_batch
+    if args.diagnostic_updates is not None and not diagnostic:
+        raise ValueError("Only a diagnostic may use a shorter pilot window")
     if diagnostic and args.reuse_window is None:
         raise ValueError("Diagnostic requires an existing matched control window")
     metadata["config"] = continuation_config(
-        metadata["config"], args.actor_lr_scale, args.disable_entropy_bonus
+        metadata["config"], args.actor_lr_scale, args.disable_entropy_bonus, args.full_batch
     )
     config = OmegaConf.create(metadata["config"]["experiment"])
     original_run = json.loads((source.parents[1] / "run.json").read_text())
@@ -221,11 +242,12 @@ def main():
     assert selection["update"] == metadata["provenance"]["updates"] == origin_update
     assert origin_interactions == metadata["provenance"]["interactions"]
     batch = config.simulation.num_envs * config.learning.options.horizon
-    updates, interval = window_steps(batch)
+    updates, interval = window_steps(batch, args.diagnostic_updates)
     if control is not None:
-        assert updates == control["planned_updates"]
+        reference_updates, _ = window_steps(batch)
+        assert reference_updates == control["planned_updates"]
         assert interval == control["evaluation_interval_updates"]
-        assert updates * batch == control["actual_additional_interactions"]
+        assert reference_updates * batch == control["actual_additional_interactions"]
     evaluation = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
     evaluation.mode = "checkpoint_eval"
     evaluation.benchmark.protocol = "learning"
@@ -261,6 +283,10 @@ def main():
         "actor_lr": config.learning.options.lr,
         "entropy_bonus_disabled": args.disable_entropy_bonus,
         "entropy_weight": config.learning.options.entropy_weight,
+        "full_batch": args.full_batch,
+        "optimizer_steps_per_update": config.learning.options.ppo_epochs
+        * config.learning.options.minibatches,
+        "diagnostic_updates": args.diagnostic_updates,
         "diagnostic": diagnostic,
         "reference_window": str(args.reuse_window.resolve()) if args.reuse_window else None,
         "scene_switches": [],
@@ -281,6 +307,14 @@ def main():
             "all other learning settings and complete source state are retained. "
             "This is not unchanged-recipe acceptance."
         )
+    elif args.full_batch:
+        result["scope"] = (
+            "Full-batch PPO optimizer diagnostic. Rollout size and learning rates are unchanged; "
+            "fewer Actor and Critic Adam steps per rollout accompany larger gradient batches. "
+            "This is not unchanged-recipe acceptance."
+        )
+    if args.diagnostic_updates is not None:
+        result["scope"] += " Short pilot, not the complete registered stability window."
     assert result["runtime_provenance"]["source_sha256"] == result["source_sha256_reused"]
     atomic_json(output / "report.json", result)
 
@@ -299,6 +333,7 @@ def main():
             "stability_window_report": str(output / "report.json"),
             "continuation_actor_lr_scale": args.actor_lr_scale,
             "continuation_entropy_bonus_disabled": args.disable_entropy_bonus,
+            "continuation_full_batch": args.full_batch,
             "evaluation_index": original_report["evaluation_index"] + len(result["checks"]),
             "training_wall_seconds": metadata["provenance"]["training_wall_seconds"]
             + time.monotonic()

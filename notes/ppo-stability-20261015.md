@@ -1557,3 +1557,29 @@ Replicate0 is reused; only replicate1 needs new32768samples, so total physical w
 including the lost attempt0 remains98304. Old attempts did not record full elapsed
 wall time; cumulative wall cost is unavailable. This measures gradients with explicit
 numerical settings, not a claim of bit-identical native minibatch optimization.
+
+### Gradient diagnostic complete; full optimizer batch pilot registered
+
+The scoped deterministic/highest-precision loss passes: both repeated full gradients
+are exactly equal, and half-group reconstruction relative errors4.6543e-7/5.5661e-7.
+The eight cross-draw scene cosines are[.33255,-.01022,.48907,.21340,-.08341,.03494,
+-.11443,-.14369]; none meets0.5. Within-scene half cosines are negative in5/8 and
+4/8scenes. Every scene has a descending aggregate-gradient direction and a negative
+actual local full-batch Adam surrogate change in both draws. No PCGrad selection
+pair qualifies. This does not prove population gradient variance or a unique cause;
+it rejects automatic scene-gradient projection under the preregistered rule.
+Sampling cost98304including the lost first attempt,65536samples in the two measured draws; last
+execution172.826s including113.893s setup. Earlier complete wall cost was not recorded.
+Raw rollouts/gradients and failed attempts remain local; report.json is the new record.
+
+Next bounded intervention changes only native minibatches4->1 from originalu176,
+not the MC-tail branch. Same64x512rollout/four epochs and original learning rates;
+Actor and Critic Adam steps both16->4. Source state, scenes and cases stay matched
+to the completed control. Eight updates262144interactions with full150-case checks
+at180/184; both require all six>=23/25 and retention>=143/150. No early stop, rollback
+or automatic final-test use. Full-batch gradient observations motivate the candidate,
+but fewer optimizer steps and changed Critic fitting prevent unique variance attribution.
+The existing continuation tool gains a full-batch flag and diagnostic-only short budget;
+no native learner or new optimizer abstraction is needed. Existing collector rejection
+now has an explicit full-batch diagnostic case.33targeted tests pass25.70s; the expanded
+Actor+Critic counter assertion also passes separately in19.20s before launch.

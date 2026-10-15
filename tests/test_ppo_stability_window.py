@@ -28,6 +28,14 @@ def test_budget_rounding_covers_original_collapse_scale():
         WINDOW.window_steps(0)
 
 
+def test_short_diagnostic_keeps_cadence_and_cannot_exceed_full_budget():
+    """A bounded pilot changes its length without relaxing any evaluation threshold."""
+    assert WINDOW.window_steps(64 * 512, 8) == (8, 4)
+    for updates in (0, -1, 29, 8.5, True):
+        with pytest.raises(ValueError, match="within the full window"):
+            WINDOW.window_steps(64 * 512, updates)
+
+
 def test_per_scene_pass_is_insufficient_when_retention_fails():
     """Eight lost cases fail; seven lost cases meet the95percent retention gate."""
     original = cases()
@@ -138,6 +146,60 @@ def test_cached_baseline_requires_same_complete_control():
     control["baseline_cases"].append(control["baseline_cases"][0])
     with pytest.raises(ValueError, match="valid first-pass"):
         WINDOW.reuse_baseline(control, path, provenance)
+
+
+def test_full_batch_override_changes_only_minibatches():
+    """Larger optimizer batches must not silently change LR, entropy or rollout length."""
+    options = {"lr": 0.0002, "minibatches": 4, "ppo_epochs": 4, "horizon": 512}
+    source = {"learning": dict(options), "experiment": {"learning": {"options": dict(options)}}}
+    actual = WINDOW.continuation_config(source, 1.0, full_batch=True)
+    assert actual["learning"]["minibatches"] == 1
+    assert actual["experiment"]["learning"]["options"]["minibatches"] == 1
+    actual["learning"]["minibatches"] = 4
+    actual["experiment"]["learning"]["options"]["minibatches"] = 4
+    assert actual == source
+    for scale, entropy in ((0.1, False), (1.0, True)):
+        with pytest.raises(ValueError, match="one learning setting"):
+            WINDOW.continuation_config(source, scale, entropy, full_batch=True)
+    for batches in (0, 1, 2.5, True, 2):
+        source["learning"]["minibatches"] = batches
+        with pytest.raises(ValueError, match="consistent multiple"):
+            WINDOW.continuation_config(source, 1.0, full_batch=True)
+
+
+def test_full_batch_changes_actual_adam_count_without_reducing_samples():
+    """The native option uses fewer real optimizer steps on the same rollout budget."""
+    import jax
+    import numpy as np
+    import optax
+
+    from drone_playground.learning.trainer import Trainer
+    from drone_playground.simulation.environment import make_environment
+
+    env = make_environment(num_envs=4)
+    try:
+        control = Trainer(env, config={"horizon": 2, "ppo_epochs": 2, "minibatches": 4})
+        full = Trainer(env, config={"horizon": 2, "ppo_epochs": 2, "minibatches": 1})
+        initial = control.initialize()
+        for trainer, expected_count in ((control, 8), (full, 2)):
+            result, metrics = trainer.update(initial)
+            assert result.interactions == 8 and result.updates == 1
+            for optimizer in ("actor", "critic"):
+                counts = [
+                    int(leaf)
+                    for leaf in jax.tree.leaves(result.optimizer_state[optimizer])
+                    if leaf.shape == () and np.issubdtype(leaf.dtype, np.integer)
+                ]
+                assert counts == [expected_count]
+            assert all(np.isfinite(value).all() for value in metrics.values())
+            assert (
+                float(
+                    optax.tree.norm(jax.tree.map(lambda a, b: a - b, result.params, initial.params))
+                )
+                > 0
+            )
+    finally:
+        env.sim.close()
 
 
 def test_lr_change_retains_adam_moments_and_scales_actual_actor_step():
