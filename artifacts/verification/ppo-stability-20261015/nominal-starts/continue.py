@@ -1,4 +1,4 @@
-"""Test nominal task resets from the intact parallel Depth PPO update48 state."""
+"""Compare reset distribution or rollout length from intact parallel Depth PPO update48."""
 
 import argparse
 import copy
@@ -22,18 +22,30 @@ SCENES = ["S01", "S02", "S03", "D01", "D02", "D03"]
 
 
 def main():
-    """Retain optimizer, RNG and live episodes; only future reset positions change."""
+    """Retain the full source state and compare at equal additional interactions."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--horizon", type=int, default=512, choices=(512, 2048))
+    parser.add_argument("--randomize-navigation-start", action="store_true")
     args = parser.parse_args()
+    if args.horizon == 2048 and not args.randomize_navigation_start:
+        raise ValueError("Long-rollout comparison must retain the original random resets")
+    if args.horizon == 512 and args.randomize_navigation_start:
+        raise ValueError("Unchanged control already exists; reuse its completed checks")
+    interactions_per_update = 64 * args.horizon
+    planned_updates = 1572864 // interactions_per_update
+    interval = 524288 // interactions_per_update
+    assert planned_updates * interactions_per_update == 1572864
+    assert interval * interactions_per_update == 524288
     output = args.output.resolve()
     source = ROOT / "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000048"
     metadata = json.loads((source / "metadata.json").read_text())
     saved = copy.deepcopy(metadata["config"])
     assert saved["learning"]["randomize_navigation_start"] is True
     assert saved["experiment"]["learning"]["scene_sampling"] == "parallel"
-    saved["learning"]["randomize_navigation_start"] = False
-    saved["experiment"]["learning"]["options"]["randomize_navigation_start"] = False
+    for options in (saved["learning"], saved["experiment"]["learning"]["options"]):
+        options["randomize_navigation_start"] = args.randomize_navigation_start
+        options["horizon"] = args.horizon
     saved["experiment"]["output"] = str(output)
     changes = subprocess.run(
         ["git", "diff", "811eabe", "--", "src", ":(exclude)src/drone_playground/cli.py"],
@@ -87,12 +99,14 @@ def main():
         ).stdout.strip(),
         "source_runtime_difference": "Native src differs from811eabe only by CLI frozen-model "
         "metadata recording; learner/environment/network source unchanged",
-        "planned_updates": 48,
+        "planned_updates": planned_updates,
         "planned_additional_interactions": 1572864,
+        "interactions_per_update": interactions_per_update,
+        "screening_interval_updates": interval,
         "initial_successes": 38,
         "checks": [],
         "training_update_seconds": 0,
-        "scope": "Matched reset-distribution diagnostic, "
+        "scope": "Matched reset-distribution or rollout-length diagnostic, "
         "not a new scratch seed or formal stability pass",
     }
     atomic_json(output / "report.json", report)
@@ -128,26 +142,26 @@ def main():
         return directory
 
     try:
-        for offset in range(1, 49):
+        for offset in range(1, planned_updates + 1):
             before = time.monotonic()
             state, metrics = trainer.update(state)
             values = {k: float(v) for k, v in jax.device_get(metrics).items()}
             assert np.isfinite(list(values.values())).all()
             assert int(state.updates) == 48 + offset
-            assert int(state.interactions) == (48 + offset) * 32768
+            assert int(state.interactions) == 1572864 + offset * interactions_per_update
             values.update(update=int(state.updates), update_seconds=time.monotonic() - before)
             report["training_update_seconds"] += values["update_seconds"]
             report.update(last_update=int(state.updates), last_interactions=int(state.interactions))
             with (output / "metrics.jsonl").open("a") as stream:
                 stream.write(json.dumps(values) + "\n")
-            if offset % 16 == 0:
+            if offset % interval == 0:
                 directory = save()
                 evaluate(
                     evaluation,
                     directory,
                     actor=trainer.actor,
                     parameters=state.params,
-                    evaluation_index=int(state.updates) // 16,
+                    evaluation_index=int(state.interactions) // 524288,
                     environments=environments,
                 )
                 with (directory / "episodes.csv").open(newline="") as stream:
@@ -165,7 +179,7 @@ def main():
                 retained = len(successes & initial_successes)
                 result = {
                     "update": int(state.updates),
-                    "additional_interactions": offset * 32768,
+                    "additional_interactions": offset * interactions_per_update,
                     "successes": len(successes),
                     "per_scene_successes": counts,
                     "retained_initial_successes": retained,
