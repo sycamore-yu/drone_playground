@@ -1,0 +1,136 @@
+{
+  "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-batch64-retention-pair/model_000300",
+  "actor_sha256": "9d340e2eda7f1835d5a731501e9d352255e62b6ba5d0e3d4d15c6320bb13c634",
+  "source_metadata_sha256": "e3a5ce87f94d3a734c5ccc1a436fee3cd1b26d5c0e1293bfffcf88b50a810317",
+  "intervention": "Only depth and depth_mask become all-zero, the encoder's no-valid-return input. Geometry, acquisition, state observations, recurrent reset and weights are fixed.",
+  "limitation": "Development counterfactual. Performance loss shows sensitivity to missing Depth, not competent geometric avoidance; missing data can be out of distribution.",
+  "results": {
+    "actual": {
+      "per_scene": {
+        "S01": 8,
+        "D01": 7,
+        "D03": 5
+      },
+      "successes": 20,
+      "retained_source_successes": 20,
+      "lost_cases": [],
+      "new_successes": [],
+      "csv_sha256": "fdb28ee164de38af27929a65efa7c968215ccc0f45a7e1fbed578206d1362ff6"
+    },
+    "without_depth": {
+      "per_scene": {
+        "S01": 3,
+        "D01": 0,
+        "D03": 0
+      },
+      "successes": 3,
+      "retained_source_successes": 3,
+      "lost_cases": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "1"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "2"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "3"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "4"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "5"
+        ],
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "1"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "2"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "3"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "5"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1000000",
+          "7"
+        ]
+      ],
+      "new_successes": [],
+      "csv_sha256": "497f988b3d12c1f3eb100d87131f7e6cb0d008da6b92151360431db115c827f0"
+    }
+  }
+}
