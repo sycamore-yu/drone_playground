@@ -241,3 +241,21 @@ Actor-input comparison. It now checks this existing field; all 25 collector
 checks pass, including a deliberately mismatched input contract. Rechecking the
 same reuse manifest still yields 3 passed / 14 missing / 1 incomplete. This
 change affects evidence validation only, not any live learning computation.
+
+
+A bounded minimum-clearance objective is implemented behind the explicit existing
+reward_options field. It replaces only the old time-average clearance term with
+increments in worst episode proximity, using the already stored min_clearance.
+Its entire-episode charge remains <=.1, so the .5 total-cost bound and 1.475
+success-over-failure return gap remain valid. The approach gradient at .5m is
+.2 versus 6.6667e-5 for the time-average term at dt=.1/duration300. These are
+local reward derivatives, not observed policy-gradient causality. It is a task
+risk-objective change, not policy-invariant shaping. Nine targeted tests pass,
+including real PPO/APG/SHAC updates and exact full-state continuation.
+
+Before launching the prepared new scratch recipes, fork two matched PPO
+continuations from the preserved Depth u300 state: unchanged control and minimum
+clearance treatment. Run180 actual updates, all48 fixed cases every60updates,
+using the original curriculum denominator. The existing diagnostic driver now
+accepts this single task-objective override and separately records original and
+branch configs. No teacher or weights from another algorithm are used.

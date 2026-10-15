@@ -93,7 +93,7 @@ def main():
 
     @jax.jit
     def check_rollout(before, progress):
-        collected, batch, terms = ppo.collect_rollout(trainer, before, sampling_progress=progress)
+        collected, batch, _ = ppo.collect_rollout(trainer, before, sampling_progress=progress)
         memory, (raw, _) = ppo.recurrent_policy(
             trainer, before.params, batch.observations, before.recurrent_memory, batch.done
         )
@@ -131,7 +131,10 @@ def main():
         if args.freeze_critic:
             after = after.replace(
                 critic_params=before.critic_params,
-                optimizer_state={**after.optimizer_state, "critic": before.optimizer_state["critic"]},
+                optimizer_state={
+                    **after.optimizer_state,
+                    "critic": before.optimizer_state["critic"],
+                },
             )
         return after, metrics
 
@@ -160,12 +163,15 @@ def main():
                 if offset == 0:
                     with (args.checkpoint / "screening" / "episodes.csv").open() as stream:
                         source_rows = list(csv.DictReader(stream))
-                    with (args.output / f"update-{origin_update:06d}" / "episodes.csv").open() as stream:
+                    with (
+                        args.output / f"update-{origin_update:06d}" / "episodes.csv"
+                    ).open() as stream:
                         replay_rows = list(csv.DictReader(stream))
                     fields = ("scene", "geometry_sha256", "initialization_seed", "world_index")
                     expected = {
                         tuple(row[k] for k in fields): row["event"]
-                        for row in source_rows if row["scene"] in args.scenes
+                        for row in source_rows
+                        if row["scene"] in args.scenes
                     }
                     actual = {tuple(row[k] for k in fields): row["event"] for row in replay_rows}
                     assert expected == actual, (expected, actual)

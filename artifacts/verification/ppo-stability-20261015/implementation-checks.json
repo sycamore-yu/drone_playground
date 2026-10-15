@@ -37,6 +37,11 @@
       "test": "test_acceptance_report.py including explicit actor observation equality",
       "result": "25 passed",
       "seconds": 4.13
+    },
+    {
+      "test": "test_goal_reaching_reward.py with minimum-clearance objective",
+      "result": "9 passed",
+      "seconds": 81.35
     }
   ],
   "legacy_checkpoint_replay": {
