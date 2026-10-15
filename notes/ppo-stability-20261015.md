@@ -1249,3 +1249,46 @@ S03 improves while other scene performance regresses, as previously observed for
 Depth. This does not isolate gradient interference or another unique cause. Both
 matched sequential controls were0/48, but that relative improvement does not satisfy
 the absolute joint-success and retention gates. Its original scratch budget continues.
+
+### Parallel Depth first full pass and unchanged continuation
+
+The native option2 full validation at parallel Depth u176 completed150/150, all six
+primary scenes25/25, after5767168 scratch interactions. Its first-pass selection
+record names `checkpoints/model_000176`, evaluation index11 and seedbase1500000.
+The existing continuation runner has now launched (PID2646288, session62169) from
+that complete state with unchanged learning settings. It imports the pinned811eabe
+runtime from `ppo-parallel-window-reference`; the runner source is2147949.
+The normal runtime-source and resolved-config checks passed after full-state restore.
+
+The already registered stability window is28updates/917504 interactions, checks at
+u180/184/188/192/196/200/204, >=23/25 in every primary scene and>=143/150 original
+successful cases at every check. No early stop, rollback or peak-model substitution.
+Output is `results/fixed_scenes_parallel/depth_ppo_s0_stability`; command and launch
+details are added to `candidate-configs/fixed-scenes-parallel-design.json`. The source
+CLI's automatic seedbase2000000 benchmark is development information; independent
+post-window final testing remains reserved at3000000 and must use the actual last
+model. The matrix is still14/18 and no additional scratch seed has been launched.
+
+The checkpoint writer saves training arrays once per update and atomically replaces
+metadata. After the completed full evaluation and selected checkpoint were recorded,
+the existing immutable state could be restored while the source CLI continues its
+automatic initial benchmark. No source replay or extra manual hash audit was needed.
+Before launch, device-wide GPU use was9414/24564MiB across the four existing jobs;
+this is a headroom sample, not a peak or isolated cost measurement. The first actual
+continuation update u177 then completed32768 added interactions (total5799936),
+Actor gradient norm0.811892 and no KL skip. Update time145.405s includes initial
+compilation;46of50 completed training episodes succeeded. These are execution
+metrics, not formal retention evidence; the first registered full check is u180.
+
+The long-rollout branch's second matched screen u56, after1048576 added interactions,
+again scores40/48 and retains38/38 original cases. Cached controlu80 scores30/48 and
+retains30/38. Treatment S03 still has eight timeouts while the other five scenes are
+8/8. Thus two checks support a retention benefit for the learned source cases, but
+the final third check and S03 acquisition gate remain unmet.
+
+LiDAR parallel u128/u144/u160 scores44/24/28 out of48, retaining7/0/4 of its ten
+initial successes. Sequential controls at these same interactions are0/39/8.
+At u160 the scene counts are8/8/0/8/4/0, with20collision failures. At u176 it recovers
+to40/48 (8/8/0/8/8/8), all ten initial cases retained, but S03 still has eight collisions;
+the sequential controlu176 was0/48. Results still fluctuate and do not establish
+joint-task convergence or stability.

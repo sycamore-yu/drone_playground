@@ -6,7 +6,7 @@
   "source_interactions": 1572864,
   "initial_successes": 38,
   "status": "running",
-  "last_treatment_update": 55,
+  "last_treatment_update": 56,
   "planned_additional_interactions": 1572864,
   "checks": [
     {
@@ -110,8 +110,121 @@
         ]
       ],
       "pilot_gate": false
+    },
+    {
+      "control_update": 80,
+      "treatment_update": 56,
+      "additional_interactions": 1048576,
+      "control_successes": 30,
+      "treatment_successes": 40,
+      "control_retained_source_successes": 30,
+      "treatment_retained_source_successes": 38,
+      "control_per_scene": {
+        "S01": 8,
+        "S02": 2,
+        "S03": 0,
+        "D01": 8,
+        "D02": 8,
+        "D03": 4
+      },
+      "treatment_per_scene": {
+        "S01": 8,
+        "S02": 8,
+        "S03": 0,
+        "D01": 8,
+        "D02": 8,
+        "D03": 8
+      },
+      "control_events": {
+        "SUCCESS": 30,
+        "COLLISION": 3,
+        "TIMEOUT": 15
+      },
+      "treatment_events": {
+        "SUCCESS": 40,
+        "TIMEOUT": 8
+      },
+      "treatment_only_success_cases": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "2"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "3"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "4"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "5"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "6"
+        ],
+        [
+          "S02",
+          "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+          "1000001",
+          "7"
+        ]
+      ],
+      "control_only_success_cases": [],
+      "treatment_lost_source_cases": [],
+      "treatment_new_source_cases": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "2"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "5"
+        ]
+      ],
+      "pilot_gate": false
     }
   ],
-  "training_update_seconds": 1381.1549989619816,
+  "training_update_seconds": 1768.1919058779604,
   "limits": "Changing horizon also changes batch size and optimizer update frequency. Judge the actual final check against the registered pilot gate; intermediate improvements do not establish scratch convergence or formal stability."
 }
