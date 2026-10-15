@@ -1491,3 +1491,25 @@ Only the test fixture changes. Existing PPO/APG/SHAC tests all pass in62.25s, in
 encoder parameter changes and exact checkpoint/inference recovery. The original24
 passing regression cases and7 new estimator checks are not rerun after this fixture-only
 change. Evidence is lidar-fixture-diagnostic.json; the production sensor is untouched.
+
+### Complete-return pilot finished: late improvement, registered gate failed
+
+All8updates completed, process exit0. u180=145/150 with S03=21,D03=24, four
+timeouts and one collision; u184=148/150 with S03=D02=24, two collisions. Retention
+is145/150 and148/150. The completed control is150/150 then124/150. At u184 the
+candidate recovers all26 control losses while creating2 new losses; at u180 it
+creates5 losses. Therefore the registered both-check gate fails, despite the late
+paired improvement. Do not extend to28updates, promote a recipe, or run final tests
+on the strength of final recovery. The optional mechanism remains default false as
+a reproducible experiment with a measured late benefit, not a stable accepted recipe.
+
+Actual costs:262144prefix +200301active tails =462445interactions;668672allocated
+tail slots. Eight nonzero Actor deltas0.50891-0.56725; no KL skips or incomplete tails.
+Update wall364.594s; complete execution excluding setup498.817s; setup114.672s.
+Actual final learner/Actor is results/fixed_scenes_parallel/depth_ppo_s0_mc_tail_pilot/
+model_000184. Native report,8 metrics rows and two new episode tables were copied once
+to artifacts/verification/ppo-stability-20261015/mc-tail with comparison.json.
+Single sampled tail/value RMSE contains return variance and is not a calibrated
+conditional-value bias. No new unique root cause is established. The matrix remains
+14/18; all four PPO Navigation cells still need three-seed stable scratch evidence.
+No candidate process is active; a next intervention has not yet been registered.

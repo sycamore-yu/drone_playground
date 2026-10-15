@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed_pilot_failed",
   "problem": "Parallel fixed-scene Depth reaches150/150 at u176 but first loses26 cases at u184. Lower LR, longer rollouts, entropy removal and frozen block exchanges did not satisfy their own registered gates. Existing u64 training probes show much of the S03 target still depends on terminal Critic bootstrap.",
   "counterevidence": "Old procedural eight-state calibration found h512/lambda1 targets already close to complete returns (mean absolute state biases0.0482/0.00212), yet its training still regressed. High bootstrap fraction is not itself bias; current parallel-source bias has not been established.",
   "hypothesis": "Replacing the remaining terminal-value prediction by a sampled complete continuation may reduce harmful target error in the current fixed-scene condition. It also adds sampling variance; this is a sufficient-repair test, not a claim of a unique root cause.",
@@ -68,5 +68,75 @@
     "tail_allocated_slots": 82496,
     "unfinished": 0,
     "update_seconds": 97.94875179399969
-  }
+  },
+  "final_result": {
+    "status": "completed_pilot_failed",
+    "runtime_provenance": {
+      "source_sha256": "262f99250c21f6a4539c74647300885a1f845838cead2c752833faf9a472bd35",
+      "git_commit": "8675f29c6538cea18e355682eb7e307bdec88cfa"
+    },
+    "checks": [
+      {
+        "update": 180,
+        "candidate_successes": 145,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 21,
+          "D01": 25,
+          "D02": 25,
+          "D03": 24
+        },
+        "retained_initial_successes": 145,
+        "events": {
+          "SUCCESS": 145,
+          "TIMEOUT": 4,
+          "COLLISION": 1
+        },
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 5,
+        "passed": false
+      },
+      {
+        "update": 184,
+        "candidate_successes": 148,
+        "control_successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 24,
+          "D01": 25,
+          "D02": 24,
+          "D03": 25
+        },
+        "retained_initial_successes": 148,
+        "events": {
+          "SUCCESS": 148,
+          "COLLISION": 2
+        },
+        "recovered_control_losses": 26,
+        "new_losses_relative_to_control": 2,
+        "passed": true
+      }
+    ],
+    "prefix_interactions": 262144,
+    "tail_interactions": 200301,
+    "actual_additional_interactions": 462445,
+    "tail_allocated_slots": 668672,
+    "training_update_seconds": 364.5937408200116,
+    "total_wall_seconds_excluding_setup": 498.8174981169868,
+    "setup_seconds": 114.67179623400443,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_mc_tail_pilot/model_000184",
+    "updates": 8,
+    "actor_parameter_delta_norm_range": [
+      0.5089095234870911,
+      0.5672545433044434
+    ],
+    "all_tails_complete": true,
+    "kl_skipped_updates": 0.0,
+    "interpretation": "Complete returns improve final u184 versus control but fail u180. This rejects sufficiency at the registered pilot budget; no unique root cause, stable-window or scratch-convergence claim. Single sampled tail versus value RMSE includes stochastic variance and is not expected-value bias.",
+    "decision": "Do not extend or promote this candidate based on its final recovery. Preserve the opt-in experiment and all results with default false; no final recipe or independent final test is selected."
+  },
+  "process_exit_code": 0
 }
