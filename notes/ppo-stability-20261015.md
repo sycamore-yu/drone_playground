@@ -546,3 +546,30 @@ Tracking runs and these three frozen Racing PPO runs. `acceptance-current` repor
 cross-algorithm Actor comparison remains unavailable until the other Racing
 algorithms supply complete selected evidence. No collector gate was relaxed.
 SHAC p1/f0 seeds1/2 are now running with seed/output-only changes from seed0.
+
+## User clarification: reuse scratch evidence and allow different rewards
+
+The user explicitly resumed the goal and clarified that reproducible scratch convergence
+need not be repeated under the current source revision. Algorithms may use different
+training rewards provided the task goal remains the same. The current three-full-check
+protocol and the PPO Navigation stability window remain in force.
+
+The collector now reports per-algorithm acceptance independently of the cross-algorithm
+configuration comparison, and can reuse explicitly selected prior verification reports.
+It compares saved configuration, run record and frozen-run selection before reuse; it
+does not repeat episode audits, policy reads or hashing. The targeted collector suite
+passed38 tests. Initial pytest autoload picked up an unrelated ROS plugin with missing
+lark; disabling plugin autoload ran the existing suite without installing dependencies.
+
+The reused matrix passes7/18 cells: Tracking all3, Racing PPO/APG, and Depth APG static
+and dynamic. Its18 selected runs reuse previous full verification. Depth APG uses the
+historical scratch_depth_apg_s0/1/2 cohort already audited in results/acceptance/scratch.json;
+no v1 runtime loader was restored. Historical SHAC/LiDAR successes remain recorded; their
+single-full-check or incomplete consecutive-check evidence still needs the precise gap
+filled before promotion under this protocol. No new training was launched for matrix reuse.
+
+The redundant Racing APG h128/lr.0001 p1/f0 process received SIGINT and saved its full
+recovery checkpoint with status interrupted. Its old three-seed p0/f0 evidence suffices
+for Racing BPTT acceptance. Existing SHAC p1/f0 seed1/2 runs remain active because that
+cohort still lacks three consecutive full checks. The h512/lambda.95 Depth continuation
+finished at4/48; h512/lambda1 had28/48 at308 and was still finishing its bounded window.

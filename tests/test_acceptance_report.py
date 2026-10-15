@@ -2,6 +2,7 @@
 
 import csv
 import hashlib
+import importlib.util
 import json
 import subprocess
 import sys
@@ -83,6 +84,7 @@ def make_run(
     seed=0,
     passes=(True, True, True),
     fixed_checkpoint_seeds=False,
+    reward_shaping=None,
 ):
     """Provide make run for the surrounding execution."""
     path = root / name
@@ -107,6 +109,8 @@ def make_run(
             "selection": "last_of_first_three_consecutive_passes",
         },
     }
+    if reward_shaping is not None:
+        config["task"]["options"] = {"reward_shaping": reward_shaping}
     if fixed_checkpoint_seeds:
         config["benchmark"] = {"fixed_checkpoint_seeds": True}
     (path / "config.yaml").write_text(yaml.safe_dump(config))
@@ -374,6 +378,65 @@ def test_algorithm_comparison_rejects_different_actor_information(tmp_path):
     completed, report = run_collector(tmp_path, runs)
     assert completed.returncode == 0, completed.stderr
     assert report["common_actor_checks"]["tracking/state"]["passed"] is False
+
+
+def test_different_training_rewards_preserve_individual_task_acceptance(tmp_path):
+    """Task success remains comparable when each algorithm uses its own shaping."""
+    runs = [
+        make_run(
+            tmp_path,
+            f"{algorithm}-{seed}",
+            task="racing",
+            algorithm=algorithm,
+            seed=seed,
+            reward_shaping={"progress_reward_scale": scale},
+        )
+        for algorithm, scale in (("ppo", 1), ("apg", 0), ("shac", 2))
+        for seed in range(3)
+    ]
+    completed, report = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    assert report["summary"] == {"missing": 15, "passed": 3}
+    assert report["common_actor_checks"]["racing/state"]["passed"] is False
+
+
+@pytest.mark.parametrize("changed", [None, "config", "run", "benchmark"])
+def test_verified_evidence_reuse_avoids_raw_audit_and_rejects_changed_inputs(
+    tmp_path, monkeypatch, changed
+):
+    """Reuse valid verification without reading policies/episodes or hashing them again."""
+    runs = [make_run(tmp_path, f"ppo-{seed}", seed=seed) for seed in range(3)]
+    completed, _ = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    manifest = {
+        "runs": [str(p) for p in runs],
+        "reuse_reports": {str(p): str(tmp_path / "report.json") for p in runs},
+    }
+    if changed in {"config", "run"}:
+        path = runs[0] / ("config.yaml" if changed == "config" else "run.json")
+        value = yaml.safe_load(path.read_text())
+        value["seed" if changed == "config" else "updates"] = 123
+        path.write_text(yaml.safe_dump(value) if changed == "config" else json.dumps(value))
+    elif changed == "benchmark":
+        manifest["benchmark_runs"] = {str(runs[0]): str(tmp_path / "another-benchmark")}
+    manifest_path = tmp_path / "reuse.json"
+    write_json(manifest_path, manifest)
+    spec = importlib.util.spec_from_file_location("acceptance_reuse_test", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Reused evidence must not trigger fresh artifact audits or hashes")
+
+    monkeypatch.setattr(module, "collect_run", unexpected)
+    monkeypatch.setattr(module, "digest", unexpected)
+    if changed:
+        with pytest.raises(ValueError, match="changed after verification"):
+            module.collect(manifest_path)
+    else:
+        report = module.collect(manifest_path)
+        assert report["summary"] == {"passed": 1, "missing": 17}
+        assert all(r["reused_evidence"]["report"] for r in report["runs"])
 
 
 @pytest.mark.parametrize("damage", [None, "payload", "checkpoint", "observation", "cohort"])

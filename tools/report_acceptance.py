@@ -808,7 +808,45 @@ def collect(manifest_path):
     benchmarks = {resolve_path(k, root): resolve_path(v, root) for k, v in benchmark_runs.items()}
     if len(benchmarks) != len(benchmark_runs) or set(benchmarks) - set(paths):
         raise ValueError("benchmark_runs contains duplicate or unselected training paths")
-    runs = [collect_run(path, root, benchmark_run=benchmarks.get(path)) for path in paths]
+    reuse = manifest.get("reuse_reports", {})
+    if not isinstance(reuse, dict) or any(
+        not isinstance(k, str) or not isinstance(v, str) or not k or not v for k, v in reuse.items()
+    ):
+        raise ValueError("reuse_reports must map selected runs to previously verified reports")
+    reuse = {resolve_path(k, root): resolve_path(v, root) for k, v in reuse.items()}
+    if set(reuse) - set(paths):
+        raise ValueError("reuse_reports contains an unselected run")
+    snapshots = {p: json.loads(p.read_text()) for p in set(reuse.values())}
+    runs = []
+    for path in paths:
+        if path not in reuse:
+            runs.append(collect_run(path, root, benchmark_run=benchmarks.get(path)))
+            continue
+        snapshot = snapshots[reuse[path]]
+        run = next((r for r in snapshot["runs"] if r["path"] == str(path)), None)
+        if run is None:
+            raise ValueError(f"No verified evidence for {path} in {reuse[path]}")
+        if run["config"] != yaml.safe_load((path / "config.yaml").read_text()) or run[
+            "run_record"
+        ] != json.loads((path / "run.json").read_text()):
+            raise ValueError(
+                f"Saved configuration or run record changed after verification: {path}"
+            )
+        old_benchmarks = {
+            resolve_path(k, Path(snapshot["resolved_root"])): resolve_path(
+                v, Path(snapshot["resolved_root"])
+            )
+            for k, v in snapshot["manifest"].get("benchmark_runs", {}).items()
+        }
+        if old_benchmarks.get(path) != benchmarks.get(path):
+            raise ValueError(f"Frozen benchmark selection changed after verification: {path}")
+        run["reused_evidence"] = {
+            "report": str(reuse[path]),
+            "verified_utc": snapshot["generated_utc"],
+            "scope": "Reuse recorded episode, selection and model-integrity checks; "
+            "configuration and run record remain unchanged. No repeated payload/CSV audit.",
+        }
+        runs.append(run)
     indexed = {}
     for run in runs:
         if run["identity"]["passed"] is not True:
@@ -846,7 +884,8 @@ def collect(manifest_path):
                 for seed, run in zip(seeds, selected, strict=True)
             }
             statuses = [value["status"] for value in values.values()]
-            comparison = combine([same_recipe, actors[f"{task}/{sensor}"]])["passed"]
+            # Task success is graded per algorithm; cross-algorithm differences are disclosed.
+            comparison = same_recipe["passed"]
             status = (
                 "failed"
                 if "failed" in statuses or comparison is False
@@ -877,13 +916,16 @@ def collect(manifest_path):
         "generated_utc": datetime.now(UTC).isoformat(),
         "manifest_path": str(manifest_path),
         "manifest": manifest,
-        "manifest_sha256": digest(manifest_path),
+        "manifest_sha256": None if reuse else digest(manifest_path),
         "resolved_root": str(root),
         "all_passed": all(cell["status"] == "passed" for cell in cells),
         "summary": dict(Counter(cell["status"] for cell in cells)),
         "cells": cells,
         "runs": runs,
         "common_actor_checks": actors,
+        "comparison_scope": "Each algorithm is accepted against the task's success criteria. "
+        "Cross-algorithm Actor/configuration equality is reported separately; different "
+        "training rewards are allowed and do not invalidate individual convergence.",
         "shared_initialization_costs": shared,
         "physics_task_contract": {
             "required": {
