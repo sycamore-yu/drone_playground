@@ -512,13 +512,18 @@ also set `results.keep_best_screening=true` to retain the best incomplete
 screening checkpoint in addition to the most recent resumable states. Selection
 still requires a passing full validation; a good screening score alone is not
 accepted as a model or frozen benchmark result.
-Training can set `benchmark.frozen_seed_base=3000000` to reserve a new final-test
+Training can set `++benchmark.frozen_seed_base=3000000` to reserve a new final-test
 cohort without changing checkpoint-validation seeds. It must be an integer of
-at least 2,000,000; null preserves the historical default. If a frozen-test failure
+at least 2,000,000; omitting it preserves archived configuration fields and the historical default.
+If a frozen-test failure
 informs another recipe, reserve a new cohort before that next final test.
 With Orbax, ordinary periodic checkpoints save resumable state without exporting
 an inference Actor. This lets retention prune unselected checkpoints while
 keeping the best screening checkpoint and any accepted Actor.
+Retention removes only old `training/` arrays. Per-episode CSVs, reports, traces
+and metadata remain available after a recovery state is pruned; a model folder
+alone therefore does not imply that it can resume training. Recovery requires
+its `training/commit_success.txt` marker.
 
 The old `start_sampling=collision_free` mixture places 35% of starts near the
 goal and draws the rest uniformly along the course. It covers nominal

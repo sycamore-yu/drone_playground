@@ -184,7 +184,7 @@ def test_frozen_cohort_rejects_invalid_or_validation_seed_before_training(
     config, training, seed_base
 ):
     """Reject a bad holdout declaration before spending the training budget."""
-    config.benchmark.frozen_seed_base = seed_base
+    OmegaConf.update(config, "benchmark.frozen_seed_base", seed_base, force_add=True)
     with pytest.raises(ValueError, match="frozen_seed_base"):
         cli.train(config, training.record)
     assert not training.evaluations and training.now == 0

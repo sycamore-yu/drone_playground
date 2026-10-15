@@ -22,6 +22,16 @@
       "test": "test_environment.py test_learning.py -k event_priority_and_termination or bootstrap_uses_final_observation or shac_terminal_value_state_gradient",
       "result": "5 passed, 64 deselected",
       "seconds": 49.36
+    },
+    {
+      "test": "test_cli.py -k frozen_cohort or resume_preserves_c5_selection or three_stage_screening_only (opt-in field, final implementation)",
+      "result": "6 passed, 61 deselected",
+      "seconds": 3.99
+    },
+    {
+      "test": "test_orbax_results.py test_progress_checkpoint_retention.py test_checkpoint_procedural.py",
+      "result": "9 passed",
+      "seconds": 10.53
     }
   ],
   "legacy_checkpoint_replay": {

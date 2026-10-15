@@ -130,3 +130,57 @@ Run independent Depth/LiDAR pilots through the existing CLI and treat every
 automatic pilot validation/benchmark as development information. This joint
 intervention cannot identify which individual objective change is responsible
 for any improvement; component ablations require a positive result first.
+
+The goal-reward Depth pilot still lost its early D03 success: u720 had 4/8,
+u960 had 0/8. This rejects an early claim that reward ordering alone solved
+the collapse. Both 16-world controls continue. The next matched scratch
+comparison uses 64 worlds with the same horizon, optimizer settings and
+interaction budget; checkpoint/evaluation update intervals are divided by
+four. This changes batch size and the number of optimizer steps per interaction,
+so any benefit cannot be uniquely attributed to scene diversity.
+
+## Existing matrix evidence and Racing comparison
+
+The existing C1-C6 collector rechecked all three Tracking families from
+scratch_v02 (PPO variant 0, APG/SHAC variant 1). All nine seed runs pass;
+the partial manifest reports 3 passed cells, 14 missing, 1 incomplete.
+Historical Racing/APG has three passing seeds but lacked the other two
+algorithms' matching evidence in that manifest. It also used different rewards:
+old APG progress 0/failure 0, convergent PPO progress 1/failure 0, convergent
+SHAC progress 2/failure 40. New Racing comparisons use the last common task
+reward, with explicit source configs and algorithm-specific optimizer settings.
+
+The shared-reward PPO seed 0 was stopped cleanly at u2907 after five consecutive
+100-episode evaluations with no success and zero passed gates. Its complete
+state remains in results/racing_common_reward/ppo_s0/checkpoints/latest.training.zip.
+This is adaptive diagnostic pruning, not a statement that PPO cannot converge.
+The shared-reward SHAC seed 0 passed full checks at u600/700/800, then passed
+100/100 in the automatic historical benchmark. That cohort was already used
+for development. The untouched u800 model separately passed a new 100-episode
+benchmark at seed base 3,000,000; trajectories and configuration are under
+results/frozen_racing_common_reward/shac_s0. The other two SHAC seeds and the
+other algorithms remain unverified for this common recipe.
+
+Frozen deterministic Racing replay from eight identical initial states found
+the u2900 PPO policy timed out with zero gates while the u700 SHAC policy
+completed all five gates. Under the actual gamma .99, realized returns were
+about .51--.64 versus 2.82--2.95. Thus these trajectories do not exhibit the
+Navigation reward-order inversion. Raw states/actions/rewards and hashes are
+in racing-return-comparison under the verification directory. Timeout sums
+omit the critic bootstrap term and are not expected stochastic policy returns.
+
+The CLI now accepts an explicit benchmark.frozen_seed_base without changing
+validation seeds. Keep this opt-in: inserting a null default into archived
+resolved configs would break exact config identity on continuation. The six
+targeted CLI checks passed for the final opt-in implementation (3.99 s).
+
+The original Orbax retention removed entire model directories, including
+episode CSVs. Early pilot case data has therefore been lost; aggregate console
+counts must not be presented as reconstructed individual trajectories. All 41
+remaining small evidence files were snapshotted with hashes before stopping
+the four owned pilots, and all four exited cleanly with complete recovery
+states. The retention fix removes only training arrays, preserving metadata,
+reports and episode evidence. Array-bearing checkpoint eligibility and selected
+actor/best-model retention rules remain unchanged. This does not change the
+training objective or the comparison settings. Resume the exact saved states
+after the targeted retention checks pass.

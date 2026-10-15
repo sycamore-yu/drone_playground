@@ -2,7 +2,6 @@ episodes: null
 protocol: ${method.protocol}
 allow_environment_change: false
 seed_base: null
-frozen_seed_base: null
 scenes: null
 record_replay: false
 record_trajectories: false

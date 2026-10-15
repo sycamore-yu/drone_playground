@@ -76,7 +76,7 @@ def test_retention_honours_safe_progress_peak_even_when_all_screens_are_zero(tmp
         kind="state",
         actor_spec={"kind": "state"},
     )
-    retained = sorted(path.name for path in root.glob("model_*"))
+    retained = sorted(path.parent.name for path in root.glob("model_*/training"))
     assert retained == ["model_000100", "model_000500", "model_000600"]
 
 
@@ -113,7 +113,7 @@ def test_original_retention_does_not_keep_progress_only_checkpoint(tmp_path, mon
         kind="state",
         actor_spec={"kind": "state"},
     )
-    retained = sorted(path.name for path in root.glob("model_*"))
+    retained = sorted(path.parent.name for path in root.glob("model_*/training"))
     assert retained == ["model_000500", "model_000600"]
 
 
@@ -154,7 +154,7 @@ def test_retention_keeps_best_training_completion_separately_from_fixed_scene_sc
         kind="state",
         actor_spec={"kind": "state"},
     )
-    assert sorted(path.name for path in root.glob("model_*")) == [
+    assert sorted(path.parent.name for path in root.glob("model_*/training")) == [
         "model_000100",  # Best procedural arrival rate: 6/8.
         "model_000300",  # Latest completed fixed-scene score tie.
         "model_000400",  # Latest recovery state.

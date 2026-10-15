@@ -239,7 +239,8 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
                 )
     for candidate in candidates:
         if candidate not in keep:
-            shutil.rmtree(candidate)
+            # Evaluation history must survive the rolling learner-state window.
+            shutil.rmtree(candidate / "training")
     return directory
 
 

@@ -1,0 +1,358 @@
+{
+  "scope": "paired deterministic frozen-policy returns; diagnostic cases, not acceptance",
+  "config": {
+    "task": {
+      "name": "racing",
+      "reference": "circuit",
+      "duration": 60.0,
+      "reference_seed": 0,
+      "options": {
+        "reward_shaping": {
+          "task_weight": 1.0,
+          "progress_reward_scale": 2.0,
+          "failure_cost": 40.0
+        }
+      }
+    },
+    "scene": {
+      "name": "racing"
+    },
+    "sensor": {
+      "name": "state",
+      "config": {},
+      "point_count": 1024
+    },
+    "controller": {
+      "_target_": "drone_playground.simulation.controllers.MellingerController",
+      "drone": "cf21B_500",
+      "frequency": 50,
+      "yaw": 0.0
+    },
+    "method": {
+      "name": "policy",
+      "protocol": "learning",
+      "implementation": {
+        "_target_": "drone_playground.simulation.methods.PolicyMethod"
+      },
+      "action": {
+        "level": "attitude_thrust",
+        "heading": "fixed"
+      },
+      "actor": {
+        "_target_": "drone_playground.simulation.networks.Actor",
+        "kind": "state",
+        "hidden_size": 192
+      }
+    },
+    "learning": {
+      "algorithm": "shac",
+      "loss": null,
+      "backward_model": null,
+      "backward_options": {},
+      "options": {
+        "horizon": 128,
+        "lr": 8.125e-05,
+        "critic_lr": 0.0003,
+        "gamma": 0.99,
+        "gae_lambda": 0.95,
+        "ppo_epochs": 4,
+        "minibatches": 4,
+        "critic_epochs": 2,
+        "clip_epsilon": 0.2,
+        "entropy_weight": 0.0,
+        "max_grad_norm": 1.0,
+        "target_alpha": 0.95,
+        "temporal_gradient_alpha": 0.0,
+        "initial_log_std": -1.5,
+        "weight_decay": 0.0,
+        "task_weight": 1.0,
+        "perception_weight": 1.0,
+        "velocity_aux_weight": 0.0,
+        "perception_loss": {},
+        "progress_reward_scale": 2.0,
+        "failure_cost": 40.0,
+        "bootstrap_weight": 0.2,
+        "report_terminal_critic_grad": false
+      },
+      "checkpoint_interval": 50,
+      "evaluation_interval": 100,
+      "log_interval": 10,
+      "required_consecutive_passes": 3,
+      "selection": "last_of_first_three_consecutive_passes",
+      "max_interactions": 67108864
+    },
+    "benchmark": {
+      "episodes": null,
+      "protocol": "learning",
+      "allow_environment_change": false,
+      "seed_base": null,
+      "scenes": null,
+      "record_replay": false,
+      "record_trajectories": false,
+      "primary_scenes": {
+        "static": [
+          "S01",
+          "S02",
+          "S03"
+        ],
+        "dynamic": [
+          "D01",
+          "D02",
+          "D03"
+        ]
+      },
+      "replay_episodes": 2,
+      "chunk_steps": 25,
+      "fixed_checkpoint_seeds": true
+    },
+    "mode": "train",
+    "seed": 0,
+    "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/shac_s0",
+    "simulation": {
+      "navigation_goal_observation": false,
+      "device": "gpu",
+      "dynamics": "first_principles",
+      "drone": "cf21B_500",
+      "physics_hz": 500,
+      "method_hz": 50,
+      "num_envs": 256,
+      "action_delay_s": 0.0,
+      "randomization": {},
+      "disturbance": {}
+    },
+    "observation": {
+      "depth": {}
+    },
+    "checkpoint": null,
+    "initial_checkpoint": null,
+    "resume": null,
+    "results": {
+      "format": "legacy",
+      "keep_checkpoints": 3,
+      "keep_best_screening": false
+    },
+    "early_stopping": {
+      "min_updates": 800,
+      "patience": 6,
+      "min_delta": 0.02
+    },
+    "replay_path": null,
+    "screening": {
+      "probe_between_full": false,
+      "training_distribution_probe": false,
+      "full_every": 3
+    }
+  },
+  "results": [
+    {
+      "policy": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002900/policy.zip",
+      "policy_sha256": "fea7b7bfe965dc44349922aa9c14bf639e3a7f377d0369d89ec7ddbf09ddcdb6",
+      "initial_state_sha256": "d13dceea8617340a41f20a8e37575f38a1359c3b212b61432785ca460cce5ed3",
+      "seed": 1100000,
+      "raw_sha256": "a8c3f8057591869785864a0fd660c21206e7cd7baab3851ecf1336d3e0e5bc06",
+      "episodes": [
+        {
+          "world": 0,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.6176074401981334,
+            "0.995": -0.6086829867650769,
+            "0.999": -17.79570629495556,
+            "1.0": -104.00422686402453
+          }
+        },
+        {
+          "world": 1,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.5057503387766564,
+            "0.995": -0.7769427992971979,
+            "0.999": -18.046845641684683,
+            "1.0": -104.52318990777712
+          }
+        },
+        {
+          "world": 2,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.6395837064328344,
+            "0.995": -0.5916683906329914,
+            "0.999": -17.60263104491781,
+            "1.0": -103.33822471331223
+          }
+        },
+        {
+          "world": 3,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.5430885632654537,
+            "0.995": -0.7193034525301301,
+            "0.999": -17.901806579235362,
+            "1.0": -103.67038563426468
+          }
+        },
+        {
+          "world": 4,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.530275830808341,
+            "0.995": -0.7092058894876959,
+            "0.999": -17.759992887370192,
+            "1.0": -103.67321670491947
+          }
+        },
+        {
+          "world": 5,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.5078230580136318,
+            "0.995": -0.7943464689335266,
+            "0.999": -18.220338900934543,
+            "1.0": -105.12353346380405
+          }
+        },
+        {
+          "world": 6,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.5837940230761911,
+            "0.995": -0.6940527851078946,
+            "0.999": -17.894676968622885,
+            "1.0": -104.23057169327512
+          }
+        },
+        {
+          "world": 7,
+          "event": "TIMEOUT",
+          "seconds": 60.000003814697266,
+          "gates": 0,
+          "returns": {
+            "0.99": 0.6006580735609722,
+            "0.995": -0.6258425829791514,
+            "0.999": -17.75716085007022,
+            "1.0": -103.79909541946836
+          }
+        }
+      ]
+    },
+    {
+      "policy": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/shac_s0/checkpoints/step-000700/policy.zip",
+      "policy_sha256": "f67fabde843f7d297504b5205456b2ed6f9fa57ccd6865e7750d98673f29fb24",
+      "initial_state_sha256": "d13dceea8617340a41f20a8e37575f38a1359c3b212b61432785ca460cce5ed3",
+      "seed": 1100000,
+      "raw_sha256": "6658dcc655f9378be09fe5f12fefebb11f861196439e919038d77f6bab71c94a",
+      "episodes": [
+        {
+          "world": 0,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.9124489815202725,
+            "0.995": 8.525371946922554,
+            "0.999": 37.57457844614452,
+            "1.0": 67.55006146905362
+          }
+        },
+        {
+          "world": 1,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.8420278302000117,
+            "0.995": 8.408606920808692,
+            "0.999": 37.39079068718861,
+            "1.0": 67.34141632041428
+          }
+        },
+        {
+          "world": 2,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.9483737310156575,
+            "0.995": 8.566984060897994,
+            "0.999": 37.629610287999625,
+            "1.0": 67.61145113664679
+          }
+        },
+        {
+          "world": 3,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.865709417106715,
+            "0.995": 8.469962884375537,
+            "0.999": 37.50986047147828,
+            "1.0": 67.48243371446733
+          }
+        },
+        {
+          "world": 4,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.817818225450789,
+            "0.995": 8.421464578444976,
+            "0.999": 37.46467788186352,
+            "1.0": 67.43955820222618
+          }
+        },
+        {
+          "world": 5,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.853001368514093,
+            "0.995": 8.417527820392422,
+            "0.999": 37.39247556333519,
+            "1.0": 67.33825108443853
+          }
+        },
+        {
+          "world": 6,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.913540088163055,
+            "0.995": 8.497526074456824,
+            "0.999": 37.47357585293868,
+            "1.0": 67.40804098529043
+          }
+        },
+        {
+          "world": 7,
+          "event": "SUCCESS",
+          "seconds": 21.874000549316406,
+          "gates": 5,
+          "returns": {
+            "0.99": 2.880212729141209,
+            "0.995": 8.489269546739816,
+            "0.999": 37.53382819999998,
+            "1.0": 67.5076252251456
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import struct as binary
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 from flax import struct
 from omegaconf import OmegaConf
 from tensorboardX.proto.event_pb2 import Event
@@ -113,7 +114,7 @@ def test_tensorboard_records_do_not_duplicate_jsonl_metrics(tmp_path):
 
 
 def test_orbax_retains_last_three_plus_selected_actor(tmp_path):
-    """Bound sensor/optimizer snapshot growth without deleting a selected model."""
+    """Bound state growth while retaining selected actors and all episode evidence."""
     config = {
         "experiment": {"results": {"keep_checkpoints": 3}},
         "learning": {},
@@ -125,9 +126,11 @@ def test_orbax_retains_last_three_plus_selected_actor(tmp_path):
         rng=jax.random.key(5),
         updates=0,
     )
+    evidence = {}
     for update in (25, 50, 75, 100, 125):
+        directory = tmp_path / f"model_{update:06d}"
         save_model(
-            tmp_path / f"model_{update:06d}",
+            directory,
             base.replace(updates=update),
             config=config,
             provenance={"updates": update},
@@ -135,12 +138,19 @@ def test_orbax_retains_last_three_plus_selected_actor(tmp_path):
             actor_spec=actor.specification,
             export_policy=update == 25,
         )
-    assert sorted(path.name for path in tmp_path.glob("model_*")) == [
+        evidence[directory / "episodes.csv"] = f"episode,event\n{update},COLLISION\n"
+        (directory / "episodes.csv").write_text(evidence[directory / "episodes.csv"])
+    for path, contents in evidence.items():
+        assert path.read_text() == contents
+        assert (path.parent / "metadata.json").exists()
+    assert sorted(path.parent.name for path in tmp_path.glob("model_*/training")) == [
         "model_000025",
         "model_000075",
         "model_000100",
         "model_000125",
     ]
+    with pytest.raises(ValueError, match="no training payload"):
+        load_model_state(tmp_path / "model_000050", base)
 
 
 def test_orbax_optionally_retains_best_incomplete_screening_checkpoint(tmp_path):
@@ -175,11 +185,12 @@ def test_orbax_optionally_retains_best_incomplete_screening_checkpoint(tmp_path)
                 }
             )
         )
-    assert sorted(path.name for path in tmp_path.glob("model_*")) == [
+    assert sorted(path.parent.name for path in tmp_path.glob("model_*/training")) == [
         "model_000020",
         "model_000040",
         "model_000050",
     ]
+    assert len(list(tmp_path.glob("model_*/screening/report.json"))) == 5
 
 
 def test_legacy_run_keeps_old_log_contract(tmp_path):
