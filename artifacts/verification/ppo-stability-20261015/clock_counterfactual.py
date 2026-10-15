@@ -7,10 +7,12 @@ from pathlib import Path
 
 import jax.numpy as jnp
 import numpy as np
+import orbax.checkpoint as ocp
 from omegaconf import OmegaConf
 
 from drone_playground.simulation.evaluation import evaluate
-from drone_playground.simulation.policy import load_policy
+from drone_playground.simulation.networks import Actor
+from drone_playground.simulation.policy import read_checkpoint
 from drone_playground.simulation.records import atomic_json
 
 
@@ -49,7 +51,10 @@ def main():
     scenes = ("S01", "D01")
     expected = {tuple(row[:4]): row[-1] for row in control["case_events"] if row[0] in scenes}
     assert len(expected) == 16 and set(expected.values()) == {"TIMEOUT"}
-    actor, parameters, metadata = load_policy(source)
+    _, metadata = read_checkpoint(source, "training")
+    with ocp.StandardCheckpointer() as checkpointer:
+        parameters = checkpointer.restore(source / "training")["params"]
+    actor = Actor(**metadata["actor"])
     config = OmegaConf.create(metadata["config"]["experiment"])
     assert config.task.options.finite_horizon and config.task.duration == 300
     assert config.observation.navigation_relative_goal
