@@ -1,0 +1,30 @@
+{
+  "scope": "Development mechanism experiment: PPO with self-generated successful-episode policy cloning, not vanilla PPO, SIL or full CLEAR. No formal acceptance claim.",
+  "hypothesis": "PPO updates on fresh states can overwrite useful behavior on previous training trajectories even while local rollout KL is small. A separate historical-policy KL term may preserve that behavior.",
+  "reference": "https://papers.neurips.cc/paper/8327-experience-replay-for-continual-learning.pdf (policy-cloning term only; no V-trace or value cloning adopted)",
+  "source": "Preserved Depth goal-reaching PPO u300 complete state, 21/48 development successes. No other algorithm weights.",
+  "data": "One new batch of64 train/procedural episodes from the frozen source stochastic policy, initialized with a folded training RNG. The source learner state and RNG remain unchanged. Only successful episodes supply64-step sequences, first32steps burn in the GRU and last32 incur policy KL. Up to4 uniformly sampled windows per successful episode. No evaluation scenes or seeds are used.",
+  "intervention": "Add0.1*mean KL(teacher Gaussian || current Gaussian) on4 sampled historical sequences to each executed actor minibatch gradient before existing global clipping/Adam. Tanh is bijective, so its shared Jacobian cancels in KL. No replay rewards/advantages enter PPO or critic updates.",
+  "controlled_conditions": "Same u300 complete state, unchanged task reward/physics/actor/optimizer/curriculum; deterministic update compilation only, original evaluation numerics. Compare to depth-deterministic-update. Fold replay minibatch RNG without advancing source PPO RNG.",
+  "checks": [
+    "complete frozen-source case replay before learning",
+    "exact source-policy sequence recomputation on retained memory/observations",
+    "zero regularizer at teacher parameters",
+    "zero-weight one-update equality with production PPO",
+    "positive KL and restoring gradient for a perturbed policy",
+    "serialized corpus and source/config hashes plus complete final learner state"
+  ],
+  "diagnostic_budget": {
+    "additional_updates": 180,
+    "additional_training_interactions": 368640,
+    "fixed_case_evaluation_interval_updates": 60,
+    "cases": 48,
+    "collection_cost": "Report actual active interactions, allocated simulation slots and collection wall time separately for the shared corpus; do not conceal it in update counts."
+  },
+  "decision": "At u480 require >=80% of the21 original successes and higher retention than matched deterministic control. Also report new successes, per-scene events and parameter changes. A retained peak alone is insufficient. If useful, integrate a bounded online replay buffer with complete recovery and run scratch3seeds plus formal continuation before claiming stable PPO-family convergence.",
+  "limitations": [
+    "Stored initial GRU state plus32-step burn-in approximates current-policy history; this does not reconstruct the entire episode under updated weights.",
+    "One fixed self-generated corpus is a diagnostic anchor, not a final online replay recipe.",
+    "This tests behavioral policy consolidation, not critic correctness or a unique causal explanation."
+  ]
+}

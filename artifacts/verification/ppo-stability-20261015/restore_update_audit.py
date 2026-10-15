@@ -23,6 +23,8 @@ from ppo_branch_diagnostic import tree_hash  # noqa: E402
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", type=Path, required=True)
 parser.add_argument("--deterministic-update", action="store_true")
+parser.add_argument("--rehearsal", type=Path)
+parser.add_argument("--rehearsal-weight", type=float, default=0.0)
 args = parser.parse_args()
 if args.output.exists():
     raise FileExistsError(args.output)
@@ -54,6 +56,13 @@ if compiler_options:
     )
 state, _ = checkpoint.load_model_state(source, trainer.initialize())
 before_hash = tree_hash(state)
+rehearsal_loss, rehearsal_contract = None, None
+if args.rehearsal is not None:
+    from ppo_rehearsal_diagnostic import install_rehearsal
+
+    rehearsal_loss, rehearsal_contract = install_rehearsal(
+        trainer, state, args.rehearsal, args.rehearsal_weight
+    )
 progress = int(state.interactions) / config.learning.max_interactions
 production, production_metrics = trainer.update(state, sampling_progress=progress)
 jax.block_until_ready(production)
@@ -84,8 +93,7 @@ for name in state.__dataclass_fields__:
 historical = next(
     record
     for line in (root / "depth-batch64-pilot.log").read_text().splitlines()
-    if line.startswith("{")
-    and (record := json.loads(line)).get("update") == int(state.updates) + 1
+    if line.startswith("{") and (record := json.loads(line)).get("update") == int(state.updates) + 1
 )
 metrics = {
     key: {
@@ -101,6 +109,7 @@ result = {
     "source_identity": source_identity(),
     "xla_flags": os.environ.get("XLA_FLAGS", ""),
     "update_compiler_options": compiler_options,
+    "rehearsal": rehearsal_contract,
     "restored_state_sha256": before_hash,
     "production_state_sha256": tree_hash(production),
     "diagnostic_state_sha256": tree_hash(diagnostic),
@@ -110,6 +119,11 @@ result = {
     "metrics": metrics,
     "scope": "One actual update. Does not establish long-run numerical reproducibility.",
 }
+if rehearsal_loss is not None:
+    result["rehearsal_kl"] = {
+        name: float(rehearsal_loss({"params": value.params, "log_std": value.log_std}, state.rng))
+        for name, value in [("before", state), ("after", production)]
+    }
 atomic_json(args.output, result)
 print(json.dumps({key: value for key, value in result.items() if key != "metrics"}), flush=True)
 trainer.env.sim.close()

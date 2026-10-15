@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--refresh-memory", action="store_true")
     parser.add_argument("--clearance-aggregation", choices=("time_average", "minimum"))
     parser.add_argument("--deterministic-update", action="store_true")
+    parser.add_argument("--rehearsal", type=Path)
+    parser.add_argument("--rehearsal-weight", type=float, default=0.1)
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -80,6 +82,13 @@ def main():
     state, _ = checkpoint.load_model_state(args.checkpoint, trainer.initialize())
     origin_update = int(state.updates)
     origin_hash = tree_hash(state)
+    rehearsal_loss, rehearsal_contract = None, None
+    if args.rehearsal is not None:
+        from ppo_rehearsal_diagnostic import install_rehearsal
+
+        rehearsal_loss, rehearsal_contract = install_rehearsal(
+            trainer, state, args.rehearsal, args.rehearsal_weight
+        )
     budget = config.learning.max_interactions
     identity = {
         "checkpoint": str(args.checkpoint),
@@ -95,6 +104,7 @@ def main():
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "arguments": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         "status": "running",
+        "rehearsal": rehearsal_contract,
     }
     atomic_json(args.output / "experiment.json", identity)
     print("restored", origin_update, origin_hash, flush=True)
@@ -150,6 +160,10 @@ def main():
                     **after.optimizer_state,
                     "critic": before.optimizer_state["critic"],
                 },
+            )
+        if rehearsal_loss is not None:
+            metrics["rehearsal_kl_probe"] = rehearsal_loss(
+                {"params": after.params, "log_std": after.log_std}, after.rng
             )
         return after, metrics
 
