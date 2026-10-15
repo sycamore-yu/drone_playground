@@ -780,10 +780,10 @@ def test_invalid_configuration_is_rejected(state_env, config):
 
 @pytest.fixture(scope="module", params=["depth", "lidar"])
 def perception_env(request):
-    # Small LiDAR acquisition keeps this a CPU integration check; camera shape is unchanged.
     """Provide perception env for the surrounding execution."""
+    # Sample sparse rays across the real scan frame; 32-ray frames produced no returns.
     sensor_config = (
-        {"points_per_frame": 32}
+        {"points_per_frame": 20000}
         if request.param == "lidar"
         else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
     )
@@ -795,6 +795,7 @@ def perception_env(request):
         sensor=request.param,
         sensor_config=sensor_config,
         point_count=32,
+        ray_sampling="policy" if request.param == "lidar" else "full",
     )
     return request.param, env
 

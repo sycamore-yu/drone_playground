@@ -1,5 +1,5 @@
 {
-  "status": "registered_before_training",
+  "status": "running",
   "problem": "Parallel fixed-scene Depth reaches150/150 at u176 but first loses26 cases at u184. Lower LR, longer rollouts, entropy removal and frozen block exchanges did not satisfy their own registered gates. Existing u64 training probes show much of the S03 target still depends on terminal Critic bootstrap.",
   "counterevidence": "Old procedural eight-state calibration found h512/lambda1 targets already close to complete returns (mean absolute state biases0.0482/0.00212), yet its training still regressed. High bootstrap fraction is not itself bias; current parallel-source bias has not been established.",
   "hypothesis": "Replacing the remaining terminal-value prediction by a sampled complete continuation may reduce harmful target error in the current fixed-scene condition. It also adds sampling variance; this is a sufficient-repair test, not a claim of a unique root cause.",
@@ -55,6 +55,18 @@
     "new_targeted_tests": "7 passed in22.54s",
     "default_regression": "24 passed,1 failed,34 deselected in217.00s",
     "baseline_reproduction": "Same lidar-ppo point_0 unchanged assertion fails on811eabe in26.24s",
-    "lint": "Ruff passed"
+    "lint": "Ruff passed",
+    "default_regression_followup": "Fixture had zero valid LiDAR points in every step. Preserve20000-ray scan phase and select32rays per frame; all three LiDAR algorithm tests pass in62.25s."
+  },
+  "pid": 2734377,
+  "runner_commit": "8675f29c6538cea18e355682eb7e307bdec88cfa",
+  "first_update": {
+    "all_10_raw_rollout_metrics_exactly_equal": true,
+    "actor_parameter_delta_norm": 0.5089095234870911,
+    "prefix_interactions": 32768,
+    "tail_interactions": 24234,
+    "tail_allocated_slots": 82496,
+    "unfinished": 0,
+    "update_seconds": 97.94875179399969
   }
 }

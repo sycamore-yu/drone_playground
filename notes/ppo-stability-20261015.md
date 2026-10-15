@@ -1478,3 +1478,16 @@ Runner uses existing checkpoint/evaluation/case-quality helpers and inline asser
 for exact first-rollout comparison, finite real updates, tail completion and accounting.
 The design and command live in candidate-configs/depth-parallel-mc-tail-design.json;
 no current candidate GPU execution has yet occurred at registration.
+
+The pilot launched from8675f29, PID2734377. Full-state setup114.672s; actual first
+update97.949s, Actor delta0.50891 and all10 raw rollout statistics exactly match the
+control. Extra tails:24234active transitions/82496allocated slots, all terminate.
+No outcome claim before the full checks. Source provenance comes from native records.
+
+The inherited LiDAR test failure is now isolated: all six Actor observations had zero
+valid points when the test shrank each MID360 scan frame to32rays. Keeping its actual
+20000-ray frame progression and selecting32 policy rays yields21valid points at step6.
+Only the test fixture changes. Existing PPO/APG/SHAC tests all pass in62.25s, including
+encoder parameter changes and exact checkpoint/inference recovery. The original24
+passing regression cases and7 new estimator checks are not rerun after this fixture-only
+change. Evidence is lidar-fixture-diagnostic.json; the production sensor is untouched.
