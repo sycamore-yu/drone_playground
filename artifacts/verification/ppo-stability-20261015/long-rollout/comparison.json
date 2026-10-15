@@ -6,7 +6,7 @@
   "source_interactions": 1572864,
   "initial_successes": 38,
   "status": "running",
-  "last_treatment_update": 54,
+  "last_treatment_update": 55,
   "planned_additional_interactions": 1572864,
   "checks": [
     {
@@ -112,6 +112,6 @@
       "pilot_gate": false
     }
   ],
-  "training_update_seconds": 1014.169371608994,
+  "training_update_seconds": 1381.1549989619816,
   "limits": "Changing horizon also changes batch size and optimizer update frequency. Judge the actual final check against the registered pilot gate; intermediate improvements do not establish scratch convergence or formal stability."
 }

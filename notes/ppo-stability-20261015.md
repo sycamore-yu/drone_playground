@@ -1195,3 +1195,32 @@ Other newly completed screens: altitude-PD u208=24/48 andu224=33/48, retaining6/
 successes; parallel Depth u160=8/48, exclusively S03 success, while the other five
 primary scenes all time out and its first six successes are lost. The continued task
 is joint success and retention, not combining these different checkpoints' best scenes.
+
+### Subsequent LiDAR screens and matched long-rollout training outcomes
+
+LiDAR parallel u32/u48/u64 completed0/10/26 successes out of48, versus the cached
+sequential control12/31/0 at the same interactions. Its first nonempty successful
+set is the ten cases at u48 (D02 eight and D03 two). At u64, only five of those ten
+remain successful, while21 previously unsuccessful cases improve. The scene counts
+are8/8/0/0/3/7 in S01/S02/S03/D01/D02/D03 order; all failures are collisions.
+At u80 it falls to14/48 (0/6/0/8/0/0), with all ten initial successes now lost;
+S03 has eight collisions and the other26 failures are timeouts. The corresponding
+cached sequential control was8/48. Thus a higher total than control is not evidence
+of preserving learned behavior. These are new scheduled screens, not repeated
+acceptance. The registered scratch budget continues.
+
+The first two complete horizon2048 training blocks are now available from the original
+scalar metrics, aligned to524288 interactions each. At treatmentu49--52 andu53--56,
+actual completed episodes are445 and467, with311 and356 successes (69.9% and76.2%).
+Cached controlu49--64 andu65--80 are529 and661, with357 and394 successes (67.5% and59.6%).
+Treatment collisions110/98 and timeouts11/6 compare with control146/199 and2/5.
+The block-mean Critic RMSE against bootstrapped targets is0.9575/0.8730 versus
+0.7289/0.8277; these different evolving policies and targets do not measure true
+return calibration. Counts span all eight scenes and include live episodes carried
+from the fork, so neither per-scene competence nor terminal-target coverage follows
+from these aggregates. The second development screen is still running at this update.
+
+`long-rollout/training-summary.json` preserves the new scalar records and reuses the
+completed control summary. Assertions check update/interactions alignment, outcome
+counts summing to completed episodes, and agreement with logged successes. No model
+loading, replay, acceptance rerun, fresh hash audit or native-code change was needed.
