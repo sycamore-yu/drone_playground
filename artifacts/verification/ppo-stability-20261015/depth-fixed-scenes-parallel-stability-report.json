@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed",
   "passed": false,
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
   "source_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0",
@@ -1089,6 +1089,352 @@
       "lost_initial_cases": [],
       "new_success_cases": [],
       "passed": true
+    },
+    {
+      "update": 184,
+      "additional_interactions": 262144,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000184",
+      "evaluation_seconds": 190.39945627600537,
+      "per_scene_successes": {
+        "S01": 11,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 13
+      },
+      "successes": 124,
+      "initial_successes": 150,
+      "retained_initial_successes": 124,
+      "retention_fraction": 0.8266666666666667,
+      "lost_initial_cases": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "1"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "10"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "11"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "15"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "18"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "19"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "20"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "21"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "23"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "24"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "6"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "0"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "1"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "10"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "13"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "14"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "18"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "19"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "21"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "22"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "23"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "24"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "7"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "8"
+        ],
+        [
+          "S01",
+          "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+          "1500000",
+          "9"
+        ]
+      ],
+      "new_success_cases": [],
+      "passed": false
+    },
+    {
+      "update": 188,
+      "additional_interactions": 393216,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000188",
+      "evaluation_seconds": 55.75816261701402,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "successes": 150,
+      "initial_successes": 150,
+      "retained_initial_successes": 150,
+      "retention_fraction": 1.0,
+      "lost_initial_cases": [],
+      "new_success_cases": [],
+      "passed": true
+    },
+    {
+      "update": 192,
+      "additional_interactions": 524288,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000192",
+      "evaluation_seconds": 44.65626973498729,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "successes": 150,
+      "initial_successes": 150,
+      "retained_initial_successes": 150,
+      "retention_fraction": 1.0,
+      "lost_initial_cases": [],
+      "new_success_cases": [],
+      "passed": true
+    },
+    {
+      "update": 196,
+      "additional_interactions": 655360,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000196",
+      "evaluation_seconds": 42.75377383900923,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 24
+      },
+      "successes": 149,
+      "initial_successes": 150,
+      "retained_initial_successes": 149,
+      "retention_fraction": 0.9933333333333333,
+      "lost_initial_cases": [
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "19"
+        ]
+      ],
+      "new_success_cases": [],
+      "passed": true
+    },
+    {
+      "update": 200,
+      "additional_interactions": 786432,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000200",
+      "evaluation_seconds": 52.33456858599675,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 24,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "successes": 149,
+      "initial_successes": 150,
+      "retained_initial_successes": 149,
+      "retention_fraction": 0.9933333333333333,
+      "lost_initial_cases": [
+        [
+          "S03",
+          "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+          "1500002",
+          "11"
+        ]
+      ],
+      "new_success_cases": [],
+      "passed": true
+    },
+    {
+      "update": 204,
+      "additional_interactions": 917504,
+      "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000204",
+      "evaluation_seconds": 48.21137635302148,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 24,
+        "D03": 18
+      },
+      "successes": 142,
+      "initial_successes": 150,
+      "retained_initial_successes": 142,
+      "retention_fraction": 0.9466666666666667,
+      "lost_initial_cases": [
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1500004",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "13"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "14"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "16"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "24"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "3"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1500005",
+          "7"
+        ]
+      ],
+      "new_success_cases": [],
+      "passed": false
     }
   ],
   "actor_lr_scale": 1.0,
@@ -1096,9 +1442,12 @@
   "diagnostic": false,
   "reference_window": null,
   "scene_switches": [],
-  "training_update_seconds": 439.37850145300035,
+  "training_update_seconds": 1026.3797706990154,
   "setup_seconds": 122.06199642299907,
   "scope": "Actual unchanged PPO continuation; original validation reused, no early stop on failure, no rollback, actual final model retained. Independent final test remains separate.",
-  "last_update": 180,
-  "last_interactions": 5898240
+  "last_update": 204,
+  "last_interactions": 6684672,
+  "actual_additional_interactions": 917504,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000204",
+  "total_wall_seconds": 2583.9942426150083
 }

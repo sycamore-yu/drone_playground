@@ -1,4 +1,4 @@
-"""Measure fixed-scene PPO continuation, optionally with a matched Actor LR change."""
+"""Measure fixed-scene PPO continuation with an optional single-setting diagnostic."""
 
 import argparse
 import copy
@@ -75,14 +75,25 @@ def read_cases(directory):
     return cases, report
 
 
-def continuation_config(config, scale):
-    """Change only Actor LR in both saved configuration representations."""
+def continuation_config(config, scale, disable_entropy=False):
+    """Change Actor LR or remove its entropy bonus in both saved representations."""
     if not math.isfinite(scale) or not 0 < scale <= 1:
         raise ValueError("Actor LR scale must be finite and in (0,1]")
+    if disable_entropy and scale != 1:
+        raise ValueError("Change only one learning setting per matched diagnostic")
     result = copy.deepcopy(config)
     rate = result["learning"]["lr"] * scale
     result["learning"]["lr"] = rate
     result["experiment"]["learning"]["options"]["lr"] = rate
+    if disable_entropy:
+        weight = result["learning"]["entropy_weight"]
+        if (
+            not weight > 0
+            or weight != result["experiment"]["learning"]["options"]["entropy_weight"]
+        ):
+            raise ValueError("Entropy removal requires a consistent positive source coefficient")
+        result["learning"]["entropy_weight"] = 0.0
+        result["experiment"]["learning"]["options"]["entropy_weight"] = 0.0
     return result
 
 
@@ -91,6 +102,7 @@ def reuse_baseline(control, source, provenance):
     if (
         control["status"] != "completed"
         or control.get("actor_lr_scale", 1.0) != 1.0
+        or control.get("diagnostic", False)
         or control["source_checkpoint"] != str(source)
         or control["source_config_sha256_reused"] != provenance["config_sha256"]
         or control["source_sha256_reused"] != provenance["source_sha256"]
@@ -106,7 +118,7 @@ def reuse_baseline(control, source, provenance):
 
 
 def main():
-    """Continue complete learner state with an explicitly recorded optional LR change."""
+    """Continue complete learner state with an explicitly recorded optional intervention."""
     import jax
     import numpy as np
     import optax
@@ -121,13 +133,17 @@ def main():
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--actor-lr-scale", type=float, default=1.0)
+    parser.add_argument("--disable-entropy-bonus", action="store_true")
     parser.add_argument("--reuse-window", type=Path)
     args = parser.parse_args()
     source, output = args.checkpoint.resolve(), args.output.resolve()
     metadata = json.loads((source / "metadata.json").read_text())
-    if args.actor_lr_scale != 1.0 and args.reuse_window is None:
-        raise ValueError("LR diagnostic requires an existing matched control window")
-    metadata["config"] = continuation_config(metadata["config"], args.actor_lr_scale)
+    diagnostic = args.actor_lr_scale != 1.0 or args.disable_entropy_bonus
+    if diagnostic and args.reuse_window is None:
+        raise ValueError("Diagnostic requires an existing matched control window")
+    metadata["config"] = continuation_config(
+        metadata["config"], args.actor_lr_scale, args.disable_entropy_bonus
+    )
     config = OmegaConf.create(metadata["config"]["experiment"])
     original_run = json.loads((source.parents[1] / "run.json").read_text())
     selection = original_run["selection"]
@@ -243,7 +259,9 @@ def main():
         "checks": [],
         "actor_lr_scale": args.actor_lr_scale,
         "actor_lr": config.learning.options.lr,
-        "diagnostic": args.actor_lr_scale != 1.0,
+        "entropy_bonus_disabled": args.disable_entropy_bonus,
+        "entropy_weight": config.learning.options.entropy_weight,
+        "diagnostic": diagnostic,
         "reference_window": str(args.reuse_window.resolve()) if args.reuse_window else None,
         "scene_switches": [],
         "training_update_seconds": 0.0,
@@ -256,6 +274,12 @@ def main():
         result["scope"] = (
             "Matched Actor-LR continuation diagnostic; all other learning settings and "
             "complete source state are retained. This is not unchanged-recipe acceptance."
+        )
+    elif args.disable_entropy_bonus:
+        result["scope"] = (
+            "Matched entropy-bonus removal diagnostic; stochastic sampling, trainable log_std, "
+            "all other learning settings and complete source state are retained. "
+            "This is not unchanged-recipe acceptance."
         )
     assert result["runtime_provenance"]["source_sha256"] == result["source_sha256_reused"]
     atomic_json(output / "report.json", result)
@@ -274,6 +298,7 @@ def main():
             "stability_source_checkpoint": str(source),
             "stability_window_report": str(output / "report.json"),
             "continuation_actor_lr_scale": args.actor_lr_scale,
+            "continuation_entropy_bonus_disabled": args.disable_entropy_bonus,
             "evaluation_index": original_report["evaluation_index"] + len(result["checks"]),
             "training_wall_seconds": metadata["provenance"]["training_wall_seconds"]
             + time.monotonic()
@@ -284,7 +309,7 @@ def main():
                 "scene_index": scene_index,
                 "updates_in_scene": updates_in_scene,
             }
-        if args.actor_lr_scale != 1.0:
+        if diagnostic:
             provenance["source_config_sha256"] = provenance.pop("config_sha256")
         checkpoint.save_model(
             directory,
@@ -319,7 +344,7 @@ def main():
             candidate, metrics = trainer.update(state)
             measured = {key: float(value) for key, value in jax.device_get(metrics).items()}
             assert np.isfinite(list(measured.values())).all(), measured
-            if args.actor_lr_scale != 1.0:
+            if diagnostic:
                 delta = optax.tree.norm(
                     jax.tree.map(lambda a, b: a - b, candidate.params, state.params)
                 )

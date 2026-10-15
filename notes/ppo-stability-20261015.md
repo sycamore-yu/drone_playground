@@ -1326,3 +1326,63 @@ u240 scores36/40/25/38 out of48 and retains7/10/8/8 of its initial ten cases. It
 u240 scene counts are8/8/5/8/8/1 with ten collision failures. The sequential control
 at u240 was also38/48; neither a peak nor this equal total establishes convergence.
 Both original scratch budgets continue to their prescribed endpoint.
+
+### Completed parallel stability, remaining scratch candidates and long rollout
+
+All four jobs reached their registered endpoints; no early termination or rollback.
+The parallel Depth u176 control finished28 updates/917504 added interactions at u204.
+Seven full scores are150,124,150,150,149,149,142 out of150. At u184 S01=11/25 and
+D03=13/25; final u204 has D02=24, D03=18 and the other four25. Final retention142/150
+fails95%, and D03 also fails23/25. All28 measured updates are finite, Actor gradients
+are positive, with no KL skips. Training-update time1026.380s; whole continuation
+2583.994s including setup, evaluations and saves. The source's initial development
+benchmark is a separate overlapping stage; these wall times are not summed as
+calendar elapsed. The complete native report was copied once; no old episode tables,
+models or hashes were re-audited. No independent final test follows this failed window.
+
+LiDAR parallel seed0 exhausted8388608 interactions at u256=38/48, scene counts
+8/8/0/6/8/8, preserving10/10 of its first nonempty screen. S03 has eight300s timeouts,
+D01 two collisions. The original sequential control ends0/48. Better final performance
+is insufficient for convergence, and the u128 peak44/48 was not selected. Recorded
+training wall time5133.241s includes the native training/evaluation run on a shared GPU.
+Altitude-PD seed0 also exhausted8388608 at u256=32/48:8/8/0/8/8/0. Its S03 now has
+eight collisions, D03 eight300s timeouts; six initial successes remain. Recorded wall
+time18146.718s. These candidates did not reach full validation and receive no final test.
+
+The h2048 continuation completed1572864 added interactions. Its three matched scores
+are40,40,32/48 and source-case retention38,38,32/38. Final scenes8/8/0/7/8/1 and events
+32SUCCESS,1COLLISION,15TIMEOUT fail the preregistered sufficient-repair gate. The earlier
+retention benefit does not persist. Actual final model is model_000060; measured
+post-restoration wall time6132.805s includes all checks. No further horizon extension.
+
+### Registered entropy-bonus removal from the same parallel first-pass state
+
+This is a single-setting matched diagnosis, not a new training framework. Native
+PPO uses a reparameterized tanh-transformed action entropy, so its bonus can affect
+both policy means and log_std. The control's exploration_std rises0.095068 at u177
+to0.097858 at u204 while recurrent route performance fluctuates. This correlation
+and the scalar loss values do not show gradient dominance or causality. Earlier
+Racing entropy0 was bundled with other settings, so it cannot answer this question.
+
+[SB3 PPO](https://stable-baselines3.readthedocs.io/en/master/modules/ppo.html) defaults
+to ent_coef0. [Andrychowicz et al. section3.8](https://arxiv.org/pdf/2006.05990) reports
+limited regularizer benefits in its five continuous-control tasks except HalfCheetah.
+Neither source establishes a drone remedy; both support treating the bonus as an
+optional standard regularizer and testing its removal without changing the algorithm.
+
+From the exact parallel u176 full state, set entropy_weight0.005->0 only in both saved
+config representations. Preserve all weights, Adam moments, RNG, live worlds/clocks,
+GRU state, trainable variance and stochastic action sampling. Use pinned native811eabe
+and reuse the completed original control and validated baseline cases. The existing
+window tool gains one boolean option, with no native-learning code change. It rejects
+combining the change with Actor LR reduction, no-op/inconsistent source coefficients,
+and using a diagnostic as the unchanged reference. Its diagnostic flag also prevents
+formal acceptance even with unchanged LR. The applicable29 tests pass; no unrelated
+packaging, source hashes or historical training are rerun.
+
+Prelaunch design is `candidate-configs/depth-parallel-postpass-entropy0-design.json`.
+The complete matched budget remains28 updates/917504 interactions and seven full
+checks. Every check must satisfy23/25 in each scene and143/150 retention; any failure
+rejects removal alone at this state/budget. Preserve the actual last model and report
+all checks, with no coefficient sweep or later-window substitution. A positive result
+would still need a declared scratch recipe, three seeds and final independent tests.

@@ -1,5 +1,5 @@
 {
-  "status": "training",
+  "status": "completed_budget_exhausted",
   "problem": "The completed LiDAR sequential h512 rematerialized seed0 used8388608 interactions but ended0/48 after38/48 at u240. Schedule-driven resets every102.4s truncate live episodes. This concrete failed run motivates changing sampling, not repeating the old recipe.",
   "hypothesis": "Balanced persistent scene groups may provide LiDAR the full-episode coverage missing from sequential forced resets. Depth has not established stable convergence; its results are not transferred to LiDAR.",
   "configuration_changes": {
@@ -36,5 +36,66 @@
   "source_commit": "fc55cc895b3288dde32c9b51d9b66f896b9c8593",
   "pid": 2596335,
   "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-parallel.log",
-  "first_update_evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-parallel-first-update.json"
+  "first_update_evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-parallel-first-update.json",
+  "final_result": {
+    "update": 256,
+    "interactions": 8388608,
+    "successes": 38,
+    "per_scene": {
+      "S01": {
+        "successes": 8,
+        "episodes": 8,
+        "events": {
+          "SUCCESS": 8
+        },
+        "median_flight_seconds": 96.221
+      },
+      "S02": {
+        "successes": 8,
+        "episodes": 8,
+        "events": {
+          "SUCCESS": 8
+        },
+        "median_flight_seconds": 114.501
+      },
+      "S03": {
+        "successes": 0,
+        "episodes": 8,
+        "events": {
+          "TIMEOUT": 8
+        },
+        "median_flight_seconds": 300.0
+      },
+      "D01": {
+        "successes": 6,
+        "episodes": 8,
+        "events": {
+          "SUCCESS": 6,
+          "COLLISION": 2
+        },
+        "median_flight_seconds": 100.524
+      },
+      "D02": {
+        "successes": 8,
+        "episodes": 8,
+        "events": {
+          "SUCCESS": 8
+        },
+        "median_flight_seconds": 98.15799999999999
+      },
+      "D03": {
+        "successes": 8,
+        "episodes": 8,
+        "events": {
+          "SUCCESS": 8
+        },
+        "median_flight_seconds": 95.727
+      }
+    },
+    "baseline_successes": 10,
+    "retained_baseline_successes": 10,
+    "training_wall_seconds": 5133.2407791079895,
+    "evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-parallel-progress.json",
+    "independent_final_test": "not run; no full-validation pass"
+  }
 }

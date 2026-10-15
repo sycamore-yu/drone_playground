@@ -87,6 +87,26 @@ def test_lr_override_rejects_freezing_or_nonfinite_rates(scale):
         WINDOW.continuation_config({}, scale)
 
 
+def test_entropy_removal_preserves_source_and_other_learning_settings():
+    """No noise freeze or optimizer change accompanies entropy-bonus removal."""
+    options = {"lr": 0.0002, "entropy_weight": 0.005, "log_std_init": -2.5}
+    source = {"learning": dict(options), "experiment": {"learning": {"options": dict(options)}}}
+    actual = WINDOW.continuation_config(source, 1.0, disable_entropy=True)
+    assert actual["learning"]["entropy_weight"] == 0
+    assert actual["experiment"]["learning"]["options"]["entropy_weight"] == 0
+    assert source["learning"]["entropy_weight"] == 0.005
+    assert source["experiment"]["learning"]["options"]["entropy_weight"] == 0.005
+    actual["learning"]["entropy_weight"] = 0.005
+    actual["experiment"]["learning"]["options"]["entropy_weight"] = 0.005
+    assert actual == source
+    with pytest.raises(ValueError, match="one learning setting"):
+        WINDOW.continuation_config(source, 0.1, disable_entropy=True)
+    for weight in (0, -1, float("nan"), 0.001):
+        source["learning"]["entropy_weight"] = weight
+        with pytest.raises(ValueError, match="consistent positive"):
+            WINDOW.continuation_config(source, 1.0, disable_entropy=True)
+
+
 def test_cached_baseline_requires_same_complete_control():
     """Reuse is conditional on checkpoint identity, not an attractive old score."""
     provenance = {
@@ -109,6 +129,7 @@ def test_cached_baseline_requires_same_complete_control():
     for changed in (
         {"status": "running"},
         {"actor_lr_scale": 0.1},
+        {"diagnostic": True},
         {"source_checkpoint": "/other"},
         {"source_config_sha256_reused": "other"},
     ):

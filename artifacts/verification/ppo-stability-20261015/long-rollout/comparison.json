@@ -5,8 +5,8 @@
   "source_update": 48,
   "source_interactions": 1572864,
   "initial_successes": 38,
-  "status": "running",
-  "last_treatment_update": 59,
+  "status": "completed",
+  "last_treatment_update": 60,
   "planned_additional_interactions": 1572864,
   "checks": [
     {
@@ -223,8 +223,109 @@
         ]
       ],
       "pilot_gate": false
+    },
+    {
+      "control_update": 96,
+      "treatment_update": 60,
+      "additional_interactions": 1572864,
+      "control_successes": 31,
+      "treatment_successes": 32,
+      "control_retained_source_successes": 31,
+      "treatment_retained_source_successes": 32,
+      "control_per_scene": {
+        "S01": 8,
+        "S02": 8,
+        "S03": 0,
+        "D01": 8,
+        "D02": 7,
+        "D03": 0
+      },
+      "treatment_per_scene": {
+        "S01": 8,
+        "S02": 8,
+        "S03": 0,
+        "D01": 7,
+        "D02": 8,
+        "D03": 1
+      },
+      "control_events": {
+        "SUCCESS": 31,
+        "COLLISION": 10,
+        "TIMEOUT": 7
+      },
+      "treatment_events": {
+        "COLLISION": 1,
+        "SUCCESS": 32,
+        "TIMEOUT": 15
+      },
+      "treatment_only_success_cases": [
+        [
+          "D02",
+          "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+          "1000004",
+          "5"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "1"
+        ]
+      ],
+      "control_only_success_cases": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0"
+        ]
+      ],
+      "treatment_lost_source_cases": [
+        [
+          "D01",
+          "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+          "1000003",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "0"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "3"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "4"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "6"
+        ],
+        [
+          "D03",
+          "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+          "1000005",
+          "7"
+        ]
+      ],
+      "treatment_new_source_cases": [],
+      "pilot_gate": false
     }
   ],
-  "training_update_seconds": 2826.6154861999676,
+  "actual_additional_interactions": 1572864,
+  "pilot_passed": false,
+  "training_update_seconds": 3206.1566900599573,
+  "total_wall_seconds": 6132.804657136992,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_h2048/model_000060",
   "limits": "Changing horizon also changes batch size and optimizer update frequency. Judge the actual final check against the registered pilot gate; intermediate improvements do not establish scratch convergence or formal stability."
 }
