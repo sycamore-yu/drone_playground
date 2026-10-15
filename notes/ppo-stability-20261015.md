@@ -523,3 +523,26 @@ and hashes are in `racing-ppo-reference-outcomes.json`. Seeds1/2 were launched
 with configurations verified to differ only by seed and output; no initial
 weights or optimizer states were supplied. Reserved4million final test remains
 unused and no additional formal matrix cell is claimed.
+
+Racing PPO seed1 selected500/600/700; seed2 selected200/300/400, all passing
+checks100/100. Seed1's earlier200/300 passes were followed by0/100at400 and
+did not count as a triple. Every earlier failed check remains retained. All three
+fixed recipes passed the collector's individual C1/C3/C5/C6 audit, after which
+the selected models were frozen on the preregistered4million cohort. Each final
+test was100/100, with matching actual loaded payload hashes and disjoint training/
+validation/test case identities. No test failure informed this recipe.
+
+`audit_racing_ppo_frozen.py` reuses the acceptance collector and native RScope
+test helper. All six representative replay bundles loaded through the upstream
+viewer APIs; recorded times/positions matched the raw NPZ exactly, embedded
+geometry/asset hashes matched, and initial/middle/final MuJoCo restorations
+matched the recorded drone position. The viewer GUI was not opened. Per-seed
+Wilson95% intervals are reported for episode sampling only; three training seeds
+do not establish a population-wide training-seed success rate.
+
+The explicit `acceptance-manifest.json` now selects the nine previously verified
+Tracking runs and these three frozen Racing PPO runs. `acceptance-current` reports
+3passed/1incomplete/14missing: all three Racing PPO seed entries pass, but its
+cross-algorithm Actor comparison remains unavailable until the other Racing
+algorithms supply complete selected evidence. No collector gate was relaxed.
+SHAC p1/f0 seeds1/2 are now running with seed/output-only changes from seed0.

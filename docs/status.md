@@ -23,9 +23,10 @@
   连续三次完整检查达标，自动开发 benchmark 为 100/100；PPO 已耗尽 67,108,864
   次交互预算，末次 0/100；APG 在相同交互预算结束时也为 0/100。
   APG 正在进行只将 Actor 学习率降低十倍的从零对照。
-  PPO 的参考优化参数组从零 seed 0 已连续三次 100/100，自动开发 benchmark
-  也是 100/100；原始 CSV、选模与归档 payload 已核对，seed 1/2 正在独立复现。
-  其余种子及最终独立冻结测试尚未完成，不能与其他奖励条件的旧成绩拼接。
+  PPO 的参考优化参数组已完成三个独立随机种子及预留 4million 批次的冻结测试，
+  各 100/100；原始 CSV、实际加载模型及六份回放已核对，逐种子 C1/C3/C5/C6
+  通过。SHAC seed 1/2 正在独立复现。Racing 跨算法 Actor 对照尚不完整，
+  收集器未将该矩阵单元标为通过；不能与其他奖励条件的旧成绩拼接。
 - Navigation 的三种子验收、至少 900,000 次额外交互的能力保持及冻结 benchmark
   尚未完成。当前没有外部阻塞。
 
@@ -34,3 +35,6 @@
 `results/goal_reaching_batch64/`、`results/goal_reaching_differentiable/` 与
 `results/racing_common_reward_p1f0/`。
 研究过程放在 `notes/ppo-stability-20261015.md`，不构成验收结果。
+当前正式证据可由 `tools/report_acceptance.py` 读取
+`artifacts/verification/ppo-stability-20261015/acceptance-manifest.json` 重建；
+其矩阵中缺失的正式种子不以开发试验代替。

@@ -386,5 +386,24 @@
     "raw_terminal_events_match_report": true,
     "source_initial_state_exact": true,
     "scope": "Existing frozen stochastic training-state data; no new policy samples or convergence claim"
+  },
+  "racing_ppo_frozen": {
+    "report": "racing-ppo-frozen-audit.json",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "episodes_per_seed": 100,
+    "successes_per_seed": [
+      100,
+      100,
+      100
+    ],
+    "actual_loaded_payload_matches_selected": true,
+    "replays_loaded_with_native_api": 6,
+    "replay_times_and_positions_match_raw_npz": true,
+    "mujoco_restores_checked_per_replay": 3,
+    "scope": "Individual C1/C3/C5/C6 and frozen evidence; cross-algorithm matrix gate remains incomplete; viewer GUI not opened"
   }
 }
