@@ -21,6 +21,9 @@
   的初始距离至少 90m；覆盖确已发生，但未防止退化。该候选不晋级。
 - PPO 的至少 900,000 次额外交互稳定性窗口、逐场景保持和独立冻结测试
   尚待合格候选。当前没有外部阻塞，后续仅继续有具体失败依据的 PPO 排查。
+- 进行中：同源 h512/λ=1/minibatches4 的 Critic 拟合量对照。只将 Critic
+  每轮实际优化步数从 16 提到 128，Actor 更新与采样保持一致；前四轮的
+  Optax 计数断言已通过。最终能力保持结果仍待完成，不据拟合损失提前晋级。
 
 当前清单：`artifacts/verification/ppo-stability-20261015/acceptance-manifest.json`。
 当前结果：同目录 `acceptance-protocol2.json` / `.md`；运行

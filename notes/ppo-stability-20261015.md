@@ -604,3 +604,19 @@ The newly finished Racing rewardp1/f0 SHAC cohort: seed0 accepted1600, seed2 acc
 seed1 budget exhausted2048 with final53/100 (u1900=100 thenu2000=0). These exploratory
 runs are not substituted into the older, internally consistent accepted p2/f40 cohort.
 The redundant Racing BPTT h128 run was stopped after1115 updates, preserving its full state.
+
+Next diagnostic uses the completed h512/lambda1/minibatches4 branch as control and
+multiplies only separate critic fitting by8. Reference: OpenAI Spinning Up's PPO
+implementation has independent train_pi_iters/train_v_iters; this supports independent
+value fitting as a standard optimization choice, not proof of a drone-specific cause.
+Existing long-target rollout explained variance0.08–0.26 and the10/21 final retention
+motivate the test. Preregistered393216 new interactions and final17/21 promotion gate
+are unchanged. Actual Optax critic counts increment128 in the first four updates;
+first-update likelihood/recurrence and fixed48 replay checks are reused from the
+completed control. The final result is pending.
+
+Reproduction disclosure: the oldest reused scratch_depth_apg_s0/1/2 records contain
+source identities and dependencies but no git_commit field. They establish historical
+three-seed scratch success, not a newly verified exact historical source checkout.
+The newer scratch_v02/depth_apg_s0/1/2 batch also has accepted results and explicit
+source commits; it has not replaced the already audited cohort or caused retraining.
