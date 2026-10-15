@@ -31,7 +31,10 @@
   每场景 2 次更新、每次 64×512 交互，预算 8,388,608，每完整场景循环筛查。
   使用 goal-reaching 奖励和 λ=1；没有加载其他模型或教师。该配方与旧固定
   场景 PPO 同时存在奖励、观测和展开长度差异，不能据此识别唯一根因。
-  运行位于 `results/fixed_scenes_long_return/depth_ppo_s0`；尚未达标，不计入矩阵。
+  首次完整筛查在 524,288 交互时为 30/48；1,048,576 交互时回落至 0/48，
+  原成功保留 0/30，失败为 46 次超时和 2 次碰撞。试验仍按预设预算执行，
+  当前结果没有解决退化。运行位于
+  `results/fixed_scenes_long_return/depth_ppo_s0`；尚未达标，不计入矩阵。
 
 当前清单：`artifacts/verification/ppo-stability-20261015/acceptance-manifest.json`。
 当前结果：同目录 `acceptance-protocol2.json` / `.md`；运行

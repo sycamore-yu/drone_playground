@@ -677,3 +677,20 @@ is not claimed. No critic8 fitting, memory architecture or rehearsal was retaine
 Config/design were committed at17ddbd8 before launch; run.json records the same
 commit, existing source digest and actual per-scene sampling. The active run is
 `results/fixed_scenes_long_return/depth_ppo_s0`. Production code was not changed.
+
+The first complete screen atu16/524288 interactions recorded30/48 successes:
+S01=8,S02=8,S03=0,D01=0,D02=8,D03=6. S03 andD01 each had8 timeouts;
+D03 had2 collisions. Successful scene median flight times were260–270s, close
+to the unchanged300s deadline. This is a different failure pattern from the old
+fixed-scene S03 collisions and is not a stability pass. The30 actual successful
+case identities are stored as the retention anchor in
+`artifacts/verification/ppo-stability-20261015/fixed-scenes-long-return-progress.json`.
+Only complete newly written screens are summarized; prior rows and model identities
+are reused without rehashing. The preregistered budget/stopping rule remains unchanged.
+
+The second complete screen atu32/1048576 interactions dropped to0/48, retaining0/30
+initial successes. Failures were46 timeouts and2 collisions (one each inD02/D03).
+Thus the bundled fixed-scene recipe has already shown regression and is not promoted.
+This does not isolate training distribution as a cause because reward/observations/
+horizon also differ from the historical fixed-scene reference. The run continues to
+its registered budget or first full pass; no successful final/stability result exists.
