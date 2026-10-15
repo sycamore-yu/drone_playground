@@ -94,6 +94,52 @@
           0.08709146082401276
         ]
       }
+    },
+    {
+      "first_update": 57,
+      "last_update": 60,
+      "additional_interactions_end": 1572864,
+      "block_interactions": 524288,
+      "completed_episodes": 499,
+      "events": {
+        "success": 373,
+        "collision": 112,
+        "out_of_bounds": 9,
+        "timeout": 5,
+        "numerical_failure": 0
+      },
+      "success_fraction": 0.7474949899799599,
+      "mean_bootstrapped_target_rmse": 0.9270713478326797,
+      "mean_value_prediction": 1.7315950691699982,
+      "minimum_actor_grad_norm": 0.2805019021034241,
+      "maximum_kl_skipped_fraction": 0.0,
+      "exploration_std_first_last": [
+        0.08510534465312958,
+        0.0852113589644432
+      ],
+      "training_update_seconds": 1437.964784181997,
+      "matched_control": {
+        "first_update": 81,
+        "last_update": 96,
+        "interactions": 524288,
+        "completed_episodes": 719,
+        "events": {
+          "success": 444,
+          "collision": 224,
+          "out_of_bounds": 50,
+          "timeout": 1,
+          "numerical_failure": 0
+        },
+        "success_fraction": 0.6175243393602226,
+        "mean_bootstrapped_target_rmse": 0.838689386844635,
+        "mean_value_prediction": 1.5545941591262817,
+        "minimum_actor_grad_norm": 0.5269257426261902,
+        "maximum_kl_skipped_fraction": 0.0,
+        "exploration_std_first_last": [
+          0.08712998032569885,
+          0.08769609779119492
+        ]
+      }
     }
   ],
   "records": [
@@ -240,6 +286,78 @@
       "kl_actor_update_skipped": 0.0,
       "actor_grad_norm": 0.30338674783706665,
       "update_seconds": 387.03690691597876
+    },
+    {
+      "update": 57,
+      "interactions": 2752512.0,
+      "navigation_completed_episodes": 129.0,
+      "navigation_completed_successes": 95.0,
+      "navigation_completed_success_rate": 0.7364341020584106,
+      "navigation_completed_collision_rate": 0.22480620443820953,
+      "navigation_completed_out_of_bounds_rate": 0.023255813866853714,
+      "navigation_completed_timeout_rate": 0.01550387591123581,
+      "navigation_completed_numerical_failure_rate": 0.0,
+      "critic_return_rmse_preupdate": 0.9073310494422913,
+      "value_prediction_mean": 1.7387804985046387,
+      "value_target_mean": 1.7702744007110596,
+      "exploration_std": 0.08510534465312958,
+      "kl_actor_update_skipped": 0.0,
+      "actor_grad_norm": 0.3672352433204651,
+      "update_seconds": 324.59623250499135
+    },
+    {
+      "update": 58,
+      "interactions": 2883584.0,
+      "navigation_completed_episodes": 113.0,
+      "navigation_completed_successes": 83.0,
+      "navigation_completed_success_rate": 0.7345132827758789,
+      "navigation_completed_collision_rate": 0.2300885021686554,
+      "navigation_completed_out_of_bounds_rate": 0.017699114978313446,
+      "navigation_completed_timeout_rate": 0.017699114978313446,
+      "navigation_completed_numerical_failure_rate": 0.0,
+      "critic_return_rmse_preupdate": 1.0273830890655518,
+      "value_prediction_mean": 1.787559986114502,
+      "value_target_mean": 1.6875795125961304,
+      "exploration_std": 0.08510527014732361,
+      "kl_actor_update_skipped": 0.0,
+      "actor_grad_norm": 0.30174362659454346,
+      "update_seconds": 356.89727932401
+    },
+    {
+      "update": 59,
+      "interactions": 3014656.0,
+      "navigation_completed_episodes": 126.0,
+      "navigation_completed_successes": 96.0,
+      "navigation_completed_success_rate": 0.7619048357009888,
+      "navigation_completed_collision_rate": 0.222222238779068,
+      "navigation_completed_out_of_bounds_rate": 0.007936508394777775,
+      "navigation_completed_timeout_rate": 0.007936508394777775,
+      "navigation_completed_numerical_failure_rate": 0.0,
+      "critic_return_rmse_preupdate": 0.8661134839057922,
+      "value_prediction_mean": 1.71064031124115,
+      "value_target_mean": 1.7795581817626953,
+      "exploration_std": 0.08516184985637665,
+      "kl_actor_update_skipped": 0.0,
+      "actor_grad_norm": 0.30225810408592224,
+      "update_seconds": 376.9300684930058
+    },
+    {
+      "update": 60,
+      "interactions": 3145728.0,
+      "navigation_completed_episodes": 131.0,
+      "navigation_completed_successes": 99.0,
+      "navigation_completed_success_rate": 0.7557252049446106,
+      "navigation_completed_collision_rate": 0.221374049782753,
+      "navigation_completed_out_of_bounds_rate": 0.022900763899087906,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_numerical_failure_rate": 0.0,
+      "critic_return_rmse_preupdate": 0.9074577689170837,
+      "value_prediction_mean": 1.6893994808197021,
+      "value_target_mean": 1.769935131072998,
+      "exploration_std": 0.0852113589644432,
+      "kl_actor_update_skipped": 0.0,
+      "actor_grad_norm": 0.2805019021034241,
+      "update_seconds": 379.54120385998976
     }
   ],
   "limits": "All eight scenes aggregated. Different evolving policies and live episodes carried across the source fork. Completed-episode counts do not measure the fraction of rollout targets that include a terminal event. Critic RMSE is against bootstrapped training targets, not Monte Carlo return accuracy. Training success cannot replace full-route screening. Shared GPU timing is not isolated throughput."

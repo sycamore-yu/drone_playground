@@ -1292,3 +1292,37 @@ At u160 the scene counts are8/8/0/8/4/0, with20collision failures. At u176 it re
 to40/48 (8/8/0/8/8/8), all ten initial cases retained, but S03 still has eight collisions;
 the sequential controlu176 was0/48. Results still fluctuate and do not establish
 joint-task convergence or stability.
+
+### First parallel stability check passes; remaining window continues
+
+The unchanged parallel Depth continuation completed its first registered check at
+u180, after131072 actual additional interactions. All six primary scenes are25/25,
+and all150 first-full-validation successes are retained. This passes the first check,
+not the seven-check window. Native evaluation already checked case identities and
+outcomes; `depth-fixed-scenes-parallel-stability-report.json` copies that validated
+runtime record without reading the CSV again or auditing model hashes. Future copies
+are triggered by newly completed checks or terminal window status.
+
+The original source training process exited after its automatic initial benchmark:
+the six primary scenes total150/150, S06=24/25 andD06=25/25, seedbase2000000.
+This remains development evaluation of selectedu176, not final testing of the eventual
+post-window model. Source run wall time13345.644s includes that evaluation and overlaps
+the beginning of the continuation process; stage durations must not be summed as
+elapsed calendar time. The actual final benchmark at a reserved independent cohort
+still depends on passing the complete window. No extra seeds or new recipes were started.
+
+The horizon2048 diagnostic completed all12 training updates throughu60, totaling
+1572864 added interactions; the actual-final screening is still running. Its last
+524288-interaction training block has373/499 successful completed episodes versus
+cached control444/719. The higher success fraction does not imply more successful
+completions per interaction or known terminal-target coverage. Mean bootstrapped-target
+RMSE is0.9271 versus0.8387, still not a Monte Carlo return-calibration comparison.
+The updated `long-rollout/training-summary.json` preserves all12 scalar records and
+uses the existing validated control summary; no new frozen probe was run.
+
+New scratch screens remain mixed: altitude-PD u240=31/48 (8/8/0/7/8/0), keeping its
+initial6/6 successes but timing out on all S03/D03 cases. LiDAR parallelu192/u208/u224/
+u240 scores36/40/25/38 out of48 and retains7/10/8/8 of its initial ten cases. Its
+u240 scene counts are8/8/5/8/8/1 with ten collision failures. The sequential control
+at u240 was also38/48; neither a peak nor this equal total establishes convergence.
+Both original scratch budgets continue to their prescribed endpoint.

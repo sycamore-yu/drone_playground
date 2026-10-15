@@ -92,5 +92,49 @@
       "added_interactions": 32768,
       "scope": "Execution evidence only; first registered full stability check is at u180"
     }
+  },
+  "initial_development_benchmark": {
+    "report": "results/fixed_scenes_parallel/depth_ppo_s0/report.json",
+    "complete": true,
+    "passed": true,
+    "seed_base": 2000000,
+    "per_scene": {
+      "S01": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "S02": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "S03": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "D01": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "D02": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "D03": {
+        "episodes": 25,
+        "successes": 25
+      },
+      "S06": {
+        "episodes": 25,
+        "successes": 24
+      },
+      "D06": {
+        "episodes": 25,
+        "successes": 25
+      }
+    },
+    "source_update": 176,
+    "source_interactions": 5767168,
+    "selection_run_wall_seconds": 13345.644340889994,
+    "scope": "Initial selected model development evaluation, not actual-final post-window acceptance. Selection run wall time includes this evaluation and overlaps the beginning of the stability process; do not sum them as elapsed calendar time."
   }
 }
