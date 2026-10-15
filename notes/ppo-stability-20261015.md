@@ -398,8 +398,8 @@ initial replica equality, finite rewards, terminal semantics and unchanged
 learner-state hashes passed the runtime assertions.
 
 All eight states are reported. At state5, success fell13/16 to2/16 and mean
-return1.38677 to-0.46872 (paired delta-1.85549; descriptive bootstrap95% interval
-[-2.40547,-1.14384]), while predicted value rose0.86337 to1.43388. State6 fell
+return1.387 to-0.469 (paired delta-1.85549; descriptive bootstrap95% interval
+[-2.40547,-1.14384]), while predicted value rose0.863 to1.434. State6 fell
 5/16 to0/16; its return-change interval includeszero. Other states mostly
 improved, so aggregate training progress cannot establish preservation of old
 capabilities. At state3 both policies succeeded16/16, but predicted values
@@ -413,3 +413,17 @@ describes the value-based variance/bias tradeoff:
 https://arxiv.org/abs/1506.02438 . Future return-target interventions must retain
 the same source state, reward and interaction budget, and be compared by actual
 case retention rather than lower critic training loss.
+
+The scoped deterministic-update control finished all180 updates: u360/420/480
+successes2/7/1, source-success retention1/2/0 out of21. Its final1/48 therefore
+rejects numerical determinism as a sufficient remedy despite exact source replay
+and first-update reproducibility. The complete final training ZIP is retained.
+
+The policy-cloning branch completed its first full post-learning check at u360:
+22/48, retaining18/21 original successes and adding4 cases (three source cases
+lost). Its matched scoped control at u360 was2/48 and retained1/21. This is a
+controlled short-run improvement after122,880 learning interactions, with an
+additional20,360 active collection interactions explicitly charged to the
+diagnostic corpus. Keep the weight, data and protocol unchanged through u480;
+the prespecified final80%-retention gate and later formal95% stability requirement
+remain in force. Do not promote this intermediate result to convergence.
