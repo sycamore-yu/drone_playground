@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import time
+from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
@@ -44,6 +45,7 @@ def main():
     parser.add_argument("--freeze-critic", action="store_true")
     parser.add_argument("--refresh-memory", action="store_true")
     parser.add_argument("--clearance-aggregation", choices=("time_average", "minimum"))
+    parser.add_argument("--deterministic-update", action="store_true")
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -120,7 +122,14 @@ def main():
     atomic_json(args.output / "rollout-checks.json", checks)
     print("rollout_checks", checks, flush=True)
 
-    @jax.jit
+    @partial(
+        jax.jit,
+        compiler_options=(
+            {"xla_gpu_exclude_nondeterministic_ops": True, "xla_gpu_autotune_level": 0}
+            if args.deterministic_update
+            else None
+        ),
+    )
     def branch_update(before, progress):
         if args.refresh_memory:
             collected, batch, terms = ppo.collect_rollout(

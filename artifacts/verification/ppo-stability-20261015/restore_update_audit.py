@@ -22,6 +22,7 @@ from ppo_branch_diagnostic import tree_hash  # noqa: E402
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", type=Path, required=True)
+parser.add_argument("--deterministic-update", action="store_true")
 args = parser.parse_args()
 if args.output.exists():
     raise FileExistsError(args.output)
@@ -41,6 +42,16 @@ trainer = Trainer(
     backward_model=config.learning.backward_model,
     backward_options=OmegaConf.to_container(config.learning.backward_options),
 )
+compiler_options = (
+    {"xla_gpu_exclude_nondeterministic_ops": True, "xla_gpu_autotune_level": 0}
+    if args.deterministic_update
+    else None
+)
+if compiler_options:
+    trainer._update = jax.jit(
+        lambda before, fraction: ppo.update(trainer, before, sampling_progress=fraction),
+        compiler_options=compiler_options,
+    )
 state, _ = checkpoint.load_model_state(source, trainer.initialize())
 before_hash = tree_hash(state)
 progress = int(state.interactions) / config.learning.max_interactions
@@ -49,7 +60,8 @@ jax.block_until_ready(production)
 repeated, _ = trainer.update(state, sampling_progress=progress)
 jax.block_until_ready(repeated)
 diagnostic, diagnostic_metrics = jax.jit(
-    lambda before, fraction: ppo.update(trainer, before, sampling_progress=fraction)
+    lambda before, fraction: ppo.update(trainer, before, sampling_progress=fraction),
+    compiler_options=compiler_options,
 )(state.replace(updates=0, interactions=0), jnp.asarray(progress, jnp.float32))
 diagnostic = diagnostic.replace(
     updates=state.updates + 1,
@@ -88,6 +100,7 @@ result = {
     "source": str(source),
     "source_identity": source_identity(),
     "xla_flags": os.environ.get("XLA_FLAGS", ""),
+    "update_compiler_options": compiler_options,
     "restored_state_sha256": before_hash,
     "production_state_sha256": tree_hash(production),
     "diagnostic_state_sha256": tree_hash(diagnostic),

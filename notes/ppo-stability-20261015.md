@@ -311,3 +311,17 @@ would not retroactively invalidate observed outcomes of previous runs. This
 diagnostic records current source identity and XLA flags, independently of the
 source-checkpoint provenance. The existing two clearance branches finish as
 launched, preserving their numerical conditions.
+
+The process-wide deterministic continuation failed its frozen source replay
+preflight before any learning: S02 seed1000001/world7 changed from SUCCESS to
+COLLISION. Its owned process was terminated with no learning updates; the partial
+raw evaluation and explicit failed_preflight record are retained. This numerical
+change must not be counted as forgetting during learning.
+
+Scope the deterministic options to the compiled update only, using JAX's public
+`jax.jit(..., compiler_options=...)` API, and leave initialization/evaluation on
+their original numerical settings. The diagnostic's --deterministic-update
+switch implements exactly this scope; no production-wide setting is changed.
+The same180-update/48-case/60-update/80%-retention decision remains in force,
+with a new source replay required before learning. Reference:
+https://github.com/jax-ml/jax/blob/main/docs/201/controlling-xla.md .
