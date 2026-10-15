@@ -1,11 +1,12 @@
 # Acceptance evidence
 
-Snapshot: 2026-10-15T17:52:01.241162+00:00
+Snapshot: 2026-10-15T18:37:41.667927+00:00
 
 All 18 cells passed: **false**. Cell counts: `{"missing": 4, "passed": 14}`.
 
 Each seed entry: status; benchmark successes/actual CSV episodes; updates; wall seconds.
 Missing metrics are null with reasons in the JSON. Mixed Navigation appears twice.
+PPO Navigation stability and final-model counters/costs are separate from selection; pending final tests cannot use initial-model benchmark quality.
 
 | Algorithm | Condition | Status | Seed 0 | Seed 1 | Seed 2 |
 |---|---|---|---|---|---|

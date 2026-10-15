@@ -74,5 +74,9 @@
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
     "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json"
   },
-  "selection": "first_full_validation_pass"
+  "selection": "first_full_validation_pass",
+  "ppo_navigation_stability": {},
+  "development_seed_bases": [
+    2000000
+  ]
 }

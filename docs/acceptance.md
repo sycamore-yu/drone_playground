@@ -16,6 +16,24 @@
 变化。该模式不重复读取模型或逐回合 CSV，也不重新计算它们的哈希。只应指定
 仍然有效、原始产物未修改的核对报告；旧格式报告可读，不恢复旧格式运行时加载。
 
+本轮清单包含 `ppo_navigation_stability`，要求每个选定 PPO Navigation 运行额外
+关联 `window_report`，窗口通过后才填写 `benchmark_run`；路径相对清单的 `root`。
+`window_report` 指末次模型元数据记录的续训目录原始 `report.json`。
+空对象表示要求已启用但尚无候选。通用历史 C1–C6 清单可以省略该项。
+收集器保留初选模型的 C5 证据，核对不少于 900,000 次额外交互（向上取整到完整
+更新）、每 122,880 次交互检查（同样向上取整）、实际更新日志、全部逐场景门槛与
+至少 95% 原成功案例保留率。基准案例和检查结果复用续训工具已核对的记录。
+窗口未完成、任一次退化或实际末次模型不符，都不能用初选成绩计为通过。
+
+最终冻结测试必须读取该窗口的实际末次模型，使用至少 3,000,000 的独立种子基数。
+CLI 保存实际加载的 Orbax 元数据；收集器关联配置、源码身份、更新计数、保存完成
+标记及场景/任务合同，不声称新做了参数字节审计。首次完整验证后的自动 benchmark
+仅作为选模阶段记录。凡用于后续调参的冻结测试基数，须加入清单的
+`development_seed_bases`，下一轮换用未消费批次；收集器不能自行推断研究者是否
+参考过某次结果。最终质量取自末次模型，选模运行、续训、最终冻结成本分别保留，
+不混作独占设备运行时间。已核对的完整链路也可由 `reuse_reports` 复用；改变窗口
+报告、冻结运行记录或消费批次声明会使旧核对失效。
+
 下文的 2026-10-08 初始化验收记录不能作为随机初始化矩阵的收敛证明。
 2026-10-10 起新项目只采用 [ADR-0017](adr/0017-eight-acceptance-gates.md)
 定义的 S1–S4 与 L1–L4 **八项独立验收**。旧 C1–C6 的原始随机种子、
@@ -27,10 +45,11 @@ EGO/SUPER 原生运行范围已纳入 **S3**。本文原来的 20 项标签只�
 冻结 benchmark。C2/C3/C4 的任务质量门槛不变；旧初始化训练的 18/18 成绩不能
 作为随机初始化证明。选模协议与初始化来源分别保留，不改写历史运行。
 
-[Current 18-cell table](../results/acceptance/current.md) ·
-[Full evidence JSON](../results/acceptance/current.json) ·
-[Frozen CSV audit](../results/acceptance/final-audit.json) ·
 [Collector](../tools/report_acceptance.py) · [Tests](../tests/test_acceptance_report.py)
+
+The 2026-10-08 historical artifact paths are `results/acceptance/current.md`,
+`results/acceptance/current.json` and `results/acceptance/final-audit.json`;
+those files are not copied into this worktree. The current task matrix is linked above.
 
 All **18 cells passed** in the 2026-10-08 final collection: 36 explicitly selected
 training runs and 5,400 independent frozen benchmark episodes. Each selected run

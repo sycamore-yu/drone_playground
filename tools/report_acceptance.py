@@ -977,6 +977,236 @@ def seed_success_rate_spread(values):
     }
 
 
+def stability_window(run, report_path):
+    """Link a completed unchanged continuation to its selected source and actual last model."""
+    issues = []
+    report = read_mapping(report_path, issues)
+    evidence = {"report": str(report_path), "record": report, **check(None, *issues)}
+    if not report or report.get("status") == "running":
+        return evidence
+
+    def require(valid, reason):
+        if not valid:
+            raise ValueError(reason)
+
+    try:
+        source = run["checkpoint"]
+        metadata = source["metadata"]
+        provenance = metadata["provenance"]
+        config = run["config"]
+        batch = config["simulation"]["num_envs"] * config["learning"]["options"]["horizon"]
+        steps, interval = math.ceil(900_000 / batch), math.ceil(122_880 / batch)
+        origin, interactions = provenance["updates"], provenance["interactions"]
+        require(
+            report["status"] == "completed"
+            and report.get("actor_lr_scale", 1) == 1
+            and not report.get("diagnostic", False)
+            and report["source_checkpoint"] == source["path"]
+            and report["source_run"] == run["path"]
+            and report["source_config_sha256_reused"] == provenance["config_sha256"]
+            and report["source_sha256_reused"] == provenance["source_sha256"]
+            and report["runtime_provenance"]["source_sha256"] == provenance["source_sha256"]
+            and report["origin_update"] == origin == run["selection"]["update"]
+            and report["origin_interactions"] == interactions
+            and config.get("initial_checkpoint") is None
+            and config.get("resume") is None,
+            "Window must continue the selected scratch model with unchanged code and recipe",
+        )
+        require(
+            report["planned_updates"] == steps
+            and report["evaluation_interval_updates"] == interval
+            and report["planned_additional_interactions"] == steps * batch
+            and report["actual_additional_interactions"] == steps * batch
+            and report["last_update"] == origin + steps
+            and report["last_interactions"] == interactions + steps * batch,
+            "Incomplete registered continuation budget or mismatched actual counters",
+        )
+        selected = next(e for e in run["checkpoint_evaluations"] if e["update"] == origin)
+        rows = report["baseline_cases"]
+        cases = {tuple(row[:4]): row[4] for row in rows}
+        require(len(cases) == len(rows) == 150, "Baseline must contain 150 distinct cases")
+        original = {key for key, event in cases.items() if event == "SUCCESS"}
+        geometry = metadata["config"]["training_sampling"]["geometry_sha256"]
+        require(
+            report["evaluation_seed_base"] == selected["seed_base"]
+            and all(event in EVENTS for event in cases.values())
+            and set(key[0] for key in cases) == set(NAV_SCENES[:6])
+            and all(
+                {(int(k[2]), int(k[3])) for k in cases if k[0] == scene}
+                == {tuple(k) for k in selected["scenes"][scene]["case_ids"]}
+                and sum(k[0] == scene for k in original)
+                == selected["scenes"][scene]["successes"]
+                >= 23
+                for scene in NAV_SCENES[:6]
+            )
+            and all(k[1] == geometry[k[0]] for k in cases),
+            "Window baseline differs from the already verified full validation",
+        )
+        offsets = [*range(interval, steps, interval), steps]
+        checks = report["checks"]
+        require(len(checks) == len(offsets), "Missing scheduled stability check")
+        passed = []
+        for row, offset in zip(checks, offsets, strict=True):
+            lost, new = (
+                {tuple(k) for k in row["lost_initial_cases"]},
+                {tuple(k) for k in row["new_success_cases"]},
+            )
+            require(
+                lost <= original
+                and new <= cases.keys() - original
+                and len(lost) == len(row["lost_initial_cases"])
+                and len(new) == len(row["new_success_cases"]),
+                "Invalid retention case identities",
+            )
+            successful = (original - lost) | new
+            counts = {s: sum(k[0] == s for k in successful) for s in NAV_SCENES[:6]}
+            retained = len(original - lost)
+            ok = min(counts.values()) >= 23 and retained * 100 >= len(original) * 95
+            require(
+                row["update"] == origin + offset
+                and row["additional_interactions"] == offset * batch
+                and Path(row["model"]).name == f"model_{origin + offset:06d}"
+                and row["per_scene_successes"] == counts
+                and row["successes"] == len(successful)
+                and row["initial_successes"] == len(original)
+                and row["retained_initial_successes"] == retained
+                and math.isclose(row["retention_fraction"], retained / len(original))
+                and row["passed"] is ok,
+                "Check counters, scene counts or retained-case evidence disagree",
+            )
+            passed.append(ok)
+        require(report["passed"] is all(passed), "Window summary disagrees with its checks")
+        updates = read_events(report_path.parent / "metrics.jsonl", issues)
+        require(
+            not issues
+            and len(updates) == steps
+            and config["learning"]["options"]["lr"] > 0
+            and all(
+                row["update"] == origin + offset
+                and row["interactions"] == interactions + offset * batch
+                and number(row.get("actor_grad_norm")) is not None
+                and row["actor_grad_norm"] > 0
+                and number(row.get("kl_actor_update_skipped")) is not None
+                and 0 <= row["kl_actor_update_skipped"] < 1
+                for offset, row in enumerate(updates, 1)
+            ),
+            "Missing actual PPO updates or all Actor updates skipped",
+        )
+        final = checkpoint(Path(report["final_checkpoint"]))
+        evidence["final_checkpoint"] = final
+        final_meta = final["metadata"] or {}
+        last = final_meta.get("provenance", {})
+        require(
+            report["final_checkpoint"] == checks[-1]["model"]
+            and final["integrity"]["passed"] is True
+            and final_meta["config"] == metadata["config"]
+            and final_meta["actor"] == metadata["actor"]
+            and last["status"] == "completed"
+            and last["updates"] == origin + steps
+            and last["interactions"] == interactions + steps * batch
+            and last["stability_source_checkpoint"] == source["path"]
+            and Path(last["stability_window_report"]).resolve() == report_path
+            and last["source_sha256"] == provenance["source_sha256"],
+            "Final model must be the completed window's actual last state, without rollback",
+        )
+        evidence.update(check(all(passed), "All scheduled per-scene and retention gates checked"))
+    except (KeyError, TypeError, ValueError, StopIteration, ZeroDivisionError) as error:
+        evidence.update(check(False, str(error)))
+    return evidence
+
+
+def apply_ppo_stability(run, entry, root, development_seed_bases):
+    """Keep selection evidence, grade stability, then use only the final frozen model's quality."""
+    if "selection_benchmark" in run:
+        run["benchmark"] = run.pop("selection_benchmark")
+    for key in ("final_benchmark_link", "final_benchmark_source", "final_stage_costs"):
+        run.pop(key, None)
+    run["final_benchmark_verified"] = False
+    run["ppo_stability"] = check(None, "No completed stability window selected")
+    if entry is None:
+        return
+    report_path = resolve_path(entry["window_report"], root)
+    window = stability_window(run, report_path)
+    run["ppo_stability"] = window
+    if window["passed"] is not True or not entry.get("benchmark_run"):
+        return
+    directory = resolve_path(entry["benchmark_run"], root)
+    issues = []
+    config = read_mapping(directory / "config.yaml", issues)
+    header = read_mapping(directory / "run.json", issues)
+    final = window["final_checkpoint"]
+    benchmark = evaluate(
+        resolve_run_path(header.get("evaluation_directory", "."), directory),
+        run["task"],
+        run["seed"],
+        "benchmark",
+    )
+    original = run["config"]
+    matched = all(
+        config.get(key) == original.get(key)
+        for key in ("task", "sensor", "method", "observation", "controller")
+    ) and {
+        k: v for k, v in config.get("simulation", {}).items() if k not in {"num_envs", "device"}
+    } == {
+        k: v for k, v in original.get("simulation", {}).items() if k not in {"num_envs", "device"}
+    }
+    development_seeds = set(run["benchmark"]["seeds"]) | {
+        seed for entry in run["checkpoint_evaluations"] for seed in entry["seeds"]
+    }
+    loaded = header.get("evaluated_checkpoint", {})
+    declared = config.get("benchmark", {})
+    selected = next(
+        e for e in run["checkpoint_evaluations"] if e["update"] == run["selection"]["update"]
+    )
+    geometry = final["metadata"]["config"]["training_sampling"]["geometry_sha256"]
+    task_geometry = all(
+        benchmark["scenes"][scene]["claimed"].get("geometry", {}).get("sha256") == geometry[scene]
+        and bool(selected["scenes"][scene]["claimed"].get("task_contract"))
+        and benchmark["scenes"][scene]["claimed"].get("task_contract")
+        == selected["scenes"][scene]["claimed"]["task_contract"]
+        for scene in NAV_SCENES[:6]
+    )
+    linked = (
+        not issues
+        and header.get("status") == "completed"
+        and header.get("layout_version") == 3
+        and config.get("mode") == "benchmark"
+        and config.get("seed") == run["seed"]
+        and config.get("checkpoint") == loaded.get("path") == final["path"]
+        and loaded.get("model_metadata") == final["metadata"]
+        and declared.get("protocol") == "learning"
+        and not declared.get("allow_environment_change", False)
+        and number(declared.get("seed_base")) is not None
+        and declared["seed_base"] == benchmark["seed_base"] >= 3_000_000
+        and declared["seed_base"] not in development_seed_bases
+        and not development_seeds.intersection(benchmark["seeds"])
+        and benchmark["partition"]["passed"] is True
+        and matched
+        and task_geometry
+    )
+    run["final_benchmark_link"] = check(
+        linked,
+        "Final frozen run must load the actual last model and use an independent cohort",
+        *issues,
+    )
+    run["final_benchmark_source"] = {
+        "path": str(directory),
+        "config": config,
+        "run_record": header,
+    }
+    if linked:
+        run["selection_benchmark"] = run["benchmark"]
+        run["benchmark"] = benchmark
+        run["final_benchmark_verified"] = True
+        run["final_stage_costs"] = {
+            "selection_run": run["cost"],
+            "continuation_wall_seconds": window["record"].get("total_wall_seconds"),
+            "continuation_update_seconds": window["record"].get("training_update_seconds"),
+            "frozen_run": cost_evidence(header, [], directory),
+            "scope": "Separate recorded stage costs include evaluations; no isolated runtime claim",
+        }
+
+
 def seed_result(run, condition):
     """Grade one selected seed using quality, selection and provenance evidence."""
     if run is None:
@@ -999,6 +1229,11 @@ def seed_result(run, condition):
         run["initialization"]["integrity"],
         run["physics_config"],
     ]
+    if "ppo_stability" in run:
+        criteria += [run["ppo_stability"], run.get("final_benchmark_link", check(None))]
+        if not run["final_benchmark_verified"]:
+            quality = check(None, "Independent frozen test of the actual final model unavailable")
+            criteria[0] = quality
     passed = combine(criteria)["passed"]
     terminal_failure = run["recorded_status"] in {"failed", "error"}
     status = (
@@ -1020,13 +1255,23 @@ def seed_result(run, condition):
         "quality": quality,
         "C5": run["C5"],
         "C6": run["C6"],
+        "ppo_stability": run.get("ppo_stability"),
+        "final_benchmark_link": run.get("final_benchmark_link"),
+        "final_model_counters": {
+            key: run.get("ppo_stability", {}).get("record", {}).get(key)
+            for key in ("last_update", "last_interactions", "actual_additional_interactions")
+        }
+        if "ppo_stability" in run
+        else None,
         "scenes": list(scenes),
         "success_rate_intervals": {
             scene: metric(
                 success_rate_interval(
                     run["benchmark"]["scenes"][scene]["successes"],
                     run["benchmark"]["scenes"][scene]["episodes"],
-                ),
+                )
+                if run.get("final_benchmark_verified", True)
+                else None,
                 run["benchmark"]["scenes"][scene]["csv"],
                 "Verified episode counts unavailable",
             )
@@ -1067,6 +1312,31 @@ def collect(manifest_path):
     benchmarks = {resolve_path(k, root): resolve_path(v, root) for k, v in benchmark_runs.items()}
     if len(benchmarks) != len(benchmark_runs) or set(benchmarks) - set(paths):
         raise ValueError("benchmark_runs contains duplicate or unselected training paths")
+    stability = manifest.get("ppo_navigation_stability")
+    if stability is not None:
+        if not isinstance(stability, dict) or any(
+            not isinstance(k, str)
+            or not k
+            or not isinstance(v, dict)
+            or set(v) - {"window_report", "benchmark_run"}
+            or not isinstance(v.get("window_report"), str)
+            or not v["window_report"]
+            or (
+                "benchmark_run" in v
+                and (not isinstance(v["benchmark_run"], str) or not v["benchmark_run"])
+            )
+            for k, v in stability.items()
+        ):
+            raise ValueError("ppo_navigation_stability must map runs to window/frozen paths")
+        resolved = {resolve_path(k, root): v for k, v in stability.items()}
+        if len(resolved) != len(stability) or set(resolved) - set(paths):
+            raise ValueError("ppo_navigation_stability contains duplicate or unselected runs")
+        stability = resolved
+    development_bases = manifest.get("development_seed_bases", [])
+    if not isinstance(development_bases, list) or any(
+        type(base) is not int or base < 0 for base in development_bases
+    ):
+        raise ValueError("development_seed_bases must list consumed evaluation seed bases")
     reuse = manifest.get("reuse_reports", {})
     if not isinstance(reuse, dict) or any(
         not isinstance(k, str) or not isinstance(v, str) or not k or not v for k, v in reuse.items()
@@ -1114,6 +1384,39 @@ def collect(manifest_path):
             "configuration and run record remain unchanged. No repeated payload/CSV audit.",
         }
         runs.append(run)
+    if stability is not None:
+        for run in runs:
+            path = Path(run["path"])
+            if run["task"] == "navigation" and run["algorithm"] == "ppo":
+                if path in reuse and "ppo_stability" in run:
+                    snapshot = snapshots[reuse[path]]
+                    previous = {
+                        resolve_path(k, Path(snapshot["resolved_root"])): v
+                        for k, v in snapshot["manifest"].get("ppo_navigation_stability", {}).items()
+                    }
+                    if (
+                        previous.get(path) == stability.get(path)
+                        and snapshot["manifest"].get("development_seed_bases", [])
+                        == development_bases
+                    ):
+                        record = run["ppo_stability"]
+                        if (
+                            record.get("report")
+                            and json.loads(Path(record["report"]).read_text()) != record["record"]
+                        ):
+                            raise ValueError("Stability report changed after verification")
+                        frozen = run.get("final_benchmark_source")
+                        if frozen and (
+                            yaml.safe_load((Path(frozen["path"]) / "config.yaml").read_text())
+                            != frozen["config"]
+                            or json.loads((Path(frozen["path"]) / "run.json").read_text())
+                            != frozen["run_record"]
+                        ):
+                            raise ValueError("Final frozen run changed after verification")
+                        continue
+                apply_ppo_stability(run, stability.get(path), root, development_bases)
+            elif path in stability:
+                raise ValueError("ppo_navigation_stability applies only to PPO Navigation")
     indexed = {}
     for run in runs:
         if run["identity"]["passed"] is not True:
@@ -1238,6 +1541,8 @@ def markdown(report):
         "",
         "Each seed entry: status; benchmark successes/actual CSV episodes; updates; wall seconds.",
         "Missing metrics are null with reasons in the JSON. Mixed Navigation appears twice.",
+        "PPO Navigation stability and final-model counters/costs are separate from selection; "
+        "pending final tests cannot use initial-model benchmark quality.",
         "",
     ]
     seeds = report["manifest"].get("seeds", [0, 1, 2])
@@ -1254,8 +1559,12 @@ def markdown(report):
                 entries.append(value["status"])
                 continue
             scenes = run["benchmark"]["scenes"]
-            counts = ", ".join(
-                f"{s}:{scenes[s]['successes']}/{scenes[s]['episodes']}" for s in value["scenes"]
+            counts = (
+                ", ".join(
+                    f"{s}:{scenes[s]['successes']}/{scenes[s]['episodes']}" for s in value["scenes"]
+                )
+                if run.get("final_benchmark_verified", True)
+                else "final frozen test pending"
             )
             updates = value["updates"]["value"]
             wall = value["wall_seconds"]["value"]

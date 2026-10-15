@@ -20,6 +20,7 @@ from drone_playground.learning.checkpoint import (
     load_inference,
     load_state,
     save_inference,
+    save_model,
     save_state,
 )
 from drone_playground.simulation import evaluation
@@ -758,12 +759,14 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
     assert record.identity["status"] == "failed"
 
 
-def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_path):
+@pytest.mark.parametrize("format_version", [2, 3])
+def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_path, format_version):
     """A separate benchmark retains the exact parameter identity it evaluated."""
-    archive = tmp_path / "policy.zip"
-    save_inference(
+    archive = tmp_path / ("policy.zip" if format_version == 2 else "model_000300")
+    save = save_inference if format_version == 2 else save_model
+    save(
         archive,
-        SmallState().params,
+        SmallState().params if format_version == 2 else SmallState(),
         kind="state",
         config={
             "experiment": OmegaConf.to_container(config, resolve=True),
@@ -771,6 +774,7 @@ def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_pat
         },
         provenance={"updates": 300},
         actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
+        **({"export_policy": True} if format_version == 3 else {}),
     )
     config.mode = "benchmark"
     config.checkpoint = str(archive)
@@ -782,7 +786,8 @@ def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_pat
     assert record.identity["status"] == "completed"
     assert record.identity["evaluated_checkpoint"] == {
         "path": str(archive.resolve()),
-        "payload_sha256": metadata["sha256"],
+        "payload_sha256": metadata.get("sha256"),
+        **({"model_metadata": metadata} if format_version == 3 else {}),
     }
 
 

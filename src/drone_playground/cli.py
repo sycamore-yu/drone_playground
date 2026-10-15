@@ -964,6 +964,8 @@ def main(config: DictConfig) -> None:
                 "path": str(Path(config.checkpoint).resolve()),
                 "payload_sha256": metadata.get("sha256"),
             }
+            if metadata.get("format_version") == 3:
+                record.identity["evaluated_checkpoint"]["model_metadata"] = metadata
         destination = (
             record.directory
             if getattr(record, "layout_version", 2) == 3

@@ -945,3 +945,43 @@ PPO stability window. Before adding any PPO Navigation cell, connect and validat
 original first-pass selection, all registered continuation checks, actual final model
 and independent final frozen evaluation as one chain. Existing14 cells are unchanged;
 do not substitute the initial automatic benchmark for the actual final model's test.
+
+## Actual final-model acceptance linkage and completed LiDAR budget
+
+The initial benchmark of a selected PPO policy does not establish post-window quality.
+The existing collector now joins the already checked initial selection to a complete
+unchanged PPO window and a separate frozen test of its actual last model. The active
+manifest enables this additional Navigation requirement with an empty mapping until
+a candidate exists. No historical BPTT/SHAC run or accepted Racing run was rerun.
+
+The window check uses recorded case identities, source/config identity, 900000 minimum
+extra interactions rounded to updates, rounded 122880 check cadence, actual update logs,
+all six scene thresholds and 95% original-case retention. It rejects changed recipes,
+missing checks, rollback and diagnostic LR continuations as original-recipe acceptance.
+Final frozen execution records the actual loaded Orbax metadata and requires an unused
+seed base at least 3000000 with matching task/scene/actor/physics inputs. The original
+selection benchmark and stage costs remain visible separately. Historical reports may
+omit this task-specific manifest section; the active task manifest explicitly includes it.
+
+31 distinct targeted checks passed, including real v2/v3 load recording, negative chain
+fixtures and reuse that prohibits repeated raw audits. The 30-run cached matrix remained
+14/18 with collect_run/digest replaced by raising assertions. Evidence is
+`artifacts/verification/ppo-stability-20261015/final-stability-chain-check.json`.
+This is report correctness evidence, not a successful real PPO stability/final-test run.
+No parameter-byte hashes or replay were added. A consumed final test must be recorded
+explicitly; reporting code cannot infer whether a researcher consulted a result.
+
+LiDAR rematerialized seed0 ended normally at u256 / 8388608 interactions with
+`budget_exhausted`. Its u240 38/48 fell to u256 0/48: all 48 cases reached the actual
+300-second task timeout, with zero of the initial 12 successes retained. No final
+independent test is warranted. Existing prior screening records were reused, and only
+the newly completed final table was ingested.
+
+Depth altitude-PD u112 is again 40/48: five scenes8/8, S03 eight timeouts, initial
+six successes retained. Parallel full3D Depth u32 is39/48: four scenes8/8, D03 7/8
+(one collision), S03 0/8 (eight timeouts); all six initial successes retained. The
+matched sequential u32 was0/48. The paired comparison reuses the cached case records;
+this local improvement does not establish stable convergence. Both current Depth
+candidates continue their predeclared budgets. No new hyperparameter sweep launched.
+
+Parallel u48 completed during reporting:38/48, S03 eight timeouts, D03 two collisions, other four scenes8/8; initial six successes retained. Matched sequential u48 was4/48. Cache/comparison and status updated from the newly completed screening table.

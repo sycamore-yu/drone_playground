@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_utc": "2026-10-15T17:52:01.241162+00:00",
+  "generated_utc": "2026-10-15T18:37:41.667927+00:00",
   "manifest_path": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-manifest.json",
   "manifest": {
     "root": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance",
@@ -78,7 +78,11 @@
       "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json",
       "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-primary-validation.json"
     },
-    "selection": "first_full_validation_pass"
+    "selection": "first_full_validation_pass",
+    "ppo_navigation_stability": {},
+    "development_seed_bases": [
+      2000000
+    ]
   },
   "manifest_sha256": null,
   "resolved_root": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance",
@@ -120,6 +124,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -179,6 +186,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -238,6 +248,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -328,6 +341,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -387,6 +403,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -446,6 +465,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -688,6 +710,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -747,6 +772,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -806,6 +834,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -896,6 +927,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -955,6 +989,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -1014,6 +1051,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -1104,6 +1144,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -1191,6 +1234,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -1278,6 +1324,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -1410,6 +1459,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -1497,6 +1549,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -1584,6 +1639,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -1716,6 +1774,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -2807,6 +2868,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -3898,6 +3962,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -4030,6 +4097,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -5121,6 +5191,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -6212,6 +6285,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -6344,6 +6420,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -6403,6 +6482,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -6462,6 +6544,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "empty"
           ],
@@ -6707,6 +6792,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -6921,6 +7009,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -7135,6 +7226,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "racing"
           ],
@@ -7225,6 +7319,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -7312,6 +7409,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -8403,6 +8503,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -8535,6 +8638,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -8622,6 +8728,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -9713,6 +9822,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -9845,6 +9957,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -10936,6 +11051,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -12027,6 +12145,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "S01",
             "S02",
@@ -12159,6 +12280,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -13250,6 +13374,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
@@ -14341,6 +14468,9 @@
               "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
             ]
           },
+          "ppo_stability": null,
+          "final_benchmark_link": null,
+          "final_model_counters": null,
           "scenes": [
             "D01",
             "D02",
