@@ -63,3 +63,89 @@ def test_changed_case_identity_cannot_masquerade_as_retention():
     current[("S01", "geometry", "2000000", "0")] = event
     with pytest.raises(ValueError, match="exact original"):
         WINDOW.quality(current, original)
+
+
+def test_lr_override_preserves_source_and_all_other_settings():
+    """The continuation has a truthful config and leaves its source immutable."""
+    source = {
+        "experiment": {"learning": {"options": {"lr": 0.0002, "critic_lr": 0.0005}}},
+        "learning": {"lr": 0.0002, "critic_lr": 0.0005, "horizon": 512},
+    }
+    actual = WINDOW.continuation_config(source, 0.1)
+    assert actual["learning"]["lr"] == pytest.approx(0.00002)
+    assert actual["experiment"]["learning"]["options"]["lr"] == pytest.approx(0.00002)
+    actual["learning"]["lr"] = 0.0002
+    actual["experiment"]["learning"]["options"]["lr"] = 0.0002
+    assert actual == source
+    assert WINDOW.continuation_config(source, 1.0) == source
+
+
+@pytest.mark.parametrize("scale", [0, -1, 2, float("nan"), float("inf")])
+def test_lr_override_rejects_freezing_or_nonfinite_rates(scale):
+    """The diagnostic must execute finite, nonzero Actor updates."""
+    with pytest.raises(ValueError, match="finite"):
+        WINDOW.continuation_config({}, scale)
+
+
+def test_cached_baseline_requires_same_complete_control():
+    """Reuse is conditional on checkpoint identity, not an attractive old score."""
+    provenance = {
+        "config_sha256": "config",
+        "source_sha256": "source",
+        "updates": 144,
+        "interactions": 4718592,
+    }
+    control = {
+        "status": "completed",
+        "source_checkpoint": "/run/model_000144",
+        "source_config_sha256_reused": "config",
+        "source_sha256_reused": "source",
+        "origin_update": 144,
+        "origin_interactions": 4718592,
+        "baseline_cases": [[*key, event] for key, event in cases().items()],
+    }
+    path = Path(control["source_checkpoint"])
+    assert WINDOW.reuse_baseline(control, path, provenance) == cases()
+    for changed in (
+        {"status": "running"},
+        {"actor_lr_scale": 0.1},
+        {"source_checkpoint": "/other"},
+        {"source_config_sha256_reused": "other"},
+    ):
+        with pytest.raises(ValueError, match="matched control"):
+            WINDOW.reuse_baseline({**control, **changed}, path, provenance)
+    control["baseline_cases"].append(control["baseline_cases"][0])
+    with pytest.raises(ValueError, match="valid first-pass"):
+        WINDOW.reuse_baseline(control, path, provenance)
+
+
+def test_lr_change_retains_adam_moments_and_scales_actual_actor_step():
+    """The real Trainer can continue Adam history with a smaller nonzero step."""
+    import jax
+    import jax.numpy as jnp
+    import numpy as np
+    import optax
+
+    from drone_playground.learning.trainer import Trainer
+    from drone_playground.simulation.environment import make_environment
+
+    env = make_environment(num_envs=1)
+    control = Trainer(env, config={"lr": 0.0002})
+    reduced = Trainer(env, config={"lr": 0.00002})
+    initial = control.initialize()
+    variables = {"params": initial.params, "log_std": initial.log_std}
+    gradients = jax.tree.map(jnp.ones_like, variables)
+    _, moments = control.actor_optimizer.update(
+        gradients, initial.optimizer_state["actor"], variables
+    )
+    original_step, expected_moments = control.actor_optimizer.update(gradients, moments, variables)
+    reduced_step, actual_moments = reduced.actor_optimizer.update(gradients, moments, variables)
+    assert float(optax.tree.norm(reduced_step)) > 0
+    for expected, actual in zip(
+        jax.tree.leaves(original_step), jax.tree.leaves(reduced_step), strict=True
+    ):
+        np.testing.assert_allclose(actual, expected * 0.1, rtol=1e-6, atol=1e-9)
+    for expected, actual in zip(
+        jax.tree.leaves(expected_moments), jax.tree.leaves(actual_moments), strict=True
+    ):
+        np.testing.assert_array_equal(actual, expected)

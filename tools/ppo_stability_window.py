@@ -1,9 +1,12 @@
-"""Continue a selected fixed-scene PPO learner through the agreed stability window."""
+"""Measure fixed-scene PPO continuation, optionally with a matched Actor LR change."""
 
 import argparse
+import copy
 import csv
+import inspect
 import json
 import math
+import subprocess
 import time
 from pathlib import Path
 
@@ -72,10 +75,41 @@ def read_cases(directory):
     return cases, report
 
 
+def continuation_config(config, scale):
+    """Change only Actor LR in both saved configuration representations."""
+    if not math.isfinite(scale) or not 0 < scale <= 1:
+        raise ValueError("Actor LR scale must be finite and in (0,1]")
+    result = copy.deepcopy(config)
+    rate = result["learning"]["lr"] * scale
+    result["learning"]["lr"] = rate
+    result["experiment"]["learning"]["options"]["lr"] = rate
+    return result
+
+
+def reuse_baseline(control, source, provenance):
+    """Reuse the completed matched control's original case records."""
+    if (
+        control["status"] != "completed"
+        or control.get("actor_lr_scale", 1.0) != 1.0
+        or control["source_checkpoint"] != str(source)
+        or control["source_config_sha256_reused"] != provenance["config_sha256"]
+        or control["source_sha256_reused"] != provenance["source_sha256"]
+        or control["origin_update"] != provenance["updates"]
+        or control["origin_interactions"] != provenance["interactions"]
+    ):
+        raise ValueError("Reference window is not the completed matched control")
+    rows = control["baseline_cases"]
+    cases = {tuple(row[:4]): row[4] for row in rows}
+    if len(cases) != len(rows) or not quality(cases, cases)["passed"]:
+        raise ValueError("Reference window lacks a valid first-pass baseline")
+    return cases
+
+
 def main():
-    """Keep the original optimizer, scene schedule, rewards and random-state lineage."""
+    """Continue complete learner state with an explicitly recorded optional LR change."""
     import jax
     import numpy as np
+    import optax
     from omegaconf import OmegaConf
 
     from drone_playground.learning import checkpoint
@@ -86,9 +120,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--actor-lr-scale", type=float, default=1.0)
+    parser.add_argument("--reuse-window", type=Path)
     args = parser.parse_args()
     source, output = args.checkpoint.resolve(), args.output.resolve()
     metadata = json.loads((source / "metadata.json").read_text())
+    if args.actor_lr_scale != 1.0 and args.reuse_window is None:
+        raise ValueError("LR diagnostic requires an existing matched control window")
+    metadata["config"] = continuation_config(metadata["config"], args.actor_lr_scale)
     config = OmegaConf.create(metadata["config"]["experiment"])
     original_run = json.loads((source.parents[1] / "run.json").read_text())
     selection = original_run["selection"]
@@ -99,7 +138,28 @@ def main():
     assert metadata["provenance"]["consecutive_passes"] == 1
     assert config.benchmark.fixed_checkpoint_seeds and config.task.duration == 300
     assert not config.simulation.get("procedural")
-    baseline, original_report = read_cases(source)
+    control = None
+    if args.reuse_window is None:
+        baseline, original_report = read_cases(source)
+        runtime_provenance = source_identity()
+    else:
+        control = json.loads(args.reuse_window.read_text())
+        baseline = reuse_baseline(control, source, metadata["provenance"])
+        original_report = json.loads((source / "report.json").read_text())
+        assert control["evaluation_seed_base"] == original_report["seed_base"]
+        checkout = Path(inspect.getfile(Trainer)).resolve().parents[3]
+        revision = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=checkout, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        changes = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all", "--", "src"],
+            cwd=checkout,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        runtime_provenance = control["runtime_provenance"]
+        assert revision == runtime_provenance["git_commit"] and not changes
     assert original_report["passed"] and quality(baseline, baseline)["passed"]
     scenes = list(config.learning.scenes)
     scene_updates = config.learning.scene_updates
@@ -135,6 +195,10 @@ def main():
     assert origin_interactions == metadata["provenance"]["interactions"]
     batch = config.simulation.num_envs * config.learning.options.horizon
     updates, interval = window_steps(batch)
+    if control is not None:
+        assert updates == control["planned_updates"]
+        assert interval == control["evaluation_interval_updates"]
+        assert updates * batch == control["actual_additional_interactions"]
     evaluation = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
     evaluation.mode = "checkpoint_eval"
     evaluation.benchmark.protocol = "learning"
@@ -150,7 +214,14 @@ def main():
         "source_run": str(source.parents[1]),
         "source_config_sha256_reused": metadata["provenance"]["config_sha256"],
         "source_sha256_reused": metadata["provenance"]["source_sha256"],
-        "runtime_provenance": source_identity(),
+        "runtime_provenance": runtime_provenance,
+        "runner_git_commit": subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip(),
         "origin_update": origin_update,
         "origin_interactions": origin_interactions,
         "planned_updates": updates,
@@ -159,6 +230,10 @@ def main():
         "evaluation_seed_base": original_report["seed_base"],
         "baseline_cases": [[*key, event] for key, event in sorted(baseline.items())],
         "checks": [],
+        "actor_lr_scale": args.actor_lr_scale,
+        "actor_lr": config.learning.options.lr,
+        "diagnostic": args.actor_lr_scale != 1.0,
+        "reference_window": str(args.reuse_window.resolve()) if args.reuse_window else None,
         "scene_switches": [],
         "training_update_seconds": 0.0,
         "setup_seconds": time.monotonic() - started,
@@ -166,6 +241,11 @@ def main():
         "on failure, no rollback, actual final model retained. "
         "Independent final test remains separate.",
     }
+    if args.actor_lr_scale != 1.0:
+        result["scope"] = (
+            "Matched Actor-LR continuation diagnostic; all other learning settings and "
+            "complete source state are retained. This is not unchanged-recipe acceptance."
+        )
     assert result["runtime_provenance"]["source_sha256"] == result["source_sha256_reused"]
     atomic_json(output / "report.json", result)
 
@@ -186,11 +266,14 @@ def main():
             },
             "stability_source_checkpoint": str(source),
             "stability_window_report": str(output / "report.json"),
+            "continuation_actor_lr_scale": args.actor_lr_scale,
             "evaluation_index": original_report["evaluation_index"] + len(result["checks"]),
             "training_wall_seconds": metadata["provenance"]["training_wall_seconds"]
             + time.monotonic()
             - started,
         }
+        if args.actor_lr_scale != 1.0:
+            provenance["source_config_sha256"] = provenance.pop("config_sha256")
         checkpoint.save_model(
             directory,
             state,
@@ -223,6 +306,12 @@ def main():
             candidate, metrics = trainer.update(state)
             measured = {key: float(value) for key, value in jax.device_get(metrics).items()}
             assert np.isfinite(list(measured.values())).all(), measured
+            if args.actor_lr_scale != 1.0:
+                delta = optax.tree.norm(
+                    jax.tree.map(lambda a, b: a - b, candidate.params, state.params)
+                )
+                measured["actor_parameter_delta_norm"] = float(delta)
+                assert np.isfinite(measured["actor_parameter_delta_norm"]) and delta > 0
             state = candidate
             updates_in_scene += 1
             assert int(state.updates) == origin_update + offset
