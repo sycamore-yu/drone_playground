@@ -787,3 +787,43 @@ others0. Those12 actual success identities now form the retention baseline.
 The altitude-PD scratch candidate launched from9953183; it is still within its
 registered budget and has no complete first-screen result yet. Both candidates
 retain their original stopping and validation rules; neither is accepted.
+
+### Matched Actor learning-rate continuation after the first full pass
+
+The new LiDAR screens at48/64/80 were31/0/8 out of48. Of its initial12 successful
+cases, retained counts were8/0/0. The altitude-PD scratch first screen was6/48,
+with36 timeouts and6 collisions; a later screen is still running.
+
+The existing fixed3D Depth control now supplies a complete28-update comparison
+from the same150/150 source. The new registered branch changes only Actor LR
+0.0002->0.00002, including its trainable log_std; Critic, entropy coefficient,
+scene schedule, action and reward remain unchanged. Both branches restore the
+same complete original state. This is distinct from the earlier failed quarter-LR
+LiDAR experiment with the old curriculum/reward; its negative outcome was read
+before choosing this source-specific experiment.
+
+`tools/ppo_stability_window.py` accepts the explicit LR change and a completed
+matched-control report, reusing original case records and source/config identities.
+It requires the imported training code to be at the original clean Git commit;
+the detached `ppo-window-reference` worktree pinsfbae846. The runner commit ise76f44f.
+Changed continuation metadata stores its actual configuration and labels the
+retained original identity `source_config_sha256`; it does not assign that identity
+to the changed configuration or compute a new digest. Recorded package versions
+match the original source. Tests(12 passed in12.48s) cover LR-only mutation,
+invalid rates, cached-source mismatch/duplicates, unchanged Adam moments with0.1x
+actual optimizer delta, and existing scene/retention gates. Ruff passed.
+
+The actual first rollout's15 reward/advantage/value/event metrics match the saved
+control exactly (max difference0). First two actual Actor parameter delta norms
+are0.062493 and0.070112, with no KL-skipped steps; mean KL is0.00011698/0.00019449.
+This is active optimization, not a frozen policy. The same seven150-case checks
+and917504 interactions will finish even after any quality failure. The run is
+explicitly diagnostic; adoption would require a reproducible from-scratch schedule,
+the remaining independent seeds and independent testing of actual final models.
+The [CleanRL PPO source](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_continuous_action.py)
+uses learning-rate annealing; this10x post-first-pass reduction is a project
+experiment, not that exact linear schedule or a known convergence guarantee.
+
+The altitude-PD scratch u32 screen completed37/48:8,8,0,8,8,5; all six initial
+successes remain. S03 has8 timeouts, D03 has3 collisions. This is developer-screening
+improvement, not a full25-case validation or stable-window pass.

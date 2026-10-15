@@ -1,5 +1,5 @@
 {
-  "status": "prepared",
+  "status": "running",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000144",
   "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_stability/report.json",
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_lr01",
@@ -60,6 +60,10 @@
   "targeted_validation": {
     "tests": "12 passed in12.48s",
     "coverage": "LR-only config mutation, invalid rates, matched-control cache identity, actual Trainer Adam step and moment equivalence, existing stability gates",
-    "ruff": "check and format passed"
-  }
+    "ruff": "check and format passed",
+    "recorded_dependency_versions_match": true,
+    "first_actual_rollout_matches_control": "True",
+    "first_actor_parameter_delta_norm": 0.06249301880598068
+  },
+  "runner_commit": "e76f44f28dc951452c0cd748e0e418fb2fa28723"
 }
