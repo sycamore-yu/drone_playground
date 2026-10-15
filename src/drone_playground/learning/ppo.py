@@ -1,5 +1,7 @@
 """Stochastic tanh-Gaussian PPO with complete recurrent-sequence recomputation."""
 
+import math
+
 import jax
 import jax.numpy as jnp
 import optax
@@ -215,10 +217,70 @@ def recurrent_policy(trainer, params, observations, initial_memory, done):
     return jax.lax.scan(scan_step, initial_memory, (observations, done))
 
 
+def monte_carlo_tail(trainer, state, active):
+    """Finish copied episodes under the behavior policy without changing the live stream."""
+    limit = math.ceil(trainer.env.task.duration / trainer.env.dt) + 1
+    env_state = state.env_state.replace(
+        task=state.env_state.task.replace(
+            event=jnp.where(active, state.env_state.task.event, Event.TIMEOUT)
+        )
+    )
+    initial = (
+        env_state,
+        state.recurrent_memory,
+        state.objective_state,
+        jax.random.fold_in(state.rng, 800001),
+        active,
+        jnp.zeros_like(active, dtype=jnp.float32),
+        jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
+    )
+
+    def condition(carry):
+        return jnp.any(carry[4]) & (carry[6] < limit)
+
+    def step(carry):
+        current, memory, history, rng, running, returns, steps, interactions = carry
+        rng, key = jax.random.split(rng)
+        raw, memory, _ = trainer.actor.apply(state.params, trainer._observe(current), memory)
+        action, _, _ = trainer.method.sample(key, raw, state.log_std)
+        after = trainer._step(current, action, differentiable=False)
+        cost, history, _ = trainer.objective.cost(current, after, action, history)
+        return (
+            after,
+            reset_actor_memory(memory, after.done),
+            history,
+            rng,
+            running & ~after.done,
+            returns - jnp.where(running, cost, 0),
+            steps + 1,
+            interactions + running.sum(dtype=jnp.int32),
+        )
+
+    final = jax.lax.while_loop(condition, step, initial)
+    metrics = {
+        "monte_carlo_tail_interactions": final[7],
+        "monte_carlo_tail_allocated_slots": final[6] * trainer.env.num_envs,
+        "monte_carlo_tail_unfinished": final[4].sum(),
+        "monte_carlo_tail_episodes": active.sum(),
+        "monte_carlo_tail_successes": (active & (final[0].task.event == Event.SUCCESS)).sum(),
+    }
+    return jax.lax.stop_gradient((final[5], metrics))
+
+
 def update(trainer, state, *, sampling_progress=None):
     """Collect recurrent samples and update actor and critic parameters with PPO."""
     initial_memory = state.recurrent_memory
     state, rollout, terms = collect_rollout(trainer, state, sampling_progress=sampling_progress)
+    tail_metrics = {}
+    if trainer.config["ppo_monte_carlo_returns"]:
+        active = ~rollout.done[-1]
+        returns, tail_metrics = monte_carlo_tail(trainer, state, active)
+        tail_metrics["monte_carlo_tail_value_sample_rmse"] = jnp.sqrt(
+            jnp.sum(jnp.where(active, (returns - rollout.next_values[-1]) ** 2, 0))
+            / jnp.maximum(active.sum(), 1)
+        )
+        rollout = rollout.replace(next_values=rollout.next_values.at[-1].set(returns))
     advantages, targets = generalized_advantage_estimate(
         rollout.rewards,
         rollout.values,
@@ -335,6 +397,7 @@ def update(trainer, state, *, sampling_progress=None):
         epoch, (state, jnp.asarray(False)), None, length=trainer.config["ppo_epochs"]
     )
     metrics = jax.tree.map(jnp.mean, metrics)
+    metrics.update(tail_metrics)
     metrics.update(jax.tree.map(jnp.mean, terms))
     if trainer.distance_sampling:
         for metres in (20, 50, 80):

@@ -1446,3 +1446,35 @@ The cleanup now skips entries without sim, matching existing window behavior. A
 small self-check executes the actual finally block with two environment stubs and
 one method entry, confirming both closes and no method close. No evaluation was
 rerun; original output/log remains. No native learning, dependency or task change.
+### Complete sampled-return pilot registered after component counterfactuals
+
+The next intervention removes the remaining rollout-cutoff value bootstrap while
+retaining the existing512x64 PPO prefix, full recurrent optimizer passes, entropy0.005,
+reward, actions, scene assignment and complete u176 learner state. Each unfinished
+copied world continues under its frozen stochastic behavior policy to first true
+termination. With gamma=lambda=1, its detached realized tail gives complete sampled
+prefix returns. This is a standard return estimator with a project-specific simulation
+implementation, not a new algorithm framework or a claim of uniquely identified cause.
+Old procedural calibration already found small512-step target bias without solving
+regression; high bootstrap fraction alone does not prove bias in the current state.
+
+Pre-registered budget:8updates,262144prefix transitions, full150-case development checks
+after4/8updates, each six scenes>=23/25 and retention>=143/150. No early stop or rollback.
+All active tail samples count toward learner interactions; allocated padded simulator
+slots and wall time are separate. Matched optimizer updates/prefix samples do not imply
+equal total sample cost. This is not the full28update stability window, scratch evidence
+or final benchmark. The completed original control is reused without model rehash/replay.
+
+Implementation reaches native PPO, Trainer validation/accounting, existing training
+documentation, targeted tests and a bounded evidence runner. Seven new checks pass,
+including real finite-horizon update, exact checkpoint continuation and unchanged live
+stream/RNG. Default-path targeted regression:24passed/1failed/34deselected in217.00s.
+The failing `test_perception_real_update_and_complete_sensor_checkpoint[lidar-ppo]`
+asserts a change in the first point encoder; it reproduces on unchanged811eabe in26.24s
+at the same assertion. This is an existing small-sensor integration gap, not a green
+full suite. A separate fixture investigation should inspect valid acquired points
+before changing that assertion; this Depth pilot does not alter sensor acquisition.
+Runner uses existing checkpoint/evaluation/case-quality helpers and inline assertions
+for exact first-rollout comparison, finite real updates, tail completion and accounting.
+The design and command live in candidate-configs/depth-parallel-mc-tail-design.json;
+no current candidate GPU execution has yet occurred at registration.

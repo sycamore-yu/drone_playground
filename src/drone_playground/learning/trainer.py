@@ -45,6 +45,7 @@ _DEFAULTS = {
     "clip_epsilon": 0.2,
     "ppo_target_kl": 0.0,
     "ppo_value_clip": 0.0,
+    "ppo_monte_carlo_returns": False,
     "bootstrap_weight": 1.0,
     "report_terminal_critic_grad": False,
     "entropy_weight": 0.0,
@@ -119,6 +120,18 @@ class Trainer:
             self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         self.loss_name = loss
+        if type(self.config["ppo_monte_carlo_returns"]) is not bool:
+            raise ValueError("ppo_monte_carlo_returns must be boolean")
+        if self.config["ppo_monte_carlo_returns"] and (
+            algorithm != "ppo"
+            or env.task.name != "navigation"
+            or not env.task.finite_horizon
+            or self.config["gamma"] != 1
+            or self.config["gae_lambda"] != 1
+        ):
+            raise ValueError(
+                "Monte Carlo returns require finite-horizon Navigation PPO, gamma=lambda=1"
+            )
         if env.task.reward_profile == "goal_reaching" and (
             self.config["gamma"] != 1.0 or loss is not None
         ):
@@ -390,7 +403,7 @@ class Trainer:
     def update(
         self, state: TrainingState, *, sampling_progress=None
     ) -> tuple[TrainingState, dict[str, jax.Array]]:
-        """Run one compiled update; scalar metrics remain on device until consumed."""
+        """Run one compiled update and count live rollout and optional tail interactions."""
         # Host integers avoid device int32 counter overflow without enabling global float64.
         local = state.replace(updates=0, interactions=0)
         if self.distance_curriculum:
@@ -403,9 +416,14 @@ class Trainer:
             result, metrics = self._update(local, jnp.asarray(sampling_progress, jnp.float32))
         else:
             result, metrics = self._update(local)
+        interactions = self.config["horizon"] * self.env.num_envs
+        if self.config["ppo_monte_carlo_returns"]:
+            if int(metrics["monte_carlo_tail_unfinished"]):
+                raise RuntimeError("Monte Carlo tail did not reach the finite task deadline")
+            interactions += int(metrics["monte_carlo_tail_interactions"])
         result = result.replace(
             updates=state.updates + 1,
-            interactions=state.interactions + self.config["horizon"] * self.env.num_envs,
+            interactions=state.interactions + interactions,
         )
         return result, {**metrics, "updates": result.updates, "interactions": result.interactions}
 

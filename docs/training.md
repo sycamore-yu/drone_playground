@@ -269,11 +269,25 @@ also report their independently optimized critic loss and gradient norm.
 PPO samples a Gaussian in raw action space and stores the pre-tanh sample and its
 Jacobian-corrected log density. Rollouts are detached from physics. GAE uses
 `delta = reward + gamma*(1-terminated)*V(final_observation) - V(observation)`;
-its recursive trace is multiplied by `1-done`. Thus timeouts bootstrap from the
-last observation before reset and never propagate advantages into another episode.
+its recursive trace is multiplied by `1-done`. External timeout truncations bootstrap
+from the last observation before reset; finite-task deadlines are true terminations.
+Neither propagates advantages into another episode.
 The rollout boundary also bootstraps. Advantages use population **standard deviation**,
 not variance. The actor objective uses the minimum of ordinary and clipped probability
 ratios; the critic independently minimizes half mean squared return error.
+
+`learning.options.ppo_monte_carlo_returns=true` selects complete sampled returns for
+finite-horizon Navigation PPO with `gamma=gae_lambda=1`. After the usual rollout,
+copies of unfinished worlds continue under the same behavior policy to termination.
+Their realized reward sums replace only the final bootstrap values; the original
+rollout supplies the PPO samples. Tail sampling uses a separate RNG stream and keeps
+the live worlds, recurrent memory and learner RNG at the original rollout boundary.
+No gradient passes through these continuations. This removes terminal-value estimation
+from the return targets at the cost of additional simulation and potentially higher
+variance; it does not establish stable convergence. `interactions` includes active
+tail transitions; `monte_carlo_tail_interactions` separates them, and
+`monte_carlo_tail_allocated_slots` also reports padded simulator work. A tail failing
+to reach its finite deadline rejects the update. The default remains ordinary GAE.
 
 Each PPO minibatch contains complete world sequences, not shuffled individual steps.
 At every optimizer pass, the current actor recomputes all recurrent states from the
@@ -473,6 +487,7 @@ revision belong in checkpoint metadata.
 | `horizon` | 32 | Control intervals per update |
 | `lr`, `critic_lr` | 0.0003, 0.001 | Actor and critic learning rates |
 | `gamma`, `gae_lambda` | 0.99, 0.95 | Discount and return trace |
+| `ppo_monte_carlo_returns` | false | Complete finite-task sampled returns instead of terminal Critic bootstrap; requires gamma=lambda=1 |
 | `ppo_epochs`, `minibatches` | 4, 1 | PPO passes; world partitions, must divide batch |
 | `critic_epochs` | 4 | SHAC critic passes; PPO fits critic once per actor minibatch |
 | `clip_epsilon` | 0.2 | PPO probability ratio clipping |
