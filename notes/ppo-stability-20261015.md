@@ -3,6 +3,9 @@
 Objective: the user attachment `6bfd2216-f69e-4121-97b8-8f1181e64d2a/pasted-text-1.txt`,
 including stable scratch Depth/LiDAR PPO and the original 18-cell BPTT/SHAC/PPO matrix.
 This is a working experiment design, not evidence of convergence or a new architecture.
+The sections below retain their chronological protocol changes. The current user-selected
+protocol is screening + one full validation + independent frozen testing, with different
+algorithm rewards allowed; see `docs/acceptance.md` and `docs/status.md`.
 
 ## Identity and protection
 
@@ -635,3 +638,42 @@ needs evidence of which missing state/history predicts return before starting an
 scratch cohort. Actor uses GRU192 while the privileged critic remains a stateless MLP;
 this is a potential information mismatch, not a proven cause. Existing MC diagnostics
 start actor memory at zero and cannot establish effects of in-flight history aliasing.
+
+## Frozen memory diagnostic and fixed-scene scratch candidate
+
+The preregistered frozen-memory comparison completed without optimization. Eight
+in-flight states from the same update300 recovery point were selected by episode age,
+with16 paired stochastic continuations per state and common action keys. Actual GRU
+memory versus zero memory changed initial raw actions (norm differences0.055–0.214),
+but none of the eight full-return comparisons met the preregistered material threshold
+(absolute mean difference>0.2 and descriptive paired95% interval excluding0).
+Only one state's successes changed,13 versus14/16. This does not support adding a
+memory-conditioned critic now; zeroed in-flight memory is an intervention, not an
+assertion about all naturally occurring histories. Report and raw arrays remain in
+`artifacts/verification/ppo-stability-20261015/depth-critic-memory/`.
+
+Existing fixed-scene PPO results provide a closer task reference than the failed
+procedural goal-reaching pilots. The historical `scratch_v02/depth_ppo_s0` full check
+at1120 had25,25,0,24,20,23 successes in S01/S02/S03/D01/D02/D03 (117/150).
+S03 failed every recorded full check. These are observed candidate results, not
+formal acceptance; no old model was replayed or rehashed for this comparison.
+The newly inspected S03 episode rows contain25 collisions at each of the seven checks,
+with median flight times7.126–46.606s; there are no S03 timeouts in this historical run.
+The compact failure summary is `fixed-scenes-historical-failure.json` beside the design.
+
+The new seed0 recipe uses the existing Navigation8 fixed-scene path, random actor
+and critic initialization,64 worlds,horizon512,lambda1,4 minibatches and2 updates
+per scene. It keeps the finite-horizon goal-reaching reward and richer goal/rotation
+observations from the current pilots. The8,388,608-interaction budget yields256
+updates, with fixed48-case screening every16 updates. The stop rule allows the first
+passing full validation or completion of the budget; ordinary patience cannot stop
+the run early. Full25-case validation still requires23 successes per primary scene;
+900k additional stability interactions and independent seeds/testing remain pending.
+
+This is a bundled scratch recipe trial, not a controlled proof that training
+distribution caused collapse. Fixed scene geometry matches the historical task;
+validation/test initialization seeds are separate, but unseen geometry generalization
+is not claimed. No critic8 fitting, memory architecture or rehearsal was retained.
+Config/design were committed at17ddbd8 before launch; run.json records the same
+commit, existing source digest and actual per-scene sampling. The active run is
+`results/fixed_scenes_long_return/depth_ppo_s0`. Production code was not changed.

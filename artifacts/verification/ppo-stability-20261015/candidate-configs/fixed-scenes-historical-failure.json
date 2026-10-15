@@ -1,0 +1,19 @@
+{
+  "scope": "Existing development evidence used to motivate and interpret the fixed-scene scratch trial, not an acceptance audit.",
+  "run": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_ppo_s0",
+  "source": "checkpoints/step-{update:06d}/episodes.csv",
+  "scene": "S03",
+  "checks": [
+    {"update": 160, "episodes": 25, "collisions": 25, "median_flight_seconds": 7.126},
+    {"update": 320, "episodes": 25, "collisions": 25, "median_flight_seconds": 18.6},
+    {"update": 480, "episodes": 25, "collisions": 25, "median_flight_seconds": 22.974},
+    {"update": 640, "episodes": 25, "collisions": 25, "median_flight_seconds": 17.026},
+    {"update": 800, "episodes": 25, "collisions": 25, "median_flight_seconds": 12.852},
+    {"update": 960, "episodes": 25, "collisions": 25, "median_flight_seconds": 46.606},
+    {"update": 1120, "episodes": 25, "collisions": 25, "median_flight_seconds": 38.668}
+  ],
+  "primary_successes_at_1120_from_existing_report": {
+    "S01": 25, "S02": 25, "S03": 0, "D01": 24, "D02": 20, "D03": 23
+  },
+  "limits": "No replay, parameter hashing or formal revalidation was performed. Different checkpoint case cohorts are not treated as paired retention data. The new recipe differs in more than its training distribution."
+}
