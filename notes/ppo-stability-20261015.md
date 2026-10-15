@@ -1029,3 +1029,43 @@ a from-scratch recipe and the unchanged formal stability/independent-test protoc
 Nominal-reset pilot launched from commit17b84c6 (PID2530705), preserving all source/control outputs. Source/control case comparison now shows u64 retains32/38 and u80 retains30/38, with no new successful cases. Later ordinary screens: PD u144 remains0/48(all timeouts); parallel u80=30/48(S01/S02/S03/D01/D02/D03=8/2/0/8/8/4). No matrix promotion.
 
 The nominal-reset branch completed its first real update u49 (32768 interactions): finite metrics, Actor gradient norm0.52205765, KL skip0, update time73.977s including compilation. Complete-state/configuration/geometry assertions passed. This validates execution only; first screening at u64 remains pending. Diagnostic wall time begins after restoration and GPU costs are concurrent, so setup/isolated throughput are not implied. First-update evidence records approximate process start time separately.
+
+### First paired reset result and offline geometric falsification
+
+The nominal-reset branch u64 completed524288 additional interactions and scored40/48:
+S01/S02/D01/D02/D03 each8/8, S03 eight timeouts. It retains all38 source-u48 successes
+and adds the two previously failed D03 cases. The matched unchanged control scores32/48,
+retaining32/38; the treatment has eight exclusive successes and loses no control-success
+case. This is an intermediate retention benefit, not S03 convergence or a final pilot
+pass. The registered u80/u96 checks remain required; the actual u96 gate is unchanged.
+`nominal-starts/comparison.json` compares already verified case-event records, with
+assertions for exact case identities, matched interactions and paired count arithmetic.
+It does not reread old CSVs, replay policies or recompute hashes.
+
+The parallel scratch control u96 is31/48:8/8/0/8/7/0, retaining31/38 source-u48
+successes. S03 has seven timeouts/one collision, D02 one collision and D03 eight
+collisions. The altitude-PD scratch u160 remains0/48, all timeouts. Both continue their
+registered budget; neither establishes stable convergence. Cached comparison with the
+original sequential u96 is31 versus12 successes, which does not imply eventual
+stability for the parallel candidate.
+
+An offline route probe asks whether the observed S03 stalls require an initial increase
+in straight-line goal distance to escape. Using the scene XML and the16 recorded
+terminal positions, plus the nominal start, it constructs a0.1m eight-neighbour planar
+grid with body radius0.07m and0.15m extra obstacle margin. Diagonal corner cutting is
+excluded. SciPy sparse Dijkstra supplies routes; assertions verify predecessor cost
+descent, summed path length and exact segment-to-cylinder body clearance. All17 routes
+have zero negative direct-progress edges across the entire route, with minimum segment
+body clearance0.16983m. Nominal route length is99.8936m versus96m direct distance.
+This does not support necessary distance-increasing detours as the specific explanation,
+so no geodesic-reward candidate is added. It does not establish dynamically feasible
+flight, Actor discoverability, or zero benefit from a different shaping signal. Routes
+hold observed altitude and still require vertical settling at the goal.
+
+Evidence and reproducible offline entrypoint are `s03-timeout-diagnostic/geodesic.json`
+and `geodesic.py`; no policy training or simulation was performed for this check.
+The reference mechanism is distance-progress reward, used with a geodesic distance in
+Habitat navigation:
+https://aihabitat.org/docs/habitat-lab/habitat.tasks.nav.nav.DistanceToGoalReward.html
+and https://aihabitat.org/docs/habitat-lab/habitat.config.default_structured_configs.html .
+Our grid is an approximate geometric diagnostic, not Habitat's navigation implementation.
