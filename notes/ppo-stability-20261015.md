@@ -182,5 +182,21 @@ the four owned pilots, and all four exited cleanly with complete recovery
 states. The retention fix removes only training arrays, preserving metadata,
 reports and episode evidence. Array-bearing checkpoint eligibility and selected
 actor/best-model retention rules remain unchanged. This does not change the
-training objective or the comparison settings. Resume the exact saved states
-after the targeted retention checks pass.
+training objective or the comparison settings. All four exact states were resumed after the nine targeted retention checks
+passed. Logs confirm advancement beyond u1638/u1614/u180/u105 respectively;
+pruned model_000120 still retains both episode CSVs and reports. Resume did not
+change training configurations or objectives.
+
+
+At the first retained full batch64 Depth screen (u240, 491520 interactions),
+D01/D02/D03 succeeded 8/7/1 out of eight each; static scenes all failed.
+This 16/48 result is developmental and does not establish stability. The
+matching 16-world model u960 lost its earlier D03 successes; individual rows
+from that old checkpoint were already pruned, so only its logged counts remain.
+
+The next comparison starts Depth APG and SHAC from scratch with exactly the
+batch64 task, actor, sensor, control, curriculum, horizon and interaction budget.
+Use their existing differentiable implementation, historical actor LR .0003,
+and SHAC state-only critic LR .001; PPO-only critic and clipping switches are
+disabled. Algorithm-specific critics are an explicit allowed difference.
+Full configuration and decision rules are in candidate-configs/differentiable-design.json.
