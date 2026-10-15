@@ -1,0 +1,1153 @@
+{
+  "scope": "Development only. Historical success sets include retained CSVs only; early pilot CSVs deleted before the retention fix are unavailable. No missing case outcomes are reconstructed from aggregate logs.",
+  "runs": {
+    "results/goal_reaching_batch64/depth_ppo_s0": {
+      "config_sha256": "95564bd4db7a3322d1ff88a5064eead600a4168aef7f6c63150fc3662082ef76",
+      "complete_screens": [
+        {
+          "update": 180,
+          "interactions": 368640,
+          "successes": 0,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.09468007431635235,
+              "mean_final_goal_progress": 0.09468004453340868
+            },
+            "S02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.09126888310946313,
+              "mean_final_goal_progress": 0.09126887315200775
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.0889783075233918,
+              "mean_final_goal_progress": 0.08897829757276442
+            },
+            "D01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "TIMEOUT": 8
+              },
+              "mean_best_goal_progress": 0.9108261997306764,
+              "mean_final_goal_progress": 0.906392775793732
+            },
+            "D02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.9936365763961118,
+              "mean_final_goal_progress": 0.9840843166397023
+            },
+            "D03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.2909432870420137,
+              "mean_final_goal_progress": 0.2909432870420137
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000180/screening/episodes.csv",
+          "csv_sha256": "d35341f854e9852002ec6039a3f6b34e1b5b51add6b933c45f3bead0334ecc5e",
+          "report_sha256": "230579dc6aa8aacb2aefc68bb48c3f8d3bb42f0ec47833f041d500b98ed66337",
+          "training_state_retained": false,
+          "retained_previous_successes": 0,
+          "previous_successes": 0,
+          "lost_previous_cases": [],
+          "new_success_cases": [],
+          "historical_successes": 0,
+          "retained_historical_successes": 0,
+          "historical_retention": null
+        },
+        {
+          "update": 240,
+          "interactions": 491520,
+          "successes": 16,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.9515765104178668,
+              "mean_final_goal_progress": 0.9515765097967993
+            },
+            "S02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.8750830880472327,
+              "mean_final_goal_progress": 0.8750830830767292
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.05257318036191401,
+              "mean_final_goal_progress": 0.052092240717266106
+            },
+            "D01": {
+              "successes": 8,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 8
+              },
+              "mean_best_goal_progress": 0.9948065777846561,
+              "mean_final_goal_progress": 0.9948065777070821
+            },
+            "D02": {
+              "successes": 7,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 7,
+                "COLLISION": 1
+              },
+              "mean_best_goal_progress": 0.9395264972826394,
+              "mean_final_goal_progress": 0.9395264972438215
+            },
+            "D03": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "SUCCESS": 1
+              },
+              "mean_best_goal_progress": 0.42070556833951356,
+              "mean_final_goal_progress": 0.41954114685093663
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000240/screening/episodes.csv",
+          "csv_sha256": "2ac5eabea87438cd8b534699157e8ade6fa188d880a1ddce28abf3d41ff7c73b",
+          "report_sha256": "2b5ad1ad312c9943e6372dbc4908db5c199a68856856297703c175a64ba7113c",
+          "training_state_retained": false,
+          "retained_previous_successes": 0,
+          "previous_successes": 0,
+          "lost_previous_cases": [],
+          "new_success_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "2"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "3"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "1"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ]
+          ],
+          "historical_successes": 0,
+          "retained_historical_successes": 0,
+          "historical_retention": null
+        },
+        {
+          "update": 300,
+          "interactions": 614400,
+          "successes": 21,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 8,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 8
+              },
+              "mean_best_goal_progress": 0.9947979187510952,
+              "mean_final_goal_progress": 0.9947979186733892
+            },
+            "S02": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "SUCCESS": 1
+              },
+              "mean_best_goal_progress": 0.9824685137020308,
+              "mean_final_goal_progress": 0.9721185955751721
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.050123917376174394,
+              "mean_final_goal_progress": 0.05012392731550551
+            },
+            "D01": {
+              "successes": 7,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 7,
+                "OUT_OF_BOUNDS": 1
+              },
+              "mean_best_goal_progress": 0.8939924213119473,
+              "mean_final_goal_progress": 0.8937959904648362
+            },
+            "D02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "OUT_OF_BOUNDS": 1
+              },
+              "mean_best_goal_progress": 0.6211142568745308,
+              "mean_final_goal_progress": 0.6188000563908157
+            },
+            "D03": {
+              "successes": 5,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 5,
+                "COLLISION": 3
+              },
+              "mean_best_goal_progress": 0.8098968854719291,
+              "mean_final_goal_progress": 0.8098968730091676
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000300/screening/episodes.csv",
+          "csv_sha256": "1b55b154d203db5c90c2a15a38258d163d878d53d63ec10c66da1aeeecbd82be",
+          "report_sha256": "2c72d67bb8d8a0b12635e321d5ca8981614d73400afae4e22b3655cbf95a27d4",
+          "training_state_retained": true,
+          "retained_previous_successes": 8,
+          "previous_successes": 16,
+          "lost_previous_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "1"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ]
+          ],
+          "new_success_cases": [
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ],
+            [
+              "S02",
+              "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+              "1000001",
+              "7"
+            ]
+          ],
+          "historical_successes": 16,
+          "retained_historical_successes": 8,
+          "historical_retention": 0.5
+        }
+      ],
+      "training_distribution_probes": [
+        {
+          "update": 120,
+          "interactions": 245760,
+          "successes": 2,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 2,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 6,
+                "SUCCESS": 2
+              },
+              "mean_best_goal_progress": 0.46440668588827033,
+              "mean_final_goal_progress": 0.46440668588827033
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000120/training_distribution/episodes.csv",
+          "csv_sha256": "a3b1dbcdd1045bee138965ca7649a9a8fd0dc33488ef0d64c3e1b84bbacae434",
+          "report_sha256": "92e431742c3fc509a395ed715c1f94ad92ecd6f4f225059c9b5eeb5bb15ee77e",
+          "training_state_retained": false
+        },
+        {
+          "update": 180,
+          "interactions": 368640,
+          "successes": 3,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 3,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 3,
+                "COLLISION": 5
+              },
+              "mean_best_goal_progress": 0.6242991176073409,
+              "mean_final_goal_progress": 0.6242991205875732
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000180/training_distribution/episodes.csv",
+          "csv_sha256": "77d0a8a36ede2bb70369c3ca88662efe37caa84d3689bf679f7c9e6bf7ee2d7b",
+          "report_sha256": "547cac10f4432a8de781dac82090519c5bb5ff5a3e668d46d71144215d52d4da",
+          "training_state_retained": false
+        },
+        {
+          "update": 240,
+          "interactions": 491520,
+          "successes": 2,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 2,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 5,
+                "SUCCESS": 2,
+                "OUT_OF_BOUNDS": 1
+              },
+              "mean_best_goal_progress": 0.6629609375040018,
+              "mean_final_goal_progress": 0.6564622342687377
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000240/training_distribution/episodes.csv",
+          "csv_sha256": "d4382556b1bb4f35079621c8df9f4a1b334cd86477cd7cb8da84ac0555abc137",
+          "report_sha256": "27c7aea6cd31e50a6e9b394cbfe967c867f32065ef7aac8a5eab24eaf3072bdc",
+          "training_state_retained": false
+        },
+        {
+          "update": 300,
+          "interactions": 614400,
+          "successes": 5,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 5,
+              "episodes": 8,
+              "events": {
+                "TIMEOUT": 1,
+                "SUCCESS": 5,
+                "COLLISION": 2
+              },
+              "mean_best_goal_progress": 0.8240736808396613,
+              "mean_final_goal_progress": 0.8237389309992021
+            }
+          },
+          "csv": "results/goal_reaching_batch64/depth_ppo_s0/checkpoints/model_000300/training_distribution/episodes.csv",
+          "csv_sha256": "7f93550632ac637d565b67e16e774c3a573e05507059191da5e5d3fc4d1faa48",
+          "report_sha256": "ff8834cb4ba976afa31cf21a71a75c82c65b11f80a0bc8bf9efe321c4ee703bd",
+          "training_state_retained": true
+        }
+      ],
+      "incomplete_evidence_skipped": []
+    },
+    "results/goal_reaching_batch64/lidar_ppo_s0": {
+      "config_sha256": "e8d1437e272b8f43cb06ba26a996ac684c47a92ddad25e6f7a5046b50ab28804",
+      "complete_screens": [
+        {
+          "update": 180,
+          "interactions": 368640,
+          "successes": 0,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.03576220543229953,
+              "mean_final_goal_progress": 0.035762225311886525
+            },
+            "S02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.03490699362445452,
+              "mean_final_goal_progress": 0.034906983670148765
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.08803905246215044,
+              "mean_final_goal_progress": 0.08803907235768145
+            },
+            "D01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.9889073624947141,
+              "mean_final_goal_progress": 0.9819652380072832
+            },
+            "D02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.6023128612824904,
+              "mean_final_goal_progress": 0.6023128513255173
+            },
+            "D03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.9895439500013824,
+              "mean_final_goal_progress": 0.9821316429983422
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000180/screening/episodes.csv",
+          "csv_sha256": "757b08bfac2fa003cdf43754378f54dfb0f08d08fb8648acd5f1d138a3e239bc",
+          "report_sha256": "a7d44436267e5dbc2120b96277a74de82e4958fa29bcb592c1edbb5927327697",
+          "training_state_retained": true,
+          "retained_previous_successes": 0,
+          "previous_successes": 0,
+          "lost_previous_cases": [],
+          "new_success_cases": [],
+          "historical_successes": 0,
+          "retained_historical_successes": 0,
+          "historical_retention": null
+        }
+      ],
+      "training_distribution_probes": [
+        {
+          "update": 60,
+          "interactions": 122880,
+          "successes": 0,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 5,
+                "OUT_OF_BOUNDS": 3
+              },
+              "mean_best_goal_progress": 0.46381918116816356,
+              "mean_final_goal_progress": 0.45423565096959817
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000060/training_distribution/episodes.csv",
+          "csv_sha256": "0e129e74ca024757313bb43af6d7f2e8b55022ad5600884649c26adca3c8179a",
+          "report_sha256": "8f1f1f3000f0091638a80d739674c3852c28e0e7269d7e143929e09a3409d2ee",
+          "training_state_retained": false
+        },
+        {
+          "update": 120,
+          "interactions": 245760,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "OUT_OF_BOUNDS": 1,
+                "COLLISION": 5,
+                "SUCCESS": 1,
+                "TIMEOUT": 1
+              },
+              "mean_best_goal_progress": 0.6486905173279405,
+              "mean_final_goal_progress": 0.6441059459166102
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000120/training_distribution/episodes.csv",
+          "csv_sha256": "b186feb2598eca63470339e6beee2767142b30dfcb613df60638d92f255fb03a",
+          "report_sha256": "5068826b9147f549ff590a2baade8f5d98e39f2c1a78e2ecfce5fb26de374d54",
+          "training_state_retained": false
+        },
+        {
+          "update": 180,
+          "interactions": 368640,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 6,
+                "SUCCESS": 1,
+                "TIMEOUT": 1
+              },
+              "mean_best_goal_progress": 0.3923787948094772,
+              "mean_final_goal_progress": 0.39170856435691764
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000180/training_distribution/episodes.csv",
+          "csv_sha256": "aee36c534855ef92a5949c8c2cd71185768a309450820f9915718f5c8c7a1912",
+          "report_sha256": "d1cf60421b4ebcceb0ba08eee9482b9d27d053faef7574884c3f0fa62eb79fc8",
+          "training_state_retained": true
+        },
+        {
+          "update": 240,
+          "interactions": 491520,
+          "successes": 2,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 2,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 6,
+                "SUCCESS": 2
+              },
+              "mean_best_goal_progress": 0.46929609246947057,
+              "mean_final_goal_progress": 0.46929609246947057
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000240/training_distribution/episodes.csv",
+          "csv_sha256": "8e2aeb6f8c138a3b5055353a58e700659f6adcb0f94814e3341d011148dbeead",
+          "report_sha256": "b44e644e6ac35431b388356c6bed264aa406521bd4808bc9b7d4e1ebee4e94e3",
+          "training_state_retained": true
+        },
+        {
+          "update": 300,
+          "interactions": 614400,
+          "successes": 0,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "TIMEOUT": 1
+              },
+              "mean_best_goal_progress": 0.42656394384693747,
+              "mean_final_goal_progress": 0.4249551952575422
+            }
+          },
+          "csv": "results/goal_reaching_batch64/lidar_ppo_s0/checkpoints/model_000300/training_distribution/episodes.csv",
+          "csv_sha256": "35fc97642199af54939aa451b28fa1f91d8b44fa8efa63c1739639cd33469190",
+          "report_sha256": "0c954bf8c6913fb70e850a5d300892f0b8fac293cd13ebedf1b70cca3bc8ccbd",
+          "training_state_retained": true
+        }
+      ],
+      "incomplete_evidence_skipped": []
+    },
+    "results/goal_reaching_differentiable/depth_apg_s0": {
+      "config_sha256": "7b8beaeb00a6fd90f1506b4f5a875f602ed7643f8f52efc421a05088ded795ba",
+      "complete_screens": [],
+      "training_distribution_probes": [],
+      "incomplete_evidence_skipped": []
+    },
+    "results/goal_reaching_differentiable/depth_shac_s0": {
+      "config_sha256": "c7e4a0597fa487a03f20fe70cb2475f225c90b5cde7629803759684ccbc49a1c",
+      "complete_screens": [],
+      "training_distribution_probes": [],
+      "incomplete_evidence_skipped": []
+    },
+    "results/goal_reaching_pilot/depth_ppo_s0": {
+      "config_sha256": "dfbe0fa3c483bed20d5e290e54100ae985a23ac67a8d575e5e88ffff418d03f4",
+      "complete_screens": [
+        {
+          "update": 1440,
+          "interactions": 737280,
+          "successes": 8,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.603532167011471,
+              "mean_final_goal_progress": 0.6035321620336431
+            },
+            "S02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.6033835797791186,
+              "mean_final_goal_progress": 0.6033835748003908
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.05079168096214357,
+              "mean_final_goal_progress": 0.0507916809690484
+            },
+            "D01": {
+              "successes": 8,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 8
+              },
+              "mean_best_goal_progress": 0.9948012672609129,
+              "mean_final_goal_progress": 0.9948012672609129
+            },
+            "D02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.28356635572869476,
+              "mean_final_goal_progress": 0.283566345800404
+            },
+            "D03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.21527031738020388,
+              "mean_final_goal_progress": 0.21527031738020388
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_001440/screening/episodes.csv",
+          "csv_sha256": "a74a09fcbac84fa76f40236897f6824f9b432de0235548674b343c97866be2ee",
+          "report_sha256": "f46135dd49f1c85b1770aa6346ed133f98bee7f47c5022aaad621dac78037c48",
+          "training_state_retained": true,
+          "retained_previous_successes": 0,
+          "previous_successes": 0,
+          "lost_previous_cases": [],
+          "new_success_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "2"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "3"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ]
+          ],
+          "historical_successes": 0,
+          "retained_historical_successes": 0,
+          "historical_retention": null
+        }
+      ],
+      "training_distribution_probes": [
+        {
+          "update": 1200,
+          "interactions": 614400,
+          "successes": 4,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 4,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 4,
+                "COLLISION": 3,
+                "OUT_OF_BOUNDS": 1
+              },
+              "mean_best_goal_progress": 0.7298770070750588,
+              "mean_final_goal_progress": 0.7285451291852738
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_001200/training_distribution/episodes.csv",
+          "csv_sha256": "a488c35b0afd3fe12cbca6bf8947c999cc05ad9767a5f2b41decc05cb93c9953",
+          "report_sha256": "64bfcf93496fd573f57e85f773cda230e78bc57146d6c6c7363c014f474c34c6",
+          "training_state_retained": true
+        },
+        {
+          "update": 1440,
+          "interactions": 737280,
+          "successes": 3,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 3,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 5,
+                "SUCCESS": 3
+              },
+              "mean_best_goal_progress": 0.6771663919578071,
+              "mean_final_goal_progress": 0.6771663836131562
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_001440/training_distribution/episodes.csv",
+          "csv_sha256": "626741fbacaf6e7636d904592c62d2e9d65f4ebb70632b2d0cb6251f527e3add",
+          "report_sha256": "dd230c743746a5ef1dde168147bf628d42b4cb1f222de5636ac2024c07ddb166",
+          "training_state_retained": true
+        },
+        {
+          "update": 1680,
+          "interactions": 860160,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "SUCCESS": 1,
+                "COLLISION": 3,
+                "OUT_OF_BOUNDS": 4
+              },
+              "mean_best_goal_progress": 0.7131589847117586,
+              "mean_final_goal_progress": 0.7034329202787003
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_001680/training_distribution/episodes.csv",
+          "csv_sha256": "43bfb8e3198c608ffce337366835fbab6179981115982d456627636b1f35b396",
+          "report_sha256": "b7d5fd73aa24e3fc6451ef00e42119575cf683f952579471644349d6eac259da",
+          "training_state_retained": false
+        },
+        {
+          "update": 1920,
+          "interactions": 983040,
+          "successes": 2,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 2,
+              "episodes": 8,
+              "events": {
+                "OUT_OF_BOUNDS": 3,
+                "SUCCESS": 2,
+                "COLLISION": 3
+              },
+              "mean_best_goal_progress": 0.6213497312812527,
+              "mean_final_goal_progress": 0.6069373469166588
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_001920/training_distribution/episodes.csv",
+          "csv_sha256": "0c09dae84119155cced2139afdde67137179705601837986a34e802ff41720ba",
+          "report_sha256": "17a6f14ec2176108044f7575c9e7b103ff02d0828926bd89502aeb25f97064a4",
+          "training_state_retained": true
+        },
+        {
+          "update": 2160,
+          "interactions": 1105920,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "SUCCESS": 1
+              },
+              "mean_best_goal_progress": 0.4298206561852086,
+              "mean_final_goal_progress": 0.42982065022474353
+            }
+          },
+          "csv": "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_002160/training_distribution/episodes.csv",
+          "csv_sha256": "8e11a30f7382c2da1ce83a271d8517be01412d87d61e290bf11cd6a8c64757c8",
+          "report_sha256": "4450f595e4d65971265ad0b48050fc4b3d7814d7fd17446062f0f314c9275eb4",
+          "training_state_retained": true
+        }
+      ],
+      "incomplete_evidence_skipped": [
+        "results/goal_reaching_pilot/depth_ppo_s0/checkpoints/model_002160/screening/report.json"
+      ]
+    },
+    "results/goal_reaching_pilot/lidar_ppo_s0": {
+      "config_sha256": "e5d0c4c2380598c9075cb64abb1a0a1dad294faf2a190d04d8d2cebf017afcbf",
+      "complete_screens": [
+        {
+          "update": 1440,
+          "interactions": 737280,
+          "successes": 0,
+          "episodes": 48,
+          "per_scene": {
+            "S01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.6058611947242816,
+              "mean_final_goal_progress": 0.6058611947242816
+            },
+            "S02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.5407270200314063,
+              "mean_final_goal_progress": 0.5407270051221443
+            },
+            "S03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.08562584828196144,
+              "mean_final_goal_progress": 0.08562582839772669
+            },
+            "D01": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.18835653882540962,
+              "mean_final_goal_progress": 0.188356528866846
+            },
+            "D02": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.33339208513678265,
+              "mean_final_goal_progress": 0.33339207522218306
+            },
+            "D03": {
+              "successes": 0,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 8
+              },
+              "mean_best_goal_progress": 0.10461357157993167,
+              "mean_final_goal_progress": 0.10461357157993167
+            }
+          },
+          "csv": "results/goal_reaching_pilot/lidar_ppo_s0/checkpoints/model_001440/screening/episodes.csv",
+          "csv_sha256": "c8a5fe51326cfd04829646916ff26b2d38ae257364604b230b58436547ae7a2e",
+          "report_sha256": "80ed086321479d50cd45532200666377387428d62b0a2b923212cecff084fc54",
+          "training_state_retained": true,
+          "retained_previous_successes": 0,
+          "previous_successes": 0,
+          "lost_previous_cases": [],
+          "new_success_cases": [],
+          "historical_successes": 0,
+          "retained_historical_successes": 0,
+          "historical_retention": null
+        }
+      ],
+      "training_distribution_probes": [
+        {
+          "update": 1440,
+          "interactions": 737280,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 6,
+                "OUT_OF_BOUNDS": 1,
+                "SUCCESS": 1
+              },
+              "mean_best_goal_progress": 0.5308753488648118,
+              "mean_final_goal_progress": 0.5308753357517899
+            }
+          },
+          "csv": "results/goal_reaching_pilot/lidar_ppo_s0/checkpoints/model_001440/training_distribution/episodes.csv",
+          "csv_sha256": "2c5c18fde4b416b87ccf058438bce8b3590a2f252d7278713a4e57c426c6d2a6",
+          "report_sha256": "abdf4a7f393fe70af2a61fc9b0da338a07102b0250544293be49a85df6386230",
+          "training_state_retained": true
+        },
+        {
+          "update": 1680,
+          "interactions": 860160,
+          "successes": 2,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 2,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 5,
+                "SUCCESS": 2,
+                "OUT_OF_BOUNDS": 1
+              },
+              "mean_best_goal_progress": 0.5451718450542383,
+              "mean_final_goal_progress": 0.5451718331333087
+            }
+          },
+          "csv": "results/goal_reaching_pilot/lidar_ppo_s0/checkpoints/model_001680/training_distribution/episodes.csv",
+          "csv_sha256": "9897af98343e5a31a81e9a19a3ce9aa05d9e7feb5e42508bb1da7e7f8b38a761",
+          "report_sha256": "3c0c40f5c4fd7766ab710d269404cf49034110f0f599e5854de71c4fe7c23e41",
+          "training_state_retained": true
+        },
+        {
+          "update": 1920,
+          "interactions": 983040,
+          "successes": 1,
+          "episodes": 8,
+          "per_scene": {
+            "train/procedural": {
+              "successes": 1,
+              "episodes": 8,
+              "events": {
+                "COLLISION": 7,
+                "SUCCESS": 1
+              },
+              "mean_best_goal_progress": 0.34007356690312396,
+              "mean_final_goal_progress": 0.32047927903080947
+            }
+          },
+          "csv": "results/goal_reaching_pilot/lidar_ppo_s0/checkpoints/model_001920/training_distribution/episodes.csv",
+          "csv_sha256": "c61079b519b882f0d19eed63f2c330af0f787ce10507aa19c2c778d255d9a94a",
+          "report_sha256": "12d7289ecf592b3776b444f9e80ec4e28fa947419a7e4439c406fda763772854",
+          "training_state_retained": true
+        }
+      ],
+      "incomplete_evidence_skipped": []
+    }
+  }
+}

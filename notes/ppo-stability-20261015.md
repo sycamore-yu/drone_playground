@@ -200,3 +200,21 @@ Use their existing differentiable implementation, historical actor LR .0003,
 and SHAC state-only critic LR .001; PPO-only critic and clipping switches are
 disabled. Algorithm-specific critics are an explicit allowed difference.
 Full configuration and decision rules are in candidate-configs/differentiable-design.json.
+
+
+The complete batch64 Depth u300 screen reached 21/48, but retained only 8/16
+of u240 successes, with 13 newly successful cases; D02 regressed from 7/8 to
+0/8. The raw-case recomputation script is summarize_navigation_pilots.py in
+this verification directory. It ignores incomplete reports, verifies CSV
+counts/case identities, and records unavailable early history explicitly.
+The complete u300 state was copied and byte-verified in
+`depth-batch64-retention-pair/`; u240 training arrays had already been pruned,
+so its evaluation rows remain usable but a continuation from u240 is unavailable.
+
+Racing next tests the successful SHAC optimizer (h128, target alpha .95,
+bootstrap .2) under progress1/additional-failure0, the task reward with prior
+PPO success. Historical SHAC trials did not combine these optimizer settings
+with this reward. This changes two shared reward coefficients together and
+cannot separate their individual effects. Base task penalties and physical
+success rules remain unchanged. candidate-configs/racing-p1f0-design.json
+records the question and decision before launch.
