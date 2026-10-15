@@ -1,0 +1,29 @@
+diff --git a/autoresearch_gym/external/runner.py b/autoresearch_gym/external/runner.py
+index 55373f3..6621dd0 100644
+--- a/autoresearch_gym/external/runner.py
++++ b/autoresearch_gym/external/runner.py
+@@ -192,9 +192,12 @@ def run_external_experiment(
+     artifacts = target.fetch_artifacts(bundle)
+     train_summary = backend.normalize_train(artifacts)
+     validate_train_curve_contract(train_summary)
+-    normalize_train_summary_curve(train_summary)
++    if train_summary.get("curve_status") != "unsupported":
++        normalize_train_summary_curve(train_summary)
+ 
+-    checkpoint_path = artifacts.root / "agent_checkpoint.pt"
++    checkpoint_path = Path(train_summary.get("checkpoint_path", "agent_checkpoint.pt"))
++    if not checkpoint_path.is_absolute():
++        checkpoint_path = artifacts.root / checkpoint_path
+     if not checkpoint_path.exists():
+         raise FileNotFoundError(f"external backend did not produce checkpoint: {checkpoint_path}")
+ 
+@@ -253,7 +256,8 @@ def run_external_experiment(
+             "env_kwargs": benchmark.env_kwargs,
+             "train_episodes": benchmark.train_episodes,
+             "train_seconds": benchmark.train_seconds,
+-            "budget_mode": "time" if benchmark.train_seconds is not None else "episodes",
++            "budget_mode": train_summary.get("budget_mode", "time" if benchmark.train_seconds is not None else "episodes"),
++            "train_env_steps": train_summary.get("train_env_steps"),
+             "eval_episodes": benchmark.eval_episodes,
+             "max_steps": benchmark.max_steps,
+             "render_mode": benchmark.render_mode,

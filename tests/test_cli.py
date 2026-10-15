@@ -518,6 +518,32 @@ def test_resume_selected_checkpoint_does_not_train_again(config, training):
     assert (training.record.directory / "eval/001").is_dir()
 
 
+def test_fixed_interaction_budget_exports_final_actor_without_acceptance(config, training):
+    """Finish a candidate at its budget without entering convergence selection."""
+    OmegaConf.update(config, "learning.max_interactions", 50, force_add=True)
+    config.simulation.num_envs = 1
+    config.learning.options.horizon = 10
+    training.stop_at = None
+    cli.train(config, training.record)
+    result = training.record.identity
+    assert result["status"] == "budget_exhausted"
+    assert result["interactions"] == 50 and result["updates"] == 5
+    assert result["checkpoint_selection"] == "final_budget_checkpoint"
+    assert training.evaluations == []
+    _, _, metadata = load_policy(training.record.directory / result["selected_checkpoint"])
+    assert metadata["provenance"]["interactions"] == 50
+
+
+@pytest.mark.parametrize("budget", [-1, True, 15])
+def test_fixed_budget_rejects_invalid_or_partial_updates(config, training, budget):
+    """A declared budget must contain an integer number of complete updates."""
+    OmegaConf.update(config, "learning.max_interactions", budget, force_add=True)
+    config.simulation.num_envs = 1
+    config.learning.options.horizon = 10
+    with pytest.raises(ValueError, match="max_interactions"):
+        cli.train(config, training.record)
+
+
 def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
     """Verify unknown selection is rejected before training."""
     config.learning.selection = "best_score"

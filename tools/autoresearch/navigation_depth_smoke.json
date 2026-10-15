@@ -1,0 +1,27 @@
+{
+  "name": "drone_navigation_depth_ppo_smoke",
+  "env_id": "external:drone-playground:navigation-depth",
+  "env_kwargs": {
+    "experiment": "navigation_procedural_depth_ppo_validation",
+    "algorithm": "ppo",
+    "eval_scenes": ["S01", "S02", "S03", "D01", "D02", "D03"],
+    "eval_mode": "checkpoint_eval"
+  },
+  "train_episodes": 0,
+  "eval_episodes": 12,
+  "max_steps": 3000,
+  "primary_metric": "eval_success_rate",
+  "primary_metric_mode": "maximize",
+  "train_seed": 0,
+  "eval_seed_start": 1600000,
+  "device": "external",
+  "execution_backend": {
+    "kind": "external",
+    "name": "drone_playground",
+    "adapter": "autoresearch:DronePlaygroundBackend",
+    "execution_target": "local",
+    "train_env_steps": 8192,
+    "supports_live_frame": false,
+    "supports_sampled_trajectory": false
+  }
+}

@@ -97,6 +97,13 @@ def train(config: DictConfig, record: RunRecord) -> None:
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
+    budget = config.learning.get("max_interactions")
+    if budget is not None:
+        batch = config.simulation.num_envs * config.learning.options.horizon
+        if type(budget) is not int or budget < 1 or budget % batch:
+            raise ValueError(
+                "learning.max_interactions must be a positive multiple of worlds*horizon"
+            )
     if not get_class(config.method.implementation._target_).trainable:
         raise ValueError("Training requires method=policy or an experiment recipe")
     selection = config.learning.selection
@@ -517,11 +524,13 @@ def train(config: DictConfig, record: RunRecord) -> None:
             )
 
     try:
-        if pending_evaluation:
+        if pending_evaluation and budget is None:
             evaluate_checkpoint()
-        while (
-            not stop_requested
-            and not patience_exhausted
+        metrics = {}
+        while not stop_requested and (
+            int(state.interactions) < budget
+            if budget is not None
+            else not patience_exhausted
             and consecutive < config.learning.required_consecutive_passes
         ):
             if scenes is not None and updates_in_scene == scene_updates:
@@ -562,14 +571,26 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 }
                 record.event("update", **measured)
                 print(json.dumps(measured), flush=True)
-            if (
-                update % config.learning.checkpoint_interval == 0
-                and update % config.learning.evaluation_interval != 0
+            if update % config.learning.checkpoint_interval == 0 and (
+                budget is not None or update % config.learning.evaluation_interval != 0
             ):
                 checkpoint(state)
-            if update % config.learning.evaluation_interval:
+            if budget is not None or update % config.learning.evaluation_interval:
                 continue
             evaluate_checkpoint()
+        if budget is not None and int(state.interactions) >= budget:
+            frozen = checkpoint(state, export_policy=True)
+            record.finish(
+                "budget_exhausted",
+                updates=int(state.updates),
+                interactions=int(state.interactions),
+                requested_interactions=budget,
+                selected_checkpoint=str(frozen.relative_to(record.directory)),
+                checkpoint_selection="final_budget_checkpoint",
+                last_metrics=metrics,
+                **cost(state),
+            )
+            return
         frozen = (
             last_frozen
             if last_checkpoint_update == int(state.updates) and last_frozen is not None

@@ -2,7 +2,9 @@
 
 `Trainer` performs one real parameter update through the shared Simulation environment.
 The caller controls the training loop, evaluations, stopping decisions and GPU assignment.
-There is no total interaction cap and an update does not indicate convergence.
+The default CLI has no interaction cap. Setting `learning.max_interactions` runs a fixed
+budget and exports the final Actor without convergence selection. See
+[Autoresearch Gym](autoresearch.md) for candidate comparisons.
 
 ```python
 from drone_playground.learning.trainer import Trainer

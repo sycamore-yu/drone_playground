@@ -1,0 +1,2 @@
+# Unified patches preserve a context marker on empty source lines.
+*.patch -whitespace

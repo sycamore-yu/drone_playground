@@ -30,6 +30,8 @@ observation:
 checkpoint: null
 initial_checkpoint: null
 resume: null
+learning:
+  max_interactions: null
 results:
   format: orbax
   keep_checkpoints: 3

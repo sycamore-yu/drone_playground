@@ -32,6 +32,7 @@
 | [0021](adr/0021-task-owned-reward-contract.md) | Task/Environment 拥有任务奖励、进度和失败惩罚；Learning 只组合任务成本与网络辅助损失 |
 | [0022](adr/0022-navigation-reward-ablation.md) | Navigation PPO 单变量奖励消融与配对验证 |
 | [0024](adr/0024-navigation-ppo-progress-regression-screening.md) | Accepted：真实进度与逐回合能力保持纳入筛查；取消速度目标并建立距离与稳定性对照；局部校准已有证据，功能代码尚未合入，收敛验收未完成 |
+| [0025](adr/0025-autoresearch-gym.md) | `feat/autoresearch-gym`：外部候选搜索接入现有 CLI，可选固定交互预算；尚未合入 `v0.2` |
 
 当前 `v0.2` 合入 Sensor P0/P1 与 RL/Brax、Scratch Matrix、奖励消融。
 新训练使用 Orbax/TensorBoard v3；旧 v2 ZIP 产物和冻结报告按原协议读取，
@@ -62,6 +63,8 @@ SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现�
 ## 运行说明
 
 [训练接口](training.md)、[实验配方](experiments.md)、[原生方法](ros_planner.md)、[回放](replay.md)。
+
+[Autoresearch Gym](autoresearch.md) 说明外部候选训练、固定预算和评测结果读取。
 
 ## 阶段性实验记录
 
