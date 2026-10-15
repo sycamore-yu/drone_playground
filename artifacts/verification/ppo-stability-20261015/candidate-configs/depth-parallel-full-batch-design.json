@@ -30,7 +30,8 @@
       4,
       4
     ],
-    "interpretation": "Equal environment samples and PPO epochs; not equal optimizer step counts. Report actual wall cost."
+    "interpretation": "Equal environment samples and PPO epochs; not equal optimizer step counts. Report actual wall cost.",
+    "random_stream": "Initial source RNG is restored exactly. Native PPO shares its RNG across rollout, permutations and entropy draws; fewer minibatches consume fewer splits, so later action draws are not pathwise matched to control. No custom RNG advancement is added."
   },
   "budget": {
     "updates": 8,

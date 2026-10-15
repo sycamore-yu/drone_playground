@@ -1583,3 +1583,10 @@ The existing continuation tool gains a full-batch flag and diagnostic-only short
 no native learner or new optimizer abstraction is needed. Existing collector rejection
 now has an explicit full-batch diagnostic case.33targeted tests pass25.70s; the expanded
 Actor+Critic counter assertion also passes separately in19.20s before launch.
+
+Before pilot outcomes: native PPO shares one learner RNG between collector, epoch
+permutations and minibatch entropy draws. Changing4->1minibatches consumes fewer
+optimizer RNG splits, so only the initial RNG/source state and first rollout are
+pathwise matched; later action draws differ. This is an explicit further limit on
+unique causal attribution. No custom RNG-burning mechanism is added to the native
+full-batch configuration. The three-seed requirement remains necessary.
