@@ -1,0 +1,30 @@
+{
+  "scope": "The pre-agreed PPO stability requirement after the first full pass under protocol2. No rollback or early termination on quality failure.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000144",
+  "baseline_full_validation": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000144/report.json",
+  "baseline_successes": 150,
+  "seed_base": 1500000,
+  "baseline_reuse": "Read the completed150-case table once, preserve exact cases, never rerun the source model.",
+  "window": {
+    "required_additional_interactions": 900000,
+    "actual_additional_interactions": 917504,
+    "updates": 28,
+    "batch": 32768,
+    "original_interval_interactions": 122880,
+    "actual_interval_interactions": 131072,
+    "interval_updates": 4,
+    "check_updates": [
+      148,
+      152,
+      156,
+      160,
+      164,
+      168,
+      172
+    ]
+  },
+  "conditions": "Restore all learner, optimizer, random-generator and environment state; retain scene order and2updates per scene. Same production Trainer.update,3D action, reward, sensors, network, optimizer and physical task. No continuation hyperparameter change.",
+  "gates": "Every check:25 episodes per primary scene,>=23 successes in each,>=95% of the original successful cases retained (at least143/150). All checks must pass; actual final model172 is retained and is the future independent-test candidate.",
+  "artifacts": "Per-update metrics; per-check CSV/report; all complete learner states and actor exports; final status and aggregate pass flag.",
+  "independence": "Automatic initial benchmark at2million is separate from the future final frozen test. Final testing will use a separately reserved new cohort after a stable three-seed recipe; no test data enter learning."
+}

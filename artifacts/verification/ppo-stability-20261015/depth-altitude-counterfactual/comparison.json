@@ -1,0 +1,24 @@
+{
+  "status": "completed",
+  "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000032",
+  "config_sha256_reused": "3e6585206ae410e2bfd0f874150f06bf8a1e86e2a2850fe36e6e4fc4efb30db1",
+  "source_sha256_reused": "a6359de47ee7c588a03d08f4719134c636cb6da4b8c300c0abbcca1ce9624b27",
+  "control_evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/fixed-scenes-long-return-progress.json",
+  "control_successes": 0,
+  "per_scene_successes": {
+    "S01": 8,
+    "S02": 8,
+    "S03": 8,
+    "D01": 7,
+    "D02": 6,
+    "D03": 3
+  },
+  "events": {
+    "SUCCESS": 40,
+    "COLLISION": 8
+  },
+  "supports_vertical_control_intervention": true,
+  "all_primary_screens_pass": false,
+  "intervention": "Only vertical control is replaced by existing Action altitude PD: az=clip(2*(goal_z-z)-1.5*vz,-3,3). Horizontal learned actions, true time input, physics, goal radius and deadline are unchanged.",
+  "limits": "Frozen development diagnostic, not scratch training or acceptance. A retained recipe must disclose its changed action/control interface and train new two-action policies from random initialization. No general 3D maneuvering claim."
+}
