@@ -1,0 +1,10 @@
+{
+  "scope": "Frozen PPO diagnostic using the already implemented horizontal_acceleration action; no production modification.",
+  "source": "results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000032",
+  "evidence": "All48 original development cases failed. Clock clamping did not improve S01/D01 (0/16). Those counterfactual trajectories reached mean x98m but z3.9m, missing the true goal z3m and0.5m sphere. This motivates an intervention on vertical tracking.",
+  "intervention": "Keep the original Actor and its real time/state/sensor inputs; use its first two action outputs and the existing goal-altitude PD for vertical acceleration. Do not modify physics, success criteria or reward. This intentionally changes the action/control interface.",
+  "control": "Reuse all48 original update32 case identities and outcomes. No repeated control evaluation or model hashing.",
+  "criterion": "At least6/8 successes in both S01 and D01 supports a substantial vertical-control contribution. Report all six primary scene counts; only a pass across all scenes supports proceeding to full validation, which this frozen intervention does not perform.",
+  "next_step_if_supported": "A configuration-only scratch candidate with the existing two-action interface, with all weights randomly initialized. Keep the original full3D trial and historical failed horizontal/Fan-reward trials; no borrowed model is accepted as scratch evidence.",
+  "limits": "This diagnoses one concrete failure mode and does not prove a unique PPO collapse cause. A selected two-action policy must be named accurately; do not claim learned general3D maneuvering or identical cross-algorithm control interfaces."
+}
