@@ -375,5 +375,16 @@
     "production_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
     "metrics_finite": true,
     "scope": "Actual GPU update, not long-run convergence"
+  },
+  "critic_trajectory_audit": {
+    "script": "critic_trajectory_audit.py",
+    "report": "depth-critic-calibration/trajectory-audit.json",
+    "initial_state_report": "depth-critic-calibration/initial-state-audit.json",
+    "all_eight_states_reported": true,
+    "raw_file_hashes_verified": true,
+    "returns_recomputed": true,
+    "raw_terminal_events_match_report": true,
+    "source_initial_state_exact": true,
+    "scope": "Existing frozen stochastic training-state data; no new policy samples or convergence claim"
   }
 }

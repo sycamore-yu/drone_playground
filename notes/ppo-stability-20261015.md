@@ -508,3 +508,18 @@ logged skip fractions and the production update loop. The observed first-check
 advantage is therefore not explained by lambda1 simply executing fewer actor
 minibatches. This remains an interim comparison; the fixed393,216-interaction
 final retention gate has not yet been evaluated.
+
+The h512/lambda.95 second complete check atu308 fell to6/48 and5/21 retained
+after262,144 additional interactions (all three static scenes0/8). Continue the
+preregistered final check; lambda1 has not yet completed the corresponding check.
+
+Current-source Racing PPO reference-options seed0 completed the required triple
+at1400/1500/1600, each100/100, and automatic development benchmark100/100.
+Raw CSV counts, legal gate orders, finite positive completion times, identical
+development case identities and disjoint benchmark identities were checked.
+The selected inference archive payload hash matches its metadata. Selection cost
+was26,214,400 interactions; recorded training wall time502.059s. Exact records
+and hashes are in `racing-ppo-reference-outcomes.json`. Seeds1/2 were launched
+with configurations verified to differ only by seed and output; no initial
+weights or optimizer states were supplied. Reserved4million final test remains
+unused and no additional formal matrix cell is claimed.
