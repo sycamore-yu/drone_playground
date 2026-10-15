@@ -1,5 +1,5 @@
 {
-  "recorded_at_utc": "2026-10-15T09:25:25.283711+00:00",
+  "recorded_at_utc": "2026-10-15T10:32:15.502747+00:00",
   "curriculum_implementation_commit": "71bdc4a",
   "goal_objective_implementation_commit": "42683b9",
   "checks": [
@@ -32,6 +32,11 @@
       "test": "test_orbax_results.py test_progress_checkpoint_retention.py test_checkpoint_procedural.py",
       "result": "9 passed",
       "seconds": 10.53
+    },
+    {
+      "test": "test_acceptance_report.py including explicit actor observation equality",
+      "result": "25 passed",
+      "seconds": 4.13
     }
   ],
   "legacy_checkpoint_replay": {

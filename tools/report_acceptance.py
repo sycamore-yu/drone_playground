@@ -634,6 +634,7 @@ def common_actor(runs):
                 "task": config.get("task"),
                 "sensor": config.get("sensor"),
                 "method": config.get("method"),
+                "observation": config.get("observation", {}),
                 "simulation": {
                     key: value
                     for key, value in config.get("simulation", {}).items()

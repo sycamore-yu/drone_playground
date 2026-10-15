@@ -325,6 +325,22 @@ def test_three_seeds_and_three_algorithms_with_actual_csv_pass_tracking_only(tmp
     assert report["runs"][0]["checkpoint"]["archive_sha256"]
 
 
+def test_algorithm_comparison_rejects_different_actor_information(tmp_path):
+    """Matching network names cannot hide a changed observation contract."""
+    runs = [
+        make_run(tmp_path, f"{algorithm}-{seed}", algorithm=algorithm, seed=seed)
+        for algorithm in ("ppo", "apg", "shac")
+        for seed in range(3)
+    ]
+    config_path = runs[-1] / "config.yaml"
+    config = yaml.safe_load(config_path.read_text())
+    config["observation"] = {"navigation_relative_goal": True}
+    config_path.write_text(yaml.safe_dump(config))
+    completed, report = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    assert report["common_actor_checks"]["tracking/state"]["passed"] is False
+
+
 @pytest.mark.parametrize("duplicate", ["path", "seed_group", "seed_list"])
 def test_duplicate_input_is_an_error(tmp_path, duplicate):
     """Verify duplicate input is an error."""

@@ -218,3 +218,26 @@ with this reward. This changes two shared reward coefficients together and
 cannot separate their individual effects. Base task penalties and physical
 success rules remain unchanged. candidate-configs/racing-p1f0-design.json
 records the question and decision before launch.
+
+
+At batch64 u360 (737280 interactions), Depth retained zero of the 21 u300
+successes and had five different successful cases; LiDAR lost all eight u300
+successes. This occurs before training updates enter curriculum phase 1. Both
+larger-batch candidates continue, but neither has solved retention. The 16-world
+controls were adaptively pruned after repeated regressions, exiting cleanly at
+u2252 Depth / u2202 LiDAR with complete training states. They did not finish the
+planned 2211840 budget; compare only actually shared interaction checkpoints.
+
+A frozen Depth u300 counterfactual evaluates the original observations versus
+all-zero depth/depth_mask (the current encoder's unavailable-frame input), on
+S01/D01/D03 and the same fixed seeds. First replay must reproduce all original
+case events; weights, other observations, physics and recurrent resets stay
+fixed. Missing-input degradation alone will not prove geometric competence.
+The script saves complete trajectories and case comparisons in the verification
+directory. It is development evidence and cannot fill an acceptance cell.
+
+The acceptance collector previously omitted config.observation from the shared
+Actor-input comparison. It now checks this existing field; all 25 collector
+checks pass, including a deliberately mismatched input contract. Rechecking the
+same reuse manifest still yields 3 passed / 14 missing / 1 incomplete. This
+change affects evidence validation only, not any live learning computation.
