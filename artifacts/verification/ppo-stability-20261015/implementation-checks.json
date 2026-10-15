@@ -42,6 +42,11 @@
       "test": "test_goal_reaching_reward.py with minimum-clearance objective",
       "result": "9 passed",
       "seconds": 81.35
+    },
+    {
+      "test": "test_acceptance_report.py test_cli.py -k acceptance_report or frozen (external model identity, fixed cohort semantics)",
+      "result": "51 passed, 50 deselected",
+      "seconds": 9.84
     }
   ],
   "legacy_checkpoint_replay": {
@@ -289,5 +294,30 @@
     "recurrent_memory_max_error": 0.0,
     "reward_finite": 1.0
   },
-  "scope": "Targeted implementation checks and source-case replay; not training convergence or full regression."
+  "scope": "Targeted implementation checks and source-case replay; not training convergence or full regression.",
+  "frozen_identity_replay": {
+    "run": "results/frozen_racing_common_reward/shac_s0_verified",
+    "payload_sha256": "3d91eb1587eae25894d2b562de9e90e7241cbdb377b1c683bed4edbe72c851c0",
+    "successes": 100,
+    "episodes": 100,
+    "exact_event_gate_order_physics_steps_replay": true,
+    "scope": "Already consumed 3million cohort replay, not a new test",
+    "collector_summary": {
+      "passed": 3,
+      "missing": 14,
+      "incomplete": 1
+    },
+    "C5": {
+      "passed": true,
+      "reasons": [
+        "Verified first consecutive triple, selection, archive update and CSV partitions"
+      ],
+      "first_passing_updates": [
+        600,
+        700,
+        800
+      ],
+      "independent_seed_sets": true
+    }
+  }
 }

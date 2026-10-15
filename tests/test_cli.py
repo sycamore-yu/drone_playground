@@ -725,6 +725,34 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
     assert record.identity["status"] == "failed"
 
 
+def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_path):
+    """A separate benchmark retains the exact parameter identity it evaluated."""
+    archive = tmp_path / "policy.zip"
+    save_inference(
+        archive,
+        SmallState().params,
+        kind="state",
+        config={
+            "experiment": OmegaConf.to_container(config, resolve=True),
+            "learning": {"action": OmegaConf.to_container(config.method.action, resolve=True)},
+        },
+        provenance={"updates": 300},
+        actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
+    )
+    config.mode = "benchmark"
+    config.checkpoint = str(archive)
+    record = Record(tmp_path / "benchmark")
+    monkeypatch.setattr(cli, "RunRecord", lambda *args, **kwargs: record)
+    monkeypatch.setattr(cli, "evaluate", lambda *args, **kwargs: {"passed": True})
+    cli.main(config)
+    _, metadata = cli.read_checkpoint(archive, "inference")
+    assert record.identity["status"] == "completed"
+    assert record.identity["evaluated_checkpoint"] == {
+        "path": str(archive.resolve()),
+        "payload_sha256": metadata["sha256"],
+    }
+
+
 @pytest.mark.parametrize("loader", ["training", "learning_inference", "simulation_inference"])
 @pytest.mark.parametrize("damage", ["format_version", "purpose", "sha256"])
 def test_shared_archive_validation(tmp_path, loader, damage):

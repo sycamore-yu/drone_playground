@@ -259,3 +259,26 @@ clearance treatment. Run180 actual updates, all48 fixed cases every60updates,
 using the original curriculum denominator. The existing diagnostic driver now
 accepts this single task-objective override and separately records original and
 branch configs. No teacher or weights from another algorithm are used.
+
+The Depth sensor counterfactual completed: the exact original case events replayed
+at 20/24 successes (S01/D01/D03 = 8/7/5). Zeroing only Depth and its validity mask
+left 3/24 successes, retaining 3/20 original successes. Raw trajectories, CSVs and
+case identities are retained. This establishes input dependence, with the
+missing-input distribution limitation above; it does not establish avoidance
+competence.
+
+The standalone frozen CLI now records the actually loaded archive path and payload
+SHA-256. The collector accepts explicitly mapped external benchmark runs only
+when that identity, selected model, inputs, seed partition and config checksum
+match. A real replay of the existing Racing SHAC p2/f40 seed0 model on the already
+consumed 3million cohort reproduced all100 case events, gate orders and completion
+steps, with the matching payload hash. This is pipeline verification, not a new
+independent test. Fixed checkpoint cohorts now use their configured seed semantics
+without relaxing consecutive-pass or quality requirements. All51 targeted
+collector/frozen-CLI checks pass; the real linked report remains 3passed,
+14missing,1incomplete, with SHAC seed0 C5 verified at u600/700/800.
+
+Racing SHAC p1/f0 seed0 completed at u1600 after three consecutive full checks:
+u1400=100/100, u1500=97/100, u1600=100/100. Its automatic development benchmark
+is100/100. This supports proceeding with the preregistered shared-reward
+PPO/APG checks and remaining seeds; it is not a completed three-seed cell.

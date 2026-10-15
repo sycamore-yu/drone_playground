@@ -57,6 +57,20 @@ named in the manifest, their checkpoint evaluation history, and explicitly recor
 initialization sources. It never searches other runs for a successful replacement.
 It does not train, import project simulation code, query the GPU, or alter run records.
 
+An optional `benchmark_runs` object maps a chosen training-run path to a separate
+frozen-evaluation run, with both paths resolved against `root`. This permits a new
+test cohort without rewriting the original training record. The collector requires
+the selected checkpoint path and loaded payload SHA-256 recorded by the evaluation
+CLI, matching task/actor/observation/physical inputs, a completed run with valid
+config checksum, and the declared test seed base in the report and episode rows.
+Older standalone evaluations without the recorded loaded-payload identity cannot
+serve as verified replacements. The opt-in `benchmark.frozen_seed_base` is excluded
+from three-seed training-recipe equality because it only reserves final-test cases;
+the collector still verifies the actual evaluation cohort independently.
+Checkpoint seed validation follows `benchmark.fixed_checkpoint_seeds`: fixed
+cohorts keep their case seeds while evaluation indices still count consecutive
+checks. Frozen benchmarks retain their separate declared test seeds.
+
 Chosen manifest, embedded here to avoid adding another maintained tool file:
 
 ```json

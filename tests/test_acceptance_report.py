@@ -21,10 +21,20 @@ def write_json(path, value):
     path.write_text(json.dumps(value))
 
 
-def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100):
+def evaluation(
+    path,
+    task="tracking",
+    seed=0,
+    index=0,
+    successes=100,
+    count=100,
+    seed_base=None,
+    fixed_checkpoint_seeds=False,
+):
     """Provide evaluation for the surrounding execution."""
     mode = "checkpoint_eval" if index else "benchmark"
-    base = 1_000_000 if index else 2_000_000
+    base = (1_000_000 if index else 2_000_000) if seed_base is None else seed_base
+    cohort = 0 if fixed_checkpoint_seeds and index else index
     scenes = NAV_SCENES if task == "navigation" else ["empty" if task == "tracking" else "racing"]
     reports = {}
     all_rows = []
@@ -36,7 +46,7 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
                 {
                     "scene": scene,
                     "event": "SUCCESS" if world < successes else "COLLISION",
-                    "initialization_seed": base + 10_000 * seed + 100 * index + scene_index,
+                    "initialization_seed": base + 10_000 * seed + 100 * cohort + scene_index,
                     "world_index": world,
                     "position_rmse": 0.1,
                     "flight_seconds": 20,
@@ -65,7 +75,14 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
 
 
 def make_run(
-    root, name="run", *, task="tracking", algorithm="ppo", seed=0, passes=(True, True, True)
+    root,
+    name="run",
+    *,
+    task="tracking",
+    algorithm="ppo",
+    seed=0,
+    passes=(True, True, True),
+    fixed_checkpoint_seeds=False,
 ):
     """Provide make run for the surrounding execution."""
     path = root / name
@@ -90,6 +107,8 @@ def make_run(
             "selection": "last_of_first_three_consecutive_passes",
         },
     }
+    if fixed_checkpoint_seeds:
+        config["benchmark"] = {"fixed_checkpoint_seeds": True}
     (path / "config.yaml").write_text(yaml.safe_dump(config))
     update = len(passes) * 100
     cp = path / "checkpoints" / f"step-{update:06d}" / "policy.zip"
@@ -157,6 +176,7 @@ def make_run(
             index,
             count if passed else 0,
             count,
+            fixed_checkpoint_seeds=fixed_checkpoint_seeds,
         )
         events.append({"event": "checkpoint_evaluation", "update": 100 * index})
     (path / "metrics.jsonl").write_text("\n".join(map(json.dumps, events)) + "\n")
@@ -310,6 +330,21 @@ def test_checkpoint_passes_must_be_consecutive(tmp_path):
     assert report["runs"][0]["C5"]["first_passing_updates"] is None
 
 
+@pytest.mark.parametrize("damage", [False, True])
+def test_fixed_validation_cohort_uses_configured_case_identity(tmp_path, damage):
+    """Repeated fixed cases still require consecutive checks and their declared seeds."""
+    path = make_run(tmp_path, fixed_checkpoint_seeds=True)
+    if damage:
+        rewrite_csv(
+            path / "checkpoints/step-000200/episodes.csv",
+            lambda rows: [row.update(initialization_seed="1000100") for row in rows],
+        )
+    completed, report = run_collector(tmp_path, [path])
+    assert completed.returncode == 0, completed.stderr
+    assert report["runs"][0]["C5"]["passed"] is (not damage)
+    assert report["runs"][0]["benchmark"]["seeds"] == [2_000_000]
+
+
 def test_three_seeds_and_three_algorithms_with_actual_csv_pass_tracking_only(tmp_path):
     """Verify three seeds and three algorithms with actual csv pass tracking only."""
     runs = [
@@ -339,6 +374,68 @@ def test_algorithm_comparison_rejects_different_actor_information(tmp_path):
     completed, report = run_collector(tmp_path, runs)
     assert completed.returncode == 0, completed.stderr
     assert report["common_actor_checks"]["tracking/state"]["passed"] is False
+
+
+@pytest.mark.parametrize("damage", [None, "payload", "checkpoint", "observation", "cohort"])
+def test_explicit_frozen_run_requires_the_selected_model_and_inputs(tmp_path, damage):
+    """A fresh benchmark may replace a consumed cohort only with verified model provenance."""
+    source = make_run(tmp_path)
+    header = json.loads((source / "run.json").read_text())
+    checkpoint = source / header["selected_checkpoint"]
+    with zipfile.ZipFile(checkpoint) as archive:
+        metadata = json.loads(archive.read("metadata.json"))
+    frozen = tmp_path / "frozen"
+    frozen.mkdir()
+    config = yaml.safe_load((source / "config.yaml").read_text())
+    config.update(
+        mode="benchmark",
+        checkpoint=str(checkpoint),
+        benchmark={
+            "protocol": "learning",
+            "allow_environment_change": False,
+            "seed_base": 4_000_000,
+        },
+    )
+    loaded = {"path": str(checkpoint), "payload_sha256": metadata["sha256"]}
+    if damage == "payload":
+        loaded["payload_sha256"] = "changed-parameters"
+    elif damage == "checkpoint":
+        config["checkpoint"] = str(source / "other-policy.zip")
+    elif damage == "observation":
+        config["observation"] = {"navigation_relative_goal": True}
+    elif damage == "cohort":
+        config["benchmark"]["seed_base"] = 5_000_000
+    config_path = frozen / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    write_json(
+        frozen / "run.json",
+        {
+            "layout_version": 2,
+            "status": "completed",
+            "evaluation_directory": "eval/001",
+            "evaluated_checkpoint": loaded,
+            "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
+        },
+    )
+    evaluation(frozen / "eval/001", seed_base=4_000_000)
+    completed, report = run_collector(tmp_path, [source], benchmark_runs={str(source): str(frozen)})
+    assert completed.returncode == 0, completed.stderr
+    run = report["runs"][0]
+    assert run["benchmark"]["checkpoint_link"]["passed"] is (damage is None)
+    assert run["C5"]["passed"] is (damage is None)
+    assert run["benchmark"]["seeds"] == [4_000_000]
+    assert json.loads((source / "run.json").read_text()) == header
+
+
+def test_frozen_test_cohort_is_not_a_training_recipe_difference():
+    """Fresh test reservation leaves the training recipe equal, other changes do not."""
+    import runpy
+
+    recipe = runpy.run_path(str(SCRIPT))["recipe"]
+    control = {"learning": {"algorithm": "ppo"}, "benchmark": {"protocol": "learning"}}
+    candidate = {**control, "benchmark": {**control["benchmark"], "frozen_seed_base": 4_000_000}}
+    assert recipe(control) == recipe(candidate)
+    assert recipe(control) != recipe({**candidate, "learning": {"algorithm": "apg"}})
 
 
 @pytest.mark.parametrize("duplicate", ["path", "seed_group", "seed_list"])

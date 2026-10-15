@@ -228,9 +228,11 @@ def combine(checks):
     return check(False if False in values else (None if None in values or not values else True))
 
 
-def evaluate(directory, task, seed, mode):
+def evaluate(directory, task, seed, mode, *, fixed_checkpoint_seeds=False):
     """Verify saved episode CSVs, task quality and evaluation seed partitions."""
     issues = []
+    if type(fixed_checkpoint_seeds) is not bool:
+        issues.append("fixed_checkpoint_seeds must be boolean")
     report = read_mapping(directory / "report.json", issues)
     scenes = NAV_SCENES if task == "navigation" else ("empty" if task == "tracking" else "racing",)
     evidence = {
@@ -260,13 +262,15 @@ def evaluate(directory, task, seed, mode):
         ):
             issues.append(f"{scenes[scene_index]}: actual CSV seeds outside {mode} partition")
         if base is not None and isinstance(index, int):
-            if actual != [int(base + 10_000 * seed + 100 * index + scene_index)]:
+            cohort = 0 if fixed_checkpoint_seeds is True and mode == "checkpoint_eval" else index
+            if actual != [int(base + 10_000 * seed + 100 * cohort + scene_index)]:
                 issues.append(f"{scenes[scene_index]}: actual CSV seeds disagree with report")
         else:
             issues.append("Missing evaluation_index/seed_base")
     primary = scenes[:6] if task == "navigation" else scenes
     return {
         "directory": str(directory),
+        "seed_base": base,
         "evaluation_index": index,
         "reported_passed": report.get("passed"),
         "task_contract": report.get("task_contract"),
@@ -334,7 +338,7 @@ def initialization_cost_id(path):
     return str(path)
 
 
-def collect_run(path, root):
+def collect_run(path, root, *, benchmark_run=None):
     """Collect one selected run without replacing failures from another run."""
     issues = []
     config = read_mapping(path / "config.yaml", issues)
@@ -411,18 +415,75 @@ def collect_run(path, root):
             directories.setdefault(update, folder / name)
     evaluations = []
     for update, directory in sorted(directories.items()):
-        entry = evaluate(directory, task, seed, "checkpoint_eval")
+        entry = evaluate(
+            directory,
+            task,
+            seed,
+            "checkpoint_eval",
+            fixed_checkpoint_seeds=config.get("benchmark", {}).get("fixed_checkpoint_seeds", False),
+        )
         entry["update"] = update
         evaluations.append(entry)
     result["checkpoint_evaluations"] = evaluations
-    benchmark = evaluate(
-        resolve_run_path(header["benchmark_directory"], path)
-        if header.get("benchmark_directory")
-        else path / "eval/001",
-        task,
-        seed,
-        "benchmark",
-    )
+    if benchmark_run is not None:
+        benchmark_issues = []
+        frozen_config = read_mapping(benchmark_run / "config.yaml", benchmark_issues)
+        frozen_header = read_mapping(benchmark_run / "run.json", benchmark_issues)
+        benchmark = evaluate(
+            resolve_run_path(frozen_header.get("evaluation_directory", "eval/001"), benchmark_run),
+            task,
+            seed,
+            "benchmark",
+        )
+        loaded = frozen_header.get("evaluated_checkpoint", {})
+        matched_inputs = all(
+            frozen_config.get(key, {}) == config.get(key, {})
+            for key in ("task", "sensor", "method", "observation", "controller")
+        ) and {
+            k: v
+            for k, v in frozen_config.get("simulation", {}).items()
+            if k not in {"num_envs", "device"}
+        } == {
+            k: v for k, v in config.get("simulation", {}).items() if k not in {"num_envs", "device"}
+        }
+        configured_checkpoint = frozen_config.get("checkpoint")
+        declared_seed_base = frozen_config.get("benchmark", {}).get("seed_base")
+        if declared_seed_base is None:
+            declared_seed_base = 2_000_000
+        linked = (
+            not benchmark_issues
+            and frozen_header.get("status") == "completed"
+            and frozen_header.get("layout_version") == 2
+            and digest(benchmark_run / "config.yaml") == frozen_header.get("config_sha256")
+            and frozen_config.get("mode") == "benchmark"
+            and frozen_config.get("seed") == seed
+            and benchmark["seed_base"] == declared_seed_base
+            and frozen_config.get("benchmark", {}).get("protocol") == "learning"
+            and not frozen_config.get("benchmark", {}).get("allow_environment_change", False)
+            and isinstance(configured_checkpoint, str)
+            and str(resolve_run_path(configured_checkpoint, benchmark_run)) == cp["path"]
+            and loaded.get("path") == cp["path"]
+            and bool(cp.get("payload_sha256"))
+            and loaded.get("payload_sha256") == cp.get("payload_sha256")
+            and matched_inputs
+        )
+        benchmark["source_run"] = str(benchmark_run)
+        benchmark["checkpoint_link"] = check(
+            linked,
+            "Verified separate frozen run config, actual loaded payload, selected model and inputs"
+            if linked
+            else "Separate frozen evaluation lacks matching checkpoint/input provenance",
+            *benchmark_issues,
+        )
+    else:
+        benchmark = evaluate(
+            resolve_run_path(header["benchmark_directory"], path)
+            if header.get("benchmark_directory")
+            else path / "eval/001",
+            task,
+            seed,
+            "benchmark",
+        )
     result["benchmark"] = benchmark
     streak, first, history_complete = [], None, True
     previous_index = 0
@@ -466,6 +527,7 @@ def collect_run(path, root):
         and resolve_run_path(header["selected_checkpoint"], path) == Path(cp["path"])
         and independent
         and benchmark["partition"]["passed"] is True
+        and benchmark.get("checkpoint_link", {"passed": True})["passed"] is True
     )
     result["C5"] = check(
         c5_ok if selection else None,
@@ -617,11 +679,18 @@ def collect_initialization_costs(runs, root):
 
 def recipe(config):
     """Select configuration fields that define the three-seed training recipe."""
-    return {
+    result = {
         key: value
         for key, value in config.items()
         if key not in {"seed", "output", "checkpoint", "resume", "replay_path", "mode"}
     }
+    if "benchmark" in result:
+        result["benchmark"] = {
+            key: value for key, value in result["benchmark"].items() if key != "frozen_seed_base"
+        }
+        if not result["benchmark"]:
+            del result["benchmark"]
+    return result
 
 
 def common_actor(runs):
@@ -730,7 +799,16 @@ def collect(manifest_path):
     paths = [resolve_path(path, root) for path in paths]
     if len(paths) != len(set(paths)):
         raise ValueError("Duplicate run path in manifest")
-    runs = [collect_run(path, root) for path in paths]
+    benchmark_runs = manifest.get("benchmark_runs", {})
+    if not isinstance(benchmark_runs, dict) or any(
+        not isinstance(key, str) or not key or not isinstance(value, str) or not value
+        for key, value in benchmark_runs.items()
+    ):
+        raise ValueError("manifest.benchmark_runs must map chosen training paths to frozen runs")
+    benchmarks = {resolve_path(k, root): resolve_path(v, root) for k, v in benchmark_runs.items()}
+    if len(benchmarks) != len(benchmark_runs) or set(benchmarks) - set(paths):
+        raise ValueError("benchmark_runs contains duplicate or unselected training paths")
+    runs = [collect_run(path, root, benchmark_run=benchmarks.get(path)) for path in paths]
     indexed = {}
     for run in runs:
         if run["identity"]["passed"] is not True:

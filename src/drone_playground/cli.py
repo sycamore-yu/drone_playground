@@ -940,7 +940,11 @@ def main(config: DictConfig) -> None:
                     "Frozen evaluation cannot reinterpret checkpoint action units or bounds"
                 )
             actor = instantiate(config.method.actor, action_size=requested_action.size)
-            actor, parameters, _ = load_policy(config.checkpoint, actor=actor)
+            actor, parameters, metadata = load_policy(config.checkpoint, actor=actor)
+            record.identity["evaluated_checkpoint"] = {
+                "path": str(Path(config.checkpoint).resolve()),
+                "payload_sha256": metadata.get("sha256"),
+            }
         destination = (
             record.directory
             if getattr(record, "layout_version", 2) == 3
