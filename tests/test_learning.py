@@ -548,7 +548,8 @@ def test_navigation_altitude_cost_matches_physical_height_error():
     np.testing.assert_allclose(weighted - plain, expected, rtol=1e-5)
 
 
-def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_recurrent_recomputation_resets_memory_and_keeps_gradients(kind):
     """Verify recurrent recomputation resets memory and keeps gradients."""
 
     class AccumulatingActor:
@@ -556,7 +557,7 @@ def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
             memory = memory + params * obs["state"]
             return memory, memory, jnp.zeros_like(memory)
 
-    trainer = SimpleNamespace(actor=AccumulatingActor())
+    trainer = SimpleNamespace(actor=AccumulatingActor(), kind=kind)
     observations = {"state": jnp.ones((3, 2, 1))}
     done = jnp.array([[True, False], [False, False], [False, True]])
     initial = jnp.array([[5.0], [7.0]])
@@ -567,6 +568,46 @@ def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
         lambda p: recurrent_policy(trainer, p, observations, initial, done)[1][0].sum()
     )(2.0)
     assert float(gradient) == 10.0
+
+
+def test_lidar_rematerialization_preserves_recurrent_outputs_and_gradients():
+    """PointNet recomputation preserves masked inputs, resets and parameter gradients."""
+    actor = Actor(kind="lidar", action_size=3)
+    observations = {
+        "state": jax.random.normal(jax.random.key(0), (3, 2, 12)),
+        "points": jax.random.normal(jax.random.key(1), (3, 2, 16, 3)),
+        "mask": jnp.ones((3, 2, 16), dtype=bool).at[1, 0].set(False),
+    }
+    observations["points"] = observations["points"].at[1, 0].set(jnp.nan)
+    memory = actor.initialize_memory(2)
+    params = actor.init(jax.random.key(2), jax.tree.map(lambda x: x[0], observations), memory)
+    done = jnp.array([[True, False], [False, False], [False, True]])
+
+    def reference(parameters):
+        def step(carry, inputs):
+            observation, reset = inputs
+            raw, carry, auxiliary = actor.apply(parameters, observation, carry)
+            return reset_actor_memory(carry, reset), (raw, auxiliary)
+
+        return jax.lax.scan(step, memory, (observations, done))
+
+    def rematerialized(parameters):
+        return recurrent_policy(
+            SimpleNamespace(actor=actor, kind="lidar"), parameters, observations, memory, done
+        )
+
+    expected = jax.jit(reference)(params)
+    actual = jax.jit(rematerialized)(params)
+    for left, right in zip(jax.tree.leaves(expected), jax.tree.leaves(actual), strict=True):
+        np.testing.assert_allclose(left, right, rtol=1e-5, atol=1e-7)
+    expected_grad = jax.jit(jax.grad(lambda p: reference(p)[1][0].sum()))(params)
+    actual_grad = jax.jit(jax.grad(lambda p: rematerialized(p)[1][0].sum()))(params)
+    assert any(np.any(np.asarray(leaf) != 0) for leaf in jax.tree.leaves(expected_grad))
+    for left, right in zip(
+        jax.tree.leaves(expected_grad), jax.tree.leaves(actual_grad), strict=True
+    ):
+        assert np.isfinite(np.asarray(left)).all() and np.isfinite(np.asarray(right)).all()
+        np.testing.assert_allclose(left, right, rtol=1e-4, atol=1e-7)
 
 
 @pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])

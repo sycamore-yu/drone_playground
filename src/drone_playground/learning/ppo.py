@@ -210,7 +210,9 @@ def recurrent_policy(trainer, params, observations, initial_memory, done):
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
         return reset_actor_memory(memory, reset), (raw, auxiliary)
 
-    return jax.lax.scan(step, initial_memory, (observations, done))
+    # Recompute PointNet activations instead of retaining them for every timestep.
+    scan_step = jax.checkpoint(step, prevent_cse=False) if trainer.kind == "lidar" else step
+    return jax.lax.scan(scan_step, initial_memory, (observations, done))
 
 
 def update(trainer, state, *, sampling_progress=None):
