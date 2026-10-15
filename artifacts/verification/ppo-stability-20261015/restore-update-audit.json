@@ -1,0 +1,316 @@
+{
+  "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-batch64-retention-pair/model_000300",
+  "source_identity": {
+    "source_sha256": "a6359de47ee7c588a03d08f4719134c636cb6da4b8c300c0abbcca1ce9624b27",
+    "git_commit": "60f46164a81e6659c8480c298cf2c0a5f41b3f3a"
+  },
+  "restored_state_sha256": "7b26c9cc4c141b2ab1749b2c50df08da9694c769afb75bbe6d5b8ece84afd6f7",
+  "production_state_sha256": "61e4088c174ff8b14ddeb44d4fa8bce3fc0e52ea39976057710b39ec2289c96d",
+  "diagnostic_state_sha256": "fcd5919a351331ba49c7ee5d59e1f6fe5ac6a4c818afa815c37677aa0c611f86",
+  "production_diagnostic_max_abs_difference": {
+    "params": 0.00019702501595020294,
+    "critic_params": 0.0,
+    "target_critic_params": 0.0,
+    "optimizer_state": 0.0004019029438495636,
+    "rng": 0.0,
+    "env_state": 0.0,
+    "recurrent_memory": 0.0,
+    "objective_state": 0.0,
+    "updates": 0.0,
+    "interactions": 0.0,
+    "log_std": 1.6689300537109375e-06
+  },
+  "metrics": {
+    "action_reward": {
+      "historical": -4.0338753137802996e-07,
+      "production": -4.0338753137802996e-07,
+      "diagnostic": -4.0338753137802996e-07
+    },
+    "actor_grad_norm": {
+      "historical": 2.610823631286621,
+      "production": 2.610941171646118,
+      "diagnostic": 2.612610340118408
+    },
+    "actor_loss": {
+      "historical": 0.0012012142688035965,
+      "production": 0.001201685518026352,
+      "diagnostic": 0.0012043826282024384
+    },
+    "advantage_mean_pre_normalization": {
+      "historical": 0.016783129423856735,
+      "production": 0.016783129423856735,
+      "diagnostic": 0.016783129423856735
+    },
+    "advantage_positive_fraction": {
+      "historical": 0.73876953125,
+      "production": 0.73876953125,
+      "diagnostic": 0.73876953125
+    },
+    "advantage_progress_correlation": {
+      "historical": -0.16975358128547668,
+      "production": -0.16975358128547668,
+      "diagnostic": -0.16975358128547668
+    },
+    "advantage_std": {
+      "historical": 0.23118755221366882,
+      "production": 0.23118755221366882,
+      "diagnostic": 0.23118755221366882
+    },
+    "approx_kl": {
+      "historical": 0.007389310747385025,
+      "production": 0.007388782687485218,
+      "diagnostic": 0.007389232516288757
+    },
+    "arrival_reward": {
+      "historical": 0.00244140625,
+      "production": 0.00244140625,
+      "diagnostic": 0.00244140625
+    },
+    "auxiliary_loss": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "boundary_reward": {
+      "historical": -7.002636834840814e-07,
+      "production": -7.002636834840814e-07,
+      "diagnostic": -7.002636834840814e-07
+    },
+    "clearance_reward": {
+      "historical": -1.0947195505650598e-06,
+      "production": -1.0947195505650598e-06,
+      "diagnostic": -1.0947195505650598e-06
+    },
+    "clip_fraction": {
+      "historical": 0.1087646484375,
+      "production": 0.1087646484375,
+      "diagnostic": 0.1087646484375
+    },
+    "critic_explained_variance_preupdate": {
+      "historical": 0.6037113666534424,
+      "production": 0.6037113666534424,
+      "diagnostic": 0.6037113666534424
+    },
+    "critic_grad_norm": {
+      "historical": 0.369148850440979,
+      "production": 0.369148850440979,
+      "diagnostic": 0.369148850440979
+    },
+    "critic_loss": {
+      "historical": 0.024838242679834366,
+      "production": 0.024838242679834366,
+      "diagnostic": 0.024838242679834366
+    },
+    "critic_return_rmse_preupdate": {
+      "historical": 0.23179595172405243,
+      "production": 0.23179595172405243,
+      "diagnostic": 0.23179595172405243
+    },
+    "depth_valid_fraction": {
+      "historical": 0.15512847900390625,
+      "production": 0.15512847900390625,
+      "diagnostic": 0.15512847900390625
+    },
+    "distance_curriculum_phase": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "done_fraction": {
+      "historical": 0.0048828125,
+      "production": 0.0048828125,
+      "diagnostic": 0.0048828125
+    },
+    "entropy": {
+      "historical": -3.1778035163879395,
+      "production": -3.1778035163879395,
+      "diagnostic": -3.1778032779693604
+    },
+    "exploration_std": {
+      "historical": 0.08597937226295471,
+      "production": 0.08597937226295471,
+      "diagnostic": 0.08597934246063232
+    },
+    "failure_reward": {
+      "historical": -0.00244140625,
+      "production": -0.00244140625,
+      "diagnostic": -0.00244140625
+    },
+    "joint_value_loss": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "kl_actor_update_skipped": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "loss": {
+      "historical": 0.026039456948637962,
+      "production": 0.026039928197860718,
+      "diagnostic": 0.026042625308036804
+    },
+    "navigation_collision_fraction": {
+      "historical": 0.00244140625,
+      "production": 0.00244140625,
+      "diagnostic": 0.00244140625
+    },
+    "navigation_completed_collision_rate": {
+      "historical": 0.5,
+      "production": 0.5,
+      "diagnostic": 0.5
+    },
+    "navigation_completed_episodes": {
+      "historical": 10.0,
+      "production": 10.0,
+      "diagnostic": 10.0
+    },
+    "navigation_completed_min_clearance_mean_metres": {
+      "historical": 0.3948257863521576,
+      "production": 0.3948257863521576,
+      "diagnostic": 0.3948257863521576
+    },
+    "navigation_completed_numerical_failure_rate": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_completed_out_of_bounds_rate": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_completed_success_rate": {
+      "historical": 0.5,
+      "production": 0.5,
+      "diagnostic": 0.5
+    },
+    "navigation_completed_successes": {
+      "historical": 5.0,
+      "production": 5.0,
+      "diagnostic": 5.0
+    },
+    "navigation_completed_timeout_rate": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_episode_min_clearance_metres": {
+      "historical": 0.001927860314026475,
+      "production": 0.001927860314026475,
+      "diagnostic": 0.001927860314026475
+    },
+    "navigation_numerical_failure_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_out_of_bounds_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_progress_metres": {
+      "historical": 0.10601852834224701,
+      "production": 0.10601852834224701,
+      "diagnostic": 0.10601852834224701
+    },
+    "navigation_remaining_metres": {
+      "historical": 10.61253833770752,
+      "production": 10.61253833770752,
+      "diagnostic": 10.61253833770752
+    },
+    "navigation_success_flight_seconds": {
+      "historical": 0.05814746394753456,
+      "production": 0.05814746394753456,
+      "diagnostic": 0.05814746394753456
+    },
+    "navigation_success_fraction": {
+      "historical": 0.00244140625,
+      "production": 0.00244140625,
+      "diagnostic": 0.00244140625
+    },
+    "navigation_success_mean_flight_seconds": {
+      "historical": 23.817201614379883,
+      "production": 23.817201614379883,
+      "diagnostic": 23.817201614379883
+    },
+    "navigation_timeout_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "perception_cost": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "policy_loss": {
+      "historical": -0.014687801711261272,
+      "production": -0.01468733325600624,
+      "diagnostic": -0.014684637077152729
+    },
+    "progress_reward": {
+      "historical": 0.005300926975905895,
+      "production": 0.005300926975905895,
+      "diagnostic": 0.005300926975905895
+    },
+    "reset_distance_20m_count": {
+      "historical": 7.0,
+      "production": 7.0,
+      "diagnostic": 7.0
+    },
+    "reset_distance_50m_count": {
+      "historical": 2.0,
+      "production": 2.0,
+      "diagnostic": 2.0
+    },
+    "reset_distance_80m_count": {
+      "historical": 1.0,
+      "production": 1.0,
+      "diagnostic": 1.0
+    },
+    "reward": {
+      "historical": 0.005215395707637072,
+      "production": 0.005215395707637072,
+      "diagnostic": 0.005215395707637072
+    },
+    "saturated_action_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "task_cost": {
+      "historical": -0.005215395241975784,
+      "production": -0.005215395241975784,
+      "diagnostic": -0.005215395241975784
+    },
+    "time_reward": {
+      "historical": -8.333333971677348e-05,
+      "production": -8.333333971677348e-05,
+      "diagnostic": -8.333333971677348e-05
+    },
+    "value_prediction_mean": {
+      "historical": 0.9091606140136719,
+      "production": 0.9091606140136719,
+      "diagnostic": 0.9091606140136719
+    },
+    "value_prediction_std": {
+      "historical": 0.2532421052455902,
+      "production": 0.2532421052455902,
+      "diagnostic": 0.2532421052455902
+    },
+    "value_target_mean": {
+      "historical": 0.9259437918663025,
+      "production": 0.9259437918663025,
+      "diagnostic": 0.9259437918663025
+    },
+    "value_target_std": {
+      "historical": 0.3672473430633545,
+      "production": 0.3672473430633545,
+      "diagnostic": 0.3672473430633545
+    }
+  },
+  "scope": "One actual update. Does not establish long-run numerical reproducibility."
+}

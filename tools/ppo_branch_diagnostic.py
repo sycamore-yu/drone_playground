@@ -4,6 +4,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -16,7 +17,7 @@ from omegaconf import OmegaConf
 from drone_playground.learning import checkpoint, ppo
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.evaluation import create_environment, create_method, evaluate
-from drone_playground.simulation.records import atomic_json
+from drone_playground.simulation.records import atomic_json, source_identity
 
 
 def tree_hash(tree):
@@ -80,6 +81,11 @@ def main():
     budget = config.learning.max_interactions
     identity = {
         "checkpoint": str(args.checkpoint),
+        "runtime_provenance": {
+            **source_identity(),
+            "jax_version": jax.__version__,
+            "xla_flags": os.environ.get("XLA_FLAGS", ""),
+        },
         "source_provenance": metadata["provenance"],
         "source_config": metadata["config"]["experiment"],
         "branch_config": resolved,

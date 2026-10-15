@@ -282,3 +282,32 @@ Racing SHAC p1/f0 seed0 completed at u1600 after three consecutive full checks:
 u1400=100/100, u1500=97/100, u1600=100/100. Its automatic development benchmark
 is100/100. This supports proceeding with the preregistered shared-reward
 PPO/APG checks and remaining seeds; it is not a completed three-seed cell.
+
+At Depth u360, the minimum-clearance branch has20/48 successes but retains10/21
+source successes; control has8/48 and retains7/21. Both lose all source static
+successes. The branches continue to the prespecified u480; the intermediate
+aggregate difference does not meet the retention criterion.
+
+The control continuation differs from the original live curve. A first-update
+audit confirms exactly matching sampled rollout/environment, RNG, recurrent
+memory and critic results, but repeated execution of the same compiled GPU
+update produces different actor parameters. Across production and diagnostic
+compilations the largest actor-parameter difference was0.00092085 in one audit.
+With `XLA_FLAGS='--xla_gpu_exclude_nondeterministic_ops=true
+--xla_gpu_autotune_level=0'`, repeat, production and diagnostic outputs have the
+same full-state SHA256 and every compared leaf difference iszero. Raw metrics
+and hashes are saved in restore-update-audit.json and restore-update-repeat-*.json.
+This is a verified numerical reproducibility issue and local remedy, not evidence
+that GPU nondeterminism uniquely causes policy collapse. OpenXLA documents the
+separate compilation/execution mechanisms and deterministic flags at
+https://openxla.org/xla/determinism .
+
+Next, from the same Depth u300 state, continue180 updates with unchanged task,
+reward, optimizer, RNG, curriculum denominator and fixed48-case checks every60
+updates, changing only those process-local GPU flags. Retention below80% at
+u480 rejects this numerical setting as a sufficient remedy. Passing that screen
+would require scratch replication and the full formal stability protocol; it
+would not retroactively invalidate observed outcomes of previous runs. This
+diagnostic records current source identity and XLA flags, independently of the
+source-checkpoint provenance. The existing two clearance branches finish as
+launched, preserving their numerical conditions.
