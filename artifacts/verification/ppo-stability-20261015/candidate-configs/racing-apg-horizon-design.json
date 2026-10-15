@@ -1,0 +1,51 @@
+{
+  "scope": "Scratch Racing APG/BPTT rollout-horizon candidate; no other learning change",
+  "trigger": {
+    "csv": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/apg_lr0001_s0/checkpoints/step-007000/episodes.csv",
+    "sha256": "c2210d978e71c2fee8626d83a0d77976b38c4b5208cf7e16289eb3a093caae04",
+    "events": {
+      "COLLISION": 100
+    },
+    "gates_passed": {
+      "1": 100
+    }
+  },
+  "hypothesis": "The0.64-second derivative window may provide insufficient post-gate guidance. Test2.56seconds without a critic or task/Actor/reward change; longer derivatives can also amplify instability, so benefit is unproven.",
+  "parent": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_apg_lr0001_s0.yaml",
+  "parent_sha256": "8dd18ecb1174ce119f0829bc775b85c4773d8bbf9bad7711fb832d43c7e91412",
+  "candidate": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_apg_h128_lr0001_s0.yaml",
+  "candidate_sha256": "31825ef65812e5318d3bf55b10766b055ea6aaf8895b58bc64416e726398a06a",
+  "changes": [
+    {
+      "path": "learning.evaluation_interval",
+      "before": 100,
+      "after": 25
+    },
+    {
+      "path": "learning.options.horizon",
+      "before": 32,
+      "after": 128
+    },
+    {
+      "path": "learning.checkpoint_interval",
+      "before": 50,
+      "after": 25
+    },
+    {
+      "path": "output",
+      "before": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/apg_lr0001_s0",
+      "after": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/apg_h128_lr0001_s0"
+    }
+  ],
+  "budget": {
+    "interactions": 67108864,
+    "updates": 2048,
+    "full100_evaluation_interval_interactions": 819200
+  },
+  "comparison_limits": "Same interaction budget and full-evaluation cadence. Longer rollout means fewer optimizer updates and different gradient horizon; runtime is measured separately. Recovery checkpoint cadence changes. Current APG uses mean undiscounted segmented task cost even though gamma is recorded; that existing choice stays fixed between these two arms and differs from the discounted NVlabs BPTT objective.",
+  "decision": "Complete the current h32 trial before launch. Require3consecutive >=90/100 checks, then same-recipe independent seeds and frozen testing; preserve failures. If h128 fails, reject it as a sufficient remedy.",
+  "references": [
+    "https://arxiv.org/abs/2204.07137",
+    "https://github.com/NVlabs/DiffRL/blob/main/algorithms/bptt.py"
+  ]
+}
