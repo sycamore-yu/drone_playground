@@ -1,0 +1,94 @@
+{
+  "scope": "Current common-reward Racing PPO seed0 verified; three-seed cell and reserved frozen test pending. Automatic2million benchmark remains development.",
+  "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0",
+  "run_sha256": "04511a5ef01299e1d40bc4c895fa256f0d830ca45590794a1b9e69cb311f8022",
+  "run_record": {
+    "schema_version": 1,
+    "layout_version": 2,
+    "status": "accepted",
+    "started_unix": 1792069417.560496,
+    "config_sha256": "c44a60b684b5d16cfce8da4ef2aa27af1a8618dc71e19f9eddd059b08bea153c",
+    "versions": {
+      "drone-playground": "0.2.0.dev0",
+      "crazyflow": "0.3.2",
+      "jax": "0.11.2",
+      "flax": "0.12.10",
+      "mujoco": "3.15.0",
+      "mujoco-lidar": "0.3.5",
+      "rscope": "0.0.8"
+    },
+    "python": "3.12.15",
+    "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+    "devices": [
+      "cuda:0"
+    ],
+    "source_sha256": "a6359de47ee7c588a03d08f4719134c636cb6da4b8c300c0abbcca1ce9624b27",
+    "git_commit": "bf30c30ba70cc869f8e1347c5a553c43a0e0471b",
+    "selection": {
+      "rule": "last_of_first_three_consecutive_passes",
+      "checkpoint": "checkpoints/step-001600/policy.zip",
+      "update": 1600,
+      "consecutive_passes": 3,
+      "evaluation_index": 16
+    },
+    "wall_seconds": 503.013634449002,
+    "updates": 1600,
+    "interactions": 26214400,
+    "selected_checkpoint": "checkpoints/step-001600/policy.zip",
+    "benchmark_passed": true,
+    "benchmark_directory": "eval/001",
+    "session_interactions": 26214400,
+    "session_wall_seconds": 502.0591227289988,
+    "training_wall_seconds": 502.0591227289988,
+    "interactions_per_second": 52213.77087524808
+  },
+  "selected_archive_sha256": "5bbfa2041e62ccb073afdecb06f0dde445b32f0b65a85239ab9b3d779e4b98bd",
+  "selected_payload_sha256": "427c3c8f66a563930f2039a806acc3e59fff5b407216b4fe5dd00f9145b1ae70",
+  "raw_checks": [
+    {
+      "directory": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/checkpoints/step-001400",
+      "episodes": 100,
+      "successes": 100,
+      "csv_sha256": "46f4d52dba8aa1870f750cc4694d1ad75e5d4a21d55ff85611fff98ca0abe3bc",
+      "report_sha256": "e1e291748d99ae00f5e6c712d10b24963b13465853a2cdc5f6e7ad7382a893e8",
+      "seed_range": [
+        1000000,
+        1000000
+      ]
+    },
+    {
+      "directory": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/checkpoints/step-001500",
+      "episodes": 100,
+      "successes": 100,
+      "csv_sha256": "19d9598a68a035f30f13c319aa14ecfeb40e957a803aaf81ae85e1b0ccfa132e",
+      "report_sha256": "d1ed85f6444889afff76bc405ccdea226a2e9fd5b2fb57ba00abeb5c2f62213f",
+      "seed_range": [
+        1000000,
+        1000000
+      ]
+    },
+    {
+      "directory": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/checkpoints/step-001600",
+      "episodes": 100,
+      "successes": 100,
+      "csv_sha256": "d37bd6b488834f8d4517955ead35274625431061970f3bfb1d0fe3b1124d09eb",
+      "report_sha256": "e8ae8dac6f486550030683e29b4f23dade6e601d162e13666c0775b9e0fb16d6",
+      "seed_range": [
+        1000000,
+        1000000
+      ]
+    },
+    {
+      "directory": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/eval/001",
+      "episodes": 100,
+      "successes": 100,
+      "csv_sha256": "5bb794c0633b40b1222ffd54d14b831538024f7f19c5a4f457faa7b258915f6f",
+      "report_sha256": "b1f9d482ac323fbed4736158d1d443060b47801187eab8cdee6607ad633bd5cc",
+      "seed_range": [
+        2000000,
+        2000000
+      ]
+    }
+  ],
+  "training_resume": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/checkpoints/latest.training.zip"
+}
