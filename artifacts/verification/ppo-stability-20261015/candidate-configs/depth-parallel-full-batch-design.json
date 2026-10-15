@@ -1,5 +1,5 @@
 {
-  "status": "registered_before_training",
+  "status": "completed_pilot_failed",
   "problem": "The completed original parallel continuation loses26/150 cases at u184. Entropy removal, parameter-block swaps and complete-return tails fail registered retention gates. Two last-goodu180 training draws show weak same-scene gradient coherence, but a local full-batch Adam step lowers every scene surrogate in both draws. No PCGrad gate passes.",
   "hypothesis": "Using the whole64-world rollout in each PPO optimizer pass may reduce noisy small-minibatch update effects and preserve successful behavior. Fewer Actor/Critic Adam steps also change optimization dynamics; this pilot cannot uniquely attribute any benefit to gradient variance.",
   "prior_negative": "Earlier64-world procedural pilots and sequential0.1xActorLR continuation failed. This is a current parallel fixed-scene/full-pass continuation with unchanged LR, not a repeat of those conditions. The earlier complete-return pilot had145/148 but failed its first scene gate.",
@@ -65,5 +65,76 @@
     "targeted_suite": "33 passed in25.70s",
     "expanded_optimizer_counter_test": "1 passed in19.20s; both Actor and Critic Adam counters verified",
     "lint": "Ruff and diff check passed"
-  }
+  },
+  "pid": 2779340,
+  "runner_commit": "f2b6a7a3af875fa7f3b79814b5df029de7256c33",
+  "first_update_evidence": "artifacts/verification/ppo-stability-20261015/depth-parallel-full-batch-first-update.json",
+  "result": {
+    "status": "completed_pilot_failed",
+    "checks": [
+      {
+        "update": 180,
+        "candidate_successes": 141,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 16,
+          "D01": 25,
+          "D02": 25,
+          "D03": 25
+        },
+        "retained_initial_successes": 141,
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 9,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 141,
+          "COLLISION": 7,
+          "OUT_OF_BOUNDS": 2
+        },
+        "passed": false
+      },
+      {
+        "update": 184,
+        "candidate_successes": 135,
+        "control_successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 10
+        },
+        "retained_initial_successes": 135,
+        "recovered_control_losses": 19,
+        "new_losses_relative_to_control": 8,
+        "common_losses": 7,
+        "events": {
+          "SUCCESS": 135,
+          "COLLISION": 15
+        },
+        "passed": false
+      }
+    ],
+    "actual_updates": 8,
+    "actual_additional_interactions": 262144,
+    "actor_parameter_delta_norm_range": [
+      0.13564147055149078,
+      0.15093368291854858
+    ],
+    "kl_skip_sum": 0.0,
+    "training_update_seconds": 134.8991996109835,
+    "total_wall_seconds_excluding_setup": 368.56273257700377,
+    "setup_seconds": 114.61140007100767,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000184",
+    "runtime_provenance": {
+      "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+      "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+    },
+    "runner_git_commit": "f2b6a7a3af875fa7f3b79814b5df029de7256c33",
+    "decision": "Both checks fail. Do not extend or promote full-batch optimization based on local training-loss improvement or an aggregate final advantage over control. Keep actual final model and failed cases; no independent final test."
+  },
+  "process_exit_code": 0
 }

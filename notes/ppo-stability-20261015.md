@@ -1590,3 +1590,27 @@ optimizer RNG splits, so only the initial RNG/source state and first rollout are
 pathwise matched; later action draws differ. This is an explicit further limit on
 unique causal attribution. No custom RNG-burning mechanism is added to the native
 full-batch configuration. The three-seed requirement remains necessary.
+
+Full-batch pilot is live, PID2779340, runnerf2b6a7a and native811eabe. Source setup
+114.611s; firstactualupdate177 took57.840s including compilation, Actor delta0.137621
+and no KL skip. All15 saved raw-rollout/target statistics exactly match the control.
+This verifies initial matching and real updates, not retained capability. Native
+report correctly marksdiagnostic=true and4optimizer steps per update.
+
+### Full-batch pilot complete: both checkpoints fail
+
+All8updates completed and process exited0. u180=141/150, S03=16/25 with7collisions
+and2out-of-bounds; u184=135/150, D03=10/25 with15collisions. Other five scenes pass
+25/25 at each check. Retention141/150 and135/150. Original control150/150 then124/150
+is reused; exact recovered/new/common loss counts are in full-batch/comparison.json.
+No gate passes, so do not extend the budget, promote a recipe, or use final tests.
+Local full-batch surrogate improvements did not predict episode-level preservation.
+
+Cost262144interactions; Actor deltas0.13564-0.15093, no KL skips. Training134.899s,
+including evaluations368.563s, setup114.611s. Actual final state remains at
+results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000184. Cached new
+reports,metrics and both150case CSVs are under full-batch/. No native code changed.
+First failed S03 collision is world4 at15.892s; all nine S03 failures occur14.708-
+15.998s. D03 failures occur19.776-20.310s. These early clustered failures justify
+recording a paired critical-obstacle trajectory rather than inferring behavior from
+aggregate loss. No such new trace evaluation has yet been registered or executed.
