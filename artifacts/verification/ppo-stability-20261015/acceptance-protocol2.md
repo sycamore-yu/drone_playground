@@ -1,6 +1,6 @@
 # Acceptance evidence
 
-Snapshot: 2026-10-15T14:49:33.861503+00:00
+Snapshot: 2026-10-15T17:52:01.241162+00:00
 
 All 18 cells passed: **false**. Cell counts: `{"missing": 4, "passed": 14}`.
 
@@ -27,6 +27,9 @@ Missing metrics are null with reasons in the JSON. Mixed Navigation appears twic
 | shac | navigation/dynamic/depth | passed | passed; D01:25/25, D02:25/25, D03:25/25; u=640; 2085.21 s | passed; D01:25/25, D02:25/25, D03:24/25; u=4405; 2073.93 s | passed; D01:24/25, D02:25/25, D03:25/25; u=320; 753.98 s |
 | shac | navigation/static/lidar | passed | passed; S01:25/25, S02:25/25, S03:25/25; u=1200; 1280.41 s | passed; S01:25/25, S02:25/25, S03:25/25; u=1280; 2500.02 s | passed; S01:25/25, S02:25/25, S03:25/25; u=640; 1378.24 s |
 | shac | navigation/dynamic/lidar | passed | passed; D01:24/25, D02:25/25, D03:23/25; u=1200; 1280.41 s | passed; D01:25/25, D02:25/25, D03:25/25; u=1280; 2500.02 s | passed; D01:25/25, D02:25/25, D03:25/25; u=640; 1378.24 s |
+
+Per-seed, per-scene 95% Wilson intervals describe finite test episode sampling conditional on a fixed trained policy and the stated evaluation distribution. Training-seed means, ranges and sample standard deviations are descriptive; three seeds do not establish general training reliability. Episodes from different trained policies are not pooled. Intervals do not change acceptance gates.
+Per-seed intervals and per-scene seed spread are in the companion JSON.
 
 Whole GPU samples with concurrent jobs; not isolated process/runtime measurements.
 

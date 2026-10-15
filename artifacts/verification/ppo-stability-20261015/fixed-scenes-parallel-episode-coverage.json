@@ -1,0 +1,96 @@
+{
+  "scope": "Training episode coverage, not deterministic validation or convergence",
+  "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0",
+  "source_commit": "811eabe",
+  "source_log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel.log",
+  "task_deadline_seconds": 300,
+  "first_timeout_update": 6,
+  "timeouts_through_last_update": 4,
+  "last_update": 7,
+  "records": [
+    {
+      "update": 1,
+      "interactions": 32768.0,
+      "navigation_completed_episodes": 54.0,
+      "navigation_completed_successes": 0.0,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_collision_rate": 0.4444444477558136,
+      "navigation_completed_out_of_bounds_rate": 0.5555555820465088,
+      "update_seconds": 86.10107792998315,
+      "actual_completed_timeouts": 0
+    },
+    {
+      "update": 2,
+      "interactions": 65536.0,
+      "navigation_completed_episodes": 51.0,
+      "navigation_completed_successes": 0.0,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_collision_rate": 0.529411792755127,
+      "navigation_completed_out_of_bounds_rate": 0.4705882668495178,
+      "update_seconds": 76.39212798399967,
+      "actual_completed_timeouts": 0
+    },
+    {
+      "update": 3,
+      "interactions": 98304.0,
+      "navigation_completed_episodes": 27.0,
+      "navigation_completed_successes": 0.0,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_collision_rate": 0.4444444477558136,
+      "navigation_completed_out_of_bounds_rate": 0.5555555820465088,
+      "update_seconds": 48.62266110201017,
+      "actual_completed_timeouts": 0
+    },
+    {
+      "update": 4,
+      "interactions": 131072.0,
+      "navigation_completed_episodes": 32.0,
+      "navigation_completed_successes": 0.0,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_collision_rate": 0.5625,
+      "navigation_completed_out_of_bounds_rate": 0.4375,
+      "update_seconds": 42.3756793460052,
+      "actual_completed_timeouts": 0
+    },
+    {
+      "update": 5,
+      "interactions": 163840.0,
+      "navigation_completed_episodes": 32.0,
+      "navigation_completed_successes": 0.0,
+      "navigation_completed_timeout_rate": 0.0,
+      "navigation_completed_collision_rate": 0.65625,
+      "navigation_completed_out_of_bounds_rate": 0.34375,
+      "update_seconds": 44.05249827101943,
+      "actual_completed_timeouts": 0
+    },
+    {
+      "update": 6,
+      "interactions": 196608.0,
+      "navigation_completed_episodes": 21.0,
+      "navigation_completed_successes": 1.0,
+      "navigation_completed_timeout_rate": 0.095238097012043,
+      "navigation_completed_collision_rate": 0.7142857313156128,
+      "navigation_completed_out_of_bounds_rate": 0.1428571492433548,
+      "update_seconds": 40.91395125101553,
+      "actual_completed_timeouts": 2
+    },
+    {
+      "update": 7,
+      "interactions": 229376.0,
+      "navigation_completed_episodes": 29.0,
+      "navigation_completed_successes": 1.0,
+      "navigation_completed_timeout_rate": 0.06896551698446274,
+      "navigation_completed_collision_rate": 0.8275861740112305,
+      "navigation_completed_out_of_bounds_rate": 0.06896551698446274,
+      "update_seconds": 40.421869672019966,
+      "actual_completed_timeouts": 2
+    }
+  ],
+  "control_reused": {
+    "scope": "Original unchanged post-pass continuation,917504 interactions",
+    "forced_live_world_resets": 896,
+    "completed_timeouts": 0,
+    "registered_evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/fixed-scenes-parallel-design.json"
+  },
+  "interpretation": "Parallel sampling actually covers full finite-horizon episodes previously censored by the102.4s sequential schedule. It has not yet established better held-out performance."
+}

@@ -931,6 +931,52 @@ def common_actor(runs):
     }
 
 
+def success_rate_interval(successes, episodes):
+    """Compute a 95% Wilson interval conditional on one fixed trained policy."""
+    if (
+        type(successes) is not int
+        or type(episodes) is not int
+        or episodes <= 0
+        or not 0 <= successes <= episodes
+    ):
+        return None
+    estimate = successes / episodes
+    z = statistics.NormalDist().inv_cdf(0.975)
+    denominator = 1 + z**2 / episodes
+    center = (estimate + z**2 / (2 * episodes)) / denominator
+    margin = (
+        z * math.sqrt(estimate * (1 - estimate) / episodes + z**2 / (4 * episodes**2)) / denominator
+    )
+    return {
+        "estimate": estimate,
+        "low": max(0.0, center - margin),
+        "high": min(1.0, center + margin),
+        "confidence_level": 0.95,
+        "method": "wilson",
+        "successes": successes,
+        "episodes": episodes,
+    }
+
+
+def seed_success_rate_spread(values):
+    """Describe variability across policies without pooling their episodes."""
+    rates = {}
+    for value in values.values():
+        for scene, interval in value.get("success_rate_intervals", {}).items():
+            if interval["value"] is not None:
+                rates.setdefault(scene, []).append(interval["value"]["estimate"])
+    return {
+        scene: {
+            "available_training_seeds": len(samples),
+            "mean": statistics.mean(samples),
+            "min": min(samples),
+            "max": max(samples),
+            "sample_standard_deviation": statistics.stdev(samples) if len(samples) > 1 else None,
+        }
+        for scene, samples in rates.items()
+    }
+
+
 def seed_result(run, condition):
     """Grade one selected seed using quality, selection and provenance evidence."""
     if run is None:
@@ -975,6 +1021,17 @@ def seed_result(run, condition):
         "C5": run["C5"],
         "C6": run["C6"],
         "scenes": list(scenes),
+        "success_rate_intervals": {
+            scene: metric(
+                success_rate_interval(
+                    run["benchmark"]["scenes"][scene]["successes"],
+                    run["benchmark"]["scenes"][scene]["episodes"],
+                ),
+                run["benchmark"]["scenes"][scene]["csv"],
+                "Verified episode counts unavailable",
+            )
+            for scene in scenes
+        },
         "updates": run["cost"]["updates"],
         "interactions": run["cost"]["interactions"],
         "wall_seconds": run["cost"]["wall_seconds"],
@@ -1115,6 +1172,7 @@ def collect(manifest_path):
                     "partition": partition,
                     "status": status,
                     "seeds": values,
+                    "seed_success_rate_spread": seed_success_rate_spread(values),
                     "C1": check(
                         True if all(selected) else None,
                         "Distinct recorded training RNG seeds; shared initialization disclosed",
@@ -1138,6 +1196,11 @@ def collect(manifest_path):
         "comparison_scope": "Each algorithm is accepted against the task's success criteria. "
         "Cross-algorithm Actor/configuration equality is reported separately; different "
         "training rewards are allowed and do not invalidate individual convergence.",
+        "uncertainty_scope": "Per-seed, per-scene 95% Wilson intervals describe finite test "
+        "episode sampling conditional on a fixed trained policy and the stated evaluation "
+        "distribution. Training-seed means, ranges and sample standard deviations are "
+        "descriptive; three seeds do not establish general training reliability. Episodes "
+        "from different trained policies are not pooled. Intervals do not change acceptance gates.",
         "shared_initialization_costs": shared,
         "physics_task_contract": {
             "required": {
@@ -1205,6 +1268,9 @@ def markdown(report):
             f"| {cell['algorithm']} | {label} | {cell['status']} | " + " | ".join(entries) + " |"
         )
     lines += [
+        "",
+        report["uncertainty_scope"],
+        "Per-seed intervals and per-scene seed spread are in the companion JSON.",
         "",
         GPU_SCOPE,
         "",

@@ -203,6 +203,17 @@ tensorboardX dependency. Archive SHA and payload SHA are distinct fields. Per-se
 per-scene outcomes and successful flight times, checkpoint history, configurations,
 versions and source identities are retained in JSON.
 
+The report also gives a 95% Wilson success-rate interval for each trained seed and
+scene, computed from the already verified episode counts. These intervals quantify
+finite test-sample uncertainty conditional on that policy and evaluation distribution;
+they do not establish reliability across new training seeds or unseen geometry.
+The calculation follows the Wilson method exposed by
+[SciPy's binomial interval API](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html).
+Training-seed means, ranges and sample standard deviations are reported separately,
+with equal weight per policy. Episodes from different policies are not pooled.
+Missing counts remain unavailable; these descriptive statistics do not alter C1--C6
+or the 23/25 per-scene threshold.
+
 The common Actor **configuration** check compares saved task/reference, sensor/input
 settings, Actor kind and physical control settings across the three algorithms and
 three seeds. It excludes batch size/device and algorithm-specific learning options;

@@ -884,3 +884,29 @@ not learning stability; the seed0 run continues under its original registered bu
 Subsequent newly completed screens: LiDAR160=8/48(D01only), retention0/12;
 altitude-PD64=24/48(S01/S02/D01), retention6/6. S03 has8collisions, D02/D03 each8timeouts.
 No new full validation, independent benchmark or matrix credit from these screens.
+
+### Full-episode coverage observed and reporting uncertainty completed
+
+Actual parallel training first reaches the300s finite deadline at update6, with2
+timeouts; update7 adds2more. The original sequential continuation's0timeouts and896
+forced live-world resets are reused from registered evidence. At229376 interactions,
+this proves complete episode coverage is now possible; it does not yet establish
+better validation success. New episode-coverage metrics are preserved in
+`fixed-scenes-parallel-episode-coverage.json` without restoring models or replaying cases.
+LiDAR176 again scored0/48. The LR continuation's fourth check160=136/150 also failed.
+
+The objective also requires uncertainty for all chosen seeds. The existing cached
+report had counts but no intervals. The collector now derives per-policy/per-scene
+95% Wilson intervals from verified counts, plus equally weighted training-seed mean,
+range and sample standard deviation. Episodes from different trained policies are
+not pooled. Missing counts remain unavailable; no acceptance threshold changes.
+The standard-library formula was checked against the
+[SciPy binomial interval API](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html),
+including0/25,23/25,25/25,100/100,1/1,7/50. Sixteen targeted tests pass in3.25s;
+41unrelated collector cases were not rerun. The cached matrix was refreshed with
+raw-audit and digest entrypoints replaced by raising assertions. All30 runs reused;
+all prior benchmark summaries and14/18 statuses match exactly. Evidence is
+`acceptance-uncertainty-check.json`. For scale,25/25 has Wilson interval86.68--100%,
+while23/25 gives75.03--97.78%; these are conditional test-sample intervals, not a
+claim about arbitrary new training seeds or unseen geometry. Three-seed spread is
+descriptive and does not alter the agreed reproducibility protocol.

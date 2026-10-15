@@ -16,6 +16,55 @@ SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "report_acceptance.py"
 NAV_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
+@pytest.fixture
+def uncertainty_collector():
+    """Load the reporting-only statistics without starting any simulation."""
+    spec = importlib.util.spec_from_file_location("acceptance_uncertainty_test", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize(
+    "successes,episodes", [(0, 25), (23, 25), (25, 25), (100, 100), (1, 1), (7, 50)]
+)
+def test_success_intervals_match_scipy_wilson(uncertainty_collector, successes, episodes):
+    """Compare the standard-library calculation to an independent reference API."""
+    from scipy.stats import binomtest
+
+    actual = uncertainty_collector.success_rate_interval(successes, episodes)
+    expected = binomtest(successes, episodes).proportion_ci(method="wilson")
+    assert actual["low"] == pytest.approx(expected.low, abs=1e-15)
+    assert actual["high"] == pytest.approx(expected.high, abs=1e-15)
+    assert actual["estimate"] == successes / episodes
+
+
+@pytest.mark.parametrize("successes,episodes", [(None, 25), (0, 0), (-1, 25), (26, 25), (True, 25)])
+def test_missing_or_invalid_counts_have_no_interval(uncertainty_collector, successes, episodes):
+    """Missing evidence cannot silently become an observed zero success rate."""
+    assert uncertainty_collector.success_rate_interval(successes, episodes) is None
+
+
+def test_training_seed_spread_does_not_pool_episodes(uncertainty_collector):
+    """Each trained policy has equal weight despite different test episode counts."""
+    counts = [(1, 1), (23, 25), (0, 100)]
+    values = {
+        str(i): {
+            "success_rate_intervals": {
+                "S01": {"value": uncertainty_collector.success_rate_interval(k, n)}
+            }
+        }
+        for i, (k, n) in enumerate(counts)
+    }
+    values["missing"] = {"status": "missing"}
+    result = uncertainty_collector.seed_success_rate_spread(values)["S01"]
+    assert result["available_training_seeds"] == 3
+    assert result["mean"] == pytest.approx(0.64)
+    assert result["min"] == 0 and result["max"] == 1
+    assert 0.55 < result["sample_standard_deviation"] < 0.56
+    assert uncertainty_collector.seed_success_rate_spread({"0": values["missing"]}) == {}
+
+
 def write_json(path, value):
     """Provide write json for the surrounding execution."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -437,6 +486,10 @@ def test_verified_evidence_reuse_avoids_raw_audit_and_rejects_changed_inputs(
         report = module.collect(manifest_path)
         assert report["summary"] == {"passed": 1, "missing": 17}
         assert all(r["reused_evidence"]["report"] for r in report["runs"])
+        interval = report["cells"][0]["seeds"]["0"]["success_rate_intervals"]["empty"]["value"]
+        assert interval["episodes"] == interval["successes"] == 100
+        assert 0.96 < interval["low"] < 1 and interval["high"] == 1
+        assert report["cells"][0]["seed_success_rate_spread"]["empty"]["mean"] == 1
 
 
 @pytest.mark.parametrize("damage", [None, "payload", "checkpoint", "observation", "cohort"])

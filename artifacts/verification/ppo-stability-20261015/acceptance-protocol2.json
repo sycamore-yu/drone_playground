@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_utc": "2026-10-15T14:49:33.861503+00:00",
+  "generated_utc": "2026-10-15T17:52:01.241162+00:00",
   "manifest_path": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/acceptance-manifest.json",
   "manifest": {
     "root": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance",
@@ -123,6 +123,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s0/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 500,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s0/run.json",
@@ -167,6 +182,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 600,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s1/run.json",
@@ -211,6 +241,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s2/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1200,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s2/run.json",
@@ -226,6 +271,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "empty": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -277,6 +331,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/frozen4m/ppo_s0/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1600,
             "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/run.json",
@@ -321,6 +390,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/frozen4m/ppo_s1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 700,
             "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1/run.json",
@@ -365,6 +449,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/frozen4m/ppo_s2/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 400,
             "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2/run.json",
@@ -380,6 +479,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "racing": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -419,6 +527,7 @@
           "reason": "No chosen run for this seed"
         }
       },
+      "seed_success_rate_spread": {},
       "C1": {
         "passed": null,
         "reasons": [
@@ -456,6 +565,7 @@
           "reason": "No chosen run for this seed"
         }
       },
+      "seed_success_rate_spread": {},
       "C1": {
         "passed": null,
         "reasons": [
@@ -493,6 +603,7 @@
           "reason": "No chosen run for this seed"
         }
       },
+      "seed_success_rate_spread": {},
       "C1": {
         "passed": null,
         "reasons": [
@@ -530,6 +641,7 @@
           "reason": "No chosen run for this seed"
         }
       },
+      "seed_success_rate_spread": {},
       "C1": {
         "passed": null,
         "reasons": [
@@ -579,6 +691,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s0_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 300,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s0_trial1/run.json",
@@ -623,6 +750,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s1_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 300,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s1_trial1/run.json",
@@ -667,6 +809,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s2_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 300,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s2_trial1/run.json",
@@ -682,6 +839,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s2_trial1/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "empty": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -733,6 +899,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s0/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 400,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s0/run.json",
@@ -777,6 +958,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 400,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s1/run.json",
@@ -821,6 +1017,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 300,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2/run.json",
@@ -836,6 +1047,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "racing": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -889,6 +1109,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/S01/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/S02/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/S03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/run.json",
@@ -935,6 +1196,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/S01/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/S02/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/S03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/run.json",
@@ -981,6 +1283,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/S01/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/S02/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/S03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 480,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/run.json",
@@ -996,6 +1339,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "S01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S03": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -1049,6 +1415,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/D01/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/D02/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/benchmark/D03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s0/run.json",
@@ -1095,6 +1502,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/D01/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/D02/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/benchmark/D03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s1/run.json",
@@ -1141,6 +1589,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/D01/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/D02/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/benchmark/D03/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 480,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/run.json",
@@ -1156,6 +1645,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_depth_apg_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "D01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D03": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -1209,6 +1721,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 3680,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s0/run.json",
@@ -2259,6 +2812,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/run.json",
@@ -3309,6 +3903,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1280,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/run.json",
@@ -3324,6 +3959,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "S01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S03": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -3377,6 +4035,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_apg_s0/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 3680,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s0/run.json",
@@ -4427,6 +5126,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 0.96,
+                "low": 0.8045593626380627,
+                "high": 0.9929037664980127,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 24,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s1/run.json",
@@ -5477,6 +6217,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1280,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/run.json",
@@ -5492,6 +6273,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_apg_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "D01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D03": {
+          "available_training_seeds": 3,
+          "mean": 0.9866666666666667,
+          "min": 0.96,
+          "max": 1.0,
+          "sample_standard_deviation": 0.023094010767585053
         }
       },
       "C1": {
@@ -5543,6 +6347,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s0_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 600,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s0_trial1/run.json",
@@ -5587,6 +6406,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s1_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 300,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s1_trial1/run.json",
@@ -5631,6 +6465,21 @@
           "scenes": [
             "empty"
           ],
+          "success_rate_intervals": {
+            "empty": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s2_trial1/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 400,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s2_trial1/run.json",
@@ -5646,6 +6495,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s2_trial1/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "empty": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -5852,6 +6710,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s0_trial11/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 500,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s0_trial11/run.json",
@@ -6051,6 +6924,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1000,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s1_trial11/run.json",
@@ -6250,6 +7138,21 @@
           "scenes": [
             "racing"
           ],
+          "success_rate_intervals": {
+            "racing": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.9630065017930143,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 100,
+                "episodes": 100
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 600,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11/run.json",
@@ -6265,6 +7168,15 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/procedural_v01/racing_shac_s2_trial11/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "racing": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -6318,6 +7230,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/run.json",
@@ -6364,6 +7317,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 4405,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s1/run.json",
@@ -7414,6 +8408,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 320,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/run.json",
@@ -7429,6 +8464,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "S01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S03": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -7482,6 +8540,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/eval/001/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s0/run.json",
@@ -7528,6 +8627,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 0.96,
+                "low": 0.8045593626380627,
+                "high": 0.9929037664980127,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 24,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/depth_shac_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 4405,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s1/run.json",
@@ -8578,6 +9718,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 0.96,
+                "low": 0.8045593626380627,
+                "high": 0.9929037664980127,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 24,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 320,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/run.json",
@@ -8593,6 +9774,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/depth_shac_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "D01": {
+          "available_training_seeds": 3,
+          "mean": 0.9866666666666667,
+          "min": 0.96,
+          "max": 1.0,
+          "sample_standard_deviation": 0.023094010767585053
+        },
+        "D02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D03": {
+          "available_training_seeds": 3,
+          "mean": 0.9866666666666667,
+          "min": 0.96,
+          "max": 1.0,
+          "sample_standard_deviation": 0.023094010767585053
         }
       },
       "C1": {
@@ -8646,6 +9850,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1200,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s0/run.json",
@@ -9696,6 +10941,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1280,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/run.json",
@@ -10746,6 +12032,47 @@
             "S02",
             "S03"
           ],
+          "success_rate_intervals": {
+            "S01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "S02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "S03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/run.json",
@@ -10761,6 +12088,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "S01": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "S03": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
         }
       },
       "C1": {
@@ -10814,6 +12164,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 0.96,
+                "low": 0.8045593626380627,
+                "high": 0.9929037664980127,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 24,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 0.92,
+                "low": 0.750338910496047,
+                "high": 0.9777795987151525,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 23,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/.scheduler/frozen_audits/lidar_shac_s0/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1200,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s0/run.json",
@@ -11864,6 +13255,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 1280,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s1/run.json",
@@ -12914,6 +14346,47 @@
             "D02",
             "D03"
           ],
+          "success_rate_intervals": {
+            "D01": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "D02": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            },
+            "D03": {
+              "value": {
+                "estimate": 1.0,
+                "low": 0.8668077490609516,
+                "high": 1.0,
+                "confidence_level": 0.95,
+                "method": "wilson",
+                "successes": 25,
+                "episodes": 25
+              },
+              "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/episodes.csv",
+              "reason": null
+            }
+          },
           "updates": {
             "value": 640,
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/run.json",
@@ -12929,6 +14402,29 @@
             "source": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/lidar_shac_s2/run.json",
             "reason": null
           }
+        }
+      },
+      "seed_success_rate_spread": {
+        "D01": {
+          "available_training_seeds": 3,
+          "mean": 0.9866666666666667,
+          "min": 0.96,
+          "max": 1.0,
+          "sample_standard_deviation": 0.023094010767585053
+        },
+        "D02": {
+          "available_training_seeds": 3,
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "sample_standard_deviation": 0.0
+        },
+        "D03": {
+          "available_training_seeds": 3,
+          "mean": 0.9733333333333334,
+          "min": 0.92,
+          "max": 1.0,
+          "sample_standard_deviation": 0.046188021535170036
         }
       },
       "C1": {
@@ -326560,6 +328056,7 @@
     }
   },
   "comparison_scope": "Each algorithm is accepted against the task's success criteria. Cross-algorithm Actor/configuration equality is reported separately; different training rewards are allowed and do not invalidate individual convergence.",
+  "uncertainty_scope": "Per-seed, per-scene 95% Wilson intervals describe finite test episode sampling conditional on a fixed trained policy and the stated evaluation distribution. Training-seed means, ranges and sample standard deviations are descriptive; three seeds do not establish general training reliability. Episodes from different trained policies are not pooled. Intervals do not change acceptance gates.",
   "shared_initialization_costs": {},
   "physics_task_contract": {
     "required": {
