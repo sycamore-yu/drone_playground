@@ -1224,3 +1224,28 @@ from these aggregates. The second development screen is still running at this up
 completed control summary. Assertions check update/interactions alignment, outcome
 counts summing to completed episodes, and agreement with logged successes. No model
 loading, replay, acceptance rerun, fresh hash audit or native-code change was needed.
+
+### Parallel Depth reaches complete screening; LiDAR still exchanges scene skills
+
+Depth parallel u176 completed48/48 after its u160 result of8/48. All six initial
+successful cases return. Median successful flight times are98.989/102.117/116.973/
+93.217/100.930/95.987seconds in S01/S02/S03/D01/D02/D03 order. The native option2
+selector is now executing the first25-case-per-scene full validation; screening alone
+does not meet selection or stability requirements. No extra acceptance was launched.
+
+A detached `ppo-parallel-window-reference` checkout at the original811eabe runtime
+has been prepared for the already registered unchanged continuation. The existing
+`tools/ppo_stability_window.py` supports parallel sampling and full-state restoration,
+so no native code or new runner is required. Launch only after a complete passing
+full-validation report and the native first-pass selection record exist. The window
+remains28updates,917504interactions, seven checks, all six scenes>=23/25 and>=95%
+case retention at each check. The runtime pin avoids the later CLI provenance-only
+change being mistaken for the original training source; no old model replay/hash
+audit was added. The window has not yet started.
+
+LiDAR parallel u96 reached42/48 (8/8/2/8/8/8), recovering all ten initial cases.
+At u112 it fell to15/48 (0/8/7/0/0/0), losing all ten again:16collisions and17timeouts.
+S03 improves while other scene performance regresses, as previously observed for
+Depth. This does not isolate gradient interference or another unique cause. Both
+matched sequential controls were0/48, but that relative improvement does not satisfy
+the absolute joint-success and retention gates. Its original scratch budget continues.
