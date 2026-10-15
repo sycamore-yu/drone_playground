@@ -35,7 +35,7 @@ def tree_hash(tree):
 
 
 def reuse_source_checks(directory, source, config, branch_config):
-    """Reuse completed source checks for the same checkpoint and rollout length."""
+    """Reuse source identity/replay, and rollout checks when sampling is unchanged."""
     identity = json.loads((directory / "experiment.json").read_text())
     checks = json.loads((directory / "rollout-checks.json").read_text())
     previous = identity["branch_config"]
@@ -43,6 +43,14 @@ def reuse_source_checks(directory, source, config, branch_config):
     for candidate in (previous, current):
         for key in ("minibatches", "gae_lambda"):
             candidate["learning"]["options"].pop(key, None)
+    old_sampling = previous.get("simulation", {}).get("procedural", {})
+    new_sampling = current.get("simulation", {}).get("procedural", {})
+    changed_sampling = (
+        old_sampling.get("start_sampling") in {"distance_curriculum", "distance_mixture"}
+        and new_sampling.get("start_sampling") == "stratified"
+    )
+    if changed_sampling:
+        old_sampling["start_sampling"] = "stratified"
     if (
         identity.get("status") != "completed"
         or Path(identity["checkpoint"]).resolve() != source.resolve()
@@ -53,7 +61,7 @@ def reuse_source_checks(directory, source, config, branch_config):
         or not checks["recurrent_memory_max_error"] < 1e-5
     ):
         raise ValueError("Existing source verification does not match this checkpoint/rollout")
-    return identity["restored_state_sha256"], checks
+    return identity["restored_state_sha256"], None if changed_sampling else checks
 
 
 def main():
@@ -75,6 +83,7 @@ def main():
     parser.add_argument("--minibatches", type=int)
     parser.add_argument("--gae-lambda", type=float)
     parser.add_argument("--reuse-source-checks", type=Path)
+    parser.add_argument("--start-sampling", choices=("stratified",))
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -85,6 +94,8 @@ def main():
     for key in ("horizon", "minibatches", "gae_lambda"):
         if (value := getattr(args, key)) is not None:
             config.learning.options[key] = value
+    if args.start_sampling is not None:
+        config.simulation.procedural.start_sampling = args.start_sampling
     if args.clearance_aggregation is not None:
         if config.task.options.get("reward_profile") != "goal_reaching":
             raise ValueError("Clearance aggregation requires the goal-reaching Task reward")
@@ -147,6 +158,7 @@ def main():
         "source_checks_reused_from": (
             str(args.reuse_source_checks) if args.reuse_source_checks is not None else None
         ),
+        "rollout_checks_reused": reused_checks is not None,
     }
     atomic_json(args.output / "experiment.json", identity)
     print("restored", origin_update, origin_hash, flush=True)
@@ -169,7 +181,8 @@ def main():
     checks = reused_checks
     if checks is None:
         checks = {k: float(v) for k, v in check_rollout(state, state.interactions / budget).items()}
-        assert tree_hash(state) == origin_hash
+        if args.reuse_source_checks is None:
+            assert tree_hash(state) == origin_hash
     assert checks["log_probability_max_error"] < 1e-4, checks
     assert checks["recurrent_memory_max_error"] < 1e-5, checks
     assert checks["reward_finite"], checks
@@ -262,6 +275,14 @@ def main():
                 interactions=interactions + trainer.config["horizon"] * trainer.env.num_envs,
             )
             record = {k: float(v) for k, v in jax.device_get(metrics).items()}
+            if args.start_sampling is not None:
+                scene = state.env_state.scene_state
+                distances = np.linalg.norm(np.asarray(scene.start - scene.goal), axis=-1)
+                record.update(
+                    active_start_distance_min_metres=float(distances.min()),
+                    active_start_distance_max_metres=float(distances.max()),
+                    active_start_distance_over90m_worlds=int((distances >= 90).sum()),
+                )
             record.update(update=int(state.updates), wall_seconds=time.monotonic() - started)
             with (args.output / "metrics.jsonl").open("a") as stream:
                 stream.write(json.dumps(record) + "\n")
