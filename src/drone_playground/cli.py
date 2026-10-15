@@ -124,6 +124,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
     if config.learning.required_consecutive_passes != (3 if legacy else 1):
         raise ValueError("Learning selection and required_consecutive_passes disagree")
     resolved = OmegaConf.to_container(config, resolve=True)
+    frozen_seed_base = resolved["benchmark"].get("frozen_seed_base")
+    if frozen_seed_base is not None and (
+        type(frozen_seed_base) is not int or frozen_seed_base < 2_000_000
+    ):
+        raise ValueError("benchmark.frozen_seed_base must be an integer >= 2000000")
     max_interactions = resolved["learning"].get("max_interactions")
     training_budget_reached(0, max_interactions)
     distance_curriculum = (resolved.get("simulation", {}).get("procedural") or {}).get(
@@ -766,7 +771,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
         atomic_json(record.directory / "run.json", record.identity)
         benchmark_config = OmegaConf.create(resolved)
         benchmark_config.mode = "benchmark"
-        benchmark_config.benchmark.seed_base = None
+        benchmark_config.benchmark.seed_base = frozen_seed_base
         benchmark_config.benchmark.episodes = None
         if scenes is not None:
             benchmark_config.benchmark.scenes = None

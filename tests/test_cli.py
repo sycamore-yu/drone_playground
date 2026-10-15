@@ -162,6 +162,34 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     assert frozen["provenance"]["consecutive_passes"] == 3
 
 
+def test_fresh_frozen_cohort_keeps_validation_seeds_separate(config, training, monkeypatch):
+    """A new holdout cohort must not alter the repeated model-selection cases."""
+    OmegaConf.update(config, "benchmark.frozen_seed_base", 3_000_000, force_add=True)
+    config.benchmark.seed_base = 1_200_000
+    training.stop_at = None
+    original = cli.evaluate
+    cohorts = []
+
+    def evaluate(selected, *args, **kwargs):
+        cohorts.append((selected.mode, selected.benchmark.seed_base))
+        return original(selected, *args, **kwargs)
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    cli.train(config, training.record)
+    assert cohorts == [("checkpoint_eval", 1_200_000)] * 3 + [("benchmark", 3_000_000)]
+
+
+@pytest.mark.parametrize("seed_base", [1_500_000, True, 3_000_000.5])
+def test_frozen_cohort_rejects_invalid_or_validation_seed_before_training(
+    config, training, seed_base
+):
+    """Reject a bad holdout declaration before spending the training budget."""
+    config.benchmark.frozen_seed_base = seed_base
+    with pytest.raises(ValueError, match="frozen_seed_base"):
+        cli.train(config, training.record)
+    assert not training.evaluations and training.now == 0
+
+
 def test_three_stage_screening_only_promotes_a_complete_candidate(config, training, monkeypatch):
     """A light diagnostic never counts as formal C2/C3 or final acceptance."""
     config.learning.selection = "first_full_validation_pass"
