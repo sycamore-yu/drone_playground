@@ -1,0 +1,177 @@
+{
+  "source": "results/fixed_scenes_long_return/depth_ppo_s0_stability",
+  "checks": {
+    "148": {
+      "retained_initial_successes": 144,
+      "passed": false,
+      "scenes": {
+        "S01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 170.0
+        },
+        "S02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 162.062
+        },
+        "S03": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 148.598
+        },
+        "D01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 153.53
+        },
+        "D02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 185.698
+        },
+        "D03": {
+          "events": {
+            "COLLISION": 6,
+            "SUCCESS": 19
+          },
+          "median_flight_seconds": 180.988
+        }
+      }
+    },
+    "152": {
+      "retained_initial_successes": 128,
+      "passed": false,
+      "scenes": {
+        "S01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 163.85
+        },
+        "S02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 160.566
+        },
+        "S03": {
+          "events": {
+            "OUT_OF_BOUNDS": 22,
+            "SUCCESS": 3
+          },
+          "median_flight_seconds": 101.504
+        },
+        "D01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 153.012
+        },
+        "D02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 173.992
+        },
+        "D03": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 179.562
+        }
+      }
+    },
+    "156": {
+      "retained_initial_successes": 117,
+      "passed": false,
+      "scenes": {
+        "S01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 192.304
+        },
+        "S02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 174.694
+        },
+        "S03": {
+          "events": {
+            "COLLISION": 25
+          },
+          "median_flight_seconds": 183.904
+        },
+        "D01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 165.742
+        },
+        "D02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 155.928
+        },
+        "D03": {
+          "events": {
+            "SUCCESS": 17,
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 169.952
+        }
+      }
+    },
+    "160": {
+      "retained_initial_successes": 148,
+      "passed": true,
+      "scenes": {
+        "S01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 150.046
+        },
+        "S02": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 144.862
+        },
+        "S03": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 146.498
+        },
+        "D01": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 145.784
+        },
+        "D02": {
+          "events": {
+            "SUCCESS": 23,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 149.434
+        },
+        "D03": {
+          "events": {
+            "SUCCESS": 25
+          },
+          "median_flight_seconds": 162.014
+        }
+      }
+    }
+  }
+}

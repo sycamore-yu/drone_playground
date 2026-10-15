@@ -21,6 +21,9 @@
   "selection": "Complete fixed48-case screening; first suitable screen triggers one25-case full validation per primary scene, requiring23 successes each. The existing CLI stops on first full pass or budget exhaustion. No patience stop before budget.",
   "remaining_acceptance": "A selected candidate still needs the preregistered >=900000-interaction stability window, two other scratch seeds, independent frozen testing and separate LiDAR training.",
   "limits": "Control interfaces differ from the historical full3D BPTT/SHAC recipes and must be disclosed in the matrix. This is goal-navigation convergence with altitude stabilization, not evidence of learned general3D maneuvering or a unique PPO failure cause. Historical horizontal-action Fan-reward trials also failed; this candidate is not presented as a novel universal cure.",
-  "status": "ready_to_launch",
-  "launch_reason": "Original3D source passed150/150 at144, but unchanged continuation failed:148 D03=19/25;152 S03=3/25;156 S03=0/25,D03=17/25. The original entire window is still completing. Existing frozen PD intervention40/48 supplies a bounded positive signal for this single-variable scratch trial."
+  "status": "running",
+  "launch_reason": "Original3D source passed150/150 at144, but unchanged continuation failed:148 D03=19/25;152 S03=3/25;156 S03=0/25,D03=17/25. The original entire window is still completing. Existing frozen PD intervention40/48 supplies a bounded positive signal for this single-variable scratch trial.",
+  "launch_commit": "9953183229aae2b1e63c13dfaf9400e362f28c97",
+  "source_sha256": "b5007aeee223e0863b6d2ab06607fbd6ae5ff9c467a049138d0184147d582ceb",
+  "run": "results/fixed_scenes_altitude_pd/depth_ppo_s0"
 }

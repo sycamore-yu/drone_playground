@@ -235,6 +235,11 @@ The Actor ignores `privileged_state`; its architecture and frozen input contract
 remain the same. Only Actor variables are exported for inference. See
 [ADR-0010](adr/0010-training-only-privileged-ppo-critic.md).
 
+LiDAR PPO uses `jax.checkpoint` inside recurrent sequence recomputation so PointNet
+intermediate activations are recomputed during the backward pass instead of retained
+for every timestep. This trades computation for memory without shortening the rollout
+or changing the objective, network or number of optimizer steps.
+
 Independent Navigation PPO runs can set `++observation.navigation_world_rotation=true`
 to append the row-major body-to-world rotation matrix to `observation['state']`.
 The original 10 features become 19 (21 with the separate goal-observation option).
