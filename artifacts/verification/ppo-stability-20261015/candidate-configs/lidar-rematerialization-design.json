@@ -1,5 +1,5 @@
 {
-  "status": "prepared",
+  "status": "running",
   "problem": "Original LiDAR fixed-scene h512 trial failed before any completed update; XLA requested 56.49 GiB on a 24 GiB device.",
   "failed_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/lidar_ppo_s0",
   "failed_log": "artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-long-return.log",
@@ -20,6 +20,14 @@
     "command": "pytest -q tests/test_learning.py -k 'recurrent_recomputation or lidar_rematerialization or (navigation_observation_ppo_updates_and_restores and True-True-21-lidar)'",
     "backend": "CPU",
     "ruff": "check and format --check passed",
-    "gpu_full_batch": "pending"
-  }
+    "gpu_full_batch": {
+      "result": "completed actual full-sized update1 with all finite metrics (CLI gate)",
+      "update": 1,
+      "interactions": 32768,
+      "update_seconds": 38.417985220003175,
+      "device_total_memory_mib": 3895.0,
+      "co_running": "Depth stability job; device-wide sample is not the allocation peak"
+    }
+  },
+  "git_commit": "2cde4fcce2cc72c02b4b91f23d4468bd5c84c4b5"
 }

@@ -1,6 +1,6 @@
 {
   "scope": "Single seed0 scratch recipe trial; not formal three-seed acceptance.",
-  "control": "depth_fixed_scenes_long_return_s0.yaml, running original8,388,608-interaction budget.",
+  "control": "Original fixed3D scratch run selected at144; unchanged stability report results/fixed_scenes_long_return/depth_ppo_s0_stability/report.json.",
   "evidence": "Frozen altitude intervention completed40/48:8,8,8,7,6,3 across the primary scenes. It supports a vertical-control contribution but not an all-scene pass.",
   "counterfactual": "../depth-altitude-counterfactual/comparison.json",
   "changes": {
@@ -21,6 +21,6 @@
   "selection": "Complete fixed48-case screening; first suitable screen triggers one25-case full validation per primary scene, requiring23 successes each. The existing CLI stops on first full pass or budget exhaustion. No patience stop before budget.",
   "remaining_acceptance": "A selected candidate still needs the preregistered >=900000-interaction stability window, two other scratch seeds, independent frozen testing and separate LiDAR training.",
   "limits": "Control interfaces differ from the historical full3D BPTT/SHAC recipes and must be disclosed in the matrix. This is goal-navigation convergence with altitude stabilization, not evidence of learned general3D maneuvering or a unique PPO failure cause. Historical horizontal-action Fan-reward trials also failed; this candidate is not presented as a novel universal cure.",
-  "status": "prepared_not_launched",
-  "deferred_because": "Original three-action PPO reached its first150/150 full validation atupdate144. Test its unchanged continuation first; no new altitude-PD training is needed now."
+  "status": "ready_to_launch",
+  "launch_reason": "Original3D source passed150/150 at144, but unchanged continuation failed:148 D03=19/25;152 S03=3/25;156 S03=0/25,D03=17/25. The original entire window is still completing. Existing frozen PD intervention40/48 supplies a bounded positive signal for this single-variable scratch trial."
 }

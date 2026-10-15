@@ -743,3 +743,28 @@ output, verified by a structural comparison; every parameter starts randomly.
 Three-seed evidence, per-seed stability and independent testing of actual final
 models remain outstanding. The automatic original2million benchmark does not replace
 that final test. The14/18 reused matrix is unchanged.
+
+### 2026-10-16: first stable-window failure and LiDAR resource fix
+
+The unchanged Depth continuation failed its gate: u148 lost6 D03 cases(19/25),
+u152 lost22 S03 cases(3/25), andu156 had S03=0/25,D03=17/25. Cached case identity
+and retention are in the window report; no initial checkpoint replay was repeated.
+All registered28 updates still run. This is a first full pass, not stable convergence.
+The predesigned altitude-PD scratch trial is therefore no longer deferred: its
+existing40/48 frozen intervention motivates the one-variable control change, but
+cannot supply formal training or dynamic-scene acceptance evidence.
+
+Original LiDAR seed0 failed with XLA RESOURCE_EXHAUSTED requesting56.49GiB before
+any completed update. Commit2cde4fc wraps only the LiDAR recurrent PPO scan body
+in `jax.checkpoint(..., prevent_cse=False)`, recomputing PointNet activations.
+The [JAX API](https://docs.jax.dev/en/latest/_autosummary/jax.checkpoint.html)
+documents this reverse-mode memory/computation tradeoff and the scan-specific CSE
+setting. No network, action, batch, objective, optimizer or dependency change.
+Four CPU tests passed(35.28s), including real PointNet output/gradient equivalence
+with masked NaNs/empty clouds, recurrence resets, and actual physical PPO update
+plus state restoration. Ruff check/format passed. Original failed artifacts remain.
+The fresh `lidar_ppo_s0_remat` run completed full-sized update1:32768 interactions,
+38.418s update time, finite metrics,3895MiB device-wide sampled memory including
+Depth. This proves the original batch can execute; it is neither a peak-memory
+bound nor convergence. The first update skipped15/16 actor steps under its KL
+guard; subsequent learning and scene-level quality remain empirical questions.
