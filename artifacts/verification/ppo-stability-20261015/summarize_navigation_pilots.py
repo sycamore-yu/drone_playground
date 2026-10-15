@@ -112,8 +112,8 @@ def summarize_branch(directory):
     original_successes = {key for key, row in baseline.items() if row["event"] == "SUCCESS"}
     assert len(original_successes) == 21
     origin = experiment["source_provenance"]["updates"]
-    config = experiment["source_config"]
-    batch = config["simulation"]["num_envs"] * config["learning"]["options"]["horizon"]
+    branch = experiment["branch_config"]
+    batch = branch["simulation"]["num_envs"] * branch["learning"]["options"]["horizon"]
     checks = []
     for report_path in sorted(directory.glob("update-*/report.json")):
         report = json.loads(report_path.read_text())
@@ -175,6 +175,8 @@ if __name__ == "__main__":
                 "depth-deterministic-control",
                 "depth-deterministic-update",
                 "depth-rehearsal",
+                "depth-h512-lambda095",
+                "depth-h512-lambda1",
             )
             if (Path(__file__).parent / name / "experiment.json").exists()
         },

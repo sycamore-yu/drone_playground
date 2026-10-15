@@ -25,6 +25,9 @@ parser.add_argument("--output", type=Path, required=True)
 parser.add_argument("--deterministic-update", action="store_true")
 parser.add_argument("--rehearsal", type=Path)
 parser.add_argument("--rehearsal-weight", type=float, default=0.0)
+parser.add_argument("--horizon", type=int)
+parser.add_argument("--minibatches", type=int)
+parser.add_argument("--gae-lambda", type=float)
 args = parser.parse_args()
 if args.output.exists():
     raise FileExistsError(args.output)
@@ -32,6 +35,13 @@ if args.output.exists():
 source = root / "depth-batch64-retention-pair/model_000300"
 metadata = json.loads((source / "metadata.json").read_text())
 config = OmegaConf.create(metadata["config"]["experiment"])
+overrides = {
+    key: value
+    for key in ("horizon", "minibatches", "gae_lambda")
+    if (value := getattr(args, key)) is not None
+}
+for key, value in overrides.items():
+    config.learning.options[key] = value
 trainer = Trainer(
     create_environment(config),
     kind=config.method.actor.kind,
@@ -109,6 +119,7 @@ result = {
     "source_identity": source_identity(),
     "xla_flags": os.environ.get("XLA_FLAGS", ""),
     "update_compiler_options": compiler_options,
+    "learning_overrides": overrides,
     "rehearsal": rehearsal_contract,
     "restored_state_sha256": before_hash,
     "production_state_sha256": tree_hash(production),
@@ -117,7 +128,8 @@ result = {
     "same_compiled_update_exact": tree_hash(repeated) == tree_hash(production),
     "production_diagnostic_max_abs_difference": differences,
     "metrics": metrics,
-    "scope": "One actual update. Does not establish long-run numerical reproducibility.",
+    "scope": "One actual update, not long-run reproducibility. Historical metrics remain the "
+    "original h32 reference, not matched samples when learning options are overridden.",
 }
 if rehearsal_loss is not None:
     result["rehearsal_kl"] = {

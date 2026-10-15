@@ -48,6 +48,9 @@ def main():
     parser.add_argument("--deterministic-update", action="store_true")
     parser.add_argument("--rehearsal", type=Path)
     parser.add_argument("--rehearsal-weight", type=float, default=0.1)
+    parser.add_argument("--horizon", type=int)
+    parser.add_argument("--minibatches", type=int)
+    parser.add_argument("--gae-lambda", type=float)
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -55,6 +58,9 @@ def main():
     metadata = json.loads((args.checkpoint / "metadata.json").read_text())
     config = OmegaConf.create(metadata["config"]["experiment"])
     config.simulation.device = "gpu"
+    for key in ("horizon", "minibatches", "gae_lambda"):
+        if (value := getattr(args, key)) is not None:
+            config.learning.options[key] = value
     if args.clearance_aggregation is not None:
         if config.task.options.get("reward_profile") != "goal_reaching":
             raise ValueError("Clearance aggregation requires the goal-reaching Task reward")
@@ -215,11 +221,11 @@ def main():
                 updates=updates + 1,
                 interactions=interactions + trainer.config["horizon"] * trainer.env.num_envs,
             )
+            record = {k: float(v) for k, v in jax.device_get(metrics).items()}
+            record.update(update=int(state.updates), wall_seconds=time.monotonic() - started)
+            with (args.output / "metrics.jsonl").open("a") as stream:
+                stream.write(json.dumps(record) + "\n")
             if (offset + 1) % 10 == 0:
-                record = {k: float(v) for k, v in jax.device_get(metrics).items()}
-                record.update(update=int(state.updates), wall_seconds=time.monotonic() - started)
-                with (args.output / "metrics.jsonl").open("a") as stream:
-                    stream.write(json.dumps(record) + "\n")
                 print("update", int(state.updates), "reward", record["reward"], flush=True)
         checkpoint.save_state(
             args.output / "final.training.zip",
