@@ -1,5 +1,5 @@
 {
-  "status": "registered_before_launch",
+  "status": "completed_neither_block_restoration_sufficient",
   "question": "Which recorded Actor parameter block contributes to the first full-scene regression after the parallel Depth first pass?",
   "problem": "Unchanged control first passes150/150 at u176, then loses26 cases at u184 (S01=11/25,D03=13/25). Entropy removal also fails its full window, so no further entropy sweep. Existing velocity/action alternatives have already failed; they are not rerun.",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
@@ -34,5 +34,45 @@
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-components",
   "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-components.log",
   "checks": "Three identity-based assembly self-checks verify both cross combinations and the unchanged combination, with all other parameter references retained and source dictionaries unchanged. Ruff passes.",
-  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/policy_component_counterfactual.py > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-components.log 2>&1"
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/policy_component_counterfactual.py > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-components.log 2>&1",
+  "runner_commit": "4cd42f3",
+  "pid": 2713095,
+  "result": {
+    "before_representation_after_head": {
+      "successes": 128,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 22,
+        "D01": 25,
+        "D02": 6,
+        "D03": 25
+      },
+      "passed": false,
+      "wall_seconds": 100.36959630501224
+    },
+    "after_representation_before_head": {
+      "successes": 129,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 8,
+        "D01": 25,
+        "D02": 21,
+        "D03": 25
+      },
+      "passed": false,
+      "wall_seconds": 59.98246450998704
+    },
+    "recovered_original_losses": {
+      "before_representation_after_head": 26,
+      "after_representation_before_head": 26
+    },
+    "new_losses": {
+      "before_representation_after_head": 22,
+      "after_representation_before_head": 21
+    },
+    "decision": "Neither block-only frozen replacement passes; no automatic module freeze or architecture change."
+  },
+  "post_evaluation_cleanup": "Process exit1 after both complete reports and final comparison were saved: method cache has no sim. Fixed cleanup to skip non-environment entries; AST execution of the actual cleanup block closes two test environments and skips a method. No episode rerun."
 }

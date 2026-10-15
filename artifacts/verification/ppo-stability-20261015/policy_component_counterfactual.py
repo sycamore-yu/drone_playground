@@ -122,7 +122,8 @@ def main():
         atomic_json(output / "comparison.json", result)
     finally:
         for env in environments.values():
-            env.sim.close()
+            if hasattr(env, "sim"):
+                env.sim.close()
 
 
 if __name__ == "__main__":

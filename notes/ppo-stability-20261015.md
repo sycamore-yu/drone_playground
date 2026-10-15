@@ -1428,3 +1428,21 @@ changes. Prelaunch design and reproduction command are in
 native load_policy/evaluate and existing new-table scoring. Three identity-based
 assembly self-checks prove source dictionaries and all other parameter references
 remain unchanged; Ruff passes. No production code or dependency change.
+
+
+The frozen component experiment launched from4cd42f3, native811eabe, PID2713095.
+Both150-episode evaluations completed and the final comparison was saved. The u176
+representation/u184 action_head hybrid scores128:25,25,22,25,6,25. The reverse
+scores129:25,25,8,25,21,25. Both recover all26 original u184 losses, but introduce
+22/21 failures on previously retained cases. First hybrid new failures are22
+collisions; second has10 collisions and11 timeouts. Neither meets the registered
+all-scene gate. No single-block restoration is promoted as a sufficient frozen
+repair, and no module-freezing training follows automatically. These results do
+not identify a unique mechanism behind the interacting parameter changes.
+
+The process exited1 only after writing both full evaluations and status=completed:
+cleanup iterated the evaluator cache's PolicyMethod as though it were an environment.
+The cleanup now skips entries without sim, matching existing window behavior. A
+small self-check executes the actual finally block with two environment stubs and
+one method entry, confirming both closes and no method close. No evaluation was
+rerun; original output/log remains. No native learning, dependency or task change.
