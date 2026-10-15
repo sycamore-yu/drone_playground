@@ -1025,3 +1025,7 @@ Start-state distribution is a standard curriculum variable; reference: Florensa 
 https://proceedings.mlr.press/v78/florensa17a.html . This comparison is not their
 adaptive reverse-curriculum algorithm. A beneficial continuation would still need
 a from-scratch recipe and the unchanged formal stability/independent-test protocol.
+
+Nominal-reset pilot launched from commit17b84c6 (PID2530705), preserving all source/control outputs. Source/control case comparison now shows u64 retains32/38 and u80 retains30/38, with no new successful cases. Later ordinary screens: PD u144 remains0/48(all timeouts); parallel u80=30/48(S01/S02/S03/D01/D02/D03=8/2/0/8/8/4). No matrix promotion.
+
+The nominal-reset branch completed its first real update u49 (32768 interactions): finite metrics, Actor gradient norm0.52205765, KL skip0, update time73.977s including compilation. Complete-state/configuration/geometry assertions passed. This validates execution only; first screening at u64 remains pending. Diagnostic wall time begins after restoration and GPU costs are concurrent, so setup/isolated throughput are not implied. First-update evidence records approximate process start time separately.

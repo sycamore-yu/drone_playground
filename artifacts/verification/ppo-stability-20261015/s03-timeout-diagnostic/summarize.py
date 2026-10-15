@@ -115,6 +115,8 @@ def main():
         }
     fig.savefig(OUTPUT / "paths.png", dpi=160)
     fig.savefig(OUTPUT / "paths.svg")
+    svg = OUTPUT / "paths.svg"
+    svg.write_text("\n".join(line.rstrip() for line in svg.read_text().splitlines()) + "\n")
     plt.close(fig)
     (OUTPUT / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     print(

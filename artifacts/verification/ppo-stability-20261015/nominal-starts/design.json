@@ -1,5 +1,5 @@
 {
-  "status": "registered_before_training",
+  "status": "training",
   "problem": "Current policies fail S03 by interior stalling/oscillation rather than final-goal settling. PD u112 remains84.49m away; parallel u48 two cases remain58.30m away and six23.25m away. Current fixed-scene training randomizes starts over x[2,94], y[-18,18], z[1,5.5], whereas the task starts near(2,0,3).",
   "hypothesis": "Training more actual full-route episodes from the task start may improve on-policy coverage of recurrent route failures and retention. The observed paths do not establish reset distribution as the cause.",
   "intervention": {
@@ -36,5 +36,11 @@
   "evaluation_separation": "Use existing eight-case development screening seeds only. Training RNG remains the restored training stream; no validation case or trajectory enters PPO training. No independent final test.",
   "reference": "https://proceedings.mlr.press/v78/florensa17a.html",
   "reference_scope": "Start-state distributions are an established RL curriculum variable. This simple fixed nominal-reset comparison is not the paper's adaptive reverse curriculum algorithm.",
-  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=$PWD/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python $PWD/artifacts/verification/ppo-stability-20261015/nominal-starts/continue.py --output $PWD/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts"
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=$PWD/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python $PWD/artifacts/verification/ppo-stability-20261015/nominal-starts/continue.py --output $PWD/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts",
+  "runtime_commit": "17b84c6",
+  "pid": 2530705,
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/nominal-starts/continue.log",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_nominal_starts",
+  "first_update": "artifacts/verification/ppo-stability-20261015/nominal-starts/first-update.json",
+  "cost_scope": "Continuation total_wall_seconds starts after state restoration; setup is excluded. First update_seconds includes compilation. GPU is shared with the two scratch runs; no isolated cost comparison."
 }
