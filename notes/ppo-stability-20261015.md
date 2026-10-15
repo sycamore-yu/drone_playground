@@ -469,3 +469,42 @@ keeping the existing p1/f0 task and67,108,864-interaction/three-pass protocol. T
 existing higher-rate run's97/100 at8100 then0/100 at8192 motivates testing a
 smaller step size. It is one seed's controlled candidate, not a unique causal
 explanation or a completed cell; other algorithms' evidence is not transferred.
+
+The existing calibration initial states were reconstructed with exactly the same
+full-state hash. Seven were20m starts, one80m; state5's regression is therefore
+inside the training reset-distance support. Its initial clearance was0.644m and
+its world had54 obstacles,35 moving. The fixed source screening starts span
+95.764–96.243m, beyond the20/50/80m reset distances. This is an explicit coverage
+gap, but it cannot alone explain the observed within-training-state regression;
+reset support also does not describe every state visited later in a trajectory.
+
+`critic_trajectory_audit.py` independently checks the existing raw file hashes,
+returns and terminal event arrays, reports all eight states and illustrates state5
+in `depth-critic-calibration/state5-regression.png`. Sourceu300 had13successes,
+2bounds failures and1collision; finalu480 had2successes and14collisions, with
+median collision time2.316s. All16 replicas remained active for the first2s.
+Mean x displacement then increased1.041m to2.619m; the former detour disappeared
+in most failed trajectories. This shows a concrete loss of avoidance behavior,
+not a unique explanation of why the update selected it. All states and both
+policies' trajectories remain available; the highlighted case was selected for
+the largest already observed paired return decline.
+
+Racing PPO now has one additional current-source scratch candidate. The historical
+`scratch_v02/racing_ppo_s0_trial2` raw100-episode CSVs at900/1000/1100 each verify
+100successes with the legal gate order. Its optimizer options motivate changing
+critic lr.0005->.001, entropy.001->0, KL limit.02->0 and value clip10->0 together,
+retaining the current common p1/f0 task, Actor, physics, observations and budget.
+This is a bundled recipe candidate, not single-factor causal evidence; no old
+weights or moments are used. Seed1's historical interruption is not acceptance.
+The full diff, source hashes and decision rule were saved before launch in
+`candidate-configs/racing-ppo-reference-options-design.json`.
+
+Both h512 branches completed the first matched check after131,072 interactions:
+lambda.95=24/48 with14/21 source successes retained and24collisions;
+lambda1=28/48 with18/21 retained,11collisions and9timeouts. Each adds10 new
+successes. The first four updates configured1,024 actor minibatches per arm;
+actual execution was252 forlambda.95 and520 forlambda1, verified from the
+logged skip fractions and the production update loop. The observed first-check
+advantage is therefore not explained by lambda1 simply executing fewer actor
+minibatches. This remains an interim comparison; the fixed393,216-interaction
+final retention gate has not yet been evaluated.

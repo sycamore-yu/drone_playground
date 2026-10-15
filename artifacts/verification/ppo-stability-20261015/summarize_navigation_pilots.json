@@ -9484,6 +9484,49 @@
           "lost_cases": [],
           "csv_sha256": "c77a629391f17921fb267bc5a1c3984d7a8e0a484a24a2c77be488235dd3198f",
           "report_sha256": "0f9974ec5c0a5843a21f0cc084631cce128adff3790917d190659a900fd6fc05"
+        },
+        {
+          "update": 304,
+          "additional_interactions": 131072,
+          "successes": 28,
+          "retained_source_successes": 18,
+          "retention_fraction": 0.8571428571428571,
+          "new_successes": 10,
+          "per_scene_successes": {
+            "S01": 7,
+            "S02": 8,
+            "S03": 0,
+            "D01": 8,
+            "D02": 0,
+            "D03": 5
+          },
+          "events": {
+            "TIMEOUT": 9,
+            "SUCCESS": 28,
+            "COLLISION": 11
+          },
+          "lost_cases": [
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ]
+          ],
+          "csv_sha256": "6e6bdd599e94a76bd050b77253326ef0bc945fad57116d237361ef288d983bf1",
+          "report_sha256": "80207fcce5bec80da69db1141067eb11237137398824b42bb6ae57b91d534491"
         }
       ]
     }
