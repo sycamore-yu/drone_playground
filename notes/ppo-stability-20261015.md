@@ -910,3 +910,38 @@ all prior benchmark summaries and14/18 statuses match exactly. Evidence is
 while23/25 gives75.03--97.78%; these are conditional test-sample intervals, not a
 claim about arbitrary new training seeds or unseen geometry. Three-seed spread is
 descriptive and does not alter the agreed reproducibility protocol.
+
+### Completed LR continuation and first parallel screening
+
+The matched0.1x Actor-LR branch completed all28updates/917504 interactions and exited0.
+All seven checks failed:139/126/62/136/144/130/139 out of150. Actual final172 gives25/25
+on five scenes and14/25 onD03, retaining139/150(92.67%). The unchanged control passed
+2/7 checks but also failed overall; it ended134/150. Mean paired success-count change
+is-9 per check, and the reduced-LR minimum62 is worse than control117. Thus the5-case
+final improvement does not establish stability or an overall controlled benefit.
+Every update has a positive finite Actor parameter delta norm(range0.04675--0.10151).
+Raw report copied unchanged to `depth-postpass-lr01-report.json`; matched summary in
+`depth-postpass-lr-comparison.json`. Source cases and control data reused, no replay
+or additional hash. Update wall1144.99s,total4856.39s include different concurrent GPU
+workloads; they are not an isolated LR-cost comparison. No final independent test or
+new lower-LR sweep from this negative branch alone.
+
+Parallel fresh Depth first complete screen at16/524288 interactions scored6/48:
+S01/S02/D02 all8timeouts,S03/D03 all8collisions,D01=6successes+2timeouts. Original
+sequential fresh seed0 at equal interactions had30/48, with no shared successful
+cases. Exact development-screening case identities matched using cached records;
+new comparison is `fixed-scenes-parallel-comparison.json`. Full-episode coverage is
+verified but a learning-quality benefit is not established at this first check.
+Continue the original budget rather than turning this early observation into a
+claim about eventual convergence or a unique cause.
+
+New altitude-PD screens80/96 are39/40 out of48, retaining all6 initial successes;
+S03 remains0/8 (timeouts). LiDAR192/208=0,224=19,240=38; last screen retains10/12,
+withS03=0/8 collisions andD02=6/8. No full-pass selection from these candidates yet.
+
+Final acceptance integration remains required: the generic collector currently links
+independent benchmark input to the first selected checkpoint, not a later completed
+PPO stability window. Before adding any PPO Navigation cell, connect and validate the
+original first-pass selection, all registered continuation checks, actual final model
+and independent final frozen evaluation as one chain. Existing14 cells are unchanged;
+do not substitute the initial automatic benchmark for the actual final model's test.

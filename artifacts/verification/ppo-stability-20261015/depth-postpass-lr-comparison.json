@@ -1,0 +1,296 @@
+{
+  "status": "completed",
+  "passed": false,
+  "source_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_lr01/report.json",
+  "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-stability-report.json",
+  "intervention": "Only Actor LR 0.0002 ->0.00002, including log_std; complete original state and all other options retained",
+  "actual_updates": 28,
+  "actual_additional_interactions": 917504,
+  "comparisons": [
+    {
+      "update": 148,
+      "additional_interactions": 131072,
+      "control_successes": 144,
+      "lr01_successes": 139,
+      "control_passed": false,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 19
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 24,
+        "D01": 25,
+        "D02": 22,
+        "D03": 18
+      },
+      "control_retained": 144,
+      "lr01_retained": 139
+    },
+    {
+      "update": 152,
+      "additional_interactions": 262144,
+      "control_successes": 128,
+      "lr01_successes": 126,
+      "control_passed": false,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 3,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 2,
+        "D01": 25,
+        "D02": 25,
+        "D03": 24
+      },
+      "control_retained": 128,
+      "lr01_retained": 126
+    },
+    {
+      "update": 156,
+      "additional_interactions": 393216,
+      "control_successes": 117,
+      "lr01_successes": 62,
+      "control_passed": false,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 0,
+        "D01": 25,
+        "D02": 25,
+        "D03": 17
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 0,
+        "D01": 7,
+        "D02": 5,
+        "D03": 0
+      },
+      "control_retained": 117,
+      "lr01_retained": 62
+    },
+    {
+      "update": 160,
+      "additional_interactions": 524288,
+      "control_successes": 148,
+      "lr01_successes": 136,
+      "control_passed": true,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 23,
+        "D03": 25
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 24,
+        "D03": 12
+      },
+      "control_retained": 148,
+      "lr01_retained": 136
+    },
+    {
+      "update": 164,
+      "additional_interactions": 655360,
+      "control_successes": 122,
+      "lr01_successes": 144,
+      "control_passed": false,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 10,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 12
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 19
+      },
+      "control_retained": 122,
+      "lr01_retained": 144
+    },
+    {
+      "update": 168,
+      "additional_interactions": 786432,
+      "control_successes": 146,
+      "lr01_successes": 130,
+      "control_passed": true,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 23,
+        "D03": 23
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 5,
+        "D03": 25
+      },
+      "control_retained": 146,
+      "lr01_retained": 130
+    },
+    {
+      "update": 172,
+      "additional_interactions": 917504,
+      "control_successes": 134,
+      "lr01_successes": 139,
+      "control_passed": false,
+      "lr01_passed": false,
+      "control_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 9
+      },
+      "lr01_per_scene": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 14
+      },
+      "control_retained": 134,
+      "lr01_retained": 139
+    }
+  ],
+  "actor_parameter_delta_norm_range": [
+    0.04675135016441345,
+    0.10150714963674545
+  ],
+  "control_passing_checks": 2,
+  "lr01_passing_checks": 0,
+  "mean_paired_success_count_change": -9,
+  "final": {
+    "update": 172,
+    "additional_interactions": 917504,
+    "model": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_lr01/model_000172",
+    "evaluation_seconds": 525.9027649399941,
+    "per_scene_successes": {
+      "S01": 25,
+      "S02": 25,
+      "S03": 25,
+      "D01": 25,
+      "D02": 25,
+      "D03": 14
+    },
+    "successes": 139,
+    "initial_successes": 150,
+    "retained_initial_successes": 139,
+    "retention_fraction": 0.9266666666666666,
+    "lost_initial_cases": [
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "0"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "1"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "12"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "18"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "20"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "23"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "4"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "5"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "6"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "8"
+      ],
+      [
+        "D03",
+        "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "1500005",
+        "9"
+      ]
+    ],
+    "new_success_cases": [],
+    "passed": false
+  },
+  "cost": {
+    "training_update_seconds": 1144.9892595879792,
+    "total_wall_seconds": 4856.394745145983,
+    "setup_seconds": 33.84567732398864
+  },
+  "interpretation": "This matched 10x reduction is insufficient: all7 checks failed. Final139/150 is5 better than control134/150, but the minimum62/150 is worse than control117/150. No further LR sweep or final independent test is justified by this branch alone.",
+  "scope": "Diagnostic continuation from a scratch-trained source; not an independent scratch seed or formal acceptance. Existing baseline identities and control results reused; no replay or new hash.",
+  "cost_scope": "Observed wall time includes compilation, evaluation and other simultaneous GPU training jobs; these durations are not an isolated LR algorithm-cost comparison."
+}

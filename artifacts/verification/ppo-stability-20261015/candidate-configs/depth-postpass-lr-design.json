@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed_failed",
   "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000144",
   "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_stability/report.json",
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_lr01",
@@ -65,5 +65,6 @@
     "first_actual_rollout_matches_control": "True",
     "first_actor_parameter_delta_norm": 0.06249301880598068
   },
-  "runner_commit": "e76f44f28dc951452c0cd748e0e418fb2fa28723"
+  "runner_commit": "e76f44f28dc951452c0cd748e0e418fb2fa28723",
+  "result": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-postpass-lr-comparison.json"
 }

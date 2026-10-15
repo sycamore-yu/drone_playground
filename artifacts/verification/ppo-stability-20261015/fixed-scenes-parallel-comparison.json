@@ -1,0 +1,120 @@
+{
+  "scope": "Matched scratch seed0 development screening at equal interactions; exact same screening case identities reused from cached episode records",
+  "control": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0",
+  "candidate": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0",
+  "configuration": "Same full3D action, reward, network, horizon and optimizer; parallel sampling jointly changes temporal scene mixing and removes forced resets",
+  "comparisons": [
+    {
+      "update": 16,
+      "interactions": 524288,
+      "sequential_successes": 30,
+      "parallel_successes": 6,
+      "shared_success_cases": 0,
+      "sequential_only_successes": 30,
+      "parallel_only_successes": 6,
+      "sequential_per_scene": {
+        "S01": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 260.21000000000004
+        },
+        "S02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 269.51
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D02": {
+          "successes": 8,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 8
+          },
+          "median_flight_seconds": 264.554
+        },
+        "D03": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "COLLISION": 2
+          },
+          "median_flight_seconds": 262.41200000000003
+        }
+      },
+      "parallel_per_scene": {
+        "S01": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "S03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 231.175
+        },
+        "D01": {
+          "successes": 6,
+          "episodes": 8,
+          "events": {
+            "SUCCESS": 6,
+            "TIMEOUT": 2
+          },
+          "median_flight_seconds": 271.78200000000004
+        },
+        "D02": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "TIMEOUT": 8
+          },
+          "median_flight_seconds": 300.0
+        },
+        "D03": {
+          "successes": 0,
+          "episodes": 8,
+          "events": {
+            "COLLISION": 8
+          },
+          "median_flight_seconds": 125.319
+        }
+      }
+    }
+  ],
+  "interpretation": "At the first screen the new sampler has lower success, despite verified full-episode coverage. No convergence benefit is established; original predeclared budget and quality gates remain active."
+}
