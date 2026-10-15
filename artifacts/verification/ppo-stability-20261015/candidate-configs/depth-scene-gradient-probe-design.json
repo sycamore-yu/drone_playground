@@ -1,0 +1,48 @@
+{
+  "status": "registered_before_sampling",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
+  "runtime_worktree": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "control_evidence": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json",
+  "problem": "Original parallel Depth still passes150/150 at u180, then loses26 cases in S01/D03 byu184. Full-return tails recover the later control losses but introduce other losses and fail their all-check gate. Component swaps and entropy removal also failed. Cross-scene regression is observed; gradient interference is not yet established.",
+  "hypotheses": [
+    "Repeated scene-specific conflict makes the shared Actor update locally worsen a previously mastered scene.",
+    "Scene gradients are themselves noisy across world groups or conditional action draws, so one negative inter-scene cosine is not evidence of stable task interference."
+  ],
+  "scope": "Measurement only; no optimizer continuation or evaluation replay. Scenes are the existing training strata, not new tasks or Actor inputs. Full-batch Adam probes are local counterfactuals, not the native16-minibatch update.",
+  "sampling": {
+    "rollouts": 2,
+    "horizon": 512,
+    "worlds": 64,
+    "interactions": 65536,
+    "replicate_rng": [
+      "unchanged source RNG",
+      "fold_in(source RNG,810002)"
+    ],
+    "shared_initial_state": "Both copies retain complete u180 physical state, episode clocks, recurrent memory, optimizer and objective history. No evaluation seeds/data enter the objective.",
+    "groups": "Eight existing contiguous training scenes, each split into its first/last4worlds; all16half-group losses use the original global advantage normalization."
+  },
+  "measurements": [
+    "Per-scene and half-scene PPO Actor gradients, including original0.005entropy and trainablelog_std",
+    "Inter-scene, within-scene half-group and cross-replicate cosine similarities; retain norms and Actor-only versus full-variable results",
+    "Predicted directional change and actual same-batch surrogate loss after one full-batch Adam step from original moments",
+    "Average of16half-gradients must match independently differentiated full-batch loss; source learner counters/state stay unchanged"
+  ],
+  "selection_gate": "Only consider a separate PCGrad continuation if a pair involving S01 or D03 has cosine<-0.1 in BOTH draws, BOTH pair members have positive half-group cosine in each draw and cross-draw scene cosine>0.5, AND S01 or D03 has normalized gradient dot Adam delta>0.1 in both draws with actual surrogate loss increasing. Thresholds are preregistered project diagnostic choices, not a published convergence guarantee. Also require the critical scene gradient to have normalized dot product>0.1 with the NEGATIVE aggregate gradient in both draws, so harm is not attributed only to inherited Adam momentum.",
+  "falsifier": "Failure of the combined gate does not establish scene-gradient projection as the next intervention. In particular, unstable within-scene directions indicate sampling variability rather than reproducible scene identity alone. No automatic PCGrad integration from negative cosine counts.",
+  "limitations": "Two conditional draws do not estimate population gradients or establish a unique root cause. Local surrogate harm is not episode-level capability loss; no curvature theorem or stability acceptance is inferred.",
+  "references": [
+    {
+      "url": "https://papers.neurips.cc/paper_files/paper/2020/file/3fe78a8acf5fda99de95303940a2420c-Paper.pdf",
+      "claim": "Negative gradient cosine defines conflict, but conflict alone is not necessarily harmful; magnitude and curvature matter. PCGrad is a real published intervention, not presumed necessary here."
+    },
+    {
+      "url": "https://github.com/openai/ppo-ewma",
+      "claim": "Official policy-optimization batch-size research motivates distinguishing sampling noise from task-specific interference; no new algorithm is adopted in this probe."
+    }
+  ],
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe",
+  "runner": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.py",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.py > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/scene-gradient-probe/probe.log 2>&1",
+  "implementation_checks": "Three analytic cosine self-checks passed; Ruff passes. Actual gradient reconstruction assertion remains to be checked during sampling."
+}

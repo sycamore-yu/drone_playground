@@ -1513,3 +1513,25 @@ Single sampled tail/value RMSE contains return variance and is not a calibrated
 conditional-value bias. No new unique root cause is established. The matrix remains
 14/18; all four PPO Navigation cells still need three-seed stable scratch evidence.
 No candidate process is active; a next intervention has not yet been registered.
+
+### Scene-gradient conflict versus sampling variability probe registered
+
+After the complete-return pilot, measure the original last-goodu180 state (150/150),
+not the changed-recipe branch. Two copies use unchanged/folded810002 source RNG with
+identical live physical/GRU/objective state; total65536training interactions. Native
+811eabe is pinned, no manual source/model hashing or evaluation replay. Existing
+eight training scene groups each split into two4world halves. Per-group PPO losses
+retain global advantage normalization and original entropy; their average gradient
+must reconstruct an independent full-batch derivative. Report within-scene, between-
+scene and cross-draw cosine/norms, plus one local full-batch Adam-step direction and
+surrogate change. This step is a counterfactual, not the native16-minibatch update.
+
+The preregistered gate requires repeated substantial inter-scene conflict involving
+S01/D03, positive within-scene half similarity, >0.5cross-draw coherence, and local
+harm under both negative aggregate gradient and inherited Adam. It prevents selecting
+PCGrad from a negative cosine alone or Adam momentum alone. Two draws cannot establish
+population gradients, a unique cause, curvature conditions or episode-level stability.
+PCGrad paper section2.2 explicitly says conflict alone need not be harmful. No native
+learner change or PCGrad integration is made for this probe. Three analytic cosine
+self-checks and Ruff pass; full gradient identity will be checked on the actual data.
+The exact design and command are candidate-configs/depth-scene-gradient-probe-design.json.
