@@ -36,6 +36,12 @@ def goal_reaching_reward(env, before, after, action):
         "boundary_reward": -0.1 * fraction * jax.nn.sigmoid(8.0 * (0.5 - boundary)),
         "action_reward": -0.05 * fraction * jnp.mean(jnp.clip(action, -1.0, 1.0) ** 2, axis=-1),
     }
+    if env.task.reward_options.get("clearance_aggregation") == "minimum":
+        # Charge only new worst proximity, keeping the whole episode's cost bounded by 0.1.
+        terms["clearance_reward"] = -0.1 * (
+            jax.nn.sigmoid(8.0 * (0.5 - after.task.min_clearance))
+            - jax.nn.sigmoid(8.0 * (0.5 - before.task.min_clearance))
+        )
     terms = {name: jnp.where(before.done, 0.0, value) for name, value in terms.items()}
     reward = sum(terms.values())
     return reward, {**terms, "task_cost": -reward}

@@ -148,6 +148,14 @@ Navigation 的可选 `task.options.reward_profile=goal_reaching` 采用有限时
 0.5 m 目标球内的成功回报比任一失败至少高 1.475。这是任务目标的性质，
 不能替代训练收敛证据，也不声称保留旧奖励的最优策略。
 
+该目标可设置 `task.options.reward_options.clearance_aggregation=minimum`，
+以已有 `TaskState.min_clearance` 记录本回合最差净空。只有最差净空进一步降低时，
+才扣除风险函数 `sigmoid(8*(0.5-min_clearance))` 的增量乘 0.1。
+整回合障碍代价仍不超过 0.1，离开障碍不会返还已扣代价；上述总成本与成功回报
+下界仍成立。省略此选项时，沿用按时间平均的障碍风险成本。
+两者是不同的任务风险目标，不能称为保持最优策略不变的 potential-based shaping。
+配置直接进入已有 Task 合同和 checkpoint，不增加环境状态字段。
+
 `finite_horizon=true` 时，任务截止时间产生 `terminated=true`，不再 bootstrap；
 Actor 的状态输入末尾加入归一化剩余时间。有限 rollout 的非终止末端仍正常
 bootstrap。该区分遵循 [Gymnasium 的时间限制语义](https://gymnasium.farama.org/v0.26.3/tutorials/handling_time_limits/)。

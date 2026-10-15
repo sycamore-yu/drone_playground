@@ -1,0 +1,11 @@
+{
+  "scope": "Scratch development comparison; first test Depth PPO and APG, all candidates use the same changed Task reward.",
+  "hypothesis": "A bounded penalty for new worst episode clearance supplies a stronger short-horizon avoidance gradient than a risk penalty divided by the 300-second task duration.",
+  "evidence": "Original time-averaged risk has clearance derivative 0.1*(0.1/300)*8*.25 = 6.6667e-5 at 0.5m, versus 0.05 for one-step distance progress along the goal direction. This local derivative comparison is not a policy-gradient attribution or a unique cause. Existing APG seed0 reached zero successes on its first full 48-case screen.",
+  "intervention": "Only task.options.reward_options.clearance_aggregation=minimum. Cost is 0.1 times the increase of sigmoid(8*(.5-episode_min_clearance)). It telescopes to at most .1 without refunding a recovery away from the obstacle. Other task costs, dynamics, observations, architecture, algorithms, budgets, seeds, resets and evaluation schedules are identical to each parent.",
+  "semantics": "An explicit worst-clearance task objective, not policy-invariant potential shaping. It reuses TaskState.min_clearance and changes no inference inputs. The full-return success-over-failure lower bound remains 1.475.",
+  "checks": "9 goal-reward tests passed in81.35s, including bounded monotone cost, nonrefund on repeated approaches, stronger local safety derivative, full-return ordering, invalid options, and real update/exact resume for PPO/APG/SHAC.",
+  "decision": "Compare complete same-seed case outcomes and retained successes at equal interactions. A positive diagnostic must then survive full-budget training and the original three-seed/consecutive-check/continued-learning/fresh-test protocol; otherwise retain the failure and do not keep stacking it.",
+  "budget": "2211840 interactions per pilot; identical 20/50/80m phase schedule,64 worlds,horizon32, evaluation every122880 interactions.",
+  "holdout": "Only consumed development cohorts are used here. No source weights or teacher data are transferred."
+}

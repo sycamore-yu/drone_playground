@@ -15,21 +15,26 @@ from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.tasks import Event
 
 
-def _environment(**kwargs):
+def _environment(*, reward_options=None, **kwargs):
     return make_environment(
         task="navigation",
         scene="S01",
         method_hz=10,
-        task_config={"reward_profile": "goal_reaching", "finite_horizon": True},
+        task_config={
+            "reward_profile": "goal_reaching",
+            "finite_horizon": True,
+            "reward_options": reward_options,
+        },
         **kwargs,
     )
 
 
-def test_safe_arrival_outranks_early_failure_and_hovering():
+@pytest.mark.parametrize("aggregation", ["time_average", "minimum"])
+def test_safe_arrival_outranks_early_failure_and_hovering(aggregation):
     """Full undiscounted returns prefer even a slow, costly success to failure."""
     from drone_playground.simulation.task_rewards import goal_reaching_reward
 
-    env = _environment(num_envs=1)
+    env = _environment(num_envs=1, reward_options={"clearance_aggregation": aggregation})
     try:
         # Include a failure arbitrarily close to the goal, plus a full-deadline hover.
         steps = 3000
@@ -45,7 +50,12 @@ def test_safe_arrival_outranks_early_failure_and_hovering():
             event = jnp.where(index >= lengths, events, Event.RUNNING)
             return SimpleNamespace(
                 physics=SimpleNamespace(states=SimpleNamespace(pos=position[:, None])),
-                task=SimpleNamespace(event=event),
+                task=SimpleNamespace(
+                    event=event,
+                    min_clearance=jnp.where(
+                        index == 0, jnp.inf, jnp.maximum(0.001, 2 - 4 * fraction)
+                    ),
+                ),
                 done=event != Event.RUNNING,
                 time=jnp.minimum(index, lengths) * env.dt,
                 scene_state=None,
@@ -69,7 +79,9 @@ def test_safe_arrival_outranks_early_failure_and_hovering():
 @pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
 def test_finite_horizon_timeout_stops_bootstrap_and_exposes_remaining_time(algorithm, tmp_path):
     """A task deadline is terminal, while a rollout cut still bootstraps."""
-    env = _environment(num_envs=1, duration=0.1)
+    env = _environment(
+        num_envs=1, duration=0.1, reward_options={"clearance_aggregation": "minimum"}
+    )
     try:
         trainer = Trainer(
             env,
@@ -138,3 +150,67 @@ def test_goal_reward_has_finite_physical_action_gradient_and_no_post_terminal_re
             Trainer(env, config={"gamma": 0.99})
     finally:
         env.sim.close()
+
+
+def test_minimum_clearance_cost_is_bounded_without_refunding_unsafe_approaches():
+    """A wall approach supplies a strong gradient while repeated visits cannot farm reward."""
+    from drone_playground.simulation.task_rewards import goal_reaching_reward
+
+    task = SimpleNamespace(
+        radius=0.07,
+        duration=300.0,
+        low=jnp.array([-5.0, -5.0, 0.5]),
+        high=jnp.array([100.0, 5.0, 6.0]),
+        reward_options={"clearance_aggregation": "minimum"},
+    )
+    env = SimpleNamespace(
+        task=task,
+        dt=0.1,
+        goal_for=lambda _: jnp.array([10.0, 0.0, 3.0]),
+        scene_clearance=lambda p, t, s: p[:, 0] + task.radius,
+    )
+
+    def state(clearance, minimum, time, event=Event.RUNNING):
+        return SimpleNamespace(
+            physics=SimpleNamespace(
+                states=SimpleNamespace(pos=jnp.array([clearance, 0.0, 3.0])[None, None])
+            ),
+            task=SimpleNamespace(min_clearance=jnp.array([minimum]), event=jnp.array([event])),
+            time=jnp.array([time]),
+            done=jnp.array([event != Event.RUNNING]),
+            scene_state=None,
+        )
+
+    action = jnp.zeros((1, 3))
+    before = state(2.0, 2.0, 0.0)
+
+    def approach_cost(clearance):
+        after = state(clearance, clearance, 0.1)
+        return goal_reaching_reward(env, before, after, action)[1]["clearance_reward"].sum()
+
+    minimum_gradient = float(jax.grad(approach_cost)(0.5))
+    task.reward_options = {}
+    average_gradient = float(jax.grad(approach_cost)(0.5))
+    assert minimum_gradient > 1000 * average_gradient > 0
+    task.reward_options = {"clearance_aggregation": "minimum"}
+    positions = [2.0, 0.8, 0.5, 1.0, 0.5, 0.3]
+    penalty, worst = [], positions[0]
+    for index, position in enumerate(positions[1:], 1):
+        worst = min(worst, position)
+        after = state(position, worst, index * env.dt)
+        penalty.append(
+            float(goal_reaching_reward(env, before, after, action)[1]["clearance_reward"][0])
+        )
+        before = after
+    assert -0.1 <= sum(penalty) <= 0
+    assert penalty[2] == penalty[3] == 0.0
+    assert penalty[-1] < 0
+    done = state(0.3, 0.3, 1.0, Event.COLLISION)
+    assert float(goal_reaching_reward(env, done, done, action)[0][0]) == 0.0
+
+
+@pytest.mark.parametrize("options", [{"unknown": 1}, {"clearance_aggregation": ["minimum"]}])
+def test_goal_reward_rejects_unsupported_clearance_options(options):
+    """Malformed objective options must fail before a training run starts."""
+    with pytest.raises(ValueError, match="clearance_aggregation"):
+        _environment(num_envs=1, reward_options=options)

@@ -42,6 +42,7 @@ def main():
     parser.add_argument("--actor-lr-scale", type=float, default=1.0)
     parser.add_argument("--freeze-critic", action="store_true")
     parser.add_argument("--refresh-memory", action="store_true")
+    parser.add_argument("--clearance-aggregation", choices=("time_average", "minimum"))
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
@@ -49,6 +50,15 @@ def main():
     metadata = json.loads((args.checkpoint / "metadata.json").read_text())
     config = OmegaConf.create(metadata["config"]["experiment"])
     config.simulation.device = "gpu"
+    if args.clearance_aggregation is not None:
+        if config.task.options.get("reward_profile") != "goal_reaching":
+            raise ValueError("Clearance aggregation requires the goal-reaching Task reward")
+        OmegaConf.update(
+            config,
+            "task.options.reward_options.clearance_aggregation",
+            args.clearance_aggregation,
+            force_add=True,
+        )
     resolved = OmegaConf.to_container(config, resolve=True)
     options = dict(resolved["learning"]["options"])
     options["lr"] *= args.actor_lr_scale
@@ -71,7 +81,8 @@ def main():
     identity = {
         "checkpoint": str(args.checkpoint),
         "source_provenance": metadata["provenance"],
-        "source_config": resolved,
+        "source_config": metadata["config"]["experiment"],
+        "branch_config": resolved,
         "restored_state_sha256": origin_hash,
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "arguments": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},

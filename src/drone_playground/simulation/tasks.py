@@ -134,8 +134,13 @@ class Task:
                 raise ValueError("Invalid Fan speed or safety range")
             if reward_profile == "fan2025_arrival" and self.reward_options["success_reward"] <= 0:
                 raise ValueError("Fan arrival reward must be positive")
+        elif reward_profile == "goal_reaching":
+            if self.reward_options.keys() - {"clearance_aggregation"} or self.reward_options.get(
+                "clearance_aggregation", "time_average"
+            ) not in ("time_average", "minimum"):
+                raise ValueError("Goal-reaching clearance_aggregation must be time_average/minimum")
         elif self.reward_options:
-            raise ValueError("Only Fan's unpublished reward weights require reward_options")
+            raise ValueError("This task reward profile does not support reward_options")
         accepted_shaping = {
             "task_weight",
             "progress_reward_scale",
