@@ -84,9 +84,12 @@ def main():
     parser.add_argument("--gae-lambda", type=float)
     parser.add_argument("--reuse-source-checks", type=Path)
     parser.add_argument("--start-sampling", choices=("stratified",))
+    parser.add_argument("--critic-fit-multiplier", type=int, default=1)
     args = parser.parse_args()
     if args.updates < 0 or args.interval <= 0 or args.actor_lr_scale <= 0:
         raise ValueError("Updates must be nonnegative; LR scale and interval must be positive")
+    if args.critic_fit_multiplier < 1:
+        raise ValueError("Critic fit multiplier must be positive")
     args.output.mkdir(parents=True, exist_ok=False)
     metadata = json.loads((args.checkpoint / "metadata.json").read_text())
     config = OmegaConf.create(metadata["config"]["experiment"])
@@ -188,6 +191,21 @@ def main():
     assert checks["reward_finite"], checks
     atomic_json(args.output / "rollout-checks.json", checks)
     print("rollout_checks", checks, flush=True)
+    if args.critic_fit_multiplier != 1:
+        if trainer.config["shared_visual_encoder"] or args.freeze_critic:
+            raise ValueError("Extra critic fits require a separate, unfrozen critic")
+        fit_critic = trainer._fit_critic
+
+        def extra_critic_fits(state, observations, targets, epochs, *, old_values=None):
+            return fit_critic(
+                state,
+                observations,
+                targets,
+                epochs * args.critic_fit_multiplier,
+                old_values=old_values,
+            )
+
+        trainer._fit_critic = extra_critic_fits
 
     @partial(
         jax.jit,
@@ -221,6 +239,11 @@ def main():
         if rehearsal_loss is not None:
             metrics["rehearsal_kl_probe"] = rehearsal_loss(
                 {"params": after.params, "log_std": after.log_std}, after.rng
+            )
+        if args.critic_fit_multiplier != 1:
+            metrics["critic_optimizer_steps"] = (
+                after.optimizer_state["critic"][1][0].count
+                - before.optimizer_state["critic"][1][0].count
             )
         return after, metrics
 
@@ -275,6 +298,13 @@ def main():
                 interactions=interactions + trainer.config["horizon"] * trainer.env.num_envs,
             )
             record = {k: float(v) for k, v in jax.device_get(metrics).items()}
+            if args.critic_fit_multiplier != 1:
+                expected = (
+                    trainer.config["ppo_epochs"]
+                    * trainer.config["minibatches"]
+                    * args.critic_fit_multiplier
+                )
+                assert record["critic_optimizer_steps"] == expected, record
             if args.start_sampling is not None:
                 scene = state.env_state.scene_state
                 distances = np.linalg.norm(np.asarray(scene.start - scene.goal), axis=-1)
