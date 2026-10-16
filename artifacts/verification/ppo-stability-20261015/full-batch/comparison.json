@@ -55,7 +55,6 @@
   ],
   "kl_skip_sum": 0.0,
   "training_update_seconds": 134.8991996109835,
-  "total_wall_seconds_excluding_setup": 368.56273257700377,
   "setup_seconds": 114.61140007100767,
   "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000184",
   "runtime_provenance": {
@@ -63,5 +62,7 @@
     "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
   },
   "runner_git_commit": "f2b6a7a3af875fa7f3b79814b5df029de7256c33",
-  "decision": "Both checks fail. Do not extend or promote full-batch optimization based on local training-loss improvement or an aggregate final advantage over control. Keep actual final model and failed cases; no independent final test."
+  "decision": "Both checks fail. Do not extend or promote full-batch optimization based on local training-loss improvement or an aggregate final advantage over control. Keep actual final model and failed cases; no independent final test.",
+  "total_wall_seconds_including_setup": 368.56273257700377,
+  "wall_timing_note": "Native window timer starts before initial state restoration; setup is a subset of total wall time, not an additional cost."
 }

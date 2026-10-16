@@ -1660,3 +1660,28 @@ usedunsupportedDepthsizes and a NumPy typed-key conversion; these were corrected
 before the meaningful physical expansion test. No GPUtraininglaunchedbeforepassing.
 LRwindowcost410.982s updates,966.367s inclchecks/saves excluding113.572ssetup.
 Actor parameterdelta.058846-.098535, noKLskip.
+
+Timing correction after inspecting the actual timer and reconciling its parts:
+ppo_stability_window starts its clock BEFORErestoration. Thusfull-batch368.563s
+andparallelLR966.367s INCLUDE114.611s/113.572ssetup respectively; earlier wording
+excluding/plussetup waswrong. Correctedderivedcomparisonfields/designresults/status;
+rawrecordsunchanged. Fullbatch134.899train+117.159eval+114.611setupplusIOmatches368.563.
+LR410.982train+436.604eval+113.572setupplusIOmatches966.367. MC-tail isdifferent:
+its498.817timer startsaftersetup and is364.594train+132.840evalplusIO; its114.672setup
+isindeedadditional. Do notaddsetupagainfornativewindowresults/newworlds256pilot.
+
+### Largerphysicalbatch pilot passes bothchecks; fullwindow registered
+
+256worldpilot completedexit0: u177148/150[D02/D03=24], u178149/150[D02=24],
+other scenes25. Bothgatespass; two/onecollision. Relative tofullbatch atmatched
+131072/262144interactions, recovers9/15losses andadds2/1newlosses. Secondcheckrecovers
+all26originalcontrol lossesbutaddsoneD02loss. No uniquevariance attribution.
+Actor deltas.378837/.364521, noKLskip.32Actorand32CriticAdamsteps,262144interactions,
+120.242supdate,total370.985sincluding118.520setup. Savedactualu178andnewcached
+reports/CSVs/metrics/comparison underworlds256-pilot/.
+
+A freshsame-source full7update917504window ispreregistered. This intentionally repeats
+the firsttwo checkpoints to test reproducibility with knownnativeGPUnumerics; it is
+not a newindependenttrainingseed. No resume abstraction/code needed. Every one of
+seven checks must passallscene/retention gates; complete throughactualu183. Shortpilot
+cost isadditional, notpartof the917504budget. Stilldevelopment,notformalacceptance.

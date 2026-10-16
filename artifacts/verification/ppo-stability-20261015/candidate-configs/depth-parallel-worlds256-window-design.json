@@ -1,0 +1,23 @@
+{
+  "status": "registered",
+  "parent_pilot_design": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/depth-parallel-worlds256-design.json",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "hypothesis": "The two-check256worldbenefit survives a repeat from the same originalstate and the fullpredeclared917504interaction horizon.",
+  "intervention": "Exactlythepilot256worldconfiguration: clone sourceworlds4x, allothernativelearningparameters unchanged.",
+  "budget": {
+    "updates": 7,
+    "interactions": 917504,
+    "check_after_each_update": true,
+    "episodes_per_check": 150,
+    "early_stop": false,
+    "rollback": false
+  },
+  "gate": "Allseven checks: everyscene>=23/25 andretain>=143/150. A single failure rejects stability; no peakpromotion. Actualfinalu183 must be reported.",
+  "first_two_checks": "Deliberately repeated in the fullrun to test reproducibility under known nativeGPUnumerics. Chargealladditionaltraining; pilot262144notpartofthis917504budget. No independent finalcohort consumed.",
+  "control": "Reuse unchanged originalu176->204 window, align byinteractions; full-batchpilot gives secondaryfirst262144reference.",
+  "scope": "Development fullwindow only; passing still needs a declared scratchrecipe andthreeindependenttrainingseeds beforeformalacceptance.",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_window",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-worlds256-window.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_window --worlds-multiplier 4 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-worlds256-window.log 2>&1"
+}

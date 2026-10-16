@@ -164,7 +164,6 @@
   ],
   "kl_skip_sum": 0.0,
   "training_update_seconds": 410.98185270209797,
-  "total_wall_seconds_excluding_setup": 966.3667548689991,
   "setup_seconds": 113.57212882398744,
   "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01/model_000204",
   "runtime_provenance": {
@@ -172,5 +171,7 @@
     "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
   },
   "runner_git_commit": "52549604c0396e72eeb3b4dbd175aaf636a15227",
-  "decision": "Five of seven checks fail, including actualfinal139/150 withS03=14/25. Reject thisparallelLR-onlycandidate, no new lower-rate sweep from this failure alone, no finaltests."
+  "decision": "Five of seven checks fail, including actualfinal139/150 withS03=14/25. Reject thisparallelLR-onlycandidate, no new lower-rate sweep from this failure alone, no finaltests.",
+  "total_wall_seconds_including_setup": 966.3667548689991,
+  "wall_timing_note": "Native window timer starts before initial state restoration; setup is a subset of total wall time, not an additional cost."
 }
