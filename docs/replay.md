@@ -3,6 +3,10 @@
 Simulation exports recorded motion to native RScope `.mj_unroll` files. Replay
 uses measured poses and timestamps; exporting does not rerun physics. Each record
 includes `scene.xml`, required assets, and `rscope_meta.pkl` in its directory.
+When Play or Benchmark enables `benchmark.record_replay=true`, the exporter also
+creates `browser_replay.json` beside the RScope record. Reports list both
+`replays` and `browser_replays`; the canonical
+[visualization guide](visualization.md) explains how to use the browser client.
 
 Enable replay in an actual Play or Benchmark run:
 
@@ -36,6 +40,12 @@ Sensor points and planner samples are display geometry and never enter collision
 physics. Invalid/no-return points are omitted. Plans are displayed only during
 their recorded validity interval. The exporter does not silently downsample;
 large point clouds increase file and rendering cost.
+
+`simulation.browser_replay.export(directory, max_frames=350)` exports a locally
+generated RScope record as the exact `qpos`, Mocap poses and timestamps needed
+for MuJoCo WASM. Browser downsampling does not alter the native record or the
+Benchmark metrics. The converter loads a Python pickle: give it only the
+project's trusted local records, not arbitrary uploaded `.mj_unroll` files.
 
 Display velocity is a finite difference of recorded poses, with the final frame
 reusing its predecessor. The required RScope reward channel is zero because the

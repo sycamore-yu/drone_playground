@@ -97,13 +97,19 @@ errors appear in `live/preview-render.log`. On budget completion, the last
 recorded one-world training Rollout fragment is saved regardless of the visual
 mode as `live/last_training_rollout.webp`, alongside a persistent manifest. The
 Dashboard shows a **Saved final rollout** link after it detects the artifact.
+For new runs with a portable pose record, the Dashboard also offers
+**Interactive 3D replay**, using the original Crazyflie 2.x MJCF model.
+Build the optional viewer once with `pixi run viewer-build`; the same HTTP
+server can serve the viewer, saved model assets and JSON recording.
+See [visualization](visualization.md) for setup and the SSH workflow.
 The animation retains the last update's recorded poses, not an independently
 resampled episode. Camera images and LiDAR points are
 not part of this world-camera preview; use a sensor-recording Benchmark or RScope
 replay when sensor visualization is required. Runs launched before this feature
 cannot acquire their original training frames retroactively. The default mode is
-Off; only the final short recording is generated automatically. Browser-native
-MJCF playback using MuJoCo WebAssembly remains a separate optional extension.
+Off; only the final short recording is generated automatically. MuJoCo WebAssembly
+uses forward kinematics on that recording for rendering; no additional physics
+episode is executed in the browser.
 
 The Episode Return chart uses environment steps on the horizontal axis for
 native training. Its blue series is the mean sum of per-step rewards over

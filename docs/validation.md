@@ -138,8 +138,11 @@ and Maze walls obstruct the direct nominal route. The `nominal`, `dynamics`,
 and `sim2real` Hydra groups construct usable Crazyflow environments with the
 documented model perturbations, delays, and gust parameters.
 
-The extended Command Builder generates 486 unique commands (42 Train,
-334 Play, 110 Benchmark), all of which compose through Hydra. The original
+The optional MJCF scene extensions originally yielded 486 unique commands
+(42 Train, 334 Play, 110 Benchmark). The mainline Racing control integration
+adds both MPCC and JAX perception-aware MPC to Play and Benchmark, bringing
+the builder to **490 unique commands** (42 Train, 336 Play, 112 Benchmark).
+All 490 configurations compose through Hydra. The original
 230-command core suite retains its prior runtime evidence. Expanded commands
 require additional real method execution before claiming the same coverage;
 configuration composition alone is not runtime validation.
@@ -149,6 +152,40 @@ actual last one-world rollout fragment even when the Dashboard was Off. It
 does not recover older unrecorded rollouts or substitute a new evaluation
 trajectory. The updated scene, preset, preview, TrainingState continuation, and
 Command Builder checks passed 23 focused tests; this is not a convergence run.
+
+## Mainline Racing control and browser integration (2026-10-16)
+
+Two controllers were selectively integrated from the Racing feature branch:
+native acados contouring MPC and experimental JAX known-landmark perception-
+aware sampling MPC. The original RPG Time-Optimal + Attitude MPC adapter,
+original RPG ROS1/ACADO PAMPC, upstream checkout tools and numerical RPG solver
+are excluded from `main`. The unmerged research branch retains that work.
+
+The Racing feature branch's fixed-Level0 eight-episode Benchmark reported
+**8/8 full gate-course successes**, with **14.682 s** mean completion time
+and **0.045 s** sample standard deviation. CPU timing was **7.31 ms** mean and
+**8.51 ms** P95 over 20 decisions. The experimental JAX perception MPC ran
+short Play/Benchmark episodes, but its 32-sample, four-stage CPU setup measured
+**83.46 ms** mean per decision, exceeding the 50 Hz (20 ms) control period.
+Original simulation results remain in the ignored `results/` directory of
+the Racing research worktree, not in the public Git tree. No training
+convergence or cross-track performance is inferred from these tests.
+
+After selection into a clean `main` worktree, the native MPCC, perception
+objective and Builder suite passed **8 focused tests**, including a real acados
+short Crazyflow flight. The 490-configuration Builder Hydra test passed.
+Replay, Autoresearch projection, training media, paired benchmark and Play
+tests passed **18 focused tests**. The MuJoCo WASM viewer built successfully
+with `npm ci` and Vite. Its mainline build was tested independently in headless
+Chrome against the recorded MPCC flight: 250 frames, eleven native Crazyflie
+meshes, and eight Mocap bodies loaded. Browser Play advanced from frame 100 to
+118 without JavaScript errors. A short JAX perception-aware Crazyflow Play also
+completed at its 0.16-second test deadline without a method exception. A running
+Dashboard from an older worktree is not automatically replaced by a Git commit.
+
+The expanded 490-command runtime matrix and complete CPU test suite have not
+been run end-to-end after this selective integration. They remain separate
+from the tested configuration-composition and representative method behavior.
 
 ## Convergence
 

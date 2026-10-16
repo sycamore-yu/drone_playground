@@ -1,47 +1,54 @@
-# ADR-0030: Racing optimization baselines and browser playback
+# ADR-0030: Racing control and browser replay
 
-**Status:** Accepted, 2026-10-16. **Implementation:** Separate Racing MPC feature
-branch. The final training-rollout recording is implemented on the main line.
+**Status:** Accepted 2026-10-16; integration scope amended 2026-10-16.
+**Implementation:** Selected methods merged into local `main` with independent
+Play/Benchmark and MuJoCo browser-replay checks.
 
-## Racing methods
+## Control-method boundary
 
-Develop the Racing optimization baselines on `feature/racing-mpc-baselines`,
-starting from the released Learning / Simulation / Benchmark interface.
+Implement acados Racing MPCC with arc-length contouring, lag and progress
+objectives on the existing Crazyflow predictive model. Use the published
+[LSY acados MPCC](https://github.com/lihengrongfei/lsy_drone_racing_ws26)
+architecture as a technical reference. The new solver uses local stage
+linearization and is **not** an exact port of the LSY project or Romero's paper.
 
-- [UZH RPG `rpg_mpc`](https://github.com/uzh-rpg/rpg_mpc): the IROS 2018
-  perception-aware MPC code is based on ACADO/ROS, not acados contouring MPC.
-  Integrate it as a distinct perception-aware controller baseline, not as MPCC.
-- [UZH RPG `rpg_time_optimal`](https://github.com/uzh-rpg/rpg_time_optimal):
-  the Science Robotics 2021 implementation solves an offline time-optimal
-  waypoint trajectory planning problem. Its output is a trajectory reference
-  that needs a separate flight controller; it is not a feedback MPC solver.
-- [LSY Racing MPCC](https://github.com/lihengrongfei/lsy_drone_racing_ws26):
-  use its acados arc-length path, lag/contour costs and progression variables as
-  the direct MPCC architecture reference. Implementation must be native to the
-  current controller/setpoint conventions and existing Crazyflow flight model.
+Also include the native JAX/Crazyflow known-landmark Perception-Aware Sampling
+MPC as an explicitly experimental controller. Its image-plane/field-of-view
+objectives were inspired by Falanga et al.'s PAMPC and the sampling pattern of
+DeepMind MJPC. This controller does **not** use the original RPG ACADO solver,
+ROS1, or images measured from a physical camera. It has not passed a 50 Hz
+real-time or full Racing benchmark and must be labeled accordingly.
 
-Keep solver provenance, numerical approximations and upstream license terms
-explicit. Do not copy GPL or course-project source into this repository unless
-its redistribution requirements are accepted. Compare real closed-loop Racing
-performance using identical initial states, gate order, speed and solver-time
-measurements. Do not label simplified trajectory tracking as full MPCC.
+The user subsequently excluded two methods from the `main` integration:
 
-## Completed-run playback
+1. The original [RPG Time-Optimal](https://github.com/uzh-rpg/rpg_time_optimal)
+   optimizer + Attitude MPC trajectory adapter. Its original numerical solver
+   can converge without satisfying the project's collision model; closed-loop
+   Crazyflow tracking is not yet accepted.
+2. The original [RPG PAMPC](https://github.com/uzh-rpg/rpg_mpc) ROS1/ACADO
+   controller. It has not been built and validated as a native host method.
 
-Persist a short sample of the **actual final training rollout**, independent
-of whether the user had the Dashboard open. Record MuJoCo JPEG frames and a
-browser-readable animated WebP for each Autoresearch training run. The sampling
-is limited to the final update's recorded one-world rollout fragment; it is
-not an independently simulated evaluation episode or the full training history.
-Existing older runs cannot be retroactively reconstructed without an additional
-policy rollout, which must be labeled as evaluation/replay rather than training.
+These remain source-backed research in `feature/racing-mpc-implementation`.
+Neither original implementation, CSV adapter, pinning utility, nor its
+associated tests are distributed from `main`. The implementation does not
+vendor external GPL software.
 
-For remote SSH users, keep the Dashboard static-asset HTTP server as the transport.
-Use the browser link to inspect saved media after training has exited. The
-current feature exports raster media. Evaluate an optional interactive viewer
-using [official MuJoCo WebAssembly bindings](https://github.com/google-deepmind/mujoco/tree/main/wasm)
-and the [mujoco_wasm](https://github.com/zalo/mujoco_wasm) demo. A WebAssembly
-viewer needs a portable MJCF/asset bundle plus recorded `qpos` and dynamic-body
-poses; running its simulator forward is not equivalent to replaying a trained
-policy's recorded states. It is a separate optional UI extension, not a reason
-to replace RScope or the evaluation executor.
+## Execution boundary
+
+Both integrated controllers use the existing `PlannerController` protocol
+for one-world host execution and the same Crazyflow plant, gate task, case
+initialization and metrics as learned policies and native controllers. Keep
+Play for inspecting a flight and Benchmark for paired suites and performance
+reports. A full fixed-Level0 MPCC test completed 8/8 cases with five ordered
+gate crossings and mean time 14.682 s. The JAX perception-aware controller
+is executable but its measured CPU decision time exceeds 20 ms.
+
+## Visualization boundary
+
+Use Autoresearch Dashboard for training metrics and short sampled frames;
+MuJoCo WASM for portable browser 3D of the exact recorded flight; RScope for
+sensor and planning overlays; and TensorBoard for optional optimizer analysis.
+Do not create a second simulator, replay physics loop, or parallel recording
+protocol. Export browser JSON and native `.mj_unroll` from the same recorded
+timestamps, poses and scene geometry. See [visualization](../visualization.md)
+for the one-port SSH workflow.

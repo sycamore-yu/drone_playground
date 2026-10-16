@@ -3,12 +3,17 @@
 [Command Builder](command-builder.html) generates supported Train, Play, and
 Benchmark commands. Start with [installation](installation.md), then use
 [training](training.md), [Autoresearch](autoresearch.md), [Benchmark](benchmark.md),
-[controllers](control-models.md), [native planners](ros_planner.md), or [replay](replay.md).
+[controllers](control-models.md), [native planners](ros_planner.md), or
+[visualization](visualization.md). [Replay](replay.md) describes the native
+RScope record format and its browser export.
 
 [Scope and acceptance](spec.md) defines the release contract.
 [Validation](validation.md) records execution evidence and open checks.
 [Experiments](experiments.md) describes reproducible comparisons.
 [The glossary](../GLOSSARY.md) contains domain definitions.
+
+[Racing MPC](racing-optimization.md) documents the two integrated controllers,
+their source references, and the separate performance acceptance status.
 
 ## Architecture decisions
 
