@@ -1752,3 +1752,29 @@ Registered unchanged sourceu24 continuation7 updates917504interactions, everyupd
 retained, plus every scene>=23/25. Keepfullsource physics/history/RNG/Adam,256worlds
 and originalPPO settings. No diagnostic flags/world expansion. Execute entirewindow
 evenifanycheckfails. This is the stability prerequisite, not final3seed acceptance.
+
+### Complete-history corpus preparation after constant256 retention failure
+
+Unchanged256 sourceu24 continuation first four checks are140/119/117/133, already
+failed; original149 successfulcases require142 retained. Complete allseven checks.
+No further scratch seeds of this failed recipe are launched. Native PPO remains unchanged.
+
+The deferred complete-history self-policy cloning corpus is activated for bounded
+data collection after the active window finishes. Retain the original64worldu176
+source and its cached matched control, rather than substituting new256weights. The
+collector uses native Trainer/environment/checkpoint/recurrent_policy; no auxiliary
+learning loss or coefficient is implemented yet. Explicitly choose fresh nominal
+starts (native small jitter; randomize_position=False) with independent source-RNG
+fold840101 to cover complete early obstacle paths. This is additional training data
+with a declared start-distribution change, not the native PPO wide-start sampler and
+not fixed evaluation cases. No evaluator is called or evaluation states read.
+
+Correctness gates require >=4 complete successful training episodes per primaryscene,
+zero initial GRU history, native full-history teacher mean maxerror<1e-4, finite values,
+first-terminal/active-mask consistency and exact active-interaction accounting. Actual
+initial positions and all64events will be retained; onlysuccesses entercorpus. Native
+sourceidentity is captured for this new execution; no additional manual model hashes.
+Failure of anycoverage/recompute gate prevents learning. CLEARsection3 motivates a
+separate historical-to-current policyKL; this fixed-success full-history corpus would
+be PPOpluspolicycloning, not the fullV-trace/CLEARalgorithm. The old0.1short-window
+21->4/48failure remains evidence and is not relabeled as a successful repair.
