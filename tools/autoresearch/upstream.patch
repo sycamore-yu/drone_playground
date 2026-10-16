@@ -15,10 +15,10 @@ index 3493d1f..d3c5d65 100644
              self._send_json(
                  200,
 diff --git a/autoresearch_gym/external/runner.py b/autoresearch_gym/external/runner.py
-index 55373f3..2f536c1 100644
+index 55373f3..3edc313 100644
 --- a/autoresearch_gym/external/runner.py
 +++ b/autoresearch_gym/external/runner.py
-@@ -86,11 +86,12 @@ def _write_external_live_status(
+@@ -86,11 +86,16 @@ def _write_external_live_status(
              "run_id": run_id,
              "tag": tag,
              "status": status,
@@ -29,10 +29,29 @@ index 55373f3..2f536c1 100644
              "train_seconds": summary.get("benchmark", {}).get("train_seconds"),
              "budget_mode": summary.get("benchmark", {}).get("budget_mode"),
 +            "train_env_steps": summary.get("benchmark", {}).get("train_env_steps"),
++            "num_envs": train_summary.get("num_envs"),
++            "rollout_horizon": train_summary.get("rollout_horizon"),
++            "algorithm": train_summary.get("algorithm"),
++            "task": train_summary.get("task"),
              "eval_episodes": summary.get("benchmark", {}).get("eval_episodes"),
              "max_steps": summary.get("benchmark", {}).get("max_steps"),
              "render_mode": summary.get("benchmark", {}).get("render_mode", "rgb_array"),
-@@ -192,9 +193,15 @@ def run_external_experiment(
+@@ -104,11 +109,12 @@ def _write_external_live_status(
+             "status": status,
+             "step": summary.get("train", {}).get("total_steps", 0),
+             "env_steps": summary.get("train", {}).get("env_steps", 0),
++            "policy_updates": train_summary.get("policy_updates"),
+             "episodes_complete": summary.get("train", {}).get("episodes_completed", 0),
+             "completed_episodes": summary.get("train", {}).get("episodes_completed", 0),
+             "episode_batches": summary.get("train", {}).get("episode_batches", 0),
+-            "avg_return": summary.get("train", {}).get("avg_return", 0.0),
+-            "success_rate": summary.get("train", {}).get("success_rate", 0.0),
++            "avg_return": summary.get("train", {}).get("avg_return"),
++            "success_rate": summary.get("train", {}).get("success_rate"),
+             "info_metrics": train_summary.get("last_metrics", {}),
+         },
+         "episodes": train_summary.get("episode_records", []),
+@@ -192,9 +198,15 @@ def run_external_experiment(
      artifacts = target.fetch_artifacts(bundle)
      train_summary = backend.normalize_train(artifacts)
      validate_train_curve_contract(train_summary)
@@ -50,7 +69,7 @@ index 55373f3..2f536c1 100644
      if not checkpoint_path.exists():
          raise FileNotFoundError(f"external backend did not produce checkpoint: {checkpoint_path}")
  
-@@ -253,7 +260,8 @@ def run_external_experiment(
+@@ -253,7 +265,8 @@ def run_external_experiment(
              "env_kwargs": benchmark.env_kwargs,
              "train_episodes": benchmark.train_episodes,
              "train_seconds": benchmark.train_seconds,
