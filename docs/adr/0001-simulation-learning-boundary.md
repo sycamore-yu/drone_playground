@@ -1,59 +1,52 @@
-# ADR-0001：Simulation 与 Learning 的职责划分
+# ADR-0001: Simulation and Learning responsibilities
 
-**Status:** Accepted · 2026-10-08
+**Status:** Accepted. The evaluation ownership is superseded by [ADR-0026](0026-training-benchmark-release-separation.md).
+**Approval:** Originally recorded as 2026-10-08; the exact timestamp was not retained.
+**Implementation:** Method construction and both execution paths are present. Benchmark extraction is implemented and runtime-tested under ADR-0026.
+**Last reviewed:** 2026-10-16T06:24:13Z, working tree based on `7d59162`.
 
 ## Context
 
-平台需要让优化控制、原生 Planner 和冻结学习策略共享任务、物理与评测，同时支持 JAX 的批量及可微训练。
+Optimal control, native planners, and frozen policies need shared tasks, physics,
+and evaluation semantics. Learning also needs batched, differentiable JAX execution.
 
 ## Decision
 
-使用一个可安装 Python 包，内部划分 **Simulation** 与 **Learning**。
+Use one installable Python package. Simulation owns tasks, scenes, sensors,
+physical execution, runtime methods, and replay. Learning owns PPO, BPTT, SHAC,
+objectives, optimizers, and explicit training state. Learning depends on Simulation,
+which depends on official Crazyflow. ADR-0026 moves evaluation protocols and report
+aggregation into Benchmark.
 
-- **Simulation**：Task、Scene、Sensor、运行时 Planner/Controller/Policy、rollout、benchmark、RScope 回放。
-- **Learning**：PPO、APG/BPTT、SHAC 的采样、损失、优化器、参数更新与训练状态。
-- **Dependency**：Learning → Simulation → Crazyflow；冻结方法由 Simulation 独立运行。
-- **Extension**：采用 Nav2 按 Planner/Controller 职责替换、配置选择具体方法、调度与算法分离的原则。支持 Planner→Controller 和直接 Policy／联合 MPC 两类运行链。
+Construct methods with Hydra before execution. `PlannerController(planner,
+controller)` coordinates the actual planner/tracker pair: planning intervals,
+trajectory validity, and controller memory. It does not own search, maps, networks,
+or an arbitrary sequence of processing stages. Direct policies execute through
+their action contract. Task names and sensor names do not determine action units.
 
-## Consequences
+JAX methods receive explicit parameters, state, and random keys. Native C++/ROS
+methods and host solvers run through host execution. Both use the same environment,
+episode rules, and record format. Ordinary RPC calls do not enter pathwise autodiff.
+The concrete entry points are `simulation.runner.rollout` and `rollout_host`.
 
-方法以物理数据、信息权限和时间合同接入。Simulation 直接运行 JAX 方法；原生 C++/ROS 由独立进程适配。训练与前向共用同一套任务判定及 Crazyflow 状态转移。
+The environment owns the physical clock, command application, sensor acquisition,
+and episode events. Trackers are injected into the method. Policy acceleration
+commands use the existing Mellinger conversion; attitude and body-rate commands
+use Crazyflow's corresponding low-level control. The user confirmed this division
+at **2026-10-10T10:46:22+08:00**, reviewed against `v0.2@6ec50c7`. That approval did
+not require an arbitrary policy-side controller option.
 
-2026-10-09 的职责细化：Simulation 的 `evaluation` module 选择任务、Method 对应的
-评价协议与种子分区，并在记录前确定 C2/C3/C4 或原生 S6/diagnostic 判定。
-记录实现保存传入的判定和实际 Episode 数据；CLI 调用该 module。
-独立验收收集器继续从保存的数据核验结果，不依赖运行时评测判定。
+Dynamics equations and controllers remain independently callable. Algorithms
+share the transition interface instead of duplicating rollout logic for every
+model. Approved controllers include Mellinger, SO3, attitude MPC, sampling MPC,
+and explicit ideal tracking. Trajectories retain a host NumPy representation;
+SE3 expansion remains deferred.
 
-## 2026-10-09 方法组合补充
+## Consequences and evidence
 
-**Status:** Accepted。**Implementation:** 已在控制模型工作树实现控制器注入、Hydra 组合和 JAX/宿主执行。
-
-Hydra 在构造阶段创建 Planner、Controller 或 Policy。需要规划跟踪时，使用 `PlannerController(planner, controller)`；直接输出控制目标的 Policy 或联合方法直接执行。运行循环调用已经构造的方法，不再根据 `ego`、`super`、`policy` 等算法名字分派。
-
-`PlannerController` 只负责规划周期、有效轨迹缓存、控制周期及两者状态。路径搜索、地图、优化器和网络仍属于具体方法。它是本项目这条实际组合的实现，不扩展为任意阶段的通用 Pipeline。
-
-Environment 保留物理时钟、命令执行、任务判定和传感采样。轨迹跟踪控制器从外部注入，不在 Environment 内固定创建 Mellinger。运行方法与执行过程共享同一控制输出合同。
-
-保留 JAX 和宿主两种执行方式。JAX 路径使用纯函数、显式参数/状态/RNG 及 `jit`；宿主路径调用 C++/ROS 或宿主求解器。二者共用 Environment、任务规则、评测和产物格式。普通 RPC 调用不进入路径式自动微分。
-
-当前入口为 `simulation/runner.py` 的 `rollout()` 和 `rollout_host()`。构造阶段生成调用函数，不另建两套 Runner 类。
-
-**设计确认（2026-10-10T10:46:22+08:00，核对 `v0.2@6ec50c7`）：**
-Planner/Controller 跟踪组合已实现外部注入。Policy 通过 `method.action` 指定动作接口：
-加速度使用 Crazyflow 的 Mellinger 转换生成姿态与推力；直接输出姿态或机体系角速度
-时走 Crazyflow 对应的低层控制链。用户确认此设计符合预期，无须额外将
-Policy 的加速度转换开放为任意 `controller` 配置；原先的“待解耦缺口”不再成立。
-
-## 2026-10-09 控制接口与独立数学实现补充
-
-**Status:** Accepted。**Implementation:** 已实现 Action、Actor 输出/记忆和损失选择的解耦，SO3 与 Mellinger 通过同一 Controller 接口执行。
-
-Task 不绑定动作层级。Tracking、Racing 和 Navigation 定义参考需求、奖励/指标及终止规则；动作维数、单位、坐标和范围由所选控制接口决定。Actor 输出遵守该接口，不根据任务名或传感器名决定动作含义。
-
-模型和控制器的数学实现可以在训练 CLI 之外独立调用。一个动力学模型可用于求导、预测或相应仿真；一个控制器可用于冻结评测或具备所需导数的训练。学习算法面对统一环境与转移接口，增加模型或控制器不复制 PPO、APG、SHAC 的采样逻辑。
-
-保留控制器注入。批准加入基于 EGO-Planner 原实现的 `SO3Controller`，与现有 `MellingerController` 处于同一轨迹跟踪选择层级，由相同的 PlannerController 组合使用。它不新增一个架构层级。
-
-SO3 的输入、输出与 JAX 移植需要对照[原 SO3Control](https://github.com/ZJU-FAST-Lab/ego-planner/blob/bfda51284c8c1b476043255a8145ef925a3778a5/src/uav_simulator/so3_control/src/SO3Control.cpp)。接口转换、名义机体参数及剩余低层控制须记录。加入 SO3 不要求复制 EGO 的整个仿真器。
-
-后续批准恢复 LSY Attitude MPC、Sampling MPC，并加入 SUPER 理想跟踪。两个 MPC 位于 `simulation/mpc.py`，SO3、Mellinger 和 IdealTracking 位于 `controllers.py`，通过 `PlannerController` 组合。理想跟踪显式选择状态响应，不把状态修改隐藏在普通 Controller 调用中。Trajectory 保留宿主 NumPy 表示；SE3 暂缓。命令和当前实现范围见[使用说明](../control-models.md)。
+Ideal tracking selects a declared state-response model; a controller cannot
+silently overwrite physical state. The SO3 implementation follows the pinned
+[EGO SO3Control source](https://github.com/ZJU-FAST-Lab/ego-planner/blob/bfda51284c8c1b476043255a8145ef925a3778a5/src/uav_simulator/so3_control/src/SO3Control.cpp).
+Input conversion, nominal parameters, and remaining low-level control are
+specified in [control models](../control-models.md). The implementation lives in
+`simulation/methods.py`, `controllers.py`, `mpc.py`, and `runner.py`.

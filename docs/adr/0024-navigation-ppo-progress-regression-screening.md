@@ -1,125 +1,90 @@
-# ADR-0024：Navigation PPO 筛查考虑真实进度与已学能力的退化
+# ADR-0024: Navigation progress and policy-regression diagnostics
 
-**Status:** Accepted。
+**Status:** Accepted; training selection superseded by [ADR-0026](0026-training-benchmark-release-separation.md).
+**Approval first recorded:** 2026-10-14T10:48:42Z, the timestamp of commit `e261127`. The original message time was not retained. The user reaffirmed the two principles at 2026-10-14T12:20:24Z.
+**Implementation:** The former progress screening and retention logic was integrated into `main`. ADR-0026 removes it from current training; Task distance controls, observations, and historical experimental evidence remain.
 
-**Approval first recorded at:** `2026-10-14T10:48:42Z`（UTC），功能分支首次记录提交
-`e261127` 的时间。原始批准的具体时刻未单独保存，不将提交时间冒充消息时间。
-用户在本轮再次明确同意以下两项原则，重申记录时间为 `2026-10-14T12:20:24Z`。
+**Last reviewed:** 2026-10-16T05:37:19Z against `main@7d59162` and the working tree.
 
-**Implementation:** 2026-10-16 本地 `main` 合并了独立 PPO 分支的进度筛查、
-退化保护、距离配方与测试。启用参数为 `screening.progress_aware`，需明确提供
-`min_progress_delta` 与 `max_unsafe_increase`；训练分布探针与六场景筛查分开选模。
-历史训练沿用冻结配置。阈值校准与同配方三随机种子稳定收敛验收尚未完成。
+## Motivation and historical decision
 
-**Last checked:** `2026-10-16T02:29:12Z`（UTC）；决策批准时间不变，
-实现来源为 `feat/ppo-stability-acceptance-20261015`，历史证据和失败试验按原提交保留。
+An early Fan-inspired experiment reached D02 8/8 after a long zero-success
+period. Zero success alone therefore did not establish that a long-range policy
+had stopped learning. A depth mixed-distance run later fell from 26/48 at update
+2880 to 0/48 at update 4320. Paired rollouts showed that all 26 lost successes
+ended at the lower height boundary. Reward, value fit, and a newer checkpoint
+could not establish retention of previously successful behavior.
 
-## 原因
+The historical screening workflow recorded initial, final, and minimum goal
+distance; actual progress; movement before failure; path length; terminal time
+and event; height range and boundary margin; goal-height error; and value-target
+RMSE/explained variance. Improvements and risk changes required calibrated,
+matched thresholds. Continued safe progress could justify using the remaining
+declared budget; reward alone could not reset patience. Two-scene probes used
+2 × 8 episodes, and complete screens used 6 × 8 episodes.
 
-Fan 的早期实验在较长的零成功阶段后曾取得 D02 8/8。因此，若长航程策略
-仍在安全地接近目标，只看短期 0/48 会过早淘汰有进展的候选。
+The workflow retained best and latest checkpoints and compared repeated full
+screens. Persistent loss of success or height control triggered causal diagnosis
+rather than an automatic budget increase. Resuming a retained checkpoint created
+a new experiment identity. Mixing action components from different checkpoints
+was a counterfactual diagnostic, not an accepted policy.
 
-Depth 混合距离 seed0 的完整筛查从 update2880 的26/48 降到 update4320
-的0/48；配对回放中失去的26次成功全部转为下高度边界失败。
-训练奖励、Critic 拟合或新 checkpoint 本身均不能证明已学能力仍然保留。
-原始证据保存在主工作树的
-`tmp/navigation-ppo-review-20261014/regression-cause/`，不改写历史记录。
+These diagnostics remain useful measurements. They no longer control checkpoint
+selection, early stopping, or retention in the current training loop.
 
-## 决定一：以真实进度补充成功率早停
+## Speed and start-distance experiments
 
-- 成功率仍是候选晋级与正式验收的首要指标。二场景探针为2×8回合，
-  完整筛查为6×8回合；辅助指标不能替代正式每场景25回合和冻结评测。
-- 固定、可重放的训练筛查同时记录目标初始/最终/最小距离、实际目标进度、
-  失败前向目标移动的距离、累计路径长度、失败时间及事件；路径变长或
-  飞行时间变长本身不能证明接近目标。
-- 高度诊断记录高度范围、上下边界余量、目标高度误差、越界次数及下边界退出。
-  价值诊断记录 Critic 的 return-target RMSE、explained variance，并逐步完成
-  固定轨迹上价值预测与实际折扣回报的配对校准，注明估计条件。
-- 达到明示最低预算后，只有匹配的重复筛查同时显示完成率、真实进度及
-  基本运动/高度稳定性均无持续改善，才可据停滞提前停止。不能仅凭0/48早停。
-- 若零成功候选的真实目标进度持续改善，且碰撞/越界风险未明显恶化，
-  可在事先声明的硬预算内继续。奖励上升或 Critic 指标改善不能单独重置等待计数。
-- 改善和风险变化阈值须由匹配基线的重复性事先校准，并在新实验开始前写入配置。
-  调度器的外部剪枝也必须遵循此原则，不能绕过进度判断只按零成功淘汰。
+The user requested fast, safe completion without specifying a 3 m/s target or
+hard speed limit. Existing target-speed features, perception costs, and Fan's
+`max_speed: 3.0` were recipe assumptions. They were not user requirements or an
+explanation for hovering 2.94 m from the goal.
 
-## 决定二：将已学能力是否丢失纳入选择
+The first execution record for the approved removal of a speed target and a
+20 m start-distance comparison is 2026-10-14T12:38:41Z. Commit `f9eb5c0` introduced
+`navigation_distance_v01`: separate depth and LiDAR runs, starting with 20 m and
+then 80, 10, 30, and 50 m. Within this batch, only the true three-dimensional
+`start_goal_distance_range_m` changed. Setting the earlier
+`min_start_goal_distance_m=20` had still sampled 80 m starts and was not the
+requested comparison.
 
-- 每轮完整筛查比较并保留 best 与 latest 的完整 checkpoint、优化器恢复状态、
-  每场景结果及诊断指标；不得用奖励更高的最新权重覆盖真实任务表现更好的权重。
-- 曾经成功后出现整场景成功丢失、持续归零、越界增加或高度控制崩溃，
-  应记录 `policy_regression`，用至少两个完整筛查时间点区分波动与持续退化。
-  能力保留程度影响候选排序和有限预算分配。
-- 持续退化优先触发价值校准、观测、垂直控制及奖励的因果诊断，不能仅扩大训练量。
-  退化事件本身不能证明唯一的 PPO 超参数根因。
-- 从 best 恢复继续训练须建立新的实验身份。混合不同 checkpoint 的水平/垂直动作
-  只作反事实诊断，不能拼接成绩或作为正式验收策略。
+The new baseline replaced target-speed features with relative goal position and
+used time, progress, clearance, and safety costs. It removed target-velocity
+tracking loss while retaining world-frame acceleration, orientation input, and a
+privileged Critic. Comparisons with older recipes changed several factors;
+only within-batch comparisons isolated start distance.
 
-## 任务速度澄清与边界
+The first budget was 2,211,840 interactions, or 4,320 updates. Success-rate
+patience could not fire before that budget, and external zero-success pruning
+was disabled. Eight-episode training-distribution probes and 48-episode fixed
+screens were recorded separately. This was a bounded experiment, not calibrated
+progress-based stopping. Earlier Fan and VisFly runs stopped after saving full
+recovery states at updates 786 and 268. Their original data remain unchanged.
 
-用户明确要求在满足安全和动力学限制的前提下尽可能快地完成导航，
-没有指定3 m/s巡航目标或硬限速。现有目标特征、默认任务/感知代价的3 m/s
-参考，以及 Fan 配方的 `max_speed: 3.0`，均是既有实现或迁移配方的假设。
-本决定不将这些数字升级为用户需求，也不把2.94m悬停当作设定的停车半径。
-速度参考或到达时间奖励的修改应使用新的具名对照，不追改已有实验。
+## Stability evidence reviewed on 2026-10-15
 
-新规则应独立于 PPO 梯度和 Task 奖励，作用于训练筛查与调度。
-当前已保存批次保留其原始协议；后续批次须显式采用经校准的新规则。
-不得用冻结测试数据调阈值，或把辅助进度分数用作正式通过标准。
+With mixed starts and static-obstacle count scaled to 0.7, the seed-zero depth
+run peaked at 21/48 and ended at 2/48; LiDAR peaked at 11/48 and ended at 0/48.
+For identical S01 initial states, depth changed from 8/8 at update 2880 to 0/8
+at update 4320. Measured discounted-return calibration error changed from
+12.44 to 55.13. These observations do not identify a unique optimizer cause.
 
-## 本轮批准：取消速度目标并增加起点距离对照
+The local `navigation_stability_fixes_v01` batch tracked episode identities:
+new successes could not compensate for loss of reference successes. A 6/8 to
+6/8 example retained only five of six prior successes and failed the retention
+check. Full checkpoints were copied independently of rolling cleanup. The depth
+update-240 checkpoint deleted before archival was enabled was recorded as
+unrecoverable. Training parameters, optimizer, and RNG were not rolled back.
+The experiment-specific script and original records remain local evidence.
 
-用户明确要求不再设置速度上限、立即建立20 m起点距离对照，并允许暂停旧训练。
-本轮授权的首次执行记录时间为 `2026-10-14T12:38:41Z`（UTC）。
+Actor learning rate, rollout length, GAE lambda, and value clipping had separate
+controls. The 128-step arm compared lambda against its matching 128-step control.
+The `fan2025_arrival` Task reward replaced continuing hover/survival rewards
+with a time penalty and a one-time arrival reward. Both Fan controls disabled
+speed penalties. Physical comparisons at 0.51 m and about 0.97 m confirmed that
+arrival returned more reward than continued hovering; that result did not show
+that PPO had learned to arrive.
 
-功能分支 `f9eb5c0` 已建立独立 `navigation_distance_v01` 批次：Depth和LiDAR
-分别从头训练，先运行20 m，再运行80、10、30、50 m；同一传感器的这些配方
-仅改变 `simulation.procedural.start_goal_distance_range_m`。起点按真实三维
-目标距离采样，障碍分布、随机种子及优化配置保持匹配。此前将旧参数
-`min_start_goal_distance_m` 改成20并不能实现这个对照，旧路径仍采样80 m起点。
-
-各距离使用同一个新基线：相对目标位置取代3 m/s目标速度特征，任务使用
-耗时、进度、避障及安全代价，移除目标速度跟踪学习损失。世界系加速度动作
-保留朝向观测与特权Critic；物理动作能力和任务边界仍由环境定义。
-因此，新旧配方成绩变化不能单独归因于距离；距离的因果比较在新批次内部进行。
-
-首轮每配方预算为2,211,840次交互（4320次更新）；成功率patience的最低预算
-设为整个首轮预算，外部零成功剪枝停用。训练分布探针每次独立运行8回合，
-与正式固定六场景的48回合筛查分开保存，记录真实进度和高度诊断。
-这是未经阈值校准时的有限预算方案，不表示进度早停阈值已经校准。
-
-旧Fan低学习率训练在u786、VisFly悬停推力训练在u268保存完整恢复点后暂停，
-原始配置、成绩和checkpoint保留。新20 m两路训练已在GPU运行。
-正式每场景至少23/25、独立冻结评测及同配方三个训练种子的要求保持不变。
-本轮功能代码和RScope支持仍只在功能分支；稳定收敛及正式验收尚未完成。
-
-## 2026-10-15 稳定性修复实验核对
-
-混合起点且静态障碍数量缩放0.7的独立seed0试验已完成首轮预算：
-Depth最佳21/48、最终2/48；LiDAR最佳11/48、最终0/48。
-覆盖长距离起点带来了更多真实成功，仍未解决后续能力丢失。
-相同S01初态的随机策略回放中，Depth u2880为8/8，u4320为0/8；
-同一策略的实测折扣回报校准误差分别为12.44和55.13。
-这些证据不能把退化唯一归因于某一个优化器参数。
-
-新批次 `results/navigation_stability_fixes_v01/` 用逐回合身份比较已成功集合：
-新增成功不能抵消旧成功丢失。只有训练分布探针和固定六场景筛查都没有丢失
-各自参考成功回合的候选，才可在该批次的诊断选模中替换保留策略；
-独立复制整份checkpoint，避免滚动清理。每次训练探针有成功就额外归档整份恢复点，
-不等待完整六场景筛查；归档启用前已删除的新Depth u240权重明确记录为无法恢复。
-这里不回滚训练中的参数、优化器或RNG，
-也不代替ADR-0015的正式验收。实现为 `tmp/navigation-stability-fixes-20261015/run_trials.py`，
-6/8→6/8却仅保持5/6的反例已通过直接自检。
-
-Actor学习率、rollout长度、GAE λ和价值裁剪分开设置对照；
-128步配方再只改变λ，比较其与对应128步控制的差异。
-Fan使用独立的Task奖励配方 `fan2025_arrival`，取消持续悬停正奖励、
-把每步生存正奖励改为时间惩罚，真实SUCCESS只奖励一次。
-两个Fan控制均关闭速度惩罚，历史 `fan2025` 配方和原始训练归档不改写。
-0.51m和约0.97m停点的真实物理对照已确认新配方抵达回报高于继续悬停，
-但这不表示PPO已经学会该控制策略。收敛验收仍待新训练结果。
-
-完整实验方案与当前数据见该批次的 `README.md`；正式冻结测试不参与调参。
-
-参见 [ADR-0015](0015-three-stage-learning-acceptance.md)、
-[ADR-0018](0018-training-patience-and-frozen-selection.md)、
-[ADR-0019](0019-procedural-training-fixed-navigation-benchmark.md)。
+The former 23/25 release threshold and training-time screening protocol are
+historical. Current experiments report actual completion, independent benchmark
+outcomes, and retention of previously successful episodes under their declared
+protocol, without restoring the removed selection state machine.

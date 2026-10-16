@@ -1,27 +1,24 @@
-# ADR-0021 — Task-owned rewards, Learning-owned auxiliary losses
+# ADR-0021: Task-owned rewards and Learning-owned auxiliary losses
 
-**Status:** Accepted · 2026-10-10
+**Status:** Accepted.
+**Approval:** Originally recorded as 2026-10-10; the exact approval time was not retained.
+**Implementation:** Task owns physical reward equations and explicit reward profiles. Learning composes task costs with auxiliary losses. The former configuration translation is removed under ADR-0026.
+**Last reviewed:** 2026-10-16T06:24:13Z against `main@7d59162` and the working tree.
 
 ## Decision
 
-**The Task/Environment domain owns all physical task reward semantics and their
-configuration.** No PPO, APG, SHAC, Actor, Critic or neural-network concept may
-appear in a Task reward implementation.
+Task owns physical task reward semantics. PPO, BPTT, SHAC, Actor, Critic, and
+network implementation details do not belong in Task reward equations.
 
-- `simulation/tasks.py` owns the `Task.reward_profile` and optional
-  `Task.reward_shaping` contract.
-- `simulation/task_rewards.py` implements the task cost terms: progress,
-  arrival, failure, clearance and height penalties, plus the optional
-  older `legacy_motion_navigation_v2` formulation.
-- `BaseEnv.cost` and `BaseEnv.task_reward_components` expose the same
-  Task-configured cost to independent evaluation, Learning and the optional
-  Brax Environment. Task-specific physical cost formulas remain internal.
-- `learning/objective.py` combines those task terms with explicitly
-  selected Zhang/Liu perceptual prediction, acceleration and jerk losses.
-  Learning algorithms update parameters and estimate advantages; they do
-  **not** select or implement goal/obstacle/terminal reward equations.
+- `simulation/tasks.py` owns `Task.reward_profile` and `Task.reward_shaping`.
+- `simulation/task_rewards.py` implements progress, arrival, failure, clearance,
+  height, and the optional `legacy_motion_navigation_v2` formulation.
+- `BaseEnv.cost` and `BaseEnv.task_reward_components` expose task costs to
+  evaluation, Learning, and the optional Brax adapter.
+- `learning/objective.py` combines task costs with explicitly selected
+  perception, acceleration, jerk, and velocity-prediction losses.
 
-The corresponding configuration for **new** experiments is:
+Current recipes select the physical reward explicitly:
 
 ```yaml
 task:
@@ -33,46 +30,40 @@ task:
       failure_cost: 0.0
       altitude_weight: 0.0
       height_boundary_weight: 0.0
-learning:
-  options:
-    reward_profile: default
 ```
 
-`learning.options.reward_profile` and the original task-reward shaping fields
-were stored in older full TrainingState configuration identities. Existing
-running Trial-4 velocity PPO recipes are **byte-for-byte preserved** for
-checkpoint restoration; `create_environment` translates their historical
-non-default Learning selector to `Task.reward_profile` before constructing
-`Task`. It never changes the saved run or frozen benchmark contract.
-The two new `*_ppo_velocity_task.yaml` presets are opt-in, separate
-experiments; they are **not** automatically substituted for in-flight jobs.
+`EpisodeObjective` still accepts the existing objective coefficients from
+Learning; explicit Task shaping takes precedence. This coefficient composition
+uses the same task-domain cost implementation. The remaining Learning-side
+`reward_profile` field checks agreement with the already constructed Task; it
+does not select or reconstruct the Task profile.
 
-For old runs without explicit Task shaping, `EpisodeObjective` passes the
-historical coefficients to the task-domain evaluator. If Task explicitly
-supplies shaping, those parameters take precedence. This is a transitional
-configuration migration, not a duplicate implementation of reward math.
-Eliminate the historical Learning fields only in a subsequent versioned
-breaking migration, after their outstanding checkpoints are retired.
+## Historical transition
 
-## Invariants and acceptance
+The initial implementation translated a non-default
+`learning.options.reward_profile` into `Task.reward_profile`. That preserved the
+then-running velocity-policy configurations while introducing separate
+`*_ppo_velocity_task.yaml` recipes. The original on-disk configurations and
+checkpoints remain historical evidence.
 
-1. Default Task reward arithmetic and all existing frozen test geometry,
-   termination priorities, numeric coefficients and acceptance thresholds
-   remain unchanged.
-2. A new reward profile must be chosen and recorded as part of the Task
-   contract, not inferred from a particular PPO implementation.
-3. Independent `env.cost`, `env.task_reward_components` and
-   `EpisodeObjective.cost` return the same task cost when Task owns all shaping
-   coefficients and no auxiliary Learning loss is enabled. Historical
-   Learning-owned coefficients remain available to restore old training runs.
-4. Validation and training may use the same Task reward with different
-   observation/Method/Actor choices; no Task imports anything under
-   `learning/`.
-5. Existing on-disk velocity PPO run configs and their optimizer, JAX RNG and
-   recurrent-state checkpoints remain restorable, with no silent replay of
-   new reward logic.
+[ADR-0026](0026-training-benchmark-release-separation.md) removes that translation
+from the current factory. Both current velocity-recipe variants now explicitly
+set the Task profile. Old configurations are executed with their original
+source revision; the current loader does not fill missing configuration values
+or restore the old ZIP format.
 
-Supersedes the temporary reward file placement documented in
-[ADR-0020](0020-ppo-diagnostics-before-brax-replacement.md), and implements
-the existing ownership decision in
-[ADR-0014](0014-rl-environment-and-method-interface.md).
+## Checks
+
+Task and Learning objective tests compare their physical cost when Task owns
+the shaping coefficients and auxiliary losses are disabled. Real short CPU
+updates pass for the depth and LiDAR velocity recipes. The task name, physical
+geometry, terminal-event ordering, and reward equations remain unchanged by
+this ownership refactor. Benchmark and training use the same Task implementation.
+
+ADR-0026 separately removes the historical aggregate acceptance thresholds and
+training-time checkpoint validation. Those changes do not alter per-episode
+success conditions or retrospectively change older experiment results.
+
+This decision supersedes the temporary reward-file placement in
+[ADR-0020](0020-ppo-diagnostics-before-brax-replacement.md) and follows the
+ownership boundary in [ADR-0014](0014-rl-environment-and-method-interface.md).

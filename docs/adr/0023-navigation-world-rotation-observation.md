@@ -1,50 +1,46 @@
-# ADR-0023：Navigation PPO 保留世界系动作并补充朝向观测
+# ADR-0023: World-frame navigation actions with orientation observations
 
-**Status:** Accepted
+**Status:** Accepted.
+**Approval recorded:** 2026-10-14T03:53:53Z. The user chose to retain world-frame actions and add orientation to the Actor input.
+**Implementation:** Implemented in `0ac3c53` and integrated into the current `main` tree. Training convergence remains an experimental result.
 
-**Approval recorded at:** 2026-10-14T03:53:53Z（UTC）。用户明确选择“保持世界系动作，给 Actor 增加朝向信息”。
+**Last reviewed:** 2026-10-16T05:37:19Z against `main@7d59162` and the working tree.
 
-**Implementation:** 代码 `0ac3c53` 已实现并通过定向验证；仅在 `feat/paper-ppo-fan-visfly-v01`，未合入 `v0.2`，尚无收敛验收证据。
+## Context
 
-**Last checked:** 2026-10-14T04:02:15Z（UTC）；集成索引核对提交 `3345f03`，实现依据 `0ac3c53`。
+The original Navigation input contained body-frame velocity, target velocity,
+and the vertical direction, while the Actor produced world-frame acceleration.
+Two states differing by a joint rotation of position and heading could have
+identical inputs but require different world-frame actions. A paired-state test
+with a five-degree heading difference reproduced this ambiguity. This identifies
+an observation gap; it does not establish the sole cause of training failure.
 
-## 原因
+## Decision
 
-原 Navigation 状态输入包含机体系速度、目标速度和竖直方向，却将 Actor 输出
-解释为世界系加速度。两个位置及航向同时旋转的状态可以拥有相同机体系输入，
-但需要不同的世界系动作。已用航向相差 5° 的成对状态复现此歧义。
-它是明确的观测信息缺口，但目前没有证明它单独造成训练不收敛。
+The explicit option `observation.navigation_world_rotation=true` appends the
+row-major, nine-element body-to-world rotation matrix `R_WB` to Navigation state
+features. It satisfies `v_world = R_WB @ v_body` and uses the existing Crazyflow
+`xyzw` quaternion. The full matrix avoids Euler-angle discontinuities and gives
+identical observations for `q` and `-q`.
 
-## 决定
+The original input has ten elements. Orientation alone produces nineteen;
+orientation with the separately approved goal height/distance features produces
+twenty-one. The state projection adapts to this width; CNN/PointNet, GRU, PPO,
+action coordinates, heading control, reward, sensors, and physics retain their
+existing contracts. Environment constructs the features and saves the observation
+configuration with the experiment and checkpoint. Frozen execution cannot
+reinterpret weights with a different input width.
 
-通过已有 `observation` 配置加入显式可选项
-`observation.navigation_world_rotation=true`，在 Navigation 状态特征末尾
-追加机体系到世界系旋转矩阵 `R_WB`，按行展开为九个数。
-矩阵满足 `v_world = R_WB @ v_body`，来自环境已有的 Crazyflow `xyzw` 姿态。
-使用完整矩阵避免欧拉航向角跳变和俯仰奇异点；`q` 与 `-q` 产生相同观测。
+## Verification
 
-默认关闭时保留原十维输入。单独启用后为十九维；若同时启用已有目标高度/距离
-观测则为二十一维，但本次单变量实验不组合两项输入变化。
-CNN/PointNet、GRU 主体和 PPO 更新保持现有实现，只由状态投影层适配输入宽度。
-动作继续是世界系加速度，目标航向控制、奖励、传感器和唯一物理核心不变。
+Paired-state tests verify the original ambiguity, recovery of world-frame target
+velocity, preservation of the original ten-element prefix, quaternion sign
+invariance, and unchanged action contracts. Six CPU PPO updates cover depth and
+LiDAR at widths 12, 19, and 21, including parameter changes and complete state
+save/restore. These are interface and update checks.
 
-状态特征由 Environment 构造，Learning 不负责旋转动作或拼接任务观测。
-观测配置随每次实验和 checkpoint 保存。冻结执行即使允许环境变化，也不得
-在加载时开关此输入；旧宽度权重不得解释为新宽度权重。
-
-## 实验与验收
-
-Depth 与 LiDAR 分别从随机参数启动独立的 `world_rotation` 配方，唯一变化是
-上述观测项，配对基线仍为 ≥80 米起点。已批准的长短距离混合采样实验独立保留。
-不将这项批准扩展成替换 APG/SHAC、迁移既有权重或改变动作坐标系的决定。
-
-固定六场景、每场景至少 23/25、首次完整 validation 通过后一次独立冻结评测、
-同配方三个独立训练种子的要求保持不变。接口测试和单步更新不代表训练收敛。
-
-## 已核对证据
-
-成对状态测试复现原输入歧义，并验证新观测能将机体系目标速度还原为正确的
-世界系速度；原十维前缀不变，`q/-q` 等价，动作合同不变。
-输入类型/任务边界、单变量配方及冻结加载拒绝修改观测的测试已通过。
-Depth/LiDAR 在 12/19/21 维输入下共六项真实 CPU PPO 更新及完整状态保存恢复
-测试通过，Actor/Critic 参数确实更新。训练成功率仍以独立运行报告为准。
+Depth and LiDAR experiments use independent random initialization. The original
+single-variable comparison retained starts at least 80 m from the goal; mixed
+start distances belong to a separate experiment. This approval did not replace
+BPTT/SHAC or change action coordinates. The former 23/25 and first-validation-pass
+requirements are historical; ADR-0026 defines the current evaluation workflow.

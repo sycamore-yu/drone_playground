@@ -1,46 +1,50 @@
 # ADR-0020: Diagnose perceptual PPO before replacing the learner
 
-**Status:** Accepted for an isolated experiment, 2026-10-10
+**Current workflow:** [ADR-0026](0026-training-benchmark-release-separation.md) supersedes historical checkpoint validation, screening, patience, and aggregate pass thresholds described below. Original experiment results retain their recorded protocol. Last reviewed 2026-10-16T06:24:13Z against `main@7d59162` and the working tree.
 
-## Findings
+**Status:** Accepted for an isolated experiment.
+**Approval:** Originally recorded as 2026-10-10; the exact approval time was not retained.
+**Implementation:** Velocity/yaw actions, task-owned rewards, and procedural start sampling are integrated. The native Brax learner remains an optional comparison.
+
+## Historical findings (2026-10-10)
 
 The existing [ADR-0014](0014-rl-environment-and-method-interface.md) already
-establishes a standard Brax \`Env.reset/step/State\` adapter. It explicitly keeps
+establishes a standard Brax `Env.reset/step/State` adapter. It explicitly keeps
 native Brax PPO/APG as **optional baseline algorithms**, not replacements for
-the in-house PPO/APG/SHAC. \`learning/brax_adapter.py\` and
-\`tools/smoke_brax.py\` exist. The adapter currently rejects sensor observations
+the local PPO/BPTT/SHAC. `learning/brax_adapter.py` and
+`tools/smoke_brax.py` exist. The adapter currently rejects sensor observations
 and native Brax is not installed in the primary Pixi environment. For
 Depth/CNN/GRU and LiDAR/PointNet/GRU, swapping the PPO library is therefore
 **not drop-in**: it would also change the policy network, recurrent rollout
 contract, normalization, action distribution and checkpoints.
 
 The old repository's Navigation PPO employed
-\`brax.training.agents.ppo.train\`, a **4D velocity/yaw policy**, its own
-velocity-control inner loop, \`MotionNavigationReward\`, 128 environments,
-8 minibatches, 4 updates per batch, \`gamma=.995\`, \`clip=.1\` and nonzero
+`brax.training.agents.ppo.train`, a **4D velocity/yaw policy**, its own
+velocity-control inner loop, `MotionNavigationReward`, 128 environments,
+8 minibatches, 4 updates per batch, `gamma=.995`, `clip=.1` and nonzero
 entropy. This is not the same causal experiment as the new **3D acceleration**
 policy with dense Zhang/Liu costs, 16 differently randomized environments,
 a CNN/PointNet+GRU Actor and independent privileged Critic. Old archived
-\`results/runs/navigation/ppo/final-acceptance-heldout-*\` records show
+`results/runs/navigation/ppo/final-acceptance-heldout-*` records show
 **0/6 arrivals for both static and dynamic trials**. The older
-three-seed Depth-static success reported in \`docs/status.md\` belongs to
+three-seed Depth-static success reported in `docs/status.md` belongs to
 other perception-learning evaluations. It cannot establish that old Brax PPO
 solved the identical Navigation PPO benchmark.
 
 Old-source references:
-\`drone_playground/src/drone_playground/configs/experiment/navigation/ppo.yaml\`,
-\`.../control/controllers/velocity.py\`,
-\`.../environments/tasks/rewards.py\`,
-\`.../learning/train.py\`.
+`drone_playground/src/drone_playground/configs/experiment/navigation/ppo.yaml`,
+`.../control/controllers/velocity.py`,
+`.../environments/tasks/rewards.py`,
+`.../learning/train.py`.
 
-DiffAero (\`cfg/algo/ppo.yaml\`) uses normalized advantages, 4 epochs,
+DiffAero (`cfg/algo/ppo.yaml`) uses normalized advantages, 4 epochs,
 8 minibatches, value clipping and nonzero entropy. VisFly's PPO wraps
 Stable-Baselines3 and logs KL, clip fraction, policy/value losses, explained
 variance and action standard deviation. These are *choices for controlled
 comparisons*, not evidence that a particular hyperparameter alone fixes the
 current navigation failure.
 
-## Decision
+## Approved isolated experiment (2026-10-10)
 
 1. Keep standard Brax Environment compatibility, but **do not replace the
    current recurrent PPO blindly**. Default native Brax PPO and the current
@@ -48,17 +52,17 @@ current navigation failure.
    Separately smoke-test Brax on supported state-only tasks; do not mix its
    policy checkpoints with native JAX Actor weights.
 2. Preserve existing acceleration/Zhang/Liu experiment histories and fixed
-   benchmark geometry. Add opt-in \`Action(level=velocity_yaw)\` executing
+   benchmark geometry. Add opt-in `Action(level=velocity_yaw)` executing
    velocity error through an explicit PID-like world-acceleration and the same
-   Crazyflow \`attitude_thrust\` plant. Preserve old-like limits/gains and
+   Crazyflow `attitude_thrust` plant. Preserve old-like limits/gains and
    record them in the action contract. Do not grant the policy extra geometry.
-3. Add \`learning.options.reward_profile=legacy_motion_navigation_v2\` as
+3. Add `learning.options.reward_profile=legacy_motion_navigation_v2` as
    an **opt-in training-only** reward: velocity tracking, clearance, progress,
    arrival bonus, failure penalty and 0.01 scaling. This is a causal reference
    inspired by the old source, not a claim of identical training or network.
-   Require \`loss=null\`, Navigation PPO and \`velocity_yaw\`.
-4. Introduce an opt-in per-world \`SceneDistribution.start_sampling=
-   collision_free\`. Training may begin at different distances along the
+   Require `loss=null`, Navigation PPO and `velocity_yaw`.
+4. Introduce an opt-in per-world `SceneDistribution.start_sampling=
+   collision_free`. Training may begin at different distances along the
    course, including near the terminal goal, with collision-clearance
    rejection. Frozen S01-D06 geometry, reset seeds and success criteria are
    unchanged. Clearance alone is **not a proof of path existence from every
@@ -71,7 +75,7 @@ current navigation failure.
    These logs help distinguish Critic overfitting from poor reward and
    action learning; do not tune on one-time frozen benchmark results.
 6. Give the optional old-inspired **composite reference recipe** its own named YAML
-   \`navigation_procedural_{depth,lidar}_ppo_velocity\`. Admission at
+   `navigation_procedural_{depth,lidar}_ppo_velocity`. Admission at
    procedural trial 4 only if the preceding candidates have failed.
    All seeds begin with random weights; the existing Seed 0 trial 3 remains
    immutable. Compare wall time, interactions/sec, progress, first collision,
@@ -83,11 +87,11 @@ current navigation failure.
    three-independent-seed frozen protocol may increase a formal matrix cell.
 
 **Reward ownership clarification:** [ADR-0021](0021-task-owned-reward-contract.md)
-supersedes the temporary Learning-side reward implementation. Existing
-in-flight Trial-4 settings retain their original configuration for exact
-checkpoint recovery. New experiments select reward under Task.
+supersedes the temporary Learning-side reward implementation. Historical velocity-policy settings remain with their source revision. Current
+experiments select rewards explicitly under Task; the old factory translation
+is removed under ADR-0026.
 
-## Acceptance
+## Original acceptance checks
 
 - Both velocity policies pass CPU JAX and GPU short-update tests; action
   output dimension is 4, applied setpoint is true attitude/thrust, and

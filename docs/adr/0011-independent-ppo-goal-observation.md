@@ -1,15 +1,29 @@
-# ADR-0011：独立 PPO 对照中的目标高度和距离观测
+# ADR-0011: Goal height and distance in an independent PPO experiment
 
-**Status:** Accepted · 2026-10-09
+**Status:** Accepted for the separate PPO comparison.
+**Approval:** Originally recorded as 2026-10-09; exact time was not retained.
+**Implementation:** Optional observations and continuous height-boundary cost are present. Original evidence was four targeted checks, not convergence.
+**Last reviewed:** 2026-10-16T05:28:58Z, working tree based on `7d59162`.
 
-**Implementation:** 可选观测和连续高度边界代价已加入，四项定向检查通过；新训练对照尚未启动。
+## Decision
 
-用户明确选择先做独立 PPO 对照，保留原验收批次。此次没有批准把新观测扩展到原 APG/SHAC 结果，也不能将两种输入混作同观测验收。
+`simulation.navigation_goal_observation=true` adds two features to the ten-element
+OA state: goal height error divided by the 5.5 m height range, and remaining goal
+distance divided by the nominal 96 m course length. The default remains off.
+The depth CNN/GRU192 and LiDAR PointNet/GRU192 remain; their state projection takes
+twelve inputs. Ten- and twelve-input weights are distinct contracts.
 
-使用 `simulation.navigation_goal_observation=true` 在原 Navigation 的十个状态特征后增加两项：目标高度减当前高度，除以高度范围 5.5 m；剩余目标距离，除以起点到目标的 96 m。默认关闭，原状态输入和已有权重继续使用十维观测。
+The approved comparison starts from random parameters, uses an independent sensor
+critic and one-step velocity smoothing, and retains height-target, progress,
+clearance, and failure costs. The added cost is
+`height_boundary_weight * dt * relu(1 m - nearest_height_limit_distance)^2`.
+Its default weight is zero; the original comparison used 20. Episode boundaries
+and the first-failure cost remain unchanged.
 
-Depth 保留 CNN/GRU192，LiDAR 保留 PointNet/GRU192 及首层小尺度初始化。网络主体不变，状态投影的输入从十维变为十二维；这两种权重不互换。配置和冻结评测明确核对观测契约。
+## Consequences
 
-新对照随机初始化，使用独立传感器 Critic，速度平滑窗口为一步，并保留高度目标、进度、避障和失败代价。新增训练项为 `height_boundary_weight * dt * relu(1 m - distance_to_nearest_height_limit)²`，默认权重零；对照权重为 20。它只在距边界一米以内生效，首次失败代价和任务边界不变。
-
-新对照单独记录，不替换原从零训练清单中的已通过运行。没有新对照收敛证据时，不宣称它提高成功率。并发、评测采集和 checkpoint 性能研究继续使用原保存配置，不混入此次观测/奖励改动。
+Approval covered a separate PPO experiment. It did not extend new observations
+to existing BPTT/SHAC results or combine different inputs into one controlled
+comparison. Preserve original completed runs and their configurations. Checkpoint
+loading verifies the observation contract. Performance and concurrency studies
+must identify which observation/reward recipe they measured.

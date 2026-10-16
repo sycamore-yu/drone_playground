@@ -113,8 +113,9 @@ missing measurements, malformed depth and nonfinite cloud points still fail vali
 `.sequence`, `.timings` and `.sample(time)`. Arrays contain upstream trajectory
 samples and actual analytic derivatives. The host's sample method interpolates
 these samples; it raises outside their validity interval. Timing fields are
-`mapping_ms`, `solve_ms` and `total_ms`, measured by C++ steady clock. Total
-includes worker queue time, not network round-trip latency.
+`mapping_ms`, `solve_ms`, and `total_ms`, measured by the C++ steady clock. The
+client additionally records `rpc_roundtrip_ms`; Benchmark reports the transport
+and RPC overhead separately from native computation.
 
 `RosPlannerError.status` identifies `NO_SOLUTION`, `INVALID_INPUT`,
 `STALE_INPUT`, `STALE_OUTPUT`, `INVALID_OUTPUT`, transport status codes, or
@@ -193,131 +194,23 @@ cloud/depth ingress, valid empty EGO clouds, occupied local EGO endpoints,
 EGO's native recovery from a failed moving-state initialization,
 malformed/stale-input rejection, and timeout/reset recovery.
 Python unit tests use a labelled wire fixture only for transport and failure behavior.
-They are not native-planner evidence. S6 flight acceptance requires separate static
-and dynamic Crazyflow episodes with control, collision and task outcomes.
+Native flight evidence requires separate Static OA and Dynamic OA episodes with
+control, collision, and task outcomes. See [current validation](validation.md).
 
-## Recorded verification
+## Run a benchmark
 
-The 2026-10-09 renamed worker passed the real EGO/SUPER integration checks with
-`drone_playground.ros_planner.v1.RosPlanner`. Its image identity, source hashes,
-native samples and measured timings are saved in
-[`ros-planner-integration-results.json`](../src/ros_planner_worker/ros-planner-integration-results.json).
-The Python client, evaluation and recording subset also passed 45 tests under the
-expanded Ruff rules. These new checks do not replace the earlier S6 flight records.
-
-Both the pinned clean ROS-base build and the supplied dependency-base build passed
-`src/ros_planner_worker/integration.py` for EGO and SUPER. The recorded fixture returned 47 samples
-across 2.298 s for EGO and 59 samples across 2.900 s for SUPER, with sensed-box
-avoidance and analytic derivative checks passing. Full image IDs and timings are
-in [`integration-results.json`](../src/ros_planner_worker/integration-results.json). Six-reset RSS
-readings are in [`memory-results.json`](../src/ros_planner_worker/memory-results.json). The initial
-eight Python protocol/client tests passed. These results cover service integration only.
-
-## EGO S6 flight acceptance
-
-The 2026-10-08 full flight run passed S6 with **12 static and 12 dynamic episodes**,
-four per required scene. Each static scene had safe arrivals. Dynamic outcomes
-have no success-rate threshold. All failures remain in the denominator:
-
-| Scene | Safe arrivals | Out of bounds | Native failure | Episodes |
-|---|---:|---:|---:|---:|
-| S01 | 3 | 1 | 0 | 4 |
-| S02 | 4 | 0 | 0 | 4 |
-| S03 | 3 | 1 | 0 | 4 |
-| D01 | 4 | 0 | 0 | 4 |
-| D02 | 4 | 0 | 0 | 4 |
-| D03 | 1 | 2 | 1 | 4 |
-
-The accepted recipe uses `navigation_depth`, one Crazyflow world, 500 Hz physics,
-50 Hz physical control and **2.5 Hz native replanning**. Native speed/acceleration
-remain 3 m/s and 4 m/s²; task collision radius remains 0.07 m. Sensor calibration,
-assets, task rules and controller were not changed by this native work.
-The run used frozen project Pixi dependencies (Python 3.12.15, JAX 0.11.2 CUDA).
-
-Both image tags `drone-playground-native:clean-noetic` and `:noetic` were rebuilt
-from the pinned clean ROS base and identify
-`sha256:77376660dd85c6cf667d600fd07433f8d069161cb26966c971519cdf11d008d4`.
-The flight worker was a fresh container with no workspace mounts. Start a fresh
-worker for a repeatable full run: EGO's randomized recovery uses process-global
-random state, which episode reset does not reseed.
+Start separate workers on localhost ports 50051 and 50052 for the default EGO
+and SUPER configurations. Then run:
 
 ```bash
-docker run -d --name dp-ego-s6 -p 127.0.0.1:50066:50051 \
-  drone-playground-ros-planner-worker:noetic
-# Wait for "Native planner listening" in docker logs dp-ego-s6.
-pixi run --frozen python -m drone_playground.cli \
-  mode=benchmark experiment=navigation_depth method=ego \
-  simulation.num_envs=1 simulation.method_hz=50 \
-  method.address=127.0.0.1:50066 method.timeout=30 method.replan_hz=2.5 \
-  'benchmark.scenes=[S01,S02,S03,D01,D02,D03]' benchmark.episodes=4 \
-  output=results/ego_S6_reproduce_s0 benchmark.record_replay=true
+pixi run benchmark task=navigation sensor=depth method=ego controller=sampling_mpc \
+  'benchmark.scenes=[S01,S02,S03,S06]' benchmark.episodes=4
+pixi run benchmark task=navigation sensor=lidar method=super controller=attitude_mpc \
+  'benchmark.scenes=[D01,D02,D03,D06]' benchmark.episodes=4
 ```
 
-The [S6 summary](../results/ego_S6_acceptance_s0/report.json) and
-[evidence audit](../results/ego_S6_acceptance_s0/evidence-audit.json) record the
-results. All 24 final replays match actual recorded poses and times; the final run
-contains 403,705 physical steps and 2,047 native solve attempts. The audit also
-checks all 36 earlier trial episodes, which remain in their original directories
-and are indexed in [prior-runs.json](../results/ego_S6_acceptance_s0/prior-runs.json).
-Across all 60 attempts there were 28 arrivals, 25 native failures and 7 bounds exits.
-
-[Final image integration evidence](../src/ros_planner_worker/ego-flight-recovery-integration-results.json)
-covers both native planners, including empty cloud/depth frames, occupied EGO
-endpoints and the moving-state recovery regression. Nine Python client tests and
-Ruff passed in the pinned project environment. The earlier image's
-`src/ros_planner_worker/integration-results.json` was preserved.
-
-The flight's exact image, configuration and launch-time source hashes are in
-[native-build.json](../results/ego_S6_acceptance_s0/native-build.json) and `run.json`.
-Changes to `runner.py` and `cli.py` after launch were not loaded by this run;
-the recorded source identity describes the implementation that executed the flight.
-EGO's latest-cloud map still has no temporal fusion or unknown-space guarantee.
-The four bounds exits and one exhausted native solve are retained limitations.
-
-## SUPER S6 flight acceptance
-
-The 2026-10-08 full run passed S6 with 12 static and 12 dynamic episodes:
-
-| Scene | Safe arrivals | Out of bounds | Native failure | Episodes |
-|---|---:|---:|---:|---:|
-| S01 | 3 | 0 | 1 | 4 |
-| S02 | 4 | 0 | 0 | 4 |
-| S03 | 2 | 0 | 2 | 4 |
-| D01 | 4 | 0 | 0 | 4 |
-| D02 | 2 | 2 | 0 | 4 |
-| D03 | 2 | 0 | 2 | 4 |
-
-The run used the full Mid-360 profile (20,000 rays/frame), one Crazyflow world,
-500 Hz physics, 50 Hz control and 5 Hz native replanning. Its 24 episodes took
-2,002.26 s wall time under concurrent GPU training. The
-[S6 report](../results/super_S6_s0_v2/report.json) and
-[flight audit](../results/super_S6_s0_v2/evidence-audit.json) retain all failures.
-The audit verified 373,343 physical steps, 37,367 replay frames and 3,729 solved
-decisions. Replay positions, timestamps and sensor hit counts exactly match the
-recorded flight; normalized quaternions agree to 1e-12. Successful endpoints are
-within the unchanged 0.5 m goal radius with positive clearance.
-
-Native solve time median/P95 was 19.24/33.51 ms; total service time was
-55.96/113.92 ms. These are measured service times for this concurrent workload.
-The worker had no workspace mounts and used image
-`sha256:3d90fc7997431649e40cd5a028f11846ccf9d502281110cdfa39dd7d9d734d78`.
-Its SUPER source and configuration match the current files. Its service still
-rejected valid empty clouds; the later service change accepts them and passed
-the separate clean-image integration test. This full flight was not rerun with
-that newer service. Exact hashes are in the audit.
-
-```bash
-docker run -d --name dp-super-s6 -p 127.0.0.1:50067:50051 \
-  drone-playground-ros-planner-worker:noetic
-# Wait for "Native planner listening" in docker logs dp-super-s6.
-pixi run --frozen drone-playground \
-  mode=benchmark experiment=navigation_lidar method=super \
-  simulation.num_envs=1 simulation.method_hz=50 \
-  method.address=127.0.0.1:50067 method.timeout=30 method.replan_hz=5 \
-  'benchmark.scenes=[S01,S02,S03,D01,D02,D03]' benchmark.episodes=4 \
-  output=results/super_S6_reproduce_s0 benchmark.record_replay=true
-```
-
-This command uses the current clean image. The earlier interrupted run remains
-in `results/super_S6_s0`; its partial episodes are not included in the 24-episode
-acceptance denominator.
+Override `method.implementation.planner.address` for another port. Attitude MPC
+also requires the [acados environment](installation.md). Reports preserve native
+failures as episode outcomes. Historical flight and integration records retain
+their image/source identities locally; current checks are listed in
+[validation](validation.md).

@@ -1,154 +1,166 @@
-# drone_playground 领域术语
+# Domain glossary
 
-用于四旋翼学习、规划、控制及实验比较的统一语言。本文只定义领域概念；源码组织、外部依赖及实现决策记录在 ADR 和功能规格中。
+Terms for quadrotor learning, planning, control, and experimental comparison.
+Architecture decisions are recorded in [the ADR index](docs/README.md).
 
-## 任务与试验
+## Tasks and experiments
 
-**Task（任务）**：
-定义一次飞行试验要实现的目标，以及成功、失败与进度的语义。
-_Avoid_: Method、Algorithm、Scene
+**Task**: The objective of a flight episode, including its success, failure, and
+progress rules.
 
-**Tracking（轨迹跟踪）**：
-飞行器按照给定的时间参考运动，偏差是主要评价对象。
-_Avoid_: Navigation
+**Tracking**: Following a time-indexed motion reference. Tracking error measures
+how closely the vehicle follows that reference.
 
-**Racing（竞速）**：
-飞行器按规定方向和顺序通过赛道门，并在完成合法飞行的前提下评价用时。
-_Avoid_: 仅按轨迹 RMSE 判定竞速
+**Racing**: Passing gates in their prescribed order and direction. Flight time
+is evaluated after establishing a valid completion of the course.
 
-**Navigation（导航）**：
-飞行器从初始位置安全到达目标，需考虑障碍物与任务限制。
-_Avoid_: Vision-Language Navigation（除非明确标注为 VLN）
+**Navigation**: Reaching a goal safely while satisfying obstacle and task
+constraints.
 
-**Scene（场景）**：
-试验中的空间几何、障碍物、门及其规定的动态变化。
-_Avoid_: Task、Benchmark Case
+**Obstacle Avoidance (OA)**: Navigation through an environment containing
+obstacles that the vehicle must avoid.
 
-**Episode（回合）**：
-从一次独立初态开始，到首次成功、失败或任务截止为止的一次完整飞行试验；成功与失败都计入试验次数。
-_Avoid_: 物理步、训练更新次数、训练种子、场景数；将失败后的重试并入原回合
+**Static Obstacle Avoidance (Static OA)**: An obstacle-avoidance case whose
+obstacles remain fixed throughout the episode.
 
-**Training Seed（训练种子）**：
-决定一次独立参数训练随机过程的起始条件；同一已训练策略可以在许多不同回合上接受评测。
-_Avoid_: 评测回合种子、场景编号
+**Dynamic Obstacle Avoidance (Dynamic OA)**: An obstacle-avoidance case containing
+moving obstacles. Static obstacles may also be present.
 
-**Benchmark Case（基准案例）**：
-预先确定的场景、初态、目标、外部条件及评价协议。
-_Avoid_: Training Run
+**Scene**: The spatial geometry, obstacles, gates, and prescribed motion of an
+environment.
 
-## 物理信息与运动
+**Procedural Scene**: A scene generated from a declared distribution and random
+seed. Different samples can vary obstacle layouts, motion, start states, and goals.
 
-**Dynamics（动力学）**：
-将无人机状态及作用于机体的物理输入映射为下一状态的运动规律。
-_Avoid_: Planner、Controller
+**Episode**: One flight from an independently initialized state to its first
+success, failure, or deadline. Each retry is a separate episode.
 
-**Backward dynamics model（反向求导模型）**：
-训练中用于计算状态和动作灵敏度的动力学模型。它有自己的状态、输入和转移方程，可以与实际推进模型相同或不同。
-_Avoid_: 逆动力学、时间倒放、梯度衰减
+**Training Seed**: The initial random condition for an independent parameter
+training run. One trained policy can be evaluated over many episode seeds.
 
-**Derivative rule（导数规则）**：
-训练反向传播时使用的输入变化与输出变化之间的关系。可以使用前向运动方程的真实导数，也可以使用明确声明的近似导数。
-_Avoid_: 将导数规则等同于另一套前向动力学
+**Benchmark Case**: A predefined scene, initial state, goal, external conditions,
+and evaluation protocol.
 
-**Gradient decay（梯度衰减）**：
-按规定因子缩放传播的梯度，同时保持所处位置的前向数值不变。
-_Avoid_: 物理阻尼、执行器滞后
+**Benchmark Suite**: A declared set of benchmark cases evaluated under a common
+measurement protocol.
 
-**Transport delay（送达延迟）**：
-测量或命令产生之后，到接收方可以使用它之间的时间。
-_Avoid_: 采样周期、物理执行器的响应时间常数
+## Physics, information, and motion
 
-**Sensor Measurement（传感器测量）**：
-传感器在确定时刻和坐标定义下获得的物理观测量。
-_Avoid_: Observation
+**Dynamics**: The physical transition from a vehicle state and physical input
+to its next state.
 
-**Snapshot acquisition（快照采集）**：
-一帧的所有测量采用同一时刻的传感器与场景位姿；采集时刻与数据送达时刻可以不同。
-_Avoid_: 将逐点扫描相位当作已模拟的帧内运动畸变
+**Backward Dynamics Model**: A dynamics model used to calculate sensitivities
+of states and actions during training. Its state, inputs, and transition equations
+may differ from those used to advance the physical simulation.
 
-**Observation（方法观测）**：
-某一方法被允许使用的测量、状态、目标及其表示形式。
-_Avoid_: 全部仿真真值
+**Derivative Rule**: The relationship used to propagate input and output
+sensitivities. It can use the forward equations' derivatives or an explicitly
+declared approximation.
 
-**Privileged Information（特权信息）**：
-仿真中存在、但当前方法在指定实验条件下未获准使用的真实状态、地图或未来信息。
-_Avoid_: 默认可用的观测
+**Gradient Decay**: Scaling a propagated gradient by a specified factor while
+preserving the corresponding forward value.
 
-**Path（路径）**：
-具有方向及参数化的几何运动路线，不隐含执行时刻。
-_Avoid_: Trajectory
+**Transport Delay**: The time between producing a measurement or command and
+making it available to its recipient. Sampling periods and actuator response
+times describe separate effects.
 
-**Trajectory（时标轨迹）**：
-带明确时间关系及有效区间的参考运动，可以包含位置、速度、加速度等实际给定的量。
-_Avoid_: 只有几何航点的 Path
+**Sensor Measurement**: A physical observation acquired at a specified time in
+a defined coordinate system.
 
-**Waypoint（航点）**：
-空间中的目标点或有序目标，不自动具有到达时间。
-_Avoid_: 完整 Trajectory
+**Snapshot Acquisition**: Acquiring all measurements in a frame at the same
+sensor and scene pose. Acquisition and delivery can occur at different times.
 
-**Setpoint（控制设定值）**：
-对飞行器某一级控制目标的要求，具有明确的量纲、坐标系和时间语义。
-_Avoid_: 含义不明的 Command 数组
+**Observation**: The measurements, states, goals, and representations a method
+is allowed to use.
 
-**Control interface（控制接口）**：
-约定接收的控制量、顺序、单位、坐标及有效范围。姿态、角速度和加速度接口描述不同物理输入。
-_Avoid_: 由任务名称或传感器名称推断控制量
+**Privileged Information**: Simulation truth, maps, or future information outside
+a method's declared observation permissions for an experiment.
 
-## 方法与研究
+**Path**: An ordered, parameterized geometric route.
 
-**Planner（规划器）**：
-根据允许的信息计算用于完成任务的路径、轨迹或其它规划结果；其内部可以包含学习与优化。
-_Avoid_: 将 Planner 等同于非学习算法
+**Trajectory**: A motion reference with an explicit time relationship and validity
+interval. It can include position, velocity, acceleration, and other prescribed
+derivatives.
 
-**Controller（控制器）**：
-根据状态、参考或设定目标产生更低层的控制请求；内部可以包含优化器或学习模块。
-_Avoid_: 将 Controller 等同于 PID
+**Waypoint**: A spatial target or an element of an ordered target sequence.
+Timing is specified separately when needed.
 
-**Policy（策略）**：
-根据当前允许的观测及可能的内部记忆产生决策的映射。
-_Avoid_: 将 Policy 等同于训练算法
+**Setpoint**: A requested control target with defined units, coordinates, and
+time semantics.
 
-**Method（运行方法）**：
-用于实际闭环执行的一种决策链，可以是 Planner、Controller、Policy 或它们的组合。
-_Avoid_: Algorithm（训练更新规则）
+**Control Interface**: The accepted control quantities, their ordering, units,
+coordinate systems, and valid ranges. Attitude, angular-rate, and acceleration
+interfaces represent different physical inputs.
 
-**Training Algorithm（训练算法）**：
-利用采样、损失或示范数据调整可学习参数的更新方法。
-_Avoid_: 冻结 Method
+## Methods and learning
 
-**Forward Simulation（前向仿真）**：
-从给定状态和决策出发运行飞行物理、场景与测量并得到下一状态和事件的过程。
-_Avoid_: Training
+**Planner**: A method that uses permitted information to compute a path,
+trajectory, or other motion plan. Its computation can include learning and
+optimization.
 
-**Ideal tracking（理想跟踪）**：
-假设实际位置和速度等于参考值，并从参考加速度和航向构造姿态。它表示零跟踪误差的理想闭环响应；具体软件接口和实验用途由单独批准的设计确定。
-_Avoid_: 实际物理闭环、MPC 控制器
+**Controller**: A method that converts vehicle state, references, or setpoints
+into lower-level control requests. Its computation can include optimization or
+learning.
 
-**Controlled Comparison（受控组件对照）**：
-明确固定除研究变量之外的实验条件，以比较某个算法或模块变化的影响。
-_Avoid_: 不同传感器与执行链的完整系统比较
+**Policy**: A mapping from permitted observations and optional internal memory
+to decisions.
 
-**Named Adaptation（具名适配）**：
-将一个有明确来源的方法迁移到新试验条件，并记录保留及修改的部分。
-_Avoid_: 声称未经修改的原方法复现
+**Method**: A decision process used in closed-loop flight. It can combine a
+planner, controller, and policy.
 
-**Convergence Acceptance（收敛验收）**：
-按照预先定义的验证协议与任务指标，训练方法稳定达到约定质量的判定。
-_Avoid_: 仅损失下降、参数变化或训练程序成功退出
+**Training Algorithm**: An update rule that adjusts learnable parameters using
+samples, losses, or demonstrations.
 
-**From-scratch Training（从零训练）**：
-每个独立训练运行从本次种子产生的随机 Actor、Critic 和新优化器状态开始，不导入其它
-运行得到的权重。恢复同一次运行的检查点仍属于这次从零训练。
-_Avoid_: 只重建优化器或 Critic 就称为从零；使用其它算法或种子的权重作为共同初始化
+**Backpropagation Through Time (BPTT)**: Differentiating an unrolled sequence of
+state transitions to update policy parameters from its trajectory objective.
 
-**Pretrained Initialization（预训练初始化）**：
-使用已有训练权重作为新运行的起点，再执行新训练；来源可以是本项目，也可以是外部参考。
-_Avoid_: 将预训练初始化等同于未训练；只报告继续训练成本而忽略初始化来源
+**Forward Simulation**: Advancing physical flight, scene motion, and measurements
+from a given state and decision to obtain the next state and events.
 
-## 关系
+**Ideal Tracking**: A response model whose position and velocity equal the
+reference, with attitude derived from reference acceleration and heading.
 
-- 一个 **Task** 可以在多个 **Scene** 或 **Benchmark Case** 中执行。
-- 一个 **Method** 可以包含多个 Planner、Controller 或 Policy；它们的内部数学不等于平台公共接口。
-- **Sensor Measurement** 是物理测量，**Observation** 是特定方法实际允许接收的输入。
-- **Training Algorithm** 更新方法参数，冻结的 **Method** 仍可独立前向执行。
-- **Path** 与 **Trajectory** 的区别是时间语义，不是文件或网络输出维数。
+**Checkpoint**: Saved parameters and state associated with a particular training
+update. A resumable checkpoint contains the state needed to continue that run.
+
+**Latest Checkpoint**: The most recent successfully saved checkpoint in a run,
+ordered by training update.
+
+**Best Checkpoint**: The checkpoint designated best by the training method's
+declared criterion. Reward-based selection compares the mean undiscounted return
+of completed episodes from a declared training or fixed evaluation distribution.
+A selector may resolve to the latest checkpoint when the
+method records no best checkpoint; that fallback does not establish higher quality.
+
+**Candidate**: One proposed training configuration evaluated within a search
+experiment under its declared budget and comparison protocol.
+
+## Research claims
+
+**Controlled Comparison**: A comparison that holds experimental conditions fixed
+except for the variable being studied.
+
+**Named Adaptation**: Applying an identifiable published method to new conditions
+while recording which parts were retained and which were changed.
+
+**Convergence Acceptance**: Establishing that a training method stably reaches
+predefined task quality under a declared evaluation protocol.
+
+**From-scratch Training**: A run whose actor, critic, and optimizer start from
+the run's own random initialization. Resuming that same run preserves its
+from-scratch origin.
+
+**Pretrained Initialization**: Starting a new run from learned parameters produced
+by another run or source. Its provenance includes the source training cost.
+
+## Relationships
+
+- A task can be exercised in several scenes or benchmark cases.
+- A benchmark suite fixes the cases and measurement protocol for a comparison.
+- A sensor measurement is a physical observation; a method observation specifies
+  which information that method receives.
+- A training algorithm changes parameters; a frozen method executes those
+  parameters independently of training.
+- A trajectory adds timing to a motion reference; a path describes its geometry.
+- A candidate identifies a training proposal; a checkpoint identifies saved
+  state within one training run.

@@ -1,41 +1,72 @@
-# 项目协作约定
+# Project collaboration
 
-## 文档与决策
+## Documents and decisions
 
-领域词典使用现有的 `GLOSSARY.md`。它承担本项目的 context document 职责，只写领域定义；不要再维护一份同义的 `CONTEXT.md`。架构取舍放在 `docs/adr/`，文档入口是 `docs/README.md`。
+`GLOSSARY.md` is the domain context document and contains domain definitions.
+Do not create a duplicate `CONTEXT.md`. Architecture decisions belong in
+`docs/adr/`; `docs/README.md` is the documentation entry point.
 
-用户批准一个架构决策后，在当前工作中写入或补充对应 ADR，记录日期、原因和实际实现状态。`Accepted` 表示决定已批准，不表示代码已完成。尚在讨论的方案不能写成已批准或已实现。普通参数和操作说明直接更新所属文档，不为每个小改动建立 ADR。
+Record an approved architecture decision in the current work, including its
+reason, approval date, and actual implementation state. `Accepted` means the
+decision was approved, not that implementation is complete. Questions, requests
+for explanation, comparisons, and evaluations are not approval. Withdraw incorrect
+approval records and correct the index. Do not extend an approval to another
+model or interface. Ordinary parameters belong in their operating document.
 
-用户提出问题、要求解释、比较或评估，不构成决策批准。只有用户明确同意的具体内容才能标记为 `Accepted`；错误记录的批准须撤回，并修正文档入口中的对应表述。不得把另一项决定的批准扩展到未批准的模型范围或接口。
+The integration branch, currently `main`, owns the integrated ADR index. Worktree
+documents are branch snapshots. Merge documents individually against the current
+integration branch, resolve conflicts, check ADR numbers, and synchronize the
+index. Unmerged implementation must remain identified as such. Keep long-term
+plans and decisions in this existing document set.
 
-各 Git worktree 的 `docs/` 是对应分支的版本快照。以当前集成分支（目前为 `v0.2`）的 `docs/adr/`、`docs/README.md` 为项目已集成决策的唯一索引；功能分支可以提交文档修改，但在合并时须逐份对照集成分支、解决冲突、核对 ADR 编号并同步索引，不直接覆盖较新的决定。未合并的分支文档不得写成已在集成分支实现。长期计划和架构决定放入同一套现有文档，不在不同工作树维护第二套常驻权威副本。
+Record approval time, implementation state, and review time separately. Use
+ISO 8601 timestamps with a timezone, such as `2026-10-10T01:27:02Z`. Support
+implementation claims with source or test evidence. A branch change does not
+change approval time; a review updates only the review time and source revision.
 
-新增或核对 ADR 时，分别记录批准时间、实现状态和最近核对时间；时间使用带时区的 ISO 8601 格式，例如 `2026-10-10T01:27:02Z`（UTC）。只有源代码或测试证据对应的实现才标为已完成。更换分支不改变决策批准时间；后续审核仅更新审核时间和所依据的提交。
+This division follows Matt Pocock's
+[domain-modeling](https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md)
+and [grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md),
+using this project's existing paths.
 
-上述分工采用 [Matt Pocock 的 domain-modeling](https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md) 和 [grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md)；沿用本项目现有路径。
+## Scope before extension
 
-## 扩展前先核对需求
+Establish the behavior the user wants to change, then inspect existing code,
+upstream public APIs, and mature implementations. Distinguish changes to forward
+physics, backward dynamics, controllers, and gradient handling. Backward dynamics
+are not merely gradient attenuation. A question does not approve a prohibition
+on additional forward models.
 
-先确定用户要改变的行为，再检查已有代码、上游公共 API 和成熟实现。分别核对用户是否需要改变实际前向模型、用于求导的动力学模型、控制器或梯度处理。不能将反向动力学模型缩减为梯度衰减，也不能从提问推导出禁止新增前向模型的决定。
+Use existing parameters, presets, pure functions, or narrow interfaces where
+they close the actual gap. Explain unnecessary maintenance costs before adding
+backends, registries, compatibility layers, configuration dimensions, or state
+transitions. Mentioning another project is not a request to transplant it.
 
-新增机制必须解决当前的具体缺口。能够使用现有参数、preset、纯函数或窄接口实现时，先给出这种方案。方案会增加不必要的后端、注册系统、兼容层、配置维度或状态转换时，应指出增加的维护成本并推荐更小的实现，不因用户提到某个项目就整套移植。
+Choose methods at construction. JAX methods keep explicit parameters, state, and
+RNG. Native C++/ROS methods execute on the host. They share environment and
+evaluation semantics without an arbitrary-stage generic Pipeline.
 
-方法在构造阶段选择；JAX 方法保留显式参数、状态和随机数。原生 C++/ROS 方法使用宿主执行。二者共用环境和评测语义，不建立任意阶段的通用 Pipeline。
+Verify facts available in code directly. Ask only unresolved questions that
+change interface, data, or experimental meaning, with a recommended option.
+Do not request approval again for an accepted decision.
 
-可以从代码查到的事实自行核对。只对会改变接口、数据或实验含义的未决问题追问，并给出推荐选择。已批准的内容不要反复请求确认。
+## Changes and verification
 
-## 修改与验证
+Documentation tasks change documentation only. Implementation tasks update
+related callers, configuration, and tests together. Keep temporary checks in
+`tmp/` and regression tests in `tests/`. Start with the smallest check that
+verifies the changed behavior.
 
-文档任务只修改文档。实现任务同步处理受影响的调用方、配置和测试；不要顺带扩展不相关功能。临时检查放在 `tmp/`，正式回归放在 `tests/`。
+Never delete results, weights, or replays as directory cleanup. Artifact layout
+changes update actual readers and references under ADR-0007 and its successors.
+ADR-0026 makes Orbax v3 the sole current checkpoint and report contract. Do not
+restore ZIP/v1/v2 loading, missing-default repair, dual-layout report readers, or
+migration tools. Historical `results/` remain read-only evidence; destruction
+requires separate authorization. The 75 v1 training archives explicitly removed
+on 2026-10-09 do not make the retained historical Actors executable by current code.
 
-从能直接验证改动的最小检查开始。运行结果、权重和回放不得因目录整理被删除。产物布局迁移须按 ADR-0007 更新实际读取方和引用。
-
-当前 Checkpoint 和评测报告只支持 v2 合同。不要恢复 v1 加载、旧配置默认值补齐、
-双目录报告读取或迁移工具。历史结果在 `results/` 中只读保存，销毁需单独核验。
-2026-10-09 已按明确要求清除 75 个 v1 完整训练归档，仍保留冻结策略与验收证据。
-不得将保留的旧冻结权重视为当前 v2 加载器可执行的策略。
-
-Git worktree 只是独立的开发目录，不是实验存档。功能分支合并后，先核对未提交修改、
-独有的 `results/` 和重要 `tmp/` 证据，再用 `git worktree remove` / `git branch -d`
-清理；活动训练或仍有独有数据的工作树不直接删除。每个功能分支的研究结果保持来源提交、
-配置和评测证据可追溯，不因目录整理改写历史原始记录。
+Worktrees are development directories, not experiment archives. Before removing
+a merged worktree and branch with `git worktree remove` and `git branch -d`,
+check uncommitted changes, unique `results/`, and important `tmp/` evidence.
+Keep active training and unique data intact. Preserve the source, configuration,
+and evaluation provenance of every research result.

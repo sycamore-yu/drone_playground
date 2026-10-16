@@ -1,55 +1,43 @@
-# ADR-0017：统一八项验收（四项 Simulation，四项 Learning）
+# ADR-0017: Eight acceptance areas
 
-**Status:** Accepted · 2026-10-10
+**Status:** Accepted for the eight-area organization. Aggregate thresholds, training selection, and shared OA training are superseded by [ADR-0026](0026-training-benchmark-release-separation.md).
+**Approval:** Originally recorded as 2026-10-10; exact time was not retained.
+**Implementation:** The areas organize evidence; they are not runtime quality gates.
+**Last reviewed:** 2026-10-16T05:28:58Z, working tree based on `7d59162`.
 
 ## Decision
 
-将旧 C1–C6、S1–S8、L1–L6 的 20 个相互引用条目收敛为
-**S1–S4 与 L1–L4 共八项独立验收**。研究任务、三种算法、18 个学习矩阵单元及
-三个独立随机初始化训练种子不变。旧编号仅用于解释已产生的历史报告，
-不再作为另一套活跃的任务列表。
+Replace the former twenty overlapping C/S/L checklist entries with eight areas.
+Historical identifiers remain interpretable in archived reports, without becoming
+another active checklist.
 
-### Simulation
+| Area | Evidence |
+|---|---|
+| S1: installation and physics | Installable package, official Crazyflow, physical-state consistency for fixed inputs |
+| S2: tasks and sensors | Task events, static/dynamic geometry, calibrated sensing, clocks, and information permissions |
+| S3: methods and native planners | Policy/planner/controller composition and actual EGO/SUPER closed-loop execution |
+| S4: replay and reproducibility | Recorded scene, sensing, commands, delays, provenance, and complete failure records |
+| L1: learning correctness | PPO/BPTT/SHAC updates, gradients, terminal/truncation semantics, memory reset, and continuation |
+| L2: perception learning | State/depth/LiDAR observation-to-action execution, including frozen actor isolation |
+| L3: training quality | Independent random-initialized runs under a declared convergence protocol |
+| L4: efficiency and reproducibility | Interactions, updates, compilation/steady timings, memory, power, total cost, and saved state |
 
-- **S1 安装和物理正确性**：Pixi/官方 Crazyflow 安装、物理状态、固定初态与动作的一致性。
-- **S2 任务和传感器**：Tracking、Racing、Navigation、静态/动态场景、
-  D435i/MID360 的时钟、量测和信息权限。完整 20k 设备扫描与直接选取
-  1024 条策略射线是两个明确标注的仿真配方。
-- **S3 组合接口和原生规划器**：Policy/Planner/Controller 组合、EGO/SUPER
-  原生 ROS/gRPC 闭环。两规划器各至少 10 次静态和 10 次动态；
-  S01/S02/S03 各至少一次静态安全到达，动态完整报告不设通过率门槛。
-- **S4 可视化与可复现**：RScope 场景/传感器/控制回放、动作延迟与运行
-  身份、结果和全部失败分母可追溯；显示不改变物理结果。
+Full 20,000-ray LiDAR scans and direct sampling of 1,024 policy rays are explicit
+simulation recipes, not interchangeable performance measurements. S1/S2/L1/L2
+are targeted correctness checks; S3/S4 demonstrate platform capabilities. L4 uses
+measurements from the same training runs instead of requiring duplicate training.
+VRAM occupancy is not a pass criterion.
 
-### Learning
+## Historical numerical protocol
 
-- **L1 学习算法正确性**：PPO、APG/BPTT、SHAC 的采样、梯度和参数更新、
-  终止与截断、GRU 记忆清零、训练状态恢复。
-- **L2 感知学习闭环**：State MLP、Zhang CNN/GRU、Liu PointNet/GRU
-  的传感器→观测→网络→损失→动作→冻结执行，Actor 不泄漏特权数据。
-- **L3 从随机参数训练并达到任务质量**：3 个算法 × 6 种任务/传感器条件
-  共 18 单元，12 组训练配方各 3 个独立种子；通过轻量筛查→完整
-  checkpoint validation→独立冻结 Benchmark 三阶段，不再要求三次连续
-  完整检查。Tracking 每种子 100 回合、成功率≥95%、成功 RMSE≤0.25m；
-  Racing 100 回合、合法完赛率≥90%；Navigation 的
-  S01/S02/S03/D01/D02/D03 每场景 25 回合≥23 次安全到达，
-  S06/D06 完整报告但不计门槛。不得导入旧项目权重，
-  可恢复同一次随机初始化 run 的完整训练状态。
-- **L4 训练效率和可复现证据**：交互数、更新数、吞吐量、
-  编译及稳态时间、显存/GPU 功率、收敛所需总成本、JAX/Flax/Orbax
-  完整恢复。**不设必须填满 VRAM 的门槛**，不允许把硬件利用率当成功率。
+The original L3 rule used twelve training recipes and eighteen static/dynamic
+evaluation cells, three seeds each, with multistage selection. It required 95/100
+Tracking successes and successful RMSE at most 0.25 m, 90/100 Racing completions,
+and 23/25 arrivals per primary OA scene. Original S3 required at least ten static
+and ten dynamic episodes per planner and at least one arrival in each primary
+static scene. Dynamic and extension outcomes were fully reported.
 
-## Workflow
-
-S1/S2、L1/L2 属于算法及环境正确性专项；不为每个超参数候选重跑整套测试。
-S3/S4 属于平台能力演示；不阻断 L3 的从零收敛研究。
-L3 是实际 18 单元研究验收，L4 从相同运行证据汇总性能和资源，
-不再单独要求重复试验。
-
-三阶段的随机种子、模型选择和独立冻结测试遵循
-[ADR-0015](0015-three-stage-learning-acceptance.md)，结果布局遵循
-[ADR-0016](0016-results-layout-orbax-tensorboard.md)。历史的
-S6 原生规划器验收明确迁入 S3；历史 C2/C3/C4 数值门槛
-明确迁入 L3，不允许通过重新编号降低成功率标准。
-
-具体条目以 [当前规格](../spec.md) 为准。
+ADR-0026 removes universal hardcoded aggregate thresholds and approves eighteen
+independent training recipes, three seeds each. Episode success definitions remain;
+new quality criteria belong to the experiment protocol. See [scope](../spec.md)
+and [validation evidence](../validation.md) for current status.

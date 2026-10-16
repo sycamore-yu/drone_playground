@@ -1,4 +1,6 @@
-# ADR-0022 — Navigation PPO reward ablations against Trial 9/10
+# ADR-0022: Experimental navigation PPO reward ablations
+
+**Current workflow:** [ADR-0026](0026-training-benchmark-release-separation.md) supersedes historical checkpoint validation, screening, patience, and aggregate pass thresholds described below. Original experiment results retain their recorded protocol. Last reviewed 2026-10-16T06:24:13Z against `main@7d59162` and the working tree.
 
 **Status:** Experimental · 2026-10-11
 

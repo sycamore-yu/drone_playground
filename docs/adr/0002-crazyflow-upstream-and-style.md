@@ -1,18 +1,29 @@
-# ADR-0002：Crazyflow、依赖管理与代码规范
+# ADR-0002: Crazyflow, dependencies, and code conventions
 
-**Status:** Accepted · 2026-10-08
+**Status:** Accepted.
+**Approval:** Originally recorded as 2026-10-08; exact time was not retained.
+**Implementation:** Present in the package and Pixi configuration.
+**Last reviewed:** 2026-10-16T05:28:58Z, working tree based on `7d59162`.
 
 ## Context
 
-Crazyflow 已提供四旋翼动力学、原生控制、状态管理、JAX 步进和 MuJoCo/MJX 场景支持。项目需要在其基础上实现研究任务、传感、方法及实验。
+Crazyflow already provides quadrotor equations, native control, state management,
+JAX stepping, and MuJoCo/MJX integration. The project adds research tasks,
+sensing, method composition, and experiments around those capabilities.
 
 ## Decision
 
-- **Physics**：使用固定版本的官方 Crazyflow；优先直接调用 `Sim`、`SimData`、`Control`、`build_step_fn()`、`build_reset_fn()`、Pipeline 及 MJCF/MJX 功能。
-- **Extensions**：在 Simulation 中增加实际缺失的场景、虚拟传感、方法适配与任务逻辑。只有必需的物理能力超出公共 API 时才评估向上游贡献或维护 fork。
-- **Environment**：使用 **Python 3.12 + Pixi**，通过 `pyproject.toml` 的 `[tool.pixi]` 和 `pixi.lock` 管理依赖；统一以 `pixi run` 调用项目任务。
-- **Style**：遵守 Google Python Style 和 MuJoCo 的命名与简洁代码规范；Ruff 采用 100 列和 Google-style docstrings。
+Pin official Crazyflow and use its public `Sim`, `SimData`, control, reset/step
+builders, pipelines, and MJCF facilities. Add only missing project behavior in
+Simulation. Consider an upstream contribution or fork only when required physics
+cannot be expressed through the public API.
+
+Use Python 3.12 and Pixi, with dependencies recorded in `pyproject.toml` and
+`pixi.lock`. Public commands use `pixi run`. Follow Google-style Python docstrings,
+MuJoCo naming conventions, and a 100-column Ruff limit.
 
 ## Consequences
 
-Crazyflow 是默认物理行为的唯一来源。项目持有研究参数与训练实验配置，保持物理、传感、网络和任务参数各自的所有权。ROS1 的系统依赖使用独立运行环境。
+Official Crazyflow remains the source of default physical behavior. Physics,
+sensors, networks, and tasks own their respective parameters. ROS1 system
+dependencies remain in an independent runtime.

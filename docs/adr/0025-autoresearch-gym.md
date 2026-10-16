@@ -1,28 +1,36 @@
-# ADR-0025: Autoresearch Gym 外部训练接入
+# ADR-0025: External training orchestration with Autoresearch Gym
 
-状态：Accepted。批准依据：2026-10-15 本次用户明确要求创建分支并接入。
-实现分支：`feat/autoresearch-gym`。尚未合入 `v0.2`。
-记录与核对时间：2026-10-15T15:34:00Z。
+**Status:** Accepted.
+**Approval recorded:** 2026-10-15T15:34:00Z, recording the user's instruction to integrate Autoresearch Gym on a feature branch.
+**Implementation:** Integrated from `feat/autoresearch-gym` into `main`. [ADR-0026](0026-training-benchmark-release-separation.md) makes this the public training entry and removes the former optional-budget lifecycle.
 
-## 决定
+**Last reviewed:** 2026-10-16T05:37:19Z against `main@7d59162` and the working tree.
 
-保留本项目的 CLI、Trainer、Simulation 和 Orbax。将 Autoresearch Gym 克隆到项目根目录下，
-由一个外部适配器启动现有 CLI 并读取原生结果。两者使用独立 Python 环境。
-上游固定版本和小补丁保存在本项目，避免依赖尚未发布的子模块提交。
+## Decision
 
-自动候选比较需要固定预算。CLI 增加可选 `learning.max_interactions`，按完整更新计数，
-预算到达时导出最后一次更新的 Actor。该模式跳过收敛选模，报告 `budget_exhausted`。
-默认值为 `null`，保留现有训练到收敛或 Patience 结束的流程。
+Keep the project CLI, Trainer, Simulation, and Orbax implementation. An external
+adapter starts native training and reads native results. Autoresearch Gym lives
+in a sibling checkout, with its own Python environment. This repository records
+the upstream revision and a small patch; it does not vendor that environment.
 
-候选只能改变训练选项、Actor 配置和并行世界数。任务 JSON 固定物理实验、训练算法、
-预算和评测条件。搜索使用 checkpoint-evaluation 种子段，最终正式 Benchmark 单独执行。
+Candidate comparisons use a fixed budget and the final completed update's Actor.
+Task JSON fixes the physical experiment, algorithm, budget, and evaluation
+cohort. Candidates may change training options, Actor configuration, and parallel
+environment count. Search evaluation and the final benchmark use distinct seeds.
 
-## 实现状态
+The initial integration added an optional interaction budget beside the old
+selection workflow. ADR-0026 replaces that arrangement: all public training uses
+Autoresearch, native training always has a finite budget, and Benchmark runs
+outside Learning. Search candidates start from random weights; explicit public
+training resumption restores a compatible complete Orbax state.
 
-`tools/autoresearch.py`、原生可选预算、Depth PPO 任务配置和回归测试已实现。
-CLI 和适配器的 63 项相关测试通过。真实 GPU Depth PPO 从随机权重执行
-16 次更新、8,192 次交互，保存 Orbax Actor 后完成六主场景共 12 回合冻结评测。
-这轮短程训练得到 0 次成功、12 次碰撞，运行器正常退出并写入候选汇总。
-此结果验证接入链路；策略收敛按现有正式流程另行评价。原始结果位于
-`results/autoresearch/sessions/integration-check/`。
-操作命令见 [Autoresearch Gym](../autoresearch.md)。
+## Initial integration evidence
+
+The original integration passed 63 targeted tests. A real GPU depth PPO run
+completed 16 updates and 8,192 interactions, saved and loaded the Actor, and
+finished twelve episodes across six primary scenes. It recorded zero successes
+and twelve collisions. This established the execution path, not convergence.
+The original evidence remains under
+`results/autoresearch/sessions/integration-check/`.
+
+See [Autoresearch](../autoresearch.md) for current commands and result layout.
