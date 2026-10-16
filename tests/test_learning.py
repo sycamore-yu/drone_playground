@@ -320,7 +320,10 @@ def test_navigation_observation_ppo_updates_and_restores(kind, goal, rotation, w
         num_envs=2,
         duration=0.02,
         navigation_goal_observation=goal,
-        observation_config={"navigation_world_rotation": True} if rotation else {},
+        observation_config={
+            "lidar": {"point_count": 1024},
+            "navigation_world_rotation": rotation,
+        },
         action={"level": "acceleration", "heading": "target"},
     )
     trainer = Trainer(
@@ -795,8 +798,7 @@ def perception_env(request):
         num_envs=1,
         sensor=request.param,
         sensor_config=sensor_config,
-        point_count=32,
-        ray_sampling="policy" if request.param == "lidar" else "full",
+        observation_config={"lidar": {"point_count": 32}},
     )
     return request.param, env
 

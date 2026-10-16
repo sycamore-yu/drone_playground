@@ -2,5 +2,3 @@
 # Same policy-visible sparse scan, with PPO's training-only privileged Critic.
 defaults:
 - navigation_lidar_scratch_ppo_asymmetric
-sensor:
-  ray_sampling: policy

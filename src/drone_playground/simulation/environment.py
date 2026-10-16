@@ -88,8 +88,6 @@ class BaseEnv:
         reference_seed: int = 0,
         sensor: str = "state",
         sensor_config: dict | None = None,
-        point_count: int = 1024,
-        ray_sampling: str = "full",
         navigation_goal_observation: bool = False,
         action: Action | dict | None = None,
         control_level: str | None = None,
@@ -212,7 +210,7 @@ class BaseEnv:
                 config,
                 physics_hz,
                 latency_bounds=latency_bounds,
-                encoding=self.observation_config.get("depth", {}),
+                observation_config=self.observation_config,
             )
         elif sensor in {"lidar", "uniform_lidar_paper"}:
             factory = SensorConfig.mid360 if sensor == "lidar" else SensorConfig.uniform_lidar_paper
@@ -220,10 +218,8 @@ class BaseEnv:
                 self.scene,
                 factory(**sensor_config),
                 physics_hz,
-                point_count,
                 latency_bounds=latency_bounds,
-                ray_sampling=ray_sampling,
-                paper_fan=self.observation_config.get("fan_lidar"),
+                observation_config=self.observation_config,
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")

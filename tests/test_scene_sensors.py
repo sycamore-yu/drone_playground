@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from jax.scipy.spatial.transform import Rotation
 
-from drone_playground.simulation.observation import preprocess_depth, reduce_points
+from drone_playground.simulation.observation import preprocess_depth
 from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import (
     Measurement,
@@ -359,7 +359,7 @@ def test_full_resolution_depth(make_scene):
 
 
 def test_mid360_full_frame_and_snapshot_moving_geometry(make_scene):
-    """The full scan uses geometry at frame time; reduction preserves the selected points."""
+    """The full scan uses geometry at frame time."""
     scene = make_scene(
         '<body pos="0 0 0" mocap="true" user="2 2 0 0 4 0"><geom type="sphere" size="20"/></body>'
     )
@@ -373,11 +373,6 @@ def test_mid360_full_frame_and_snapshot_moving_geometry(make_scene):
     dx = np.asarray(sensor_rays(config, 0.75)[0][:, 0])
     expected = centers_x * dx + np.sqrt(400 - centers_x**2 * (1 - dx**2))
     np.testing.assert_allclose(result.values, expected, atol=5e-6)
-    reduced = jax.jit(lambda m: reduce_points(m, 64))(result)
-    indices = np.linspace(0, 19999, 64).astype(int)
-    np.testing.assert_array_equal(reduced.acquisition_time, result.acquisition_time)
-    np.testing.assert_array_equal(reduced.mask, result.mask[indices])
-    np.testing.assert_array_equal(reduced.points_body, result.points_body[indices])
 
 
 def test_mid360_selected_rays_match_full_scan_reduction_snapshot(make_scene):
@@ -402,19 +397,25 @@ def test_mid360_selected_rays_match_full_scan_reduction_snapshot(make_scene):
 
     full = jax.jit(lambda: capture(None))()
     sparse = jax.jit(lambda: capture(count))()
-    reference = reduce_points(full, count)
-    for name in Measurement._fields:
-        np.testing.assert_allclose(
-            getattr(sparse, name), getattr(reference, name), atol=5e-4, rtol=1e-6
-        )
+    indices = np.linspace(0, 256, count).astype(int)
+    np.testing.assert_allclose(sparse.values, full.values[:, indices], atol=5e-4, rtol=1e-6)
+    np.testing.assert_allclose(
+        sparse.points_body, full.points_body[:, indices], atol=5e-4, rtol=1e-6
+    )
+    np.testing.assert_array_equal(sparse.mask, full.mask[:, indices])
+    np.testing.assert_array_equal(sparse.acquisition_time, full.acquisition_time)
+    np.testing.assert_array_equal(sparse.available_time, full.available_time)
     assert sparse.points_body.shape == (2, count, 3)
     assert full.points_body.shape == (2, 257, 3)
-    with pytest.raises(ValueError, match="Selected rays"):
-        sensor_rays(SensorConfig.uniform_lidar_paper(), selected_count=64)
+    uniform = SensorConfig.uniform_lidar_paper()
+    rays, _ = sensor_rays(uniform)
+    selected, _ = sensor_rays(uniform, selected_count=64)
+    np.testing.assert_array_equal(selected, rays[np.linspace(0, 5399, 64).astype(int)])
 
 
-def test_mid360_policy_sampling_changes_only_acquisition_workload():
-    """Policy-only capture computes fewer rays without changing the actor-visible points."""
+@pytest.mark.parametrize("count", [512, 1024, 20000])
+def test_lidar_observation_count_controls_queries_and_policy_points(count):
+    """One observation count determines both captured and actor-visible point shapes."""
     from drone_playground.simulation.environment import make_environment
 
     base = dict(
@@ -425,33 +426,27 @@ def test_mid360_policy_sampling_changes_only_acquisition_workload():
         physics_hz=100,
         method_hz=10,
         sensor="lidar",
-        sensor_config={"points_per_frame": 257},
-        point_count=64,
+        observation_config={"lidar": {"point_count": count}},
         action={"level": "acceleration", "heading": "target"},
     )
-    full = make_environment(**base, ray_sampling="full")
-    policy = make_environment(**base, ray_sampling="policy")
+    env = make_environment(**base)
     try:
         key = jax.random.key(8)
-        initial_full, initial_sparse = full.reset(key), policy.reset(key)
-        assert initial_full.observation.measurement.points_body.shape == (1, 257, 3)
-        assert initial_sparse.observation.measurement.points_body.shape == (1, 64, 3)
+        initial = env.reset(key)
+        assert initial.observation.measurement.points_body.shape == (1, count, 3)
         action = jnp.zeros((1, 3))
-        measured_full = full.step(initial_full, action)
-        measured_sparse = policy.step(initial_sparse, action)
-        points_full = full.observe(measured_full)
-        points_sparse = policy.observe(measured_sparse)
-        assert points_full["points"].shape == points_sparse["points"].shape == (1, 64, 3)
-        np.testing.assert_allclose(points_sparse["points"], points_full["points"], atol=1e-3)
-        np.testing.assert_array_equal(points_sparse["mask"], points_full["mask"])
-        np.testing.assert_allclose(
-            points_sparse["point_times"], points_full["point_times"], atol=1e-6
+        measured = env.step(initial, action)
+        points = env.observe(measured)
+        assert measured.observation.measurement.points_body.shape == (1, count, 3)
+        assert points["points"].shape == (1, count, 3)
+        assert int(measured.observation.frame[0]) == 1
+        np.testing.assert_array_equal(
+            points["points"], measured.observation.measurement.points_body
         )
-        assert "ray_sampling" not in full.sensor.specification
-        assert policy.sensor.specification["ray_sampling"] == "policy"
+        np.testing.assert_array_equal(points["mask"], measured.observation.measurement.mask)
+        assert env.sensor.specification["point_count"] == count
     finally:
-        full.sim.close()
-        policy.sim.close()
+        env.sim.close()
 
 
 def test_snapshot_world_poses_and_mask_preservation(make_scene):
@@ -466,9 +461,8 @@ def test_snapshot_world_poses_and_mask_preservation(make_scene):
     world = result.points_body + positions[:, None]
     np.testing.assert_allclose(np.linalg.norm(world, axis=-1), 20, atol=4e-6)
     empty = measure(Scene("empty"), config, jnp.zeros(3), jnp.array([0.0, 0, 0, 1.0]), 0.0)
-    reduced = reduce_points(empty, 16)
-    assert not reduced.mask.any()
-    np.testing.assert_array_equal(reduced.acquisition_time, 0)
+    assert not empty.mask.any()
+    np.testing.assert_array_equal(empty.acquisition_time, 0)
 
 
 def test_preprocessing_inverse_pool_masks_and_gradient():

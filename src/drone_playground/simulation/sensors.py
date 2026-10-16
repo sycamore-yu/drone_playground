@@ -172,11 +172,11 @@ def sensor_rays(
 ) -> tuple[Array, Array]:
     """Unit rays and zero snapshot offsets; each world has an explicit scan phase."""
     if selected_count is not None and (
-        config.profile != "mid360"
-        or not isinstance(selected_count, int)
+        config.profile == "d435i"
+        or type(selected_count) is not int
         or not 0 < selected_count <= config.points_per_frame
     ):
-        raise ValueError("Selected rays require a valid Mid-360 point count")
+        raise ValueError("Selected rays require a valid LiDAR point count")
     if config.profile == "d435i":
         x = 2 * (jnp.arange(config.width) + 0.5) / config.width - 1
         y = 1 - 2 * (jnp.arange(config.height) + 0.5) / config.height
@@ -195,6 +195,9 @@ def sensor_rays(
             ),
         )
         azimuth, elevation = azimuth.ravel(), elevation.ravel()
+        if selected_count is not None:
+            indices = jnp.linspace(0, len(azimuth) - 1, selected_count).astype(jnp.int32)
+            azimuth, elevation = azimuth[indices], elevation[indices]
     else:
         frame = (
             jnp.floor(jnp.asarray(t) * config.frequency_hz)
