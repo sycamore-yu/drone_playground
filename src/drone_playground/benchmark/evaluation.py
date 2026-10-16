@@ -88,7 +88,7 @@ def evaluate(config, directory, *, actor=None, parameters=None, checkpoint_confi
                     env.task.radius,
                     times=(0.0,) if scene in STATIC_OA else (0.0, 5.0, 10.0, 15.0),
                 )
-            scene_rows, replays = [], []
+            scene_rows, replays, browser_replays = [], [], []
             for episode_index in range(1 if method.execution == "jax" else count):
                 plans = None
                 if method.execution == "jax":
@@ -180,6 +180,7 @@ def evaluate(config, directory, *, actor=None, parameters=None, checkpoint_confi
                         record_trajectories=False,
                     )
                     replays.extend(saved["replays"])
+                    browser_replays.extend(saved["browser_replays"])
             if len(scene_rows) != count:
                 raise RuntimeError("Evaluation did not produce every requested episode")
             reports[scene] = {
@@ -191,6 +192,7 @@ def evaluate(config, directory, *, actor=None, parameters=None, checkpoint_confi
                 "sensor": None if env.sensor is None else env.sensor.specification,
                 "method": label,
                 "replays": replays,
+                "browser_replays": browser_replays,
                 "timing": computation,
                 "traversability": complexity,
                 "execution": "ideal_tracking" if env.control_level == "ideal" else "crazyflow",

@@ -65,6 +65,7 @@ train = "python tools/autoresearch.py train"
 benchmark = "drone-playground mode=benchmark"
 replay = "drone-playground mode=replay"
 build = "python -m build"
+viewer-build = "npm ci --prefix docs/viewer --no-audit --no-fund && npm run build --prefix docs/viewer"
 
 [tool.ruff]
 line-length = 100

@@ -198,19 +198,11 @@ def _visual_model(sample):
         contype="0",
         conaffinity="0",
     )
-    ET.SubElement(
-        drone,
-        "site",
-        name="preview_position_marker",
-        type="sphere",
-        size="0.09",
-        rgba="1.0 0.8 0.18 1.0",
-    )
     _attach_drone_mesh(root, assets, drone)
     model = mujoco.MjModel.from_xml_string(ET.tostring(root).decode(), assets=assets)
     if model.nq != 7:
         raise ValueError("Training preview must contain exactly one free-joint drone")
-    return model, movable
+    return model, movable, root, assets
 
 
 def _render(sample, session):
@@ -245,11 +237,11 @@ def _render(sample, session):
         if indices[-1] != len(times) - 1:
             indices.append(len(times) - 1)
 
-    model, obstacle_indices = _visual_model(sample)
+    model, obstacle_indices, model_xml, assets = _visual_model(sample)
     data = mujoco.MjData(model)
     camera = mujoco.MjvCamera()
     camera.type = mujoco.mjtCamera.mjCAMERA_FREE
-    camera.distance = 2.8 if str(sample["scene_name"].item()) != "train/procedural" else 7.0
+    camera.distance = 1.6 if str(sample["scene_name"].item()) != "train/procedural" else 5.0
     camera.azimuth = 135
     camera.elevation = -28
     root = session / "live"
@@ -263,6 +255,7 @@ def _render(sample, session):
         sequence.mkdir(parents=True, exist_ok=True)
     images = []
     rendered = []
+    browser_frames = []
     with mujoco.Renderer(model, width=640, height=360) as renderer:
         for index, row in enumerate(indices):
             data.time = float(times[row])
@@ -291,6 +284,15 @@ def _render(sample, session):
             mujoco.mj_kinematics(model, data)
             mujoco.mj_comPos(model, data)
             mujoco.mj_camlight(model, data)
+            if final:
+                browser_frames.append(
+                    {
+                        "time": float(data.time),
+                        "qpos": np.asarray(data.qpos).round(8).tolist(),
+                        "mocap_pos": np.asarray(data.mocap_pos).round(8).tolist(),
+                        "mocap_quat": np.asarray(data.mocap_quat).round(8).tolist(),
+                    }
+                )
             camera.lookat[:] = positions[row]
             renderer.update_scene(data, camera=camera)
             # Render the sampled path as MuJoCo debug geometry, not a second
@@ -328,6 +330,7 @@ def _render(sample, session):
         return str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
 
     final_video = None
+    browser_replay = None
     if final and rendered:
         video_path = root / "last_training_rollout.webp"
         temporary = root / ".last_training_rollout.webp"
@@ -342,6 +345,29 @@ def _render(sample, session):
         )
         os.replace(temporary, video_path)
         final_video = relative(video_path)
+        import xml.etree.ElementTree as ET
+
+        from drone_playground.simulation.browser_replay import FORMAT
+
+        browser_xml = root / "browser_scene.xml"
+        browser_xml.write_bytes(ET.tostring(model_xml, encoding="utf-8", xml_declaration=True))
+        for name, content in assets.items():
+            if "/" in name or "\\" in name or name in {"browser_scene.xml", "browser_replay.json"}:
+                raise ValueError("Browser MJCF assets require flat portable names")
+            (root / name).write_bytes(content)
+        path = root / "browser_replay.json"
+        record = {
+            "format": FORMAT,
+            "model": browser_xml.name,
+            "assets": sorted(assets),
+            "source": "actual final Crazyflow training rollout fragment",
+            "original_frame_count": len(times),
+            "frames": browser_frames,
+        }
+        temporary = root / ".browser_replay.json"
+        temporary.write_text(json.dumps(record, separators=(",", ":")) + "\n")
+        os.replace(temporary, path)
+        browser_replay = relative(path)
 
     status = {
         "mode": str(sample["mode"].item()),
@@ -350,6 +376,7 @@ def _render(sample, session):
         "live_frame_path": relative(root / "current_run_frame.jpg"),
         "trajectory_manifest_path": None,
         "final_rollout_path": final_video,
+        "browser_replay_path": browser_replay,
     }
     if images:
         manifest = {

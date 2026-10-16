@@ -82,3 +82,11 @@ def test_finished_training_preserves_a_browser_playable_clip_without_live_mode(
         assert clip.n_frames == 2
     manifest = Path(visual["trajectory_manifest_path"])
     assert len(json.loads(manifest.read_text())["frames"]) == 2
+    browser = json.loads(Path(visual["browser_replay_path"]).read_text())
+    assert browser["format"] == "drone-playground-mujoco-replay-v1"
+    assert len(browser["frames"]) == 2
+    import mujoco
+
+    live = tmp_path / "live"
+    assert mujoco.MjModel.from_xml_path(str(live / browser["model"])).nq == 7
+    assert all((live / name).is_file() for name in browser["assets"])

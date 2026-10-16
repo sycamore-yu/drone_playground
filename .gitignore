@@ -5,6 +5,8 @@ __pycache__/
 .cache/
 *.egg-info/
 dist/
+docs/viewer/node_modules/
+docs/viewer/dist/
 build/
 results/
 multirun/

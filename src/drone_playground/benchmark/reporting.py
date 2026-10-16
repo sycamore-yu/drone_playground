@@ -6,6 +6,7 @@ from pathlib import Path
 import jax.numpy as jnp
 import numpy as np
 
+from drone_playground.simulation.browser_replay import export as export_browser_replay
 from drone_playground.simulation.records import atomic_json
 from drone_playground.simulation.replay import export_replay
 from drone_playground.simulation.scene import SceneBatch
@@ -50,7 +51,7 @@ def save_evaluation(
         geometry=env.scene.geometry_identity,
         method=episodes[0]["method"],
     )
-    replays = []
+    replays, browser_replays = [], []
     indices = []
     for success in (True, False):
         eligible = [
@@ -97,7 +98,10 @@ def save_evaluation(
             sensor_times=(traces["sensor_time"][frames, index] if env.sensor is not None else None),
         )
         replays.append(str(output.relative_to(directory)))
+        browser = export_browser_replay(output.parent)
+        browser_replays.append(str(browser.relative_to(directory)))
     report["replays"] = replays
+    report["browser_replays"] = browser_replays
     if write_tables:
         atomic_json(directory / "report.json", report)
     return report
