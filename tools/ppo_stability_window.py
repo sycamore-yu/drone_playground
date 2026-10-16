@@ -202,6 +202,7 @@ def main():
     parser.add_argument("--disable-entropy-bonus", action="store_true")
     parser.add_argument("--full-batch", action="store_true")
     parser.add_argument("--worlds-multiplier", type=int, default=1)
+    parser.add_argument("--policy-cloning-corpus", type=Path)
     parser.add_argument("--diagnostic-updates", type=int)
     parser.add_argument("--reuse-window", type=Path)
     args = parser.parse_args()
@@ -209,16 +210,18 @@ def main():
     metadata = json.loads((source / "metadata.json").read_text())
     if args.worlds_multiplier < 1:
         raise ValueError("World multiplier must be positive")
-    if args.worlds_multiplier != 1 and (
-        args.actor_lr_scale != 1.0 or args.disable_entropy_bonus or args.full_batch
-    ):
-        raise ValueError("World expansion must be the only intervention")
-    diagnostic = (
-        args.actor_lr_scale != 1.0
-        or args.disable_entropy_bonus
-        or args.full_batch
-        or args.worlds_multiplier != 1
+    changes = sum(
+        (
+            args.actor_lr_scale != 1.0,
+            args.disable_entropy_bonus,
+            args.full_batch,
+            args.worlds_multiplier != 1,
+            args.policy_cloning_corpus is not None,
+        )
     )
+    if changes > 1:
+        raise ValueError("Change only one learning setting per matched diagnostic")
+    diagnostic = bool(changes)
     if args.diagnostic_updates is not None and not diagnostic:
         raise ValueError("Only a diagnostic may use a shorter pilot window")
     if diagnostic and args.reuse_window is None:
@@ -310,6 +313,19 @@ def main():
         trainers.pop(scene_index).env.sim.close()
         trainer = trainer_for(scene_index)
         assert state.env_state.done.shape == (trainer.env.num_envs,)
+    cloning_loss, cloning_record, initial_cloning_kl = None, None, None
+    if args.policy_cloning_corpus is not None:
+        from ppo_rehearsal_diagnostic import install_complete_rehearsal
+
+        loss, cloning_record = install_complete_rehearsal(
+            trainer, state, source, args.policy_cloning_corpus, weight=0.1
+        )
+        cloning_loss = jax.jit(loss)
+        cloning_probe_key = jax.random.fold_in(state.rng, 840103)
+        initial_cloning_kl = float(
+            cloning_loss({"params": state.params, "log_std": state.log_std}, cloning_probe_key)
+        )
+        assert math.isfinite(initial_cloning_kl) and abs(initial_cloning_kl) < 1e-4
     batch = config.simulation.num_envs * config.learning.options.horizon
     updates, interval = window_steps(batch, args.diagnostic_updates)
     if control is not None:
@@ -355,6 +371,8 @@ def main():
         "entropy_weight": config.learning.options.entropy_weight,
         "full_batch": args.full_batch,
         "worlds_multiplier": args.worlds_multiplier,
+        "policy_cloning": cloning_record,
+        "initial_policy_cloning_probe_kl": initial_cloning_kl,
         "rollout_worlds": config.simulation.num_envs,
         "optimizer_steps_per_update": config.learning.options.ppo_epochs
         * config.learning.options.minibatches,
@@ -392,6 +410,13 @@ def main():
             "starts. Shared parameters, Adam state and RNG key are preserved. Larger batches "
             "also reduce policy-refresh frequency at matched interactions."
         )
+    elif cloning_record is not None:
+        result["scope"] = (
+            "PPO plus self-policy cloning on complete successful training histories. "
+            "Native PPO rollout/optimizer budget matches control; additional teacher-data "
+            "interactions are separate extra cost. This is not vanilla PPO or full CLEAR. "
+            "Update timing includes the fixed training-corpus KL probe."
+        )
     if args.diagnostic_updates is not None:
         result["scope"] += " Short pilot, not the complete registered stability window."
     assert result["runtime_provenance"]["source_sha256"] == result["source_sha256_reused"]
@@ -414,6 +439,7 @@ def main():
             "continuation_entropy_bonus_disabled": args.disable_entropy_bonus,
             "continuation_full_batch": args.full_batch,
             "continuation_worlds_multiplier": args.worlds_multiplier,
+            "continuation_policy_cloning": cloning_record,
             "evaluation_index": original_report["evaluation_index"] + len(result["checks"]),
             "training_wall_seconds": metadata["provenance"]["training_wall_seconds"]
             + time.monotonic()
@@ -458,6 +484,13 @@ def main():
             before = time.monotonic()
             candidate, metrics = trainer.update(state)
             measured = {key: float(value) for key, value in jax.device_get(metrics).items()}
+            if cloning_loss is not None:
+                measured["policy_cloning_probe_kl"] = float(
+                    cloning_loss(
+                        {"params": candidate.params, "log_std": candidate.log_std},
+                        cloning_probe_key,
+                    )
+                )
             assert np.isfinite(list(measured.values())).all(), measured
             if diagnostic:
                 delta = optax.tree.norm(
@@ -514,6 +547,11 @@ def main():
             final_checkpoint=result["checks"][-1]["model"],
             total_wall_seconds=time.monotonic() - started,
         )
+        if cloning_record is not None:
+            result["ppo_plus_corpus_interactions"] = (
+                result["actual_additional_interactions"]
+                + cloning_record["teacher_data_interactions"]
+            )
         assert len(result["checks"]) == math.ceil(updates / interval)
         save_model(Path(result["final_checkpoint"]))
         atomic_json(output / "report.json", result)

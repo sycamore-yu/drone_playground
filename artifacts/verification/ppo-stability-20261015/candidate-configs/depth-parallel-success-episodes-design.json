@@ -1,5 +1,5 @@
 {
-  "status": "registered_ready_after_stability_finishes",
+  "status": "completed_collection_gate_passed",
   "scope": "Training-only frozen successful-trajectory corpus prerequisite; no PPO intervention launched",
   "problem": "SmallerActorsteps and largerfreshbatches have not preserved allsceneabilities. PairedS03paths show a lost lateral avoidance response. A256worldpilot148/149didnotreproduce atsecondfullwindowcheck125. Noneestablishes a unique learning rootcause.",
   "hypothesis": "A separate policy-cloning constraint on complete successfultraininghistories may preserve useful behavior that fresh PPOsurrogates overwrite. This remainsunproven and isPPOplusself-policycloning, notvanillaPPOorfullCLEAR.",
@@ -34,5 +34,26 @@
   "activation_evidence": "Constant256 scratch reaches149/150 at3.145728m, then unchanged continuation drops140/119/117 in first three checks. Increasing physical sampling alone has not solved retention. Complete current window before launching collection.",
   "source_choice": "Retain original64worldu176 source with150/150 and cached matched control; do not substitute the new256source or mix weights. Source was learned by scratch PPO.",
   "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/parallel-success-episodes/collect.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/parallel-success-episodes/data > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/parallel-success-episodes/collect.log 2>&1",
-  "implementation": "One bounded collector reuses native Trainer, environment, Actor, recurrent_policy, and checkpoint loading. No training objective or coefficient implemented yet. Actual collection carries finite, terminal/active accounting, zero-history policy-recompute and scene-coverage self-checks."
+  "implementation": "One bounded collector reuses native Trainer, environment, Actor, recurrent_policy, and checkpoint loading. No training objective or coefficient implemented yet. Actual collection carries finite, terminal/active accounting, zero-history policy-recompute and scene-coverage self-checks.",
+  "pid": 2916885,
+  "runner_commit": "3c1813b",
+  "results": {
+    "successful_episodes_per_scene": {
+      "S01": 8,
+      "S02": 8,
+      "S03": 8,
+      "D01": 8,
+      "D02": 8,
+      "D03": 8,
+      "S06": 8,
+      "D06": 8
+    },
+    "active_interactions": 68748,
+    "allocated_simulation_slots": 91200,
+    "corpus_padded_steps": 1409,
+    "source_policy_recompute_max_error": 5.097314715385437e-05,
+    "setup_seconds": 128.03098708900507,
+    "collection_seconds": 51.05237777600996,
+    "total_wall_seconds": 190.24527603702154
+  }
 }

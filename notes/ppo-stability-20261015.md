@@ -1792,3 +1792,34 @@ modelresults/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability/model_000031
 retained. Do notpromoteconstant256alone orlaunchadditionalseeds/final3mtests.
 Nextboundedworkisregisteredcomplete-historytrainingdemonstrationcollection, not
 a newoptimizerknobsweep. No trainingregularizerhasyetbeenimplemented.
+
+### Complete-history collection passes and policy-cloning pilot is ready
+
+Sourceoriginal64worldu176, independentfold840101, nominal-start64trainingepisodes
+allSUCCESS(each8scenes8/8). Actualactive68748,allocated91200; maxsuccessfulhistory
+1409steps. Fullzero-memorysourceActor recomputation maxerror5.097315e-5<1e-4.
+Initialposes/all64traces andcorpus NPZpreservedunderparallel-success-episodes/data.
+Collectionsetup128.031s,physicalcollection51.052s,total190.245s includingverification
+andserialization. Noevaluationstates/cohortsread,noPPOupdateperformed.
+
+Addedfull-historycloningtoexistingrehearsaldiagnostic helperandoneexistingwindowflag
+--policy-cloning-corpus. Fixedcoefficient0.1(reusedoldnegativeprobevalue,no sweep),
+onecompleteepisodepertrainingsceneperexecutedActorminibatch. CurrentActorhistory
+startsatzero;maskedmeanwithinepisode,equalmeanacrosseightscenes. ExtraKLgradient
+entersbeforeexistingActorclip/Adam. HistoricalsamplesneverenterPPOratio/GAE/Critic.
+RNGusesfoldwithoutadvancingthenativestream. ProvenanceexplicitlyPPOplusself-policy
+cloning/diagnostic; collectorrejectsformalacceptance. AdditionalfixedtrainingprobeKL
+loggedseparately; nativeActorloss/gradnormomitthisterm.
+
+Targetedrun:21passedandnewCPUtestfailedbecauseitscomparisonassumedallstateleaves
+have.dtype. FixedPython-scalarhandling; theactualCPUtestthenpassed41.90s:zero-weight
+exactstateequivalence,maskedpadding/restoringgradient,nonzeroactualActorchange,
+identicalCritic/env/recurrenthistory/RNG/rollouttargets,16interactionsand4Adamsteps.
+Ruff/diffchecks passed. Nativelearnerunchanged; nofullregression/packagingtests.
+
+Registered8update262144PPOinteractionpilotfromoriginal176usingcachedunchanged
+control150/124atmatched131072/262144. Bothgatesrequireeachscene>=23/25andretain
+>=143/150sourcecases. Extra68748demonstrationinteractionsaredeclaredadditional
+data cost(combined330892),nota matched-total-data claim. Corpuscollectioncost is
+a separateone-timeacquisition; laterreusemustnotbe countedagainasnew sampling.
+Full28updatewindowstillrequiredifshortpilotpasses;actualfinal184keptregardless.

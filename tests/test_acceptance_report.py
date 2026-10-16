@@ -154,6 +154,7 @@ def stable_ppo_evidence(tmp_path, uncertainty_collector):
         "entropy_diagnostic",
         "full_batch_diagnostic",
         "expanded_worlds_diagnostic",
+        "policy_cloning_diagnostic",
         "case_identity",
         "failed_retention",
         "skipped_updates",
@@ -190,6 +191,8 @@ def test_ppo_stability_requires_complete_final_chain(
         report.update(diagnostic=True, full_batch=True, optimizer_steps_per_update=4)
     elif damage == "expanded_worlds_diagnostic":
         report.update(diagnostic=True, worlds_multiplier=4, rollout_worlds=256)
+    elif damage == "policy_cloning_diagnostic":
+        report.update(diagnostic=True, policy_cloning={"weight": 0.1})
     elif damage == "case_identity":
         report["baseline_cases"][0][2] = "changed"
     elif damage == "failed_retention":

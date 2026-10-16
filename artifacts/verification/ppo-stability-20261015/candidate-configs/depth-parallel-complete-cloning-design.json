@@ -1,0 +1,60 @@
+{
+  "status": "implemented_ready",
+  "problem": "Constant256 unchanged continuation failed6/7checks after first149/150. Original64world source176 also failed its unchanged stability control; no prior batch/LR/entropy/MC candidate solved retention.",
+  "hypothesis": "A policy KL on complete successful training histories may preserve useful behavior while PPO continues learning; not a unique root-cause claim.",
+  "algorithm": "PPO plus self-policy cloning, inspired only by CLEAR policy-cloning component; no V-trace or historical samples in PPO ratio/GAE/critic fitting.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "corpus": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/parallel-success-episodes/data",
+  "collection_gate_passed": true,
+  "native_runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "regularizer": {
+    "weight": 0.1,
+    "weight_reason": "Reuse the prior short-window diagnostic coefficient rather than tune a sweep. Changed source/corpus/history coverage means this is not an isolated history-length ablation.",
+    "direction": "KL(frozen teacher Gaussian || current Gaussian), same bijective tanh action transform",
+    "sampling": "One complete successful trajectory uniformly sampled per training scene for each executed actor minibatch, eight trajectories total; folded native RNG, no RNG stream advance",
+    "recurrent_history": "Current Actor recomputes from zero at each episode start through its entire active history; no stored teacher hidden-state initialization",
+    "aggregation": "Mean KL per active step within each episode, then equal mean across eight scenes",
+    "integration": "Add weighted KL gradient before the existing Actor gradient clipping and Adam; native Critic unchanged",
+    "native_logs": "Native actor loss/grad norm omit the auxiliary term; report separate fixed-training-corpus probe KL"
+  },
+  "budget": {
+    "ppo_updates": 8,
+    "ppo_interactions": 262144,
+    "teacher_data_interactions": 68748,
+    "total_new_interactions_including_collection": 330892,
+    "checks_at_additional_ppo_interactions": [
+      131072,
+      262144
+    ]
+  },
+  "comparison": {
+    "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json",
+    "control_successes": [
+      150,
+      124
+    ],
+    "source_successes": 150,
+    "gate": "Both checks require each primaryscene>=23/25 and retain>=143/150 original successes; reject after whole pilot if anyfails",
+    "budget_limit": "Native PPO rollout budget and optimizer cadence match control; additional68748 demonstration interactions are explicitly extra data cost, not a matched total-data claim"
+  },
+  "correctness": [
+    "Zero-weight equivalence using actual CPU PPO update",
+    "Complete recurrent history from zero; terminal padding excluded from objective",
+    "Known restoring KL gradient; finite positive teacher loss after distribution shift",
+    "Same actual rollout interactions, RNG progression, Critic updates and Adam counts as native control",
+    "First live collected rollout/target metrics compare to existing source176 control cache; no control replay",
+    "Diagnostic provenance and acceptance rejection"
+  ],
+  "stop_rule": "Complete all8updates includingactualfinal184 evenifearlycheckfails; no peak promotion or independentfinaltest. A full28updatewindow remains required ifpilotpasses.",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_complete_cloning_pilot",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-complete-cloning-pilot.log",
+  "reference": "https://papers.neurips.cc/paper_files/paper/2019/file/fa7cdfad1a5aaf8370ebeda47a1ff1c3-Paper.pdf",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_complete_cloning_pilot --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json --policy-cloning-corpus /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/parallel-success-episodes/data --diagnostic-updates 8 > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-complete-cloning-pilot.log 2>&1",
+  "correctness_results": {
+    "first_targeted_run": "21 passed; one new test failed on Python scalar dtype handling in its comparison helper",
+    "corrected_actual_cpu_test": "1 passed in41.90s after comparison helper fix; zero weight exact, nonzeroActorchange, same Critic/env/history/RNG and4Adamsteps verified",
+    "ruff": "passed",
+    "full_regression": "not run; changes are diagnostic tools and scoped tests",
+    "native_learner_changed": false
+  }
+}

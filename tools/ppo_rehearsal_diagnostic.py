@@ -43,6 +43,125 @@ def gaussian_kl(teacher_mean, teacher_log_std, mean, log_std):
     )
 
 
+def install_complete_rehearsal(trainer, state, source, directory, weight=0.1):
+    """Install full-history cloning before this Trainer's first compiled PPO update."""
+    directory = Path(directory)
+    metadata = json.loads((directory / "corpus.json").read_text())
+    if not hasattr(trainer.env.scene, "scenes"):
+        raise ValueError("Complete-history cloning requires parallel training scenes")
+    scenes = [scene.name for scene in trainer.env.scene.scenes]
+    if (
+        trainer.algorithm != "ppo"
+        or trainer.kind != "depth"
+        or trainer.config["shared_visual_encoder"]
+        or not np.isfinite(weight)
+        or weight < 0
+        or metadata["collection_gate_passed"] is not True
+        or not 0 <= metadata["source_policy_recompute_max_error"] < 1e-4
+        or Path(metadata["source_checkpoint"]).resolve() != Path(source).resolve()
+        or metadata["source_provenance_reused"]["updates"] != int(state.updates)
+        or metadata["source_provenance_reused"]["interactions"] != int(state.interactions)
+        or metadata["actor"] != trainer.actor.specification
+        or metadata["scenes"] != scenes
+        or metadata["worlds_per_scene"] != trainer.env.scene.worlds_per_scene
+    ):
+        raise ValueError("Complete-history corpus must match the source PPO state and scenes")
+    with np.load(directory / "corpus.npz", allow_pickle=False) as archive:
+        data = {key: archive[key] for key in archive.files}
+    active, done = data["active"], data["done"]
+    worlds, scene_indices, lengths = (
+        data["source_world"],
+        data["source_scene_index"],
+        data["lengths"],
+    )
+    if active.ndim != 2 or not active.size or active.dtype != bool or done.dtype != bool:
+        raise ValueError("Complete histories require nonempty boolean active/done masks")
+    steps, count = active.shape
+    episodes = {row["world"]: row for row in metadata["episodes"]}
+    if (
+        not all(np.isfinite(value).all() for value in data.values())
+        or not np.issubdtype(worlds.dtype, np.integer)
+        or not np.issubdtype(scene_indices.dtype, np.integer)
+        or not np.issubdtype(lengths.dtype, np.integer)
+        or worlds.shape != (count,)
+        or lengths.shape != (count,)
+        or len(set(worlds)) != count
+        or not np.array_equal(worlds, np.sort(worlds))
+        or not ((worlds >= 0) & (worlds < trainer.env.num_envs)).all()
+        or not ((lengths > 0) & (lengths <= steps)).all()
+        or not np.array_equal(scene_indices, worlds // trainer.env.scene.worlds_per_scene)
+        or not np.array_equal(active, np.arange(steps)[:, None] < lengths)
+        or not np.array_equal(done, np.arange(steps)[:, None] >= lengths - 1)
+        or not np.array_equal(data["teacher_log_std"], np.asarray(state.log_std))
+        or data["teacher_mean"].shape != (steps, count, trainer.env.action_size)
+        or any(
+            value.shape[:2] != (steps, count)
+            for key, value in data.items()
+            if key.startswith("obs__")
+        )
+        or any(
+            episodes.get(int(world), {}).get("event") != "SUCCESS"
+            or episodes[int(world)]["steps"] != int(length)
+            or episodes[int(world)]["scene"] != scenes[int(scene_index)]
+            for world, length, scene_index in zip(worlds, lengths, scene_indices, strict=True)
+        )
+    ):
+        raise ValueError("Invalid complete successful-episode corpus")
+    counts = np.bincount(scene_indices, minlength=len(scenes))
+    if not (counts > 0).all() or any(
+        counts[index] < 4
+        for index, scene in enumerate(scenes)
+        if scene in ("S01", "S02", "S03", "D01", "D02", "D03")
+    ):
+        raise ValueError("Insufficient successful-episode coverage")
+    offsets = jnp.asarray(np.r_[0, np.cumsum(counts)[:-1]])
+    counts = jnp.asarray(counts)
+    observation = {
+        key[5:]: jnp.asarray(value) for key, value in data.items() if key.startswith("obs__")
+    }
+    active, done, teacher = map(jnp.asarray, (active, done, data["teacher_mean"]))
+    teacher_log_std = jnp.asarray(data["teacher_log_std"])
+
+    def loss(variables, rng):
+        indices = offsets + jax.random.randint(
+            jax.random.fold_in(rng, 840102), (len(scenes),), 0, counts
+        )
+        _, (mean, _) = ppo.recurrent_policy(
+            trainer,
+            variables["params"],
+            jax.tree.map(lambda value: value[:, indices], observation),
+            trainer.actor.initialize_memory(len(scenes)),
+            done[:, indices],
+        )
+        values = gaussian_kl(teacher[:, indices], teacher_log_std, mean, variables["log_std"])
+        mask = active[:, indices]
+        return jnp.mean(jnp.sum(jnp.where(mask, values, 0.0), axis=0) / mask.sum(axis=0))
+
+    original_apply = trainer._apply_actor
+
+    def apply_actor(current, gradients):
+        variables = {"params": current.params, "log_std": current.log_std}
+        restoring = jax.grad(loss)(variables, current.rng)
+        combined = jax.tree.map(lambda a, b: a + weight * b, gradients, restoring)
+        return original_apply(current, combined)
+
+    if weight:
+        trainer._apply_actor = apply_actor
+    return loss, {
+        "weight": weight,
+        "corpus": str(directory.resolve()),
+        "source_checkpoint": str(Path(source).resolve()),
+        "teacher_data_interactions": metadata["active_interactions"],
+        "teacher_collection_wall_seconds": metadata["total_wall_seconds"],
+        "episodes": count,
+        "padded_steps": steps,
+        "sequences_per_minibatch": len(scenes),
+        "aggregation": "Equal scene mean of each complete episode's active-step mean KL",
+        "scope": "PPO plus self-policy cloning; full history starts from zero memory. "
+        "Native actor loss/grad norm exclude the auxiliary term; Critic and PPO samples unchanged.",
+    }
+
+
 def install_rehearsal(trainer, state, directory, weight):
     """Add only the historical-policy KL gradient to executed actor updates."""
     from ppo_branch_diagnostic import tree_hash
