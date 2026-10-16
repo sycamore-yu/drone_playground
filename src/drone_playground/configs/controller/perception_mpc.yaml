@@ -1,0 +1,12 @@
+_target_: drone_playground.simulation.perception_mpc.PerceptionAwareSamplingMPC
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+samples: 256
+horizon: 12
+prediction_seconds: 0.48
+device: ${simulation.device}
+yaw: 0.0
+visibility_weight: 90.0
+image_velocity_weight: 7.0
+horizontal_fov_deg: 87.0
+vertical_fov_deg: 58.0

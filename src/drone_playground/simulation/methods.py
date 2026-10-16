@@ -357,6 +357,8 @@ class PlannerController:
 
     def initialize(self, env, seed, actor=None):
         """Reset the controller and planner for an independent episode."""
+        if hasattr(self.controller, "set_course"):
+            self.controller.set_course(env.task)
         if self.planner is not None:
             self.planner.reset(seed)
         memory = self.controller.initialize_memory(env.num_envs, seed)

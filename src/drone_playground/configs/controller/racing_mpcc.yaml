@@ -1,0 +1,15 @@
+_target_: drone_playground.simulation.racing_mpcc.RacingMPCC
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+horizon: 12
+prediction_seconds: 0.36
+nominal_progress_speed: 1.0
+maximum_progress_speed: 1.8
+contour_weight: 150.0
+lag_weight: 8.0
+progress_weight: 0.8
+control_weight: 2.0
+tilt_limit: 0.35
+workdir: ${output}/acados-mpcc
+acados_source: ${oc.env:ACADOS_SOURCE_DIR,null}
+python_path: ${oc.env:ACADOS_PYTHON_PATH,.cache/acados-python}
