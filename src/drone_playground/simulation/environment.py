@@ -288,7 +288,13 @@ class BaseEnv:
             states = states.replace(rotor_vel=rpm)
         initial = initial.replace(states=states)
         observation = (
-            None if self.sensor is None else self.sensor.reset(initial, scene_state=scene_state)
+            None
+            if self.sensor is None
+            else self.sensor.reset(
+                initial,
+                scene_state=scene_state,
+                mask=(None if state is None else (state.done if mask is None else mask)),
+            )
         )
         inputs = self.action.decode(jnp.zeros((batch, self.action_size)))
         initial_target = (

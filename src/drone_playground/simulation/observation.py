@@ -15,6 +15,7 @@ from drone_playground.simulation.paper_fan_lidar import (
     push_history,
     push_point_window,
 )
+from drone_playground.simulation.procedural_scene import ProceduralScene
 from drone_playground.simulation.sensors import Measurement, SensorConfig, measure
 
 
@@ -132,15 +133,65 @@ class SensorObservation:
         quat = quat / jnp.maximum(jnp.linalg.norm(quat, axis=-1, keepdims=True), 1e-8)
         return position, quat
 
-    def reset(self, physics, *, scene_state=None) -> ObservationState:
+    def _reset_depth_measurement(self, position, quaternion, mask, scene_state):
+        """Capture only restarted procedural worlds, using fixed-shape GPU batches."""
+        batch = position.shape[0]
+        time = jnp.zeros(batch)
+
+        def capture_all():
+            return measure(
+                self.scene, self.config, position, quaternion, time, scene_state=scene_state
+            )
+
+        if mask is None or not isinstance(self.scene, ProceduralScene):
+            return capture_all()
+
+        def capture_masked():
+            chunk = min(batch, 32)
+            indices = jnp.nonzero(mask, size=batch, fill_value=0)[0]
+            indices = jnp.pad(indices, (0, (-batch) % chunk))
+            active_count = jnp.count_nonzero(mask)
+            height, width = self.config.height, self.config.width
+            shape = (batch + 1, height, width)
+            output = Measurement(
+                jnp.zeros(shape),
+                jnp.zeros(shape, dtype=bool),
+                jnp.zeros((*shape, 3)),
+                jnp.zeros(batch + 1),
+                jnp.zeros(batch + 1),
+            )
+
+            def capture_chunk(index, accumulated):
+                start = index * chunk
+                selected = jax.lax.dynamic_slice_in_dim(indices, start, chunk)
+                selected_state = jax.tree.map(
+                    lambda array: jnp.take(array, selected, axis=0), scene_state
+                )
+                captured = measure(
+                    self.scene,
+                    self.config,
+                    jnp.take(position, selected, axis=0),
+                    jnp.take(quaternion, selected, axis=0),
+                    jnp.zeros(chunk),
+                    scene_state=selected_state,
+                )
+                # Extra row absorbs the padded indices without overwriting a live world.
+                target = jnp.where(start + jnp.arange(chunk) < active_count, selected, batch)
+                return jax.tree.map(lambda old, new: old.at[target].set(new), accumulated, captured)
+
+            chunks = (active_count + chunk - 1) // chunk
+            output = jax.lax.fori_loop(0, chunks, capture_chunk, output)
+            return jax.tree.map(lambda array: array[:batch], output)
+
+        return jax.lax.cond(jnp.all(mask), capture_all, capture_masked)
+
+    def reset(self, physics, *, scene_state=None, mask=None) -> ObservationState:
         """Depth samples at reset; LiDAR publishes its first snapshot after one period."""
         p, q = physics.states.pos[:, 0], physics.states.quat[:, 0]
         batch = len(p)
         pose = jnp.concatenate([jnp.zeros((batch, 1)), p, q], -1)
         if self.config.profile == "d435i":
-            measurement = measure(
-                self.scene, self.config, p, q, jnp.zeros(batch), scene_state=scene_state
-            )
+            measurement = self._reset_depth_measurement(p, q, mask, scene_state)
         else:
             shape = (batch, self.captured_points)
             measurement = Measurement(
