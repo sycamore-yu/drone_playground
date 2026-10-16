@@ -1,5 +1,5 @@
 {
-  "status": "completed_first_full_pass_stability_pending",
+  "status": "completed_acquisition_pass_stability_failed",
   "problem": "Switching a successful64worldpolicy to256worldsampling gave a148/149shortpilot but failedfullrepeat149/125/144/150/150/150/150. The finalfourpassescannotreplace thefailedwindow.",
   "hypothesis": "Using256worldsfromrandominitialization mayavoid the midtrainingbatch-size/optimizer-history transition while retaining the later samplingbenefit. Thisisuntested, andfeweroptimizersteps atequalinteractions mayhurtinitialacquisition.",
   "intervention": "Onlynum_envs64->256; evaluation/checkpointinterval16->4 preserves524288interactioncadence. ExistingnativePPOimplementation/objective unchanged.",
@@ -78,5 +78,6 @@
       "Automatic benchmark is development only; S06 auxiliary 0/25",
       "Independent 3000000 final cohort remains unused"
     ]
-  }
+  },
+  "stability_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/worlds256-scratch-stability/comparison.json"
 }

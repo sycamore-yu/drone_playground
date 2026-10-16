@@ -1778,3 +1778,17 @@ Failure of anycoverage/recompute gate prevents learning. CLEARsection3 motivates
 separate historical-to-current policyKL; this fixed-success full-history corpus would
 be PPOpluspolicycloning, not the fullV-trace/CLEARalgorithm. The old0.1short-window
 21->4/48failure remains evidence and is not relabeled as a successful repair.
+
+### Constant256 unchanged stability completed: six of seven checks fail
+
+The entire917504interaction window completedwithout earlystop/rollback, sourceu24
+toactualfinalu31. Scores140/119/117/133/148/140/124; onlyu29passes. Finalper-scene
+25/25/0/25/25/24; original149successesretain123(82.5503%),gainone andlose26.
+All26finalfailuresarecollisions. AllsevenActorgradientnormspositive,noKLskips.
+Nativeprocess2894883/session19075exited0. Trainingupdates235.691s,setup117.837s,
+totalwall1021.621sINCLUDINGsetup. Allsevencomplete150caseCSV/report pairs plus
+metrics/nativewindowreport cachedonceunderworlds256-scratch-stability. Actualfinal
+modelresults/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability/model_000031
+retained. Do notpromoteconstant256alone orlaunchadditionalseeds/final3mtests.
+Nextboundedworkisregisteredcomplete-historytrainingdemonstrationcollection, not
+a newoptimizerknobsweep. No trainingregularizerhasyetbeenimplemented.

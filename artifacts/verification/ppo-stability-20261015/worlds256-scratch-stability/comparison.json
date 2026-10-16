@@ -1,0 +1,242 @@
+{
+  "status": "completed_stability_failed",
+  "source_successes": 149,
+  "minimum_retained_source_successes": 142,
+  "checks": [
+    {
+      "update": 25,
+      "additional_interactions": 131072,
+      "successes": 140,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 15
+      },
+      "retained_initial_successes": 140,
+      "retention_fraction": 0.9395973154362416,
+      "passed": false,
+      "events": {
+        "SUCCESS": 140,
+        "COLLISION": 10
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {},
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 10
+        }
+      },
+      "new_successes": 0
+    },
+    {
+      "update": 26,
+      "additional_interactions": 262144,
+      "successes": 119,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 0,
+        "D01": 25,
+        "D02": 25,
+        "D03": 19
+      },
+      "retained_initial_successes": 119,
+      "retention_fraction": 0.7986577181208053,
+      "passed": false,
+      "events": {
+        "SUCCESS": 119,
+        "COLLISION": 31
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {
+          "COLLISION": 25
+        },
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 6
+        }
+      },
+      "new_successes": 0
+    },
+    {
+      "update": 27,
+      "additional_interactions": 393216,
+      "successes": 117,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 2,
+        "D01": 25,
+        "D02": 25,
+        "D03": 15
+      },
+      "retained_initial_successes": 117,
+      "retention_fraction": 0.785234899328859,
+      "passed": false,
+      "events": {
+        "SUCCESS": 117,
+        "COLLISION": 32,
+        "TIMEOUT": 1
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {
+          "COLLISION": 22,
+          "TIMEOUT": 1
+        },
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 10
+        }
+      },
+      "new_successes": 0
+    },
+    {
+      "update": 28,
+      "additional_interactions": 524288,
+      "successes": 133,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 8
+      },
+      "retained_initial_successes": 133,
+      "retention_fraction": 0.8926174496644296,
+      "passed": false,
+      "events": {
+        "SUCCESS": 133,
+        "COLLISION": 17
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {},
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 17
+        }
+      },
+      "new_successes": 0
+    },
+    {
+      "update": 29,
+      "additional_interactions": 655360,
+      "successes": 148,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 23
+      },
+      "retained_initial_successes": 147,
+      "retention_fraction": 0.9865771812080537,
+      "passed": true,
+      "events": {
+        "SUCCESS": 148,
+        "COLLISION": 2
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {},
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 2
+        }
+      },
+      "new_successes": 1
+    },
+    {
+      "update": 30,
+      "additional_interactions": 786432,
+      "successes": 140,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 15,
+        "D03": 25
+      },
+      "retained_initial_successes": 139,
+      "retention_fraction": 0.9328859060402684,
+      "passed": false,
+      "events": {
+        "SUCCESS": 140,
+        "COLLISION": 10
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {},
+        "D01": {},
+        "D02": {
+          "COLLISION": 10
+        },
+        "D03": {}
+      },
+      "new_successes": 1
+    },
+    {
+      "update": 31,
+      "additional_interactions": 917504,
+      "successes": 124,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 0,
+        "D01": 25,
+        "D02": 25,
+        "D03": 24
+      },
+      "retained_initial_successes": 123,
+      "retention_fraction": 0.825503355704698,
+      "passed": false,
+      "events": {
+        "SUCCESS": 124,
+        "COLLISION": 26
+      },
+      "failure_events_per_scene": {
+        "S01": {},
+        "S02": {},
+        "S03": {
+          "COLLISION": 25
+        },
+        "D01": {},
+        "D02": {},
+        "D03": {
+          "COLLISION": 1
+        }
+      },
+      "new_successes": 1
+    }
+  ],
+  "failed_checks": 6,
+  "actual_additional_interactions": 917504,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability/model_000031",
+  "final_retention_fraction": 0.825503355704698,
+  "training_update_seconds": 235.6908918940171,
+  "setup_seconds": 117.83696180398692,
+  "total_wall_seconds_including_setup": 1021.6207109100069,
+  "kl_skips": 0.0,
+  "decision": "Reject constant256 alone as a stability repair. Do not launch two more seeds or independent final tests for this failed recipe. Preserve acquisition gain and all failures. Complete-history training-only corpus validation follows.",
+  "limits": "One development seed; no unique root-cause claim. Original source and every actual continuation checkpoint retained. No peak selection, rollback, or gate reanchoring."
+}

@@ -135,8 +135,9 @@ def collect(source, output):
             for scene in scenes
         }
         gate = max_error < 1e-4 and all(counts[scene] >= 4 for scene in PRIMARY)
+        retained_steps = int(lengths[success_worlds].max(initial=0))
         data = {
-            key: value[:, success_worlds]
+            key: value[:retained_steps, success_worlds]
             for key, value in traces.items()
             if key.startswith("obs__") or key in ("teacher_mean", "active", "done")
         }
@@ -173,6 +174,7 @@ def collect(source, output):
             "successful_episodes_per_scene": counts,
             "active_interactions": int(lengths.sum()),
             "allocated_simulation_slots": len(traces["active"]) * 64,
+            "corpus_padded_steps": retained_steps,
             "source_policy_recompute_max_error": max_error,
             "setup_seconds": setup_seconds,
             "collection_seconds": collection_seconds,
