@@ -23,7 +23,7 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 <p>Train policies through Autoresearch, inspect an individual flight with Play, or compare frozen methods on a paired Benchmark suite. Play and Benchmark share one execution interface, but serve different purposes.</p>
 <form id="builder" aria-label="Experiment configuration">
 <div><label for="mode">Mode</label><select id="mode"><option value="train">Train</option><option value="play">Play</option><option value="benchmark">Benchmark</option></select></div>
-<div id="methodField"><label for="method">Method</label><select id="method"><option value="policy">Policy</option><option value="mpc">MPC</option><option value="planner">Planner + MPC</option></select></div>
+<div id="methodField"><label for="method">Method</label><select id="method"><option value="policy">Policy</option><option value="controller">Controller</option><option value="planner">Planner + Controller</option></select></div>
 <div><label for="task">Task</label><select id="task"></select></div>
 <div><label for="sensor">Sensor</label><select id="sensor"></select></div>
 <div id="algorithmField"><label for="algorithm">Algorithm</label><select id="algorithm"><option value="bptt">BPTT</option><option value="shac">SHAC</option><option value="ppo">PPO</option></select></div>
@@ -37,7 +37,7 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 <div class="wide"><p id="description" role="status"></p></div>
 </form>
 <h2>Command</h2><pre><code id="command"></code></pre><button id="copy" type="button">Copy command</button><p id="status" role="status"></p>
-<footer>This page generates commands. Native planners require their ROS workers; Attitude MPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and not yet real-time at 50 Hz on CPU. See <a href="installation.md">installation</a> and <a href="benchmark.md">Benchmark measurement</a>.</footer>
+<footer>This page generates compatible commands. Native planners require their ROS workers; Attitude MPC, Full-State NMPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and is not yet real-time at 50 Hz on CPU. See <a href="installation.md">installation</a> and <a href="benchmark.md">Benchmark measurement</a>.</footer>
 </main>
 <script>
 'use strict';
@@ -53,6 +53,20 @@ function suiteNames(task){return task==='static_oa'?['core','forest','maze','den
 function sceneNames(task){return [...suites[task],...suiteNames(task).filter(key=>key!=='core').flatMap(key=>extendedSuites[key])];}
 function selectedSuite(s){return s.suite&&s.suite!=='core'?extendedSuites[s.suite]:suites[s.task];}
 const algorithms = ['bptt','shac','ppo'];
+// The reference contract and task define applicability, not the word "MPC".
+const controllerCapabilities = {
+  sampling_mpc:{label:'Sampling MPC',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  attitude_mpc:{label:'Attitude MPC (acados)',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  full_state_nmpc:{label:'Full-State NMPC (acados)',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  racing_mpcc:{label:'Racing MPCC (acados)',reference:'gate_course',tasks:['racing']},
+  perception_mpc:{label:'Perception-Aware MPC (experimental)',reference:'trajectory_landmarks',tasks:['racing']},
+};
+function eligibleControllers(task,planner){
+  return Object.keys(controllerCapabilities).filter(key=>{
+    const entry=controllerCapabilities[key];
+    return entry.tasks.includes(task)&&(!planner||entry.reference==='trajectory');
+  });
+}
 function experiment(s){return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;}
 function shellQuote(value){return "'"+value.replaceAll("'", "'\\''")+"'";}
 function command(s){
@@ -67,7 +81,7 @@ function command(s){
       const checkpoint=s.checkpoint==='path'?s.path:s.checkpoint;
       parts.push(checkpoint==='latest'||checkpoint==='best'?`checkpoint=${checkpoint}`:shellQuote(`checkpoint=${JSON.stringify(checkpoint)}`));
     }
-  }else if(s.method==='mpc'){
+  }else if(s.method==='controller'){
     parts.push(`task=${s.task}`,`scene=${s.task==='racing'?'racing':'empty'}`,'sensor=state','method=controller',`controller=${s.controller}`);
   }else{
     parts.push('task=navigation',`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
@@ -89,21 +103,19 @@ function combinations(){
       }
     }
     if(mode==='train')continue;
-    for(const controller of ['racing_mpcc','perception_mpc']){
-      const s={mode,task:'racing',sensor:'state',method:'mpc',controller};
+    for(const task of ['tracking','racing'])for(const controller of eligibleControllers(task,false)){
+      const s={mode,task,sensor:'state',method:'controller',controller};
       result.push({...s,command:command(s)});
     }
-    for(const controller of ['sampling_mpc','attitude_mpc']){
-      let s={mode,task:'tracking',sensor:'state',method:'mpc',controller};result.push({...s,command:command(s)});
-      for(const task of Object.keys(suites))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
-        s={mode,task,planner,scene,suite,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};result.push({...s,command:command(s)});
-      }
+    for(const task of Object.keys(suites))for(const controller of eligibleControllers(task,true))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
+      const s={mode,task,planner,scene,suite,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};
+      result.push({...s,command:command(s)});
     }
   }
   return result;
 }
 // The same finite command set drives the UI and release execution checks.
-globalThis.CommandBuilder={command,combinations};
+globalThis.CommandBuilder={command,combinations,controllerCapabilities,eligibleControllers};
 if(typeof document!=='undefined'){
   const $=id=>document.getElementById(id);
   const state={mode:'train',method:'policy',task:'tracking',sensor:'state',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',suite:'core',checkpoint:'latest',path:''};
@@ -119,7 +131,7 @@ if(typeof document!=='undefined'){
     $('sensor').disabled=planner||!suites[state.task];
     show('methodField',!train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
     show('plannerField',planner);show('controllerField',!policy);show('sceneField',!train&&state.mode==='play'&&Boolean(suites[state.task]));
-    if(!policy)options('controller',(state.method==='mpc'&&state.task==='racing'?['racing_mpcc','perception_mpc']:['sampling_mpc','attitude_mpc']).map(key=>[key,key==='racing_mpcc'?'Racing MPCC (acados)':key==='perception_mpc'?'Perception-Aware Sampling MPC (experimental)':key]));
+    if(!policy)options('controller',eligibleControllers(state.task,planner).map(key=>[key,controllerCapabilities[key].label]));
     show('suiteField',!train&&state.mode==='benchmark'&&Boolean(suites[state.task]));
     show('checkpointField',!train&&policy);show('pathField',!train&&policy&&state.checkpoint==='path');
     if(suites[state.task]){

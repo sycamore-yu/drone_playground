@@ -26,10 +26,19 @@ def test_every_builder_command_composes_with_independent_oa_training():
     )
     cases = json.loads(result.stdout)
     assert len(cases) == len({case["command"] for case in cases})
-    assert len(cases) == 490
+    assert len(cases) == 550
     assert {
         mode: sum(case["mode"] == mode for case in cases) for mode in ("train", "play", "benchmark")
-    } == {"train": 42, "play": 336, "benchmark": 112}
+    } == {"train": 42, "play": 380, "benchmark": 128}
+    for case in cases:
+        if case.get("controller") in {"racing_mpcc", "perception_mpc"}:
+            assert case["task"] == "racing" and case["method"] == "controller"
+        if case["method"] == "planner":
+            assert case["controller"] in {"sampling_mpc", "attitude_mpc", "full_state_nmpc"}
+            assert case["task"] in {"static_oa", "dynamic_oa"}
+        if case.get("controller") == "full_state_nmpc":
+            assert case["method"] in {"controller", "planner"}
+    assert sum(case.get("controller") == "full_state_nmpc" for case in cases) == 56
     training = set()
     with initialize_config_dir(
         version_base=None, config_dir=str(root / "src/drone_playground/configs")
