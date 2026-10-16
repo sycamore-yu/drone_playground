@@ -1,5 +1,5 @@
 {
-  "status": "implemented_ready",
+  "status": "completed_pilot_failed",
   "problem": "Constant256 unchanged continuation failed6/7checks after first149/150. Original64world source176 also failed its unchanged stability control; no prior batch/LR/entropy/MC candidate solved retention.",
   "hypothesis": "A policy KL on complete successful training histories may preserve useful behavior while PPO continues learning; not a unique root-cause claim.",
   "algorithm": "PPO plus self-policy cloning, inspired only by CLEAR policy-cloning component; no V-trace or historical samples in PPO ratio/GAE/critic fitting.",
@@ -56,5 +56,85 @@
     "ruff": "passed",
     "full_regression": "not run; changes are diagnostic tools and scoped tests",
     "native_learner_changed": false
+  },
+  "pid": 2939476,
+  "runner_commit": "364b786",
+  "results": {
+    "status": "completed_pilot_failed",
+    "checks": [
+      {
+        "update": 180,
+        "additional_interactions": 131072,
+        "successes": 145,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 24,
+          "D01": 25,
+          "D02": 21,
+          "D03": 25
+        },
+        "retained_initial_successes": 145,
+        "retention_fraction": 0.9666666666666667,
+        "passed": false,
+        "events": {
+          "SUCCESS": 145,
+          "COLLISION": 5
+        },
+        "control_successes": 150,
+        "recovered_control_failures": 0,
+        "new_failures_vs_control": 5,
+        "shared_failures": 0
+      },
+      {
+        "update": 184,
+        "additional_interactions": 262144,
+        "successes": 117,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 1,
+          "D03": 16
+        },
+        "retained_initial_successes": 117,
+        "retention_fraction": 0.78,
+        "passed": false,
+        "events": {
+          "SUCCESS": 117,
+          "COLLISION": 33
+        },
+        "control_successes": 124,
+        "recovered_control_failures": 22,
+        "new_failures_vs_control": 29,
+        "shared_failures": 4
+      }
+    ],
+    "ppo_interactions": 262144,
+    "one_time_corpus_interactions": 68748,
+    "ppo_plus_corpus_interactions": 330892,
+    "training_update_seconds_including_kl_probe": 221.62799421697855,
+    "setup_seconds": 124.61650826901314,
+    "total_wall_seconds_including_setup": 506.02625991401146,
+    "one_time_corpus_wall_seconds": 190.24527603702154,
+    "actor_parameter_delta_range": [
+      0.47698959708213806,
+      0.5575070381164551
+    ],
+    "cloning_probe_kl_by_update": [
+      0.0024816414806991816,
+      0.005446968600153923,
+      0.007097724825143814,
+      0.008508933708071709,
+      0.008164002560079098,
+      0.009216848760843277,
+      0.010573241859674454,
+      0.010122203268110752
+    ],
+    "kl_skips": 0.0,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_complete_cloning_pilot/model_000184",
+    "decision": "Reject this fixed0.1 full-history policy-cloning candidate; no full-window promotion, additional seeds, or final tests. Measure per-scene/per-time training-corpus policy drift before choosing another intervention.",
+    "limits": "One development source. This does not identify a unique cause or prove every policy-cloning method ineffective. Extra demonstration data cost differs from control."
   }
 }

@@ -1823,3 +1823,16 @@ control150/124atmatched131072/262144. Bothgatesrequireeachscene>=23/25andretain
 data cost(combined330892),nota matched-total-data claim. Corpuscollectioncost is
 a separateone-timeacquisition; laterreusemustnotbe countedagainasnew sampling.
 Full28updatewindowstillrequiredifshortpilotpasses;actualfinal184keptregardless.
+
+### Complete-history0.1cloning pilot completed and failed
+
+Source176first15rawrollout/targetmetricsEXACTcachedcontrolmatch; actualfirstActor
+delta0.486693 andinitialtraining-corpusprobeKL1.25007e-9. Complete8updates262144
+PPOinteractions; sharedcorpusone-time68748(extra) givescombined330892. Fullchecks
+u180=145[25,25,24,25,21,25],u184=117[25,25,25,25,1,16]; bothfail. Originalmatched
+control150/124. All8Actordeltaspositive,noKLskips. Allnewreports/150caseCSV/metrics
+cachedundercomplete-cloning; comparisonrecords per-case recovery and new losses.
+Nativeprocess2939476/session39574exited0; actualfinal184retained. Do notpromote
+thisfailed0.1candidate,extenditswindow,orlaunchnewseeds/finaltests. Nextstepbefore
+anothercoefficientchoiceisfrozenper-scene/per-timeKLmeasurementonexistingtraining
+corpus, not newevaluations ordatacollection. No nextmeasurementregistered/launchedyet.
