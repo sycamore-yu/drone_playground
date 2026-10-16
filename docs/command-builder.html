@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drone Playground · Command Builder Demo</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans CJK SC",sans-serif;color:#18243a;background:#f5f7fb;font-size:14px;line-height:1.5}
+    *{box-sizing:border-box}
+    body{margin:0;padding:34px 20px 54px}
+    button,select,input{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1080px;margin:auto}
+    .eyebrow{color:#5c76a8;font-size:11px;font-weight:750;letter-spacing:.16em;text-transform:uppercase;margin-bottom:7px}
+    h1{font-size:27px;line-height:1.25;letter-spacing:-.035em;margin:0}
+    .sub{color:#66758b;margin:9px 0 24px;max-width:740px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+    .sample{font-size:11px;font-weight:650;background:#e9efff;color:#315ac7;padding:5px 10px;border-radius:20px;white-space:nowrap}
+    .card{border-radius:15px;background:#fff;border:1px solid #e0e6f0;box-shadow:0 8px 28px rgba(35,51,90,.04)}
+    .layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(265px,1fr);gap:16px;align-items:start}
+    .form{padding:24px}
+    .preview{padding:23px;position:sticky;top:18px}
+    .section-heading{margin:0 0 16px;font-weight:760;letter-spacing:-.02em;font-size:16px}
+    .seg{display:inline-flex;padding:4px;background:#f1f4fa;border:1px solid #e5e9f1;border-radius:10px;gap:4px}
+    .seg button{border:0;padding:9px 25px;border-radius:7px;background:transparent;color:#606d83;font-weight:750}
+    .seg button[aria-pressed="true"]{background:#fff;color:#275bcc;box-shadow:0 1px 5px #aab7d155}
+    .mode-line{border-bottom:1px solid #e5e9f2;padding-bottom:22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+    .label{display:block;font-size:12px;font-weight:720;color:#43536d;margin:0 0 7px}
+    .note{font-size:12px;color:#71819b;line-height:1.6;margin:7px 0 0}
+    .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px}
+    select,input[type=text],input[type=number]{width:100%;border:1px solid #d7dfeb;background:#fff;border-radius:8px;padding:10px 12px;color:#1e2b46;min-height:42px}
+    select:focus-visible, input:focus-visible,button:focus-visible{outline:3px solid #94b6ff;outline-offset:2px}
+    select:disabled{background:#f0f3f8;color:#8b97a9;cursor:not-allowed}
+    .wide{grid-column:1/-1}
+    .mode-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .choice{border:1px solid #dfe6f0;border-radius:10px;text-align:left;background:#fff;padding:11px 12px;min-height:82px;color:#30415f}
+    .choice[aria-pressed="true"]{border-color:#4876e7;background:#eff4ff;box-shadow:inset 0 0 0 1px #4876e7}
+    .choice strong{display:block;font-size:13px;margin-bottom:5px}
+    .choice small{display:block;color:#75849a;line-height:1.4;font-size:11px}
+    .choice[aria-pressed="true"] small{color:#4263a2}
+    .environment{border:1px solid #dfe6f1;background:#f8faff;border-radius:11px;padding:15px;margin-top:2px}
+    .env-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+    .env-title{font-size:12px;font-weight:780;color:#2c456d}
+    .env-code{color:#4b68aa;background:#ecf1ff;border-radius:5px;font-size:11px;padding:3px 7px;font-family:ui-monospace,Menlo,Consolas,monospace}
+    .env-details{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+    .env-details span{background:#fff;border:1px solid #dfe6f1;border-radius:6px;padding:3px 7px;color:#596b86;font-size:11px}
+    .preview h2{font-size:16px;margin:0 0 20px}
+    .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:18px}
+    .node{font-size:11px;border:1px solid #dbe3f1;border-radius:6px;padding:5px 8px;background:#f7f9fe;color:#41546e;font-weight:650}
+    .arrow{color:#8d9bad}
+    .facts{margin:0}
+    .facts>div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;border-bottom:1px solid #eff1f5;padding:11px 0}
+    .facts dt{color:#79869b;font-size:12px}
+    .facts dd{margin:0;text-align:right;color:#2a3b55;font-size:12px;font-weight:660;max-width:60%;overflow-wrap:anywhere}
+    .tip{background:#f3f7ff;border-left:3px solid #85a7f0;color:#526688;border-radius:0 8px 8px 0;padding:11px 12px;margin:18px 0 0;font-size:12px;line-height:1.65}
+    .builder{margin-top:16px;padding:20px 23px}
+    .cmd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .cmd-label{font-weight:780;letter-spacing:-.01em}
+    .small-muted{font-size:11px;color:#7e8a9d}
+    .command{display:flex;gap:12px;align-items:flex-start;border-radius:9px;background:#111d31;color:#cde0ff;padding:15px 16px}
+    pre{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:12px;line-height:1.7;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;flex:1;min-width:0}
+    .copy{flex:none;border:1px solid #647c9e;color:#e8f0ff;background:#243956;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:680}
+    .disclaimer{margin:12px 0 0;color:#707d91;font-size:12px}
+    .hidden{display:none!important}
+    @media(max-width:810px){body{padding:20px 12px}.layout{grid-template-columns:minmax(0,1fr)}.preview{position:static}.top{align-items:center}.form,.preview{padding:18px}}
+    @media(max-width:520px){h1{font-size:22px}.controls{grid-template-columns:1fr}.mode-group{grid-template-columns:1fr}.choice{min-height:58px}.mode-line{align-items:flex-start;flex-direction:column}.sample{display:none}}
+  </style>
+</head>
+<body>
+<main class="wrap" id="app">
+  <header class="top">
+    <div><div class="eyebrow">Interactive prototype / v0.1</div><h1>Drone Playground · Command Builder</h1><p class="sub">组合训练与执行配置。仅显示可用选项，并实时生成对应的 Hydra / Pixi 命令。</p></div>
+    <span class="sample">UI Demo · 不运行程序</span>
+  </header>
+
+  <div class="layout">
+    <section class="card form" aria-label="Experiment configuration">
+      <div class="mode-line">
+        <div><div class="label">运行模式</div><div class="seg" role="group" aria-label="运行模式">
+          <button type="button" data-mode="train" aria-pressed="true">Train</button>
+          <button type="button" data-mode="play" aria-pressed="false">Play</button>
+        </div></div>
+        <span class="small-muted" id="modeDescription">训练策略并保存模型</span>
+      </div>
+
+      <div class="controls">
+        <div class="wide hidden" id="playMethodSection">
+          <div class="label">执行方式（互斥）</div>
+          <div class="mode-group" role="group" aria-label="执行方式">
+            <button class="choice" type="button" data-method="policy" aria-pressed="true"><strong>Policy</strong><small>加载已训练的 Actor</small></button>
+            <button class="choice" type="button" data-method="mpc" aria-pressed="false"><strong>MPC Only</strong><small>Tracking，无 Planner</small></button>
+            <button class="choice" type="button" data-method="planner_mpc" aria-pressed="false"><strong>Planner + MPC</strong><small>Navigation，轨迹规划 + 跟踪</small></button>
+          </div>
+        </div>
+
+        <div><label class="label" for="task">Task</label><select id="task"></select></div>
+        <div id="algoSection"><label class="label" for="algorithm">训练算法</label><select id="algorithm">
+          <option value="ppo">PPO</option><option value="apg">APG / BPTT (DiffRL)</option><option value="shac">SHAC (DiffRL)</option>
+        </select></div>
+
+        <div id="trainEnvSection" class="wide">
+          <label class="label" for="trainEnv">训练环境</label><select id="trainEnv"></select>
+          <div class="environment" id="trainEnvDetails" aria-live="polite">
+            <div class="env-top"><span class="env-title" id="envTitle"></span><span class="env-code" id="envCode"></span></div>
+            <div class="note" id="envText"></div><div class="env-details" id="envTags"></div>
+          </div>
+        </div>
+
+        <div id="sensorSection"><label class="label" for="sensor">Sensor / Observation</label><select id="sensor"></select></div>
+        <div class="hidden" id="sceneSection"><label class="label" for="scene">场景</label><select id="scene"></select></div>
+        <div class="hidden" id="plannerSection"><label class="label" for="planner">Planner</label><select id="planner">
+          <option value="ego">EGO-Planner (Depth)</option><option value="super">SUPER (LiDAR)</option>
+        </select></div>
+        <div class="hidden" id="mpcSection"><label class="label" for="mpc">MPC Controller</label><select id="mpc">
+          <option value="sampling_mpc">Sampling MPC</option><option value="attitude_mpc">Attitude MPC</option>
+        </select></div>
+        <div class="wide hidden" id="backwardSection">
+          <label class="label" for="backward">反向传播动力学（Backward Dynamics）</label><select id="backward">
+            <option value="native">Crazyflow · Native Jacobian</option>
+            <option value="lotf">LOTF · Simplified Dynamics</option>
+            <option value="point_mass_lag">PointMass Lag</option>
+          </select>
+          <p class="note" id="backwardNote">选择项只作用于反向梯度。前向动力学保持 Crazyflow。</p>
+        </div>
+        <div class="wide hidden" id="checkpointSection">
+          <label class="label" for="checkpoint">Policy Checkpoint</label>
+          <input type="text" spellcheck="false" id="checkpoint" placeholder="/absolute/path/to/checkpoints/model_000016">
+          <p class="note">使用训练产物中的完整 Orbax model 目录；需与 Task、Sensor 和 Action 配置匹配。</p>
+        </div>
+        <div class="wide hidden" id="playNotice"></div>
+      </div>
+    </section>
+
+    <aside class="card preview" aria-label="Selection summary">
+      <h2>组合预览</h2>
+      <div id="pipeline" class="flow" aria-label="执行管线"></div>
+      <dl class="facts">
+        <div><dt>Mode</dt><dd id="pMode">Train</dd></div>
+        <div><dt>Task</dt><dd id="pTask">Tracking</dd></div>
+        <div><dt>Method</dt><dd id="pMethod">DiffRL</dd></div>
+        <div><dt>Scene / Environment</dt><dd id="pEnv">Figure-eight</dd></div>
+        <div><dt>Sensor</dt><dd id="pSensor">State</dd></div>
+        <div><dt>Forward Dynamics</dt><dd>Crazyflow</dd></div>
+        <div id="pBackwardRow"><dt>Backward Dynamics</dt><dd id="pBackward">LOTF</dd></div>
+        <div id="pActionRow"><dt>Action / Controller</dt><dd id="pAction">Body rate</dd></div>
+      </dl>
+      <p class="tip" id="explanation" role="status"></p>
+    </aside>
+  </div>
+
+  <section class="card builder" aria-label="Generated command">
+    <div class="cmd-head"><span class="cmd-label">Generated command</span><span class="small-muted">随选择实时更新</span></div>
+    <div class="command"><pre><code id="command"></code></pre><button class="copy" id="copy" type="button" aria-label="复制命令">Copy</button></div>
+    <p class="disclaimer">本页只生成命令，不启动训练或仿真。Planner + MPC 执行需要对应的 ROS worker；Attitude MPC 需要 acados，Policy 需要匹配的 checkpoint。</p>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const s = {mode:'train',task:'tracking',algorithm:'apg',backward:'lotf',trainEnv:'figure8',sensor:'state',method:'policy',planner:'ego',mpc:'sampling_mpc',scene:'S01',checkpoint:''};
+  const labels = {tracking:'Tracking',racing:'Racing',navigation:'Navigation',ppo:'PPO',apg:'APG / BPTT',shac:'SHAC',lotf:'LOTF',point_mass_lag:'PointMass Lag',native:'Crazyflow (native)',state:'State',depth:'D435i Depth',lidar:'MID360 LiDAR',policy:'Policy',mpc:'MPC Only',planner_mpc:'Planner + MPC',ego:'EGO-Planner',super:'SUPER',sampling_mpc:'Sampling MPC',attitude_mpc:'Attitude MPC'};
+  const scenes=['S01','S02','S03','D01','D02','D03','S06','D06'];
+  const options=(id,items,v)=>{const el=$(id);el.replaceChildren(...items.map(([key,label])=>new Option(label,key)));if(items.some(a=>a[0]===v))el.value=v;else el.value=items[0][0];return el.value;};
+  const visible=(id,on)=>$(id).classList.toggle('hidden',!on);
+  const text=(id,v)=>$(id).textContent=v;
+  function normalize(){
+    if(s.mode==='play'){
+      if(s.method==='mpc')s.task='tracking';
+      if(s.method==='planner_mpc'){s.task='navigation';s.sensor=s.planner==='ego'?'depth':'lidar';}
+    }
+    if(s.task!=='navigation'){s.sensor='state';s.scene=s.task==='tracking'?'empty':'racing';}
+    else {
+      if(s.sensor==='state')s.sensor='depth';
+      if(!scenes.includes(s.scene))s.scene='S01';
+    }
+    if(s.mode==='train'){
+      if(s.task==='tracking')s.trainEnv='figure8';
+      else if(s.task==='racing')s.trainEnv='race';
+      else if(!['procedural','mixed'].includes(s.trainEnv))s.trainEnv='procedural';
+    }
+  }
+  function environmentOptions(){
+    if(s.task==='tracking')return [['figure8','Figure-eight tracking (empty scene)']];
+    if(s.task==='racing')return [['race','Racing course']];
+    return [['procedural','Procedural Navigation (train/procedural)'],['mixed','Fixed Navigation8 (training scenes)']];
+  }
+  function envDetails(){
+    const data={
+      figure8:['Tracking environment','scene=empty','跟踪任务参考轨迹为 figure_eight；使用 State 观测。',['Reference: figure_eight','Task: tracking','No obstacles']],
+      race:['Racing environment','scene=racing','使用既有 Racing Course 和门序。',['Reference: circuit','Task: racing','Sensor: state']],
+      procedural:['Procedural Navigation','scene=train/procedural','每个并行环境独立采样障碍物与起点，使用原有程序化场景训练。',['Randomized geometry','Depth / LiDAR','Fixed eval kept separate']],
+      mixed:['Fixed Navigation8','learning.scenes=[S01...D06]','轮换已定义的八个 Navigation 场景训练，适用于固定地图对照。',['S01–S06','D01–D06','Scene switching']]
+    };
+    const [title,code,desc,tags]=data[s.trainEnv];text('envTitle',title);text('envCode',code);text('envText',desc);
+    $('envTags').replaceChildren(...tags.map(v=>{const x=document.createElement('span');x.textContent=v;return x}));
+  }
+  function command(){
+    if(s.mode==='train'){
+      const experiment=s.task==='navigation'?`navigation_${s.trainEnv==='mixed'?'mixed':'procedural'}_${s.sensor}`:s.task;
+      const parts=['pixi run train',`experiment=${experiment}`,`learning=${s.algorithm}`,'seed=0'];
+      if(s.algorithm!=='ppo'&&s.backward!=='native'){
+        parts.push(`learning.backward_model=${s.backward}`);
+        parts.push(`method.action.level=${s.backward==='lotf'?'body_rate':'acceleration'}`);
+      }
+      return parts.join(' ');
+    }
+    const parts=['pixi run sim'];
+    if(s.method==='policy'){
+      const exp=s.task==='navigation'?`navigation_${s.sensor}`:s.task;
+      parts.push(`experiment=${exp}`);
+      if(s.task==='navigation')parts.push(`scene=${s.scene}`);
+      parts.push(`checkpoint=${s.checkpoint.trim()||'/absolute/path/to/checkpoints/model_XXXXXX'}`);
+    }else if(s.method==='mpc'){
+      parts.push('task=tracking','scene=empty','sensor=state','method=controller',`controller=${s.mpc}`);
+    }else{
+      parts.push('task=navigation',`scene=${s.scene}`,`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.mpc}`);
+    }
+    return parts.join(' ');
+  }
+  function render(){
+    normalize();
+    document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===s.mode)));
+    document.querySelectorAll('[data-method]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.method===s.method)));
+    const train=s.mode==='train', policy=s.method==='policy', planner=s.method==='planner_mpc';
+    const taskOptions=train||policy?[['tracking','Tracking'],['racing','Racing'],['navigation','Navigation']]:planner?[['navigation','Navigation']]:[['tracking','Tracking']];
+    s.task=options('task',taskOptions,s.task);$('task').disabled=taskOptions.length===1;
+    s.algorithm=options('algorithm',[['ppo','PPO'],['apg','APG / BPTT (DiffRL)'],['shac','SHAC (DiffRL)']],s.algorithm);
+    visible('algoSection',train);visible('playMethodSection',!train);visible('trainEnvSection',train);visible('backwardSection',train&&s.algorithm!=='ppo');
+    visible('mpcSection',!train&&!policy);visible('plannerSection',!train&&planner);visible('sceneSection',!train&&(planner||(policy&&s.task==='navigation')));
+    visible('checkpointSection',!train&&policy);visible('sensorSection',train||policy);visible('pBackwardRow',train&&s.algorithm!=='ppo');visible('pActionRow',!train||s.algorithm!=='ppo');
+    if(train){s.trainEnv=options('trainEnv',environmentOptions(),s.trainEnv);envDetails();}
+    s.sensor=options('sensor',s.task==='navigation'?[['depth','D435i Depth'],['lidar','MID360 LiDAR']]:[['state','State']],s.sensor);
+    $('sensor').disabled=s.task!=='navigation';
+    s.scene=options('scene',scenes.map(x=>[x,x]),s.scene);
+    s.planner=options('planner',[['ego','EGO-Planner (Depth)'],['super','SUPER (LiDAR)']],s.planner);
+    s.mpc=options('mpc',[['sampling_mpc','Sampling MPC'],['attitude_mpc','Attitude MPC']],s.mpc);
+    if(!train&&planner){s.sensor=s.planner==='ego'?'depth':'lidar';}
+    $('backward').value=s.backward;$('checkpoint').value=s.checkpoint;
+    text('modeDescription',train?'策略训练（从零初始化）':'单次执行 / 回放式评测');
+    text('pMode',train?'Train':'Play');text('pTask',labels[s.task]);
+    text('pMethod',train?labels[s.algorithm]:labels[s.method]);
+    text('pEnv',train?environmentOptions().find(x=>x[0]===s.trainEnv)[1]:planner?s.scene:s.task==='tracking'?'empty':s.task==='racing'?'racing':s.scene);
+    text('pSensor',labels[s.sensor]);text('pBackward',labels[s.backward]);
+    text('pAction',train?(s.backward==='lotf'&&s.algorithm!=='ppo'?'Body rate':s.backward==='point_mass_lag'&&s.algorithm!=='ppo'?'Acceleration':'Task recipe default'):(policy?'Checkpoint Actor':labels[s.mpc]));
+    let flow,note;
+    if(train){
+      flow=['Task',labels[s.algorithm],'Crazyflow'];
+      note=s.algorithm==='ppo'?'PPO 根据采样回报更新策略；不显示反向动力学选项。':`前向由 Crazyflow 执行；${labels[s.backward]} 用于策略梯度。${s.backward==='lotf'?'动作自动匹配 Body Rate。':s.backward==='point_mass_lag'?'动作自动匹配 Acceleration。':''}`;
+    }else if(policy){flow=['Observation','Policy','Crazyflow'];note='只加载冻结策略；Planner 和 MPC 控件均不出现。Checkpoint 必须与策略观测和 Action 合同一致。';}
+    else if(planner){flow=[labels[s.planner],labels[s.mpc],'Crazyflow'];note=`Planner 自带 ${labels[s.sensor]} 输入，需要对应 ROS worker。实际运行还取决于 MPC 依赖与场景配置。`;}
+    else{flow=[labels[s.mpc],'Crazyflow'];note='没有 Planner 时使用 Task 自带的参考轨迹。目前只允许 Tracking。';}
+    $('pipeline').replaceChildren(...flow.flatMap((n,i)=>{const e=document.createElement('span');e.className='node';e.textContent=n;return i?[Object.assign(document.createElement('span'),{textContent:'→',className:'arrow'}),e]:[e]}));
+    text('explanation',note);text('command',command());
+  }
+  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{s.mode=b.dataset.mode;render();}));
+  document.querySelectorAll('[data-method]').forEach(b=>b.addEventListener('click',()=>{s.method=b.dataset.method;render();}));
+  ['task','algorithm','trainEnv','sensor','scene','planner','mpc','backward'].forEach(id=>$(id).addEventListener('change',e=>{s[id]=e.target.value;render();}));
+  $('checkpoint').addEventListener('input',e=>{s.checkpoint=e.target.value;text('command',command());});
+  $('copy').addEventListener('click',async()=>{const value=command();try{await navigator.clipboard.writeText(value);$('copy').textContent='Copied';}catch{const t=document.createElement('textarea');t.value=value;document.body.append(t);t.select();document.execCommand('copy');t.remove();$('copy').textContent='Copied';}setTimeout(()=>$('copy').textContent='Copy',1300)});
+  render();
+})();
+</script>
+</body>
+</html>

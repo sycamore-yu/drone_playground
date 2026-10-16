@@ -2,6 +2,9 @@
 
 [当前工作状态](status.md)记录本分支的训练、验收缺口和阻塞。
 
+[Command Builder](command-builder.html) 是独立 HTML 页面，可在浏览器中选择 Train / Play、
+训练环境、反向动力学、Policy 或 Planner + MPC，并复制对应 CLI 命令。
+
 [功能规格](spec.md)定义当前唯一的 **S1–S4 / L1–L4 八项验收**；[验证记录](validation.md)和[验收证据与历史说明](acceptance.md)描述已有执行证据。旧 C/S/L 二十项记录只作追溯，不作为另一套任务。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
 
 **集成文档核对：2026-10-16T02:29:12Z（UTC）。** 当前集成分支为 `main`。功能分支的 ADR 和文档仅是各自的 Git 快照；合并时要核对现有决策、编号和索引，不能以分支副本覆盖新决定。协作规则见 [AGENTS.md](../AGENTS.md)。

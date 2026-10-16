@@ -10,6 +10,9 @@ acceptance criteria are met. v0.2 is not yet a validated release.
 D435i Depth / Mid-360 LiDAR，PPO、APG/BPTT、SHAC，以及原生 EGO-Planner / SUPER。
 目标与验收条件见 [规格](docs/spec.md)，实际执行证据见 [验证记录](docs/validation.md)。
 
+交互式 [Command Builder](docs/command-builder.html) 可在浏览器中组合 Train / Play、
+训练环境、反向动力学、Policy 与 Planner + MPC，并生成 Hydra / Pixi 命令。
+
 ## 安装与运行
 
 Linux x86-64，安装 Pixi 后在仓库根目录执行：
