@@ -375,6 +375,9 @@ class ProceduralScene:
         origin = jnp.broadcast_to(origin, (*batch, 3))
         directions = jnp.broadcast_to(directions, (*batch, count, 3))
         time = jnp.broadcast_to(jnp.asarray(t), batch)
+        # Every ray from one origin shares its acquisition time. Calculate
+        # moving obstacle positions once per origin, not once per ray block.
+        centers_at_origin = self._centers_at(scene_state, time)
         limits_per_origin = jnp.broadcast_to(jnp.asarray(max_range), batch)
         ranges = jnp.broadcast_to(limits_per_origin[..., None], (*batch, count))
         points = origin[..., None, :]
@@ -382,38 +385,99 @@ class ProceduralScene:
         shape = (batch[0], -1)
         origins = points.reshape((*shape, 3))
         directions = directions.reshape((*shape, 3))
-        times = jnp.broadcast_to(time[..., None], (*batch, count)).reshape(shape)
         limits = ranges.reshape(shape)
         count_flat = origins.shape[1]
         chunk_size = min(128, count_flat)
         padded = (-count_flat) % chunk_size
         origins = jnp.pad(origins, ((0, 0), (0, padded), (0, 0)))
         directions = jnp.pad(directions, ((0, 0), (0, padded), (0, 0)))
-        times = jnp.pad(times, ((0, 0), (0, padded)))
         limits = jnp.pad(limits, ((0, 0), (0, padded)))
-        index = (slice(None), None, slice(None))
-        sizes = scene_state.sizes[index]
-        active = scene_state.active[:, None, :]
-        cylinder = scene_state.cylinder[:, None, :]
+        index = (slice(None), *(None,) * (len(batch) - 1), slice(None))
+        sizes = jnp.broadcast_to(scene_state.sizes[index], (*batch, scene_state.sizes.shape[1], 3))
+        cylinder = jnp.broadcast_to(
+            scene_state.cylinder[index], (*batch, scene_state.active.shape[1])
+        )
+        active = jnp.broadcast_to(scene_state.active[index], (*batch, scene_state.active.shape[1]))
 
-        def cast_block(i):
-            start = i * chunk_size
-            p = jax.lax.dynamic_slice_in_dim(origins, start, chunk_size, 1)
-            d = jax.lax.dynamic_slice_in_dim(directions, start, chunk_size, 1)
-            times_i = jax.lax.dynamic_slice_in_dim(times, start, chunk_size, 1)
-            limit = jax.lax.dynamic_slice_in_dim(limits, start, chunk_size, 1)
-            center = self._centers_at(scene_state, times_i)
-            norm = jnp.linalg.norm(d, axis=-1)
-            unit = d / jnp.where(norm > 0, norm, 1)[..., None]
-            delta = p[..., None, :] - center
-            direction = unit[..., None, :]
-            cylinder_hit = _intersection("cylinder", delta, direction, sizes)
-            box_hit = _intersection("box", delta, direction, sizes)
-            hit = jnp.where(cylinder, cylinder_hit, box_hit)
-            result = jnp.min(jnp.where(active, hit, jnp.inf), axis=-1)
-            return jnp.where(norm > 0, jnp.minimum(limit, result), limit)
+        def trace_rays(centers, shape_sizes, shape_active, shape_cylinder):
+            geometry_count = centers.shape[-2]
 
-        hits = jax.lax.map(cast_block, jnp.arange(origins.shape[1] // chunk_size))
+            def cast_block(i):
+                start = i * chunk_size
+                p = jax.lax.dynamic_slice_in_dim(origins, start, chunk_size, 1)
+                d = jax.lax.dynamic_slice_in_dim(directions, start, chunk_size, 1)
+                limit = jax.lax.dynamic_slice_in_dim(limits, start, chunk_size, 1)
+                if len(batch) == 1:
+                    center = centers[:, None, :, :]
+                    size = shape_sizes[:, None, :, :]
+                    enabled = shape_active[:, None, :]
+                    kind = shape_cylinder[:, None, :]
+                else:
+                    # Flattening multiple origins per world interleaves their rays.
+                    origin_index = (start + jnp.arange(chunk_size)) // count
+                    center = jnp.take(
+                        centers.reshape((batch[0], -1, geometry_count, 3)), origin_index, axis=1
+                    )
+                    size = jnp.take(
+                        shape_sizes.reshape((batch[0], -1, geometry_count, 3)),
+                        origin_index,
+                        axis=1,
+                    )
+                    enabled = jnp.take(
+                        shape_active.reshape((batch[0], -1, geometry_count)),
+                        origin_index,
+                        axis=1,
+                    )
+                    kind = jnp.take(
+                        shape_cylinder.reshape((batch[0], -1, geometry_count)),
+                        origin_index,
+                        axis=1,
+                    )
+                norm = jnp.linalg.norm(d, axis=-1)
+                unit = d / jnp.where(norm > 0, norm, 1)[..., None]
+                delta = p[..., None, :] - center
+                direction = unit[..., None, :]
+                cylinder_hit = _intersection("cylinder", delta, direction, size)
+                box_hit = _intersection("box", delta, direction, size)
+                hit = jnp.where(kind, cylinder_hit, box_hit)
+                result = jnp.min(jnp.where(enabled, hit, jnp.inf), axis=-1)
+                return jnp.where(norm > 0, jnp.minimum(limit, result), limit)
+
+            return jax.lax.map(cast_block, jnp.arange(origins.shape[1] // chunk_size))
+
+        capacity = scene_state.active.shape[1]
+        if capacity <= 64:
+            hits = trace_rays(centers_at_origin, sizes, active, cylinder)
+        else:
+            # Conservative sphere test, evaluated once per origin. Sorting only
+            # the nearby obstacles avoids ray/geometry work in dense forests.
+            radius = jnp.where(
+                cylinder,
+                jnp.hypot(sizes[..., 0], sizes[..., 1]),
+                jnp.linalg.norm(sizes, axis=-1),
+            )
+            offset = centers_at_origin - origin[..., None, :]
+            distance_squared = jnp.sum(offset * offset, axis=-1)
+            nearby = active & (distance_squared <= (limits_per_origin[..., None] + radius) ** 2)
+
+            def trace_nearby():
+                _, closest = jax.lax.top_k(jnp.where(nearby, -distance_squared, -jnp.inf), 64)
+
+                def gather(array):
+                    return jnp.take_along_axis(array, closest[..., None], axis=-2)
+
+                return trace_rays(
+                    gather(centers_at_origin),
+                    gather(sizes),
+                    jnp.take_along_axis(nearby, closest, axis=-1),
+                    jnp.take_along_axis(cylinder, closest, axis=-1),
+                )
+
+            hits = jax.lax.cond(
+                jnp.any(jnp.sum(nearby, axis=-1) > 64),
+                lambda: trace_rays(centers_at_origin, sizes, active, cylinder),
+                trace_nearby,
+            )
         hits = hits.transpose(1, 0, 2).reshape((batch[0], -1))[:, :count_flat]
         hits = hits.reshape((*batch, count))
         return hits[..., 0] if single_ray else hits
