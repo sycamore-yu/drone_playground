@@ -80,7 +80,7 @@ index 55373f3..3edc313 100644
              "max_steps": benchmark.max_steps,
              "render_mode": benchmark.render_mode,
 diff --git a/dashboard/index.html b/dashboard/index.html
-index 7d5f723..2db958e 100644
+index 7d5f723..03b21f5 100644
 --- a/dashboard/index.html
 +++ b/dashboard/index.html
 @@ -874,12 +874,12 @@
@@ -139,6 +139,15 @@ index 7d5f723..2db958e 100644
                      <th>decision</th>
                      <th>candidate description</th>
                    </tr>
+@@ -1026,7 +1027,7 @@
+       const simPlaceholder = document.getElementById("simPlaceholder");
+       let frameRefreshActive = false;
+       let frameRefreshTimer = null;
+-      let selectedVisualMode = "sampled_trajectory";
++      let selectedVisualMode = null;
+       let visualModeOverride = null;
+       let displayedFrameKind = "sampled_trajectory";
+       let trajectoryManifestPath = "";
 @@ -1152,8 +1153,8 @@
  
        function sessionSummaryLine(item) {
@@ -164,6 +173,15 @@ index 7d5f723..2db958e 100644
 +        if (value === null || value === undefined || value === "") return "-";
 +        if (!Number.isFinite(Number(value))) return "-";
          return `${(100 * Number(value || 0)).toFixed(1)}%`;
+       }
+ 
+@@ -1264,7 +1268,7 @@
+           latestRun.visual_control?.visual_mode ||
+           latestRun.visual?.mode ||
+           selectedVisualMode ||
+-          "sampled_trajectory"
++          (latestRun.budget_mode === "env_steps" ? "off" : "sampled_trajectory")
+         );
        }
  
 @@ -1529,6 +1533,12 @@
@@ -242,3 +260,32 @@ index 7d5f723..2db958e 100644
              );
            }
            drawMetadataDiagnostics(latestEpisodes, data.latest_losses, data);
+@@ -2756,7 +2781,7 @@
+         }
+       }
+ 
+-      function refreshFrame() {
++      async function refreshFrame() {
+         frameRefreshTimer = null;
+         const mode = activeVisualMode();
+         updateVisualControls(mode);
+@@ -2768,6 +2793,19 @@
+           scheduleFrameRefresh(1000);
+           return;
+         }
++        // External training backends publish rendering independently from
++        // metric updates; this lightweight sidecar also works after training.
++        if (session) {
++          try {
++            const response = await fetch(cacheBustedUrl(artifactUrl(`${session}/live/visual.json`)), {cache: "no-store"});
++            if (response.ok) {
++              const published = await response.json();
++              latestRun.visual = {...(latestRun.visual || {}), ...published};
++            }
++          } catch (_) {
++            // Not every backend has a visual producer.
++          }
++        }
+         if (mode === "sampled_trajectory") {
+           refreshSampledTrajectoryFrame();
+           return;

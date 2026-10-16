@@ -415,6 +415,14 @@ def run_worker(request_path, phase, arguments):
             [sys.executable, "-m", "drone_playground.cli", *arguments],
             stdout=subprocess.PIPE,
             text=True,
+            env={
+                **os.environ,
+                **(
+                    {"DRONE_PLAYGROUND_DASHBOARD_SESSION": str(session.resolve())}
+                    if session is not None and phase == "train"
+                    else {}
+                ),
+            },
         )
         handlers = {
             sig: signal.signal(sig, lambda signum, _: process.send_signal(signum))
@@ -508,8 +516,8 @@ def prepare_training(overrides):
             "adapter": "autoresearch:DronePlaygroundBackend",
             "execution_target": "local",
             "train_env_steps": steps,
-            "supports_live_frame": False,
-            "supports_sampled_trajectory": False,
+            "supports_live_frame": True,
+            "supports_sampled_trajectory": True,
         },
     }
     root = ROOT / "results/autoresearch/tasks"
