@@ -73,11 +73,14 @@ def evaluate(config, directory, *, actor=None, parameters=None, checkpoint_confi
                 sensor = None if env.sensor is None else env.sensor.specification
                 if checkpoint_config["learning"]["sensor"] != sensor:
                     raise ValueError("Frozen evaluation changes checkpoint sensor contract")
-            measurement_env = create_environment(config, num_envs=1, scene=scene)
-            computation = profile(measurement_env, method, actor, parameters)
+            if config.mode == "benchmark":
+                measurement_env = create_environment(config, num_envs=1, scene=scene)
+                computation = profile(measurement_env, method, actor, parameters)
+            else:
+                computation = None
             complexity = None
             reference = None
-            if scene in (*STATIC_OA, *DYNAMIC_OA):
+            if config.mode == "benchmark" and scene in (*STATIC_OA, *DYNAMIC_OA):
                 complexity = traversability(
                     env.scene,
                     env.task.low,
@@ -129,7 +132,11 @@ def evaluate(config, directory, *, actor=None, parameters=None, checkpoint_confi
                         path_excess_percent=None,
                         reference_path_status="not_applicable",
                     )
-                    if scene in STATIC_OA and row["event"] == "SUCCESS":
+                    if (
+                        config.mode == "benchmark"
+                        and scene in STATIC_OA
+                        and row["event"] == "SUCCESS"
+                    ):
                         if reference is None:
                             reference = ReferencePath(
                                 env.scene, env.task.low, env.task.high, env.task.radius

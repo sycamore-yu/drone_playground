@@ -75,6 +75,9 @@ def training(monkeypatch, tmp_path):
 
         def __init__(self, *args, **kwargs):
             self.resolved_config = {}
+            self.config = {"horizon": 2}
+            self.algorithm = kwargs["algorithm"]
+            self.env = SimpleNamespace(num_envs=4, task=SimpleNamespace(name="tracking"))
 
         def initialize(self):
             return SmallState()
@@ -87,7 +90,13 @@ def training(monkeypatch, tmp_path):
                 updates=update,
                 interactions=state.interactions + 8,
                 params={"params": state.params["params"] + 1},
-            ), {"loss": float("nan") if update == harness.nonfinite_at else 1.0}
+            ), {
+                "loss": float("nan") if update == harness.nonfinite_at else 1.0,
+                "episodes_completed": 0,
+                "episode_return_sum": 0.0,
+                "episode_length_sum": 0,
+                "episode_successes": 0,
+            }
 
     def set_signal(sig, handler):
         old = harness.handlers.get(sig, signal.SIG_DFL)
