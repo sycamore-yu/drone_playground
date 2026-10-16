@@ -10,5 +10,13 @@ results/
 multirun/
 tmp/
 .gitnexus/
-autoresearch-gym/
 autoresearch_runs/
+dashboard
+artifacts/
+notes/
+docs/research/
+docs/acceptance.md
+docs/performance.md
+docs/replay-validation.md
+docs/status.md
+/src/ros_planner_worker/*-results.json

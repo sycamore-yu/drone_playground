@@ -1,5 +1,0 @@
-{
-  "status": "invalid_case_replay",
-  "reason": "Diagnostic script omitted evaluation_index=2, producing seed1500000 instead of source1500200. Forward result100/100 is not an exact source replay. Raw output preserved.",
-  "formal_acceptance": false
-}

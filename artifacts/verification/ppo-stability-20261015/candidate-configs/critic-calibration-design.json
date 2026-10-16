@@ -1,9 +1,0 @@
-{
-  "question": "Does the goal-reaching PPO critic estimate full stochastic-policy returns before and after the observed collapse?",
-  "models": ["Depth preserved u300 complete state", "Depth unchanged-reward continuation final u480 complete state"],
-  "cases": "Eight fresh train/procedural initial states, each repeated16 times with independently sampled policy actions. Fixed source curriculum progress300/1080, reset RNG fold730020 and action RNG fold730021. Both frozen policies use the same initial states and action random stream. No evaluation cases or learning.",
-  "measure": "Per state: original critic prediction,16 complete undiscounted returns, mean, standard error, descriptive bootstrap95% interval, success/event counts. Save per-step rewards/actions/events/positions and all identities. Finite-horizon TIMEOUT is terminal, so no residual critic bootstrap is added.",
-  "checks": ["identical initial physical and observation state within each16-replica group", "identical initial critic prediction within each group", "all128 episodes reach a terminal event", "zero reward after termination", "frozen learner state hashes unchanged", "finite raw outcomes and independently recomputed full returns"],
-  "interpretation": "A critic error larger than0.25 reward units is a practically relevant discrepancy for the +/-1 terminal reward. Report uncertainty and all eight states, not a pooled selected example. Bootstrap intervals with16 replicas are exploratory, not simultaneous tests or proof of a unique collapse cause. This is fixed initial-state calibration, not coverage of all visited recurrent histories.",
-  "budget": "Exactly256 complete frozen-policy episodes, at most768000 allocated simulation slots; record active interactions and wall time separately."
-}

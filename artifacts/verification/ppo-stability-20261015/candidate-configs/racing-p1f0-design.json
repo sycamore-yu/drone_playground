@@ -1,9 +1,0 @@
-{
-  "scope": "Development seed0 reward comparison, not formal matrix completion.",
-  "hypothesis": "The successful SHAC horizon128/target-alpha.95/terminal-bootstrap.2 optimizer may also learn with the shared Racing task reward that historically supported PPO success.",
-  "intervention": "Task shaping progress2 -> 1 and additional failure40 -> 0; base physical task reward and its default first-event failure penalty remain in force. No threshold or task-event changes.",
-  "held_fixed": "SHAC scratch seed0, forward physics, actor/control, all optimizer/critic settings, evaluation frequency, strict three-consecutive-check selection and 67108864 interaction cap.",
-  "existing_evidence": "PPO historical p1/f0 scratch runs passed; the new p2/f40 PPO candidate had zero gates. SHAC p2/f40 reached three full passes at600/700/800. No prior SHAC run matched the successful horizon128/.95/.2 combination with p1/f0.",
-  "decision": "If this shared reward passes, validate PPO and APG under it and complete three independent seeds per algorithm. If it fails, retain the evidence and do not infer that the reward alone prevents SHAC convergence.",
-  "holdout": "Automatic seed-base2million tests are development. Final cohorts must be fixed before formal training and not used for recipe selection."
-}
