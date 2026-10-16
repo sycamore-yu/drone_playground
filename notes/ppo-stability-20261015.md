@@ -1723,3 +1723,14 @@ metrics,Actorgrad.578099,depthvalidfraction.385905,noKLskip. Completedtrainingep
 native sessionwall237.467sincludinginitialization. Firstscreenpendingatupdate4/524288.
 Nootherownedtrainingjobslive. Do notrelauch/resetthisprocess. Exactcommand/config/design
 aredepth-fixed-scenes-worlds256-scratch-design.json; outputresults/fixed_scenes_parallel_worlds256/depth_ppo_s0.
+
+### Constant256 scratch candidate: first two completed screens
+
+The random-initialized native811 Depth run completed u4/u8 screening at524288/1048576
+interactions with0/23 successes outof48; u8 scene counts8/8/0/7/0/0. The original64world
+control at identical interactions scored6/39. All23 current successes belong to the
+control success set; no additional control cases succeed. Native CSVs do not contain
+true goal-progress fields, which remain explicitly unavailable. The new artifact script
+`summarize_worlds256_scratch.py` checks complete48case identity/scene/event consistency,
+reads each new screen once, and reuses both earlier current and original control caches.
+The registered8,388,608 budget continues unchanged. No convergence claim or new loss.
