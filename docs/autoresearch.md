@@ -49,7 +49,9 @@ pixi run autoresearch run \
 
 任务 JSON 固定实验、算法、交互预算、评测场景和种子。候选文件的 `recipe` 可以修改
 `learning.options.*`、`method.actor.*` 和 `simulation.num_envs`。
+`learning.budget_only=true` 使外部候选训练按固定预算执行、不进行中途选模。
 `max_interactions` 必须是 `num_envs × horizon` 的整数倍，避免改变并行度后悄悄超出预算。
+普通 PPO 训练可用相同的 `max_interactions` 作为硬上限，同时保留训练期间的筛查与选模。
 候选从随机权重开始，不能覆盖初始权重、恢复路径或评测条件。
 
 搜索使用 `checkpoint_eval` 种子段，主指标为六场景平均成功率，并保留最差场景成功率和

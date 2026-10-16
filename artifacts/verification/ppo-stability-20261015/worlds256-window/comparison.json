@@ -1,0 +1,184 @@
+{
+  "status": "completed_stability_failed",
+  "checks": [
+    {
+      "update": 177,
+      "original_control_update": 180,
+      "additional_interactions": 131072,
+      "candidate_successes": 149,
+      "original_control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 24
+      },
+      "retained_initial_successes": 149,
+      "recovered_control_losses": 0,
+      "new_losses_vs_control": 1,
+      "events": {
+        "SUCCESS": 149,
+        "COLLISION": 1
+      },
+      "passed": true,
+      "pilot_successes": 148,
+      "changed_success_outcomes_vs_pilot": 3
+    },
+    {
+      "update": 178,
+      "original_control_update": 184,
+      "additional_interactions": 262144,
+      "candidate_successes": 125,
+      "original_control_successes": 124,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 0,
+        "D03": 25
+      },
+      "retained_initial_successes": 125,
+      "recovered_control_losses": 26,
+      "new_losses_vs_control": 25,
+      "events": {
+        "SUCCESS": 125,
+        "COLLISION": 25
+      },
+      "passed": false,
+      "pilot_successes": 149,
+      "changed_success_outcomes_vs_pilot": 24
+    },
+    {
+      "update": 179,
+      "original_control_update": 188,
+      "additional_interactions": 393216,
+      "candidate_successes": 144,
+      "original_control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 19,
+        "D03": 25
+      },
+      "retained_initial_successes": 144,
+      "recovered_control_losses": 0,
+      "new_losses_vs_control": 6,
+      "events": {
+        "SUCCESS": 144,
+        "COLLISION": 6
+      },
+      "passed": false
+    },
+    {
+      "update": 180,
+      "original_control_update": 192,
+      "additional_interactions": 524288,
+      "candidate_successes": 150,
+      "original_control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 150,
+      "recovered_control_losses": 0,
+      "new_losses_vs_control": 0,
+      "events": {
+        "SUCCESS": 150
+      },
+      "passed": true
+    },
+    {
+      "update": 181,
+      "original_control_update": 196,
+      "additional_interactions": 655360,
+      "candidate_successes": 150,
+      "original_control_successes": 149,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 150,
+      "recovered_control_losses": 1,
+      "new_losses_vs_control": 0,
+      "events": {
+        "SUCCESS": 150
+      },
+      "passed": true
+    },
+    {
+      "update": 182,
+      "original_control_update": 200,
+      "additional_interactions": 786432,
+      "candidate_successes": 150,
+      "original_control_successes": 149,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 150,
+      "recovered_control_losses": 1,
+      "new_losses_vs_control": 0,
+      "events": {
+        "SUCCESS": 150
+      },
+      "passed": true
+    },
+    {
+      "update": 183,
+      "original_control_update": 204,
+      "additional_interactions": 917504,
+      "candidate_successes": 150,
+      "original_control_successes": 142,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 150,
+      "recovered_control_losses": 8,
+      "new_losses_vs_control": 0,
+      "events": {
+        "SUCCESS": 150
+      },
+      "passed": true
+    }
+  ],
+  "actual_updates": 7,
+  "actual_interactions": 917504,
+  "actor_and_critic_adam_steps_each": 112,
+  "actor_parameter_delta_norm_range": [
+    0.35230109095573425,
+    0.3873285949230194
+  ],
+  "kl_skip_sum": 0.0,
+  "training_update_seconds": 246.98577683002804,
+  "total_wall_seconds_including_setup": 720.246898063022,
+  "setup_seconds_subset": 118.67136406200007,
+  "actual_final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_window/model_000183",
+  "runtime_provenance": {
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+  },
+  "runner_git_commit": "f13b6c63739a7f7b68743c2bf424aa50424de4ed",
+  "decision": "Twointermediatechecks fail; actualfinal150/150andfourconsecutivefinalpasses do noterasefailures. Do notpromoteorextendthispostpass-world-expansioncandidate. Nextboundedexperimentuses256worldsfromscratchtoavoidthemidtrainingworld-counttransition,withoutchangingnativePPOobjective."
+}

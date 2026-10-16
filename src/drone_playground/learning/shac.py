@@ -12,11 +12,13 @@ def update_target(old, new, alpha):
     return jax.tree.map(lambda old, new: alpha * old + (1 - alpha) * new, old, new)
 
 
-def update(trainer, state):
+def update(trainer, state, *, sampling_progress=None):
     """Update the short-horizon actor and bootstrap critic with SHAC."""
 
     def objective(params):
-        return rollout_objective(trainer, state, params, bootstrap=True)
+        return rollout_objective(
+            trainer, state, params, bootstrap=True, sampling_progress=sampling_progress
+        )
 
     (loss, (state, rollout, metrics)), gradients = jax.value_and_grad(objective, has_aux=True)(
         state.params

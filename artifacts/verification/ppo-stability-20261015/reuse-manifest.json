@@ -1,0 +1,22 @@
+{
+  "root": "/home/tong/tongworkspace/simulation_dev/new_drone_playground",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "runs": [
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s0",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_ppo_s2",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s0_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s1_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_apg_s2_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s0_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s1_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/tracking_shac_s2_trial1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s0",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s1",
+    "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/scratch_v02/racing_apg_s2"
+  ]
+}

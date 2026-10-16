@@ -1,0 +1,142 @@
+{
+  "status": "completed_pilot_passed",
+  "scope": "Larger on-policy sample batch diagnostic; no native learner change",
+  "problem": "Two training draws showed weak gradient coherence; local full-batch surrogate improvement did not preserve behavior. Full-batch64worlds itself adds no physical samples. The currentLR-only continuation has also failedmultiplechecks.",
+  "hypothesis": "Pooling four times as many stochastic trajectories before PPO epochs may improve retained behavior relative to repeatedly optimizing smaller physical batches. It also changes policy-refresh cadence, so not a unique variance test.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "intervention": {
+    "simulation.num_envs": "64->256",
+    "training_worlds_per_scene": "8->32",
+    "minibatches": 4,
+    "ppo_epochs": 4,
+    "horizon": 512,
+    "actor_lr": 0.0002,
+    "critic_lr": 0.0005
+  },
+  "state_restoration": "Restore original64worldcomplete state; contiguously repeat each in-flight physical/sensor/GRU/objective state four times. Parameters, log_std, optimizer states, source RNG key and counters unchanged. Scene groups remain contiguous. Clones are initially identical; per-world stochastic actions subsequently differ. This is not256independentinitialconditions.",
+  "comparison": {
+    "primary_control": "Completed64worldfull-batchpilot,8updates262144interactions",
+    "mapping": [
+      {
+        "additional_interactions": 131072,
+        "candidate_update": 177,
+        "full_batch_update": 180,
+        "original_control_update": 180
+      },
+      {
+        "additional_interactions": 262144,
+        "candidate_update": 178,
+        "full_batch_update": 184,
+        "original_control_update": 184
+      }
+    ],
+    "matched_to_full_batch": "Same total physical samples262144, same32Actorand32CriticAdamsteps, same64worldoptimizer-minibatchshape and512timeextent, four epochs per sample, same rates/sourceparams/moments/task/scenes.",
+    "different": "Candidate pools256worldspercollectionandshufflesfourminibatches; full-batchcontrol refreshes64worldpolicyfourtimes more often. RNG shapes/splits and current-policy histories differ; comparison is not pathwise matched. The unchanged original4minibatchcontrol is a secondary reference."
+  },
+  "budget": {
+    "updates": 2,
+    "interactions": 262144,
+    "evaluation_every_update": true,
+    "cases_per_check": 150,
+    "early_stop": false,
+    "rollback": false
+  },
+  "gate": "Both checks allsix>=23/25 and retention>=143/150; anyfailure rejects sufficiency. Actual final178 retained. Passing only justifies separately registered complete917504window and scratch recipe verification, not acceptance or finalbenchmark.",
+  "correctness": [
+    "Configchanges onlyworldcounts/sceneallocation",
+    "Real Depth Navigation CPU expansion preserves physical/sensor/GRU/objective states, sharedparams/moments and counters, then executes finite PPO and independent cloned-world actions",
+    "Existing stability budget/identity/gate regression and explicit acceptance rejection",
+    "NativeGPUrun actualinteractions/caseidentities, positiveActorupdates and sourcegeometrymatch"
+  ],
+  "references": [
+    "https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_continuous_action.py"
+  ],
+  "reference_limit": "Parallel rollout batch size is a standard PPO parameter; source-world cloning is this bounded diagnostic restore technique, not a new algorithm or guarantee.",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_pilot",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-worlds256-pilot.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_pilot --worlds-multiplier 4 --diagnostic-updates 2 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-worlds256-pilot.log 2>&1",
+  "preflight": {
+    "other_targeted_checks": "35passed; retained result from54.29s run with expansion failure",
+    "real_expanded_depth_update": "1passed38.69s aftercoremetadata/worldmaskfix;4->8worlds,two scenes,64x48depth,Adam/counters/independentactions",
+    "lint": "Ruff and diffchecks passed"
+  },
+  "pid": 2829213,
+  "runner_commit": "5ce1631",
+  "process_exit_code": 0,
+  "result": {
+    "status": "completed_pilot_passed",
+    "checks": [
+      {
+        "candidate_update": 177,
+        "reference_update": 180,
+        "additional_interactions": 131072,
+        "candidate_successes": 148,
+        "full_batch_successes": 141,
+        "original_control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 24,
+          "D03": 24
+        },
+        "retained_initial_successes": 148,
+        "recovered_full_batch_losses": 9,
+        "new_losses_vs_full_batch": 2,
+        "recovered_original_control_losses": 0,
+        "new_losses_vs_original_control": 2,
+        "events": {
+          "SUCCESS": 148,
+          "COLLISION": 2
+        },
+        "passed": true
+      },
+      {
+        "candidate_update": 178,
+        "reference_update": 184,
+        "additional_interactions": 262144,
+        "candidate_successes": 149,
+        "full_batch_successes": 135,
+        "original_control_successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 24,
+          "D03": 25
+        },
+        "retained_initial_successes": 149,
+        "recovered_full_batch_losses": 15,
+        "new_losses_vs_full_batch": 1,
+        "recovered_original_control_losses": 26,
+        "new_losses_vs_original_control": 1,
+        "events": {
+          "SUCCESS": 149,
+          "COLLISION": 1
+        },
+        "passed": true
+      }
+    ],
+    "actual_interactions": 262144,
+    "actual_updates": 2,
+    "actor_and_critic_adam_steps_each": 32,
+    "actor_parameter_deltas": [
+      0.3788374066352844,
+      0.36452123522758484
+    ],
+    "kl_skip_sum": 0.0,
+    "training_update_seconds": 120.24178367800778,
+    "total_wall_seconds_including_setup": 370.9849380259984,
+    "setup_seconds_subset": 118.52019811698119,
+    "actual_final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_pilot/model_000178",
+    "runtime_provenance": {
+      "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+      "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+    },
+    "runner_git_commit": "5ce1631fcb28cdaaaa84db46549ef58f938a29e5",
+    "decision": "Both short checks pass. Register a fresh full917504interaction window from originalu176 to test pilot reproducibility and the remaining horizon; this is not scratch/three-seed/frozen acceptance."
+  }
+}

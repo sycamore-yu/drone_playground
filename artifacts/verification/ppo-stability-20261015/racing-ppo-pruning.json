@@ -1,0 +1,14 @@
+{
+  "recorded_at_utc": "2026-10-15T09:36:00.221638+00:00",
+  "pid": 1852322,
+  "action": "SIGTERM requests CLI checkpoint and clean interruption",
+  "reason": "Five latest 100-episode validations all failed with zero passed gates; preserve failed candidate and release compute.",
+  "checks": [
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002500/episodes.csv",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002600/episodes.csv",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002700/episodes.csv",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002800/episodes.csv",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward/ppo_s0/checkpoints/step-002900/episodes.csv"
+  ],
+  "limitation": "adaptive diagnostic pruning, not a formal statistical test or final algorithm failure"
+}

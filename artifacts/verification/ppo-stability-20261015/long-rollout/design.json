@@ -1,0 +1,107 @@
+{
+  "status": "completed_pilot_failed",
+  "problem": "Current parallel fixed-scene PPO still loses learned routes. The u64 frozen training probes contain no S03 successes (6/1 completed failures), and 76.78%/94.29% of S03 gamma=lambda=1 targets end in Critic bootstrap under random/nominal resets. Existing procedural h512 and critic-fit8 diagnostics also failed retention; they are not rerun.",
+  "hypothesis": "Collecting204.8s per world before each PPO update, rather than51.2s, may expose more terminal outcomes and improve long-route credit assignment and retention. Previous successful full-route flight times are around160-184s. More observed termination is not proof of accurate values or convergence.",
+  "intervention": {
+    "learning.options.horizon": "512 -> 2048",
+    "output": "separate diagnostic directory"
+  },
+  "source_checkpoint": "results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000048",
+  "source_state": "Restore Actor/Critic, optimizer, RNG, recurrent memory, current world states and episode clocks. Retain whole-map random resets and parallel8-scene sampling.",
+  "unchanged": [
+    "64worlds,8per scene",
+    "reward",
+    "full3D acceleration action",
+    "sensor and Actor inputs",
+    "Actor/Critic network and learning rates",
+    "gamma=lambda=1",
+    "4PPO epochs and4minibatches",
+    "initialization state",
+    "geometry",
+    "eight-case development cohort"
+  ],
+  "coupled_changes": "Rollout batch increases32768->131072 transitions; equal-interaction budget has12updates rather than48. Consequently there are fewer optimizer steps and longer recurrent sequences. This is a rollout-length intervention; a benefit cannot be uniquely assigned to bootstrap error versus batch/update-frequency effects.",
+  "budget": {
+    "additional_interactions": 1572864,
+    "updates": 12,
+    "checks_after_updates": [
+      4,
+      8,
+      12
+    ],
+    "checks_after_interactions": [
+      524288,
+      1048576,
+      1572864
+    ],
+    "early_stop": false
+  },
+  "control": "Reuse original parallel u64/u80/u96 screens and case identities, compared by actual additional interactions; treatment model counters are u52/u56/u60.",
+  "pilot_gate": "At actual final u60: S03>=6/8, retain>=37/38 source successful cases, and every other primary scene>=7/8. Complete all three checks. No promotion from an intermediate peak.",
+  "falsifier": "Missing the final gate rejects this rollout-length change as a sufficient repair at the registered budget; no automatic horizon sweep.",
+  "scope": "Continuation diagnosis, not another scratch seed or formal stability pass. A beneficial recipe still needs scratch replication and the full final protocol.",
+  "evaluation_separation": "Existing development screening only; no new final test, teacher data, evaluation trajectories used for learning, source replay or manual hash audit.",
+  "reference": "https://spinningup.openai.com/en/latest/_modules/spinup/algos/pytorch/ppo/ppo.html",
+  "reference_scope": "PPO buffer distinguishes terminal returns from value bootstrap at an epoch cutoff. This supports the estimator mechanism, not a claim that horizon2048 is optimal.",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=$PWD/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python $PWD/artifacts/verification/ppo-stability-20261015/nominal-starts/continue.py --horizon 2048 --randomize-navigation-start --output $PWD/results/fixed_scenes_parallel/depth_ppo_s0_h2048",
+  "launch_condition": "The already running nominal-reset continuation completes first. No native-code change is needed for this candidate.",
+  "preflight_checks": {
+    "default_nominal_branch": [
+      48,
+      16,
+      32768
+    ],
+    "long_rollout_branch": [
+      12,
+      4,
+      131072
+    ],
+    "checks_after_interactions_both": [
+      524288,
+      1048576,
+      1572864
+    ],
+    "two_unsupported_or_unchanged_argument_combinations": "rejected before source/output handling",
+    "method": "Executed actual argument and budget setup via AST, without model loading or output creation",
+    "ruff": "passed"
+  },
+  "runtime_commit": "dbc62df",
+  "pid": 2580615,
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_h2048",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/long-rollout/continue.log",
+  "first_update": "artifacts/verification/ppo-stability-20261015/long-rollout/first-update.json",
+  "cost_scope": "total_wall_seconds starts after restoration; first update includes compilation; shared GPU, no isolated throughput comparison",
+  "final_result": {
+    "pilot_passed": false,
+    "actual_additional_interactions": 1572864,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_h2048/model_000060",
+    "training_update_seconds": 3206.1566900599573,
+    "total_wall_seconds": 6132.804657136992,
+    "checks": [
+      {
+        "treatment_update": 52,
+        "treatment_successes": 40,
+        "treatment_retained_source_successes": 38
+      },
+      {
+        "treatment_update": 56,
+        "treatment_successes": 40,
+        "treatment_retained_source_successes": 38
+      },
+      {
+        "treatment_update": 60,
+        "treatment_successes": 32,
+        "treatment_retained_source_successes": 32
+      }
+    ],
+    "final_per_scene_successes": {
+      "S01": 8,
+      "S02": 8,
+      "S03": 0,
+      "D01": 7,
+      "D02": 8,
+      "D03": 1
+    },
+    "decision": "Reject as a sufficient repair; no horizon extension or independent final testing."
+  }
+}

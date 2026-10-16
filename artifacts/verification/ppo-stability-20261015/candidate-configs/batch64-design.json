@@ -1,0 +1,10 @@
+{
+  "hypothesis": "A larger on-policy rollout batch reduces destructive sampling noise in the recurrent PPO updates.",
+  "intervention": "num_envs 16 -> 64; horizon remains 32, PPO epochs and minibatches remain 4.",
+  "implied_changes": "2048 instead of 512 interactions per actor update, and 512 instead of 128 transitions per minibatch; fewer optimizer steps at equal interactions. Do not attribute an effect uniquely to scene diversity.",
+  "held_fixed": "reward and gamma, finite-horizon semantics, actor/critic, optimizer hyperparameters, sensors, control, physics, sampling schedule as a function of interactions, seed 0, total 2211840 interactions.",
+  "evaluation": "every 122880 interactions (60 rather than 240 updates); full screen every third interval; identical fixed cases and 8-episode diagnostics.",
+  "checkpoint": "every 61440 interactions (30 rather than 120 updates). All new updates are logged.",
+  "decision": "Compare full fixed-scene outcomes and prior-success retention at matched interactions. A short improvement is not acceptance; only a stable candidate advances to independent seeds and the preregistered full protocol.",
+  "holdout": "Automatic pilot benchmarks use the already consumed development cohort. Fresh formal cohorts begin at 3000000 and are not used to select these candidates."
+}

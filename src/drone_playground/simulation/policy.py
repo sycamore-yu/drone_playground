@@ -42,7 +42,13 @@ def load_policy(path: str | Path, *, actor=None) -> tuple[Actor, dict, dict]:
     """Restore an Actor selected by trusted configuration, never checkpoint executable names."""
     path = Path(path)
     payload, metadata = read_checkpoint(path, "inference")
-    if actor is None and metadata.get("kind") not in {"state", "depth", "lidar"}:
+    if actor is None and metadata.get("kind") not in {
+        "state",
+        "depth",
+        "lidar",
+        "fan_lidar",
+        "visfly_depth",
+    }:
         raise ValueError("Checkpoint does not declare a supported actor kind")
     if path.is_dir():
         import orbax.checkpoint as ocp

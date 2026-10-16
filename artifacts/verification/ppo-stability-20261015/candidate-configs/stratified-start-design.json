@@ -1,0 +1,14 @@
+{
+  "scope": "Paired development diagnostic; not scratch convergence or formal acceptance.",
+  "source": "depth-batch64-retention-pair/model_000300",
+  "control": "depth-h512-lambda1-minibatches4: completed final21/48, source-success retention10/21; S01 final8/8 timeout.",
+  "intervention": "Only simulation.procedural.start_sampling changes from distance_curriculum to existing stratified sampler.",
+  "hypothesis": "Training reset coverage limited to20/50/80m contributes to loss on approximately96m starts. Existing stratified resets include nominal-like long starts, broad starts and near-goal starts on independently generated training geometry.",
+  "evidence": "Previously completed initial-state-audit.json and depth-h512-lambda1-minibatches4/outcomes.json. Within-training regression also exists; coverage is not asserted as the sole cause.",
+  "held_fixed": "Same complete actor/critic/optimizer/RNG/environment/memory state; h512 lambda1 minibatches4 epochs4 gamma1 learning rates reward scoped deterministic update and evaluation cases.",
+  "budget": {"updates":12,"additional_learning_interactions":393216,"evaluation_interval_updates":4,"source_update":300,"actual_final_update":312,"diagnostic_only_rollout_interactions":32768},
+  "source_reuse": "Reuse completed source hash and fixed48 initial replay. Recheck rollout likelihood/recurrent correctness once because reset sampling changes.",
+  "runtime_measurement": "Log current active worlds' start-distance range and count over90m each update. These are in-flight world coverage, not reset-frequency estimates.",
+  "decision": "Promotion requires at least17/21 original successes retained at actual final312. Compare every check with completed control; record new/lost successes and termination causes. Failure rejects coverage change as sufficient within this budget.",
+  "limitations": "No evaluation trajectories used in training. Source in-flight episodes stay unchanged until reset. A successful diagnostic still requires independent scratch seeds and long PPO stability validation."
+}

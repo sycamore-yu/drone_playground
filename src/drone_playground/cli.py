@@ -80,6 +80,15 @@ def diagnostic_probe_scenes(primary_scenes: list[str], evaluation_index: int, fu
     return [primary_scenes[index], primary_scenes[index + 3]]
 
 
+def training_budget_reached(interactions: int, limit: int | None) -> bool:
+    """Bound a pilot by collected transitions, independent of its PPO horizon."""
+    if limit is None:
+        return False
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("learning.max_interactions must be a positive integer or null")
+    return interactions >= limit
+
+
 def train(config: DictConfig, record: RunRecord) -> None:
     """Train under a versioned evaluation contract with one common update lifecycle."""
     from drone_playground.learning.checkpoint import (
@@ -89,6 +98,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
         save_model,
         save_state,
     )
+    from drone_playground.learning.progress_guard import (
+        ProgressGuardConfig,
+        evaluate_progress_guard,
+    )
     from drone_playground.learning.selection import (
         PatienceConfig,
         screening_score,
@@ -97,7 +110,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
     from drone_playground.learning.trainer import Trainer
 
     started = time.monotonic()
-    budget = config.learning.get("max_interactions")
+    # Bounded screening and fixed-budget candidate training share the same hard cap.
+    # Only external candidate training bypasses checkpoint screening.
+    budget_only = config.learning.get("budget_only", False)
+    budget = config.learning.get("max_interactions") if budget_only else None
+    if budget_only and budget is None:
+        raise ValueError("learning.budget_only requires learning.max_interactions")
     if budget is not None:
         batch = config.simulation.num_envs * config.learning.options.horizon
         if type(budget) is not int or budget < 1 or budget % batch:
@@ -118,13 +136,61 @@ def train(config: DictConfig, record: RunRecord) -> None:
     if config.learning.required_consecutive_passes != (3 if legacy else 1):
         raise ValueError("Learning selection and required_consecutive_passes disagree")
     resolved = OmegaConf.to_container(config, resolve=True)
+    frozen_seed_base = resolved["benchmark"].get("frozen_seed_base")
+    if frozen_seed_base is not None and (
+        type(frozen_seed_base) is not int or frozen_seed_base < 2_000_000
+    ):
+        raise ValueError("benchmark.frozen_seed_base must be an integer >= 2000000")
+    max_interactions = resolved["learning"].get("max_interactions")
+    training_budget_reached(0, max_interactions)
+    distance_curriculum = (resolved.get("simulation", {}).get("procedural") or {}).get(
+        "start_sampling"
+    ) == "distance_curriculum"
+    if distance_curriculum and max_interactions is None:
+        raise ValueError("Distance curriculum requires a finite interaction budget")
     scenes = resolved["learning"].get("scenes")
+    scene_sampling = resolved["learning"].get("scene_sampling", "sequential")
+    if scene_sampling not in ("sequential", "parallel") or (
+        scene_sampling == "parallel" and scenes is None
+    ):
+        raise ValueError("learning.scene_sampling requires sequential or parallel fixed scenes")
+    parallel_scenes = None
+    if distance_curriculum and scenes is not None:
+        raise ValueError("Distance curriculum requires one procedural training distribution")
     scene_updates = resolved["learning"].get("scene_updates", 20)
     scene_index, updates_in_scene = 0, 0
     sampling = None
     screening_options = resolved.get("screening", {})
+    training_probe_enabled = screening_options.get("training_distribution_probe", False)
+    if scene_sampling == "parallel" and training_probe_enabled:
+        raise ValueError("Training-distribution probe currently requires procedural geometry")
+    if type(training_probe_enabled) is not bool or (
+        training_probe_enabled and (config.task.name != "navigation" or legacy)
+    ):
+        raise ValueError("Training-distribution probe requires nonlegacy Navigation evaluation")
     fast_probes = screening_options.get("probe_between_full", False)
     full_every = screening_options.get("full_every", 3)
+    progress_guard_options = screening_options.get("progress_aware")
+    progress_guard_policy = None
+    if progress_guard_options is not None and progress_guard_options is not False:
+        if (
+            type(progress_guard_options) is not dict
+            or not progress_guard_options
+            or config.task.name != "navigation"
+            or legacy
+            or not config.benchmark.get("fixed_checkpoint_seeds", False)
+            or not config.results.get("keep_best_screening", False)
+            or max_interactions is None
+        ):
+            raise ValueError(
+                "Progress-aware screening requires an explicit Navigation "
+                "configuration, finite training budget, fixed screening seeds "
+                "and best checkpoint retention"
+            )
+        progress_guard_policy = ProgressGuardConfig(
+            **progress_guard_options,
+            min_score_delta=patience_settings.min_delta,
+        )
     if type(fast_probes) is not bool or type(full_every) is not int or full_every < 2:
         raise ValueError("screening requires boolean probe_between_full and full_every >= 2")
     if fast_probes and (
@@ -142,7 +208,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             or len(set(scenes)) != len(scenes)
         ):
             raise ValueError("learning.scenes requires a nonempty unique Navigation8 scene list")
-        if (
+        if scene_sampling == "sequential" and (
             not isinstance(scene_updates, int)
             or isinstance(scene_updates, bool)
             or scene_updates < 1
@@ -150,34 +216,45 @@ def train(config: DictConfig, record: RunRecord) -> None:
             raise ValueError("learning.scene_updates must be a positive integer")
         sampling = {
             "scenes": scenes,
-            "scene_updates": scene_updates,
             "geometry_sha256": {scene: Scene(scene).geometry_hash for scene in scenes},
         }
+        if scene_sampling == "parallel":
+            count = config.simulation.num_envs
+            if type(count) is not int or count < len(scenes) or count % len(scenes):
+                raise ValueError("Parallel scenes require equal nonempty world groups")
+            parallel_scenes = scenes
+            sampling.update(scene_sampling="parallel", worlds_per_scene=count // len(scenes))
+        else:
+            sampling["scene_updates"] = scene_updates
         if config.resume:
             _, metadata = read_checkpoint(config.resume, "training")
             if metadata["config"].get("training_sampling") != sampling:
                 raise ValueError("Resume changes the saved training sampling schedule or geometry")
-            progress = metadata["provenance"].get("training_sampling", {})
-            scene_index = progress.get("scene_index")
-            updates_in_scene = progress.get("updates_in_scene")
-            if (
-                type(scene_index) is not int
-                or not 0 <= scene_index < len(scenes)
-                or type(updates_in_scene) is not int
-                or not 0 <= updates_in_scene <= scene_updates
-            ):
-                raise ValueError("Checkpoint has invalid training sampling progress")
+            if parallel_scenes is None:
+                progress = metadata["provenance"].get("training_sampling", {})
+                scene_index = progress.get("scene_index")
+                updates_in_scene = progress.get("updates_in_scene")
+                if (
+                    type(scene_index) is not int
+                    or not 0 <= scene_index < len(scenes)
+                    or type(updates_in_scene) is not int
+                    or not 0 <= updates_in_scene <= scene_updates
+                ):
+                    raise ValueError("Checkpoint has invalid training sampling progress")
+        if parallel_scenes is not None:
+            scenes = None
     kind = config.method.actor.get("kind", "custom")
     orbax_layout = getattr(record, "layout_version", 2) == 3
     trainers = {}
 
     def trainer_for(index):
         if index not in trainers:
-            env = (
-                create_environment(config)
-                if scenes is None
-                else create_environment(config, scene=scenes[index])
-            )
+            if parallel_scenes is not None:
+                env = create_environment(config, scene=parallel_scenes)
+            elif scenes is not None:
+                env = create_environment(config, scene=scenes[index])
+            else:
+                env = create_environment(config)
             trainers[index] = Trainer(
                 env,
                 kind=kind,
@@ -235,6 +312,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
     best_screen_score = None
     stagnant_screens = 0
     patience_exhausted = False
+    progress_guard_state = None
     if config.resume:
         if Path(config.resume).is_dir():
             state, metadata = load_model_state(config.resume, state)
@@ -243,6 +321,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
         if "initialization" in metadata["config"]:
             identity["initialization"] = metadata["config"]["initialization"]
         previous = metadata["config"]["experiment"]
+        if distance_curriculum and previous["learning"].get("max_interactions") != max_interactions:
+            raise ValueError("Resume changes the distance curriculum interaction budget")
+        if previous.get("screening", {}).get("progress_aware") != screening_options.get(
+            "progress_aware"
+        ):
+            raise ValueError("Resume changes the progress-aware screening contract")
         for field in (
             "task",
             "scene",
@@ -270,10 +354,18 @@ def train(config: DictConfig, record: RunRecord) -> None:
             screening_progress = progress.get("screening_progress", {})
             best_screen_score = screening_progress.get("best_score")
             stagnant_screens = int(screening_progress.get("stagnant_screens", 0))
-        pending_evaluation = (
-            int(state.updates) % config.learning.evaluation_interval == 0
-            and evaluation_index < int(state.updates) // config.learning.evaluation_interval
+            if progress_guard_policy is not None:
+                if "progress_guard" not in screening_progress:
+                    raise ValueError("Resume checkpoint predates progress guard evidence")
+                progress_guard_state = screening_progress["progress_guard"]
+        interval = config.learning.evaluation_interval
+        at_budget = training_budget_reached(int(state.interactions), max_interactions)
+        expected_evaluations = int(state.updates) // interval + int(
+            at_budget and int(state.updates) % interval != 0
         )
+        pending_evaluation = (
+            int(state.updates) % interval == 0 or at_budget
+        ) and evaluation_index < expected_evaluations
         record.event("resumed", checkpoint=str(config.resume), update=int(state.updates))
     if sampling is not None:
         record.identity["training_sampling"] = sampling
@@ -300,6 +392,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
         light_config.benchmark.episodes = 8
         light_config.benchmark.scenes = primary_scenes
         light_config.benchmark.seed_base = 1_000_000
+        if training_probe_enabled:
+            training_probe_config = OmegaConf.create(
+                OmegaConf.to_container(light_config, resolve=True)
+            )
+            training_probe_config.benchmark.scenes = ["train/procedural"]
+            training_probe_config.benchmark.seed_base = 1_100_000
         evaluation_config.benchmark.scenes = primary_scenes
         evaluation_config.benchmark.seed_base = 1_500_000
         if fast_probes:
@@ -310,6 +408,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
             probe_config.benchmark.episodes = 8
             probe_config.benchmark.record_replay = False
             probe_config.benchmark.record_trajectories = False
+            if progress_guard_policy is not None:
+                # Only full six-scene screens affect progress-aware patience.
+                probe_config.screening.progress_aware = None
     environments = {}
     initial_interactions = int(state.interactions)
     checkpoint_path = record.directory / "checkpoints" / "latest.training.zip"
@@ -348,6 +449,11 @@ def train(config: DictConfig, record: RunRecord) -> None:
             "screening_progress": {
                 "best_score": best_screen_score,
                 "stagnant_screens": stagnant_screens,
+                **(
+                    {"progress_guard": progress_guard_state}
+                    if progress_guard_policy is not None
+                    else {}
+                ),
             },
             **cost(current),
         }
@@ -387,9 +493,10 @@ def train(config: DictConfig, record: RunRecord) -> None:
             last_frozen = frozen
         return frozen
 
-    def evaluate_checkpoint():
+    def evaluate_checkpoint(*, force_full=False):
         nonlocal consecutive, evaluation_index
         nonlocal best_screen_score, stagnant_screens, patience_exhausted
+        nonlocal progress_guard_state
         update = int(state.updates)
         frozen = checkpoint(state, export_policy=False)
         directory = frozen if orbax_layout else frozen.parent
@@ -408,12 +515,26 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     "replays",
                     "screening",
                     "probe",
+                    "training_distribution",
                 }:
                     item.rename(previous / item.name)
             record.event(
                 "checkpoint_evaluation_retry",
                 update=update,
                 previous_output=str(previous),
+            )
+        if training_probe_enabled:
+            training_report = evaluate(
+                training_probe_config,
+                directory / "training_distribution",
+                actor=trainer.actor,
+                parameters=state.params,
+                environments=environments,
+            )
+            record.event(
+                "training_distribution_probe",
+                update=update,
+                per_scene=training_report["reports"],
             )
         if legacy:
             report = evaluate(
@@ -426,7 +547,9 @@ def train(config: DictConfig, record: RunRecord) -> None:
             )
         else:
             report = {"passed": False}
-            run_full_screen = not fast_probes or (evaluation_index + 1) % full_every == 0
+            run_full_screen = (
+                force_full or not fast_probes or (evaluation_index + 1) % full_every == 0
+            )
             if not run_full_screen:
                 # The same six canonical fixed seeds are used during full screens.
                 # Rotate three static/dynamic pairs rather than evaluating all six.
@@ -462,13 +585,50 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     environments=environments,
                 )
                 score = screening_score(screening, config.task.name, primary_scenes)
-                best_screen_score, stagnant_screens, improved, patience_exhausted = update_patience(
-                    score,
-                    update,
-                    best_screen_score,
-                    stagnant_screens,
-                    settings=patience_settings,
-                )
+                progress_decision = None
+                if progress_guard_policy is not None:
+                    progress_guard_state, progress_decision = evaluate_progress_guard(
+                        screening,
+                        primary_scenes,
+                        update=update,
+                        previous=progress_guard_state,
+                        best_screen_score=score,
+                        settings=progress_guard_policy,
+                        min_updates=patience_settings.min_updates,
+                        patience=patience_settings.patience,
+                    )
+                    best_screen_score = progress_guard_state["best_score"]
+                    stagnant_screens = progress_guard_state["stagnant_screens"]
+                    improved = (
+                        progress_decision["score_improved"]
+                        or progress_decision["progress_improved"]
+                    )
+                    patience_exhausted = progress_decision["patience_exhausted"]
+                    if (
+                        progress_decision["regression_streak"]
+                        == progress_guard_policy.regression_patience
+                    ):
+                        record.event(
+                            "policy_regression",
+                            update=update,
+                            best_checkpoint_update=progress_guard_state["best_checkpoint_update"],
+                            best_successes=progress_guard_state["best_successes"],
+                            current_successes=progress_decision["successes"],
+                            lower_height_failures=progress_decision["lower_height_out_of_bounds"],
+                        )
+                else:
+                    (
+                        best_screen_score,
+                        stagnant_screens,
+                        improved,
+                        patience_exhausted,
+                    ) = update_patience(
+                        score,
+                        update,
+                        best_screen_score,
+                        stagnant_screens,
+                        settings=patience_settings,
+                    )
                 suitable = screening_passed(screening, config.task.name, primary_scenes)
                 record.event(
                     "screening_evaluation",
@@ -476,11 +636,17 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     passed=suitable,
                     episodes=8,
                     scenes=primary_scenes,
+                    per_scene=screening["reports"],
                     score=score,
                     best_score=best_screen_score,
                     improved=improved,
                     stagnant_screens=stagnant_screens,
                     patience_exhausted=patience_exhausted,
+                    **(
+                        {"progress_decision": progress_decision}
+                        if progress_decision is not None
+                        else {}
+                    ),
                     evaluation_seconds=time.monotonic() - screening_started,
                 )
                 if suitable:
@@ -516,7 +682,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
             record.event(
                 "early_stopping",
                 update=update,
-                reason="six_light_screens_without_significant_improvement",
+                reason="light_screens_without_significant_improvement",
                 best_score=best_screen_score,
                 stagnant_screens=stagnant_screens,
                 min_updates=patience_settings.min_updates,
@@ -525,13 +691,18 @@ def train(config: DictConfig, record: RunRecord) -> None:
 
     try:
         if pending_evaluation and budget is None:
-            evaluate_checkpoint()
+            evaluate_checkpoint(
+                force_full=training_budget_reached(int(state.interactions), max_interactions)
+            )
         metrics = {}
         while not stop_requested and (
             int(state.interactions) < budget
             if budget is not None
-            else not patience_exhausted
-            and consecutive < config.learning.required_consecutive_passes
+            else (
+                not patience_exhausted
+                and consecutive < config.learning.required_consecutive_passes
+                and not training_budget_reached(int(state.interactions), max_interactions)
+            )
         ):
             if scenes is not None and updates_in_scene == scene_updates:
                 next_index = (scene_index + 1) % len(scenes)
@@ -551,7 +722,14 @@ def train(config: DictConfig, record: RunRecord) -> None:
                     reset_worlds=trainer.env.num_envs,
                 )
             update_started = time.monotonic()
-            candidate, metrics = trainer.update(state)
+            candidate, metrics = trainer.update(
+                state,
+                **(
+                    {"sampling_progress": min(int(state.interactions) / max_interactions, 1.0)}
+                    if distance_curriculum
+                    else {}
+                ),
+            )
             metrics = {name: float(value) for name, value in jax.device_get(metrics).items()}
             if not all(np.isfinite(list(metrics.values()))):
                 checkpoint(state)
@@ -575,9 +753,12 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 budget is not None or update % config.learning.evaluation_interval != 0
             ):
                 checkpoint(state)
-            if budget is not None or update % config.learning.evaluation_interval:
+            at_budget = training_budget_reached(int(state.interactions), max_interactions)
+            if budget is not None or (
+                update % config.learning.evaluation_interval and not at_budget
+            ):
                 continue
-            evaluate_checkpoint()
+            evaluate_checkpoint(force_full=at_budget)
         if budget is not None and int(state.interactions) >= budget:
             frozen = checkpoint(state, export_policy=True)
             record.finish(
@@ -604,13 +785,17 @@ def train(config: DictConfig, record: RunRecord) -> None:
                 best_screen_score=best_screen_score,
                 stagnant_screens=stagnant_screens,
                 resume_checkpoint=str(checkpoint_path),
-                reason="six_light_screens_without_significant_improvement",
+                reason="light_screens_without_significant_improvement",
                 **cost(state),
             )
             return
         if consecutive < config.learning.required_consecutive_passes:
             record.finish(
-                "interrupted",
+                (
+                    "budget_exhausted"
+                    if training_budget_reached(int(state.interactions), max_interactions)
+                    else "interrupted"
+                ),
                 updates=int(state.updates),
                 interactions=int(state.interactions),
                 resume_checkpoint=str(checkpoint_path),
@@ -635,7 +820,7 @@ def train(config: DictConfig, record: RunRecord) -> None:
         atomic_json(record.directory / "run.json", record.identity)
         benchmark_config = OmegaConf.create(resolved)
         benchmark_config.mode = "benchmark"
-        benchmark_config.benchmark.seed_base = None
+        benchmark_config.benchmark.seed_base = frozen_seed_base
         benchmark_config.benchmark.episodes = None
         if scenes is not None:
             benchmark_config.benchmark.scenes = None
@@ -766,6 +951,11 @@ def main(config: DictConfig) -> None:
                 if previous[field] != OmegaConf.to_container(config[field], resolve=True):
                     raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             physical = OmegaConf.to_container(config.simulation, resolve=True)
+            for field in ("navigation_world_rotation", "navigation_relative_goal"):
+                if previous["observation"].get(field, False) != config.observation.get(
+                    field, False
+                ):
+                    raise ValueError(f"Frozen evaluation changes checkpoint {field} contract")
             if (
                 previous["simulation"]["navigation_goal_observation"]
                 != physical["navigation_goal_observation"]
@@ -799,7 +989,13 @@ def main(config: DictConfig) -> None:
                     "Frozen evaluation cannot reinterpret checkpoint action units or bounds"
                 )
             actor = instantiate(config.method.actor, action_size=requested_action.size)
-            actor, parameters, _ = load_policy(config.checkpoint, actor=actor)
+            actor, parameters, metadata = load_policy(config.checkpoint, actor=actor)
+            record.identity["evaluated_checkpoint"] = {
+                "path": str(Path(config.checkpoint).resolve()),
+                "payload_sha256": metadata.get("sha256"),
+            }
+            if metadata.get("format_version") == 3:
+                record.identity["evaluated_checkpoint"]["model_metadata"] = metadata
         destination = (
             record.directory
             if getattr(record, "layout_version", 2) == 3

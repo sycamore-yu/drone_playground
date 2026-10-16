@@ -1,0 +1,91 @@
+{
+  "scope": "First native update matching only, not retention or convergence",
+  "update": 177,
+  "all_15_raw_rollout_and_target_metrics_exactly_equal": true,
+  "comparison": {
+    "reward": {
+      "control": 0.00505460798740387,
+      "candidate": 0.00505460798740387,
+      "absolute_difference": 0.0
+    },
+    "progress_reward": {
+      "control": 0.0038591292686760426,
+      "candidate": 0.0038591292686760426,
+      "absolute_difference": 0.0
+    },
+    "arrival_reward": {
+      "control": 0.00140380859375,
+      "candidate": 0.00140380859375,
+      "absolute_difference": 0.0
+    },
+    "failure_reward": {
+      "control": -0.0001220703125,
+      "candidate": -0.0001220703125,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_episodes": {
+      "control": 50.0,
+      "candidate": 50.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_successes": {
+      "control": 46.0,
+      "candidate": 46.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_progress_metres": {
+      "control": 0.0771825835108757,
+      "candidate": 0.0771825835108757,
+      "absolute_difference": 0.0
+    },
+    "done_fraction": {
+      "control": 0.00152587890625,
+      "candidate": 0.00152587890625,
+      "absolute_difference": 0.0
+    },
+    "advantage_std": {
+      "control": 0.41958045959472656,
+      "candidate": 0.41958045959472656,
+      "absolute_difference": 0.0
+    },
+    "advantage_mean_pre_normalization": {
+      "control": 0.17338398098945618,
+      "candidate": 0.17338398098945618,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_mean": {
+      "control": 2.0661845207214355,
+      "candidate": 2.0661845207214355,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_std": {
+      "control": 0.8610859513282776,
+      "candidate": 0.8610859513282776,
+      "absolute_difference": 0.0
+    },
+    "value_target_mean": {
+      "control": 2.2395687103271484,
+      "candidate": 2.2395687103271484,
+      "absolute_difference": 0.0
+    },
+    "value_target_std": {
+      "control": 1.0604915618896484,
+      "candidate": 1.0604915618896484,
+      "absolute_difference": 0.0
+    },
+    "critic_return_rmse_preupdate": {
+      "control": 0.45399314165115356,
+      "candidate": 0.45399314165115356,
+      "absolute_difference": 0.0
+    }
+  },
+  "actor_parameter_delta_norm": 0.07823273539543152,
+  "kl_actor_update_skipped": 0.0,
+  "update_seconds": 59.35755340199103,
+  "setup_seconds": 113.57212882398744,
+  "runtime_provenance": {
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+  },
+  "runner_git_commit": "52549604c0396e72eeb3b4dbd175aaf636a15227"
+}

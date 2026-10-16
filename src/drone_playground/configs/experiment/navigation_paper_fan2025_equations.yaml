@@ -1,0 +1,50 @@
+# @package _global_
+# Published equations, reconstructed weights: the paper does not publish k values.
+# Long-course transfer retains >=80m resets and the project's frozen benchmark.
+defaults:
+  - navigation_paper_fan2025_ppo
+
+observation:
+  fan_lidar:
+    # The raw-window length j is not published; current + two prior scans is a candidate.
+    raw_history_frames: 3
+
+task:
+  options:
+    reward_profile: fan2025
+    reward_options:
+      min_speed: 0.0
+      max_speed: 3.0
+      safe_distance: 1.2
+      hover_distance: 1.0
+      weights:
+        alive: 0.1
+        acceleration: 0.002
+        velocity: 0.1
+        distance: 0.001
+        progress: 1.0
+        jerk: 0.002
+        obstacle: 0.5
+        hover: 2.0
+        collision: 10.0
+
+learning:
+  critic:
+    _target_: drone_playground.simulation.networks.Critic
+    kind: fan_lidar
+  options:
+    horizon: 128
+    minibatches: 4
+    gamma: 0.995
+    failure_cost: 0.0
+    altitude_weight: 0.0
+    perception_weight: 0.0
+  evaluation_interval: 160
+
+screening:
+  probe_between_full: true
+  full_every: 3
+
+early_stopping:
+  min_updates: 800
+  patience: 6

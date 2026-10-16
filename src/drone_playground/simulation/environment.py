@@ -22,7 +22,7 @@ from drone_playground.simulation.methods import Action, Setpoint
 from drone_playground.simulation.observation import ObservationState, SensorObservation
 from drone_playground.simulation.procedural_scene import ProceduralScene, SceneState
 from drone_playground.simulation.randomization import install_randomization
-from drone_playground.simulation.scene import Scene
+from drone_playground.simulation.scene import Scene, SceneBatch
 from drone_playground.simulation.sensors import SensorConfig
 from drone_playground.simulation.task_rewards import motion_navigation_reward, shaped_task_cost
 from drone_playground.simulation.tasks import Event, Task, TaskState, first_event
@@ -39,6 +39,7 @@ class EnvState:
     commands: CommandState | None = None
     acceleration: Array | None = None
     scene_state: SceneState | None = None
+    finite_horizon: bool = struct.field(pytree_node=False, default=False)
 
     @property
     def time(self):
@@ -48,12 +49,14 @@ class EnvState:
     @property
     def terminated(self):
         """Identify episodes that reached a terminal task outcome."""
-        return (self.task.event != Event.RUNNING) & (self.task.event != Event.TIMEOUT)
+        return (self.task.event != Event.RUNNING) & (
+            (self.task.event != Event.TIMEOUT) | self.finite_horizon
+        )
 
     @property
     def truncated(self):
-        """Identify episodes that reached the task deadline."""
-        return self.task.event == Event.TIMEOUT
+        """Identify an external time limit that still permits value bootstrapping."""
+        return (self.task.event == Event.TIMEOUT) & (not self.finite_horizon)
 
     @property
     def done(self):
@@ -73,7 +76,7 @@ class BaseEnv:
     def __init__(
         self,
         task: str | None = None,
-        scene: str = "empty",
+        scene: str | list[str] | tuple[str, ...] = "empty",
         num_envs: int = 1,
         device: str = "cpu",
         dynamics: str = "first_principles",
@@ -106,7 +109,20 @@ class BaseEnv:
             raise ValueError(
                 "Positive batch and method frequency dividing physics frequency required"
             )
-        self.scene = ProceduralScene(procedural) if scene == "train/procedural" else Scene(scene)
+        if isinstance(scene, (list, tuple)):
+            if task != "navigation" or procedural is not None:
+                raise ValueError("Parallel scene batches require fixed Navigation geometry")
+            self.scene = SceneBatch(scene, num_envs)
+        else:
+            self.scene = (
+                ProceduralScene(procedural) if scene == "train/procedural" else Scene(scene)
+            )
+        if isinstance(self.scene, SceneBatch) and (task_config or {}).get("reward_profile") in {
+            "fan2025",
+            "fan2025_arrival",
+            "visfly2025",
+        }:
+            raise ValueError("Paper per-object reward geometry does not support scene batches")
         self.task = Task(
             task, self.scene, reference, duration, reference_seed, **(task_config or {})
         )
@@ -116,6 +132,15 @@ class BaseEnv:
         if navigation_goal_observation and not self.allows_goal_observation:
             raise ValueError("Goal observation requires Navigation")
         self.navigation_goal_observation = navigation_goal_observation
+        self.observation_config = dict(observation_config or {})
+        relative_goal = self.observation_config.get("navigation_relative_goal", False)
+        if type(relative_goal) is not bool or (relative_goal and self.task.name != "navigation"):
+            raise ValueError("navigation_relative_goal requires boolean Navigation configuration")
+        world_rotation = self.observation_config.get("navigation_world_rotation", False)
+        if type(world_rotation) is not bool:
+            raise ValueError("navigation_world_rotation must be boolean")
+        if world_rotation and self.task.name != "navigation":
+            raise ValueError("navigation_world_rotation requires Navigation")
         self.num_envs, self.method_hz = num_envs, method_hz
         self.substeps = physics_hz // method_hz
         self.dt = 1 / method_hz
@@ -166,7 +191,16 @@ class BaseEnv:
             "ideal": None,
         }[self.control_level]
         self.sensor = None
-        self.observation_config = dict(observation_config or {})
+        if self.observation_config.get("visfly_quaternion_order", "xyzw") not in {"xyzw", "wxyz"}:
+            raise ValueError("VisFly quaternion order must be xyzw or wxyz")
+        position_scale = self.observation_config.get("visfly_position_scale", 1.0)
+        if (
+            isinstance(position_scale, bool)
+            or not isinstance(position_scale, (float, int))
+            or not math.isfinite(position_scale)
+            or position_scale <= 0
+        ):
+            raise ValueError("VisFly position scale must be finite and positive")
         sensor_config = dict(sensor_config or {})
         latency_bounds = delay_range(sensor_config.get("latency", 0.0))
         if "latency" in sensor_config:
@@ -189,6 +223,7 @@ class BaseEnv:
                 point_count,
                 latency_bounds=latency_bounds,
                 ray_sampling=ray_sampling,
+                paper_fan=self.observation_config.get("fan_lidar"),
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")
@@ -208,7 +243,13 @@ class BaseEnv:
         return self.task.start + jax.random.uniform(key, (count, 3), minval=-0.05, maxval=0.05)
 
     def _reset(
-        self, key, state: EnvState | None = None, mask=None, *, randomize_position=False
+        self,
+        key,
+        state: EnvState | None = None,
+        mask=None,
+        *,
+        randomize_position=False,
+        sampling_progress=None,
     ) -> EnvState:
         """Reset selected worlds; wide position sampling is opt-in Navigation training."""
         batch = self.num_envs
@@ -219,6 +260,7 @@ class BaseEnv:
                 jax.random.fold_in(key, 99),
                 batch,
                 None if state is None else state.scene_state,
+                sampling_progress=sampling_progress,
             )
             if isinstance(self.scene, ProceduralScene)
             else None
@@ -269,6 +311,7 @@ class BaseEnv:
             commands,
             jnp.zeros_like(pos),
             scene_state,
+            finite_horizon=self.task.finite_horizon,
         )
         # Persisted arrays have explicit dtypes; avoid a different JIT specialization on restore.
         fresh = jax.tree.map(
@@ -305,7 +348,16 @@ class BaseEnv:
                 state.scene_state,
                 scene_state,
             )
-        return EnvState(physics, task, action, observation, commands, acceleration, scene_state)
+        return EnvState(
+            physics,
+            task,
+            action,
+            observation,
+            commands,
+            acceleration,
+            scene_state,
+            finite_horizon=self.task.finite_horizon,
+        )
 
     def goal_for(self, state: EnvState) -> Array:
         """Return static task goal or procedural per-world target."""
@@ -463,6 +515,31 @@ class BaseEnv:
         )
         if self.sensor is not None:
             observation.update(self.sensor.encode(state.observation))
+        if self.observation_config.get("fan_lidar") is not None:
+            physics = state.physics.states
+            observation["fan_state"] = jnp.concatenate(
+                [physics.vel[:, 0, :2], state.previous_action[:, :2] * 6.0], axis=-1
+            )
+            goal = jnp.broadcast_to(self.goal_for(state), physics.pos[:, 0].shape)
+            observation["fan_command"] = goal[:, :2] - physics.pos[:, 0, :2]
+        if self.observation_config.get("visfly", False):
+            physics = state.physics.states
+            quaternion = physics.quat[:, 0]
+            if self.observation_config.get("visfly_quaternion_order", "xyzw") == "wxyz":
+                quaternion = quaternion[:, jnp.array([3, 0, 1, 2])]
+            position_scale = self.observation_config.get("visfly_position_scale", 1.0)
+            observation["visfly_state"] = jnp.concatenate(
+                [
+                    physics.pos[:, 0] / position_scale,
+                    quaternion,
+                    physics.vel[:, 0],
+                    physics.ang_vel[:, 0],
+                ],
+                axis=-1,
+            )
+            observation["visfly_target"] = (
+                jnp.broadcast_to(self.goal_for(state), physics.pos[:, 0].shape) / position_scale
+            )
         return observation
 
     def observe_privileged(self, state: EnvState) -> Array:
@@ -661,10 +738,13 @@ class NavigationEnv(BaseEnv):
         goal = self.goal_for(state)
         delta = goal - p
         distance = jnp.linalg.norm(delta, axis=-1)
-        goal_velocity = delta / jnp.maximum(distance[:, None], 1e-6)
-        goal_velocity = goal_velocity * jnp.minimum(3.0, distance)[:, None]
+        if self.observation_config.get("navigation_relative_goal", False):
+            goal_feature = delta / 100.0
+        else:
+            goal_feature = delta / jnp.maximum(distance[:, None], 1e-6)
+            goal_feature = goal_feature * jnp.minimum(3.0, distance)[:, None]
         body_v = rot.apply(v, inverse=True)
-        body_target = rot.apply(goal_velocity, inverse=True)
+        body_target = rot.apply(goal_feature, inverse=True)
         up = rot.apply(jnp.broadcast_to(jnp.array([0.0, 0.0, 1.0]), p.shape), inverse=True)
         features = jnp.concatenate([body_v, body_target, up, jnp.full((len(p), 1), 0.07)], -1)
         if self.navigation_goal_observation:
@@ -672,6 +752,12 @@ class NavigationEnv(BaseEnv):
             start = self.task.start if state.scene_state is None else state.scene_state.start
             remaining = distance / jnp.linalg.norm(goal - start, axis=-1)
             features = jnp.concatenate([features, height_error[:, None], remaining[:, None]], -1)
+        if self.observation_config.get("navigation_world_rotation", False):
+            # World acceleration needs body-to-world attitude beyond body-frame up.
+            features = jnp.concatenate([features, rot.as_matrix().reshape(len(p), 9)], -1)
+        if self.task.finite_horizon:
+            remaining_time = jnp.clip(1.0 - state.time / self.task.duration, 0.0, 1.0)
+            features = jnp.concatenate([features, remaining_time[:, None]], -1)
         return {"state": features}
 
     def _task_progress(self, state: TaskState, before, after, time, *, scene_state=None):
@@ -726,6 +812,16 @@ class NavigationEnv(BaseEnv):
         self, before: EnvState, after: EnvState, action: Array
     ) -> tuple[Array, dict[str, Array]]:
         """Evaluate the selected Navigation reward before optional shaping."""
+        if self.task.reward_profile == "goal_reaching":
+            from drone_playground.simulation.task_rewards import goal_reaching_reward
+
+            reward, terms = goal_reaching_reward(self, before, after, action)
+            return -reward, terms
+        if self.task.reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"}:
+            from drone_playground.simulation.task_rewards import paper_navigation_reward
+
+            reward, terms = paper_navigation_reward(self, before, after, action)
+            return -reward, terms
         if self.task.reward_profile == "legacy_motion_navigation_v2":
             reward, terms = motion_navigation_reward(self, before, after, action)
             return -reward, terms
@@ -733,11 +829,19 @@ class NavigationEnv(BaseEnv):
         velocity = after.physics.states.vel[:, 0]
         direction = self.goal_for(after) - position
         distance = jnp.linalg.norm(direction, axis=-1, keepdims=True)
-        desired = direction / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
-        error = jnp.sum((velocity - desired) ** 2, -1)
+        if self.task.reward_profile == "minimum_time_navigation":
+            error = jnp.ones(position.shape[0])
+        else:
+            desired = direction / jnp.maximum(distance, 1e-6) * jnp.minimum(distance, 3.0)
+            error = jnp.sum((velocity - desired) ** 2, -1)
         clearance = self.scene_clearance(position, after.time, after.scene_state) - self.task.radius
         error = error + 5 * jax.nn.softplus((0.5 - clearance) * 8) / 8
-        return self._shared_cost(before, after, action, error), {}
+        terms = (
+            {"navigation_time_cost": jnp.where(before.done, 0.0, self.dt)}
+            if self.task.reward_profile == "minimum_time_navigation"
+            else {}
+        )
+        return self._shared_cost(before, after, action, error), terms
 
 
 def make_environment(*, task: str = "tracking", **kwargs) -> BaseEnv:

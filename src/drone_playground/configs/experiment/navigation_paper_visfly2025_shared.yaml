@@ -1,0 +1,9 @@
+# @package _global_
+# Match the official shared feature extractor + joint PPO/value Adam update.
+# No new simulator, reward, action, observation, seed or acceptance change.
+defaults:
+  - navigation_paper_visfly2025_source
+
+learning:
+  options:
+    shared_visual_encoder: true

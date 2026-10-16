@@ -8,7 +8,7 @@ from drone_playground.learning.ppo import Rollout
 from drone_playground.simulation.tasks import Event
 
 
-def rollout_objective(trainer, state, params, *, bootstrap=False):
+def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progress=None):
     """Differentiable segmented rollout, optionally bootstrapped by a target critic.
 
     Target critic parameters are fixed, but its input-state Jacobian stays live.
@@ -83,7 +83,17 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
             after.terminated,
             after.done,
         )
-        env_state, memory, history = trainer._reset(reset_key, after, memory, history)
+        env_state, memory, history = trainer._reset(
+            reset_key, after, memory, history, sampling_progress=sampling_progress
+        )
+        if trainer.distance_sampling:
+            distance = jnp.linalg.norm(
+                env_state.scene_state.start - env_state.scene_state.goal, axis=-1
+            )
+            for metres in (20, 50, 80):
+                terms[f"reset_distance_{metres}m_count"] = (
+                    after.done & (jnp.abs(distance - metres) < 0.01)
+                ).astype(jnp.float32)
         discount = jnp.where(after.done, 1.0, discount * trainer.config["gamma"])
         return (env_state, memory, history, rng, discount), (
             contribution + auxiliary_cost,
@@ -113,6 +123,15 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
         "done_fraction": rollout.done.mean(),
         "auxiliary_loss": auxiliary.mean(),
     }
+    if trainer.distance_sampling:
+        for metres in (20, 50, 80):
+            name = f"reset_distance_{metres}m_count"
+            metrics[name] = jnp.sum(terms[name])
+        metrics["distance_curriculum_phase"] = (
+            jnp.minimum(jnp.floor(sampling_progress * 3), 2)
+            if sampling_progress is not None
+            else -1.0
+        )
     if bootstrap:
         metrics["bootstrap_terminal_value_abs"] = jnp.abs(rollout.next_values[-1]).mean()
         metrics["bootstrap_terminal_vs_step_cost"] = (
@@ -123,11 +142,11 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
     return costs.mean(), (state, rollout, metrics)
 
 
-def update(trainer, state):
+def update(trainer, state, *, sampling_progress=None):
     """Apply one differentiable actor update to the recoverable training state."""
 
     def objective(params):
-        return rollout_objective(trainer, state, params)
+        return rollout_objective(trainer, state, params, sampling_progress=sampling_progress)
 
     (loss, (state, _, metrics)), gradients = jax.value_and_grad(objective, has_aux=True)(
         state.params

@@ -141,10 +141,19 @@ class RunRecord:
                 self.identity["last_update"] = step
                 self.identity["last_interactions"] = metrics.get("interactions")
             elif event in ("screening_evaluation", "full_validation", "checkpoint_evaluation"):
+                # Model retention may prune the report; keep its selection evidence.
+                self._writer.add_text(f"event/{event}", json.dumps(data, default=str), step)
                 self.identity["last_evaluation"] = {
                     "event": event,
-                    **{key: value for key, value in metrics.items() if key != "scenes"},
+                    **{
+                        key: value
+                        for key, value in metrics.items()
+                        if key not in ("scenes", "per_scene")
+                    },
                 }
+                for name in ("score", "best_score", "stagnant_screens"):
+                    if name in metrics:
+                        self._writer.add_scalar(f"evaluation/{name}", metrics[name], step)
                 if isinstance(metrics.get("passed"), bool):
                     self._writer.add_scalar(
                         f"evaluation/{event}_passed", int(metrics["passed"]), step

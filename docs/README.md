@@ -1,8 +1,10 @@
 # 文档入口
 
-[功能规格](spec.md)定义当前唯一的 **S1–S4 / L1–L4 八项验收**；[验证记录](validation.md)和[历史验收说明](acceptance.md)描述已有执行证据。旧 C/S/L 二十项记录只作追溯，不作为另一套任务。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
+[当前工作状态](status.md)记录本分支的训练、验收缺口和阻塞。
 
-**集成文档核对：2026-10-10T01:27:02Z（UTC）。** 当前集成分支为 `v0.2`。功能分支的 ADR 和文档仅是各自的 Git 快照；合并时要核对现有决策、编号和索引，不能以分支副本覆盖新决定。协作规则见 [AGENTS.md](../AGENTS.md)。
+[功能规格](spec.md)定义当前唯一的 **S1–S4 / L1–L4 八项验收**；[验证记录](validation.md)和[验收证据与历史说明](acceptance.md)描述已有执行证据。旧 C/S/L 二十项记录只作追溯，不作为另一套任务。术语使用根目录的 [GLOSSARY.md](../GLOSSARY.md)。
+
+**集成文档核对：2026-10-16T02:29:12Z（UTC）。** 当前集成分支为 `main`。功能分支的 ADR 和文档仅是各自的 Git 快照；合并时要核对现有决策、编号和索引，不能以分支副本覆盖新决定。协作规则见 [AGENTS.md](../AGENTS.md)。
 
 ## 架构决策
 
@@ -31,10 +33,11 @@
 | [0020](adr/0020-ppo-diagnostics-before-brax-replacement.md) | 保留 Brax 标准 Env 兼容和原生 PPO 对照；独立验证旧版速度指令、奖励配方与导航 PPO 训练诊断 |
 | [0021](adr/0021-task-owned-reward-contract.md) | Task/Environment 拥有任务奖励、进度和失败惩罚；Learning 只组合任务成本与网络辅助损失 |
 | [0022](adr/0022-navigation-reward-ablation.md) | Navigation PPO 单变量奖励消融与配对验证 |
-| [0024](adr/0024-navigation-ppo-progress-regression-screening.md) | Accepted：真实进度与逐回合能力保持纳入筛查；取消速度目标并建立距离与稳定性对照；局部校准已有证据，功能代码尚未合入，收敛验收未完成 |
-| [0025](adr/0025-autoresearch-gym.md) | `feat/autoresearch-gym`：外部候选搜索接入现有 CLI，可选固定交互预算；尚未合入 `v0.2` |
+| [0023](adr/0023-navigation-world-rotation-observation.md) | Accepted：独立 Navigation PPO 世界朝向观测已集成；稳定性验收未完成 |
+| [0024](adr/0024-navigation-ppo-progress-regression-screening.md) | Accepted：真实进度和能力保持筛查、距离对照已集成；多种子收敛未验收 |
+| [0025](adr/0025-autoresearch-gym.md) | 固定预算候选训练与外部 Autoresearch Gym 已集成 |
 
-当前 `v0.2` 合入 Sensor P0/P1 与 RL/Brax、Scratch Matrix、奖励消融。
+当前 `main` 已集成 Sensor P0/P1、RL/Brax、Scratch Matrix、奖励消融和 PPO 稳定性诊断代码。
 新训练使用 Orbax/TensorBoard v3；旧 v2 ZIP 产物和冻结报告按原协议读取，
 历史验证证据不能代替本次代码的训练收敛测试。配置、控制器、延迟和动力学
 见[控制模型说明](control-models.md)。
@@ -67,6 +70,10 @@ SE3 暂不加入。原迭代审查保留在 Git 历史，不作为另一套现�
 [Autoresearch Gym](autoresearch.md) 说明外部候选训练、固定预算和评测结果读取。
 
 ## 阶段性实验记录
+
+已集成的 [Navigation PPO 四路线实验](research/navigation-ppo-search-20261012.md)
+记录 Fan/VisFly 与原 Depth/LiDAR 对照、分支整理及证据核对。
+论文适配代码已合入本地 `main`；训练收敛和冻结验收尚未通过。
 
 版本控制只保留稳定的规格、ADR、可复现入口和正式研究结论。
 每轮参数尝试不新增 Markdown：失败模型、过程指标、日志、独立评测及来源

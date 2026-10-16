@@ -1,0 +1,17 @@
+{
+  "scope": "Replicate the fixed p1/f0 SHAC recipe from independent random initialization",
+  "trigger": "SHAC seed0 has verified three consecutive passes; PPO under the same common task has passed seed0/2 and seed1 remains running.",
+  "seed0_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/shac_s0",
+  "seed0_run_sha256": "d556d613691498d85f3f0a0e37498073aa6d4990b295e308d399bdb4be44271d",
+  "configs": [
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_shac_p1f0_s1.yaml",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_shac_p1f0_s2.yaml"
+  ],
+  "only_changes_from_seed0": [
+    "seed",
+    "output"
+  ],
+  "budget_per_seed": 67108864,
+  "selection": "First three consecutive100-episode passing checkpoint evaluations; no best-seed replacement.",
+  "final_test": "Unused4million cohort remains reserved; automatic2million benchmarks are development. No new matrix cell claimed before complete evidence."
+}

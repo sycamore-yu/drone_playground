@@ -1,0 +1,55 @@
+{
+  "status": "completed",
+  "scope": "Frozen development trajectory measurement, not training or acceptance",
+  "runs": {
+    "control": {
+      "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
+      "wall_seconds": 42.18670926601044,
+      "successes": 25,
+      "case_events_match": true,
+      "changed_events": [],
+      "goal_metres": [
+        98.0,
+        0.0,
+        3.0
+      ],
+      "bounds_metres": [
+        [
+          0.0,
+          -20.0,
+          0.5
+        ],
+        [
+          100.0,
+          20.0,
+          6.0
+        ]
+      ]
+    },
+    "full_batch": {
+      "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000180",
+      "wall_seconds": 11.386548673996003,
+      "successes": 16,
+      "case_events_match": true,
+      "changed_events": [],
+      "goal_metres": [
+        98.0,
+        0.0,
+        3.0
+      ],
+      "bounds_metres": [
+        [
+          0.0,
+          -20.0,
+          0.5
+        ],
+        [
+          100.0,
+          20.0,
+          6.0
+        ]
+      ]
+    }
+  },
+  "wall_seconds": 54.42304568600957
+}

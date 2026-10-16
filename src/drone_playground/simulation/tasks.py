@@ -64,17 +64,83 @@ class Task:
         gate_order=None,
         reward_profile: str = "default",
         reward_shaping: dict | None = None,
+        reward_options: dict | None = None,
+        finite_horizon: bool = False,
     ):
         """Configure the task reference, duration and terminal-event contract."""
         if name not in {"tracking", "racing", "navigation"}:
             raise ValueError(f"Unknown task: {name}")
         self.name = name
-        if reward_profile not in {"default", "legacy_motion_navigation_v2"}:
+        if reward_profile not in {
+            "default",
+            "minimum_time_navigation",
+            "legacy_motion_navigation_v2",
+            "fan2025",
+            "fan2025_arrival",
+            "visfly2025",
+            "goal_reaching",
+        }:
             raise ValueError("Unsupported Task reward profile")
         if reward_profile != "default" and name != "navigation":
             raise ValueError("Alternative Navigation reward requires navigation task")
         self.reward_profile = reward_profile
+        if type(finite_horizon) is not bool or (finite_horizon and name != "navigation"):
+            raise ValueError("finite_horizon requires boolean Navigation configuration")
+        self.finite_horizon = finite_horizon
+        if reward_profile == "goal_reaching" and not finite_horizon:
+            raise ValueError("Goal-reaching reward requires a finite-horizon task")
         self.reward_shaping = dict(reward_shaping or {})
+        self.reward_options = dict(reward_options or {})
+        if reward_profile in {"fan2025", "fan2025_arrival", "visfly2025"} and self.reward_shaping:
+            raise ValueError("Paper task profiles cannot add legacy reward shaping")
+        if reward_profile == "goal_reaching" and self.reward_shaping:
+            raise ValueError("Goal-reaching reward cannot add unbounded legacy shaping")
+        if reward_profile in {"fan2025", "fan2025_arrival"}:
+            required = {"weights", "min_speed", "max_speed", "safe_distance", "hover_distance"}
+            if reward_profile == "fan2025_arrival":
+                required.add("success_reward")
+            coefficients = {
+                "alive",
+                "acceleration",
+                "velocity",
+                "distance",
+                "progress",
+                "jerk",
+                "obstacle",
+                "hover",
+                "collision",
+            }
+            if (
+                set(self.reward_options) != required
+                or set(self.reward_options.get("weights", {})) != coefficients
+            ):
+                raise ValueError("Fan reward needs explicit weights and physical thresholds")
+            numbers = [
+                *self.reward_options["weights"].values(),
+                *(self.reward_options[key] for key in required - {"weights"}),
+            ]
+            if any(
+                isinstance(v, bool)
+                or not isinstance(v, (float, int))
+                or not np.isfinite(v)
+                or v < 0
+                for v in numbers
+            ):
+                raise ValueError("Fan reward parameters must be finite and nonnegative")
+            if not (
+                self.reward_options["min_speed"] < self.reward_options["max_speed"]
+                and self.reward_options["safe_distance"] > 0
+            ):
+                raise ValueError("Invalid Fan speed or safety range")
+            if reward_profile == "fan2025_arrival" and self.reward_options["success_reward"] <= 0:
+                raise ValueError("Fan arrival reward must be positive")
+        elif reward_profile == "goal_reaching":
+            if self.reward_options.keys() - {"clearance_aggregation"} or self.reward_options.get(
+                "clearance_aggregation", "time_average"
+            ) not in ("time_average", "minimum"):
+                raise ValueError("Goal-reaching clearance_aggregation must be time_average/minimum")
+        elif self.reward_options:
+            raise ValueError("This task reward profile does not support reward_options")
         accepted_shaping = {
             "task_weight",
             "progress_reward_scale",
@@ -199,8 +265,12 @@ class Task:
         }
         if self.reward_profile != "default":
             result["reward_profile"] = self.reward_profile
+        if self.finite_horizon:
+            result["finite_horizon"] = True
         if self.reward_shaping:
             result["reward_shaping"] = dict(self.reward_shaping)
+        if self.reward_options:
+            result["reward_options"] = dict(self.reward_options)
         if self.name == "navigation":
             result.update(
                 goal_metres=np.asarray(self.goal).tolist(), goal_radius_metres=self.goal_radius

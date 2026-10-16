@@ -166,6 +166,7 @@ def export_replay(
     plans: Sequence | None = None,
     *,
     sensor_times: ArrayLike | None = None,
+    scene_body_positions: dict[str, ArrayLike] | None = None,
 ) -> Path:
     """Export one recorded episode without stepping or mutating its simulation.
 
@@ -180,6 +181,7 @@ def export_replay(
         plans: T world-position arrays (N, 3), None entries, or mappings containing
             positions and optional received_time/valid_until. Only a valid plan is shown.
         sensor_times: Actual acquisition times for recorded sensor hits, when available.
+        scene_body_positions: Recorded world positions [T,3] for named scene mocap bodies.
 
     Returns:
         Path to episode.mj_unroll, beside scene.xml, assets and rscope_meta.pkl.
@@ -188,6 +190,12 @@ def export_replay(
         ValueError: Invalid shapes, timestamps, poses or prescribed motion.
         FileExistsError: The output directory is not empty.
     """
+    raw_times = np.asarray(times)
+    time_roundoff = (
+        np.abs(np.spacing(raw_times)).astype(float)
+        if raw_times.dtype == np.float32
+        else np.zeros(raw_times.shape)
+    )
     times = np.asarray(times, dtype=float)
     positions = np.asarray(positions, dtype=float)
     quaternions = np.asarray(quaternions_xyzw, dtype=float)
@@ -224,7 +232,8 @@ def export_replay(
         sensor_times = np.asarray(sensor_times, dtype=float)
         if sensor_times.shape != (count,) or not np.isfinite(sensor_times).all():
             raise ValueError("Sensor acquisition times must be finite and frame-aligned")
-        if np.any(sensor_times > times + 1e-7):
+        # Independent float32 timestamp arithmetic can differ by one ULP.
+        if np.any(sensor_times > times + np.maximum(1e-7, time_roundoff)):
             raise ValueError("Sensor acquisition cannot be later than its replay frame")
     plan_segments = [np.stack((p[:-1], p[1:]), axis=1) for p in trajectories]
     root, assets = _scene_xml(scene)
@@ -250,7 +259,8 @@ def export_replay(
     )
     _attach_drone_mesh(root, assets, drone)
     for i, (start, end) in enumerate(itertools.pairwise(positions)):
-        if np.array_equal(start, end):
+        # MuJoCo rejects microscopic capsules; every recorded pose remains in qpos.
+        if np.linalg.norm(end - start) < 1e-6:
             continue
         ET.SubElement(
             world,
@@ -312,6 +322,16 @@ def export_replay(
     mocap_pos = np.tile(data.mocap_pos, (count, 1, 1, 1))
     mocap_quat = np.tile(data.mocap_quat, (count, 1, 1, 1))
     _motion(model, times, mocap_pos)
+    for name, values in (scene_body_positions or {}).items():
+        values = np.asarray(values, dtype=float)
+        if name == "drone" or name.startswith("replay_"):
+            raise ValueError("Scene positions cannot replace drone or replay overlays")
+        slot = int(model.body(name).mocapid[0])
+        if slot < 0 or values.shape != (count, 3) or not np.isfinite(values).all():
+            raise ValueError(
+                "Recorded scene motion requires a mocap body and finite [T,3] positions"
+            )
+        mocap_pos[:, 0, slot] = values
     for label, frames, _ in overlays:
         slots = [model.body(f"replay_{label}_{i}").mocapid[0] for i in range(max(map(len, frames)))]
         # ponytail: park unused slots below the scene until RScope supports per-frame visibility.

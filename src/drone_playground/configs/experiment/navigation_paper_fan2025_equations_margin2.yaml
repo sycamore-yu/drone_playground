@@ -1,0 +1,9 @@
+# @package _global_
+# One measured-search candidate: earlier obstacle feedback, no other changes.
+defaults:
+  - navigation_paper_fan2025_equations
+
+task:
+  options:
+    reward_options:
+      safe_distance: 2.0

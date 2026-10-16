@@ -1,7 +1,9 @@
 """Exercise the public collector CLI with real CSV denominators and provenance files."""
 
+import copy
 import csv
 import hashlib
+import importlib.util
 import json
 import subprocess
 import sys
@@ -15,16 +17,386 @@ SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "report_acceptance.py"
 NAV_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
+@pytest.fixture
+def stable_ppo_evidence(tmp_path, uncertainty_collector):
+    """Build a complete continuation/frozen chain around existing selected-run fixtures."""
+    module = uncertainty_collector
+    path = make_run(tmp_path, task="navigation")
+    run = module.collect_run(path, tmp_path)
+    config = run["config"]
+    config["simulation"]["num_envs"] = 64
+    config["learning"]["options"] = {"horizon": 512, "lr": 0.0002}
+    source = path / "checkpoints/model_000300"
+    meta = {
+        "format_version": 3,
+        "purpose": "model",
+        "has_inference_actor": True,
+        "kind": "depth",
+        "actor": {"kind": "depth"},
+        "config": {
+            "experiment": config,
+            "training_sampling": {
+                "geometry_sha256": {scene: scene for scene in NAV_SCENES},
+            },
+        },
+        "provenance": {
+            "updates": 300,
+            "interactions": 9830400,
+            "source_sha256": "recorded-source",
+            "config_sha256": "recorded-config",
+        },
+    }
+    run["checkpoint"] = {"path": str(source), "metadata": meta, "integrity": module.check(True)}
+    selected = run["checkpoint_evaluations"][-1]
+    for scene in NAV_SCENES[:6]:
+        selected["scenes"][scene]["claimed"]["task_contract"] = {"goal_radius_metres": 0.5}
+    rows = [
+        [s, s, str(seed), str(world), "SUCCESS"]
+        for s in NAV_SCENES[:6]
+        for seed, world in selected["scenes"][s]["case_ids"]
+    ]
+    folder = tmp_path / "window"
+    checks = [
+        {
+            "update": 300 + offset,
+            "additional_interactions": offset * 32768,
+            "model": str(folder / f"model_{300 + offset:06d}"),
+            "per_scene_successes": dict.fromkeys(NAV_SCENES[:6], 25),
+            "successes": 150,
+            "initial_successes": 150,
+            "retained_initial_successes": 150,
+            "retention_fraction": 1,
+            "lost_initial_cases": [],
+            "new_success_cases": [],
+            "passed": True,
+        }
+        for offset in range(4, 29, 4)
+    ]
+    report = {
+        "status": "completed",
+        "passed": True,
+        "source_checkpoint": str(source),
+        "source_run": str(path),
+        "source_config_sha256_reused": "recorded-config",
+        "source_sha256_reused": "recorded-source",
+        "runtime_provenance": {"source_sha256": "recorded-source"},
+        "origin_update": 300,
+        "origin_interactions": 9830400,
+        "planned_updates": 28,
+        "evaluation_interval_updates": 4,
+        "planned_additional_interactions": 917504,
+        "actual_additional_interactions": 917504,
+        "last_update": 328,
+        "last_interactions": 10747904,
+        "evaluation_seed_base": selected["seed_base"],
+        "baseline_cases": rows,
+        "checks": checks,
+        "final_checkpoint": checks[-1]["model"],
+    }
+    write_json(folder / "report.json", report)
+    metrics = [
+        {
+            "update": 300 + offset,
+            "interactions": 9830400 + offset * 32768,
+            "actor_grad_norm": 0.1,
+            "kl_actor_update_skipped": 0,
+        }
+        for offset in range(1, 29)
+    ]
+    (folder / "metrics.jsonl").write_text("\n".join(map(json.dumps, metrics)))
+    final = Path(report["final_checkpoint"])
+    final_meta = copy.deepcopy(meta)
+    final_meta["provenance"].update(
+        updates=328,
+        interactions=10747904,
+        status="completed",
+        stability_source_checkpoint=str(source),
+        stability_window_report=str(folder / "report.json"),
+    )
+    write_json(final / "metadata.json", final_meta)
+    for part in ("actor", "training"):
+        (final / part).mkdir()
+        (final / part / "commit_success.txt").touch()
+    frozen = tmp_path / "final-test"
+    evaluation(frozen, task="navigation", successes=25, count=25, seed_base=3000000)
+    frozen_report = json.loads((frozen / "report.json").read_text())
+    for scene in NAV_SCENES:
+        frozen_report["reports"][scene].update(
+            geometry={"sha256": scene},
+            task_contract={"goal_radius_metres": 0.5},
+        )
+    write_json(frozen / "report.json", frozen_report)
+    frozen_config = copy.deepcopy(config)
+    frozen_config.update(mode="benchmark", checkpoint=str(final))
+    frozen_config["benchmark"] = {"seed_base": 3000000, "protocol": "learning"}
+    (frozen / "config.yaml").write_text(yaml.safe_dump(frozen_config))
+    write_json(
+        frozen / "run.json",
+        {
+            "layout_version": 3,
+            "status": "completed",
+            "evaluation_directory": ".",
+            "evaluated_checkpoint": {"path": str(final), "model_metadata": final_meta},
+        },
+    )
+    return run, {"window_report": str(folder / "report.json"), "benchmark_run": str(frozen)}
+
+
+@pytest.mark.parametrize(
+    "damage",
+    [
+        None,
+        "short",
+        "missing_check",
+        "rollback",
+        "recipe",
+        "diagnostic",
+        "entropy_diagnostic",
+        "full_batch_diagnostic",
+        "expanded_worlds_diagnostic",
+        "policy_cloning_diagnostic",
+        "case_identity",
+        "failed_retention",
+        "skipped_updates",
+        "truncated_metrics",
+        "orbax",
+        "final_model",
+        "consumed_cohort",
+        "missing_final",
+        "geometry",
+    ],
+)
+def test_ppo_stability_requires_complete_final_chain(
+    tmp_path,
+    uncertainty_collector,
+    stable_ppo_evidence,
+    damage,
+):
+    """A passing initial benchmark cannot mask an invalid window or wrong final model."""
+    module = uncertainty_collector
+    run, entry = stable_ppo_evidence
+    path = Path(entry["window_report"])
+    report = json.loads(path.read_text())
+    if damage == "short":
+        report["actual_additional_interactions"] -= 32768
+    elif damage == "missing_check":
+        report["checks"].pop(0)
+    elif damage == "rollback":
+        report["final_checkpoint"] = report["checks"][-2]["model"]
+    elif damage == "diagnostic":
+        report["actor_lr_scale"] = 0.1
+    elif damage == "entropy_diagnostic":
+        report.update(diagnostic=True, entropy_weight=0.0, entropy_bonus_disabled=True)
+    elif damage == "full_batch_diagnostic":
+        report.update(diagnostic=True, full_batch=True, optimizer_steps_per_update=4)
+    elif damage == "expanded_worlds_diagnostic":
+        report.update(diagnostic=True, worlds_multiplier=4, rollout_worlds=256)
+    elif damage == "policy_cloning_diagnostic":
+        report.update(diagnostic=True, policy_cloning={"weight": 0.1})
+    elif damage == "case_identity":
+        report["baseline_cases"][0][2] = "changed"
+    elif damage == "failed_retention":
+        row = report["checks"][0]
+        lost = [
+            r[:4]
+            for s in NAV_SCENES[:4]
+            for r in report["baseline_cases"]
+            if r[0] == s and int(r[3]) < 2
+        ]
+        row.update(
+            lost_initial_cases=lost,
+            retained_initial_successes=142,
+            retention_fraction=142 / 150,
+            successes=142,
+            passed=False,
+        )
+        row["per_scene_successes"].update(dict.fromkeys(NAV_SCENES[:4], 23))
+        report["passed"] = False
+    elif damage in {"recipe", "orbax"}:
+        final = Path(report["final_checkpoint"])
+        if damage == "orbax":
+            (final / "actor/commit_success.txt").unlink()
+        else:
+            meta = json.loads((final / "metadata.json").read_text())
+            meta["config"]["experiment"]["learning"]["options"]["lr"] *= 0.1
+            write_json(final / "metadata.json", meta)
+    elif damage in {"skipped_updates", "truncated_metrics"}:
+        metrics_path = path.parent / "metrics.jsonl"
+        metrics = [json.loads(line) for line in metrics_path.read_text().splitlines()]
+        if damage == "truncated_metrics":
+            metrics.pop()
+        else:
+            metrics[0]["kl_actor_update_skipped"] = 1
+        metrics_path.write_text("\n".join(map(json.dumps, metrics)))
+    elif damage == "final_model":
+        frozen_path = Path(entry["benchmark_run"]) / "run.json"
+        header = json.loads(frozen_path.read_text())
+        header["evaluated_checkpoint"]["path"] = run["checkpoint"]["path"]
+        write_json(frozen_path, header)
+    elif damage == "missing_final":
+        entry.pop("benchmark_run")
+    elif damage == "geometry":
+        frozen_path = Path(entry["benchmark_run"]) / "report.json"
+        frozen_report = json.loads(frozen_path.read_text())
+        frozen_report["reports"]["S01"]["geometry"]["sha256"] = "another-scene"
+        write_json(frozen_path, frozen_report)
+    write_json(path, report)
+    module.apply_ppo_stability(
+        run, entry, tmp_path, [3000000] if damage == "consumed_cohort" else []
+    )
+    grade = module.seed_result(run, ("navigation", "depth", "static"))
+    assert grade["status"] == (
+        "passed" if damage is None else "incomplete" if damage == "missing_final" else "failed"
+    )
+    assert run["final_benchmark_verified"] is (damage is None)
+    if damage == "failed_retention":
+        assert min(report["checks"][0]["per_scene_successes"].values()) == 23
+        assert run["ppo_stability"]["passed"] is False
+    if damage is None:
+        assert run["benchmark"]["seed_base"] == 3000000
+        assert run["selection_benchmark"]["seed_base"] == 2000000
+        assert grade["final_model_counters"]["last_update"] == 328
+
+
+@pytest.fixture
+def uncertainty_collector():
+    """Load the reporting-only statistics without starting any simulation."""
+    spec = importlib.util.spec_from_file_location("acceptance_uncertainty_test", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize("damage", [None, "window_changed", "frozen_changed", "consumed"])
+def test_ppo_final_chain_reuse_skips_completed_audits(
+    tmp_path,
+    uncertainty_collector,
+    stable_ppo_evidence,
+    monkeypatch,
+    damage,
+):
+    """Reuse a valid completed chain; changed records cannot silently retain a pass."""
+    module = uncertainty_collector
+    run, entry = stable_ppo_evidence
+    path = Path(run["path"])
+    (path / "config.yaml").write_text(yaml.safe_dump(run["config"]))
+    manifest = {"runs": [str(path)], "ppo_navigation_stability": {str(path): entry}}
+    manifest_path = tmp_path / "manifest.json"
+    write_json(manifest_path, manifest)
+    monkeypatch.setattr(module, "collect_run", lambda *a, **kw: copy.deepcopy(run))
+    report = module.collect(manifest_path)
+    assert report["cells"][2]["seeds"]["0"]["status"] == "passed"
+    cached = tmp_path / "verified.json"
+    write_json(cached, report)
+    manifest["reuse_reports"] = {str(path): str(cached)}
+    if damage == "consumed":
+        manifest["development_seed_bases"] = [3000000]
+    write_json(manifest_path, manifest)
+    if damage == "window_changed":
+        window = Path(entry["window_report"])
+        record = json.loads(window.read_text())
+        record["passed"] = False
+        write_json(window, record)
+    elif damage == "frozen_changed":
+        frozen = Path(entry["benchmark_run"]) / "run.json"
+        record = json.loads(frozen.read_text())
+        record["status"] = "failed"
+        write_json(frozen, record)
+    monkeypatch.setattr(module, "collect_run", lambda *a, **kw: pytest.fail("repeated raw audit"))
+    if damage != "consumed":
+        monkeypatch.setattr(module, "stability_window", lambda *a: pytest.fail("repeated window"))
+        monkeypatch.setattr(module, "evaluate", lambda *a, **kw: pytest.fail("repeated CSV audit"))
+        monkeypatch.setattr(module, "digest", lambda *a: pytest.fail("repeated hash"))
+    if damage in {"window_changed", "frozen_changed"}:
+        with pytest.raises(ValueError, match="changed after verification"):
+            module.collect(manifest_path)
+    else:
+        reused = module.collect(manifest_path)
+        assert reused["cells"][2]["seeds"]["0"]["status"] == (
+            "failed" if damage == "consumed" else "passed"
+        )
+
+
+def test_ppo_window_requirement_cannot_use_initial_benchmark(
+    tmp_path,
+    uncertainty_collector,
+    stable_ppo_evidence,
+    monkeypatch,
+):
+    """An empty stability map enables the requirement without supplying evidence."""
+    module = uncertainty_collector
+    run, _ = stable_ppo_evidence
+    path = tmp_path / "manifest.json"
+    write_json(path, {"runs": [run["path"]], "ppo_navigation_stability": {}})
+    monkeypatch.setattr(module, "collect_run", lambda *a, **kw: run)
+    report = module.collect(path)
+    seed = report["cells"][2]["seeds"]["0"]
+    assert seed["C5"]["passed"] is True
+    assert seed["status"] == "incomplete" and seed["quality"]["passed"] is None
+    assert seed["success_rate_intervals"]["S01"]["value"] is None
+    assert "final frozen test pending" in module.markdown(report)
+
+
+@pytest.mark.parametrize(
+    "successes,episodes", [(0, 25), (23, 25), (25, 25), (100, 100), (1, 1), (7, 50)]
+)
+def test_success_intervals_match_scipy_wilson(uncertainty_collector, successes, episodes):
+    """Compare the standard-library calculation to an independent reference API."""
+    from scipy.stats import binomtest
+
+    actual = uncertainty_collector.success_rate_interval(successes, episodes)
+    expected = binomtest(successes, episodes).proportion_ci(method="wilson")
+    assert actual["low"] == pytest.approx(expected.low, abs=1e-15)
+    assert actual["high"] == pytest.approx(expected.high, abs=1e-15)
+    assert actual["estimate"] == successes / episodes
+
+
+@pytest.mark.parametrize("successes,episodes", [(None, 25), (0, 0), (-1, 25), (26, 25), (True, 25)])
+def test_missing_or_invalid_counts_have_no_interval(uncertainty_collector, successes, episodes):
+    """Missing evidence cannot silently become an observed zero success rate."""
+    assert uncertainty_collector.success_rate_interval(successes, episodes) is None
+
+
+def test_training_seed_spread_does_not_pool_episodes(uncertainty_collector):
+    """Each trained policy has equal weight despite different test episode counts."""
+    counts = [(1, 1), (23, 25), (0, 100)]
+    values = {
+        str(i): {
+            "success_rate_intervals": {
+                "S01": {"value": uncertainty_collector.success_rate_interval(k, n)}
+            }
+        }
+        for i, (k, n) in enumerate(counts)
+    }
+    values["missing"] = {"status": "missing"}
+    result = uncertainty_collector.seed_success_rate_spread(values)["S01"]
+    assert result["available_training_seeds"] == 3
+    assert result["mean"] == pytest.approx(0.64)
+    assert result["min"] == 0 and result["max"] == 1
+    assert 0.55 < result["sample_standard_deviation"] < 0.56
+    assert uncertainty_collector.seed_success_rate_spread({"0": values["missing"]}) == {}
+
+
 def write_json(path, value):
     """Provide write json for the surrounding execution."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value))
 
 
-def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100):
+def evaluation(
+    path,
+    task="tracking",
+    seed=0,
+    index=0,
+    successes=100,
+    count=100,
+    seed_base=None,
+    fixed_checkpoint_seeds=False,
+):
     """Provide evaluation for the surrounding execution."""
     mode = "checkpoint_eval" if index else "benchmark"
-    base = 1_000_000 if index else 2_000_000
+    base = (1_000_000 if index else 2_000_000) if seed_base is None else seed_base
+    cohort = 0 if fixed_checkpoint_seeds and index else index
     scenes = NAV_SCENES if task == "navigation" else ["empty" if task == "tracking" else "racing"]
     reports = {}
     all_rows = []
@@ -36,7 +408,7 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
                 {
                     "scene": scene,
                     "event": "SUCCESS" if world < successes else "COLLISION",
-                    "initialization_seed": base + 10_000 * seed + 100 * index + scene_index,
+                    "initialization_seed": base + 10_000 * seed + 100 * cohort + scene_index,
                     "world_index": world,
                     "position_rmse": 0.1,
                     "flight_seconds": 20,
@@ -65,7 +437,15 @@ def evaluation(path, task="tracking", seed=0, index=0, successes=100, count=100)
 
 
 def make_run(
-    root, name="run", *, task="tracking", algorithm="ppo", seed=0, passes=(True, True, True)
+    root,
+    name="run",
+    *,
+    task="tracking",
+    algorithm="ppo",
+    seed=0,
+    passes=(True, True, True),
+    fixed_checkpoint_seeds=False,
+    reward_shaping=None,
 ):
     """Provide make run for the surrounding execution."""
     path = root / name
@@ -90,6 +470,10 @@ def make_run(
             "selection": "last_of_first_three_consecutive_passes",
         },
     }
+    if reward_shaping is not None:
+        config["task"]["options"] = {"reward_shaping": reward_shaping}
+    if fixed_checkpoint_seeds:
+        config["benchmark"] = {"fixed_checkpoint_seeds": True}
     (path / "config.yaml").write_text(yaml.safe_dump(config))
     update = len(passes) * 100
     cp = path / "checkpoints" / f"step-{update:06d}" / "policy.zip"
@@ -157,6 +541,7 @@ def make_run(
             index,
             count if passed else 0,
             count,
+            fixed_checkpoint_seeds=fixed_checkpoint_seeds,
         )
         events.append({"event": "checkpoint_evaluation", "update": 100 * index})
     (path / "metrics.jsonl").write_text("\n".join(map(json.dumps, events)) + "\n")
@@ -310,6 +695,21 @@ def test_checkpoint_passes_must_be_consecutive(tmp_path):
     assert report["runs"][0]["C5"]["first_passing_updates"] is None
 
 
+@pytest.mark.parametrize("damage", [False, True])
+def test_fixed_validation_cohort_uses_configured_case_identity(tmp_path, damage):
+    """Repeated fixed cases still require consecutive checks and their declared seeds."""
+    path = make_run(tmp_path, fixed_checkpoint_seeds=True)
+    if damage:
+        rewrite_csv(
+            path / "checkpoints/step-000200/episodes.csv",
+            lambda rows: [row.update(initialization_seed="1000100") for row in rows],
+        )
+    completed, report = run_collector(tmp_path, [path])
+    assert completed.returncode == 0, completed.stderr
+    assert report["runs"][0]["C5"]["passed"] is (not damage)
+    assert report["runs"][0]["benchmark"]["seeds"] == [2_000_000]
+
+
 def test_three_seeds_and_three_algorithms_with_actual_csv_pass_tracking_only(tmp_path):
     """Verify three seeds and three algorithms with actual csv pass tracking only."""
     runs = [
@@ -323,6 +723,147 @@ def test_three_seeds_and_three_algorithms_with_actual_csv_pass_tracking_only(tmp
     assert not report["all_passed"]
     assert report["runs"][0]["C5"]["first_passing_updates"] == [100, 200, 300]
     assert report["runs"][0]["checkpoint"]["archive_sha256"]
+
+
+def test_algorithm_comparison_rejects_different_actor_information(tmp_path):
+    """Matching network names cannot hide a changed observation contract."""
+    runs = [
+        make_run(tmp_path, f"{algorithm}-{seed}", algorithm=algorithm, seed=seed)
+        for algorithm in ("ppo", "apg", "shac")
+        for seed in range(3)
+    ]
+    config_path = runs[-1] / "config.yaml"
+    config = yaml.safe_load(config_path.read_text())
+    config["observation"] = {"navigation_relative_goal": True}
+    config_path.write_text(yaml.safe_dump(config))
+    completed, report = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    assert report["common_actor_checks"]["tracking/state"]["passed"] is False
+
+
+def test_different_training_rewards_preserve_individual_task_acceptance(tmp_path):
+    """Task success remains comparable when each algorithm uses its own shaping."""
+    runs = [
+        make_run(
+            tmp_path,
+            f"{algorithm}-{seed}",
+            task="racing",
+            algorithm=algorithm,
+            seed=seed,
+            reward_shaping={"progress_reward_scale": scale},
+        )
+        for algorithm, scale in (("ppo", 1), ("apg", 0), ("shac", 2))
+        for seed in range(3)
+    ]
+    completed, report = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    assert report["summary"] == {"missing": 15, "passed": 3}
+    assert report["common_actor_checks"]["racing/state"]["passed"] is False
+
+
+@pytest.mark.parametrize("changed", [None, "config", "run", "benchmark"])
+def test_verified_evidence_reuse_avoids_raw_audit_and_rejects_changed_inputs(
+    tmp_path, monkeypatch, changed
+):
+    """Reuse valid verification without reading policies/episodes or hashing them again."""
+    runs = [make_run(tmp_path, f"ppo-{seed}", seed=seed) for seed in range(3)]
+    completed, _ = run_collector(tmp_path, runs)
+    assert completed.returncode == 0, completed.stderr
+    manifest = {
+        "runs": [str(p) for p in runs],
+        "reuse_reports": {str(p): str(tmp_path / "report.json") for p in runs},
+    }
+    if changed in {"config", "run"}:
+        path = runs[0] / ("config.yaml" if changed == "config" else "run.json")
+        value = yaml.safe_load(path.read_text())
+        value["seed" if changed == "config" else "updates"] = 123
+        path.write_text(yaml.safe_dump(value) if changed == "config" else json.dumps(value))
+    elif changed == "benchmark":
+        manifest["benchmark_runs"] = {str(runs[0]): str(tmp_path / "another-benchmark")}
+    manifest_path = tmp_path / "reuse.json"
+    write_json(manifest_path, manifest)
+    spec = importlib.util.spec_from_file_location("acceptance_reuse_test", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Reused evidence must not trigger fresh artifact audits or hashes")
+
+    monkeypatch.setattr(module, "collect_run", unexpected)
+    monkeypatch.setattr(module, "digest", unexpected)
+    if changed:
+        with pytest.raises(ValueError, match="changed after verification"):
+            module.collect(manifest_path)
+    else:
+        report = module.collect(manifest_path)
+        assert report["summary"] == {"passed": 1, "missing": 17}
+        assert all(r["reused_evidence"]["report"] for r in report["runs"])
+        interval = report["cells"][0]["seeds"]["0"]["success_rate_intervals"]["empty"]["value"]
+        assert interval["episodes"] == interval["successes"] == 100
+        assert 0.96 < interval["low"] < 1 and interval["high"] == 1
+        assert report["cells"][0]["seed_success_rate_spread"]["empty"]["mean"] == 1
+
+
+@pytest.mark.parametrize("damage", [None, "payload", "checkpoint", "observation", "cohort"])
+def test_explicit_frozen_run_requires_the_selected_model_and_inputs(tmp_path, damage):
+    """A fresh benchmark may replace a consumed cohort only with verified model provenance."""
+    source = make_run(tmp_path)
+    header = json.loads((source / "run.json").read_text())
+    checkpoint = source / header["selected_checkpoint"]
+    with zipfile.ZipFile(checkpoint) as archive:
+        metadata = json.loads(archive.read("metadata.json"))
+    frozen = tmp_path / "frozen"
+    frozen.mkdir()
+    config = yaml.safe_load((source / "config.yaml").read_text())
+    config.update(
+        mode="benchmark",
+        checkpoint=str(checkpoint),
+        benchmark={
+            "protocol": "learning",
+            "allow_environment_change": False,
+            "seed_base": 4_000_000,
+        },
+    )
+    loaded = {"path": str(checkpoint), "payload_sha256": metadata["sha256"]}
+    if damage == "payload":
+        loaded["payload_sha256"] = "changed-parameters"
+    elif damage == "checkpoint":
+        config["checkpoint"] = str(source / "other-policy.zip")
+    elif damage == "observation":
+        config["observation"] = {"navigation_relative_goal": True}
+    elif damage == "cohort":
+        config["benchmark"]["seed_base"] = 5_000_000
+    config_path = frozen / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    write_json(
+        frozen / "run.json",
+        {
+            "layout_version": 2,
+            "status": "completed",
+            "evaluation_directory": "eval/001",
+            "evaluated_checkpoint": loaded,
+            "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
+        },
+    )
+    evaluation(frozen / "eval/001", seed_base=4_000_000)
+    completed, report = run_collector(tmp_path, [source], benchmark_runs={str(source): str(frozen)})
+    assert completed.returncode == 0, completed.stderr
+    run = report["runs"][0]
+    assert run["benchmark"]["checkpoint_link"]["passed"] is (damage is None)
+    assert run["C5"]["passed"] is (damage is None)
+    assert run["benchmark"]["seeds"] == [4_000_000]
+    assert json.loads((source / "run.json").read_text()) == header
+
+
+def test_frozen_test_cohort_is_not_a_training_recipe_difference():
+    """Fresh test reservation leaves the training recipe equal, other changes do not."""
+    import runpy
+
+    recipe = runpy.run_path(str(SCRIPT))["recipe"]
+    control = {"learning": {"algorithm": "ppo"}, "benchmark": {"protocol": "learning"}}
+    candidate = {**control, "benchmark": {**control["benchmark"], "frozen_seed_base": 4_000_000}}
+    assert recipe(control) == recipe(candidate)
+    assert recipe(control) != recipe({**candidate, "learning": {"algorithm": "apg"}})
 
 
 @pytest.mark.parametrize("duplicate", ["path", "seed_group", "seed_list"])
@@ -544,3 +1085,134 @@ def test_saved_physics_change_cannot_pass(tmp_path):
     _, report = run_collector(tmp_path, [path])
     assert report["runs"][0]["physics_config"]["passed"] is False
     assert report["cells"][0]["seeds"]["0"]["status"] == "failed"
+
+
+@pytest.mark.parametrize("damage", [None, "screening", "earlier_pass", "orbax", "truncated_log"])
+def test_first_full_orbax_evidence(tmp_path, damage):
+    """Read actual TensorBoard events and preserve screening/selection/save requirements."""
+    from tensorboardX import SummaryWriter
+
+    path = make_run(tmp_path, task="racing", passes=(True,))
+    config = yaml.safe_load((path / "config.yaml").read_text())
+    config["learning"].update(selection="first_full_validation_pass", required_consecutive_passes=1)
+    (path / "config.yaml").write_text(yaml.safe_dump(config))
+    model = path / "checkpoints/model_000100"
+    model.mkdir()
+    write_json(
+        model / "metadata.json",
+        {
+            "format_version": 3,
+            "purpose": "model",
+            "has_inference_actor": True,
+            "kind": "state",
+            "actor": {"kind": "state"},
+            "config": {"experiment": config},
+            "provenance": {"updates": 100},
+        },
+    )
+    for part in ("actor", "training"):
+        (model / part).mkdir()
+        (model / part / "commit_success.txt").touch()
+    evaluation(model, task="racing", index=1, seed_base=1_500_000)
+    evaluation(model / "screening", task="racing", index=1, successes=8, count=8)
+    screen = json.loads((model / "screening/report.json").read_text())
+    screen["complete"] = True
+    if damage == "screening":
+        screen["reports"]["racing"]["successes"] = 0
+    write_json(model / "screening/report.json", screen)
+    header = json.loads((path / "run.json").read_text())
+    header.update(layout_version=3, selected_checkpoint="checkpoints/model_000100")
+    header["config_sha256"] = hashlib.sha256((path / "config.yaml").read_bytes()).hexdigest()
+    header["selection"].update(
+        rule="first_full_validation_pass",
+        checkpoint="checkpoints/model_000100",
+        consecutive_passes=1,
+        full_validation="checkpoints/model_000100/report.json",
+        screening="checkpoints/model_000100/screening/report.json",
+    )
+    write_json(path / "run.json", header)
+    (path / "metrics.jsonl").unlink()
+    with SummaryWriter(str(path)) as writer:
+        for key, value in {
+            "update": 100,
+            "interactions": 3000,
+            "gpu_memory_mib": 120,
+            "gpu_utilization_percent": 65,
+        }.items():
+            writer.add_scalar(f"train/{key}", value, 100)
+        if damage == "earlier_pass":
+            writer.add_text(
+                "event/full_validation",
+                json.dumps({"event": "full_validation", "passed": True, "update": 50}),
+                50,
+            )
+    if damage == "orbax":
+        (model / "actor/commit_success.txt").unlink()
+    if damage == "truncated_log":
+        event_file = next(path.glob("events.out.tfevents.*"))
+        event_file.write_bytes(b"partial")
+    completed, report = run_collector(tmp_path, [path], selection="first_full_validation_pass")
+    assert completed.returncode == 0, completed.stderr
+    run = report["runs"][0]
+    if damage is None:
+        assert run["C5"]["passed"] is True
+        assert run["C6"]["passed"] is True
+        assert report["cells"][1]["seeds"]["0"]["status"] == "passed"
+    elif damage in {"screening", "earlier_pass"}:
+        assert run["C5"]["passed"] is False
+    elif damage == "orbax":
+        assert run["checkpoint"]["integrity"]["passed"] is False
+    else:
+        assert run["actual_updates"]["passed"] is None
+        assert run["issues"]
+
+
+def test_legacy_one_time_frozen_audit_reuses_interrupted_run(tmp_path):
+    """A completed frozen audit governs selection without rewriting the old run record."""
+    path = make_run(tmp_path, task="racing", passes=(True,))
+    header = json.loads((path / "run.json").read_text())
+    header.update(status="interrupted")
+    header.pop("selection")
+    header.pop("selected_checkpoint")
+    write_json(path / "run.json", header)
+    audit_dir = path.parent / ".scheduler/frozen_audits" / path.name
+    evaluation(audit_dir, task="racing")
+    write_json(
+        audit_dir / "audit.json",
+        {
+            "status": "accepted",
+            "source_run": str(path),
+            "benchmark_attempts": 1,
+            "benchmark_passed": True,
+            "checkpoint": "checkpoints/step-000100/policy.zip",
+            "source_validation": "checkpoints/step-000100/report.json",
+        },
+    )
+    completed, report = run_collector(tmp_path, [path], selection="first_full_validation_pass")
+    assert completed.returncode == 0, completed.stderr
+    assert report["runs"][0]["recorded_status"] == "interrupted"
+    assert report["runs"][0]["C5"]["passed"] is True
+    assert report["cells"][1]["seeds"]["0"]["status"] == "passed"
+
+
+def test_full_navigation_validation_requires_six_but_benchmark_requires_eight(tmp_path):
+    """Extensions are recorded in frozen tests, not a requirement for candidate validation."""
+    spec = importlib.util.spec_from_file_location("collector_scenes", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for mode, index in [("checkpoint_eval", 1), ("benchmark", 0)]:
+        path = tmp_path / mode
+        evaluation(path, task="navigation", index=index, count=25, successes=25)
+        data = json.loads((path / "report.json").read_text())
+        for scene in ("S06", "D06"):
+            del data["reports"][scene]
+        write_json(path / "report.json", data)
+        rewrite_csv(
+            path / "episodes.csv",
+            lambda rows: rows.__setitem__(
+                slice(None), [r for r in rows if r["scene"] not in ("S06", "D06")]
+            ),
+        )
+        result = module.evaluate(path, "navigation", 0, mode)
+        assert result["partition"]["passed"] is (mode == "checkpoint_eval")
+        assert result["quality"]["passed"] is True

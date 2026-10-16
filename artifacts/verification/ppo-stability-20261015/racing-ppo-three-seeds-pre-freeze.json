@@ -1,0 +1,166 @@
+{
+  "scope": "Three fixed scratch PPO seeds pass the original C1/C3/C5/C6 checks on development cohorts. Final unused4million evaluation is preregistered next; matrix common-Actor audit still requires other algorithms.",
+  "runs": [
+    {
+      "seed": 0,
+      "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0",
+      "verdict": {
+        "status": "passed",
+        "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0",
+        "quality": {
+          "passed": true,
+          "reasons": []
+        },
+        "C5": {
+          "passed": true,
+          "reasons": [
+            "Verified first consecutive triple, selection, archive update and CSV partitions"
+          ],
+          "first_passing_updates": [
+            1400,
+            1500,
+            1600
+          ],
+          "independent_seed_sets": true
+        },
+        "C6": {
+          "passed": true,
+          "reasons": [
+            "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
+          ]
+        },
+        "scenes": [
+          "racing"
+        ],
+        "updates": {
+          "value": 1600,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/run.json",
+          "reason": null
+        },
+        "interactions": {
+          "value": 26214400,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/run.json",
+          "reason": null
+        },
+        "wall_seconds": {
+          "value": 503.013634449002,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0/run.json",
+          "reason": null
+        }
+      },
+      "run_sha256": "04511a5ef01299e1d40bc4c895fa256f0d830ca45590794a1b9e69cb311f8022",
+      "selected_archive_sha256": "5bbfa2041e62ccb073afdecb06f0dde445b32f0b65a85239ab9b3d779e4b98bd",
+      "selected_payload_sha256": "427c3c8f66a563930f2039a806acc3e59fff5b407216b4fe5dd00f9145b1ae70"
+    },
+    {
+      "seed": 1,
+      "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1",
+      "verdict": {
+        "status": "passed",
+        "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1",
+        "quality": {
+          "passed": true,
+          "reasons": []
+        },
+        "C5": {
+          "passed": true,
+          "reasons": [
+            "Verified first consecutive triple, selection, archive update and CSV partitions"
+          ],
+          "first_passing_updates": [
+            500,
+            600,
+            700
+          ],
+          "independent_seed_sets": true
+        },
+        "C6": {
+          "passed": true,
+          "reasons": [
+            "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
+          ]
+        },
+        "scenes": [
+          "racing"
+        ],
+        "updates": {
+          "value": 700,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1/run.json",
+          "reason": null
+        },
+        "interactions": {
+          "value": 11468800,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1/run.json",
+          "reason": null
+        },
+        "wall_seconds": {
+          "value": 283.7334118439903,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s1/run.json",
+          "reason": null
+        }
+      },
+      "run_sha256": "bba9c096a1c9c2e65271c519350ecfdcd6dc3bb5eeb6a175a8085ab24397affd",
+      "selected_archive_sha256": "a88e2de2849e41d14ddfa34b49139c3f7fccfeb913a1882f8486c2f2aac09471",
+      "selected_payload_sha256": "499d5379a0e28e3dc2d38172ff793e191f3254d0ab1f869cdb17d2b9fe23023c"
+    },
+    {
+      "seed": 2,
+      "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2",
+      "verdict": {
+        "status": "passed",
+        "run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2",
+        "quality": {
+          "passed": true,
+          "reasons": []
+        },
+        "C5": {
+          "passed": true,
+          "reasons": [
+            "Verified first consecutive triple, selection, archive update and CSV partitions"
+          ],
+          "first_passing_updates": [
+            200,
+            300,
+            400
+          ],
+          "independent_seed_sets": true
+        },
+        "C6": {
+          "passed": true,
+          "reasons": [
+            "Whole GPU samples with concurrent jobs; not isolated process/runtime measurements."
+          ]
+        },
+        "scenes": [
+          "racing"
+        ],
+        "updates": {
+          "value": 400,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2/run.json",
+          "reason": null
+        },
+        "interactions": {
+          "value": 6553600,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2/run.json",
+          "reason": null
+        },
+        "wall_seconds": {
+          "value": 210.82597708399408,
+          "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s2/run.json",
+          "reason": null
+        }
+      },
+      "run_sha256": "54b001f2a138130fc8f321e8e8659c1977832fb2d017457283e49f79b16a0033",
+      "selected_archive_sha256": "2cbf79261ab61013428207271c68971e72054bbbb79342f5b008899cd9886f40",
+      "selected_payload_sha256": "84490430085f0062c94f848459a7ace04324a71bd7657ae35b17c4ef089d2822"
+    }
+  ],
+  "same_recipe_across_three_seeds": true,
+  "final_evaluation_configs": [
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_ppo_frozen4m_s0.yaml",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_ppo_frozen4m_s1.yaml",
+    "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/racing_ppo_frozen4m_s2.yaml"
+  ],
+  "final_rule": "Evaluate each preselected final model once on100 independent Racing episodes, seed_base4000000. Keep all outcomes. No tuning against this cohort; if its failure informs changes, retire it and reserve a new cohort.",
+  "shared_conditions": "P1/f0 task reward and original physical/control/Actor conditions remain fixed across current Racing algorithms. Shared changes later invalidate affected comparison claims."
+}

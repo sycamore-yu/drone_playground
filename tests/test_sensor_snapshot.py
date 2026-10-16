@@ -66,6 +66,49 @@ def test_camera_calibration_does_not_hide_a_training_mode():
     assert (camera.width, camera.height, camera.frequency_hz, camera.pitch_deg) == (64, 48, 15, 0)
 
 
+@pytest.mark.parametrize("raw_frames", [1, 3])
+def test_fan_history_consumes_snapshots_only_for_active_worlds(raw_frames):
+    """Fan history follows the snapshot clock and does not advance inactive worlds."""
+    sensor = SensorObservation(
+        Scene("S01"),
+        SensorConfig.mid360(points_per_frame=32),
+        physics_hz=500,
+        point_count=32,
+        paper_fan={"raw_history_frames": raw_frames},
+    )
+
+    def physics(tick):
+        return SimpleNamespace(
+            states=SimpleNamespace(
+                pos=jnp.tile(jnp.array([[[2.0, 0, 3.0]]]), (2, 1, 1)),
+                quat=jnp.tile(jnp.array([[[0.0, 0, 0, 1.0]]]), (2, 1, 1)),
+            ),
+            core=SimpleNamespace(
+                steps=jnp.full((2, 1), tick), freq=500, rng_key=jax.random.PRNGKey(1)
+            ),
+        )
+
+    initial = sensor.reset(physics(0))
+    updated = jax.jit(lambda state: sensor.update(state, physics(50), jnp.array([True, False])))(
+        initial
+    )
+    np.testing.assert_array_equal(updated.frame, [1, 0])
+    encoded = sensor.encode(updated)
+    assert encoded["fan_map"].shape == (2, 36, 36, 1)
+    assert np.isfinite(encoded["fan_map"]).all()
+    np.testing.assert_array_equal(encoded["fan_map"][1], 1)
+    if raw_frames > 1:
+        np.testing.assert_allclose(
+            updated.paper_fan_history["points_world"][0, 0],
+            jnp.where(
+                updated.measurement.mask[0, :, None],
+                updated.measurement.points_body[0] + jnp.array([2.0, 0, 3.0]),
+                0,
+            ),
+        )
+        np.testing.assert_array_equal(updated.paper_fan_history["mask"][1], False)
+
+
 def test_empty_depth_does_not_turn_range_roundoff_into_hits():
     """A miss stays invalid when radial range is converted to axial depth."""
     config = SensorConfig.d435i(width=64, height=48, max_range=10)

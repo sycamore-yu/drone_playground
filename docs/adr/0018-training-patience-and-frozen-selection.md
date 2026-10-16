@@ -2,6 +2,12 @@
 
 **Status:** Accepted · 2026-10-10
 
+**后续细化（2026-10-14）：**Navigation PPO 的**新训练**早停增加
+真实进度、失败前运动、高度稳定性及价值校准诊断；不能仅靠持续
+`0/48` 判断“没有学习”。已有能力的后续退化必须保留最佳权重并单独
+记录。详见 [ADR-0024](0024-navigation-ppo-progress-regression-screening.md)。
+历史训练仍按各自保存的配置执行，此补充**尚未部署到正在运行的调度器**。
+
 ## Decision
 
 新的随机初始化训练遵循 [ADR-0015](0015-three-stage-learning-acceptance.md)：

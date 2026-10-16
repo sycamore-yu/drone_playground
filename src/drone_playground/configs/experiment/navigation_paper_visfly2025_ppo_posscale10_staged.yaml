@@ -1,0 +1,8 @@
+# @package _global_
+# Single training-variable ablation against the VisFly staged screening recipe.
+# Scale only world position and world goal, keeping all other inputs unchanged.
+defaults:
+  - navigation_paper_visfly2025_ppo_staged
+
+observation:
+  visfly_position_scale: 10.0

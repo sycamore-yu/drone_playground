@@ -1,0 +1,270 @@
+{
+  "status": "completed_stability_failed",
+  "scope": "Unchanged-recipe stability continuation from the actual first full validation pass of random-initialized constant256 Depth seed0",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0/checkpoints/model_000024",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "source_successes": 149,
+  "minimum_retained_source_successes": 142,
+  "planned_updates": 7,
+  "batch_interactions": 131072,
+  "planned_additional_interactions": 917504,
+  "evaluation_interval_updates": 1,
+  "evaluation_seed_base": 1500000,
+  "gate": "All seven checks: six primary scenes at least23/25 and at least142/149 original successes retained",
+  "stopping": "Execute all seven updates even after any failed check; no early stop, rollback, or final-source reanchoring",
+  "settings": "All source PPO/Adam/physics/sensor/environment/RNG/recurrent state unchanged; no world multiplier or diagnostic flags",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-worlds256-stability.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0/checkpoints/model_000024 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-worlds256-stability.log 2>&1",
+  "pid": 2894883,
+  "runner_commit": "aa2994e",
+  "first_failed_check": {
+    "update": 25,
+    "successes": 140,
+    "retained": 140,
+    "source_successes": 149,
+    "D03_successes": 15
+  },
+  "results": {
+    "status": "completed_stability_failed",
+    "source_successes": 149,
+    "minimum_retained_source_successes": 142,
+    "checks": [
+      {
+        "update": 25,
+        "additional_interactions": 131072,
+        "successes": 140,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 15
+        },
+        "retained_initial_successes": 140,
+        "retention_fraction": 0.9395973154362416,
+        "passed": false,
+        "events": {
+          "SUCCESS": 140,
+          "COLLISION": 10
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {},
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 10
+          }
+        },
+        "new_successes": 0
+      },
+      {
+        "update": 26,
+        "additional_interactions": 262144,
+        "successes": 119,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 0,
+          "D01": 25,
+          "D02": 25,
+          "D03": 19
+        },
+        "retained_initial_successes": 119,
+        "retention_fraction": 0.7986577181208053,
+        "passed": false,
+        "events": {
+          "SUCCESS": 119,
+          "COLLISION": 31
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {
+            "COLLISION": 25
+          },
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 6
+          }
+        },
+        "new_successes": 0
+      },
+      {
+        "update": 27,
+        "additional_interactions": 393216,
+        "successes": 117,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 2,
+          "D01": 25,
+          "D02": 25,
+          "D03": 15
+        },
+        "retained_initial_successes": 117,
+        "retention_fraction": 0.785234899328859,
+        "passed": false,
+        "events": {
+          "SUCCESS": 117,
+          "COLLISION": 32,
+          "TIMEOUT": 1
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {
+            "COLLISION": 22,
+            "TIMEOUT": 1
+          },
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 10
+          }
+        },
+        "new_successes": 0
+      },
+      {
+        "update": 28,
+        "additional_interactions": 524288,
+        "successes": 133,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 8
+        },
+        "retained_initial_successes": 133,
+        "retention_fraction": 0.8926174496644296,
+        "passed": false,
+        "events": {
+          "SUCCESS": 133,
+          "COLLISION": 17
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {},
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 17
+          }
+        },
+        "new_successes": 0
+      },
+      {
+        "update": 29,
+        "additional_interactions": 655360,
+        "successes": 148,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 23
+        },
+        "retained_initial_successes": 147,
+        "retention_fraction": 0.9865771812080537,
+        "passed": true,
+        "events": {
+          "SUCCESS": 148,
+          "COLLISION": 2
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {},
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 2
+          }
+        },
+        "new_successes": 1
+      },
+      {
+        "update": 30,
+        "additional_interactions": 786432,
+        "successes": 140,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 15,
+          "D03": 25
+        },
+        "retained_initial_successes": 139,
+        "retention_fraction": 0.9328859060402684,
+        "passed": false,
+        "events": {
+          "SUCCESS": 140,
+          "COLLISION": 10
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {},
+          "D01": {},
+          "D02": {
+            "COLLISION": 10
+          },
+          "D03": {}
+        },
+        "new_successes": 1
+      },
+      {
+        "update": 31,
+        "additional_interactions": 917504,
+        "successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 0,
+          "D01": 25,
+          "D02": 25,
+          "D03": 24
+        },
+        "retained_initial_successes": 123,
+        "retention_fraction": 0.825503355704698,
+        "passed": false,
+        "events": {
+          "SUCCESS": 124,
+          "COLLISION": 26
+        },
+        "failure_events_per_scene": {
+          "S01": {},
+          "S02": {},
+          "S03": {
+            "COLLISION": 25
+          },
+          "D01": {},
+          "D02": {},
+          "D03": {
+            "COLLISION": 1
+          }
+        },
+        "new_successes": 1
+      }
+    ],
+    "failed_checks": 6,
+    "actual_additional_interactions": 917504,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0_stability/model_000031",
+    "final_retention_fraction": 0.825503355704698,
+    "training_update_seconds": 235.6908918940171,
+    "setup_seconds": 117.83696180398692,
+    "total_wall_seconds_including_setup": 1021.6207109100069,
+    "kl_skips": 0.0,
+    "decision": "Reject constant256 alone as a stability repair. Do not launch two more seeds or independent final tests for this failed recipe. Preserve acquisition gain and all failures. Complete-history training-only corpus validation follows.",
+    "limits": "One development seed; no unique root-cause claim. Original source and every actual continuation checkpoint retained. No peak selection, rollback, or gate reanchoring."
+  }
+}

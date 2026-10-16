@@ -1,0 +1,70 @@
+{
+  "status": "completed_failed",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0/checkpoints/model_000144",
+  "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_stability/report.json",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/depth_ppo_s0_lr01",
+  "source_runtime_provenance_reused": {
+    "source_sha256": "a6359de47ee7c588a03d08f4719134c636cb6da4b8c300c0abbcca1ce9624b27",
+    "git_commit": "fbae846355ddea4f0d917bb9d528ff85216f751f"
+  },
+  "reference_checkout": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-window-reference",
+  "source_baseline": "150/150 atupdate144; existing completed control supplies the original150 case identities and all7 checks, without replay or recomputation of model identifiers.",
+  "control_result": {
+    "scores": [
+      144,
+      128,
+      117,
+      148,
+      122,
+      146,
+      134
+    ],
+    "final_per_scene": {
+      "S01": 25,
+      "S02": 25,
+      "S03": 25,
+      "D01": 25,
+      "D02": 25,
+      "D03": 9
+    },
+    "passed": false
+  },
+  "prior_negative": "The earlier LiDAR quarter-LR continuation used the old distance curriculum/reward from351d855 and fell29/32->0. It is not the same reward, geometry distribution, horizon, sensor or source checkpoint. No repeat of that experiment.",
+  "hypothesis": "Cumulative policy updates at the fixed Actor LR disturb a now successful full3D policy. Reducing the post-first-pass Actor step may retain safety while allowing nonzero ongoing learning. Low mean KL in the failed control does not prove a unique root cause.",
+  "intervention": {
+    "actor_lr_before": 0.0002,
+    "actor_lr_after": 2e-05,
+    "actor_lr_scale": 0.1
+  },
+  "unchanged": "Restore all source parameters, log_std, Adam moments, RNG, physical/recurrent state and exact scene position. Same production code as control, Critic LR, entropy weight,4x4 optimizer schedule,64x512 rollout, scene order,2updates per scene, reward, sensor,3D acceleration action, budget and evaluation cases.",
+  "budget": {
+    "updates": 28,
+    "additional_interactions": 917504,
+    "check_updates": [
+      148,
+      152,
+      156,
+      160,
+      164,
+      168,
+      172
+    ],
+    "cases_per_check": 150
+  },
+  "criterion": "Every one of7 checks must have>=23/25 in each primary scene and retain>=95% of the150 source successes. Any failed check rejects stability for this candidate. Complete the whole window even after quality failure; retain actual final172 and all intermediate full states.",
+  "correctness": "Targeted tests verify only two LR fields change, Adam moments survive and actual optimizer delta is0.1x, cache identity/duplicate rejection and existing gates. Runtime verifies pinned clean source commit and same counters/geometry; logs positive finite actor parameter changes per update.",
+  "interpretation": "Diagnostic only. A positive result motivates a reproducible from-scratch recipe with a predeclared LR reduction after its first full validation; it still needs independent scratch seeds and independent testing of actual final models. This continuation is not reported as unchanged-recipe stability or a new random initialization.",
+  "reference": "https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_continuous_action.py",
+  "reference_limit": "CleanRL explicitly anneals the PPO learning rate; this fixed10x post-first-pass drop is a project experiment, not its exact schedule or an authority-backed convergence guarantee.",
+  "identity": "Record the exact changed continuation configuration and name the retained parent configuration identity source_config_sha256. Do not label the old configuration identity as the changed one; no new configuration digest is needed for this diagnostic.",
+  "targeted_validation": {
+    "tests": "12 passed in12.48s",
+    "coverage": "LR-only config mutation, invalid rates, matched-control cache identity, actual Trainer Adam step and moment equivalence, existing stability gates",
+    "ruff": "check and format passed",
+    "recorded_dependency_versions_match": true,
+    "first_actual_rollout_matches_control": "True",
+    "first_actor_parameter_delta_norm": 0.06249301880598068
+  },
+  "runner_commit": "e76f44f28dc951452c0cd748e0e418fb2fa28723",
+  "result": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-postpass-lr-comparison.json"
+}

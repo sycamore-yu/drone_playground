@@ -5,8 +5,16 @@ import math
 import jax
 import jax.numpy as jnp
 from flax import struct
+from jax.scipy.spatial.transform import Rotation
 
 from drone_playground.simulation.delay import delay_range
+from drone_playground.simulation.paper_fan_lidar import (
+    FanLidarConfig,
+    empty_history,
+    encode_range_ring,
+    push_history,
+    push_point_window,
+)
 from drone_playground.simulation.sensors import Measurement, SensorConfig, measure
 
 
@@ -59,6 +67,7 @@ class ObservationState:
     pending: Measurement | None = None
     pending_poses: jax.Array | None = None
     pending_valid: jax.Array | None = None
+    paper_fan_history: jax.Array | dict | None = None
 
 
 class SensorObservation:
@@ -73,6 +82,7 @@ class SensorObservation:
         latency_bounds=None,
         encoding=None,
         ray_sampling: str = "full",
+        paper_fan: dict | None = None,
     ):
         """Initialize SensorObservation state for the declared contract."""
         if config.frequency_hz > physics_hz:
@@ -91,6 +101,9 @@ class SensorObservation:
         ):
             raise ValueError("Policy ray sampling requires Mid-360 and a valid point count")
         self.ray_sampling = ray_sampling
+        if paper_fan is not None and (config.profile != "mid360" or self.latency_bounds[1] > 0):
+            raise ValueError("Fan LiDAR requires MID360 with zero measurement latency")
+        self.paper_fan = None if paper_fan is None else FanLidarConfig(**paper_fan)
         self.captured_points = point_count if ray_sampling == "policy" else config.points_per_frame
 
     @property
@@ -143,6 +156,20 @@ class SensorObservation:
         )
         measurement = measurement._replace(available_time=measurement.acquisition_time + delay)
         acquisition_pose = jnp.concatenate([p, q], -1)
+        fan_history = (
+            None
+            if self.paper_fan is None
+            else empty_history(
+                batch, frames=self.paper_fan.history_frames, sectors=self.paper_fan.sectors
+            )
+        )
+        if self.paper_fan is not None and self.paper_fan.raw_history_frames > 1:
+            shape = (batch, self.paper_fan.raw_history_frames, self.captured_points)
+            fan_history = {
+                "ranges": fan_history,
+                "points_world": jnp.zeros((*shape, 3)),
+                "mask": jnp.zeros(shape, bool),
+            }
         state = ObservationState(
             measurement=measurement,
             frame=jnp.zeros(batch, jnp.int32),
@@ -150,6 +177,7 @@ class SensorObservation:
             acquisition_pose=acquisition_pose,
             delay_s=delay,
             available=jnp.full(batch, self.config.profile == "d435i"),
+            paper_fan_history=fan_history,
         )
         if high == 0:
             return jax.tree.map(jax.lax.stop_gradient, state)
@@ -274,12 +302,65 @@ class SensorObservation:
             pending_valid=pending_valid,
             available=available,
         )
+        if self.paper_fan is not None:
+
+            def capture_fan(_):
+                # All snapshot hits share the recorded acquisition pose.
+                quaternion = result.acquisition_pose[:, 3:]
+                body_to_world = Rotation.from_quat(quaternion).as_matrix()
+                if self.paper_fan.raw_history_frames > 1:
+                    old = state.paper_fan_history
+                    position = result.acquisition_pose[:, :3]
+                    world_points = (
+                        jnp.einsum("bij,bnj->bni", body_to_world, result.measurement.points_body)
+                        + position[:, None]
+                    )
+                    points, masks = push_point_window(
+                        old["points_world"], old["mask"], world_points, result.measurement.mask
+                    )
+                    relative = points.reshape(len(time), -1, 3) - position[:, None]
+                    ring = encode_range_ring(
+                        relative,
+                        masks.reshape(len(time), -1),
+                        sectors=self.paper_fan.sectors,
+                        max_range_m=self.paper_fan.max_range_m,
+                        half_height_m=self.paper_fan.half_height_m,
+                    )
+                    updated = {
+                        "ranges": push_history(old["ranges"], ring),
+                        "points_world": points,
+                        "mask": masks,
+                    }
+                    return jax.tree.map(choose, old, updated)
+                ring = encode_range_ring(
+                    result.measurement.points_body,
+                    result.measurement.mask,
+                    rotation_body_to_level=body_to_world,
+                    sectors=self.paper_fan.sectors,
+                    max_range_m=self.paper_fan.max_range_m,
+                    half_height_m=self.paper_fan.half_height_m,
+                )
+                next_history = push_history(state.paper_fan_history, ring)
+                return jnp.where(due[:, None, None], next_history, state.paper_fan_history)
+
+            result = result.replace(
+                paper_fan_history=jax.lax.cond(
+                    jnp.any(due), capture_fan, lambda _: state.paper_fan_history, None
+                )
+            )
         # Image/point acquisition is not part of the pathwise dynamics derivative.
         return jax.tree.map(jax.lax.stop_gradient, result)
 
     def encode(self, state: ObservationState) -> dict[str, jax.Array]:
         """Keep device calibration separate from the named policy preprocessing."""
         if self.config.profile == "d435i":
+            if self.encoding.get("representation") == "metric":
+                measurement = state.measurement
+                return {
+                    "depth": jnp.where(measurement.mask, measurement.values, 0.0)[..., None],
+                    "depth_mask": measurement.mask,
+                    "acquisition_time": measurement.acquisition_time,
+                }
             depth, mask = preprocess_depth(state.measurement, **self.encoding)
             return {
                 "depth": depth[..., None],
@@ -289,6 +370,16 @@ class SensorObservation:
         measurement = state.measurement
         if self.ray_sampling != "policy":
             measurement = reduce_points(measurement, self.point_count)
+        if self.paper_fan is not None:
+            ranges = (
+                state.paper_fan_history["ranges"]
+                if self.paper_fan.raw_history_frames > 1
+                else state.paper_fan_history
+            )
+            return {
+                "fan_map": ranges[..., None],
+                "acquisition_time": measurement.acquisition_time,
+            }
         return {
             "points": measurement.points_body,
             "mask": measurement.mask,

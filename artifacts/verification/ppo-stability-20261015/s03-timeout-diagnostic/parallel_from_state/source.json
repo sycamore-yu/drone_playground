@@ -1,0 +1,77 @@
+{
+  "checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000048",
+  "source_provenance_reused": {
+    "config_sha256": "40044c6715fb4d6717273146689c1218bccd0a3a6d3d1671412e5125c4c0fe9a",
+    "consecutive_passes": 0,
+    "devices": [
+      "cuda:0"
+    ],
+    "evaluation_index": 3,
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+    "interactions": 1572864,
+    "interactions_per_second": 426.70088673438744,
+    "last_evaluation": {
+      "best_score": 0.203125,
+      "episodes": 8,
+      "evaluation_seconds": 281.02498006497626,
+      "event": "screening_evaluation",
+      "improved": false,
+      "passed": false,
+      "patience_exhausted": false,
+      "score": 0.19791666666666666,
+      "stagnant_screens": 0,
+      "update": 48
+    },
+    "last_interactions": 1572864.0,
+    "last_update": 48,
+    "layout_version": 3,
+    "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+    "python": "3.12.15",
+    "schema_version": 1,
+    "screening_progress": {
+      "best_score": 0.203125,
+      "stagnant_screens": 0
+    },
+    "session_interactions": 1572864,
+    "session_wall_seconds": 3686.104362326005,
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "started_unix": 1792085853.0907261,
+    "status": "running",
+    "training_sampling": {
+      "geometry_sha256": {
+        "D01": "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+        "D02": "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+        "D03": "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+        "D06": "eb00927dd9c3455ba63dc22880ec3741a0de2a27572e99170b5011dc58f79d0f",
+        "S01": "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+        "S02": "9bb7d3160847b154315d9e9f9c553b813c704f40242869b95b07766b71a7d460",
+        "S03": "89a95166549ff57ca41d355e430d826ba183bfd40e35a987da264f0f35114526",
+        "S06": "7b5d906220a1ab3cc2e5bea9f699c882b5e0ae88ba21796749386f9793a69d4b"
+      },
+      "scene_sampling": "parallel",
+      "scenes": [
+        "S01",
+        "S02",
+        "S03",
+        "D01",
+        "D02",
+        "D03",
+        "S06",
+        "D06"
+      ],
+      "worlds_per_scene": 8
+    },
+    "training_wall_seconds": 3686.104362326005,
+    "updates": 48,
+    "versions": {
+      "crazyflow": "0.3.2",
+      "drone-playground": "0.2.0.dev0",
+      "flax": "0.12.10",
+      "jax": "0.11.2",
+      "mujoco": "3.15.0",
+      "mujoco-lidar": "0.3.5",
+      "rscope": "0.0.8"
+    }
+  },
+  "scope": "Frozen parameters restored through the existing full-state loader"
+}

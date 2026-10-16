@@ -1,0 +1,142 @@
+{
+  "status": "completed_pilot_failed",
+  "problem": "Parallel fixed-scene Depth reaches150/150 at u176 but first loses26 cases at u184. Lower LR, longer rollouts, entropy removal and frozen block exchanges did not satisfy their own registered gates. Existing u64 training probes show much of the S03 target still depends on terminal Critic bootstrap.",
+  "counterevidence": "Old procedural eight-state calibration found h512/lambda1 targets already close to complete returns (mean absolute state biases0.0482/0.00212), yet its training still regressed. High bootstrap fraction is not itself bias; current parallel-source bias has not been established.",
+  "hypothesis": "Replacing the remaining terminal-value prediction by a sampled complete continuation may reduce harmful target error in the current fixed-scene condition. It also adds sampling variance; this is a sufficient-repair test, not a claim of a unique root cause.",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "control_report": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json",
+  "intervention": {
+    "learning.options.ppo_monte_carlo_returns": true
+  },
+  "mechanism": "Keep the original512x64 on-policy prefix and full recurrent PPO update. For each unfinished cutoff world, copy physical state, episode clock, observation/history and GRU memory; continue the same frozen stochastic behavior policy without resets until its first true terminal event. Replace only next_values[-1] with the detached realized reward sum. Gamma=lambda=1 makes prefix targets complete sampled returns. Separate folded RNG800001 leaves the live sampler/optimizer RNG and world stream unchanged.",
+  "unchanged": "Original entropy0.005, actor/critic rates, clipping, four epochs/four minibatches, rewards,8parallel scenes, full3D actions, sensor/Actor inputs, architecture, source Actor/Critic/Adam and live state.",
+  "budget": {
+    "ppo_updates": 8,
+    "prefix_interactions": 262144,
+    "checks_after_updates": [
+      4,
+      8
+    ],
+    "reference_updates": [
+      180,
+      184
+    ],
+    "max_tail_steps_per_update": 3001,
+    "max_total_active_interactions": 1798656,
+    "early_stop": false,
+    "rollback": false
+  },
+  "cost_comparison": "Matched policy-training prefix samples and optimizer updates, not equal total interactions. Reuse the complete original control at u180/u184; charge all additional active simulation tails and separately report allocated padded slots and wall time. No speed/equal-budget claim.",
+  "gate": "Both checks must have>=23/25 successes in each of six primary scenes and retain>=143/150 original successes; report the actual final u184 regardless of the first result. A failure rejects complete sampled returns as sufficient at this registered pilot budget.",
+  "scope": "Short mechanism/training pilot, NOT the full>=900k-interaction registered stability window or a new scratch seed. Even a positive pilot requires a final declared recipe, three scratch seeds, correctly budgeted stability windows and independent final tests.",
+  "evaluation_separation": "Reuse the original150 development case identities and original baseline outcomes; no source replay or manual model hashes, no3m final cohort consumption.",
+  "implementation_checks": [
+    "Analytic terminal/padding/return-to-go test, detached gradients and unchanged live state/RNG",
+    "Configuration rejects nonfinite-task or discounted/non-PPO use",
+    "Actual finite-task PPO update counts extra interactions and exact checkpoint continuation succeeds",
+    "First real512x64 update: compare original pre-optimization rollout statistics, excluding deliberately changed return targets; require nonzero Actor update and complete tails"
+  ],
+  "source_scope": "Only native PPO estimator helper and Trainer option/accounting change; shared physics, network and objective unchanged. Existing BPTT/SHAC acceptance reused.",
+  "references": [
+    {
+      "url": "https://arxiv.org/abs/1506.02438",
+      "claim": "Value-based advantage estimators trade variance for bias; this is not evidence of this project's unique failure cause."
+    },
+    {
+      "url": "https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html",
+      "claim": "Complete reward-to-go and a state baseline are standard policy-gradient estimators. Copying simulator tail states here is an implementation choice with explicit additional sampling cost."
+    }
+  ],
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_mc_tail_pilot",
+  "runner": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/mc-tail/continue.py",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/mc-tail/continue.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/src:/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/mc-tail/continue.py > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/mc-tail/continue.log 2>&1",
+  "preflight": {
+    "new_targeted_tests": "7 passed in22.54s",
+    "default_regression": "24 passed,1 failed,34 deselected in217.00s",
+    "baseline_reproduction": "Same lidar-ppo point_0 unchanged assertion fails on811eabe in26.24s",
+    "lint": "Ruff passed",
+    "default_regression_followup": "Fixture had zero valid LiDAR points in every step. Preserve20000-ray scan phase and select32rays per frame; all three LiDAR algorithm tests pass in62.25s."
+  },
+  "pid": 2734377,
+  "runner_commit": "8675f29c6538cea18e355682eb7e307bdec88cfa",
+  "first_update": {
+    "all_10_raw_rollout_metrics_exactly_equal": true,
+    "actor_parameter_delta_norm": 0.5089095234870911,
+    "prefix_interactions": 32768,
+    "tail_interactions": 24234,
+    "tail_allocated_slots": 82496,
+    "unfinished": 0,
+    "update_seconds": 97.94875179399969
+  },
+  "final_result": {
+    "status": "completed_pilot_failed",
+    "runtime_provenance": {
+      "source_sha256": "262f99250c21f6a4539c74647300885a1f845838cead2c752833faf9a472bd35",
+      "git_commit": "8675f29c6538cea18e355682eb7e307bdec88cfa"
+    },
+    "checks": [
+      {
+        "update": 180,
+        "candidate_successes": 145,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 21,
+          "D01": 25,
+          "D02": 25,
+          "D03": 24
+        },
+        "retained_initial_successes": 145,
+        "events": {
+          "SUCCESS": 145,
+          "TIMEOUT": 4,
+          "COLLISION": 1
+        },
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 5,
+        "passed": false
+      },
+      {
+        "update": 184,
+        "candidate_successes": 148,
+        "control_successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 24,
+          "D01": 25,
+          "D02": 24,
+          "D03": 25
+        },
+        "retained_initial_successes": 148,
+        "events": {
+          "SUCCESS": 148,
+          "COLLISION": 2
+        },
+        "recovered_control_losses": 26,
+        "new_losses_relative_to_control": 2,
+        "passed": true
+      }
+    ],
+    "prefix_interactions": 262144,
+    "tail_interactions": 200301,
+    "actual_additional_interactions": 462445,
+    "tail_allocated_slots": 668672,
+    "training_update_seconds": 364.5937408200116,
+    "total_wall_seconds_excluding_setup": 498.8174981169868,
+    "setup_seconds": 114.67179623400443,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_mc_tail_pilot/model_000184",
+    "updates": 8,
+    "actor_parameter_delta_norm_range": [
+      0.5089095234870911,
+      0.5672545433044434
+    ],
+    "all_tails_complete": true,
+    "kl_skipped_updates": 0.0,
+    "interpretation": "Complete returns improve final u184 versus control but fail u180. This rejects sufficiency at the registered pilot budget; no unique root cause, stable-window or scratch-convergence claim. Single sampled tail versus value RMSE includes stochastic variance and is not expected-value bias.",
+    "decision": "Do not extend or promote this candidate based on its final recovery. Preserve the opt-in experiment and all results with default false; no final recipe or independent final test is selected."
+  },
+  "process_exit_code": 0
+}

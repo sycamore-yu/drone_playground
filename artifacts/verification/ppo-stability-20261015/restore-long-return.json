@@ -1,0 +1,329 @@
+{
+  "source": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-batch64-retention-pair/model_000300",
+  "source_identity": {
+    "source_sha256": "a6359de47ee7c588a03d08f4719134c636cb6da4b8c300c0abbcca1ce9624b27",
+    "git_commit": "c5e6924846a3d44fd79daa76c9731b48d1e69fad"
+  },
+  "xla_flags": "",
+  "update_compiler_options": {
+    "xla_gpu_exclude_nondeterministic_ops": true,
+    "xla_gpu_autotune_level": 0
+  },
+  "learning_overrides": {
+    "horizon": 512,
+    "minibatches": 64,
+    "gae_lambda": 1.0
+  },
+  "rehearsal": null,
+  "restored_state_sha256": "7b26c9cc4c141b2ab1749b2c50df08da9694c769afb75bbe6d5b8ece84afd6f7",
+  "production_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
+  "diagnostic_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
+  "repeated_production_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
+  "same_compiled_update_exact": true,
+  "production_diagnostic_max_abs_difference": {
+    "params": 0.0,
+    "critic_params": 0.0,
+    "target_critic_params": 0.0,
+    "optimizer_state": 0.0,
+    "rng": 0.0,
+    "env_state": 0.0,
+    "recurrent_memory": 0.0,
+    "objective_state": 0.0,
+    "updates": 0.0,
+    "interactions": 0.0,
+    "log_std": 0.0
+  },
+  "metrics": {
+    "action_reward": {
+      "historical": -4.0338753137802996e-07,
+      "production": -3.800080037308362e-07,
+      "diagnostic": -3.800080037308362e-07
+    },
+    "actor_grad_norm": {
+      "historical": 2.610823631286621,
+      "production": 3.373901128768921,
+      "diagnostic": 3.373901128768921
+    },
+    "actor_loss": {
+      "historical": 0.0012012142688035965,
+      "production": 0.0186095479875803,
+      "diagnostic": 0.0186095479875803
+    },
+    "advantage_mean_pre_normalization": {
+      "historical": 0.016783129423856735,
+      "production": 0.20751234889030457,
+      "diagnostic": 0.20751234889030457
+    },
+    "advantage_positive_fraction": {
+      "historical": 0.73876953125,
+      "production": 0.756927490234375,
+      "diagnostic": 0.756927490234375
+    },
+    "advantage_progress_correlation": {
+      "historical": -0.16975358128547668,
+      "production": 0.15949282050132751,
+      "diagnostic": 0.15949282050132751
+    },
+    "advantage_std": {
+      "historical": 0.23118755221366882,
+      "production": 0.7801547646522522,
+      "diagnostic": 0.7801547646522522
+    },
+    "approx_kl": {
+      "historical": 0.007389310747385025,
+      "production": 0.012719593942165375,
+      "diagnostic": 0.012719593942165375
+    },
+    "arrival_reward": {
+      "historical": 0.00244140625,
+      "production": 0.003082275390625,
+      "diagnostic": 0.003082275390625
+    },
+    "auxiliary_loss": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "boundary_reward": {
+      "historical": -7.002636834840814e-07,
+      "production": -8.183486670532147e-07,
+      "diagnostic": -8.183486670532147e-07
+    },
+    "clearance_reward": {
+      "historical": -1.0947195505650598e-06,
+      "production": -1.0533285603742115e-06,
+      "diagnostic": -1.0533285603742115e-06
+    },
+    "clip_fraction": {
+      "historical": 0.1087646484375,
+      "production": 0.2326202392578125,
+      "diagnostic": 0.2326202392578125
+    },
+    "critic_explained_variance_preupdate": {
+      "historical": 0.6037113666534424,
+      "production": 0.08107966184616089,
+      "diagnostic": 0.08107966184616089
+    },
+    "critic_grad_norm": {
+      "historical": 0.369148850440979,
+      "production": 2.4760055541992188,
+      "diagnostic": 2.4760055541992188
+    },
+    "critic_loss": {
+      "historical": 0.024838242679834366,
+      "production": 0.2961784601211548,
+      "diagnostic": 0.2961784601211548
+    },
+    "critic_return_rmse_preupdate": {
+      "historical": 0.23179595172405243,
+      "production": 0.8072811365127563,
+      "diagnostic": 0.8072811365127563
+    },
+    "depth_valid_fraction": {
+      "historical": 0.15512847900390625,
+      "production": 0.1437479704618454,
+      "diagnostic": 0.1437479704618454
+    },
+    "distance_curriculum_phase": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "done_fraction": {
+      "historical": 0.0048828125,
+      "production": 0.00439453125,
+      "diagnostic": 0.00439453125
+    },
+    "entropy": {
+      "historical": -3.1778035163879395,
+      "production": -3.1645522117614746,
+      "diagnostic": -3.1645522117614746
+    },
+    "exploration_std": {
+      "historical": 0.08597937226295471,
+      "production": 0.08643350005149841,
+      "diagnostic": 0.08643350005149841
+    },
+    "failure_reward": {
+      "historical": -0.00244140625,
+      "production": -0.001312255859375,
+      "diagnostic": -0.001312255859375
+    },
+    "joint_value_loss": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "kl_actor_update_skipped": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "loss": {
+      "historical": 0.026039456948637962,
+      "production": 0.31478801369667053,
+      "diagnostic": 0.31478801369667053
+    },
+    "navigation_collision_fraction": {
+      "historical": 0.00244140625,
+      "production": 0.000885009765625,
+      "diagnostic": 0.000885009765625
+    },
+    "navigation_completed_collision_rate": {
+      "historical": 0.5,
+      "production": 0.2013888955116272,
+      "diagnostic": 0.2013888955116272
+    },
+    "navigation_completed_episodes": {
+      "historical": 10.0,
+      "production": 144.0,
+      "diagnostic": 144.0
+    },
+    "navigation_completed_min_clearance_mean_metres": {
+      "historical": 0.3948257863521576,
+      "production": 0.6563904881477356,
+      "diagnostic": 0.6563904881477356
+    },
+    "navigation_completed_numerical_failure_rate": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_completed_out_of_bounds_rate": {
+      "historical": 0.0,
+      "production": 0.0972222238779068,
+      "diagnostic": 0.0972222238779068
+    },
+    "navigation_completed_success_rate": {
+      "historical": 0.5,
+      "production": 0.7013888955116272,
+      "diagnostic": 0.7013888955116272
+    },
+    "navigation_completed_successes": {
+      "historical": 5.0,
+      "production": 101.0,
+      "diagnostic": 101.0
+    },
+    "navigation_completed_timeout_rate": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_episode_min_clearance_metres": {
+      "historical": 0.001927860314026475,
+      "production": 0.0028845283668488264,
+      "diagnostic": 0.0028845283668488264
+    },
+    "navigation_numerical_failure_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "navigation_out_of_bounds_fraction": {
+      "historical": 0.0,
+      "production": 0.00042724609375,
+      "diagnostic": 0.00042724609375
+    },
+    "navigation_progress_metres": {
+      "historical": 0.10601852834224701,
+      "production": 0.09464307129383087,
+      "diagnostic": 0.09464307129383087
+    },
+    "navigation_remaining_metres": {
+      "historical": 10.61253833770752,
+      "production": 11.75965690612793,
+      "diagnostic": 11.75965690612793
+    },
+    "navigation_success_flight_seconds": {
+      "historical": 0.05814746394753456,
+      "production": 0.0688224583864212,
+      "diagnostic": 0.0688224583864212
+    },
+    "navigation_success_fraction": {
+      "historical": 0.00244140625,
+      "production": 0.003082275390625,
+      "diagnostic": 0.003082275390625
+    },
+    "navigation_success_mean_flight_seconds": {
+      "historical": 23.817201614379883,
+      "production": 22.328458786010742,
+      "diagnostic": 22.328458786010742
+    },
+    "navigation_timeout_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "perception_cost": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "policy_loss": {
+      "historical": -0.014687801711261272,
+      "production": 0.0027867844328284264,
+      "diagnostic": 0.0027867844328284264
+    },
+    "progress_reward": {
+      "historical": 0.005300926975905895,
+      "production": 0.004732153378427029,
+      "diagnostic": 0.004732153378427029
+    },
+    "reset_distance_20m_count": {
+      "historical": 7.0,
+      "production": 112.0,
+      "diagnostic": 112.0
+    },
+    "reset_distance_50m_count": {
+      "historical": 2.0,
+      "production": 16.0,
+      "diagnostic": 16.0
+    },
+    "reset_distance_80m_count": {
+      "historical": 1.0,
+      "production": 16.0,
+      "diagnostic": 16.0
+    },
+    "reward": {
+      "historical": 0.005215395707637072,
+      "production": 0.006416588090360165,
+      "diagnostic": 0.006416588090360165
+    },
+    "saturated_action_fraction": {
+      "historical": 0.0,
+      "production": 0.0,
+      "diagnostic": 0.0
+    },
+    "task_cost": {
+      "historical": -0.005215395241975784,
+      "production": -0.006416588090360165,
+      "diagnostic": -0.006416588090360165
+    },
+    "time_reward": {
+      "historical": -8.333333971677348e-05,
+      "production": -8.333333971677348e-05,
+      "diagnostic": -8.333333971677348e-05
+    },
+    "value_prediction_mean": {
+      "historical": 0.9091606140136719,
+      "production": 0.9215508699417114,
+      "diagnostic": 0.9215508699417114
+    },
+    "value_prediction_std": {
+      "historical": 0.2532421052455902,
+      "production": 0.23395487666130066,
+      "diagnostic": 0.23395487666130066
+    },
+    "value_target_mean": {
+      "historical": 0.9259437918663025,
+      "production": 1.1290631294250488,
+      "diagnostic": 1.1290631294250488
+    },
+    "value_target_std": {
+      "historical": 0.3672473430633545,
+      "production": 0.8138453364372253,
+      "diagnostic": 0.8138453364372253
+    }
+  },
+  "scope": "One actual update, not long-run reproducibility. Historical metrics remain the original h32 reference, not matched samples when learning options are overridden."
+}

@@ -74,6 +74,7 @@ class DronePlaygroundBackend:
                 "checkpoint=null",
                 f"seed={request['train_seed']}",
                 f"learning.max_interactions={request['train_env_steps']}",
+                "++learning.budget_only=true",
             ]
         return [
             *args,

@@ -37,6 +37,7 @@ def test_candidate_cannot_change_fixed_evaluation_or_resume(tmp_path):
     train = backend.overrides(bundle, "train")
     evaluate = backend.overrides(bundle, "eval", tmp_path / "model")
     assert "learning.max_interactions=8192" in train
+    assert "++learning.budget_only=true" in train
     assert "seed=7" in train and "initial_checkpoint=null" in train
     assert "seed=0" in evaluate and "benchmark.seed_base=1600000" in evaluate
     assert "benchmark.episodes=1" in evaluate

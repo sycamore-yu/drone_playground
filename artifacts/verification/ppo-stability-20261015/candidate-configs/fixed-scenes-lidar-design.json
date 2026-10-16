@@ -1,0 +1,10 @@
+{
+  "scope": "Independent LiDAR seed0 scratch trial, not extrapolated Depth acceptance.",
+  "evidence": "Depth same fixed-scene long-return recipe first passed full150/150 atupdate144; its stability remains pending. LiDAR convergence is a separate missing objective.",
+  "configuration": "lidar_fixed_scenes_long_return_s0.yaml",
+  "changes_from_depth": "Only sensor configuration, Actor kind and output directory differ. Same physical task,3D action, reward, observations, scene schedule, optimizer, budget and selection rule.",
+  "initialization": "Fresh random Actor/Critic/optimizers; no Depth, BPTT or SHAC weights.",
+  "budget_interactions": 8388608,
+  "stop_rule": "First complete25-per-scene validation pass or full budget; no patience stop before the budget.",
+  "remaining_acceptance": "Three independent same-recipe LiDAR seeds, >=900000 additional stability interactions for each selected candidate, and independent frozen final tests remain required."
+}

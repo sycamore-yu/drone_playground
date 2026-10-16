@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import statistics
+import struct
 import zipfile
 from collections import Counter
 from datetime import UTC, datetime
@@ -24,6 +25,7 @@ CONDITIONS = (
 )
 NAV_SCENES = ("S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06")
 RULE = "last_of_first_three_consecutive_passes"
+SINGLE_RULE = "first_full_validation_pass"
 EVENTS = {
     "SUCCESS",
     "COLLISION",
@@ -81,6 +83,8 @@ def read_mapping(path, issues):
 
 def read_events(path, issues):
     """Read recorded events while retaining malformed-line evidence."""
+    if not path.exists() and list(path.parent.glob("events.out.tfevents.*")):
+        return read_tensorboard_events(path.parent, issues)
     try:
         lines = path.read_text().splitlines()
     except OSError as error:
@@ -98,6 +102,35 @@ def read_events(path, issues):
     return events
 
 
+def read_tensorboard_events(directory, issues):
+    """Read existing v3 scalar updates and selection events without simulation imports."""
+    from tensorboardX.proto.event_pb2 import Event
+
+    events, updates = [], {}
+    for path in sorted(directory.glob("events.out.tfevents.*")):
+        try:
+            with path.open("rb") as stream:
+                while header := stream.read(12):
+                    if len(header) != 12:
+                        raise ValueError("Incomplete TensorBoard record header")
+                    length = struct.unpack("<Q", header[:8])[0]
+                    payload = stream.read(length)
+                    if len(payload) != length or len(stream.read(4)) != 4:
+                        raise ValueError("Incomplete TensorBoard record")
+                    event = Event.FromString(payload)
+                    for value in event.summary.value:
+                        if value.tag.startswith("train/") and value.HasField("simple_value"):
+                            update = updates.setdefault(
+                                event.step, {"event": "update", "update": event.step}
+                            )
+                            update[value.tag.removeprefix("train/")] = value.simple_value
+                        elif value.tag.startswith("event/") and value.tensor.string_val:
+                            events.append(json.loads(value.tensor.string_val[0]))
+        except (OSError, ValueError) as error:
+            issues.append(f"{path}: {error}")
+    return events + [updates[step] for step in sorted(updates)]
+
+
 def resolve_run_path(value, run):
     """Resolve the current run's checkpoint or evaluation location."""
     path = Path(value)
@@ -107,6 +140,24 @@ def resolve_run_path(value, run):
 def checkpoint(path):
     """Inspect the persisted archive and payload checksum without loading an Actor."""
     result = {"path": str(path), "archive_sha256": None, "metadata": None}
+    if path.is_dir():
+        issues = []
+        metadata = read_mapping(path / "metadata.json", issues)
+        result["metadata"] = metadata
+        result["integrity"] = check(
+            not issues
+            and metadata.get("format_version") == 3
+            and metadata.get("purpose") == "model"
+            and metadata.get("has_inference_actor") is True
+            and isinstance(metadata.get("actor"), dict)
+            and all(
+                (path / part / "commit_success.txt").is_file() for part in ("actor", "training")
+            ),
+            "Recorded v3 model identity and completed Orbax actor/training saves; "
+            "payload bytes are not rehashed or replayed",
+            *issues,
+        )
+        return result
     try:
         result["archive_sha256"] = digest(path)
         with zipfile.ZipFile(path) as archive:
@@ -228,11 +279,19 @@ def combine(checks):
     return check(False if False in values else (None if None in values or not values else True))
 
 
-def evaluate(directory, task, seed, mode):
+def evaluate(directory, task, seed, mode, *, fixed_checkpoint_seeds=False):
     """Verify saved episode CSVs, task quality and evaluation seed partitions."""
     issues = []
+    if type(fixed_checkpoint_seeds) is not bool:
+        issues.append("fixed_checkpoint_seeds must be boolean")
     report = read_mapping(directory / "report.json", issues)
     scenes = NAV_SCENES if task == "navigation" else ("empty" if task == "tracking" else "racing",)
+    if (
+        task == "navigation"
+        and mode == "checkpoint_eval"
+        and set(report.get("reports", {})) == set(NAV_SCENES[:6])
+    ):
+        scenes = NAV_SCENES[:6]
     evidence = {
         scene: scene_evidence(directory, scene, task, report.get("reports", {}).get(scene, {}))
         for scene in scenes
@@ -260,13 +319,15 @@ def evaluate(directory, task, seed, mode):
         ):
             issues.append(f"{scenes[scene_index]}: actual CSV seeds outside {mode} partition")
         if base is not None and isinstance(index, int):
-            if actual != [int(base + 10_000 * seed + 100 * index + scene_index)]:
+            cohort = 0 if fixed_checkpoint_seeds is True and mode == "checkpoint_eval" else index
+            if actual != [int(base + 10_000 * seed + 100 * cohort + scene_index)]:
                 issues.append(f"{scenes[scene_index]}: actual CSV seeds disagree with report")
         else:
             issues.append("Missing evaluation_index/seed_base")
     primary = scenes[:6] if task == "navigation" else scenes
     return {
         "directory": str(directory),
+        "seed_base": base,
         "evaluation_index": index,
         "reported_passed": report.get("passed"),
         "task_contract": report.get("task_contract"),
@@ -281,6 +342,10 @@ def cost_evidence(header, events, source):
     """Attribute actual counters, elapsed time and GPU samples to their records."""
     updates = [event for event in events if event.get("event") == "update"]
     last = updates[-1] if updates else {}
+    event_source = str(
+        Path(source)
+        / ("events.out.tfevents.*" if header.get("layout_version") == 3 else "metrics.jsonl")
+    )
     result = {}
     for key in (
         "updates",
@@ -295,7 +360,7 @@ def cost_evidence(header, events, source):
         origin = f"{source}/run.json"
         if value is None:
             value = number(last.get("update" if key == "updates" else key))
-            origin = f"{Path(source) / 'metrics.jsonl'}:last update (lower bound while running)"
+            origin = f"{event_source}:last update (lower bound while running)"
         result[key] = metric(value, origin)
     result["logged_update_events"] = len(updates)
     result["last_logged_update"] = last or None
@@ -311,7 +376,7 @@ def cost_evidence(header, events, source):
             }
             if samples
             else None,
-            str(Path(source) / "metrics.jsonl"),
+            event_source,
         )
     result["gpu_scope"] = GPU_SCOPE
     result["isolated_gpu_seconds"] = metric(None, None, GPU_SCOPE)
@@ -334,7 +399,92 @@ def initialization_cost_id(path):
     return str(path)
 
 
-def collect_run(path, root):
+def check_single_full(result, screening, events):
+    """Grade selection using saved episode evidence; no model or CSV reread."""
+    path = Path(result["path"])
+    config, header = result["config"], result["run_record"]
+    task, seed = result["task"], result["seed"]
+    selection = result["selection"]
+    audit = result.get("selection_audit")
+    cp = result["checkpoint"]
+    metadata = cp.get("metadata") or {}
+    evaluations, benchmark = result["checkpoint_evaluations"], result["benchmark"]
+    independent = result["C5"]["independent_seed_sets"]
+    chosen = next((e for e in evaluations if e["update"] == selection["update"]), None)
+    prior_passes = [
+        e
+        for e in evaluations
+        if e["update"] < selection["update"] and e["quality"]["passed"] is True
+    ]
+    screened = bool(audit) or (
+        screening is not None
+        and screening.get("complete") is True
+        and screening.get("seed_base") == 1_000_000
+        and chosen is not None
+        and chosen["seed_base"] == 1_500_000
+        and screening.get("training_seed") == seed
+        and screening.get("evaluation_index") == selection["evaluation_index"]
+        and all(
+            screening.get("reports", {}).get(scene, {}).get("episodes") == 8
+            and screening["reports"][scene].get("successes", 0)
+            >= (6 if task == "navigation" else 7)
+            and (
+                task != "tracking"
+                or (
+                    number(screening["reports"][scene].get("successful_position_rmse")) is not None
+                    and screening["reports"][scene]["successful_position_rmse"] <= 0.35
+                )
+            )
+            for scene in (
+                NAV_SCENES[:6]
+                if task == "navigation"
+                else ("empty" if task == "tracking" else "racing",)
+            )
+        )
+    )
+    selected_path = audit.get("checkpoint") if audit else header.get("selected_checkpoint")
+    c5_ok = (
+        chosen is not None
+        and chosen["quality"]["passed"] is True
+        and chosen["partition"]["passed"] is True
+        and not prior_passes
+        and not any(
+            e.get("event") == "full_validation"
+            and e.get("passed") is True
+            and e.get("update", selection["update"]) < selection["update"]
+            for e in events
+        )
+        and screened
+        and (
+            bool(audit)
+            or (
+                config.get("learning", {}).get("selection") == SINGLE_RULE
+                and config.get("learning", {}).get("required_consecutive_passes") == 1
+            )
+        )
+        and selection.get("consecutive_passes") == 1
+        and selection.get("evaluation_index") == chosen["evaluation_index"]
+        and metadata.get("provenance", {}).get("updates") == selection["update"]
+        and selected_path is not None
+        and resolve_run_path(selected_path, path) == Path(cp["path"])
+        and independent is True
+        and benchmark["partition"]["passed"] is True
+        and benchmark.get("checkpoint_link", {"passed": True})["passed"] is True
+    )
+    result["C5"] = check(
+        c5_ok,
+        "First full validation and independent frozen benchmark; "
+        "historical audit or recorded screening, without repeated training",
+    )
+    result["C5"].update(
+        first_passing_updates=[selection["update"]],
+        independent_seed_sets=independent,
+        protocol=SINGLE_RULE,
+        screening=screening,
+    )
+
+
+def collect_run(path, root, *, benchmark_run=None, allow_first_full=False):
     """Collect one selected run without replacing failures from another run."""
     issues = []
     config = read_mapping(path / "config.yaml", issues)
@@ -355,7 +505,7 @@ def collect_run(path, root):
         "issues": issues,
         "cost": cost_evidence(header, events, path),
     }
-    if header.get("layout_version") != 2:
+    if header.get("layout_version") not in (2, 3):
         message = f"Unsupported run layout version: {header.get('layout_version')!r}"
         issues.append(message)
         result["identity"] = check(False, message)
@@ -375,6 +525,23 @@ def collect_run(path, root):
         else check(None, "run.json config_sha256 unavailable")
     )
     selection = header.get("selection", {})
+    audit_directory = path.parent / ".scheduler" / "frozen_audits" / path.name
+    audit = (
+        read_mapping(audit_directory / "audit.json", issues)
+        if allow_first_full and (audit_directory / "audit.json").is_file()
+        else None
+    )
+    if audit:
+        selected_report = read_mapping(path / audit["source_validation"], issues)
+        selection = {
+            "rule": SINGLE_RULE,
+            "checkpoint": audit["checkpoint"],
+            "update": int(Path(audit["checkpoint"]).parent.name.removeprefix("step-")),
+            "evaluation_index": selected_report.get("evaluation_index"),
+            "consecutive_passes": 1,
+            "full_validation": audit["source_validation"],
+        }
+        result["selection_audit"] = audit
     result["selection"] = selection or None
     cp = (
         checkpoint(resolve_run_path(selection["checkpoint"], path))
@@ -404,25 +571,101 @@ def collect_run(path, root):
         for p in folder.glob(f"{prefix}*")
         if p.is_dir() and p.name.removeprefix(prefix).isdigit() and (p / "report.json").is_file()
     }
+    if header.get("layout_version") == 3:
+        directories.update(
+            (int(p.name.removeprefix("model_")), p)
+            for p in folder.glob("model_*")
+            if (p / "report.json").is_file()
+        )
     for event in events:
-        if event.get("event") == "checkpoint_evaluation" and type(event.get("update")) is int:
+        if (
+            header.get("layout_version") == 2
+            and event.get("event") == "checkpoint_evaluation"
+            and type(event.get("update")) is int
+        ):
             update = event["update"]
             name = f"step-{update:06d}"
             directories.setdefault(update, folder / name)
     evaluations = []
     for update, directory in sorted(directories.items()):
-        entry = evaluate(directory, task, seed, "checkpoint_eval")
+        entry = evaluate(
+            directory,
+            task,
+            seed,
+            "checkpoint_eval",
+            fixed_checkpoint_seeds=config.get("benchmark", {}).get("fixed_checkpoint_seeds", False),
+        )
         entry["update"] = update
         evaluations.append(entry)
     result["checkpoint_evaluations"] = evaluations
-    benchmark = evaluate(
-        resolve_run_path(header["benchmark_directory"], path)
-        if header.get("benchmark_directory")
-        else path / "eval/001",
-        task,
-        seed,
-        "benchmark",
-    )
+    if audit:
+        benchmark = evaluate(audit_directory, task, seed, "benchmark")
+        benchmark["checkpoint_link"] = check(
+            audit.get("status") == "accepted"
+            and audit.get("source_run") == str(path)
+            and audit.get("benchmark_attempts") == 1
+            and audit.get("benchmark_passed") is True,
+            "Reuse completed one-time frozen audit of its recorded first validation candidate",
+        )
+    elif benchmark_run is not None:
+        benchmark_issues = []
+        frozen_config = read_mapping(benchmark_run / "config.yaml", benchmark_issues)
+        frozen_header = read_mapping(benchmark_run / "run.json", benchmark_issues)
+        benchmark = evaluate(
+            resolve_run_path(frozen_header.get("evaluation_directory", "eval/001"), benchmark_run),
+            task,
+            seed,
+            "benchmark",
+        )
+        loaded = frozen_header.get("evaluated_checkpoint", {})
+        matched_inputs = all(
+            frozen_config.get(key, {}) == config.get(key, {})
+            for key in ("task", "sensor", "method", "observation", "controller")
+        ) and {
+            k: v
+            for k, v in frozen_config.get("simulation", {}).items()
+            if k not in {"num_envs", "device"}
+        } == {
+            k: v for k, v in config.get("simulation", {}).items() if k not in {"num_envs", "device"}
+        }
+        configured_checkpoint = frozen_config.get("checkpoint")
+        declared_seed_base = frozen_config.get("benchmark", {}).get("seed_base")
+        if declared_seed_base is None:
+            declared_seed_base = 2_000_000
+        linked = (
+            not benchmark_issues
+            and frozen_header.get("status") == "completed"
+            and frozen_header.get("layout_version") == 2
+            and digest(benchmark_run / "config.yaml") == frozen_header.get("config_sha256")
+            and frozen_config.get("mode") == "benchmark"
+            and frozen_config.get("seed") == seed
+            and benchmark["seed_base"] == declared_seed_base
+            and frozen_config.get("benchmark", {}).get("protocol") == "learning"
+            and not frozen_config.get("benchmark", {}).get("allow_environment_change", False)
+            and isinstance(configured_checkpoint, str)
+            and str(resolve_run_path(configured_checkpoint, benchmark_run)) == cp["path"]
+            and loaded.get("path") == cp["path"]
+            and bool(cp.get("payload_sha256"))
+            and loaded.get("payload_sha256") == cp.get("payload_sha256")
+            and matched_inputs
+        )
+        benchmark["source_run"] = str(benchmark_run)
+        benchmark["checkpoint_link"] = check(
+            linked,
+            "Verified separate frozen run config, actual loaded payload, selected model and inputs"
+            if linked
+            else "Separate frozen evaluation lacks matching checkpoint/input provenance",
+            *benchmark_issues,
+        )
+    else:
+        benchmark = evaluate(
+            resolve_run_path(header["benchmark_directory"], path)
+            if header.get("benchmark_directory")
+            else path / "eval/001",
+            task,
+            seed,
+            "benchmark",
+        )
     result["benchmark"] = benchmark
     streak, first, history_complete = [], None, True
     previous_index = 0
@@ -466,6 +709,7 @@ def collect_run(path, root):
         and resolve_run_path(header["selected_checkpoint"], path) == Path(cp["path"])
         and independent
         and benchmark["partition"]["passed"] is True
+        and benchmark.get("checkpoint_link", {"passed": True})["passed"] is True
     )
     result["C5"] = check(
         c5_ok if selection else None,
@@ -474,6 +718,13 @@ def collect_run(path, root):
         else "Missing/invalid consecutive evaluations, selection or holdout",
     )
     result["C5"].update(first_passing_updates=first, independent_seed_sets=independent)
+    if allow_first_full and selection.get("rule") == SINGLE_RULE:
+        screening = (
+            read_mapping(path / selection["screening"], issues)
+            if selection.get("screening")
+            else None
+        )
+        check_single_full(result, screening, events)
     target_event = next(
         (
             event
@@ -615,13 +866,29 @@ def collect_initialization_costs(runs, root):
     return shared
 
 
-def recipe(config):
+def recipe(config, *, allow_first_full=False):
     """Select configuration fields that define the three-seed training recipe."""
-    return {
+    result = {
         key: value
         for key, value in config.items()
         if key not in {"seed", "output", "checkpoint", "resume", "replay_path", "mode"}
     }
+    if "benchmark" in result:
+        result["benchmark"] = {
+            key: value for key, value in result["benchmark"].items() if key != "frozen_seed_base"
+        }
+        if not result["benchmark"]:
+            del result["benchmark"]
+    if allow_first_full:
+        # Historical stopping/serialization rules do not change the optimization recipe.
+        for key in ("results", "early_stopping"):
+            result.pop(key, None)
+        result["learning"] = {
+            k: v
+            for k, v in result.get("learning", {}).items()
+            if k not in {"selection", "required_consecutive_passes"}
+        }
+    return result
 
 
 def common_actor(runs):
@@ -634,6 +901,7 @@ def common_actor(runs):
                 "task": config.get("task"),
                 "sensor": config.get("sensor"),
                 "method": config.get("method"),
+                "observation": config.get("observation", {}),
                 "simulation": {
                     key: value
                     for key, value in config.get("simulation", {}).items()
@@ -663,6 +931,282 @@ def common_actor(runs):
     }
 
 
+def success_rate_interval(successes, episodes):
+    """Compute a 95% Wilson interval conditional on one fixed trained policy."""
+    if (
+        type(successes) is not int
+        or type(episodes) is not int
+        or episodes <= 0
+        or not 0 <= successes <= episodes
+    ):
+        return None
+    estimate = successes / episodes
+    z = statistics.NormalDist().inv_cdf(0.975)
+    denominator = 1 + z**2 / episodes
+    center = (estimate + z**2 / (2 * episodes)) / denominator
+    margin = (
+        z * math.sqrt(estimate * (1 - estimate) / episodes + z**2 / (4 * episodes**2)) / denominator
+    )
+    return {
+        "estimate": estimate,
+        "low": max(0.0, center - margin),
+        "high": min(1.0, center + margin),
+        "confidence_level": 0.95,
+        "method": "wilson",
+        "successes": successes,
+        "episodes": episodes,
+    }
+
+
+def seed_success_rate_spread(values):
+    """Describe variability across policies without pooling their episodes."""
+    rates = {}
+    for value in values.values():
+        for scene, interval in value.get("success_rate_intervals", {}).items():
+            if interval["value"] is not None:
+                rates.setdefault(scene, []).append(interval["value"]["estimate"])
+    return {
+        scene: {
+            "available_training_seeds": len(samples),
+            "mean": statistics.mean(samples),
+            "min": min(samples),
+            "max": max(samples),
+            "sample_standard_deviation": statistics.stdev(samples) if len(samples) > 1 else None,
+        }
+        for scene, samples in rates.items()
+    }
+
+
+def stability_window(run, report_path):
+    """Link a completed unchanged continuation to its selected source and actual last model."""
+    issues = []
+    report = read_mapping(report_path, issues)
+    evidence = {"report": str(report_path), "record": report, **check(None, *issues)}
+    if not report or report.get("status") == "running":
+        return evidence
+
+    def require(valid, reason):
+        if not valid:
+            raise ValueError(reason)
+
+    try:
+        source = run["checkpoint"]
+        metadata = source["metadata"]
+        provenance = metadata["provenance"]
+        config = run["config"]
+        batch = config["simulation"]["num_envs"] * config["learning"]["options"]["horizon"]
+        steps, interval = math.ceil(900_000 / batch), math.ceil(122_880 / batch)
+        origin, interactions = provenance["updates"], provenance["interactions"]
+        require(
+            report["status"] == "completed"
+            and report.get("actor_lr_scale", 1) == 1
+            and not report.get("diagnostic", False)
+            and report["source_checkpoint"] == source["path"]
+            and report["source_run"] == run["path"]
+            and report["source_config_sha256_reused"] == provenance["config_sha256"]
+            and report["source_sha256_reused"] == provenance["source_sha256"]
+            and report["runtime_provenance"]["source_sha256"] == provenance["source_sha256"]
+            and report["origin_update"] == origin == run["selection"]["update"]
+            and report["origin_interactions"] == interactions
+            and config.get("initial_checkpoint") is None
+            and config.get("resume") is None,
+            "Window must continue the selected scratch model with unchanged code and recipe",
+        )
+        require(
+            report["planned_updates"] == steps
+            and report["evaluation_interval_updates"] == interval
+            and report["planned_additional_interactions"] == steps * batch
+            and report["actual_additional_interactions"] == steps * batch
+            and report["last_update"] == origin + steps
+            and report["last_interactions"] == interactions + steps * batch,
+            "Incomplete registered continuation budget or mismatched actual counters",
+        )
+        selected = next(e for e in run["checkpoint_evaluations"] if e["update"] == origin)
+        rows = report["baseline_cases"]
+        cases = {tuple(row[:4]): row[4] for row in rows}
+        require(len(cases) == len(rows) == 150, "Baseline must contain 150 distinct cases")
+        original = {key for key, event in cases.items() if event == "SUCCESS"}
+        geometry = metadata["config"]["training_sampling"]["geometry_sha256"]
+        require(
+            report["evaluation_seed_base"] == selected["seed_base"]
+            and all(event in EVENTS for event in cases.values())
+            and set(key[0] for key in cases) == set(NAV_SCENES[:6])
+            and all(
+                {(int(k[2]), int(k[3])) for k in cases if k[0] == scene}
+                == {tuple(k) for k in selected["scenes"][scene]["case_ids"]}
+                and sum(k[0] == scene for k in original)
+                == selected["scenes"][scene]["successes"]
+                >= 23
+                for scene in NAV_SCENES[:6]
+            )
+            and all(k[1] == geometry[k[0]] for k in cases),
+            "Window baseline differs from the already verified full validation",
+        )
+        offsets = [*range(interval, steps, interval), steps]
+        checks = report["checks"]
+        require(len(checks) == len(offsets), "Missing scheduled stability check")
+        passed = []
+        for row, offset in zip(checks, offsets, strict=True):
+            lost, new = (
+                {tuple(k) for k in row["lost_initial_cases"]},
+                {tuple(k) for k in row["new_success_cases"]},
+            )
+            require(
+                lost <= original
+                and new <= cases.keys() - original
+                and len(lost) == len(row["lost_initial_cases"])
+                and len(new) == len(row["new_success_cases"]),
+                "Invalid retention case identities",
+            )
+            successful = (original - lost) | new
+            counts = {s: sum(k[0] == s for k in successful) for s in NAV_SCENES[:6]}
+            retained = len(original - lost)
+            ok = min(counts.values()) >= 23 and retained * 100 >= len(original) * 95
+            require(
+                row["update"] == origin + offset
+                and row["additional_interactions"] == offset * batch
+                and Path(row["model"]).name == f"model_{origin + offset:06d}"
+                and row["per_scene_successes"] == counts
+                and row["successes"] == len(successful)
+                and row["initial_successes"] == len(original)
+                and row["retained_initial_successes"] == retained
+                and math.isclose(row["retention_fraction"], retained / len(original))
+                and row["passed"] is ok,
+                "Check counters, scene counts or retained-case evidence disagree",
+            )
+            passed.append(ok)
+        require(report["passed"] is all(passed), "Window summary disagrees with its checks")
+        updates = read_events(report_path.parent / "metrics.jsonl", issues)
+        require(
+            not issues
+            and len(updates) == steps
+            and config["learning"]["options"]["lr"] > 0
+            and all(
+                row["update"] == origin + offset
+                and row["interactions"] == interactions + offset * batch
+                and number(row.get("actor_grad_norm")) is not None
+                and row["actor_grad_norm"] > 0
+                and number(row.get("kl_actor_update_skipped")) is not None
+                and 0 <= row["kl_actor_update_skipped"] < 1
+                for offset, row in enumerate(updates, 1)
+            ),
+            "Missing actual PPO updates or all Actor updates skipped",
+        )
+        final = checkpoint(Path(report["final_checkpoint"]))
+        evidence["final_checkpoint"] = final
+        final_meta = final["metadata"] or {}
+        last = final_meta.get("provenance", {})
+        require(
+            report["final_checkpoint"] == checks[-1]["model"]
+            and final["integrity"]["passed"] is True
+            and final_meta["config"] == metadata["config"]
+            and final_meta["actor"] == metadata["actor"]
+            and last["status"] == "completed"
+            and last["updates"] == origin + steps
+            and last["interactions"] == interactions + steps * batch
+            and last["stability_source_checkpoint"] == source["path"]
+            and Path(last["stability_window_report"]).resolve() == report_path
+            and last["source_sha256"] == provenance["source_sha256"],
+            "Final model must be the completed window's actual last state, without rollback",
+        )
+        evidence.update(check(all(passed), "All scheduled per-scene and retention gates checked"))
+    except (KeyError, TypeError, ValueError, StopIteration, ZeroDivisionError) as error:
+        evidence.update(check(False, str(error)))
+    return evidence
+
+
+def apply_ppo_stability(run, entry, root, development_seed_bases):
+    """Keep selection evidence, grade stability, then use only the final frozen model's quality."""
+    if "selection_benchmark" in run:
+        run["benchmark"] = run.pop("selection_benchmark")
+    for key in ("final_benchmark_link", "final_benchmark_source", "final_stage_costs"):
+        run.pop(key, None)
+    run["final_benchmark_verified"] = False
+    run["ppo_stability"] = check(None, "No completed stability window selected")
+    if entry is None:
+        return
+    report_path = resolve_path(entry["window_report"], root)
+    window = stability_window(run, report_path)
+    run["ppo_stability"] = window
+    if window["passed"] is not True or not entry.get("benchmark_run"):
+        return
+    directory = resolve_path(entry["benchmark_run"], root)
+    issues = []
+    config = read_mapping(directory / "config.yaml", issues)
+    header = read_mapping(directory / "run.json", issues)
+    final = window["final_checkpoint"]
+    benchmark = evaluate(
+        resolve_run_path(header.get("evaluation_directory", "."), directory),
+        run["task"],
+        run["seed"],
+        "benchmark",
+    )
+    original = run["config"]
+    matched = all(
+        config.get(key) == original.get(key)
+        for key in ("task", "sensor", "method", "observation", "controller")
+    ) and {
+        k: v for k, v in config.get("simulation", {}).items() if k not in {"num_envs", "device"}
+    } == {
+        k: v for k, v in original.get("simulation", {}).items() if k not in {"num_envs", "device"}
+    }
+    development_seeds = set(run["benchmark"]["seeds"]) | {
+        seed for entry in run["checkpoint_evaluations"] for seed in entry["seeds"]
+    }
+    loaded = header.get("evaluated_checkpoint", {})
+    declared = config.get("benchmark", {})
+    selected = next(
+        e for e in run["checkpoint_evaluations"] if e["update"] == run["selection"]["update"]
+    )
+    geometry = final["metadata"]["config"]["training_sampling"]["geometry_sha256"]
+    task_geometry = all(
+        benchmark["scenes"][scene]["claimed"].get("geometry", {}).get("sha256") == geometry[scene]
+        and bool(selected["scenes"][scene]["claimed"].get("task_contract"))
+        and benchmark["scenes"][scene]["claimed"].get("task_contract")
+        == selected["scenes"][scene]["claimed"]["task_contract"]
+        for scene in NAV_SCENES[:6]
+    )
+    linked = (
+        not issues
+        and header.get("status") == "completed"
+        and header.get("layout_version") == 3
+        and config.get("mode") == "benchmark"
+        and config.get("seed") == run["seed"]
+        and config.get("checkpoint") == loaded.get("path") == final["path"]
+        and loaded.get("model_metadata") == final["metadata"]
+        and declared.get("protocol") == "learning"
+        and not declared.get("allow_environment_change", False)
+        and number(declared.get("seed_base")) is not None
+        and declared["seed_base"] == benchmark["seed_base"] >= 3_000_000
+        and declared["seed_base"] not in development_seed_bases
+        and not development_seeds.intersection(benchmark["seeds"])
+        and benchmark["partition"]["passed"] is True
+        and matched
+        and task_geometry
+    )
+    run["final_benchmark_link"] = check(
+        linked,
+        "Final frozen run must load the actual last model and use an independent cohort",
+        *issues,
+    )
+    run["final_benchmark_source"] = {
+        "path": str(directory),
+        "config": config,
+        "run_record": header,
+    }
+    if linked:
+        run["selection_benchmark"] = run["benchmark"]
+        run["benchmark"] = benchmark
+        run["final_benchmark_verified"] = True
+        run["final_stage_costs"] = {
+            "selection_run": run["cost"],
+            "continuation_wall_seconds": window["record"].get("total_wall_seconds"),
+            "continuation_update_seconds": window["record"].get("training_update_seconds"),
+            "frozen_run": cost_evidence(header, [], directory),
+            "scope": "Separate recorded stage costs include evaluations; no isolated runtime claim",
+        }
+
+
 def seed_result(run, condition):
     """Grade one selected seed using quality, selection and provenance evidence."""
     if run is None:
@@ -685,6 +1229,11 @@ def seed_result(run, condition):
         run["initialization"]["integrity"],
         run["physics_config"],
     ]
+    if "ppo_stability" in run:
+        criteria += [run["ppo_stability"], run.get("final_benchmark_link", check(None))]
+        if not run["final_benchmark_verified"]:
+            quality = check(None, "Independent frozen test of the actual final model unavailable")
+            criteria[0] = quality
     passed = combine(criteria)["passed"]
     terminal_failure = run["recorded_status"] in {"failed", "error"}
     status = (
@@ -692,7 +1241,11 @@ def seed_result(run, condition):
         if terminal_failure or (passed is False and run["recorded_status"] != "running")
         else (
             "passed"
-            if passed is True and run["recorded_status"] in {"accepted", "frozen_benchmark_failed"}
+            if passed is True
+            and (
+                run["recorded_status"] in {"accepted", "frozen_benchmark_failed"}
+                or run.get("selection_audit", {}).get("status") == "accepted"
+            )
             else "incomplete"
         )
     )
@@ -702,7 +1255,28 @@ def seed_result(run, condition):
         "quality": quality,
         "C5": run["C5"],
         "C6": run["C6"],
+        "ppo_stability": run.get("ppo_stability"),
+        "final_benchmark_link": run.get("final_benchmark_link"),
+        "final_model_counters": {
+            key: run.get("ppo_stability", {}).get("record", {}).get(key)
+            for key in ("last_update", "last_interactions", "actual_additional_interactions")
+        }
+        if "ppo_stability" in run
+        else None,
         "scenes": list(scenes),
+        "success_rate_intervals": {
+            scene: metric(
+                success_rate_interval(
+                    run["benchmark"]["scenes"][scene]["successes"],
+                    run["benchmark"]["scenes"][scene]["episodes"],
+                )
+                if run.get("final_benchmark_verified", True)
+                else None,
+                run["benchmark"]["scenes"][scene]["csv"],
+                "Verified episode counts unavailable",
+            )
+            for scene in scenes
+        },
         "updates": run["cost"]["updates"],
         "interactions": run["cost"]["interactions"],
         "wall_seconds": run["cost"]["wall_seconds"],
@@ -729,7 +1303,120 @@ def collect(manifest_path):
     paths = [resolve_path(path, root) for path in paths]
     if len(paths) != len(set(paths)):
         raise ValueError("Duplicate run path in manifest")
-    runs = [collect_run(path, root) for path in paths]
+    benchmark_runs = manifest.get("benchmark_runs", {})
+    if not isinstance(benchmark_runs, dict) or any(
+        not isinstance(key, str) or not key or not isinstance(value, str) or not value
+        for key, value in benchmark_runs.items()
+    ):
+        raise ValueError("manifest.benchmark_runs must map chosen training paths to frozen runs")
+    benchmarks = {resolve_path(k, root): resolve_path(v, root) for k, v in benchmark_runs.items()}
+    if len(benchmarks) != len(benchmark_runs) or set(benchmarks) - set(paths):
+        raise ValueError("benchmark_runs contains duplicate or unselected training paths")
+    stability = manifest.get("ppo_navigation_stability")
+    if stability is not None:
+        if not isinstance(stability, dict) or any(
+            not isinstance(k, str)
+            or not k
+            or not isinstance(v, dict)
+            or set(v) - {"window_report", "benchmark_run"}
+            or not isinstance(v.get("window_report"), str)
+            or not v["window_report"]
+            or (
+                "benchmark_run" in v
+                and (not isinstance(v["benchmark_run"], str) or not v["benchmark_run"])
+            )
+            for k, v in stability.items()
+        ):
+            raise ValueError("ppo_navigation_stability must map runs to window/frozen paths")
+        resolved = {resolve_path(k, root): v for k, v in stability.items()}
+        if len(resolved) != len(stability) or set(resolved) - set(paths):
+            raise ValueError("ppo_navigation_stability contains duplicate or unselected runs")
+        stability = resolved
+    development_bases = manifest.get("development_seed_bases", [])
+    if not isinstance(development_bases, list) or any(
+        type(base) is not int or base < 0 for base in development_bases
+    ):
+        raise ValueError("development_seed_bases must list consumed evaluation seed bases")
+    reuse = manifest.get("reuse_reports", {})
+    if not isinstance(reuse, dict) or any(
+        not isinstance(k, str) or not isinstance(v, str) or not k or not v for k, v in reuse.items()
+    ):
+        raise ValueError("reuse_reports must map selected runs to previously verified reports")
+    reuse = {resolve_path(k, root): resolve_path(v, root) for k, v in reuse.items()}
+    if set(reuse) - set(paths):
+        raise ValueError("reuse_reports contains an unselected run")
+    snapshots = {p: json.loads(p.read_text()) for p in set(reuse.values())}
+    allow_first_full = manifest.get("selection") == SINGLE_RULE
+    runs = []
+    for path in paths:
+        if path not in reuse:
+            runs.append(
+                collect_run(
+                    path,
+                    root,
+                    benchmark_run=benchmarks.get(path),
+                    allow_first_full=allow_first_full,
+                )
+            )
+            continue
+        snapshot = snapshots[reuse[path]]
+        run = next((r for r in snapshot["runs"] if r["path"] == str(path)), None)
+        if run is None:
+            raise ValueError(f"No verified evidence for {path} in {reuse[path]}")
+        if run["config"] != yaml.safe_load((path / "config.yaml").read_text()) or run[
+            "run_record"
+        ] != json.loads((path / "run.json").read_text()):
+            raise ValueError(
+                f"Saved configuration or run record changed after verification: {path}"
+            )
+        old_benchmarks = {
+            resolve_path(k, Path(snapshot["resolved_root"])): resolve_path(
+                v, Path(snapshot["resolved_root"])
+            )
+            for k, v in snapshot["manifest"].get("benchmark_runs", {}).items()
+        }
+        if old_benchmarks.get(path) != benchmarks.get(path):
+            raise ValueError(f"Frozen benchmark selection changed after verification: {path}")
+        run["reused_evidence"] = {
+            "report": str(reuse[path]),
+            "verified_utc": snapshot["generated_utc"],
+            "scope": "Reuse recorded episode, selection and model-integrity checks; "
+            "configuration and run record remain unchanged. No repeated payload/CSV audit.",
+        }
+        runs.append(run)
+    if stability is not None:
+        for run in runs:
+            path = Path(run["path"])
+            if run["task"] == "navigation" and run["algorithm"] == "ppo":
+                if path in reuse and "ppo_stability" in run:
+                    snapshot = snapshots[reuse[path]]
+                    previous = {
+                        resolve_path(k, Path(snapshot["resolved_root"])): v
+                        for k, v in snapshot["manifest"].get("ppo_navigation_stability", {}).items()
+                    }
+                    if (
+                        previous.get(path) == stability.get(path)
+                        and snapshot["manifest"].get("development_seed_bases", [])
+                        == development_bases
+                    ):
+                        record = run["ppo_stability"]
+                        if (
+                            record.get("report")
+                            and json.loads(Path(record["report"]).read_text()) != record["record"]
+                        ):
+                            raise ValueError("Stability report changed after verification")
+                        frozen = run.get("final_benchmark_source")
+                        if frozen and (
+                            yaml.safe_load((Path(frozen["path"]) / "config.yaml").read_text())
+                            != frozen["config"]
+                            or json.loads((Path(frozen["path"]) / "run.json").read_text())
+                            != frozen["run_record"]
+                        ):
+                            raise ValueError("Final frozen run changed after verification")
+                        continue
+                apply_ppo_stability(run, stability.get(path), root, development_bases)
+            elif path in stability:
+                raise ValueError("ppo_navigation_stability applies only to PPO Navigation")
     indexed = {}
     for run in runs:
         if run["identity"]["passed"] is not True:
@@ -755,7 +1442,9 @@ def collect(manifest_path):
         for condition in CONDITIONS:
             task, sensor, partition = condition
             selected = [indexed.get((task, sensor, algorithm, seed)) for seed in seeds]
-            recipes = [recipe(run["config"]) for run in selected if run]
+            recipes = [
+                recipe(run["config"], allow_first_full=allow_first_full) for run in selected if run
+            ]
             same_recipe = check(
                 False
                 if recipes and any(r != recipes[0] for r in recipes)
@@ -767,7 +1456,8 @@ def collect(manifest_path):
                 for seed, run in zip(seeds, selected, strict=True)
             }
             statuses = [value["status"] for value in values.values()]
-            comparison = combine([same_recipe, actors[f"{task}/{sensor}"]])["passed"]
+            # Task success is graded per algorithm; cross-algorithm differences are disclosed.
+            comparison = same_recipe["passed"]
             status = (
                 "failed"
                 if "failed" in statuses or comparison is False
@@ -785,6 +1475,7 @@ def collect(manifest_path):
                     "partition": partition,
                     "status": status,
                     "seeds": values,
+                    "seed_success_rate_spread": seed_success_rate_spread(values),
                     "C1": check(
                         True if all(selected) else None,
                         "Distinct recorded training RNG seeds; shared initialization disclosed",
@@ -798,13 +1489,21 @@ def collect(manifest_path):
         "generated_utc": datetime.now(UTC).isoformat(),
         "manifest_path": str(manifest_path),
         "manifest": manifest,
-        "manifest_sha256": digest(manifest_path),
+        "manifest_sha256": None if reuse else digest(manifest_path),
         "resolved_root": str(root),
         "all_passed": all(cell["status"] == "passed" for cell in cells),
         "summary": dict(Counter(cell["status"] for cell in cells)),
         "cells": cells,
         "runs": runs,
         "common_actor_checks": actors,
+        "comparison_scope": "Each algorithm is accepted against the task's success criteria. "
+        "Cross-algorithm Actor/configuration equality is reported separately; different "
+        "training rewards are allowed and do not invalidate individual convergence.",
+        "uncertainty_scope": "Per-seed, per-scene 95% Wilson intervals describe finite test "
+        "episode sampling conditional on a fixed trained policy and the stated evaluation "
+        "distribution. Training-seed means, ranges and sample standard deviations are "
+        "descriptive; three seeds do not establish general training reliability. Episodes "
+        "from different trained policies are not pooled. Intervals do not change acceptance gates.",
         "shared_initialization_costs": shared,
         "physics_task_contract": {
             "required": {
@@ -842,6 +1541,8 @@ def markdown(report):
         "",
         "Each seed entry: status; benchmark successes/actual CSV episodes; updates; wall seconds.",
         "Missing metrics are null with reasons in the JSON. Mixed Navigation appears twice.",
+        "PPO Navigation stability and final-model counters/costs are separate from selection; "
+        "pending final tests cannot use initial-model benchmark quality.",
         "",
     ]
     seeds = report["manifest"].get("seeds", [0, 1, 2])
@@ -858,8 +1559,12 @@ def markdown(report):
                 entries.append(value["status"])
                 continue
             scenes = run["benchmark"]["scenes"]
-            counts = ", ".join(
-                f"{s}:{scenes[s]['successes']}/{scenes[s]['episodes']}" for s in value["scenes"]
+            counts = (
+                ", ".join(
+                    f"{s}:{scenes[s]['successes']}/{scenes[s]['episodes']}" for s in value["scenes"]
+                )
+                if run.get("final_benchmark_verified", True)
+                else "final frozen test pending"
             )
             updates = value["updates"]["value"]
             wall = value["wall_seconds"]["value"]
@@ -872,6 +1577,9 @@ def markdown(report):
             f"| {cell['algorithm']} | {label} | {cell['status']} | " + " | ".join(entries) + " |"
         )
     lines += [
+        "",
+        report["uncertainty_scope"],
+        "Per-seed intervals and per-scene seed spread are in the companion JSON.",
         "",
         GPU_SCOPE,
         "",

@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "tests": {
+    "passed": 16,
+    "deselected": 41,
+    "seconds": 3.25
+  },
+  "summary": {
+    "passed": 14,
+    "missing": 4
+  },
+  "runs_reused": 30,
+  "raw_audit_and_digest_entrypoints": "replaced with raising assertions during this update",
+  "changes": "Add per-policy Wilson95% intervals and unpooled training-seed descriptive spread; all prior status and benchmark results unchanged",
+  "reference": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html",
+  "examples": {
+    "23/25": {
+      "estimate": 0.92,
+      "low": 0.750338910496047,
+      "high": 0.9777795987151525,
+      "confidence_level": 0.95,
+      "method": "wilson",
+      "successes": 23,
+      "episodes": 25
+    },
+    "24/25": {
+      "estimate": 0.96,
+      "low": 0.8045593626380627,
+      "high": 0.9929037664980127,
+      "confidence_level": 0.95,
+      "method": "wilson",
+      "successes": 24,
+      "episodes": 25
+    },
+    "25/25": {
+      "estimate": 1.0,
+      "low": 0.8668077490609516,
+      "high": 1.0,
+      "confidence_level": 0.95,
+      "method": "wilson",
+      "successes": 25,
+      "episodes": 25
+    }
+  },
+  "scope": "Per-seed, per-scene 95% Wilson intervals describe finite test episode sampling conditional on a fixed trained policy and the stated evaluation distribution. Training-seed means, ranges and sample standard deviations are descriptive; three seeds do not establish general training reliability. Episodes from different trained policies are not pooled. Intervals do not change acceptance gates."
+}

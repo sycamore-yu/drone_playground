@@ -83,6 +83,35 @@ def next_evaluation_directory(run_directory):
     return destination
 
 
+def navigation_progress_summary(rows: list[dict]) -> dict:
+    """Summarize cheap, physical per-episode progress for training-only screening."""
+    if not rows:
+        raise ValueError("Cannot infer progress from an empty episode set")
+    keys = (
+        "normalized_final_goal_progress",
+        "normalized_best_goal_progress",
+        "final_goal_distance_metres",
+        "path_length_metres",
+        "min_height_metres",
+        "minimum_lower_boundary_margin_metres",
+        "lower_height_out_of_bounds",
+    )
+    if any(key not in row for row in rows for key in keys):
+        raise ValueError("Progress screening is missing required episode telemetry")
+    values = np.asarray([[row[key] for key in keys] for row in rows], np.float64)
+    if not np.isfinite(values).all():
+        raise ValueError("Progress screening contains nonfinite episode telemetry")
+    return {
+        "mean_normalized_final_progress": float(values[:, 0].mean()),
+        "mean_normalized_best_progress": float(values[:, 1].mean()),
+        "mean_final_distance_metres": float(values[:, 2].mean()),
+        "mean_path_length_metres": float(values[:, 3].mean()),
+        "minimum_height_metres": float(values[:, 4].min()),
+        "minimum_lower_boundary_margin_metres": float(values[:, 5].min()),
+        "lower_height_out_of_bounds": int(values[:, 6].sum()),
+    }
+
+
 def evaluate(
     config,
     directory,
@@ -131,6 +160,16 @@ def evaluate(
     if "method" not in environments:
         environments["method"] = create_method(config)
     method = environments["method"]
+    progress_diagnostics = bool(
+        protocol == "diagnostic"
+        and config.mode == "checkpoint_eval"
+        and (
+            config.get("screening", {}).get("progress_aware", False)
+            or config.get("screening", {}).get("training_distribution_probe", False)
+        )
+    )
+    if progress_diagnostics and (task != "navigation" or method.execution != "jax"):
+        raise ValueError("Progress-aware screening requires JAX Navigation evaluation")
     reports, all_rows, recorded, decisions = {}, [], {}, []
     keep_traces = bool(config.benchmark.record_trajectories or config.benchmark.record_replay)
     label = config.method.name
@@ -165,6 +204,7 @@ def evaluate(
                         method_name=label,
                         chunk_steps=config.benchmark.chunk_steps,
                         record=keep_traces,
+                        progress_diagnostics=progress_diagnostics,
                     )
                 else:
                     episodes, traces, plans, iteration = rollout_host(
@@ -233,6 +273,8 @@ def evaluate(
                 replays=replays,
                 execution="ideal_tracking" if env.control_level == "ideal" else "crazyflow",
             )
+            if progress_diagnostics:
+                report["progress_diagnostics"] = navigation_progress_summary(scene_rows)
             reports[scene] = report
             all_rows.extend(scene_rows)
             write_episodes(directory / "episodes.csv", all_rows)

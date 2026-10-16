@@ -45,6 +45,7 @@ _DEFAULTS = {
     "clip_epsilon": 0.2,
     "ppo_target_kl": 0.0,
     "ppo_value_clip": 0.0,
+    "ppo_monte_carlo_returns": False,
     "bootstrap_weight": 1.0,
     "report_terminal_critic_grad": False,
     "entropy_weight": 0.0,
@@ -65,6 +66,7 @@ _DEFAULTS = {
     "perception_loss": {},
     "randomize_navigation_start": False,
     "reward_profile": "default",
+    "shared_visual_encoder": False,
 }
 
 
@@ -99,7 +101,7 @@ class Trainer:
         """Configure the shared actor, critic, optimizers and compiled update."""
         if algorithm not in ("ppo", "apg", "shac"):
             raise ValueError("Expected algorithm ppo/apg/shac")
-        if actor is None and kind not in ("state", "depth", "lidar"):
+        if actor is None and kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth"):
             raise ValueError("Default Actor kind must be state/depth/lidar")
         if actor is not None and actor_config is not None:
             raise ValueError("Pass an Actor or actor_config, not both")
@@ -108,10 +110,32 @@ class Trainer:
         if unknown:
             raise ValueError(f"Unknown learning options: {sorted(unknown)}")
         self.config = {**_DEFAULTS, **options}
+        if type(self.config["shared_visual_encoder"]) is not bool:
+            raise ValueError("shared_visual_encoder must be boolean")
+        if self.config["shared_visual_encoder"] and (
+            algorithm != "ppo" or kind != "visfly_depth" or self.config["ppo_value_clip"] != 0
+        ):
+            raise ValueError("Shared encoder requires VisFly PPO without value clipping")
         if self.config["perception_loss"] is None:
             self.config["perception_loss"] = {}
         self.env, self.kind, self.algorithm, self.seed = env, kind, algorithm, seed
         self.loss_name = loss
+        if type(self.config["ppo_monte_carlo_returns"]) is not bool:
+            raise ValueError("ppo_monte_carlo_returns must be boolean")
+        if self.config["ppo_monte_carlo_returns"] and (
+            algorithm != "ppo"
+            or env.task.name != "navigation"
+            or not env.task.finite_horizon
+            or self.config["gamma"] != 1
+            or self.config["gae_lambda"] != 1
+        ):
+            raise ValueError(
+                "Monte Carlo returns require finite-horizon Navigation PPO, gamma=lambda=1"
+            )
+        if env.task.reward_profile == "goal_reaching" and (
+            self.config["gamma"] != 1.0 or loss is not None
+        ):
+            raise ValueError("Goal-reaching reward requires gamma=1 and no auxiliary task loss")
         if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
             raise ValueError("Unknown reward profile")
         if self.config["reward_profile"] != "default" and (
@@ -211,6 +235,8 @@ class Trainer:
         critic_kind = "state"
         if self.config["critic_uses_sensor"]:
             critic_kind = "depth" if env.sensor.config.profile == "d435i" else "lidar"
+        if self.kind == "visfly_depth" and not self.config["critic_uses_privileged"]:
+            critic_kind = "visfly_depth"
         self.critic = (
             critic
             if critic is not None
@@ -268,6 +294,15 @@ class Trainer:
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adamw(self.config["lr"], weight_decay=self.config["weight_decay"]),
         )
+        if self.config["shared_visual_encoder"]:
+            # VisFly supplies optimizer_kwargs(weight_decay), so torch Adam's
+            # default epsilon=1e-8 applies, with L2 decay inside the moments.
+            self.actor_optimizer = optax.chain(
+                optax.clip_by_global_norm(self.config["max_grad_norm"]),
+                optax.add_decayed_weights(self.config["weight_decay"]),
+                optax.scale_by_adam(eps=1e-8),
+                optax.scale(-self.config["lr"]),
+            )
         self.critic_optimizer = optax.chain(
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adam(self.config["critic_lr"]),
@@ -275,7 +310,19 @@ class Trainer:
         from drone_playground.learning import apg, ppo, shac
 
         implementation = {"ppo": ppo.update, "apg": apg.update, "shac": shac.update}[algorithm]
-        self._update = jax.jit(lambda state: implementation(self, state))
+        distribution = getattr(env.scene, "distribution", None)
+        self.distance_sampling = distribution is not None and distribution.start_sampling in (
+            "distance_mixture",
+            "distance_curriculum",
+        )
+        self.distance_curriculum = (
+            self.distance_sampling and distribution.start_sampling == "distance_curriculum"
+        )
+        self._update = (
+            jax.jit(lambda state, progress: implementation(self, state, sampling_progress=progress))
+            if self.distance_curriculum
+            else jax.jit(lambda state: implementation(self, state))
+        )
 
     @property
     def resolved_config(self):
@@ -298,7 +345,11 @@ class Trainer:
     def initialize(self) -> TrainingState:
         """Initialize variables, optimizers, physical episodes and recurrent history."""
         rng, reset_key, actor_key, critic_key = jax.random.split(jax.random.PRNGKey(self.seed), 4)
-        env_state = self.env.reset(reset_key, **self._reset_options)
+        env_state = self.env.reset(
+            reset_key,
+            **self._reset_options,
+            **({"sampling_progress": 0.0} if self.distance_curriculum else {}),
+        )
         observation = self._observe(env_state)
         memory = self.actor.initialize_memory(self.env.num_envs)
         params = self.actor.init(actor_key, observation, memory)
@@ -307,6 +358,16 @@ class Trainer:
         actor_parameters = (
             {"params": params, "log_std": log_std} if self.algorithm == "ppo" else params
         )
+        if self.config["shared_visual_encoder"]:
+            from drone_playground.learning.ppo import shared_critic_parameters
+
+            head = {
+                key: value
+                for key, value in critic_params["params"]["visfly_value"].items()
+                if key != "VisFlyFeatures_0"
+            }
+            actor_parameters["critic_head"] = {"params": {"visfly_value": head}}
+            critic_params = shared_critic_parameters(params, actor_parameters["critic_head"])
         history = self.objective.initialize_state(self.env.num_envs)
         return TrainingState(
             params=params,
@@ -314,7 +375,11 @@ class Trainer:
             target_critic_params=critic_params,
             optimizer_state={
                 "actor": self.actor_optimizer.init(actor_parameters),
-                "critic": self.critic_optimizer.init(critic_params),
+                "critic": (
+                    None
+                    if self.config["shared_visual_encoder"]
+                    else self.critic_optimizer.init(critic_params)
+                ),
             },
             rng=rng,
             env_state=env_state,
@@ -335,13 +400,30 @@ class Trainer:
             objective_state=jax.tree.map(jnp.zeros_like, state.objective_state),
         )
 
-    def update(self, state: TrainingState) -> tuple[TrainingState, dict[str, jax.Array]]:
-        """Run one compiled update; scalar metrics remain on device until consumed."""
+    def update(
+        self, state: TrainingState, *, sampling_progress=None
+    ) -> tuple[TrainingState, dict[str, jax.Array]]:
+        """Run one compiled update and count live rollout and optional tail interactions."""
         # Host integers avoid device int32 counter overflow without enabling global float64.
-        result, metrics = self._update(state.replace(updates=0, interactions=0))
+        local = state.replace(updates=0, interactions=0)
+        if self.distance_curriculum:
+            if (
+                sampling_progress is None
+                or not math.isfinite(sampling_progress)
+                or not 0 <= sampling_progress <= 1
+            ):
+                raise ValueError("Distance curriculum requires explicit finite progress in [0, 1]")
+            result, metrics = self._update(local, jnp.asarray(sampling_progress, jnp.float32))
+        else:
+            result, metrics = self._update(local)
+        interactions = self.config["horizon"] * self.env.num_envs
+        if self.config["ppo_monte_carlo_returns"]:
+            if int(metrics["monte_carlo_tail_unfinished"]):
+                raise RuntimeError("Monte Carlo tail did not reach the finite task deadline")
+            interactions += int(metrics["monte_carlo_tail_interactions"])
         result = result.replace(
             updates=state.updates + 1,
-            interactions=state.interactions + self.config["horizon"] * self.env.num_envs,
+            interactions=state.interactions + interactions,
         )
         return result, {**metrics, "updates": result.updates, "interactions": result.interactions}
 
@@ -389,7 +471,7 @@ class Trainer:
         step = self._differentiable_step if differentiable else self.env.step
         return self.method.execute(self.env, before, action, step=step)
 
-    def _reset(self, key, after, memory, history):
+    def _reset(self, key, after, memory, history, *, sampling_progress=None):
         from drone_playground.simulation.networks import reset_actor_memory
 
         done = after.done
@@ -402,14 +484,18 @@ class Trainer:
         )
         env_state = jax.lax.cond(
             jnp.any(done),
-            lambda: self.env.reset(key, after, **self._reset_options),
+            lambda: self.env.reset(
+                key, after, **self._reset_options, sampling_progress=sampling_progress
+            ),
             lambda: after,
         )
         return env_state, memory, history
 
     def _apply_actor(self, state, gradients):
+        from drone_playground.learning.ppo import policy_variables, shared_critic_parameters
+
         variables = (
-            {"params": state.params, "log_std": state.log_std}
+            policy_variables(state, shared_visual_encoder=self.config["shared_visual_encoder"])
             if self.algorithm == "ppo"
             else state.params
         )
@@ -417,10 +503,16 @@ class Trainer:
             gradients, state.optimizer_state["actor"], variables
         )
         variables = optax.apply_updates(variables, updates)
+        critic_params = (
+            shared_critic_parameters(variables["params"], variables["critic_head"])
+            if self.config["shared_visual_encoder"]
+            else state.critic_params
+        )
         return state.replace(
             params=variables["params"] if self.algorithm == "ppo" else variables,
             log_std=variables["log_std"] if self.algorithm == "ppo" else state.log_std,
             optimizer_state={**state.optimizer_state, "actor": optimizer},
+            critic_params=critic_params,
         )
 
     def _fit_critic(self, state, observations, targets, epochs, *, old_values=None):

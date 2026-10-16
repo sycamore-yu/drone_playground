@@ -1,5 +1,7 @@
 """Stochastic tanh-Gaussian PPO with complete recurrent-sequence recomputation."""
 
+import math
+
 import jax
 import jax.numpy as jnp
 import optax
@@ -7,6 +9,26 @@ from flax import struct
 
 from drone_playground.simulation.networks import reset_actor_memory
 from drone_playground.simulation.tasks import Event
+
+
+def shared_critic_parameters(actor_parameters, critic_head):
+    """Bind VisFly's value head to the one actor-owned visual/state encoder."""
+    scope = dict(critic_head["params"]["visfly_value"])
+    scope["VisFlyFeatures_0"] = actor_parameters["params"]["visfly_policy"]["VisFlyFeatures_0"]
+    return {"params": {"visfly_value": scope}}
+
+
+def policy_variables(state, *, shared_visual_encoder=False):
+    """Return each parameter once for the joint actor/value optimizer."""
+    variables = {"params": state.params, "log_std": state.log_std}
+    if shared_visual_encoder:
+        head = {
+            key: value
+            for key, value in state.critic_params["params"]["visfly_value"].items()
+            if key != "VisFlyFeatures_0"
+        }
+        variables["critic_head"] = {"params": {"visfly_value": head}}
+    return variables
 
 
 @struct.dataclass
@@ -103,7 +125,7 @@ def completed_navigation_metrics(done, terms):
     return results
 
 
-def collect_rollout(trainer, state):
+def collect_rollout(trainer, state, *, sampling_progress=None):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
     def step(carry, _):
@@ -156,7 +178,17 @@ def collect_rollout(trainer, state):
         data = Rollout(
             observation, pre_tanh, log_prob, -cost, value, next_value, after.terminated, after.done
         )
-        env_state, memory, history = trainer._reset(reset_key, after, memory, history)
+        env_state, memory, history = trainer._reset(
+            reset_key, after, memory, history, sampling_progress=sampling_progress
+        )
+        if trainer.distance_sampling:
+            distance = jnp.linalg.norm(
+                env_state.scene_state.start - env_state.scene_state.goal, axis=-1
+            )
+            for metres in (20, 50, 80):
+                terms[f"reset_distance_{metres}m_count"] = (
+                    after.done & (jnp.abs(distance - metres) < 0.01)
+                ).astype(jnp.float32)
         return (env_state, memory, history, rng), (data, terms)
 
     carry, (rollout, terms) = jax.lax.scan(
@@ -180,13 +212,75 @@ def recurrent_policy(trainer, params, observations, initial_memory, done):
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
         return reset_actor_memory(memory, reset), (raw, auxiliary)
 
-    return jax.lax.scan(step, initial_memory, (observations, done))
+    # Recompute PointNet activations instead of retaining them for every timestep.
+    scan_step = jax.checkpoint(step, prevent_cse=False) if trainer.kind == "lidar" else step
+    return jax.lax.scan(scan_step, initial_memory, (observations, done))
 
 
-def update(trainer, state):
+def monte_carlo_tail(trainer, state, active):
+    """Finish copied episodes under the behavior policy without changing the live stream."""
+    limit = math.ceil(trainer.env.task.duration / trainer.env.dt) + 1
+    env_state = state.env_state.replace(
+        task=state.env_state.task.replace(
+            event=jnp.where(active, state.env_state.task.event, Event.TIMEOUT)
+        )
+    )
+    initial = (
+        env_state,
+        state.recurrent_memory,
+        state.objective_state,
+        jax.random.fold_in(state.rng, 800001),
+        active,
+        jnp.zeros_like(active, dtype=jnp.float32),
+        jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
+    )
+
+    def condition(carry):
+        return jnp.any(carry[4]) & (carry[6] < limit)
+
+    def step(carry):
+        current, memory, history, rng, running, returns, steps, interactions = carry
+        rng, key = jax.random.split(rng)
+        raw, memory, _ = trainer.actor.apply(state.params, trainer._observe(current), memory)
+        action, _, _ = trainer.method.sample(key, raw, state.log_std)
+        after = trainer._step(current, action, differentiable=False)
+        cost, history, _ = trainer.objective.cost(current, after, action, history)
+        return (
+            after,
+            reset_actor_memory(memory, after.done),
+            history,
+            rng,
+            running & ~after.done,
+            returns - jnp.where(running, cost, 0),
+            steps + 1,
+            interactions + running.sum(dtype=jnp.int32),
+        )
+
+    final = jax.lax.while_loop(condition, step, initial)
+    metrics = {
+        "monte_carlo_tail_interactions": final[7],
+        "monte_carlo_tail_allocated_slots": final[6] * trainer.env.num_envs,
+        "monte_carlo_tail_unfinished": final[4].sum(),
+        "monte_carlo_tail_episodes": active.sum(),
+        "monte_carlo_tail_successes": (active & (final[0].task.event == Event.SUCCESS)).sum(),
+    }
+    return jax.lax.stop_gradient((final[5], metrics))
+
+
+def update(trainer, state, *, sampling_progress=None):
     """Collect recurrent samples and update actor and critic parameters with PPO."""
     initial_memory = state.recurrent_memory
-    state, rollout, terms = collect_rollout(trainer, state)
+    state, rollout, terms = collect_rollout(trainer, state, sampling_progress=sampling_progress)
+    tail_metrics = {}
+    if trainer.config["ppo_monte_carlo_returns"]:
+        active = ~rollout.done[-1]
+        returns, tail_metrics = monte_carlo_tail(trainer, state, active)
+        tail_metrics["monte_carlo_tail_value_sample_rmse"] = jnp.sqrt(
+            jnp.sum(jnp.where(active, (returns - rollout.next_values[-1]) ** 2, 0))
+            / jnp.maximum(active.sum(), 1)
+        )
+        rollout = rollout.replace(next_values=rollout.next_values.at[-1].set(returns))
     advantages, targets = generalized_advantage_estimate(
         rollout.rewards,
         rollout.values,
@@ -210,6 +304,7 @@ def update(trainer, state):
     )
     advantages = normalize_advantages(advantages)
     batches = trainer.config["minibatches"]
+    shared = trainer.config["shared_visual_encoder"]
 
     def epoch(carry, _):
         state, halted = carry
@@ -245,16 +340,30 @@ def update(trainer, state):
                     trainer.objective.auxiliary_cost(auxiliary, data.observations)
                 )
                 loss = policy_loss - trainer.config["entropy_weight"] * entropy + auxiliary_loss
+                value_loss = jnp.zeros_like(loss)
+                if shared:
+                    critic_parameters = shared_critic_parameters(
+                        variables["params"], variables["critic_head"]
+                    )
+                    flattened = jax.tree.map(
+                        lambda value: value.reshape((-1, *value.shape[2:])), data.observations
+                    )
+                    values = trainer.critic.apply(critic_parameters, flattened)
+                    value_loss = 0.5 * jnp.mean(
+                        (values - jax.lax.stop_gradient(targets[:, indices].reshape(-1))) ** 2
+                    )
+                    loss = loss + value_loss
                 return loss, {
                     "policy_loss": policy_loss,
                     "entropy": entropy,
                     "auxiliary_loss": auxiliary_loss,
                     "approx_kl": jnp.mean((ratio - 1) - (log_prob - data.log_prob)),
                     "clip_fraction": jnp.mean(jnp.abs(ratio - 1) > trainer.config["clip_epsilon"]),
+                    "joint_value_loss": value_loss,
                 }
 
             (loss, metrics), gradients = jax.value_and_grad(objective, has_aux=True)(
-                {"params": state.params, "log_std": state.log_std}
+                policy_variables(state, shared_visual_encoder=shared)
             )
             skip_actor = halted | exceeds_kl_limit(
                 metrics["approx_kl"], trainer.config["ppo_target_kl"]
@@ -265,17 +374,19 @@ def update(trainer, state):
                 lambda current: trainer._apply_actor(current, gradients),
                 state,
             )
-            state, critic_metrics = trainer._fit_critic(
-                state,
-                data.observations,
-                targets[:, indices],
-                1,
-                old_values=data.values,
-            )
+            if shared:
+                critic_metrics = {
+                    "critic_loss": metrics["joint_value_loss"],
+                    "critic_grad_norm": optax.tree.norm(gradients["critic_head"]),
+                }
+            else:
+                state, critic_metrics = trainer._fit_critic(
+                    state, data.observations, targets[:, indices], 1, old_values=data.values
+                )
             return (state, skip_actor), {
                 **metrics,
                 **critic_metrics,
-                "actor_loss": loss,
+                "actor_loss": loss - metrics["joint_value_loss"],
                 "actor_grad_norm": optax.tree.norm(gradients),
                 "kl_actor_update_skipped": skip_actor.astype(jnp.float32),
             }
@@ -286,7 +397,17 @@ def update(trainer, state):
         epoch, (state, jnp.asarray(False)), None, length=trainer.config["ppo_epochs"]
     )
     metrics = jax.tree.map(jnp.mean, metrics)
+    metrics.update(tail_metrics)
     metrics.update(jax.tree.map(jnp.mean, terms))
+    if trainer.distance_sampling:
+        for metres in (20, 50, 80):
+            name = f"reset_distance_{metres}m_count"
+            metrics[name] = jnp.sum(terms[name])
+        metrics["distance_curriculum_phase"] = (
+            jnp.minimum(jnp.floor(sampling_progress * 3), 2)
+            if sampling_progress is not None
+            else -1.0
+        )
     metrics["reward"] = rollout.rewards.mean()
     metrics["advantage_std"] = advantage_std
     metrics["advantage_positive_fraction"] = advantage_positive_fraction

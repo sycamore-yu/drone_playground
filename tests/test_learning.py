@@ -305,8 +305,11 @@ def test_racing_shac_bootstrap_diagnostic_is_explicit_and_finite():
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
-def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
-    """Train the expanded goal input with immediate velocity and continuous height cost."""
+@pytest.mark.parametrize(
+    "goal,rotation,width", [(True, False, 12), (False, True, 19), (True, True, 21)]
+)
+def test_navigation_observation_ppo_updates_and_restores(kind, goal, rotation, width, tmp_path):
+    """Both sensor actors can update and restore their declared navigation inputs."""
     env = make_environment(
         task="navigation",
         scene="S01",
@@ -316,7 +319,8 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         else {},
         num_envs=2,
         duration=0.02,
-        navigation_goal_observation=True,
+        navigation_goal_observation=goal,
+        observation_config={"navigation_world_rotation": True} if rotation else {},
         action={"level": "acceleration", "heading": "target"},
     )
     trainer = Trainer(
@@ -333,7 +337,7 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
         },
     )
     state = trainer.initialize()
-    assert env.observe(state.env_state)["state"].shape == (2, 12)
+    assert env.observe(state.env_state)["state"].shape == (2, width)
     updated, metrics = trainer.update(state)
     assert all(np.isfinite(float(value)) for value in metrics.values())
     assert tree_changed(state.params, updated.params)
@@ -544,7 +548,8 @@ def test_navigation_altitude_cost_matches_physical_height_error():
     np.testing.assert_allclose(weighted - plain, expected, rtol=1e-5)
 
 
-def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
+@pytest.mark.parametrize("kind", ["depth", "lidar"])
+def test_recurrent_recomputation_resets_memory_and_keeps_gradients(kind):
     """Verify recurrent recomputation resets memory and keeps gradients."""
 
     class AccumulatingActor:
@@ -552,7 +557,7 @@ def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
             memory = memory + params * obs["state"]
             return memory, memory, jnp.zeros_like(memory)
 
-    trainer = SimpleNamespace(actor=AccumulatingActor())
+    trainer = SimpleNamespace(actor=AccumulatingActor(), kind=kind)
     observations = {"state": jnp.ones((3, 2, 1))}
     done = jnp.array([[True, False], [False, False], [False, True]])
     initial = jnp.array([[5.0], [7.0]])
@@ -563,6 +568,46 @@ def test_recurrent_recomputation_resets_memory_and_keeps_gradients():
         lambda p: recurrent_policy(trainer, p, observations, initial, done)[1][0].sum()
     )(2.0)
     assert float(gradient) == 10.0
+
+
+def test_lidar_rematerialization_preserves_recurrent_outputs_and_gradients():
+    """PointNet recomputation preserves masked inputs, resets and parameter gradients."""
+    actor = Actor(kind="lidar", action_size=3)
+    observations = {
+        "state": jax.random.normal(jax.random.key(0), (3, 2, 12)),
+        "points": jax.random.normal(jax.random.key(1), (3, 2, 16, 3)),
+        "mask": jnp.ones((3, 2, 16), dtype=bool).at[1, 0].set(False),
+    }
+    observations["points"] = observations["points"].at[1, 0].set(jnp.nan)
+    memory = actor.initialize_memory(2)
+    params = actor.init(jax.random.key(2), jax.tree.map(lambda x: x[0], observations), memory)
+    done = jnp.array([[True, False], [False, False], [False, True]])
+
+    def reference(parameters):
+        def step(carry, inputs):
+            observation, reset = inputs
+            raw, carry, auxiliary = actor.apply(parameters, observation, carry)
+            return reset_actor_memory(carry, reset), (raw, auxiliary)
+
+        return jax.lax.scan(step, memory, (observations, done))
+
+    def rematerialized(parameters):
+        return recurrent_policy(
+            SimpleNamespace(actor=actor, kind="lidar"), parameters, observations, memory, done
+        )
+
+    expected = jax.jit(reference)(params)
+    actual = jax.jit(rematerialized)(params)
+    for left, right in zip(jax.tree.leaves(expected), jax.tree.leaves(actual), strict=True):
+        np.testing.assert_allclose(left, right, rtol=1e-5, atol=1e-7)
+    expected_grad = jax.jit(jax.grad(lambda p: reference(p)[1][0].sum()))(params)
+    actual_grad = jax.jit(jax.grad(lambda p: rematerialized(p)[1][0].sum()))(params)
+    assert any(np.any(np.asarray(leaf) != 0) for leaf in jax.tree.leaves(expected_grad))
+    for left, right in zip(
+        jax.tree.leaves(expected_grad), jax.tree.leaves(actual_grad), strict=True
+    ):
+        assert np.isfinite(np.asarray(left)).all() and np.isfinite(np.asarray(right)).all()
+        np.testing.assert_allclose(left, right, rtol=1e-4, atol=1e-7)
 
 
 @pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
@@ -735,10 +780,10 @@ def test_invalid_configuration_is_rejected(state_env, config):
 
 @pytest.fixture(scope="module", params=["depth", "lidar"])
 def perception_env(request):
-    # Small LiDAR acquisition keeps this a CPU integration check; camera shape is unchanged.
     """Provide perception env for the surrounding execution."""
+    # Sample sparse rays across the real scan frame; 32-ray frames produced no returns.
     sensor_config = (
-        {"points_per_frame": 32}
+        {"points_per_frame": 20000}
         if request.param == "lidar"
         else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
     )
@@ -750,6 +795,7 @@ def perception_env(request):
         sensor=request.param,
         sensor_config=sensor_config,
         point_count=32,
+        ray_sampling="policy" if request.param == "lidar" else "full",
     )
     return request.param, env
 

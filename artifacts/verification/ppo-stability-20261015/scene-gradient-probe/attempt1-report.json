@@ -1,0 +1,23 @@
+{
+  "status": "interrupted",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_stability/model_000180",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "runner_git_commit": "714ac067630ff53dc38f86c2153b7921b3cdc2a1",
+  "setup_seconds": 113.62897879301454,
+  "scenes": [
+    "S01",
+    "S02",
+    "S03",
+    "D01",
+    "D02",
+    "D03",
+    "S06",
+    "D06"
+  ],
+  "sampling_interactions": 32768,
+  "replicates": [],
+  "scope": "Measurement only; no optimizer continuation or evaluation replay. Scenes are the existing training strata, not new tasks or Actor inputs. Full-batch Adam probes are local counterfactuals, not the native16-minibatch update.",
+  "error": "AssertionError(np.float32(8.360139e-05))",
+  "relative_gradient_error": 8.360139e-05,
+  "saved_rollout": "artifacts/verification/ppo-stability-20261015/scene-gradient-probe/replicate_0_rollout.npz"
+}

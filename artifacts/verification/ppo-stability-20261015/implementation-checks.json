@@ -1,0 +1,409 @@
+{
+  "recorded_at_utc": "2026-10-15T10:32:15.502747+00:00",
+  "curriculum_implementation_commit": "71bdc4a",
+  "goal_objective_implementation_commit": "42683b9",
+  "checks": [
+    {
+      "test": "test_procedural_scene.py -k curriculum_progress",
+      "result": "3 passed, 15 deselected",
+      "seconds": 58.97
+    },
+    {
+      "test": "test_learning.py -k real_physics_update_and_exact_checkpoint_continuation or shac_terminal_value_state_gradient",
+      "result": "6 passed, 42 deselected",
+      "seconds": 59.72
+    },
+    {
+      "test": "test_goal_reaching_reward.py",
+      "result": "5 passed",
+      "seconds": 74.01
+    },
+    {
+      "test": "test_environment.py test_learning.py -k event_priority_and_termination or bootstrap_uses_final_observation or shac_terminal_value_state_gradient",
+      "result": "5 passed, 64 deselected",
+      "seconds": 49.36
+    },
+    {
+      "test": "test_cli.py -k frozen_cohort or resume_preserves_c5_selection or three_stage_screening_only (opt-in field, final implementation)",
+      "result": "6 passed, 61 deselected",
+      "seconds": 3.99
+    },
+    {
+      "test": "test_orbax_results.py test_progress_checkpoint_retention.py test_checkpoint_procedural.py",
+      "result": "9 passed",
+      "seconds": 10.53
+    },
+    {
+      "test": "test_acceptance_report.py including explicit actor observation equality",
+      "result": "25 passed",
+      "seconds": 4.13
+    },
+    {
+      "test": "test_goal_reaching_reward.py with minimum-clearance objective",
+      "result": "9 passed",
+      "seconds": 81.35
+    },
+    {
+      "test": "test_acceptance_report.py test_cli.py -k acceptance_report or frozen (external model identity, fixed cohort semantics)",
+      "result": "51 passed, 50 deselected",
+      "seconds": 9.84
+    },
+    {
+      "test": "test_ppo_rehearsal_diagnostic.py (analytic policy KL and restoring gradient)",
+      "result": "2 passed",
+      "seconds": 4.59
+    }
+  ],
+  "legacy_checkpoint_replay": {
+    "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+    "source_provenance": {
+      "config_sha256": "f8c339ec5cb6720fc62b10c9924a0b5e71be1bad895f04c56e7515e273fe999f",
+      "consecutive_passes": 0,
+      "devices": [
+        "cuda:0"
+      ],
+      "evaluation_index": 11,
+      "git_commit": "351d855fc5a122f0356e91f669b48c9b6bdc95bb",
+      "interactions": 1351680,
+      "interactions_per_second": 284.7182070196596,
+      "last_evaluation": {
+        "best_score": 0.15104166666666666,
+        "episodes": 8,
+        "evaluation_seconds": 41.78655016599805,
+        "event": "screening_evaluation",
+        "improved": true,
+        "passed": false,
+        "patience_exhausted": false,
+        "score": 0.15104166666666666,
+        "stagnant_screens": 0,
+        "update": 2640
+      },
+      "last_interactions": 1351680.0,
+      "last_update": 2640,
+      "layout_version": 3,
+      "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+      "python": "3.12.15",
+      "schema_version": 1,
+      "screening_progress": {
+        "best_score": 0.15104166666666666,
+        "stagnant_screens": 0
+      },
+      "session_interactions": 1351680,
+      "session_wall_seconds": 4747.430851539,
+      "source_sha256": "082d45567dd15da7584a37ddbddf3cfea8fc77b1c5f0e9949507b14605c2f5dc",
+      "started_unix": 1792036034.0901985,
+      "status": "running",
+      "training_wall_seconds": 4747.430851539,
+      "updates": 2640,
+      "versions": {
+        "crazyflow": "0.3.2",
+        "drone-playground": "0.2.0.dev0",
+        "flax": "0.12.10",
+        "jax": "0.11.2",
+        "mujoco": "3.15.0",
+        "mujoco-lidar": "0.3.5",
+        "rscope": "0.0.8"
+      }
+    },
+    "source_config": {
+      "benchmark": {
+        "allow_environment_change": false,
+        "chunk_steps": 25,
+        "episodes": null,
+        "fixed_checkpoint_seeds": true,
+        "primary_scenes": {
+          "dynamic": [
+            "D01",
+            "D02",
+            "D03"
+          ],
+          "static": [
+            "S01",
+            "S02",
+            "S03"
+          ]
+        },
+        "protocol": "learning",
+        "record_replay": false,
+        "record_trajectories": false,
+        "replay_episodes": 2,
+        "scenes": null,
+        "seed_base": null
+      },
+      "checkpoint": null,
+      "controller": {
+        "_target_": "drone_playground.simulation.controllers.MellingerController",
+        "drone": "cf21B_500",
+        "frequency": 10,
+        "yaw": 0.0
+      },
+      "early_stopping": {
+        "min_delta": 0.005,
+        "min_updates": 4320,
+        "patience": 3
+      },
+      "initial_checkpoint": null,
+      "learning": {
+        "algorithm": "ppo",
+        "backward_model": null,
+        "backward_options": {},
+        "checkpoint_interval": 120,
+        "evaluation_interval": 240,
+        "log_interval": 10,
+        "loss": null,
+        "max_interactions": 2211840,
+        "options": {
+          "altitude_weight": 1.0,
+          "clip_epsilon": 0.15,
+          "critic_epochs": 4,
+          "critic_lr": 0.0005,
+          "critic_uses_privileged": true,
+          "critic_uses_sensor": false,
+          "entropy_weight": 0.005,
+          "failure_cost": 160.0,
+          "gae_lambda": 0.95,
+          "gamma": 0.995,
+          "height_boundary_weight": 1.0,
+          "horizon": 32,
+          "initial_log_std": -2.5,
+          "lr": 0.0001,
+          "max_grad_norm": 1.0,
+          "minibatches": 4,
+          "perception_weight": 0.0,
+          "ppo_epochs": 4,
+          "ppo_target_kl": 0.025,
+          "ppo_value_clip": 10.0,
+          "progress_reward_scale": 0.25,
+          "randomize_navigation_start": false,
+          "target_alpha": 0.995,
+          "task_weight": 1.0,
+          "temporal_gradient_alpha": 0.916290731874155,
+          "velocity_aux_weight": 0.0,
+          "weight_decay": 0.0
+        },
+        "required_consecutive_passes": 1,
+        "scene_updates": 20,
+        "scenes": null,
+        "selection": "first_full_validation_pass"
+      },
+      "method": {
+        "action": {
+          "heading": "target",
+          "level": "acceleration"
+        },
+        "actor": {
+          "_target_": "drone_playground.simulation.networks.Actor",
+          "hidden_size": 192,
+          "kind": "lidar"
+        },
+        "implementation": {
+          "_target_": "drone_playground.simulation.methods.PolicyMethod"
+        },
+        "name": "policy",
+        "protocol": "learning"
+      },
+      "mode": "train",
+      "observation": {
+        "depth": {},
+        "navigation_relative_goal": true,
+        "navigation_world_rotation": true
+      },
+      "output": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0",
+      "replay_path": null,
+      "results": {
+        "format": "orbax",
+        "keep_best_screening": true,
+        "keep_checkpoints": 3
+      },
+      "resume": null,
+      "scene": {
+        "name": "train/procedural"
+      },
+      "screening": {
+        "full_every": 3,
+        "probe_between_full": true,
+        "training_distribution_probe": true
+      },
+      "seed": 0,
+      "sensor": {
+        "config": {
+          "latency": 0.0,
+          "max_range": 40.0,
+          "min_range": 0.1,
+          "points_per_frame": 20000
+        },
+        "name": "lidar",
+        "point_count": 1024,
+        "ray_sampling": "policy"
+      },
+      "simulation": {
+        "action_delay_s": 0.0,
+        "device": "gpu",
+        "disturbance": {},
+        "drone": "cf21B_500",
+        "dynamics": "first_principles",
+        "method_hz": 10,
+        "navigation_goal_observation": true,
+        "num_envs": 16,
+        "physics_hz": 500,
+        "procedural": {
+          "corridor_y": -17.5,
+          "max_obstacles": 208,
+          "min_start_goal_distance_m": 0.0,
+          "start_goal_distance_range_m": null,
+          "start_sampling": "distance_curriculum",
+          "static_obstacle_scale": 0.7,
+          "training_seed": 0
+        },
+        "randomization": {}
+      },
+      "task": {
+        "duration": 300.0,
+        "name": "navigation",
+        "options": {
+          "reward_profile": "minimum_time_navigation",
+          "reward_shaping": {
+            "altitude_weight": 1.0,
+            "failure_cost": 160.0,
+            "height_boundary_weight": 1.0,
+            "progress_reward_scale": 0.25,
+            "task_weight": 1.0
+          }
+        },
+        "reference": "goal",
+        "reference_seed": 0
+      }
+    },
+    "restored_state_sha256": "d178ed4a111cc0924d1584480662524ba8a1c4fc192c05a74e6ee990d61adff9",
+    "script_sha256": "fe8cf3448bff9f19c068af53a93961a6bc236a80fbd7f2d500cd5e5fba759f13",
+    "arguments": {
+      "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+      "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/legacy-checkpoint-replay",
+      "updates": 0,
+      "interval": 60,
+      "scenes": [
+        "S01",
+        "D01",
+        "D02",
+        "D03"
+      ],
+      "actor_lr_scale": 1.0,
+      "freeze_critic": false,
+      "refresh_memory": false
+    },
+    "status": "completed",
+    "final_update": 2640
+  },
+  "legacy_rollout_checks": {
+    "log_probability_max_error": 0.0,
+    "recurrent_memory_max_error": 0.0,
+    "reward_finite": 1.0
+  },
+  "scope": "Targeted implementation checks and source-case replay; not training convergence or full regression.",
+  "frozen_identity_replay": {
+    "run": "results/frozen_racing_common_reward/shac_s0_verified",
+    "payload_sha256": "3d91eb1587eae25894d2b562de9e90e7241cbdb377b1c683bed4edbe72c851c0",
+    "successes": 100,
+    "episodes": 100,
+    "exact_event_gate_order_physics_steps_replay": true,
+    "scope": "Already consumed 3million cohort replay, not a new test",
+    "collector_summary": {
+      "passed": 3,
+      "missing": 14,
+      "incomplete": 1
+    },
+    "C5": {
+      "passed": true,
+      "reasons": [
+        "Verified first consecutive triple, selection, archive update and CSV partitions"
+      ],
+      "first_passing_updates": [
+        600,
+        700,
+        800
+      ],
+      "independent_seed_sets": true
+    }
+  },
+  "rehearsal_zero_weight_update": {
+    "audit": "restore-rehearsal-zero.json",
+    "source_repeated_and_both_entrypoints_exact": true,
+    "unchanged_production_state_sha256": "28a8b4379af435fc862d1374ec11417e7e53feffd0bcd6a0cf7b3e480619cd63",
+    "initial_kl": 1.3504177331924438e-08,
+    "scope": "One actual GPU update with scoped deterministic compilation; no long-run benefit claim"
+  },
+  "rehearsal_positive_weight_update": {
+    "audit": "restore-rehearsal-positive.json",
+    "weight": 0.1,
+    "repeated_and_both_entrypoints_exact": true,
+    "production_state_sha256": "d32a41ff63748ab409ee7b551eb6e474af3a7b077dc6aa854afb271f54a74cce",
+    "initial_kl": 1.3504177331924438e-08,
+    "post_update_probe_kl": 0.0034615329932421446,
+    "zero_weight_post_update_probe_kl": 0.004172049462795258,
+    "scope": "One actual GPU update, finite metrics and exercised policy regularizer; no long-run benefit claim"
+  },
+  "critic_mc_calibration": {
+    "report": "depth-critic-calibration/report.json",
+    "audit": "depth-critic-calibration/audit.json",
+    "complete_episodes": 256,
+    "active_interactions": 68585,
+    "allocated_simulation_slots": 329600,
+    "grouped_initial_states_identical": true,
+    "complete_returns_independently_recomputed": true,
+    "raw_hashes_verified": true,
+    "source_state_immutable": true,
+    "scope": "Calibration on eight fixed training initial states, not a root-cause or convergence claim"
+  },
+  "critic_target_audit": {
+    "report": "depth-critic-targets/report.json",
+    "models": 2,
+    "initial_states_per_model": 8,
+    "replicas_per_state": 16,
+    "max_replay_position_error_m": 0,
+    "max_replay_reward_error": 0,
+    "terminal_events_exact": true,
+    "production_gae_matches_independent_numpy": true,
+    "scope": "Fixed trajectories, six estimators per model; no actual training outcome claimed"
+  },
+  "long_return_update": {
+    "audit": "restore-long-return.json",
+    "horizon": 512,
+    "minibatches": 64,
+    "gae_lambda": 1.0,
+    "source_state_exact": true,
+    "repeated_and_both_entrypoints_exact": true,
+    "production_state_sha256": "70c23a4717ceb86598a3e9e57956d9c99b784223828f8476d8b8b795cf413bee",
+    "metrics_finite": true,
+    "scope": "Actual GPU update, not long-run convergence"
+  },
+  "critic_trajectory_audit": {
+    "script": "critic_trajectory_audit.py",
+    "report": "depth-critic-calibration/trajectory-audit.json",
+    "initial_state_report": "depth-critic-calibration/initial-state-audit.json",
+    "all_eight_states_reported": true,
+    "raw_file_hashes_verified": true,
+    "returns_recomputed": true,
+    "raw_terminal_events_match_report": true,
+    "source_initial_state_exact": true,
+    "scope": "Existing frozen stochastic training-state data; no new policy samples or convergence claim"
+  },
+  "racing_ppo_frozen": {
+    "report": "racing-ppo-frozen-audit.json",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "episodes_per_seed": 100,
+    "successes_per_seed": [
+      100,
+      100,
+      100
+    ],
+    "actual_loaded_payload_matches_selected": true,
+    "replays_loaded_with_native_api": 6,
+    "replay_times_and_positions_match_raw_npz": true,
+    "mujoco_restores_checked_per_replay": 3,
+    "scope": "Individual C1/C3/C5/C6 and frozen evidence; cross-algorithm matrix gate remains incomplete; viewer GUI not opened"
+  }
+}

@@ -111,19 +111,36 @@ class Action:
         velocity_gain=(3.0, 3.0, 5.0),
         acceleration_limit=(6.0, 6.0, 6.0),
         tilt_limit=0.55,
+        thrust_to_weight_bounds=(0.4, 1.6),
+        body_rate_limit=6.0,
     ):
         """Resolve nominal limits once; physical randomization never changes them."""
         self.level, self.heading = level, heading
         self.mass = float(np.asarray(load_params("first_principles", drone)["mass"]).item())
         self.hover = self.mass * 9.81
+        thrust_low, thrust_high = thrust_to_weight_bounds
+        if (
+            not np.isfinite([thrust_low, thrust_high, body_rate_limit]).all()
+            or not 0 <= thrust_low < thrust_high
+            or body_rate_limit <= 0
+        ):
+            raise ValueError("Physical thrust/rate limits must be finite and ordered")
+        if (tuple(thrust_to_weight_bounds) != (0.4, 1.6) or body_rate_limit != 6.0) and (
+            level != "body_rate" or low is not None or high is not None
+        ):
+            raise ValueError("Thrust-to-weight/rate limits configure default body_rate bounds")
         defaults = {
             "acceleration": ([-6.0] * 3, [6.0] * 3),
+            "horizontal_acceleration": ([-6.0] * 2, [6.0] * 2),
             "velocity_yaw": ([-4.0, -4.0, -4.0, -np.pi], [4.0, 4.0, 4.0, np.pi]),
             "attitude_thrust": (
                 [-0.6, -0.6, -np.pi, 0.4 * self.hover],
                 [0.6, 0.6, np.pi, 1.6 * self.hover],
             ),
-            "body_rate": ([0.4 * self.hover, -6.0, -6.0, -6.0], [1.6 * self.hover, 6.0, 6.0, 6.0]),
+            "body_rate": (
+                [thrust_low * self.hover, *([-body_rate_limit] * 3)],
+                [thrust_high * self.hover, *([body_rate_limit] * 3)],
+            ),
         }
         if level not in {*defaults, "force_torque", "rotor_vel"}:
             raise ValueError(f"Unknown action level: {level}")
@@ -134,7 +151,7 @@ class Action:
                 raise ValueError(f"{level} needs explicit physical low/high bounds")
             low, high = defaults[level]
         lower, upper = np.asarray(low, np.float32), np.asarray(high, np.float32)
-        size = 3 if level == "acceleration" else 4
+        size = 2 if level == "horizontal_acceleration" else 3 if level == "acceleration" else 4
         if (
             lower.shape != (size,)
             or upper.shape != (size,)
@@ -144,14 +161,19 @@ class Action:
         if np.any(lower >= upper):
             raise ValueError("Each lower action limit must be smaller than its upper limit")
         expected_frame = (
-            "world" if level in {"acceleration", "attitude_thrust", "velocity_yaw"} else "body"
+            "world"
+            if level
+            in {"acceleration", "horizontal_acceleration", "attitude_thrust", "velocity_yaw"}
+            else "body"
         )
         self.frame = expected_frame if frame is None else frame
         if self.frame != expected_frame or heading not in {"fixed", "target"}:
             raise ValueError("Unsupported action frame or heading convention")
         self.low, self.high, self.size = jnp.asarray(lower), jnp.asarray(upper), size
         self.output_level = (
-            "attitude_thrust" if level in {"acceleration", "velocity_yaw"} else level
+            "attitude_thrust"
+            if level in {"acceleration", "horizontal_acceleration", "velocity_yaw"}
+            else level
         )
         if level != "velocity_yaw" and (
             tuple(velocity_gain) != (3.0, 3.0, 5.0)
@@ -174,7 +196,7 @@ class Action:
         self.acceleration_limit = jnp.asarray(limits)
         self.tilt_limit = float(tilt_limit)
         self._acceleration = None
-        if level == "acceleration":
+        if level in {"acceleration", "horizontal_acceleration"}:
             from drone_playground.simulation.controllers import MellingerController
 
             self._acceleration = MellingerController(drone=drone, frequency=frequency)
@@ -189,6 +211,8 @@ class Action:
             "low": np.asarray(self.low).tolist(),
             "high": np.asarray(self.high).tolist(),
         }
+        if self.level == "horizontal_acceleration":
+            result["altitude_hold"] = {"kp": 2.0, "kd": 1.5, "z_acceleration_limit": 3.0}
         if self.level == "velocity_yaw":
             result.update(
                 velocity_gain=np.asarray(self.velocity_gain).tolist(),
@@ -239,6 +263,16 @@ class Action:
             return Setpoint(physical[..., jnp.array([1, 2, 3, 0])], level="body_rate", frame="body")
         if self._acceleration is None:
             return Setpoint(physical, level=self.level, frame=self.frame)
+        if self.level == "horizontal_acceleration":
+            if target is None:
+                raise ValueError(
+                    "Horizontal acceleration needs a target altitude for stabilization"
+                )
+            target = jnp.broadcast_to(target, physics.states.pos[:, 0].shape)
+            altitude_error = target[:, 2] - physics.states.pos[:, 0, 2]
+            vertical_speed = physics.states.vel[:, 0, 2]
+            z_acceleration = jnp.clip(2.0 * altitude_error - 1.5 * vertical_speed, -3.0, 3.0)
+            physical = jnp.concatenate([physical, z_acceleration[:, None]], axis=-1)
         yaw = jnp.zeros(physical.shape[:-1])
         if self.heading == "target":
             if target is None:

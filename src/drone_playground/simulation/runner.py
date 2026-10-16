@@ -14,6 +14,7 @@ from drone_playground.simulation.controllers import MellingerController
 from drone_playground.simulation.methods import PlannerController
 from drone_playground.simulation.records import atomic_json, write_episodes
 from drone_playground.simulation.replay import export_replay
+from drone_playground.simulation.scene import SceneBatch
 from drone_playground.simulation.tasks import Event
 
 
@@ -55,9 +56,99 @@ def _sample(env, state, command):
     }
 
 
+def _init_navigation_progress(env, state):
+    """Track only low-dimensional episode facts, never costly sensor replay arrays."""
+    position = state.physics.states.pos[:, 0]
+    goal = jnp.broadcast_to(env.goal_for(state), position.shape)
+    distance = jnp.linalg.norm(goal - position, axis=-1)
+    height = position[:, 2]
+    return {
+        "initial_distance": distance,
+        "closest_distance": distance,
+        "path_length": jnp.zeros_like(distance),
+        "minimum_height": height,
+        "maximum_height": height,
+        "lower_margin": height - env.task.low[2],
+        "upper_margin": env.task.high[2] - height,
+    }
+
+
+def _step_navigation_progress(env, progress, before, after):
+    """Accumulate active-policy-step displacement and extrema without host transfers."""
+    current = after.physics.states.pos[:, 0]
+    previous = before.physics.states.pos[:, 0]
+    goal = jnp.broadcast_to(env.goal_for(after), current.shape)
+    active = ~before.done
+    distance = jnp.linalg.norm(goal - current, axis=-1)
+    displacement = jnp.linalg.norm(current - previous, axis=-1)
+    height = current[:, 2]
+    return {
+        **progress,
+        "closest_distance": jnp.minimum(
+            progress["closest_distance"], jnp.where(active, distance, jnp.inf)
+        ),
+        "path_length": progress["path_length"] + jnp.where(active, displacement, 0.0),
+        "minimum_height": jnp.minimum(
+            progress["minimum_height"], jnp.where(active, height, jnp.inf)
+        ),
+        "maximum_height": jnp.maximum(
+            progress["maximum_height"], jnp.where(active, height, -jnp.inf)
+        ),
+        "lower_margin": jnp.minimum(
+            progress["lower_margin"], jnp.where(active, height - env.task.low[2], jnp.inf)
+        ),
+        "upper_margin": jnp.minimum(
+            progress["upper_margin"], jnp.where(active, env.task.high[2] - height, jnp.inf)
+        ),
+    }
+
+
+def _append_navigation_progress(env, episodes, state, progress):
+    """Attach comparable, finite terminal facts to each original episode record."""
+    goal = np.broadcast_to(np.asarray(env.goal_for(state)), (env.num_envs, 3))
+    position = np.asarray(state.physics.states.pos[:, 0])
+    final_distance = np.linalg.norm(goal - position, axis=-1)
+    initial_distance = np.asarray(progress["initial_distance"])
+    for i, row in enumerate(episodes):
+        original = max(float(initial_distance[i]), 1e-6)
+        final = float(final_distance[i])
+        closest = float(progress["closest_distance"][i])
+        height = float(position[i, 2])
+        row.update(
+            initial_goal_distance_metres=original,
+            final_goal_distance_metres=final,
+            minimum_goal_distance_metres=closest,
+            normalized_final_goal_progress=(original - final) / original,
+            normalized_best_goal_progress=max(0.0, (original - closest) / original),
+            path_length_metres=float(progress["path_length"][i]),
+            min_height_metres=float(progress["minimum_height"][i]),
+            max_height_metres=float(progress["maximum_height"][i]),
+            minimum_lower_boundary_margin_metres=float(progress["lower_margin"][i]),
+            minimum_upper_boundary_margin_metres=float(progress["upper_margin"][i]),
+            lower_height_out_of_bounds=int(
+                row["event"] == Event.OUT_OF_BOUNDS.name and height <= float(env.task.low[2]) + 0.01
+            ),
+        )
+
+
 @lru_cache(maxsize=16)
-def _rollout_kernel(env, method, actor, chunk_steps, record):
+def _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostics=False):
     method_step = method.build_step(env, actor)
+
+    if progress_diagnostics:
+
+        def diagnostic_chunk(carry, parameters):
+            def advance(carry, _):
+                state, memory, progress = carry
+                next_state, next_memory = method_step(state, memory, parameters)
+                progress = _step_navigation_progress(env, progress, state, next_state)
+                return (next_state, next_memory, progress), (
+                    _sample(env, next_state, next_state.commands.applied) if record else None
+                )
+
+            return jax.lax.scan(advance, carry, None, length=chunk_steps)
+
+        return jax.jit(diagnostic_chunk)
 
     def run(carry, parameters):
         def advance(carry, _):
@@ -79,6 +170,7 @@ def rollout(
     chunk_steps: int = 25,
     method_name=None,
     record=True,
+    progress_diagnostics=False,
 ) -> tuple[list[dict], dict[str, np.ndarray]]:
     """Run one complete independent episode per world through the public Environment.
 
@@ -93,12 +185,18 @@ def rollout(
         raise ValueError("Use a constructed JAX method and positive chunk_steps")
     if method.trainable and (actor is None or parameters is None):
         raise ValueError("Frozen policy evaluation requires an actor and explicit parameters")
+    if progress_diagnostics and env.task.name != "navigation":
+        raise ValueError("Progress diagnostics only apply to Navigation")
     state = env.reset(jax.random.PRNGKey(seed))
     memory = method.initialize(env, seed, actor)
-    run_chunk = _rollout_kernel(env, method, actor, chunk_steps, record)
+    run_chunk = _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostics)
     initial = _sample(env, state, state.commands.applied) if record else {}
     samples = [{key: np.asarray(value)[None] for key, value in initial.items()}]
-    carry = (state, memory)
+    carry = (
+        (state, memory, _init_navigation_progress(env, state))
+        if progress_diagnostics
+        else (state, memory)
+    )
     started = time.monotonic()
     for _ in range(math.ceil((env.task.duration / env.dt + 1) / chunk_steps)):
         carry, chunk = run_chunk(carry, parameters)
@@ -116,13 +214,17 @@ def rollout(
         else {}
     )
     label = method_name or ("policy" if method.trainable else type(method.controller).__name__)
-    return episode_records(env, state, seed, label, elapsed), traces
+    episodes = episode_records(env, state, seed, label, elapsed)
+    if progress_diagnostics:
+        _append_navigation_progress(env, episodes, state, jax.device_get(carry[2]))
+    return episodes, traces
 
 
 def episode_records(env, state, seed, method, elapsed, failure=None):
     """Build one row per actual episode, independent of execution or transport."""
     episodes = []
     for index in range(env.num_envs):
+        scene = env.scene.scene_for_world(index) if isinstance(env.scene, SceneBatch) else env.scene
         event = Event(int(state.task.event[index]))
         clearance = float(state.task.min_clearance[index])
         episodes.append(
@@ -130,8 +232,8 @@ def episode_records(env, state, seed, method, elapsed, failure=None):
                 "episode": index,
                 "initialization_seed": seed,
                 "world_index": index,
-                "scene": env.scene.name,
-                "geometry_sha256": env.scene.geometry_hash,
+                "scene": scene.name,
+                "geometry_sha256": scene.geometry_hash,
                 "method": method,
                 "event": event.name,
                 "terminated": bool(state.terminated[index]),
@@ -198,6 +300,7 @@ def save_evaluation(
             indices.append(eligible[0])
     indices += [i for i in range(len(episodes)) if i not in indices]
     for index in indices[:replay_episodes]:
+        scene = env.scene.scene_for_world(index) if isinstance(env.scene, SceneBatch) else env.scene
         times = traces["time"][:, index]
         keep = np.r_[True, np.diff(times) > 0]
         positions, quaternions = traces["position"][keep, index], traces["quaternion"][keep, index]
@@ -225,7 +328,7 @@ def save_evaluation(
             directory
             / replay_directory
             / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
-            env.scene,
+            scene,
             times[frames],
             traces["position"][frames, index],
             traces["quaternion"][frames, index],

@@ -76,6 +76,14 @@ Full training archives require the current state structure and matching identity
 轮换 S01–D06；原 S01–D06 冻结 MJCF、种子基段与正式门槛不变。
 S06/D06 只作扩展报告，不作为已见几何的泛化证明。
 
+`simulation.procedural.start_sampling=distance_mixture` 使用固定的20/50/80米
+起终距离混合；`distance_curriculum` 根据已完成交互数占总预算的比例改变
+三个距离的采样权重，并保留旧距离。PPO、APG/BPTT、SHAC 均通过同一个
+环境 reset 接收该进度，只影响下一次重置的世界。直接调用课程训练时须向
+`Trainer.update(state, sampling_progress=...)` 传入 `[0,1]` 进度；CLI 使用保存的
+交互计数和 `learning.max_interactions` 计算，恢复时禁止改变课程总预算。
+评测不传训练进度，始终使用固定混合分布；每次更新记录实际重置距离计数。
+
 原 12/18 已通过矩阵继续保存在 `results/scratch_v02/`；
 新协议必须使用独立的 `results/procedural_v01/`：
 
@@ -133,6 +141,28 @@ PPO 训练记录额外提供 `navigation_progress_metres`、
 以上均是训练轨迹诊断指标，不能替代独立冻结成功率。
 
 ### Task 奖励与 Learning 损失的归属
+
+Navigation 的可选 `task.options.reward_profile=goal_reaching` 采用有限时域的
+安全到达目标，要求 `task.options.finite_horizon=true`、`learning.options.gamma=1`
+和 `learning.loss=null`，不叠加旧奖励 shaping。每步距离进度为
+`(distance_before-distance_after)/20`，首次成功奖励 +1，首次失败奖励 -1。
+时间、障碍净空、边界与动作代价的整回合总和上界为 0.5；同一起点下，
+0.5 m 目标球内的成功回报比任一失败至少高 1.475。这是任务目标的性质，
+不能替代训练收敛证据，也不声称保留旧奖励的最优策略。
+
+该目标可设置 `task.options.reward_options.clearance_aggregation=minimum`，
+以已有 `TaskState.min_clearance` 记录本回合最差净空。只有最差净空进一步降低时，
+才扣除风险函数 `sigmoid(8*(0.5-min_clearance))` 的增量乘 0.1。
+整回合障碍代价仍不超过 0.1，离开障碍不会返还已扣代价；上述总成本与成功回报
+下界仍成立。省略此选项时，沿用按时间平均的障碍风险成本。
+两者是不同的任务风险目标，不能称为保持最优策略不变的 potential-based shaping。
+配置直接进入已有 Task 合同和 checkpoint，不增加环境状态字段。
+
+`finite_horizon=true` 时，任务截止时间产生 `terminated=true`，不再 bootstrap；
+Actor 的状态输入末尾加入归一化剩余时间。有限 rollout 的非终止末端仍正常
+bootstrap。该区分遵循 [Gymnasium 的时间限制语义](https://gymnasium.farama.org/v0.26.3/tutorials/handling_time_limits/)。
+此选项目前用于 Navigation；默认 false 保留已有模型的观测与时间截断合同。
+它作为 Task 配置和 EnvState 静态元数据恢复，不增加 checkpoint 数组字段。
 
 根据 [ADR-0001](adr/0001-simulation-learning-boundary.md)、
 [ADR-0014](adr/0014-rl-environment-and-method-interface.md) 与
@@ -207,6 +237,20 @@ The Actor ignores `privileged_state`; its architecture and frozen input contract
 remain the same. Only Actor variables are exported for inference. See
 [ADR-0010](adr/0010-training-only-privileged-ppo-critic.md).
 
+LiDAR PPO uses `jax.checkpoint` inside recurrent sequence recomputation so PointNet
+intermediate activations are recomputed during the backward pass instead of retained
+for every timestep. This trades computation for memory without shortening the rollout
+or changing the objective, network or number of optimizer steps.
+
+Independent Navigation PPO runs can set `++observation.navigation_world_rotation=true`
+to append the row-major body-to-world rotation matrix to `observation['state']`.
+The original 10 features become 19 (21 with the separate goal-observation option).
+Actions remain world-frame accelerations. This changes the checkpoint input contract;
+start a separately named run from random initialization. Frozen evaluation rejects
+switching this flag even when `benchmark.allow_environment_change=true`.
+See [ADR-0023](adr/0023-navigation-world-rotation-observation.md); this option is
+implemented on the paper experiment branch, not yet integrated into `v0.2`.
+
 `TrainingState` is a Flax dataclass containing full actor variables (`params`, including
 its `params` collection), critic and target critic variables, both Optax states, RNG,
 complete environment PyTree, recurrent memory, perception objective history, trainable
@@ -227,11 +271,25 @@ also report their independently optimized critic loss and gradient norm.
 PPO samples a Gaussian in raw action space and stores the pre-tanh sample and its
 Jacobian-corrected log density. Rollouts are detached from physics. GAE uses
 `delta = reward + gamma*(1-terminated)*V(final_observation) - V(observation)`;
-its recursive trace is multiplied by `1-done`. Thus timeouts bootstrap from the
-last observation before reset and never propagate advantages into another episode.
+its recursive trace is multiplied by `1-done`. External timeout truncations bootstrap
+from the last observation before reset; finite-task deadlines are true terminations.
+Neither propagates advantages into another episode.
 The rollout boundary also bootstraps. Advantages use population **standard deviation**,
 not variance. The actor objective uses the minimum of ordinary and clipped probability
 ratios; the critic independently minimizes half mean squared return error.
+
+`learning.options.ppo_monte_carlo_returns=true` selects complete sampled returns for
+finite-horizon Navigation PPO with `gamma=gae_lambda=1`. After the usual rollout,
+copies of unfinished worlds continue under the same behavior policy to termination.
+Their realized reward sums replace only the final bootstrap values; the original
+rollout supplies the PPO samples. Tail sampling uses a separate RNG stream and keeps
+the live worlds, recurrent memory and learner RNG at the original rollout boundary.
+No gradient passes through these continuations. This removes terminal-value estimation
+from the return targets at the cost of additional simulation and potentially higher
+variance; it does not establish stable convergence. `interactions` includes active
+tail transitions; `monte_carlo_tail_interactions` separates them, and
+`monte_carlo_tail_allocated_slots` also reports padded simulator work. A tail failing
+to reach its finite deadline rejects the update. The default remains ordinary GAE.
 
 Each PPO minibatch contains complete world sequences, not shuffled individual steps.
 At every optimizer pass, the current actor recomputes all recurrent states from the
@@ -305,6 +363,20 @@ length; resuming performs the pending switch before the next update. A checkpoin
 after a switch but before a successful update has progress zero in the new scene.
 Mid-block resumes restore the active scene's template and continue its existing episodes.
 Schedule, geometry and progress validation prevent silently continuing a different run.
+
+For fixed Navigation geometry, `learning.scene_sampling: parallel` instead assigns an
+equal, contiguous group of worlds to each entry in `learning.scenes`. The environment
+count must be divisible by the scene count. Every update samples all groups; each world
+keeps its own physics, obstacle clock, sensor history and recurrent state until its
+episode ends. `scene_updates` is unused in this mode. For example, 64 worlds over eight
+scenes produce eight worlds per scene on every rollout, without scheduler-induced resets.
+Checkpoint configuration records the ordered scenes, worlds per scene and original
+geometry identities; resume rejects a changed assignment. Episode tables and replays
+identify each world's actual scene. Evaluation continues to construct individual scenes.
+Parallel batches currently exclude procedural geometry, procedural training probes and
+paper reward profiles requiring per-object geometry; the goal-reaching reward uses the
+existing clearance and ray queries. This sampling option does not imply convergence.
+
 The current archive format is **v2 only**. Training resume requires matching complete
 state, environment, action, network and learning configuration. No missing options are
 filled from historical defaults. Standalone inference archives must declare the Actor
@@ -417,6 +489,7 @@ revision belong in checkpoint metadata.
 | `horizon` | 32 | Control intervals per update |
 | `lr`, `critic_lr` | 0.0003, 0.001 | Actor and critic learning rates |
 | `gamma`, `gae_lambda` | 0.99, 0.95 | Discount and return trace |
+| `ppo_monte_carlo_returns` | false | Complete finite-task sampled returns instead of terminal Critic bootstrap; requires gamma=lambda=1 |
 | `ppo_epochs`, `minibatches` | 4, 1 | PPO passes; world partitions, must divide batch |
 | `critic_epochs` | 4 | SHAC critic passes; PPO fits critic once per actor minibatch |
 | `clip_epsilon` | 0.2 | PPO probability ratio clipping |
@@ -483,9 +556,18 @@ also set `results.keep_best_screening=true` to retain the best incomplete
 screening checkpoint in addition to the most recent resumable states. Selection
 still requires a passing full validation; a good screening score alone is not
 accepted as a model or frozen benchmark result.
+Training can set `++benchmark.frozen_seed_base=3000000` to reserve a new final-test
+cohort without changing checkpoint-validation seeds. It must be an integer of
+at least 2,000,000; omitting it preserves archived configuration fields and the historical default.
+If a frozen-test failure
+informs another recipe, reserve a new cohort before that next final test.
 With Orbax, ordinary periodic checkpoints save resumable state without exporting
 an inference Actor. This lets retention prune unselected checkpoints while
 keeping the best screening checkpoint and any accepted Actor.
+Retention removes only old `training/` arrays. Per-episode CSVs, reports, traces
+and metadata remain available after a recovery state is pruned; a model folder
+alone therefore does not imply that it can resume training. Recovery requires
+its `training/commit_success.txt` marker.
 
 The old `start_sampling=collision_free` mixture places 35% of starts near the
 goal and draws the rest uniformly along the course. It covers nominal

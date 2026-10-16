@@ -1,0 +1,75 @@
+{
+  "status": "completed_pilot_passed",
+  "checks": [
+    {
+      "candidate_update": 177,
+      "reference_update": 180,
+      "additional_interactions": 131072,
+      "candidate_successes": 148,
+      "full_batch_successes": 141,
+      "original_control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 24,
+        "D03": 24
+      },
+      "retained_initial_successes": 148,
+      "recovered_full_batch_losses": 9,
+      "new_losses_vs_full_batch": 2,
+      "recovered_original_control_losses": 0,
+      "new_losses_vs_original_control": 2,
+      "events": {
+        "SUCCESS": 148,
+        "COLLISION": 2
+      },
+      "passed": true
+    },
+    {
+      "candidate_update": 178,
+      "reference_update": 184,
+      "additional_interactions": 262144,
+      "candidate_successes": 149,
+      "full_batch_successes": 135,
+      "original_control_successes": 124,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 24,
+        "D03": 25
+      },
+      "retained_initial_successes": 149,
+      "recovered_full_batch_losses": 15,
+      "new_losses_vs_full_batch": 1,
+      "recovered_original_control_losses": 26,
+      "new_losses_vs_original_control": 1,
+      "events": {
+        "SUCCESS": 149,
+        "COLLISION": 1
+      },
+      "passed": true
+    }
+  ],
+  "actual_interactions": 262144,
+  "actual_updates": 2,
+  "actor_and_critic_adam_steps_each": 32,
+  "actor_parameter_deltas": [
+    0.3788374066352844,
+    0.36452123522758484
+  ],
+  "kl_skip_sum": 0.0,
+  "training_update_seconds": 120.24178367800778,
+  "total_wall_seconds_including_setup": 370.9849380259984,
+  "setup_seconds_subset": 118.52019811698119,
+  "actual_final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_worlds256_pilot/model_000178",
+  "runtime_provenance": {
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+  },
+  "runner_git_commit": "5ce1631fcb28cdaaaa84db46549ef58f938a29e5",
+  "decision": "Both short checks pass. Register a fresh full917504interaction window from originalu176 to test pilot reproducibility and the remaining horizon; this is not scratch/three-seed/frozen acceptance."
+}

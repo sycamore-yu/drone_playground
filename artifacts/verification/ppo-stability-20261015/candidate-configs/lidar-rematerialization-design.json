@@ -1,0 +1,41 @@
+{
+  "status": "running",
+  "problem": "Original LiDAR fixed-scene h512 trial failed before any completed update; XLA requested 56.49 GiB on a 24 GiB device.",
+  "failed_run": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_long_return/lidar_ppo_s0",
+  "failed_log": "artifacts/verification/ppo-stability-20261015/lidar-fixed-scenes-long-return.log",
+  "intervention": "jax.checkpoint on the LiDAR recurrent PPO scan body, prevent_cse=False; recompute PointNet reverse-mode intermediates.",
+  "scope": "src/drone_playground/learning/ppo.py recurrent_policy; direct callers use a real Trainer. Test SimpleNamespace receives kind. No configuration option, dependency, action/reward/scene/optimizer change.",
+  "reference": "https://docs.jax.dev/en/latest/_autosummary/jax.checkpoint.html",
+  "configuration": "lidar_fixed_scenes_long_return_remat_s0.yaml",
+  "unchanged": "64 worlds x 512 steps, 1024 points, GRU192, 4 minibatches x 4 epochs, original random seed0 and all training hyperparameters. Config differs only in output path.",
+  "checks": [
+    "Recurrent reset and analytic gradient with and without checkpointing",
+    "Actual PointNet outputs and gradients against uncheckpointed scan, including masked NaNs and an empty point cloud",
+    "Actual LiDAR physical PPO update and full-state restore",
+    "Full-sized GPU training completes at least one update without OOM and reports actual memory"
+  ],
+  "limits": "Rematerialization is a resource fix, not evidence of PPO convergence or bitwise identical optimization. Original failed run is preserved. All Navigation stability and three-seed gates still apply.",
+  "targeted_validation": {
+    "result": "4 passed, 46 deselected in 35.28s",
+    "command": "pytest -q tests/test_learning.py -k 'recurrent_recomputation or lidar_rematerialization or (navigation_observation_ppo_updates_and_restores and True-True-21-lidar)'",
+    "backend": "CPU",
+    "ruff": "check and format --check passed",
+    "gpu_full_batch": {
+      "result": "completed actual full-sized update1 with all finite metrics (CLI gate)",
+      "update": 1,
+      "interactions": 32768,
+      "update_seconds": 38.417985220003175,
+      "device_total_memory_mib": 3895.0,
+      "co_running": "Depth stability job; device-wide sample is not the allocation peak"
+    },
+    "gpu_full_optimizer_schedule": {
+      "update": 2,
+      "interactions": 65536.0,
+      "kl_actor_update_skipped": 0.0,
+      "update_seconds": 17.6763132380147,
+      "gpu_memory_mib": 3895.0,
+      "meaning": "All16 configured actor minibatch steps executed; no OOM, finite metrics."
+    }
+  },
+  "git_commit": "2cde4fcce2cc72c02b4b91f23d4468bd5c84c4b5"
+}

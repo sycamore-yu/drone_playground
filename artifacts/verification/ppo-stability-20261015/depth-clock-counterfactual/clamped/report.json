@@ -1,0 +1,290 @@
+{
+  "mode": "checkpoint_eval",
+  "protocol": "diagnostic",
+  "training_seed": 0,
+  "seed_base": 1000000,
+  "evaluation_index": 0,
+  "reports": {
+    "S01": {
+      "episodes": 8,
+      "successes": 0,
+      "success_rate": 0.0,
+      "successful_position_rmse": null,
+      "passed": null,
+      "task": "navigation",
+      "task_contract": {
+        "name": "navigation",
+        "duration_seconds": 300.0,
+        "body_radius_metres": 0.07,
+        "start_metres": [
+          2.0,
+          0.0,
+          3.0
+        ],
+        "bounds_metres": [
+          [
+            0.0,
+            -20.0,
+            0.5
+          ],
+          [
+            100.0,
+            20.0,
+            6.0
+          ]
+        ],
+        "event_priority": [
+          "COLLISION",
+          "NUMERICAL_FAILURE",
+          "OUT_OF_BOUNDS",
+          "SUCCESS",
+          "TIMEOUT"
+        ],
+        "reward_profile": "goal_reaching",
+        "finite_horizon": true,
+        "goal_metres": [
+          98.0,
+          0.0,
+          3.0
+        ],
+        "goal_radius_metres": 0.5
+      },
+      "scene": "S01",
+      "geometry": {
+        "name": "S01",
+        "sha256": "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+        "geom_names": [
+          "obstacle_geom_0",
+          "obstacle_geom_1",
+          "obstacle_geom_2",
+          "obstacle_geom_3",
+          "obstacle_geom_4",
+          "obstacle_geom_5",
+          "obstacle_geom_6",
+          "obstacle_geom_7",
+          "obstacle_geom_8",
+          "obstacle_geom_9",
+          "obstacle_geom_10",
+          "obstacle_geom_11",
+          "obstacle_geom_12",
+          "obstacle_geom_13",
+          "obstacle_geom_14",
+          "obstacle_geom_15",
+          "obstacle_geom_16",
+          "obstacle_geom_17",
+          "obstacle_geom_18",
+          "obstacle_geom_19",
+          "obstacle_geom_20",
+          "obstacle_geom_21",
+          "obstacle_geom_22",
+          "obstacle_geom_23",
+          "obstacle_geom_24",
+          "obstacle_geom_25",
+          "obstacle_geom_26",
+          "obstacle_geom_27",
+          "obstacle_geom_28",
+          "obstacle_geom_29",
+          "obstacle_geom_30",
+          "obstacle_geom_31",
+          "obstacle_geom_32",
+          "obstacle_geom_33",
+          "obstacle_geom_34",
+          "obstacle_geom_35",
+          "obstacle_geom_36",
+          "obstacle_geom_37",
+          "obstacle_geom_38",
+          "obstacle_geom_39",
+          "obstacle_geom_40",
+          "obstacle_geom_41",
+          "obstacle_geom_42",
+          "obstacle_geom_43",
+          "obstacle_geom_44"
+        ]
+      },
+      "sensor": {
+        "config": {
+          "profile": "d435i",
+          "width": 64,
+          "height": 48,
+          "horizontal_fov_deg": 87.0,
+          "vertical_fov_deg": 58.0,
+          "frequency_hz": 30,
+          "min_range": 0.3,
+          "max_range": 10.0,
+          "points_per_frame": 20000,
+          "elevation_min_deg": -7.0,
+          "elevation_max_deg": 52.0,
+          "translation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "roll_deg": 0.0,
+          "pitch_deg": 20.0,
+          "yaw_deg": 0.0,
+          "latency": 0.0,
+          "error_model": "ideal",
+          "acquisition": "snapshot"
+        },
+        "point_count": 1024,
+        "encoding": {},
+        "latency_bounds": [
+          0.0,
+          0.0
+        ]
+      },
+      "method": "policy",
+      "outcomes": {
+        "TIMEOUT": 8
+      },
+      "replays": [],
+      "execution": "crazyflow"
+    },
+    "D01": {
+      "episodes": 8,
+      "successes": 0,
+      "success_rate": 0.0,
+      "successful_position_rmse": null,
+      "passed": null,
+      "task": "navigation",
+      "task_contract": {
+        "name": "navigation",
+        "duration_seconds": 300.0,
+        "body_radius_metres": 0.07,
+        "start_metres": [
+          2.0,
+          0.0,
+          3.0
+        ],
+        "bounds_metres": [
+          [
+            0.0,
+            -20.0,
+            0.5
+          ],
+          [
+            100.0,
+            20.0,
+            6.0
+          ]
+        ],
+        "event_priority": [
+          "COLLISION",
+          "NUMERICAL_FAILURE",
+          "OUT_OF_BOUNDS",
+          "SUCCESS",
+          "TIMEOUT"
+        ],
+        "reward_profile": "goal_reaching",
+        "finite_horizon": true,
+        "goal_metres": [
+          98.0,
+          0.0,
+          3.0
+        ],
+        "goal_radius_metres": 0.5
+      },
+      "scene": "D01",
+      "geometry": {
+        "name": "D01",
+        "sha256": "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+        "geom_names": [
+          "obstacle_geom_0",
+          "obstacle_geom_1",
+          "obstacle_geom_2",
+          "obstacle_geom_3",
+          "obstacle_geom_4",
+          "obstacle_geom_5",
+          "obstacle_geom_6",
+          "obstacle_geom_7",
+          "obstacle_geom_8",
+          "obstacle_geom_9",
+          "obstacle_geom_10",
+          "obstacle_geom_11",
+          "obstacle_geom_12",
+          "obstacle_geom_13",
+          "obstacle_geom_14",
+          "obstacle_geom_15",
+          "obstacle_geom_16",
+          "obstacle_geom_17",
+          "obstacle_geom_18",
+          "obstacle_geom_19",
+          "obstacle_geom_20",
+          "obstacle_geom_21",
+          "obstacle_geom_22",
+          "obstacle_geom_23",
+          "obstacle_geom_24",
+          "obstacle_geom_25",
+          "obstacle_geom_26",
+          "obstacle_geom_27",
+          "obstacle_geom_28",
+          "obstacle_geom_29",
+          "obstacle_geom_30",
+          "obstacle_geom_31",
+          "obstacle_geom_32",
+          "obstacle_geom_33",
+          "obstacle_geom_34",
+          "obstacle_geom_35",
+          "obstacle_geom_36",
+          "obstacle_geom_37",
+          "obstacle_geom_38",
+          "obstacle_geom_39",
+          "obstacle_geom_40",
+          "obstacle_geom_41",
+          "obstacle_geom_42",
+          "obstacle_geom_43",
+          "obstacle_geom_44",
+          "obstacle_geom_45",
+          "obstacle_geom_46",
+          "obstacle_geom_47",
+          "obstacle_geom_48",
+          "obstacle_geom_49",
+          "obstacle_geom_50",
+          "obstacle_geom_51",
+          "obstacle_geom_52",
+          "obstacle_geom_53"
+        ]
+      },
+      "sensor": {
+        "config": {
+          "profile": "d435i",
+          "width": 64,
+          "height": 48,
+          "horizontal_fov_deg": 87.0,
+          "vertical_fov_deg": 58.0,
+          "frequency_hz": 30,
+          "min_range": 0.3,
+          "max_range": 10.0,
+          "points_per_frame": 20000,
+          "elevation_min_deg": -7.0,
+          "elevation_max_deg": 52.0,
+          "translation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "roll_deg": 0.0,
+          "pitch_deg": 20.0,
+          "yaw_deg": 0.0,
+          "latency": 0.0,
+          "error_model": "ideal",
+          "acquisition": "snapshot"
+        },
+        "point_count": 1024,
+        "encoding": {},
+        "latency_bounds": [
+          0.0,
+          0.0
+        ]
+      },
+      "method": "policy",
+      "outcomes": {
+        "TIMEOUT": 8
+      },
+      "replays": [],
+      "execution": "crazyflow"
+    }
+  },
+  "complete": true,
+  "passed": null
+}

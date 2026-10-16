@@ -1,0 +1,68 @@
+{
+  "status": "completed_pilot_failed",
+  "checks": [
+    {
+      "update": 180,
+      "candidate_successes": 141,
+      "control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 16,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 141,
+      "recovered_control_losses": 0,
+      "new_losses_relative_to_control": 9,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 141,
+        "COLLISION": 7,
+        "OUT_OF_BOUNDS": 2
+      },
+      "passed": false
+    },
+    {
+      "update": 184,
+      "candidate_successes": 135,
+      "control_successes": 124,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 10
+      },
+      "retained_initial_successes": 135,
+      "recovered_control_losses": 19,
+      "new_losses_relative_to_control": 8,
+      "common_losses": 7,
+      "events": {
+        "SUCCESS": 135,
+        "COLLISION": 15
+      },
+      "passed": false
+    }
+  ],
+  "actual_updates": 8,
+  "actual_additional_interactions": 262144,
+  "actor_parameter_delta_norm_range": [
+    0.13564147055149078,
+    0.15093368291854858
+  ],
+  "kl_skip_sum": 0.0,
+  "training_update_seconds": 134.8991996109835,
+  "setup_seconds": 114.61140007100767,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_full_batch_pilot/model_000184",
+  "runtime_provenance": {
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+  },
+  "runner_git_commit": "f2b6a7a3af875fa7f3b79814b5df029de7256c33",
+  "decision": "Both checks fail. Do not extend or promote full-batch optimization based on local training-loss improvement or an aggregate final advantage over control. Keep actual final model and failed cases; no independent final test.",
+  "total_wall_seconds_including_setup": 368.56273257700377,
+  "wall_timing_note": "Native window timer starts before initial state restoration; setup is a subset of total wall time, not an additional cost."
+}

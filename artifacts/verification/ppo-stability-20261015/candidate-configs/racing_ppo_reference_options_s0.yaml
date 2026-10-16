@@ -1,0 +1,120 @@
+task:
+  name: racing
+  reference: circuit
+  duration: 60.0
+  reference_seed: 0
+  options:
+    reward_shaping:
+      task_weight: 1.0
+      progress_reward_scale: 1.0
+      failure_cost: 0.0
+scene:
+  name: racing
+sensor:
+  name: state
+  config: {}
+  point_count: 1024
+controller:
+  _target_: drone_playground.simulation.controllers.MellingerController
+  drone: cf21B_500
+  frequency: 50
+  yaw: 0.0
+method:
+  name: policy
+  protocol: learning
+  implementation:
+    _target_: drone_playground.simulation.methods.PolicyMethod
+  action:
+    level: attitude_thrust
+    heading: fixed
+  actor:
+    _target_: drone_playground.simulation.networks.Actor
+    kind: state
+    hidden_size: 192
+learning:
+  algorithm: ppo
+  loss: null
+  backward_model: null
+  backward_options: {}
+  options:
+    horizon: 32
+    lr: 0.0003
+    critic_lr: 0.001
+    gamma: 0.99
+    gae_lambda: 0.95
+    ppo_epochs: 4
+    minibatches: 4
+    critic_epochs: 4
+    clip_epsilon: 0.2
+    entropy_weight: 0.0
+    max_grad_norm: 1.0
+    target_alpha: 0.995
+    temporal_gradient_alpha: 0.0
+    initial_log_std: -1.5
+    weight_decay: 0.0
+    task_weight: 1.0
+    perception_weight: 1.0
+    velocity_aux_weight: 0.0
+    perception_loss: {}
+    progress_reward_scale: 1.0
+    ppo_target_kl: 0.0
+    ppo_value_clip: 0.0
+    failure_cost: 0.0
+  checkpoint_interval: 50
+  evaluation_interval: 100
+  log_interval: 10
+  required_consecutive_passes: 3
+  selection: last_of_first_three_consecutive_passes
+  max_interactions: 67108864
+benchmark:
+  episodes: null
+  protocol: learning
+  allow_environment_change: false
+  seed_base: null
+  scenes: null
+  record_replay: false
+  record_trajectories: false
+  primary_scenes:
+    static:
+    - S01
+    - S02
+    - S03
+    dynamic:
+    - D01
+    - D02
+    - D03
+  replay_episodes: 2
+  chunk_steps: 25
+  fixed_checkpoint_seeds: true
+mode: train
+seed: 0
+output: /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/racing_common_reward_p1f0/ppo_reference_options_s0
+simulation:
+  navigation_goal_observation: false
+  device: gpu
+  dynamics: first_principles
+  drone: cf21B_500
+  physics_hz: 500
+  method_hz: 50
+  num_envs: 512
+  action_delay_s: 0.0
+  randomization: {}
+  disturbance: {}
+observation:
+  depth: {}
+checkpoint: null
+initial_checkpoint: null
+resume: null
+results:
+  format: legacy
+  keep_checkpoints: 3
+  keep_best_screening: false
+early_stopping:
+  min_updates: 800
+  patience: 6
+  min_delta: 0.02
+replay_path: null
+screening:
+  probe_between_full: false
+  training_distribution_probe: false
+  full_every: 3

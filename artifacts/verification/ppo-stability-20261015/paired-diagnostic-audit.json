@@ -1,0 +1,3163 @@
+{
+  "scope": "development diagnostics; not convergence or formal acceptance",
+  "paired_restored_state_sha256": "d178ed4a111cc0924d1584480662524ba8a1c4fc192c05a74e6ee990d61adff9",
+  "paired_continuations": {
+    "lidar-control": {
+      "arguments": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+        "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-control",
+        "updates": 240,
+        "interval": 60,
+        "scenes": [
+          "S01",
+          "D01",
+          "D02",
+          "D03"
+        ],
+        "actor_lr_scale": 1.0,
+        "freeze_critic": false,
+        "refresh_memory": false
+      },
+      "evaluations": [
+        {
+          "update": 2640,
+          "additional_interactions": 0,
+          "successes": 29,
+          "retained_source_successes": 29,
+          "retention_fraction": 1.0,
+          "new_successes": 0,
+          "events": {
+            "SUCCESS": 29,
+            "COLLISION": 3
+          },
+          "per_scene_successes": {
+            "S01": 8,
+            "D01": 6,
+            "D02": 7,
+            "D03": 8
+          },
+          "lost_cases": [],
+          "csv_sha256": "6405b5466872e972fa00a7118a3f49d1feefd82fbadb662d8c71299c54b54ac5"
+        },
+        {
+          "update": 2700,
+          "additional_interactions": 30720,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "aaa107471a68ca57b536308fde16adb78a5b08645fcdde3ad698d0aeb9a291dd"
+        },
+        {
+          "update": 2760,
+          "additional_interactions": 61440,
+          "successes": 8,
+          "retained_source_successes": 7,
+          "retention_fraction": 0.2413793103448276,
+          "new_successes": 1,
+          "events": {
+            "COLLISION": 24,
+            "SUCCESS": 8
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 8,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "0fee26fcd269fe7d60bb7044a6df2b1cd8adc16e6664874939c5ed93e32329e8"
+        },
+        {
+          "update": 2820,
+          "additional_interactions": 92160,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "328f456e9edd6ca5a242cf264eff81b6e587e5c91766b5e84abf8148d0032ae5"
+        },
+        {
+          "update": 2880,
+          "additional_interactions": 122880,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "77a3613a87af987c92136ec31e40fe45b23128f3a83f6db0f8af014d9c42e54d"
+        }
+      ]
+    },
+    "lidar-memory": {
+      "arguments": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+        "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-memory",
+        "updates": 240,
+        "interval": 60,
+        "scenes": [
+          "S01",
+          "D01",
+          "D02",
+          "D03"
+        ],
+        "actor_lr_scale": 1.0,
+        "freeze_critic": false,
+        "refresh_memory": true
+      },
+      "evaluations": [
+        {
+          "update": 2640,
+          "additional_interactions": 0,
+          "successes": 29,
+          "retained_source_successes": 29,
+          "retention_fraction": 1.0,
+          "new_successes": 0,
+          "events": {
+            "SUCCESS": 29,
+            "COLLISION": 3
+          },
+          "per_scene_successes": {
+            "S01": 8,
+            "D01": 6,
+            "D02": 7,
+            "D03": 8
+          },
+          "lost_cases": [],
+          "csv_sha256": "75cd9ad398eb1c2211a3627917cebbf4c04391dae671be0f9319323df3400b88"
+        },
+        {
+          "update": 2700,
+          "additional_interactions": 30720,
+          "successes": 3,
+          "retained_source_successes": 3,
+          "retention_fraction": 0.10344827586206896,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 29,
+            "SUCCESS": 3
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 3,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "17ffcfa9821040df78bc3beabf745d29fd26c5db0eac127a66377c6b2fb7b355"
+        },
+        {
+          "update": 2760,
+          "additional_interactions": 61440,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "506d0bee0cd9c3fedd1863b69654aa615f8bb702a8c6508bea3daec121c5d6e0"
+        },
+        {
+          "update": 2820,
+          "additional_interactions": 92160,
+          "successes": 2,
+          "retained_source_successes": 2,
+          "retention_fraction": 0.06896551724137931,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 30,
+            "SUCCESS": 2
+          },
+          "per_scene_successes": {
+            "S01": 1,
+            "D01": 0,
+            "D02": 0,
+            "D03": 1
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "51e3f1d5d7e07fbf32e910171a27e0b94d5e4d436e25229f1a3ceb9c937dde34"
+        },
+        {
+          "update": 2880,
+          "additional_interactions": 122880,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "TIMEOUT": 7,
+            "COLLISION": 25
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "03e0a300374aa51678a765dcb52c4c1b4df030b4fb6e68beb49c379f044aaa1e"
+        }
+      ]
+    },
+    "lidar-critic-frozen": {
+      "arguments": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+        "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-critic-frozen",
+        "updates": 240,
+        "interval": 60,
+        "scenes": [
+          "S01",
+          "D01",
+          "D02",
+          "D03"
+        ],
+        "actor_lr_scale": 1.0,
+        "freeze_critic": true,
+        "refresh_memory": false
+      },
+      "evaluations": [
+        {
+          "update": 2640,
+          "additional_interactions": 0,
+          "successes": 29,
+          "retained_source_successes": 29,
+          "retention_fraction": 1.0,
+          "new_successes": 0,
+          "events": {
+            "SUCCESS": 29,
+            "COLLISION": 3
+          },
+          "per_scene_successes": {
+            "S01": 8,
+            "D01": 6,
+            "D02": 7,
+            "D03": 8
+          },
+          "lost_cases": [],
+          "csv_sha256": "41c252bfb5fde374d06d4e41b963f5e85b62f6ad85ff1c0a60f59153b2296650"
+        },
+        {
+          "update": 2700,
+          "additional_interactions": 30720,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "3b0835f5a0c48db26472548a6abc73887aa30f86e09f7b729496d29b6032307e"
+        },
+        {
+          "update": 2760,
+          "additional_interactions": 61440,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "da205f3e93767f682f88702c78841cf0573885b185ce52ee87e91d0d41bb90b7"
+        },
+        {
+          "update": 2820,
+          "additional_interactions": 92160,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "97a1254c6445740cc6477f30467f66bd3b322d43832e9fbc0b79ea97cc541751"
+        },
+        {
+          "update": 2880,
+          "additional_interactions": 122880,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "c75b8b8259ee83801921787abf8bcf3bc33ac5301833d6fb9c5b852d3c13e619"
+        }
+      ]
+    },
+    "lidar-quarter-lr": {
+      "arguments": {
+        "checkpoint": "/home/tong/tongworkspace/simulation_dev/new_drone_playground/results/navigation_stability_fixes_v01/lidar_distance_curriculum_s0/checkpoints/model_002640",
+        "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/lidar-quarter-lr",
+        "updates": 240,
+        "interval": 60,
+        "scenes": [
+          "S01",
+          "D01",
+          "D02",
+          "D03"
+        ],
+        "actor_lr_scale": 0.25,
+        "freeze_critic": false,
+        "refresh_memory": false
+      },
+      "evaluations": [
+        {
+          "update": 2640,
+          "additional_interactions": 0,
+          "successes": 29,
+          "retained_source_successes": 29,
+          "retention_fraction": 1.0,
+          "new_successes": 0,
+          "events": {
+            "SUCCESS": 29,
+            "COLLISION": 3
+          },
+          "per_scene_successes": {
+            "S01": 8,
+            "D01": 6,
+            "D02": 7,
+            "D03": 8
+          },
+          "lost_cases": [],
+          "csv_sha256": "8ea8a8e35e6f758774bf56f07c76ebf5dbe79f545eb36f2fca219e17fad260c9"
+        },
+        {
+          "update": 2700,
+          "additional_interactions": 30720,
+          "successes": 11,
+          "retained_source_successes": 9,
+          "retention_fraction": 0.3103448275862069,
+          "new_successes": 2,
+          "events": {
+            "COLLISION": 21,
+            "SUCCESS": 11
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 8,
+            "D02": 3,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "18ce559afb988a26c1d7f9910a091b18fcf657ba49fee1b065c3450c5e30e1ec"
+        },
+        {
+          "update": 2760,
+          "additional_interactions": 61440,
+          "successes": 3,
+          "retained_source_successes": 2,
+          "retention_fraction": 0.06896551724137931,
+          "new_successes": 1,
+          "events": {
+            "COLLISION": 29,
+            "SUCCESS": 3
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 3,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "1dd03c099fe761f4951633eede10ab0ce96cde917532839ce56d202d47b95dad"
+        },
+        {
+          "update": 2820,
+          "additional_interactions": 92160,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "eb91f2fee5197c56f905467d44175a07c8505cd6e3d28307e0cb88d0ea6edf6a"
+        },
+        {
+          "update": 2880,
+          "additional_interactions": 122880,
+          "successes": 0,
+          "retained_source_successes": 0,
+          "retention_fraction": 0.0,
+          "new_successes": 0,
+          "events": {
+            "COLLISION": 32
+          },
+          "per_scene_successes": {
+            "S01": 0,
+            "D01": 0,
+            "D02": 0,
+            "D03": 0
+          },
+          "lost_cases": [
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "0"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "1"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "4"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "5"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "6"
+            ],
+            [
+              "D01",
+              "2510663ddf43e2ef1253b1d2667ca95365a9bf09d780d1585355fb226d16e61c",
+              "1000003",
+              "7"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "0"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "2"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "3"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "4"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "5"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "6"
+            ],
+            [
+              "D02",
+              "0b248d4df80b6330cf17eda7c36a639ac419ed524f7170ab3d1c147ca38d6124",
+              "1000004",
+              "7"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "0"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "1"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "2"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "3"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "4"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "5"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "6"
+            ],
+            [
+              "D03",
+              "0dbeb0a2cef49c7e67ce8a199beb4dad05108a91fef49254c8d079ecbb9f47f6",
+              "1000005",
+              "7"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "0"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "1"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "2"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "3"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "4"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "5"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "6"
+            ],
+            [
+              "S01",
+              "b6341373ebed813d951f2bd20a19a06a05b291bef3f910310217a07a149a107a",
+              "1000000",
+              "7"
+            ]
+          ],
+          "csv_sha256": "e1e83da75c4202a7a5e274b86489c6fcb35ad137a0fc6f491b5e72e4a0af0827"
+        }
+      ]
+    }
+  },
+  "reward_order_counterexample": {
+    "scene": "D01",
+    "seed": 1000003,
+    "world_index": 4,
+    "initial_state_sha256": "bdcb80d66f4c9a46a8f5b343e305eac787d44839444fcbaca2b5abae0e08057a",
+    "records": [
+      {
+        "update": 2640,
+        "event": "SUCCESS",
+        "seconds": 183.64401245117188,
+        "gamma": 0.995,
+        "original_discounted_return": -44.56790073096891,
+        "remaining_metres": 0.4986424744129181,
+        "raw_sha256": "c716e4741432b0d559d18cb8c0ddf0c29b6406275f00697b86e071fe59d6ef8e"
+      },
+      {
+        "update": 4320,
+        "event": "COLLISION",
+        "seconds": 95.96000671386719,
+        "gamma": 0.995,
+        "original_discounted_return": -17.1617555520532,
+        "remaining_metres": 6.171886920928955,
+        "raw_sha256": "10358809ea418c4b6f2c37b083daf6666e16ad5331fc4d2616c87242b9b6d9e8"
+      }
+    ],
+    "limitation": "two realized stochastic trajectories; not expected policy returns or a unique cause",
+    "proposed_goal_reward_success_minus_failure_lower_bound": 1.7836622223258018,
+    "bound_scope": "analytic full-episode undiscounted bound, not a replay or training result"
+  }
+}

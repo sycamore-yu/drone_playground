@@ -1,0 +1,93 @@
+{
+  "scope": "One first-update execution check, no model rehash or repeated evaluation. Pre-optimization rollout/target metrics compare the matched full-state branches; no convergence claim.",
+  "runner_commit": "cd5a0b89827d5a6e96f82785bdb2e156c215d9b9",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176",
+  "update": 177,
+  "additional_interactions": 32768,
+  "pre_optimization_comparison": {
+    "reward": {
+      "control": 0.00505460798740387,
+      "entropy0": 0.00505460798740387,
+      "absolute_difference": 0.0
+    },
+    "progress_reward": {
+      "control": 0.0038591292686760426,
+      "entropy0": 0.0038591292686760426,
+      "absolute_difference": 0.0
+    },
+    "arrival_reward": {
+      "control": 0.00140380859375,
+      "entropy0": 0.00140380859375,
+      "absolute_difference": 0.0
+    },
+    "failure_reward": {
+      "control": -0.0001220703125,
+      "entropy0": -0.0001220703125,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_episodes": {
+      "control": 50.0,
+      "entropy0": 50.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_successes": {
+      "control": 46.0,
+      "entropy0": 46.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_progress_metres": {
+      "control": 0.0771825835108757,
+      "entropy0": 0.0771825835108757,
+      "absolute_difference": 0.0
+    },
+    "done_fraction": {
+      "control": 0.00152587890625,
+      "entropy0": 0.00152587890625,
+      "absolute_difference": 0.0
+    },
+    "advantage_std": {
+      "control": 0.41958045959472656,
+      "entropy0": 0.41958045959472656,
+      "absolute_difference": 0.0
+    },
+    "advantage_mean_pre_normalization": {
+      "control": 0.17338398098945618,
+      "entropy0": 0.17338398098945618,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_mean": {
+      "control": 2.0661845207214355,
+      "entropy0": 2.0661845207214355,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_std": {
+      "control": 0.8610859513282776,
+      "entropy0": 0.8610859513282776,
+      "absolute_difference": 0.0
+    },
+    "value_target_mean": {
+      "control": 2.2395687103271484,
+      "entropy0": 2.2395687103271484,
+      "absolute_difference": 0.0
+    },
+    "value_target_std": {
+      "control": 1.0604915618896484,
+      "entropy0": 1.0604915618896484,
+      "absolute_difference": 0.0
+    },
+    "critic_return_rmse_preupdate": {
+      "control": 0.45399314165115356,
+      "entropy0": 0.45399314165115356,
+      "absolute_difference": 0.0
+    }
+  },
+  "all_15_exactly_equal": true,
+  "actor_parameter_delta_norm": 0.49340522289276123,
+  "actor_grad_norm": 0.8105747699737549,
+  "kl_actor_update_skipped": 0.0,
+  "update_seconds": 59.24304304798716,
+  "setup_seconds": 115.82981785098673,
+  "entropy_weight": 0.0,
+  "diagnostic": true
+}

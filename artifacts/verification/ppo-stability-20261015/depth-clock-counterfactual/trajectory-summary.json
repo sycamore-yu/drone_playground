@@ -1,0 +1,317 @@
+{
+  "scope": "Measured frozen clock-clamped trajectories, not the original unmodified-control trajectories. Before102.3s the Actor feature intervention has not changed any input.",
+  "scenes": {
+    "S01": {
+      "goal": [
+        98.0,
+        0.0,
+        3.0
+      ],
+      "cases": [
+        {
+          "initialization_seed": 1000000,
+          "world_index": 0,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.18826675415039,
+            -0.5563580989837646,
+            4.394969940185547
+          ],
+          "final_position": [
+            97.9629135131836,
+            0.16822999715805054,
+            3.787074089050293
+          ],
+          "final_distance_metres": 0.80570612576952,
+          "best_distance_metres": 0.7727011535159364,
+          "late_mean_speed_mps": 0.17680498957633972
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 1,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.29621887207031,
+            -0.597347617149353,
+            4.386070251464844
+          ],
+          "final_position": [
+            98.06723022460938,
+            -0.4287276864051819,
+            3.869508743286133
+          ],
+          "final_distance_metres": 0.9717884475761157,
+          "best_distance_metres": 0.8725205200873395,
+          "late_mean_speed_mps": 0.19590383768081665
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 2,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.26640701293945,
+            -0.5445281863212585,
+            4.4057393074035645
+          ],
+          "final_position": [
+            98.12806701660156,
+            -0.46575430035591125,
+            3.955986261367798
+          ],
+          "final_distance_metres": 1.0710919479508885,
+          "best_distance_metres": 0.8916365622333609,
+          "late_mean_speed_mps": 0.18941698968410492
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 3,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.12798309326172,
+            -0.5186297297477722,
+            4.4096503257751465
+          ],
+          "final_position": [
+            98.02381134033203,
+            -0.21406380832195282,
+            3.8551671504974365
+          ],
+          "final_distance_metres": 0.88187365832732,
+          "best_distance_metres": 0.8660014071083963,
+          "late_mean_speed_mps": 0.1841694414615631
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 4,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.03260040283203,
+            -0.5027554631233215,
+            4.417449951171875
+          ],
+          "final_position": [
+            98.00236511230469,
+            -0.4656273424625397,
+            4.115396022796631
+          ],
+          "final_distance_metres": 1.2086863544673132,
+          "best_distance_metres": 0.9464173578244625,
+          "late_mean_speed_mps": 0.2001834362745285
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 5,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.13164520263672,
+            -0.49960780143737793,
+            4.418974876403809
+          ],
+          "final_position": [
+            98.09868621826172,
+            -0.10518331825733185,
+            3.8096635341644287
+          ],
+          "final_distance_metres": 0.8224095930070707,
+          "best_distance_metres": 0.7793641474873124,
+          "late_mean_speed_mps": 0.1888146698474884
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 6,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.174476623535156,
+            -0.522567093372345,
+            4.407201290130615
+          ],
+          "final_position": [
+            98.00061798095703,
+            0.23314446210861206,
+            3.877027750015259
+          ],
+          "final_distance_metres": 0.9074879593742302,
+          "best_distance_metres": 0.6954273136175854,
+          "late_mean_speed_mps": 0.19706861674785614
+        },
+        {
+          "initialization_seed": 1000000,
+          "world_index": 7,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            58.02458953857422,
+            -0.46417635679244995,
+            4.428997993469238
+          ],
+          "final_position": [
+            97.92801666259766,
+            -0.2157837450504303,
+            3.954061269760132
+          ],
+          "final_distance_metres": 0.9808043290829643,
+          "best_distance_metres": 0.8048886153972249,
+          "late_mean_speed_mps": 0.1803133189678192
+        }
+      ],
+      "mean_final_distance_metres": 0.9562310519444278,
+      "max_final_distance_metres": 1.2086863544673132,
+      "mean_final_altitude_error_metres": 0.9029856026172638
+    },
+    "D01": {
+      "goal": [
+        98.0,
+        0.0,
+        3.0
+      ],
+      "cases": [
+        {
+          "initialization_seed": 1000003,
+          "world_index": 0,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            56.13825988769531,
+            1.7059385776519775,
+            4.467152118682861
+          ],
+          "final_position": [
+            97.98748016357422,
+            0.14417940378189087,
+            3.8276922702789307
+          ],
+          "final_distance_metres": 0.8402493326736536,
+          "best_distance_metres": 0.7635157962592386,
+          "late_mean_speed_mps": 0.1857452690601349
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 1,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            52.37096405029297,
+            1.2201176881790161,
+            4.333278179168701
+          ],
+          "final_position": [
+            97.8746566772461,
+            -0.04149501770734787,
+            3.800781726837158
+          ],
+          "final_distance_metres": 0.8115935923168837,
+          "best_distance_metres": 0.7283833813829155,
+          "late_mean_speed_mps": 0.186855286359787
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 2,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            56.67137908935547,
+            1.7887636423110962,
+            4.472874641418457
+          ],
+          "final_position": [
+            98.24036407470703,
+            0.1096620112657547,
+            3.997086763381958
+          ],
+          "final_distance_metres": 1.0314953508553135,
+          "best_distance_metres": 0.8033868936513927,
+          "late_mean_speed_mps": 0.18824805319309235
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 3,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            50.17481231689453,
+            1.4647489786148071,
+            4.465598106384277
+          ],
+          "final_position": [
+            97.94586944580078,
+            0.15878325700759888,
+            3.832655429840088
+          ],
+          "final_distance_metres": 0.8493864282210055,
+          "best_distance_metres": 0.7161147027919599,
+          "late_mean_speed_mps": 0.18806082010269165
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 4,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            56.191375732421875,
+            1.4662646055221558,
+            4.403035640716553
+          ],
+          "final_position": [
+            98.16680908203125,
+            -0.021897578611969948,
+            3.9257028102874756
+          ],
+          "final_distance_metres": 0.9408668698446692,
+          "best_distance_metres": 0.7906782614611166,
+          "late_mean_speed_mps": 0.18671275675296783
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 5,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            57.36460494995117,
+            1.9274641275405884,
+            4.4289045333862305
+          ],
+          "final_position": [
+            98.2645492553711,
+            -0.1647353172302246,
+            4.026335716247559
+          ],
+          "final_distance_metres": 1.0726085193143544,
+          "best_distance_metres": 0.7956387855817161,
+          "late_mean_speed_mps": 0.18753299117088318
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 6,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            56.28340148925781,
+            1.4720025062561035,
+            4.4048662185668945
+          ],
+          "final_position": [
+            98.02288818359375,
+            -0.074631467461586,
+            3.824690580368042
+          ],
+          "final_distance_metres": 0.828376893830018,
+          "best_distance_metres": 0.7862956532805293,
+          "late_mean_speed_mps": 0.18746210634708405
+        },
+        {
+          "initialization_seed": 1000003,
+          "world_index": 7,
+          "event": "TIMEOUT",
+          "position_at_100s": [
+            51.14033126831055,
+            1.3303934335708618,
+            4.376928806304932
+          ],
+          "final_position": [
+            98.06782531738281,
+            -0.5019810795783997,
+            3.955486536026001
+          ],
+          "final_distance_metres": 1.081452633479498,
+          "best_distance_metres": 0.7237955375778933,
+          "late_mean_speed_mps": 0.1864926666021347
+        }
+      ],
+      "mean_final_distance_metres": 0.9320037025669246,
+      "max_final_distance_metres": 1.081452633479498,
+      "mean_final_altitude_error_metres": 0.8988039791584015
+    }
+  }
+}
