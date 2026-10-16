@@ -25,6 +25,8 @@ pixi run benchmark experiment=tracking learning=bptt checkpoint=latest
 Training runs through Autoresearch Gym and writes its run directory to the final
 summary. Navigation training samples independent obstacle layouts; fixed S/D
 maps are used only for evaluation.
+The [Autoresearch Dashboard](docs/autoresearch.md#training-visuals) can display
+optional live MuJoCo frames and sampled trajectories from the training rollout.
 
 ```bash
 pixi run train experiment=oa_static_depth learning=ppo seed=0

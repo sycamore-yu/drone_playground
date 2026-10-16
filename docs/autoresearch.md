@@ -80,6 +80,25 @@ dashboard. The session list includes registered training runs. Add
 `?session=results/autoresearch/sessions/depth-ppo` to select one explicitly.
 Use `session-dashboard teardown --session-dir <session>` to stop it.
 
+### Training visuals
+
+Select an active training session and click **Live Frame** for the latest
+sampled state, or **Sampled Rollout** for a short trajectory from one training
+world. **Off** stops creating new previews. Sampling starts on the next training
+update; the optional renderer publishes at most once every eight seconds and
+runs in a separate MuJoCo EGL process. Training does not construct a viewer or
+pause to execute a second policy rollout. The viewer uses the saved MJCF assets
+for fixed scenes and constructs equivalent MuJoCo primitives from the actual
+sampled procedural obstacle state during navigation training.
+
+Frames are 640 × 360 JPEG images; a manifest describes sampled trajectory frames.
+The Dashboard serves them from the active session's `live/` directory. Renderer
+errors appear in `live/preview-render.log`. Camera images and LiDAR points are
+not part of this world-camera preview; use a sensor-recording Benchmark or RScope
+replay when sensor visualization is required. Runs launched before this feature
+cannot acquire training visuals retroactively. The default mode is Off so that
+headless throughput is unchanged until a user requests a preview.
+
 The Episode Return chart uses environment steps on the horizontal axis for
 native training. Its blue series is the mean sum of per-step rewards over
 episodes **completed in each logging window**. The optional green fixed-policy

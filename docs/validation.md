@@ -111,6 +111,23 @@ completed under the current concurrent compute load. The original 230-command
 runtime sweep has not been repeated in full after the newest changes, and the
 full CPU regression has not been repeated to completion after the focused fixes.
 
+## Dashboard training media (2026-10-16)
+
+The Autoresearch training adapter now exports optional, one-world pose previews
+for the MuJoCo `Live Frame` and `Sampled Rollout` modes. A separate renderer
+process writes JPEG frames and a trajectory manifest into the session's `live/`
+directory. Rendering is disabled until the Dashboard user selects a visual mode.
+The world-camera preview shows flight motion and scene geometry, not depth or
+LiDAR sensor measurements.
+
+The renderer produced procedural obstacle geometry and loaded fixed Racing and
+S01 MJCF scenes. A short Autoresearch PPO run with two worlds and 16 total
+environment interactions published a two-frame sampled training rollout. Its
+frame, manifest, and visual index were readable through the active Dashboard
+HTTP server. Session `tracking_ppo_native_s219831_6st85j6x` retains that example.
+All three learning algorithms passed focused preview and checkpoint-continuation
+checks. This short run is an integration check, not convergence evidence.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.
