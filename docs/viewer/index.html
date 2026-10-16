@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101827" />
+  <link rel="icon" href="data:," />
+  <title>Drone Playground | Interactive MuJoCo Replay</title>
+  <style>
+    :root{color-scheme:dark;font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;background:#101827;color:#e5eef8}
+    *{box-sizing:border-box}body{margin:0;display:flex;flex-direction:column;height:100dvh}
+    header{padding:12px 18px;background:#18243a;display:grid;gap:8px;z-index:1}
+    h1{font-weight:600;font-size:16px;margin:0}p{margin:0;color:#a7bdd8}
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    input,select,button{background:#101d31;color:#e5eef8;border:1px solid #455875;border-radius:6px;padding:7px 10px}
+    input[type=url]{flex:1;min-width:200px}input[type=range]{flex:1;min-width:140px}
+    button{cursor:pointer}button:hover{border-color:#91c5f7}
+    #scene{width:100%;height:100%;min-height:100px;overflow:hidden;flex:1;position:relative}
+    #scene canvas{display:block;width:100%;height:100%}
+    #status{font-variant-numeric:tabular-nums;font-size:13px}
+    .disabled{opacity:.45}footer{padding:9px 18px;background:#18243a;color:#adc1dc;display:flex;gap:16px;justify-content:space-between}
+    a{color:#a3d5fa}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Drone Playground · Interactive MuJoCo Replay</h1>
+    <div class="controls">
+      <input id="record" type="url" aria-label="Browser replay URL" placeholder="/results/.../replays/racing-0000/browser_replay.json" />
+      <button id="load" type="button">Load recording</button>
+      <span id="status" role="status">Ready</span>
+    </div>
+    <div class="controls">
+      <button id="play" type="button" disabled>Play</button>
+      <input id="timeline" type="range" min="0" max="0" step="1" value="0" disabled aria-label="Recorded flight time" />
+      <span id="time">0.000 s</span>
+      <label for="speed">Playback</label>
+      <select id="speed"><option value="0.25">0.25×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+      <button id="follow" type="button">Follow drone: On</button>
+      <button id="view" type="button">Camera: Aircraft</button>
+      <button id="trail" type="button">Flight path: On</button>
+    </div>
+  </header>
+  <main id="scene" aria-label="3D MuJoCo recorded flight"></main>
+  <footer><span>Rotate: drag · Pan: right-drag · Zoom: wheel</span><span>Recorded qpos + mocap · No physics resimulation</span><a href="https://github.com/google-deepmind/mujoco/tree/main/wasm">MuJoCo WASM</a></footer>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>
