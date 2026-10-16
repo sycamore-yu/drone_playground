@@ -2,14 +2,10 @@
 
 
 def get_candidate():
-    """Start with the native procedural Depth PPO validation recipe."""
+    """Start with the task's declared training recipe."""
     return {
-        "description": "Native procedural Depth PPO, from scratch, fixed interaction budget.",
-        "recipe": {
-            "learning.options.lr": 0.0001,
-            "learning.options.horizon": 32,
-            "simulation.num_envs": 16,
-        },
+        "description": "Declared baseline, trained from scratch for the fixed interaction budget.",
+        "recipe": {},
     }
 
 

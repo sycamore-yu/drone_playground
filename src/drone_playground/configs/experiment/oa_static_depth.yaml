@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+- navigation_procedural_depth
+simulation:
+  procedural:
+    obstacle_motion: static
+benchmark:
+  scenes:
+  - S01
+  - S02
+  - S03
+  - S06

@@ -46,6 +46,7 @@ class SceneState:
 class SceneDistribution:
     """Static-shape scenario distribution; no runtime mutations to benchmarks."""
 
+    obstacle_motion: str = "mixed"
     max_obstacles: int = 208
     corridor_y: float = -17.5
     training_seed: int = 0
@@ -56,6 +57,8 @@ class SceneDistribution:
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
+        if self.obstacle_motion not in {"static", "dynamic", "mixed"}:
+            raise ValueError("obstacle_motion must be static, dynamic, or mixed")
         if type(self.max_obstacles) is not int or self.max_obstacles < 3:
             raise ValueError("max_obstacles must be at least 3")
         if (
@@ -123,6 +126,8 @@ class ProceduralScene:
         )
         # Keep v1's byte-for-byte identity compatible with historical checkpoints.
         distribution_identity = vars(self.distribution).copy()
+        if self.distribution.obstacle_motion == "mixed":
+            distribution_identity.pop("obstacle_motion")
         if self.distribution.static_obstacle_scale == 1:
             distribution_identity.pop("static_obstacle_scale")
         if self.distribution.start_goal_distance_range_m is None:
@@ -167,7 +172,11 @@ class ProceduralScene:
         def sample_world(rng):
             a, b, c, d, e, f, g, h, k, reset_key = jax.random.split(rng, 10)
             difficulty = jax.random.randint(a, (), 0, 3)
-            dynamic = jax.random.bernoulli(b, 0.5)
+            dynamic = (
+                jax.random.bernoulli(b, 0.5)
+                if self.distribution.obstacle_motion == "mixed"
+                else jnp.asarray(self.distribution.obstacle_motion == "dynamic")
+            )
             # Same order of magnitude as the fixed SANDO Navigation8: static
             # easy/medium/hard 41/81/162; dynamic 50/100/200, 65% moving.
             static_count = jnp.array([41, 81, 162])[difficulty]

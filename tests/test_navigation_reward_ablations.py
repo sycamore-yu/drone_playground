@@ -176,8 +176,6 @@ def test_ablation_changes_one_logical_setting_and_retains_fixed_validation(senso
     before = OmegaConf.to_container(control, resolve=True)
     after = OmegaConf.to_container(candidate, resolve=True)
     assert before["scene"]["name"] == after["scene"]["name"] == "train/procedural"
-    assert before["benchmark"]["fixed_checkpoint_seeds"] is True
-    assert after["results"]["keep_best_screening"] is True
     assert before["simulation"] == after["simulation"]
     assert before["task"]["name"] == after["task"]["name"] == "navigation"
     if letter == "d":
@@ -198,7 +196,7 @@ def test_ablation_changes_one_logical_setting_and_retains_fixed_validation(senso
 def test_real_crazyflow_step_uses_task_owned_reward_and_learning_loss(sensor, letter):
     """Task and objective agree on new safety terms under actual Crazyflow physics."""
     from drone_playground.learning.trainer import Trainer
-    from drone_playground.simulation.evaluation import create_environment
+    from drone_playground.simulation.factory import create_environment
 
     config_dir = str((Path(__file__).parents[1] / "src/drone_playground/configs").resolve())
     with initialize_config_dir(version_base=None, config_dir=config_dir):

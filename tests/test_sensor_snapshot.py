@@ -130,7 +130,7 @@ def test_trainer_records_sensor_semantics_and_source_hash():
         sensor_config={"points_per_frame": 32},
         action={"level": "acceleration"},
     )
-    trainer = Trainer(env, kind="lidar", algorithm="apg", loss="liu")
+    trainer = Trainer(env, kind="lidar", algorithm="bptt", loss="liu")
     assert "sensor" in trainer.resolved_config
     sensor = trainer.resolved_config["sensor"]
     assert sensor["config"]["acquisition"] == "snapshot"

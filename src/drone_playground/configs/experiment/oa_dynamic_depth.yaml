@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+- navigation_procedural_depth
+simulation:
+  procedural:
+    obstacle_motion: dynamic
+benchmark:
+  scenes:
+  - D01
+  - D02
+  - D03
+  - D06

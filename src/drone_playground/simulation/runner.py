@@ -3,7 +3,6 @@
 import math
 import time
 from functools import lru_cache
-from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -12,8 +11,6 @@ from jax.scipy.spatial.transform import Rotation
 
 from drone_playground.simulation.controllers import MellingerController
 from drone_playground.simulation.methods import PlannerController
-from drone_playground.simulation.records import atomic_json, write_episodes
-from drone_playground.simulation.replay import export_replay
 from drone_playground.simulation.scene import SceneBatch
 from drone_playground.simulation.tasks import Event
 
@@ -36,9 +33,8 @@ def measurement_points(env, state, count=128):
     return world, mask
 
 
-def _sample(env, state, command):
-    points, mask = measurement_points(env, state)
-    return {
+def _sample(env, state, command, record_sensors=True):
+    sample = {
         "time": state.time,
         "position": state.physics.states.pos[:, 0],
         "velocity": state.physics.states.vel[:, 0],
@@ -46,14 +42,19 @@ def _sample(env, state, command):
         "command": command,
         "event": state.task.event,
         "gates": state.task.gates,
-        "sensor_points": points,
-        "sensor_mask": mask,
-        "sensor_time": (
-            state.time
-            if state.observation is None
-            else state.observation.measurement.acquisition_time
-        ),
     }
+    if record_sensors:
+        points, mask = measurement_points(env, state)
+        sample.update(
+            sensor_points=points,
+            sensor_mask=mask,
+            sensor_time=(
+                state.time
+                if state.observation is None
+                else state.observation.measurement.acquisition_time
+            ),
+        )
+    return sample
 
 
 def _init_navigation_progress(env, state):
@@ -132,7 +133,9 @@ def _append_navigation_progress(env, episodes, state, progress):
 
 
 @lru_cache(maxsize=16)
-def _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostics=False):
+def _rollout_kernel(
+    env, method, actor, chunk_steps, record, progress_diagnostics=False, record_sensors=True
+):
     method_step = method.build_step(env, actor)
 
     if progress_diagnostics:
@@ -143,7 +146,9 @@ def _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostic
                 next_state, next_memory = method_step(state, memory, parameters)
                 progress = _step_navigation_progress(env, progress, state, next_state)
                 return (next_state, next_memory, progress), (
-                    _sample(env, next_state, next_state.commands.applied) if record else None
+                    _sample(env, next_state, next_state.commands.applied, record_sensors)
+                    if record
+                    else None
                 )
 
             return jax.lax.scan(advance, carry, None, length=chunk_steps)
@@ -153,7 +158,9 @@ def _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostic
     def run(carry, parameters):
         def advance(carry, _):
             state, memory = method_step(*carry, parameters)
-            return (state, memory), _sample(env, state, state.commands.applied) if record else None
+            return (state, memory), _sample(
+                env, state, state.commands.applied, record_sensors
+            ) if record else None
 
         return jax.lax.scan(advance, carry, None, length=chunk_steps)
 
@@ -171,6 +178,8 @@ def rollout(
     method_name=None,
     record=True,
     progress_diagnostics=False,
+    record_sensors=True,
+    initial_state=None,
 ) -> tuple[list[dict], dict[str, np.ndarray]]:
     """Run one complete independent episode per world through the public Environment.
 
@@ -187,10 +196,12 @@ def rollout(
         raise ValueError("Frozen policy evaluation requires an actor and explicit parameters")
     if progress_diagnostics and env.task.name != "navigation":
         raise ValueError("Progress diagnostics only apply to Navigation")
-    state = env.reset(jax.random.PRNGKey(seed))
+    state = env.reset(jax.random.PRNGKey(seed)) if initial_state is None else initial_state
     memory = method.initialize(env, seed, actor)
-    run_chunk = _rollout_kernel(env, method, actor, chunk_steps, record, progress_diagnostics)
-    initial = _sample(env, state, state.commands.applied) if record else {}
+    run_chunk = _rollout_kernel(
+        env, method, actor, chunk_steps, record, progress_diagnostics, record_sensors
+    )
+    initial = _sample(env, state, state.commands.applied, record_sensors) if record else {}
     samples = [{key: np.asarray(value)[None] for key, value in initial.items()}]
     carry = (
         (state, memory, _init_navigation_progress(env, state))
@@ -261,95 +272,63 @@ def episode_records(env, state, seed, method, elapsed, failure=None):
     return episodes
 
 
-def save_evaluation(
-    directory: Path,
-    env,
-    episodes,
-    traces,
-    *,
-    report: dict,
-    replay_episodes: int = 2,
-    plans=None,
-    name="",
-    write_tables=True,
-    record_trajectories=True,
-    replay_directory="replays",
-) -> dict:
-    """Persist the selected report, actual trajectories and success/failure examples."""
-    directory = Path(directory).resolve()
-    directory.mkdir(parents=True, exist_ok=True)
-    if write_tables:
-        write_episodes(directory / "episodes.csv", episodes)
-    if record_trajectories and traces:
-        np.savez_compressed(directory / "trajectories.npz", **traces)
-    report = dict(report)
-    report.update(
-        task=env.task.name,
-        task_contract=env.task.contract,
-        scene=env.scene.name,
-        geometry=env.scene.geometry_identity,
-        method=episodes[0]["method"],
+def slice_initial_world(batch_state, template, world_index: int, batch_size: int):
+    """Select one benchmark world without resampling its initial conditions.
+
+    The single-world environment supplies shape information so that global
+    simulator arrays are not accidentally sliced when their size equals B.
+    """
+    if not 0 <= world_index < batch_size:
+        raise ValueError("Benchmark world index is outside the initial-state batch")
+
+    def select(batched, one):
+        many_shape, one_shape = getattr(batched, "shape", ()), getattr(one, "shape", ())
+        if (
+            batch_size > 1
+            and one_shape
+            and one_shape[0] == 1
+            and (many_shape == (batch_size, *one_shape[1:]))
+        ):
+            return batched[world_index : world_index + 1]
+        if many_shape != one_shape:
+            raise ValueError("Benchmark batch and single-world state layouts differ")
+        return batched
+
+    # Crazyflow's SimCore keeps batch size in PyTree metadata. Reconstruct with
+    # the single-world metadata instead of mapping two incompatible treedefs.
+    batched_leaves = jax.tree.leaves(batch_state)
+    template_leaves, single_layout = jax.tree.flatten(template)
+    if len(batched_leaves) != len(template_leaves):
+        raise ValueError("Benchmark state layouts have different leaf counts")
+    return jax.tree.unflatten(
+        single_layout,
+        [
+            select(batched, one)
+            for batched, one in zip(batched_leaves, template_leaves, strict=True)
+        ],
     )
-    replays = []
-    indices = []
-    for success in (True, False):
-        eligible = [
-            i for i, episode in enumerate(episodes) if (episode["event"] == "SUCCESS") == success
-        ]
-        if eligible:
-            indices.append(eligible[0])
-    indices += [i for i in range(len(episodes)) if i not in indices]
-    for index in indices[:replay_episodes]:
-        scene = env.scene.scene_for_world(index) if isinstance(env.scene, SceneBatch) else env.scene
-        times = traces["time"][:, index]
-        keep = np.r_[True, np.diff(times) > 0]
-        positions, quaternions = traces["position"][keep, index], traces["quaternion"][keep, index]
-        finite = np.isfinite(positions).all(-1) & np.isfinite(quaternions).all(-1)
-        frames = np.flatnonzero(keep)[finite]
-        if len(frames) < 2:
-            continue
-        measurements = [
-            {
-                "points_world": traces["sensor_points"][frame, index],
-                "mask": traces["sensor_mask"][frame, index],
-            }
-            for frame in frames
-        ]
-        if plans is not None:
-            episode_plans = [plans[frame] for frame in frames]
-        elif not episodes[index]["method"].startswith("policy"):
-            episode_plans = [
-                np.asarray(env.task.target(jnp.asarray(times[frame]) + jnp.linspace(0, 1, 12))[0])
-                for frame in frames
-            ]
-        else:
-            episode_plans = None
-        output = export_replay(
-            directory
-            / replay_directory
-            / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
-            scene,
-            times[frames],
-            traces["position"][frames, index],
-            traces["quaternion"][frames, index],
-            measurements,
-            episode_plans,
-            sensor_times=(traces["sensor_time"][frames, index] if env.sensor is not None else None),
-        )
-        replays.append(str(output.relative_to(directory)))
-    report["replays"] = replays
-    if write_tables:
-        atomic_json(directory / "report.json", report)
-    return report
 
 
-def rollout_host(env, method, *, seed: int, method_name=None, record=True):
+def rollout_host(
+    env,
+    method,
+    *,
+    seed: int,
+    method_name=None,
+    record=True,
+    record_sensors=True,
+    initial_state=None,
+):
     """Run a constructed planner/controller using the common physical and task step."""
     if env.num_envs != 1 or method.execution != "host":
         raise ValueError("Host execution requires one independent world and a host method")
-    state = env.reset(jax.random.PRNGKey(seed))
+    state = env.reset(jax.random.PRNGKey(seed)) if initial_state is None else initial_state
     memory = method.initialize(env, seed)
-    records = [jax.device_get(_sample(env, state, state.commands.applied))] if record else [{}]
+    records = (
+        [jax.device_get(_sample(env, state, state.commands.applied, record_sensors))]
+        if record
+        else [{}]
+    )
     plans, decisions = [None], []
     started, failure = time.monotonic(), None
     for _ in range(math.ceil(env.task.duration / env.dt) + 1):
@@ -369,11 +348,15 @@ def rollout_host(env, method, *, seed: int, method_name=None, record=True):
                 task=state.task.replace(event=jnp.array([Event.METHOD_FAILURE], jnp.int32))
             )
             if record:
-                records.append(jax.device_get(_sample(env, state, state.commands.applied)))
+                records.append(
+                    jax.device_get(_sample(env, state, state.commands.applied, record_sensors))
+                )
             plans.append(None)
             break
         if record:
-            records.append(jax.device_get(_sample(env, state, state.commands.applied)))
+            records.append(
+                jax.device_get(_sample(env, state, state.commands.applied, record_sensors))
+            )
         plans.append(
             None
             if trajectory is None

@@ -62,7 +62,7 @@ def test_actor_contract_determinism_jit_and_algorithm_independent_init(kind, act
         assert np.isfinite(actual).all()
     # No algorithm field or algorithm-specific parameter initialization exists.
     assert "algorithm" not in inspect.signature(Actor).parameters
-    for _algorithm in ("ppo", "apg", "shac"):
+    for _algorithm in ("ppo", "bptt", "shac"):
         assert_tree_equal(
             params, Actor(kind=kind, action_size=4 if kind == "state" else 3).init(key, obs, memory)
         )

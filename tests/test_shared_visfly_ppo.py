@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 
 from drone_playground.learning import ppo
 from drone_playground.learning.trainer import _DEFAULTS, Trainer, TrainingState
-from drone_playground.simulation.evaluation import create_environment, create_method
+from drone_playground.simulation.factory import create_environment, create_method
 from drone_playground.simulation.networks import Critic
 
 

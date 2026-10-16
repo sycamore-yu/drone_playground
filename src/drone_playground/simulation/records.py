@@ -1,6 +1,5 @@
 """Reproducible run identities, event logs and per-episode evaluation records."""
 
-import csv
 import hashlib
 import importlib.metadata
 import json
@@ -78,22 +77,13 @@ class RunRecord:
             if resume and (self.directory / "run.json").exists()
             else None
         )
-        requested = config.get("results", {}).get("format", "orbax")
-        if requested not in ("legacy", "orbax"):
-            raise ValueError("results.format must be legacy or orbax")
-        self.layout_version = (
-            int(previous["layout_version"])
-            if previous is not None
-            else 2
-            if requested == "legacy"
-            else 3
-        )
-        self._writer = (
-            SummaryWriter(logdir=str(self.directory)) if self.layout_version == 3 else None
-        )
+        if previous is not None and previous.get("layout_version") != 3:
+            raise ValueError("Only current Orbax runs can be resumed")
+        self.layout_version = 3
+        self._writer = SummaryWriter(logdir=str(self.directory))
         resolved = OmegaConf.to_container(config, resolve=True)
         config_path = self.directory / "config.yaml"
-        if not resume:
+        if previous is None:
             OmegaConf.save(OmegaConf.create(resolved), config_path)
         self.start = time.monotonic()
         versions = {}
@@ -132,45 +122,19 @@ class RunRecord:
     def event(self, event: str, **metrics) -> None:
         """Append one finite metric record, preserving earlier failed attempts."""
         data = {"event": event, "wall_seconds": time.monotonic() - self.start, **metrics}
-        if self._writer is not None:
-            step = int(metrics.get("update", self.identity.get("last_update", 0)))
-            if event == "update":
-                for name, value in metrics.items():
-                    if isinstance(value, (int, float)) and np.isfinite(value):
-                        self._writer.add_scalar(f"train/{name}", value, step)
-                self.identity["last_update"] = step
-                self.identity["last_interactions"] = metrics.get("interactions")
-            elif event in ("screening_evaluation", "full_validation", "checkpoint_evaluation"):
-                # Model retention may prune the report; keep its selection evidence.
-                self._writer.add_text(f"event/{event}", json.dumps(data, default=str), step)
-                self.identity["last_evaluation"] = {
-                    "event": event,
-                    **{
-                        key: value
-                        for key, value in metrics.items()
-                        if key not in ("scenes", "per_scene")
-                    },
-                }
-                for name in ("score", "best_score", "stagnant_screens"):
-                    if name in metrics:
-                        self._writer.add_scalar(f"evaluation/{name}", metrics[name], step)
-                if isinstance(metrics.get("passed"), bool):
-                    self._writer.add_scalar(
-                        f"evaluation/{event}_passed", int(metrics["passed"]), step
-                    )
-            else:
-                self._writer.add_text(f"event/{event}", json.dumps(data, default=str), step)
-            self._writer.flush()
-            if event in (
-                "update",
-                "screening_evaluation",
-                "full_validation",
-                "checkpoint_evaluation",
-            ):
-                atomic_json(self.directory / "run.json", self.identity)
+        with (self.directory / "metrics.jsonl").open("a") as stream:
+            stream.write(json.dumps(data, allow_nan=False) + "\n")
+        step = int(metrics.get("update", self.identity.get("last_update", 0)))
+        if event == "update":
+            for name, value in metrics.items():
+                if isinstance(value, (int, float)) and np.isfinite(value):
+                    self._writer.add_scalar(f"train/{name}", value, step)
+            self.identity["last_update"] = step
+            self.identity["last_interactions"] = metrics.get("interactions")
+            atomic_json(self.directory / "run.json", self.identity)
         else:
-            with (self.directory / "metrics.jsonl").open("a") as stream:
-                stream.write(json.dumps(data, allow_nan=False) + "\n")
+            self._writer.add_text(f"event/{event}", json.dumps(data, default=str), step)
+        self._writer.flush()
 
     def finish(self, status: str, **metrics) -> None:
         """Record measured outcome; only the caller's acceptance checker may declare a pass."""
@@ -179,39 +143,3 @@ class RunRecord:
         if self._writer is not None:
             self._writer.flush()
             self._writer.close()
-
-
-def write_episodes(path: Path, episodes: list[dict]) -> None:
-    """Write all outcomes, including failures, with an explicit stable denominator."""
-    if not episodes:
-        raise ValueError("Cannot report an empty evaluation as an experiment")
-    with path.open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(episodes[0]))
-        writer.writeheader()
-        writer.writerows(episodes)
-
-
-def acceptance(task: str, episodes: list[dict]) -> dict:
-    """Apply C2/C3/C4 exactly; incomplete episode sets cannot pass."""
-    successes = [episode for episode in episodes if episode["event"] == "SUCCESS"]
-    success_rate = len(successes) / len(episodes) if episodes else 0.0
-    rmse = (
-        float(np.mean([episode["position_rmse"] for episode in successes]))
-        if successes and task == "tracking"
-        else None
-    )
-    if task == "tracking":
-        passed = len(episodes) == 100 and len(successes) >= 95 and rmse is not None and rmse <= 0.25
-    elif task == "racing":
-        passed = len(episodes) == 100 and len(successes) >= 90
-    elif task == "navigation":
-        passed = len(episodes) == 25 and len(successes) >= 23
-    else:
-        raise ValueError(f"Unknown task: {task}")
-    return {
-        "episodes": len(episodes),
-        "successes": len(successes),
-        "success_rate": success_rate,
-        "successful_position_rmse": rmse,
-        "passed": bool(passed),
-    }

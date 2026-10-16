@@ -1,6 +1,0 @@
-# @package _global_
-defaults:
-  - navigation_lidar_initialized
-learning:
-  options:
-    lr: 0.000001

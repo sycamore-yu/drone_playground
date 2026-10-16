@@ -1,6 +1,5 @@
 """A static-density intervention keeps dynamic scenes and sampled geometry matched."""
 
-import importlib.util
 from pathlib import Path
 
 import jax
@@ -39,32 +38,22 @@ def test_invalid_static_scales_fail_before_sampling(scale):
         ProceduralScene({"static_obstacle_scale": scale})
 
 
-def test_static_density_queue_changes_only_static_scale_from_distance_baseline():
-    """Resolved training configurations differ solely in static obstacle count."""
+def test_static_density_recipe_changes_only_the_obstacle_scale():
+    """Direct Hydra overrides preserve the rest of the declared experiment."""
     root = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location(
-        "density_scheduler", root / "tools/optimize_paper_ppo.py"
-    )
-    scheduler = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(scheduler)
     with initialize_config_dir(
         version_base=None, config_dir=str(root / "src/drone_playground/configs")
     ):
-        for family in ("depth", "lidar"):
-            scheduler.configure_distance_search()
-            baseline = compose(
-                config_name="config",
-                overrides=scheduler.trial_options(f"{family}_d20", 0, Path("/tmp/static-control")),
-            )
-            scheduler.configure_static_density_search()
-            assert len(scheduler.CASES) == 2
+        for sensor in ("depth", "lidar"):
+            options = [f"experiment=oa_static_{sensor}", "learning=ppo"]
+            baseline = compose(config_name="config", overrides=options)
             lighter = compose(
                 config_name="config",
-                overrides=scheduler.trial_options(
-                    f"{family}_static_light_d20", 0, Path("/tmp/static-control")
-                ),
+                overrides=[
+                    *options,
+                    "+simulation.procedural.static_obstacle_scale=0.7",
+                ],
             )
             assert lighter.simulation.procedural.static_obstacle_scale == 0.7
-            lighter.output = baseline.output
             del lighter.simulation.procedural.static_obstacle_scale
             assert lighter == baseline

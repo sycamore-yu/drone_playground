@@ -1,8 +1,7 @@
 # @package _global_
 # Arrival-task reward adaptation; original Fan hovering equations remain separate.
 defaults:
-  - navigation_paper_fan2025_equations_margin2
-
+- navigation_paper_fan2025_equations_margin2
 task:
   options:
     reward_profile: fan2025_arrival

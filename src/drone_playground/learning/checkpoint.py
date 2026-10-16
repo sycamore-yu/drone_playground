@@ -1,151 +1,57 @@
-"""Atomic, versioned Flax checkpoints and standalone inference archives.
+"""Orbax checkpoints containing resumable training state and a frozen Actor."""
 
-Archives contain JSON identity/provenance and MessagePack arrays, never executable
-pickles. Restoring training requires a freshly initialized matching state template;
-its static Simulation metadata remains owned by the resolved environment config.
-"""
-
-import hashlib
 import json
 import os
 import re
 import shutil
 import tempfile
-import zipfile
 from pathlib import Path
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import orbax.checkpoint as ocp
-from flax import serialization
 
-from drone_playground.learning.selection import screening_score
-from drone_playground.simulation.policy import CHECKPOINT_VERSION, read_checkpoint
+from drone_playground.simulation.policy import read_checkpoint
 
 
-def _save(path, payload, *, purpose, config, provenance, kind=None, actor_spec=None):
-    path = Path(path)
-    metadata = {
-        "format_version": CHECKPOINT_VERSION,
-        "purpose": purpose,
-        "config": config,
-        "provenance": provenance,
-        "kind": kind,
-        "actor": actor_spec,
-        "sha256": hashlib.sha256(payload).hexdigest(),
-    }
-    metadata_json = json.dumps(metadata, sort_keys=True, allow_nan=False)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+def _replace_link(path, target):
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.unlink(missing_ok=True)
+    temporary.symlink_to(target, target_is_directory=True)
     try:
-        with os.fdopen(descriptor, "wb") as stream:
-            with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_STORED) as archive:
-                archive.writestr("metadata.json", metadata_json)
-                archive.writestr("variables.msgpack", payload)
-            stream.flush()
-            os.fsync(stream.fileno())
         os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        descriptor = os.open(path.parent, os.O_DIRECTORY)
         try:
-            os.fsync(directory)
+            os.fsync(descriptor)
         finally:
-            os.close(directory)
+            os.close(descriptor)
     finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+        temporary.unlink(missing_ok=True)
 
 
-def _is_typed_key(value):
-    return isinstance(value, jax.Array) and jax.dtypes.issubdtype(value.dtype, jax.dtypes.prng_key)
+def _publish(directory, selection):
+    # Readers follow one atomic pointer after both Orbax payloads and metadata commit.
+    best = selection["best_checkpoint"]
+    if best:
+        read_checkpoint(best, "inference")
+        _replace_link(directory / "best", os.path.relpath(best, directory))
+    _replace_link(directory.parent / "latest", directory.name)
+    if best:
+        _replace_link(directory.parent.parent / "best_model", "checkpoints/latest/best")
 
 
-def _serializable_keys(tree):
-    return jax.tree.map(
-        lambda value: jax.random.key_data(value) if _is_typed_key(value) else value, tree
-    )
-
-
-def save_state(path, state, *, config, provenance):
-    """Save every TrainingState field and the resolved run config atomically."""
-    _save(
-        path,
-        serialization.to_bytes(jax.device_get(_serializable_keys(state))),
-        purpose="training",
-        config=config,
-        provenance=provenance,
-    )
-
-
-def load_state(path, template):
-    """Return (restored TrainingState, metadata), checking leaf shapes and dtypes."""
-    payload, metadata = read_checkpoint(path, "training")
-    restored = serialization.from_bytes(_serializable_keys(template), payload)
-
-    def restore_leaf(expected, actual):
-        if _is_typed_key(expected):
-            if np.shape(actual) != jax.random.key_data(expected).shape or np.asarray(
-                actual
-            ).dtype != np.dtype("uint32"):
-                raise ValueError("Checkpoint RNG shape or dtype differs from the training template")
-            return jax.random.wrap_key_data(actual, impl=jax.random.key_impl(expected))
-        if (
-            np.shape(expected) != np.shape(actual)
-            or np.asarray(expected).dtype != np.asarray(actual).dtype
-        ):
-            raise ValueError("Checkpoint array shape or dtype differs from the training template")
-        return jax.device_put(actual) if isinstance(expected, jax.Array) else actual
-
-    restored = jax.tree.map(restore_leaf, template, restored)
-    return restored, metadata
-
-
-def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
-    """Save a configured Actor without a trainer or executable checkpoint payload."""
-    if kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth") and actor_spec is None:
-        raise ValueError("Unknown actor kind")
-    if not isinstance(actor_spec, dict) or actor_spec.get("kind") != kind:
-        raise ValueError("Actor specification must match the frozen inference kind")
-    _save(
-        path,
-        serialization.to_bytes(jax.device_get(params)),
-        purpose="inference",
-        config=config,
-        provenance=provenance,
-        kind=kind,
-        actor_spec=actor_spec,
-    )
-
-
-def load_inference(path):
-    """Return params/kind/config/provenance and format metadata for frozen inference."""
-    payload, metadata = read_checkpoint(path, "inference")
-    return {
-        **metadata,
-        "params": jax.tree.map(jax.device_put, serialization.msgpack_restore(payload)),
-    }
-
-
-def _screening_score(path: Path, folder: str = "screening") -> float | None:
-    """Read a completed lightweight validation without touching benchmark records."""
-    report_path = path / folder / "report.json"
-    if not report_path.is_file():
-        return None
-    report = json.loads(report_path.read_text())
-    if not report.get("complete"):
-        return None
-    scenes = list(report["reports"])
-    task = report["reports"][scenes[0]]["task"]
-    return screening_score(report, task, scenes)
-
-
-def save_model(path, state, *, config, provenance, kind, actor_spec, export_policy=False):
+def save_model(path, state, *, config, provenance, kind, actor_spec):
     """Write a version-three Orbax checkpoint under a model-NNNNNN folder.
 
-    The full training state is saved once per update; the inference actor
-    is exported only when selected. Metadata stays human-readable.
+    Each update stores both resumable state and a frozen actor.
+    Metadata stays human-readable.
     """
     directory = Path(path).resolve()
+    settings = config.get("experiment", {}).get("results", {})
+    retention = settings.get("keep_checkpoints", 3)
+    if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
+        raise ValueError("results.keep_checkpoints must be a positive integer")
     directory.mkdir(parents=True, exist_ok=True)
     # State actors deliberately have no recurrent memory (shape [B,0]).
     # Orbax cannot serialize zero-size arrays; use an internal padded surrogate
@@ -164,10 +70,12 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
         with ocp.StandardCheckpointer() as checkpointer:
             checkpointer.save(state_path, serialized_state)
             checkpointer.wait_until_finished()
-    if export_policy and not (directory / "actor").exists():
+    if not (directory / "actor").exists():
         with ocp.StandardCheckpointer() as checkpointer:
             checkpointer.save(directory / "actor", state.params)
             checkpointer.wait_until_finished()
+    if not (directory / "actor/commit_success.txt").is_file():
+        raise ValueError(f"Incomplete Orbax inference checkpoint: {directory}")
     metadata = {
         "format_version": 3,
         "purpose": "model",
@@ -188,16 +96,11 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-    # Keep the selected actor and a small rolling window of resumable states.
+    if "selection" in provenance:
+        _publish(directory, provenance["selection"])
+    # Keep actor snapshots and a rolling window of large resumable states.
     # This avoids accumulating a full copy of the large LiDAR sensor history
     # at every scheduled checkpoint.
-    settings = config.get("experiment", {}).get("results", {})
-    retention = settings.get("keep_checkpoints", 3)
-    if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
-        raise ValueError("results.keep_checkpoints must be a positive integer")
-    keep_best = settings.get("keep_best_screening", False)
-    if type(keep_best) is not bool:
-        raise ValueError("results.keep_best_screening must be boolean")
     candidates = sorted(
         (
             candidate
@@ -209,34 +112,6 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
         key=lambda candidate: int(candidate.name.split("_")[1]),
     )
     keep = set(candidates[-retention:])
-    keep.update(candidate for candidate in candidates if (candidate / "actor").is_dir())
-    if keep_best:
-        ranked = [
-            (score, candidate)
-            for candidate in candidates
-            if (score := _screening_score(candidate)) is not None
-        ]
-        if ranked:
-            keep.add(max(ranked, key=lambda item: (item[0], item[1].name))[1])
-        if config.get("experiment", {}).get("screening", {}).get("training_distribution_probe"):
-            training_ranked = [
-                (score, candidate)
-                for candidate in candidates
-                if (score := _screening_score(candidate, "training_distribution")) is not None
-            ]
-            if training_ranked:
-                keep.add(max(training_ranked, key=lambda item: (item[0], item[1].name))[1])
-        # A new opt-in run retains its *safe* progress peak separately from
-        # the checkpoint with the highest fixed-scene success score.
-        if config.get("experiment", {}).get("screening", {}).get("progress_aware"):
-            guard = provenance.get("screening_progress", {}).get("progress_guard") or {}
-            update = guard.get("best_progress_checkpoint_update")
-            if type(update) is int:
-                keep.update(
-                    candidate
-                    for candidate in candidates
-                    if int(candidate.name.split("_")[1]) == update
-                )
     for candidate in candidates:
         if candidate not in keep:
             # Evaluation history must survive the rolling learner-state window.
@@ -247,7 +122,7 @@ def save_model(path, state, *, config, provenance, kind, actor_spec, export_poli
 def load_model_state(path, template):
     """Restore the complete training PyTree into a matching Flax template."""
     directory = Path(path).resolve()
-    _, metadata = read_checkpoint(directory, "training")
+    metadata = read_checkpoint(directory, "training")
     empty_recurrent = metadata.get("padded_empty_recurrent_memory", False)
     if empty_recurrent:
         recurrent = getattr(template, "recurrent_memory", None)

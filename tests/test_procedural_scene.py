@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from hydra import compose, initialize_config_dir
 
-from drone_playground.simulation.evaluation import create_environment
+from drone_playground.simulation.factory import create_environment
 from drone_playground.simulation.procedural_scene import (
     ProceduralScene,
     SceneDistribution,
@@ -140,7 +140,7 @@ def test_distance_curriculum_rehearses_old_distances_and_has_stationary_probe():
     assert np.mean(np.linalg.norm(np.asarray(late.goal - late.start), axis=-1)) > 50
 
 
-@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
+@pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac"])
 def test_curriculum_progress_survives_host_counter_reset_and_world_masks(algorithm):
     """Each real algorithm uses the supplied phase and preserves live worlds."""
     from drone_playground.learning.trainer import Trainer
@@ -187,7 +187,7 @@ def test_fixed_validation_cohort_and_stratified_start_experiments_are_paired(kin
     with initialize_config_dir(version_base=None, config_dir=str(root)):
         control = compose(
             config_name="config",
-            overrides=[f"experiment=navigation_procedural_{kind}_ppo_validation"],
+            overrides=[f"experiment=navigation_procedural_{kind}_ppo_collision_free"],
         )
         candidate = compose(
             config_name="config",
@@ -197,8 +197,6 @@ def test_fixed_validation_cohort_and_stratified_start_experiments_are_paired(kin
     assert control.learning.algorithm == candidate.learning.algorithm == "ppo"
     assert control.simulation.procedural.start_sampling == "collision_free"
     assert candidate.simulation.procedural.start_sampling == "stratified"
-    assert control.benchmark.fixed_checkpoint_seeds is True
-    assert candidate.benchmark.fixed_checkpoint_seeds is True
     control.simulation.procedural.start_sampling = "stratified"
     assert control == candidate
 
@@ -321,7 +319,7 @@ def test_procedural_environment_reset_and_sensor_observation(experiment):
                 "simulation.device=cpu",
             ],
         )
-    assert cfg.learning.scenes is None
+    assert cfg.scene.name == "train/procedural"
     env = create_environment(cfg)
     state = env.reset(jax.random.PRNGKey(1))
     assert state.scene_state.centers.shape == (2, 6, 3)
@@ -335,3 +333,16 @@ def test_procedural_environment_reset_and_sensor_observation(experiment):
     assert ("depth" if "depth" in experiment else "points") in observation
     advanced = env.step(state, jnp.zeros((2, env.action_size)))
     assert (np.asarray(advanced.time) > 0).all()
+
+
+def test_static_and_dynamic_training_distributions_are_independent():
+    """Static OA has no moving geometry; Dynamic OA samples moving obstacles."""
+    static = ProceduralScene({"obstacle_motion": "static", "max_obstacles": 8})
+    dynamic = ProceduralScene({"obstacle_motion": "dynamic", "max_obstacles": 8})
+    key = jax.random.key(4)
+    first, second = static.sample(key, 4), dynamic.sample(key, 4)
+    assert not np.asarray(first.moving).any()
+    assert np.asarray(second.moving & second.active).any(axis=1).all()
+    assert static.geometry_hash != dynamic.geometry_hash
+    np.testing.assert_array_equal(first.centers, static.sample(key, 4).centers)
+    np.testing.assert_array_equal(second.centers, dynamic.sample(key, 4).centers)

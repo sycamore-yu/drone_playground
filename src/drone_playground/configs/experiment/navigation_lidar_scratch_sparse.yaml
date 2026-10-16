@@ -2,6 +2,6 @@
 # Directly cast only the 1024 policy-visible returns sampled from a 20k MID360 scan.
 # The native 20k profile, 10Hz frame clock, scan phase and per-ray times are unchanged.
 defaults:
-  - navigation_lidar_scratch_safe
+- navigation_lidar_scratch_safe
 sensor:
   ray_sampling: policy

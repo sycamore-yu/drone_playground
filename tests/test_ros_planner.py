@@ -2,6 +2,7 @@
 
 import time
 from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
 
 import grpc
 import numpy as np
@@ -40,8 +41,9 @@ class WireFixture(rpc_grpc.RosPlannerServicer):
         """Provide Decide for the surrounding execution."""
         time.sleep(self.delay)
         t = request.state.timestamp_ns
+        self.request = request
         return rpc.Decision(
-            status=self.failure,
+            status=rpc.STALE_INPUT if request.measurement.available_ns > t else self.failure,
             detail="fixture",
             session=request.session,
             sequence=request.sequence + int(self.wrong_sequence),
@@ -184,3 +186,29 @@ def test_sensor_generator_nearest_hits():
     assert np.isfinite(blocked).all()
     assert len(clear) == len(blocked)
     assert np.any(np.linalg.norm(clear - blocked, axis=1) > 1)
+
+
+@pytest.mark.parametrize("time", [0.1, 0.2, 1.8, 300.2])
+def test_float32_sensor_clock_roundoff_preserves_wire_order(wire, time):
+    """Roundoff is reconciled; an actually future sensor measurement is still rejected."""
+    fixture, address = wire
+    sample = SimpleNamespace(
+        acquisition_time=np.array([time], dtype=np.float32),
+        available_time=np.array([time], dtype=np.float32),
+        mask=np.array([[True]]),
+    )
+    observed = {
+        **observation(),
+        "measurement": sample,
+        "sensor_config": SimpleNamespace(profile="mid360"),
+        "sensor_pose": np.array([0, 0, 2, 0, 0, 0, 1]),
+        "sensor_points": np.array([[1, 0, 0]]),
+    }
+    with RosPlanner("super", address) as planner:
+        trajectory = planner(observed, time, force_replan=True)
+        encoded = fixture.request.measurement
+        assert encoded.timestamp_ns <= encoded.available_ns <= fixture.request.state.timestamp_ns
+        trajectory.sample(time)
+        sample.acquisition_time[:] = sample.available_time[:] = time + 0.01
+        with pytest.raises(RosPlannerError, match="STALE_INPUT"):
+            planner(observed, time, force_replan=True)

@@ -1,9 +1,0 @@
-# @package _global_
-# Follow-up evaluation-only variation of the frozen Fan training recipe.
-# Use two-scene probes between scheduled six-scene full screens.
-defaults:
-  - navigation_paper_fan2025_ppo
-
-screening:
-  probe_between_full: true
-  full_every: 3

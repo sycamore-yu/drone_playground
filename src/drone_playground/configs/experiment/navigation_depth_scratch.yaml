@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - navigation_mixed_depth
+- navigation_random_starts_depth
 initial_checkpoint: null
 learning:
   options:
@@ -8,5 +8,4 @@ learning:
     perception_loss:
       clearance_margin: 1.5
       clearance_weight: 8.0
-  evaluation_interval: 160
   checkpoint_interval: 80

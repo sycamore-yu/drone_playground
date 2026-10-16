@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 from drone_playground.learning.ppo import advantage_progress_correlation
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import make_environment
-from drone_playground.simulation.evaluation import create_environment, create_method
+from drone_playground.simulation.factory import create_environment, create_method
 from drone_playground.simulation.methods import Action
 from drone_playground.simulation.procedural_scene import ProceduralScene
 from drone_playground.simulation.task_rewards import motion_navigation_reward
@@ -106,8 +106,8 @@ def test_task_reward_profile_matches_environment_cost_and_learning_objective():
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
-def test_task_owned_configuration_and_archived_reward_override_are_equivalent(kind):
-    """New task contract and archived trial-4 Learning selector agree numerically."""
+def test_velocity_recipes_declare_task_owned_reward_explicitly(kind):
+    """Both current recipes construct their reward from the Task configuration."""
     root = Path(__file__).resolve().parents[1] / "src/drone_playground/configs"
     with initialize_config_dir(version_base=None, config_dir=str(root)):
         old = compose(
@@ -119,7 +119,7 @@ def test_task_owned_configuration_and_archived_reward_override_are_equivalent(ki
             overrides=[f"experiment=navigation_procedural_{kind}_ppo_velocity_task"],
         )
     assert old.learning.options.reward_profile == "legacy_motion_navigation_v2"
-    assert old.task.get("options", {}).get("reward_profile") is None
+    assert old.task.options.reward_profile == "legacy_motion_navigation_v2"
     assert new.learning.options.reward_profile == "default"
     assert new.task.options.reward_profile == "legacy_motion_navigation_v2"
     assert new.task.options.reward_shaping.progress_reward_scale == 0.0
@@ -212,9 +212,7 @@ def test_velocity_ppo_real_training_update_with_procedural_observations(experime
     assert env.control_level == "attitude_thrust"
     assert env.scene.distribution.start_sampling == "collision_free"
     assert env.task.reward_profile == "legacy_motion_navigation_v2"
-    # The original in-flight trial-4 YAML is immutable; the environment
-    # constructor projects its historical Learning selector to Task.
-    assert config.task.get("options", {}).get("reward_profile") is None
+    assert config.task.options.reward_profile == "legacy_motion_navigation_v2"
     assert config.learning.options.reward_profile == "legacy_motion_navigation_v2"
     trainer = Trainer(
         env,

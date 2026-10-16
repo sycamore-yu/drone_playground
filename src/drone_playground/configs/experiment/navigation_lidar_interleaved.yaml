@@ -1,5 +1,0 @@
-# @package _global_
-defaults:
-  - navigation_lidar_finetune
-learning:
-  scene_updates: 1

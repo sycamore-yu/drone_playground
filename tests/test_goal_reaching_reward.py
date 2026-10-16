@@ -7,8 +7,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from drone_playground.learning.apg import rollout_objective
-from drone_playground.learning.checkpoint import load_state, save_state
+from drone_playground.learning.bptt import rollout_objective
+from drone_playground.learning.checkpoint import load_model_state
 from drone_playground.learning.ppo import collect_rollout, generalized_advantage_estimate
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import make_environment
@@ -76,7 +76,7 @@ def test_safe_arrival_outranks_early_failure_and_hovering(aggregation):
         env.sim.close()
 
 
-@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
+@pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac"])
 def test_finite_horizon_timeout_stops_bootstrap_and_exposes_remaining_time(algorithm, tmp_path):
     """A task deadline is terminal, while a rollout cut still bootstraps."""
     env = _environment(
@@ -118,9 +118,9 @@ def test_finite_horizon_timeout_stops_bootstrap_and_exposes_remaining_time(algor
             np.testing.assert_allclose(ordinary, bootstrapped, atol=1e-6)
         updated, metrics = trainer.update(initial)
         assert all(np.isfinite(value).all() for value in metrics.values())
-        path = tmp_path / "training.zip"
-        save_state(path, updated, config=trainer.resolved_config, provenance={})
-        restored, _ = load_state(path, trainer.initialize())
+        path = tmp_path / "model"
+        trainer.save_state(path, updated, provenance={})
+        restored, _ = load_model_state(path, trainer.initialize())
         assert restored.env_state.finite_horizon
         expected, _ = trainer.update(updated)
         continued, _ = trainer.update(restored)
@@ -133,7 +133,7 @@ def test_finite_horizon_timeout_stops_bootstrap_and_exposes_remaining_time(algor
 
 
 def test_goal_reward_has_finite_physical_action_gradient_and_no_post_terminal_reward():
-    """The shared task reward supplies a real Crazyflow gradient to APG/SHAC."""
+    """The shared task reward supplies a real Crazyflow gradient to BPTT/SHAC."""
     env = _environment(num_envs=1)
     try:
         before = env.reset(jax.random.key(2))

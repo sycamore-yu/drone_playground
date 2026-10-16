@@ -1,8 +1,8 @@
 # @package _global_
 # Per-environment motion phase and obstacle layout, same geometry for LiDAR and collision.
 defaults:
-  - navigation_lidar_scratch_safe
-  - override /scene: train_procedural
+- navigation_lidar_scratch_safe
+- override /scene: train_procedural
 initial_checkpoint: null
 simulation:
   method_hz: 10
@@ -14,6 +14,5 @@ simulation:
 sensor:
   ray_sampling: policy
 learning:
-  scenes: null
   options:
     randomize_navigation_start: false

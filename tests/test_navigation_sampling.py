@@ -1,7 +1,5 @@
 """Training-only starts and deterministic scene blocks through real CPU updates."""
 
-import json
-import signal
 from pathlib import Path
 
 import jax
@@ -15,8 +13,6 @@ from drone_playground.learning import checkpoint
 from drone_playground.learning.ppo import collect_rollout
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.environment import make_environment
-from drone_playground.simulation.policy import read_checkpoint
-from drone_playground.simulation.records import RunRecord
 from drone_playground.simulation.tasks import Event
 
 SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
@@ -38,7 +34,7 @@ def recipe(kind="depth", algorithm="shac"):
     ):
         return compose(
             config_name="config",
-            overrides=[f"experiment=navigation_mixed_{kind}", f"learning={algorithm}"],
+            overrides=[f"experiment=navigation_{kind}", f"learning={algorithm}"],
         )
 
 
@@ -145,172 +141,6 @@ def test_training_sampler_rejects_other_tasks(task, scene):
         Trainer(env, config={"randomize_navigation_start": True})
 
 
-@pytest.mark.parametrize("kind,batch", [("depth", 128), ("lidar", 32)])
-@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
-def test_shared_mixed_recipes(kind, batch, algorithm):
-    """Verify shared mixed recipes."""
-    config = recipe(kind, algorithm)
-    assert list(config.learning.scenes) == SCENES
-    assert config.learning.scene_updates == 20
-    assert config.learning.options.randomize_navigation_start is True
-    assert config.learning.options.horizon == 32
-    assert config.learning.options.lr == 0.0003
-    assert config.learning.options.temporal_gradient_alpha == 0.916290731874155
-    assert config.simulation.num_envs == batch
-    assert config.initial_checkpoint is None
-    assert config.benchmark.scenes is None
-    assert config.learning.required_consecutive_passes == 1
-
-
-@pytest.mark.parametrize(
-    "experiment",
-    ["navigation_lidar_scratch_sparse", "navigation_lidar_scratch_ppo_asymmetric_sparse"],
-)
-def test_sparse_mid360_training_recipe_preserves_hardware_scan_contract(experiment):
-    """Only new experiments opt into selected rays; original configs remain full scans."""
-    with initialize_config_dir(
-        version_base=None, config_dir=str(Path(cli.__file__).parent / "configs")
-    ):
-        config = compose(config_name="config", overrides=[f"experiment={experiment}"])
-    assert config.sensor.ray_sampling == "policy"
-    assert config.sensor.config.points_per_frame == 20_000
-    assert config.sensor.point_count == 1_024
-    assert config.initial_checkpoint is None
-    assert config.learning.selection == "first_full_validation_pass"
-
-
-@pytest.mark.parametrize("kind", ["depth", "lidar"])
-def test_cli_real_scene_switch_and_exact_midblock_boundary_resume(kind, monkeypatch, tmp_path):
-    """Verify cli real scene switch and exact midblock boundary resume."""
-    config = recipe(kind)
-    config.results.format = "legacy"
-    # Preserve the original reset/sampling semantics independent of the new
-    # three-stage screen/validation implementation.
-    config.learning.selection = "last_of_first_three_consecutive_passes"
-    config.learning.required_consecutive_passes = 3
-    config.mode = "train"
-    config.simulation.device = "cpu"
-    config.simulation.num_envs = 2
-    config.simulation.method_hz = 50
-    config.learning.scenes = ["S01", "D01"]
-    config.learning.scene_updates = 2
-    config.learning.options.horizon = 2
-    config.learning.options.minibatches = 1
-    config.learning.options.critic_epochs = 1
-    config.learning.options.ppo_epochs = 1
-    config.learning.checkpoint_interval = 1
-    config.learning.evaluation_interval = 1
-    config.learning.log_interval = 1
-    config.benchmark.scenes = ["S01"]  # Training evaluation must still request all eight.
-    if kind == "lidar":
-        config.sensor.config.points_per_frame = 32
-        config.sensor.point_count = 32
-    handlers, snapshots, inputs, outputs, constructed, initialized = {}, {}, {}, {}, [], []
-    original_update, original_init = Trainer.update, Trainer.initialize
-    original_save, original_environment = checkpoint.save_state, cli.create_environment
-
-    def set_signal(sig, handler):
-        previous = handlers.get(sig, signal.SIG_DFL)
-        handlers[sig] = handler
-        return previous
-
-    def create_environment(config, **kwargs):
-        constructed.append(kwargs["scene"])
-        return original_environment(config, **kwargs)
-
-    def initialize(self):
-        initialized.append(self.env.scene.name)
-        return original_init(self)
-
-    def update(self, state):
-        inputs[int(state.updates)] = (self.env.scene.name, state)
-        result, metrics = original_update(self, state)
-        outputs[int(result.updates)] = result
-        if result.updates == 5:
-            handlers[signal.SIGTERM](signal.SIGTERM, None)
-        return result, metrics
-
-    def save(path, state, **kwargs):
-        original_save(path, state, **kwargs)
-        if state.updates in (3, 4) and state.updates not in snapshots:
-            snapshot = tmp_path / f"resume-{state.updates}.zip"
-            snapshot.write_bytes(Path(path).read_bytes())
-            snapshots[state.updates] = snapshot
-
-    def evaluate(config, *args, **kwargs):
-        assert config.mode == "checkpoint_eval"
-        assert config.benchmark.scenes is None
-        assert config.benchmark.episodes is None
-        return {"passed": False}
-
-    monkeypatch.setattr(cli.signal, "signal", set_signal)
-    monkeypatch.setattr(cli, "gpu_usage", lambda: {})
-    monkeypatch.setattr(cli, "create_environment", create_environment)
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    monkeypatch.setattr(Trainer, "initialize", initialize)
-    monkeypatch.setattr(Trainer, "update", update)
-    monkeypatch.setattr(checkpoint, "save_state", save)
-    config.output = str(tmp_path / "continuous")
-    record = RunRecord(config.output, config)
-    cli.train(config, record)
-    expected = outputs[5]
-    assert constructed == ["S01", "D01"]
-    assert initialized == ["S01"]  # No reseeding/initialization when entering another scene.
-    assert [scene for scene, _ in inputs.values()] == ["S01", "S01", "D01", "D01", "S01"]
-    for boundary in (2, 4):
-        before, after = outputs[boundary], inputs[boundary][1]
-        for field in (
-            "params",
-            "critic_params",
-            "target_critic_params",
-            "optimizer_state",
-            "log_std",
-            "updates",
-            "interactions",
-        ):
-            assert_tree_equal(getattr(after, field), getattr(before, field))
-        np.testing.assert_array_equal(after.rng, jax.random.split(before.rng)[0])
-        for value in (after.recurrent_memory, *jax.tree.leaves(after.objective_state)):
-            np.testing.assert_array_equal(value, 0)
-        np.testing.assert_array_equal(after.env_state.time, 0)
-        np.testing.assert_array_equal(after.env_state.task.event, Event.RUNNING)
-    header = json.loads((record.directory / "run.json").read_text())
-    assert set(header["training_sampling"]["geometry_sha256"]) == {"S01", "D01"}
-    events = [
-        json.loads(line) for line in (record.directory / "metrics.jsonl").read_text().splitlines()
-    ]
-    switches = [event for event in events if event["event"] == "training_scene_switch"]
-    assert [event["update"] for event in switches] == [2, 4]
-    assert all(event["truncated_worlds"] == event["reset_worlds"] == 2 for event in switches)
-    for update_count in (3, 4):
-        _, metadata = read_checkpoint(snapshots[update_count], "training")
-        assert metadata["provenance"]["training_sampling"] == {
-            "scene_index": 1,
-            "updates_in_scene": update_count - 2,
-        }
-        constructed.clear()
-        initialized.clear()
-        config.resume = str(snapshots[update_count])
-        config.output = str(tmp_path / f"continued-{update_count}")
-        cli.train(config, RunRecord(config.output, config))
-        assert constructed == ["D01", "S01"]
-        assert initialized == ["D01"]
-        assert_tree_equal(outputs[5], expected)
-        assert outputs[5].updates == 5 and outputs[5].interactions == 20
-
-
-@pytest.mark.parametrize(
-    "scenes,block", [([], 2), (["empty"], 2), (["S01", "S01"], 2), (["S01"], 0), (["S01"], True)]
-)
-def test_invalid_scene_schedule_fails_before_environment(scenes, block, monkeypatch):
-    """Verify invalid scene schedule fails before environment."""
-    config = recipe()
-    config.learning.scenes, config.learning.scene_updates = scenes, block
-    monkeypatch.setattr(cli, "create_environment", lambda *a, **kw: pytest.fail("constructed env"))
-    with pytest.raises(ValueError, match=r"learning.scene"):
-        cli.train(config, None)
-
-
 @pytest.mark.parametrize("missing_option", ["randomize_navigation_start", "failure_cost"])
 def test_missing_saved_training_option_is_rejected(tmp_path, missing_option):
     """A saved training contract must match exactly; missing options are not guessed."""
@@ -319,6 +149,13 @@ def test_missing_saved_training_option_is_rejected(tmp_path, missing_option):
     old_config = dict(trainer.resolved_config)
     del old_config[missing_option]
     path = tmp_path / "old.zip"
-    checkpoint.save_state(path, initial, config={"learning": old_config}, provenance={})
+    checkpoint.save_model(
+        path,
+        initial,
+        config={"learning": old_config},
+        provenance={},
+        kind=trainer.kind,
+        actor_spec=trainer.actor.specification,
+    )
     with pytest.raises(ValueError, match="configuration"):
         trainer.load_state(path)

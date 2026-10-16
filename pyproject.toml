@@ -59,14 +59,11 @@ test = "pytest -q"
 lint = "ruff check src tests tools && ruff format --check src tests tools"
 setup-acados = "python tools/setup_acados.py"
 autoresearch = "python tools/autoresearch.py"
-sim = "drone-playground mode=sim"
-train = "drone-playground mode=train"
-navigation-ppo-search = "python tools/optimize_paper_ppo.py --suite navigation"
-checkpoint_eval = "drone-playground mode=checkpoint_eval"
+play = "drone-playground mode=play"
+train = "python tools/autoresearch.py train"
 benchmark = "drone-playground mode=benchmark"
 replay = "drone-playground mode=replay"
 build = "python -m build"
-acceptance = "drone-playground -m mode=train experiment=tracking,racing,navigation_depth,navigation_lidar learning=ppo,apg,shac seed=0,1,2"
 
 [tool.ruff]
 line-length = 100

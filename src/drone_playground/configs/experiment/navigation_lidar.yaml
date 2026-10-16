@@ -1,9 +1,9 @@
 # @package _global_
 defaults:
-  - override /task: navigation
-  - override /scene: S01
-  - override /sensor: lidar
-  - override /method: policy
+- override /task: navigation
+- override /scene: train_procedural
+- override /sensor: lidar
+- override /method: policy
 method:
   action:
     level: acceleration

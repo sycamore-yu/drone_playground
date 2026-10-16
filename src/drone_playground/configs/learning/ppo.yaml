@@ -23,7 +23,4 @@ options:
   velocity_aux_weight: 0.0
   perception_loss: {}
 checkpoint_interval: 100
-evaluation_interval: 200
 log_interval: 10
-required_consecutive_passes: 1
-selection: first_full_validation_pass

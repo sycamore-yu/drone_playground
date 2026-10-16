@@ -1,7 +1,7 @@
 """Task-owned reward and shaping functions shared by all learning algorithms.
 
 These calculations belong to the Task/Environment domain. They do not import
-PPO, APG, SHAC or a neural network. Named Zhang/Liu perception prediction and
+PPO, BPTT, SHAC or a neural network. Named Zhang/Liu perception prediction and
 auxiliary losses remain under learning/.
 """
 

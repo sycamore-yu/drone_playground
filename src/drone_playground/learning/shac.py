@@ -3,7 +3,7 @@
 import jax
 import optax
 
-from drone_playground.learning.apg import rollout_objective
+from drone_playground.learning.bptt import rollout_objective
 from drone_playground.learning.ppo import generalized_advantage_estimate
 
 

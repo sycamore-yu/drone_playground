@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -239,6 +240,7 @@ class RosPlanner:
             raise RosPlannerError("RESET_REQUIRED", "Reset the worker after an RPC timeout")
         self._trajectory = None
         self._sequence += 1
+        rpc_started = time.perf_counter()
         response = self._invoke(
             self._stub.Decide,
             rpc.DecideRequest(
@@ -249,6 +251,7 @@ class RosPlanner:
                 measurement=measurement,
             ),
         )
+        rpc_roundtrip_ms = (time.perf_counter() - rpc_started) * 1000
         self.last_decision = response
         if response.status != rpc.SOLVED:
             raise RosPlannerError(rpc.PlanningStatus.Name(response.status), response.detail)
@@ -283,6 +286,7 @@ class RosPlanner:
         timings = {
             name: getattr(response.timings, name) for name in ("mapping_ms", "solve_ms", "total_ms")
         }
+        timings["rpc_roundtrip_ms"] = rpc_roundtrip_ms
         self._trajectory = RosTrajectory(
             timestamps * 1e-9, p, v, a, timings, response.upstream_status, self._sequence
         )
@@ -308,6 +312,15 @@ class RosPlanner:
             position, rotation = pose[:3], Rotation.from_quat(pose[3:])
             acquisition = float(measurement.acquisition_time[0])
             available = float(measurement.available_time[0])
+            # Float32 sensor clocks can round past the exact integer-tick host clock.
+            roundoff = max(
+                abs(float(np.spacing(np.asarray(measurement.acquisition_time[0])))),
+                abs(float(np.spacing(np.asarray(measurement.available_time[0])))),
+            )
+            if 0 < available - time <= roundoff:
+                available = time
+            if 0 < acquisition - available <= roundoff:
+                acquisition = available
             if config.profile == "d435i":
                 mounting = Rotation.from_euler(
                     "xyz", [config.roll_deg, -config.pitch_deg, config.yaw_deg], degrees=True

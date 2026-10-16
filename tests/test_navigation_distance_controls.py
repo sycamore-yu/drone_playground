@@ -1,6 +1,5 @@
 """Distance interventions preserve geometry and remove velocity-target incentives."""
 
-import importlib.util
 from pathlib import Path
 
 import jax
@@ -79,49 +78,26 @@ def test_relative_goal_does_not_saturate_and_time_reward_does_not_penalize_speed
     np.testing.assert_allclose(terms["navigation_time_cost"], env.dt)
 
 
-def test_distance_queue_composes_matched_speed_free_controls():
-    """Actual Hydra recipes change only the distance within each sensor family."""
+def test_distance_controls_change_only_the_requested_sampling_range():
+    """Direct recipes keep the same task and obstacle distribution across distances."""
     root = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location(
-        "distance_scheduler", root / "tools/optimize_paper_ppo.py"
-    )
-    scheduler = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(scheduler)
-    scheduler.configure_distance_search()
     with initialize_config_dir(
         version_base=None, config_dir=str(root / "src/drone_playground/configs")
     ):
-        for family in ("depth", "lidar"):
+        for sensor in ("depth", "lidar"):
             configs = []
             for distance in (20, 80):
-                options = scheduler.trial_options(
-                    f"{family}_d{distance}", 0, Path("/tmp/test-distance")
+                configs.append(
+                    compose(
+                        config_name="config",
+                        overrides=[
+                            f"experiment=oa_static_{sensor}",
+                            "simulation.procedural.start_sampling=collision_free",
+                            f"+simulation.procedural.start_goal_distance_range_m=[{distance},{distance}]",
+                        ],
+                    )
                 )
-                config = compose(config_name="config", overrides=options)
-                assert config.learning.loss is None
-                assert config.task.options.reward_profile == "minimum_time_navigation"
-                assert config.observation.navigation_relative_goal is True
-                assert (
-                    config.early_stopping.min_updates
-                    * config.learning.options.horizon
-                    * config.simulation.num_envs
-                    == config.learning.max_interactions
-                )
-                assert config.screening.training_distribution_probe is True
-                assert config.simulation.procedural.start_goal_distance_range_m == [
-                    distance,
-                    distance,
-                ]
-                configs.append(config)
+            assert configs[0].simulation.procedural.start_goal_distance_range_m == [20, 20]
+            assert configs[1].simulation.procedural.start_goal_distance_range_m == [80, 80]
             configs[1].simulation.procedural.start_goal_distance_range_m = [20, 20]
             assert configs[0] == configs[1]
-    assert not scheduler.prune_lidar_candidate("lidar_d20", {"status": "running"})
-    records = {
-        f"{case}_s{seed}": {"status": "missing"}
-        for case in scheduler.CASES
-        for seed in range(3)
-    }
-    for family in ("depth", "lidar"):
-        for seed in range(3):
-            records[f"{family}_d20_s{seed}"]["status"] = "accepted"
-    assert scheduler.next_trial(records) == ("depth_d80", 0)

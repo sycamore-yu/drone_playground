@@ -1,53 +1,42 @@
-"""Bounded CLI integration with real archives and cheap execution stand-ins."""
+"""Bounded training and playback contracts with real Orbax persistence."""
 
-import json
 import signal
 import sys
-import zipfile
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from types import SimpleNamespace
-from typing import ClassVar
 
 import jax.numpy as jnp
 import pytest
 from flax import struct
 from hydra import compose, initialize_config_dir
-from omegaconf import OmegaConf
 
 from drone_playground import cli
-from drone_playground.learning.checkpoint import (
-    load_inference,
-    load_state,
-    save_inference,
-    save_model,
-    save_state,
-)
-from drone_playground.simulation import evaluation
-from drone_playground.simulation.policy import load_policy
+from drone_playground.learning import runner
+from drone_playground.learning.checkpoint import load_model_state
+from drone_playground.simulation.policy import read_checkpoint
 
 
 @pytest.fixture
 def config(tmp_path):
-    """Provide config for the surrounding execution."""
+    """Use the public tracking recipe and a short, exactly divisible budget."""
     with initialize_config_dir(
         version_base=None, config_dir=str(Path(cli.__file__).parent / "configs")
     ):
         result = compose(config_name="config", overrides=["experiment=tracking", "mode=train"])
     result.output = str(tmp_path)
     result.simulation.device = "cpu"
-    result.learning.evaluation_interval = 1
+    result.simulation.num_envs = 4
+    result.learning.options.horizon = 2
+    result.learning.max_interactions = 32
+    result.learning.checkpoint_interval = 2
     result.learning.log_interval = 1
-    # Exercise the original, versioned continuation contract here; the
-    # three-stage protocol has separate selection tests below.
-    result.learning.selection = "last_of_first_three_consecutive_passes"
-    result.learning.required_consecutive_passes = 3
     return result
 
 
 @struct.dataclass
 class SmallState:
-    """Represent SmallState state for the surrounding execution."""
+    """Keep update counters and policy parameters in an actual serializable state."""
 
     updates: int = 0
     interactions: int = 0
@@ -55,941 +44,130 @@ class SmallState:
 
 
 class Record:
-    """Represent Record state for the surrounding execution."""
+    """Capture the lifecycle without GPU queries or TensorBoard setup."""
 
     def __init__(self, directory):
-        """Initialize Record state for the declared contract."""
+        """Capture calls in memory."""
         self.directory = directory
         self.identity = {"status": "running"}
         self.events = []
 
     def event(self, event, **fields):
-        """Provide event for the surrounding execution."""
+        """Append one event."""
         self.events.append({"event": event, **fields})
 
     def finish(self, status, **fields):
-        """Provide finish for the surrounding execution."""
+        """Store the final state."""
         self.identity.update(status=status, **fields)
 
 
 @pytest.fixture
 def training(monkeypatch, tmp_path):
-    """Provide training for the surrounding execution."""
-    import drone_playground.learning.trainer as learning
-
-    harness = SimpleNamespace(
-        now=0.0,
-        stop_at=2,
-        failed_evaluations=set(),
-        fail_benchmark=False,
-        evaluations=[],
-        handlers={},
-    )
+    """Replace only expensive dynamics; keep the actual loop and Checkpoint writer."""
+    harness = SimpleNamespace(stop_at=None, nonfinite_at=None, handlers={})
 
     class Trainer:
         actor = SimpleNamespace(
             specification={"kind": "state", "action_size": 4, "hidden_size": 192}
         )
-        resolved_config: ClassVar[dict] = {}
+        kind = "state"
+        distance_curriculum = False
 
         def __init__(self, *args, **kwargs):
-            pass
+            self.resolved_config = {}
 
         def initialize(self):
             return SmallState()
 
         def update(self, state):
-            harness.now += 2
-            return state.replace(updates=state.updates + 1, interactions=state.interactions + 10), {
-                "loss": 1.0
-            }
-
-    def evaluate(config, directory, *, evaluation_index=0, **kwargs):
-        directory.mkdir(parents=True, exist_ok=True)
-        harness.now += 3
-        harness.evaluations.append((config.mode, evaluation_index))
-        if config.mode == "benchmark" and harness.fail_benchmark:
-            raise RuntimeError("benchmark interrupted")
-        if config.mode == "checkpoint_eval" and evaluation_index == harness.stop_at:
-            harness.handlers[signal.SIGTERM](signal.SIGTERM, None)
-        return {"passed": evaluation_index not in harness.failed_evaluations}
+            update = state.updates + 1
+            if update == harness.stop_at:
+                harness.handlers[signal.SIGTERM](signal.SIGTERM, None)
+            return state.replace(
+                updates=update,
+                interactions=state.interactions + 8,
+                params={"params": state.params["params"] + 1},
+            ), {"loss": float("nan") if update == harness.nonfinite_at else 1.0}
 
     def set_signal(sig, handler):
         old = harness.handlers.get(sig, signal.SIG_DFL)
         harness.handlers[sig] = handler
         return old
 
-    monkeypatch.setattr(learning, "Trainer", Trainer)
-    monkeypatch.setattr(cli, "create_environment", lambda config: object())
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    monkeypatch.setattr(cli, "gpu_usage", lambda: {})
-    monkeypatch.setattr(cli.time, "monotonic", lambda: harness.now)
-    monkeypatch.setattr(cli.signal, "signal", set_signal)
+    monkeypatch.setattr(runner, "Trainer", Trainer)
+    monkeypatch.setattr(runner, "create_environment", lambda config: object())
+    monkeypatch.setattr(runner, "create_method", lambda config: SimpleNamespace(close=lambda: None))
+    monkeypatch.setattr(runner, "gpu_usage", lambda: {})
+    monkeypatch.setattr(runner.signal, "signal", set_signal)
     harness.record = Record(tmp_path)
-    harness.path = tmp_path / "checkpoints/latest.training.zip"
     return harness
 
 
-def test_parallel_scene_schedule_resumes_without_forced_resets(config, training, monkeypatch):
-    """Parallel worlds keep one Trainer and their static assignment across resume."""
-    config.task.name = "navigation"
-    config.simulation.num_envs = 4
-    OmegaConf.update(config, "learning.scenes", ["S01", "D03"], force_add=True)
-    OmegaConf.update(config, "learning.scene_sampling", "parallel", force_add=True)
-    calls = []
-
-    def environment(config, *, scene):
-        calls.append(scene)
-        return object()
-
-    monkeypatch.setattr(cli, "create_environment", environment)
-    cli.train(config, training.record)
-    state, metadata = load_state(training.path, SmallState())
-    assert state.updates == 2
-    assert calls == [["S01", "D03"]]
-    sampling = metadata["config"]["training_sampling"]
-    assert metadata["provenance"]["training_sampling"] == sampling
-    assert "scene_index" not in sampling and "updates_in_scene" not in sampling
-    assert sampling["scene_sampling"] == "parallel"
-    assert sampling["worlds_per_scene"] == 2
-    assert set(sampling["geometry_sha256"]) == {"S01", "D03"}
-    config.resume = str(training.path)
-    training.stop_at = None
-    cli.train(config, training.record)
-    assert calls == [["S01", "D03"], ["S01", "D03"]]
-    assert not any(event["event"] == "training_scene_switch" for event in training.record.events)
-    config.learning.scenes = ["D03", "S01"]
-    with pytest.raises(ValueError, match="sampling schedule or geometry"):
-        cli.train(config, training.record)
-
-
-def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
-    """Verify resume preserves c5 selection seeds and cost."""
-    cli.train(config, training.record)
-    state, metadata = load_state(training.path, SmallState())
-    assert state.updates == 2
-    progress = metadata["provenance"]
-    assert progress["consecutive_passes"] == progress["evaluation_index"] == 2
-    assert progress["training_wall_seconds"] == 10
-    config.resume = str(training.path)
-    training.stop_at = None
-    cli.train(config, training.record)
-    assert training.evaluations == [
-        ("checkpoint_eval", 1),
-        ("checkpoint_eval", 2),
-        ("checkpoint_eval", 3),
-        ("benchmark", 0),
-    ]
-    selection = json.loads((training.record.directory / "run.json").read_text())["selection"]
-    assert (
-        selection["update"] == selection["consecutive_passes"] == selection["evaluation_index"] == 3
-    )
-    updates = [event for event in training.record.events if event["event"] == "update"]
-    assert updates[-1]["interactions"] == 30
-    assert updates[-1]["session_interactions"] == 10
-    assert updates[-1]["interactions_per_second"] == 5
-    assert training.record.identity["training_wall_seconds"] == 18
-    _, saved = load_state(training.path, SmallState())
-    assert saved["provenance"]["training_wall_seconds"] == 18
-    assert training.record.identity["status"] == "accepted"
-    _, _, frozen = load_policy(training.record.directory / selection["checkpoint"])
-    assert frozen["provenance"]["consecutive_passes"] == 3
-
-
-def test_fresh_frozen_cohort_keeps_validation_seeds_separate(config, training, monkeypatch):
-    """A new holdout cohort must not alter the repeated model-selection cases."""
-    OmegaConf.update(config, "benchmark.frozen_seed_base", 3_000_000, force_add=True)
-    config.benchmark.seed_base = 1_200_000
-    training.stop_at = None
-    original = cli.evaluate
-    cohorts = []
-
-    def evaluate(selected, *args, **kwargs):
-        cohorts.append((selected.mode, selected.benchmark.seed_base))
-        return original(selected, *args, **kwargs)
-
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    cli.train(config, training.record)
-    assert cohorts == [("checkpoint_eval", 1_200_000)] * 3 + [("benchmark", 3_000_000)]
-
-
-@pytest.mark.parametrize("seed_base", [1_500_000, True, 3_000_000.5])
-def test_frozen_cohort_rejects_invalid_or_validation_seed_before_training(
-    config, training, seed_base
-):
-    """Reject a bad holdout declaration before spending the training budget."""
-    OmegaConf.update(config, "benchmark.frozen_seed_base", seed_base, force_add=True)
-    with pytest.raises(ValueError, match="frozen_seed_base"):
-        cli.train(config, training.record)
-    assert not training.evaluations and training.now == 0
-
-
-def test_three_stage_screening_only_promotes_a_complete_candidate(config, training, monkeypatch):
-    """A light diagnostic never counts as formal C2/C3 or final acceptance."""
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    training.stop_at = None
-    calls = []
-
-    def staged(config, directory, *, evaluation_index=0, **kwargs):
-        directory.mkdir(parents=True, exist_ok=True)
-        calls.append(
-            (
-                config.mode,
-                config.benchmark.protocol,
-                config.benchmark.episodes,
-                config.benchmark.seed_base,
-                evaluation_index,
-            )
-        )
-        if config.mode == "benchmark":
-            return {"passed": True}
-        if config.benchmark.protocol == "diagnostic":
-            successes = 5 if evaluation_index == 1 else 7
-            return {
-                "complete": True,
-                "reports": {
-                    "empty": {
-                        "episodes": 8,
-                        "successes": successes,
-                        "successful_position_rmse": 0.2,
-                    }
-                },
-            }
-        (directory / "report.json").write_text('{"passed": true, "complete": true}')
-        return {"passed": True}
-
-    monkeypatch.setattr(cli, "evaluate", staged)
-    cli.train(config, training.record)
-    assert calls == [
-        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 1),
-        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 2),
-        ("checkpoint_eval", "learning", None, 1_500_000, 2),
-        ("benchmark", "learning", None, None, 0),
-    ]
-    selected = training.record.identity["selection"]
-    assert selected["rule"] == "first_full_validation_pass"
-    assert selected["consecutive_passes"] == 1
-    assert selected["update"] == 2
-    assert training.record.identity["status"] == "accepted"
-
-
-def test_six_unimproved_screens_stop_a_new_run_only_after_800(config, training, monkeypatch):
-    """Keep an early-stopped checkpoint without touching the frozen test set."""
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    config.learning.evaluation_interval = 160
-    config.learning.checkpoint_interval = 80
-    training.stop_at = None
-    evaluations = []
-
-    def stagnant_screen(config, directory, *, evaluation_index=0, **kwargs):
-        del kwargs
-        directory.mkdir(parents=True, exist_ok=True)
-        evaluations.append((config.mode, config.benchmark.protocol, evaluation_index))
-        if config.mode != "checkpoint_eval" or config.benchmark.protocol != "diagnostic":
-            raise AssertionError("Stagnant screening must not access full or frozen test data")
-        return {
-            "complete": True,
-            "reports": {
-                "empty": {
-                    "episodes": 8,
-                    "successes": 0,
-                    "successful_position_rmse": None,
-                }
-            },
-        }
-
-    monkeypatch.setattr(cli, "evaluate", stagnant_screen)
-    cli.train(config, training.record)
-    assert training.record.identity["status"] == "early_stopped"
-    assert training.record.identity["updates"] == 1600
-    assert training.record.identity["stagnant_screens"] == 6
-    assert len(evaluations) == 10
-    assert all(row[:2] == ("checkpoint_eval", "diagnostic") for row in evaluations)
-    assert training.path.exists()
-    assert [e["event"] for e in training.record.events].count("early_stopping") == 1
-
-
-def test_opt_in_progress_screening_preserves_learning_zero_successes(config, training, monkeypatch):
-    """New bounded Navigation runs may learn genuine safe progress before first arrival."""
-    config.task.name = "navigation"
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    config.learning.evaluation_interval = 1
-    config.learning.checkpoint_interval = 1
-    config.early_stopping.min_updates = 2
-    config.early_stopping.patience = 2
-    config.early_stopping.min_delta = 0.005
-    OmegaConf.update(config, "results.keep_best_screening", True, force_add=True)
-    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
-    OmegaConf.update(config, "learning.max_interactions", 50, force_add=True)
-    OmegaConf.update(
-        config,
-        "screening",
-        {
-            "probe_between_full": False,
-            "full_every": 3,
-            "progress_aware": {"min_progress_delta": 0.03, "max_unsafe_increase": 0.0},
-        },
-        force_add=True,
-    )
-    training.stop_at = None
-    seen = []
-    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
-
-    def improving_screen(cfg, directory, *, evaluation_index=0, **kwargs):
-        directory.mkdir(parents=True, exist_ok=True)
-        assert cfg.mode == "checkpoint_eval"
-        assert cfg.benchmark.protocol == "diagnostic"
-        seen.append(evaluation_index)
-        value = evaluation_index * 0.1
-        return {
-            "complete": True,
-            "protocol": "diagnostic",
-            "reports": {
-                scene: {
-                    "episodes": 8,
-                    "successes": 0,
-                    "outcomes": {"COLLISION": 8, "SUCCESS": 0, "OUT_OF_BOUNDS": 0},
-                    "progress_diagnostics": {
-                        "mean_normalized_final_progress": value,
-                        "mean_normalized_best_progress": value,
-                        "mean_final_distance_metres": 96 * (1 - value),
-                        "mean_path_length_metres": 120 * value,
-                        "minimum_height_metres": 2.0,
-                        "minimum_lower_boundary_margin_metres": 1.5,
-                        "lower_height_out_of_bounds": 0,
-                    },
-                }
-                for scene in scenes
-            },
-        }
-
-    monkeypatch.setattr(cli, "evaluate", improving_screen)
-    cli.train(config, training.record)
-    assert seen == [1, 2, 3, 4, 5]
-    assert training.record.identity["status"] == "budget_exhausted"
-    assert not any(item["event"] == "early_stopping" for item in training.record.events)
-    evaluations = [
-        event for event in training.record.events if event["event"] == "screening_evaluation"
-    ]
-    assert all(event["score"] == 0.0 for event in evaluations)
-    assert all(not event["patience_exhausted"] for event in evaluations)
-    assert all(item["progress_decision"]["progress_improved"] for item in evaluations[1:])
-    _, metadata = load_state(training.path, SmallState())
-    guard = metadata["provenance"]["screening_progress"]["progress_guard"]
-    assert guard["best_progress_checkpoint_update"] == 5
-    assert guard["best_progress"] == pytest.approx(0.5)
-
-
-def test_explicit_interaction_budget_stops_without_false_acceptance(config, training, monkeypatch):
-    """An exhausted pilot saves resumable state and never enters frozen benchmark."""
-    assert hasattr(cli, "training_budget_reached"), "Bounded training budget missing"
-    OmegaConf.update(config, "learning.max_interactions", 20, force_add=True)
-    training.stop_at = None
-    training.failed_evaluations = {1, 2, 3}
-    # This test harness chooses pass/fail by the named set below.
-    original = cli.evaluate
-
-    def fail_checkpoint(cfg, directory, **kwargs):
-        report = original(cfg, directory, **kwargs)
-        if cfg.mode == "checkpoint_eval":
-            report["passed"] = False
-        return report
-
-    monkeypatch.setattr(cli, "evaluate", fail_checkpoint)
-    cli.train(config, training.record)
-    assert training.record.identity["status"] == "budget_exhausted"
-    assert training.record.identity["interactions"] == 20
-    assert training.path.exists()
-    assert all(mode != "benchmark" for mode, _ in training.evaluations)
-
-
-def test_three_stage_real_results_layout_writes_orbax_and_events(config, training, monkeypatch):
-    """The new run writes Orbax folders and one event stream, not zip/JSONL duplicates."""
-    from drone_playground.simulation.records import RunRecord
-
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    config.results.format = "orbax"
-    training.stop_at = None
-
-    def evaluate(config, directory, **kwargs):
-        directory.mkdir(parents=True, exist_ok=True)
-        if config.mode == "benchmark":
-            (directory / "episodes.csv").write_text("episode,event\n0,SUCCESS\n")
-            (directory / "report.json").write_text('{"mode":"benchmark","passed":true}')
-            return {"passed": True}
-        if config.benchmark.protocol == "diagnostic":
-            return {
-                "complete": True,
-                "reports": {
-                    "empty": {
-                        "episodes": 8,
-                        "successes": 8,
-                        "successful_position_rmse": 0.05,
-                    }
-                },
-            }
-        (directory / "report.json").write_text('{"mode":"checkpoint_eval","passed":true}')
-        return {"passed": True}
-
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    record = RunRecord(training.record.directory / "orbax", config)
-    cli.train(config, record)
-    assert record.identity["status"] == "accepted"
-    models = sorted((record.directory / "checkpoints").glob("model_*"))
-    assert len(models) == 1
-    assert (models[0] / "training/commit_success.txt").is_file()
-    assert (models[0] / "actor/commit_success.txt").is_file()
-    assert (record.directory / "episodes.csv").is_file()
-    assert list(record.directory.glob("events.out.tfevents.*"))
-    assert not (record.directory / "metrics.jsonl").exists()
-    assert not (record.directory / "eval").exists()
-    assert record.identity["selected_checkpoint"].startswith("checkpoints/model_")
-    assert record.identity["selection"]["full_validation"] == (
-        f"{record.identity['selected_checkpoint']}/report.json"
-    )
-
-
-@pytest.mark.parametrize(
-    "task,successes,rmse,expected",
-    [
-        ("navigation", 6, None, True),
-        ("navigation", 5, None, False),
-        ("racing", 7, None, True),
-        ("racing", 6, None, False),
-        ("tracking", 7, 0.34, True),
-        ("tracking", 7, 0.36, False),
-        ("tracking", 6, 0.2, False),
-    ],
-)
-def test_light_screen_is_not_a_full_acceptance(task, successes, rmse, expected):
-    """Screening is permissive, fixed-sized and distinct from formal benchmarks."""
-    scenes = (
-        ["S01", "S02", "S03", "D01", "D02", "D03"]
-        if task == "navigation"
-        else ["empty" if task == "tracking" else "racing"]
-    )
-    report = {
-        "complete": True,
-        "reports": {
-            scene: {
-                "episodes": 8,
-                "successes": successes,
-                "successful_position_rmse": rmse,
-            }
-            for scene in scenes
-        },
-    }
-    assert cli.screening_passed(report, task, scenes) is expected
-
-
-def test_fast_probes_rotate_scene_pairs_and_cannot_claim_full_acceptance():
-    """Cheap probes cycle every scene without touching the frozen acceptance protocol."""
-    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
-    pairs = [cli.diagnostic_probe_scenes(scenes, index, 3) for index in (0, 1, 3, 4, 6, 7)]
-    assert pairs == [
-        ["S01", "D01"],
-        ["S02", "D02"],
-        ["S03", "D03"],
-        ["S01", "D01"],
-        ["S02", "D02"],
-        ["S03", "D03"],
-    ]
-    assert not cli.probe_justifies_full_screen(
-        {"complete": True, "reports": {"S01": {"episodes": 8, "successes": 0}}}
-    )
-    assert cli.probe_justifies_full_screen(
-        {"complete": True, "reports": {"D03": {"episodes": 8, "successes": 1}}}
-    )
-    assert not cli.probe_justifies_full_screen(
-        {"complete": False, "reports": {"D03": {"episodes": 8, "successes": 8}}}
-    )
-    with pytest.raises(ValueError):
-        cli.diagnostic_probe_scenes(scenes[:4], 0, 3)
-
-
-def test_fast_probe_integration_delays_full_screen_without_skipping_final_validation(
-    config, training, monkeypatch
-):
-    """Two failed probes still lead to a mandatory full validation opportunity."""
-    config.task.name = "navigation"
-    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    OmegaConf.update(
-        config, "screening", {"probe_between_full": True, "full_every": 3}, force_add=True
-    )
-    training.stop_at = None
-    calls = []
-
-    def evaluate(config, directory, *, evaluation_index=0, **kwargs):
-        directory.mkdir(parents=True, exist_ok=True)
-        calls.append((config.mode, tuple(config.benchmark.scenes or ()), directory.name))
-        if config.mode == "benchmark":
-            return {"passed": True}
-        if config.benchmark.protocol == "learning":
-            return {"passed": True}
-        scenes = list(config.benchmark.scenes)
-        successes = 0 if directory.name == "probe" else 7
-        return {
-            "complete": True,
-            "reports": {scene: {"episodes": 8, "successes": successes} for scene in scenes},
-        }
-
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    cli.train(config, training.record)
-    assert [row[2] for row in calls[:3]] == ["probe", "probe", "screening"]
-    assert [row[0] for row in calls] == ["checkpoint_eval"] * 4 + ["benchmark"]
-    assert calls[0][1] == ("S01", "D01")
-    assert calls[1][1] == ("S02", "D02")
-    assert calls[2][1] == ("S01", "S02", "S03", "D01", "D02", "D03")
-    assert [item["event"] for item in training.record.events].count("checkpoint_probe") == 2
-    assert training.record.identity["status"] == "accepted"
-
-
-def test_checkpoint_evaluations_do_not_repeat_policy_serialization(config, training, monkeypatch):
-    """Keep crash recovery and C5 provenance with two state writes per evaluation."""
-    from collections import Counter
-
-    from drone_playground.learning import checkpoint
-
-    writes = Counter()
-    original_state, original_policy = checkpoint.save_state, checkpoint.save_inference
-
-    def state_writer(path, state, **kwargs):
-        writes[("state", state.updates)] += 1
-        return original_state(path, state, **kwargs)
-
-    def policy_writer(path, params, **kwargs):
-        writes[("policy", kwargs["provenance"]["updates"])] += 1
-        return original_policy(path, params, **kwargs)
-
-    monkeypatch.setattr(checkpoint, "save_state", state_writer)
-    monkeypatch.setattr(checkpoint, "save_inference", policy_writer)
-    config.learning.checkpoint_interval = 1
-    training.stop_at = None
-    cli.train(config, training.record)
-    assert writes[("state", 1)] <= 2
-    assert writes[("policy", 1)] == 1
-    assert sum(value for (purpose, _), value in writes.items() if purpose == "state") <= 7
-    assert sum(value for (purpose, _), value in writes.items() if purpose == "policy") <= 4
-    state, metadata = load_state(training.path, SmallState())
-    assert state.updates == 3
-    assert metadata["provenance"]["consecutive_passes"] == 3
-    assert metadata["provenance"]["training_wall_seconds"] == 18
-
-
-def test_resume_completes_pending_evaluation_before_training(config, training):
-    """Retry a saved unevaluated update and retain the partial output."""
-    save_state(
-        training.path,
-        SmallState(updates=2, interactions=20),
-        config={"experiment": OmegaConf.to_container(config, resolve=True)},
-        provenance={"evaluation_index": 1, "consecutive_passes": 1, "training_wall_seconds": 10},
-    )
-    partial = training.record.directory / "checkpoints/step-000002"
-    partial.mkdir(parents=True)
-    (partial / "episodes.csv").write_bytes(b"recorded before restart\n")
-    config.resume = str(training.path)
-    cli.train(config, training.record)
-    state, metadata = load_state(training.path, SmallState())
-    assert state.updates == 2 and state.interactions == 20
-    assert training.evaluations == [("checkpoint_eval", 2)]
-    assert metadata["provenance"]["consecutive_passes"] == 2
-    retry = next(e for e in training.record.events if e["event"] == "checkpoint_evaluation_retry")
-    assert (Path(retry["previous_output"]) / "episodes.csv").read_bytes() == (
-        b"recorded before restart\n"
-    )
-
-
-def test_failed_evaluation_keeps_index_for_resume(config, training, monkeypatch):
-    """A failed evaluation must be completed at the same saved update and seed index."""
-    evaluate = cli.evaluate
-    indices = []
-
-    def interrupted(config, directory, *, evaluation_index=0, **kwargs):
-        indices.append(evaluation_index)
-        if len(indices) == 1:
-            raise RuntimeError("evaluation interrupted")
-        return evaluate(config, directory, evaluation_index=evaluation_index, **kwargs)
-
-    monkeypatch.setattr(cli, "evaluate", interrupted)
-    with pytest.raises(RuntimeError, match=r"evaluation interrupted"):
-        cli.train(config, training.record)
-    _, metadata = load_state(training.path, SmallState())
-    assert metadata["provenance"]["evaluation_index"] == 0
-    config.resume = str(training.path)
-    training.stop_at = 1
-    cli.train(config, training.record)
-    state, _ = load_state(training.path, SmallState())
-    assert indices == [1, 1]
-    assert state.updates == 1 and state.interactions == 10
-
-
-@pytest.mark.parametrize("interval", [2, 4])
-def test_resume_retries_full_budget_screen_without_another_update(
-    config, training, monkeypatch, interval
-):
-    """A budget screen survives interruption both on and between scheduled evaluations."""
-    config.task.name = "navigation"
-    config.learning.selection = "first_full_validation_pass"
-    config.learning.required_consecutive_passes = 1
-    config.learning.evaluation_interval = interval
-    OmegaConf.update(config, "learning.max_interactions", 20, force_add=True)
-    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
-    OmegaConf.update(
-        config, "screening", {"probe_between_full": True, "full_every": 3}, force_add=True
-    )
-    training.stop_at = None
-    calls = []
-
-    def evaluate(cfg, directory, *, evaluation_index=0, **kwargs):
-        calls.append((directory.name, evaluation_index, list(cfg.benchmark.scenes)))
-        if len(calls) == 1:
-            raise RuntimeError("budget screen interrupted")
-        return {
-            "complete": True,
-            "reports": {scene: {"episodes": 8, "successes": 0} for scene in cfg.benchmark.scenes},
-        }
-
-    monkeypatch.setattr(cli, "evaluate", evaluate)
-    with pytest.raises(RuntimeError, match="budget screen interrupted"):
-        cli.train(config, training.record)
-    config.resume = str(training.path)
-    cli.train(config, training.record)
-    assert calls == [("screening", 1, ["S01", "S02", "S03", "D01", "D02", "D03"])] * 2
-    state, metadata = load_state(training.path, SmallState())
-    assert state.updates == 2 and state.interactions == 20
-    assert metadata["provenance"]["evaluation_index"] == 1
-    assert training.record.identity["status"] == "budget_exhausted"
-    assert training.record.identity["session_interactions"] == 0
-
-
-def test_failed_evaluation_resets_saved_consecutive_count(config, training):
-    """Verify failed evaluation resets saved consecutive count."""
-    training.failed_evaluations = {2}
-    cli.train(config, training.record)
-    _, metadata = load_state(training.path, SmallState())
-    assert metadata["provenance"]["consecutive_passes"] == 0
-    assert metadata["provenance"]["evaluation_index"] == 2
-
-
-def test_initial_checkpoint_preserves_parameters_with_fresh_training(config, training, tmp_path):
-    """Verify initial checkpoint preserves parameters with fresh training."""
-    initial = tmp_path / "initial.policy.zip"
-    parameters = {"params": jnp.ones(1)}
-    save_inference(
-        initial,
-        parameters,
-        kind="state",
-        config={},
-        provenance={"updates": 999},
-        actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
-    )
-    config.initial_checkpoint = str(initial)
-    cli.train(config, training.record)
-    state, metadata = load_state(training.path, SmallState())
-    assert jnp.array_equal(state.params["params"], parameters["params"])
-    assert state.updates == 2
-    assert metadata["config"]["initialization"]["provenance"]["updates"] == 999
-    assert metadata["provenance"]["consecutive_passes"] == 2
-
-
-def test_resume_selected_checkpoint_does_not_train_again(config, training):
-    """Verify resume selected checkpoint does not train again."""
-    training.stop_at = None
-    training.fail_benchmark = True
-    with pytest.raises(RuntimeError, match=r"benchmark interrupted"):
-        cli.train(config, training.record)
-    config.resume = str(training.path)
-    training.fail_benchmark = False
-    cli.train(config, training.record)
-    assert training.evaluations[-2:] == [("benchmark", 0), ("benchmark", 0)]
-    assert training.record.identity["updates"] == 3
-    assert training.record.identity["session_interactions"] == 0
-    assert training.record.identity["benchmark_directory"] == "eval/002"
-    assert (training.record.directory / "eval/001").is_dir()
-
-
-def test_fixed_interaction_budget_exports_final_actor_without_acceptance(config, training):
-    """Finish a candidate at its budget without entering convergence selection."""
-    OmegaConf.update(config, "learning.budget_only", True, force_add=True)
-    OmegaConf.update(config, "learning.max_interactions", 50, force_add=True)
-    config.simulation.num_envs = 1
-    config.learning.options.horizon = 10
-    training.stop_at = None
-    cli.train(config, training.record)
+def test_bounded_training_exports_latest_actor_without_evaluation(config, training):
+    """The finite loop saves each interval and finishes without a quality claim."""
+    runner.train(config, training.record)
     result = training.record.identity
-    assert result["status"] == "budget_exhausted"
-    assert result["interactions"] == 50 and result["updates"] == 5
-    assert result["checkpoint_selection"] == "final_budget_checkpoint"
-    assert training.evaluations == []
-    _, _, metadata = load_policy(training.record.directory / result["selected_checkpoint"])
-    assert metadata["provenance"]["interactions"] == 50
+    assert result["status"] == "budget_exhausted" and result["interactions"] == 32
+    assert result["latest_checkpoint"] == "checkpoints/model_000004"
+    path = training.record.directory / result["latest_checkpoint"]
+    state, metadata = load_model_state(path, SmallState())
+    assert state.updates == 4 and state.params["params"].item() == 4
+    assert metadata["provenance"]["interactions"] == 32
+    read_checkpoint(path, "inference")
+    assert {x["event"] for x in training.record.events} == {"update"}
+    assert not (training.record.directory / "report.json").exists()
+    assert all(training.handlers[sig] == signal.SIG_DFL for sig in (signal.SIGINT, signal.SIGTERM))
 
 
-@pytest.mark.parametrize("budget", [-1, True, 15])
-def test_fixed_budget_rejects_invalid_or_partial_updates(config, training, budget):
-    """A declared budget must contain an integer number of complete updates."""
-    OmegaConf.update(config, "learning.budget_only", True, force_add=True)
-    OmegaConf.update(config, "learning.max_interactions", budget, force_add=True)
-    config.simulation.num_envs = 1
-    config.learning.options.horizon = 10
-    with pytest.raises(ValueError, match="max_interactions"):
-        cli.train(config, training.record)
-
-
-def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
-    """Verify unknown selection is rejected before training."""
-    config.learning.selection = "best_score"
-    monkeypatch.setattr(cli, "create_environment", lambda config: pytest.fail("constructed env"))
-    with pytest.raises(ValueError, match=r"selection"):
-        cli.train(config, Record(Path(config.output)))
-
-
-@pytest.mark.parametrize(
-    "field",
-    [
-        "dynamics",
-        "drone",
-        "physics_hz",
-        "method_hz",
-        "action_delay_s",
-        "navigation_goal_observation",
-        "navigation_world_rotation",
-        "navigation_relative_goal",
-    ],
-)
-def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch, field):
-    """Verify frozen execution rejects changed physical contract."""
-    metadata = {"config": {"experiment": OmegaConf.to_container(config, resolve=True)}}
-    config.mode = "benchmark"
-    config.checkpoint = "frozen.zip"
-    if field == "action_delay_s":
-        config.simulation.action_delay_s = 0.1
-    elif field == "navigation_goal_observation":
-        config.simulation.navigation_goal_observation = True
-    elif field in ("navigation_world_rotation", "navigation_relative_goal"):
-        OmegaConf.update(config, f"observation.{field}", True, force_add=True)
-        config.benchmark.allow_environment_change = True
-    else:
-        config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123
-    record = Record(Path(config.output))
-    monkeypatch.setattr(cli, "RunRecord", lambda *args, **kwargs: record)
-    monkeypatch.setattr(cli, "read_checkpoint", lambda path, purpose: (b"", metadata))
-    monkeypatch.setattr(cli, "load_policy", lambda path, *, actor: (actor, {}, metadata))
-    monkeypatch.setattr(cli, "evaluate", lambda *args, **kwargs: pytest.fail("evaluated mismatch"))
-    with pytest.raises(ValueError, match=field):
-        cli.main(config)
-    assert record.identity["status"] == "failed"
-
-
-@pytest.mark.parametrize("format_version", [2, 3])
-def test_frozen_run_records_loaded_archive_identity(config, monkeypatch, tmp_path, format_version):
-    """A separate benchmark retains the exact parameter identity it evaluated."""
-    archive = tmp_path / ("policy.zip" if format_version == 2 else "model_000300")
-    save = save_inference if format_version == 2 else save_model
-    save(
-        archive,
-        SmallState().params if format_version == 2 else SmallState(),
-        kind="state",
-        config={
-            "experiment": OmegaConf.to_container(config, resolve=True),
-            "learning": {"action": OmegaConf.to_container(config.method.action, resolve=True)},
-        },
-        provenance={"updates": 300},
-        actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
-        **({"export_policy": True} if format_version == 3 else {}),
+def test_interruption_resumes_from_the_exact_saved_update(config, training):
+    """Resume preserves counters and policy state without replaying an update."""
+    training.stop_at = 2
+    runner.train(config, training.record)
+    assert training.record.identity["status"] == "interrupted"
+    config.resume = str(training.record.directory / "checkpoints/model_000002")
+    training.stop_at = None
+    runner.train(config, training.record)
+    state, _ = load_model_state(
+        training.record.directory / "checkpoints/model_000004", SmallState()
     )
-    config.mode = "benchmark"
-    config.checkpoint = str(archive)
-    record = Record(tmp_path / "benchmark")
-    monkeypatch.setattr(cli, "RunRecord", lambda *args, **kwargs: record)
-    monkeypatch.setattr(cli, "evaluate", lambda *args, **kwargs: {"passed": True})
-    cli.main(config)
-    _, metadata = cli.read_checkpoint(archive, "inference")
-    assert record.identity["status"] == "completed"
-    assert record.identity["evaluated_checkpoint"] == {
-        "path": str(archive.resolve()),
-        "payload_sha256": metadata.get("sha256"),
-        **({"model_metadata": metadata} if format_version == 3 else {}),
-    }
+    assert state.updates == 4 and state.params["params"].item() == 4
+    assert [x["update"] for x in training.record.events if x["event"] == "update"] == [1, 2, 3, 4]
 
 
-@pytest.mark.parametrize("loader", ["training", "learning_inference", "simulation_inference"])
-@pytest.mark.parametrize("damage", ["format_version", "purpose", "sha256"])
-def test_shared_archive_validation(tmp_path, loader, damage):
-    """Verify shared archive validation."""
-    path = tmp_path / "checkpoint.zip"
-    if loader == "training":
-        save_state(path, SmallState(), config={}, provenance={})
-    else:
-        save_inference(
-            path,
-            SmallState().params,
-            kind="state",
-            config={},
-            provenance={},
-            actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
-        )
-
-    def load():
-        if loader == "training":
-            return load_state(path, SmallState())
-        return load_inference(path) if loader == "learning_inference" else load_policy(path)
-
-    load()
-    with zipfile.ZipFile(path) as archive:
-        metadata = json.loads(archive.read("metadata.json"))
-        payload = archive.read("variables.msgpack")
-    metadata[damage] = "invalid"
-    with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("metadata.json", json.dumps(metadata))
-        archive.writestr("variables.msgpack", payload)
-    with pytest.raises(
-        ValueError, match=r"checksum" if damage == "sha256" else "version or purpose"
-    ):
-        load()
+def test_nonfinite_update_preserves_last_good_state(config, training):
+    """A failed numerical update cannot overwrite the previous finite parameters."""
+    training.nonfinite_at = 2
+    with pytest.raises(FloatingPointError, match="Nonfinite update"):
+        runner.train(config, training.record)
+    state, _ = load_model_state(
+        training.record.directory / "checkpoints/model_000001", SmallState()
+    )
+    assert state.params["params"].item() == 1
+    assert training.record.identity["status"] == "failed"
 
 
-@pytest.mark.parametrize("purpose", ["training", "inference"])
-def test_version_one_archive_is_rejected_without_compatibility(tmp_path, purpose):
-    """The current runtime must never infer the missing v1 environment/actor contract."""
-    path = tmp_path / "outdated.zip"
-    if purpose == "training":
-        save_state(path, SmallState(), config={}, provenance={})
-    else:
-        save_inference(
-            path,
-            SmallState().params,
-            kind="state",
-            config={},
-            provenance={},
-            actor_spec={"kind": "state", "action_size": 4, "hidden_size": 192},
-        )
-    with zipfile.ZipFile(path) as archive:
-        metadata = json.loads(archive.read("metadata.json"))
-        payload = archive.read("variables.msgpack")
-    metadata["format_version"] = 1
-    with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("metadata.json", json.dumps(metadata))
-        archive.writestr("variables.msgpack", payload)
-    with pytest.raises(ValueError, match="version or purpose"):
-        if purpose == "training":
-            load_state(path, SmallState())
-        else:
-            load_policy(path)
+@pytest.mark.parametrize("budget", [None, True, 0, 7])
+def test_budget_must_describe_whole_updates(config, training, budget):
+    """Reject incomplete or unbounded budgets before training."""
+    config.learning.max_interactions = budget
+    with pytest.raises(ValueError, match="positive multiple"):
+        runner.train(config, training.record)
 
 
-def test_v2_policy_requires_explicit_actor_specification(tmp_path):
-    """Do not invent action dimensions from the sensor name or old task presets."""
-    with pytest.raises(ValueError, match="Actor specification"):
-        save_inference(
-            tmp_path / "frozen.zip", SmallState().params, kind="state", config={}, provenance={}
-        )
-
-
-@pytest.mark.parametrize("archived", [{}, {"sensor": None}, {"sensor": {"acquisition": "rolling"}}])
-def test_frozen_evaluation_rejects_sensor_model_change(config, monkeypatch, tmp_path, archived):
-    """Old scan semantics cannot silently inherit a new frozen benchmark identity."""
-    config.mode = "benchmark"
-    config.benchmark.scenes = ["S01"]
-    config.benchmark.episodes = 1
-    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
-    env = SimpleNamespace(sensor=SimpleNamespace(specification={"acquisition": "snapshot"}))
-    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
-    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
-    monkeypatch.setattr(evaluation, "rollout", lambda *args, **kwargs: pytest.fail("ran mismatch"))
-    with pytest.raises(ValueError, match="sensor"):
-        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
-
-
-@pytest.mark.parametrize("allow_change", [False, True])
-def test_frozen_sensor_guard_allows_matched_or_explicit_comparison(
-    config, monkeypatch, tmp_path, allow_change
-):
-    """Matching snapshots and explicitly requested cross-model experiments reach execution."""
-    config.mode = "benchmark"
-    config.benchmark.scenes = ["S01"]
-    config.benchmark.episodes = 1
-    config.benchmark.allow_environment_change = allow_change
-    current = {"acquisition": "snapshot"}
-    archived = {} if allow_change else {"sensor": current}
-    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
-    env = SimpleNamespace(sensor=SimpleNamespace(specification=current))
-    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
-    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
-
-    def reached(*args, **kwargs):
-        raise RuntimeError("reached rollout")
-
-    monkeypatch.setattr(evaluation, "rollout", reached)
-    with pytest.raises(RuntimeError, match="reached rollout"):
-        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
-
-
-@pytest.mark.parametrize(
-    "count, missing, failed_static, expected",
-    [
-        (4, None, None, True),
-        (3, None, None, False),
-        (5, "D03", None, False),
-        (5, "S03", None, False),
-        (4, None, "S02", False),
-    ],
-)
-@pytest.mark.parametrize("method", ["ego", "super"])
-def test_native_s6_uses_main_scene_counts_and_static_successes(
-    config, monkeypatch, tmp_path, count, missing, failed_static, expected, method
-):
-    """Verify native s6 uses main scene counts and static successes."""
-    config.mode = "benchmark"
+def test_fixed_oa_map_is_rejected_for_training(config, training):
+    """The fixed benchmark suite cannot accidentally become a training schedule."""
     config.task.name = "navigation"
-    config.method = {"name": method, "protocol": "s6"}
-    scenes = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
-    config.benchmark.scenes = [scene for scene in scenes if scene != missing]
-    config.benchmark.episodes = count
-    implementation = SimpleNamespace(
-        trainable=False, execution="host", controller=object(), close=lambda: None
-    )
-    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+    config.scene.name = "S01"
+    with pytest.raises(ValueError, match="fixed maps belong to Benchmark"):
+        runner.train(config, training.record)
 
-    def create_environment(config, **kwargs):
-        scene = SimpleNamespace(name=kwargs["scene"], geometry_identity={"name": kwargs["scene"]})
-        return SimpleNamespace(
-            scene=scene,
-            task=SimpleNamespace(contract={}),
-            control_level="attitude_thrust",
-            sensor=None,
-        )
 
-    monkeypatch.setattr(evaluation, "create_environment", create_environment)
-    seen = set()
-
-    def rollout(env, planner, **kwargs):
-        scene = env.scene.name
-        success = scene.startswith("S") and scene != failed_static and scene not in seen
-        event = "SUCCESS" if success else "COLLISION"
-        seen.add(scene)
-        return [{"event": event, "scene": scene}], {}, [], [{"status": "OK", "solve_ms": 1}]
-
-    monkeypatch.setattr(evaluation, "rollout_host", rollout)
-    report = cli.evaluate(config, tmp_path)
-    assert report["criterion"] == "S6"
-    assert report["passed"] is expected
-    assert report["static_episodes"] == count * (2 if missing == "S03" else 3)
-    assert report["dynamic_episodes"] == count * (2 if missing == "D03" else 3)
-    assert report["reports"]["D01"]["successes"] == 0
-    assert report["reports"]["D01"]["outcomes"] == {"COLLISION": count}
-    assert report["reports"]["D01"]["passed"] is None
-    diagnostic = json.loads((tmp_path / "report.json").read_text())["reports"]["D01"]
-    assert diagnostic["sensor"] is None
-    assert diagnostic["criterion"] == "diagnostic" and diagnostic["passed"] is None
-    assert (tmp_path / "decisions.json").is_file()
-    assert (tmp_path / "episodes.csv").is_file()
+def test_zip_checkpoint_is_rejected(tmp_path):
+    """Historical archives require their original code, with no current ZIP loader."""
+    path = tmp_path / "policy.zip"
+    path.write_bytes(b"PK")
+    with pytest.raises(ValueError, match="Orbax model directory"):
+        read_checkpoint(path, "inference")
 
 
 def test_replay_launches_selected_record_and_restores_paths(config, monkeypatch, tmp_path):

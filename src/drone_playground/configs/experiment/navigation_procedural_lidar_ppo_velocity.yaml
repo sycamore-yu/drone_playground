@@ -1,7 +1,7 @@
 # @package _global_
 # Identical velocity-control and reward ablation with MID360 point observations.
 defaults:
-  - navigation_procedural_lidar_ppo
+- navigation_procedural_lidar_ppo
 initial_checkpoint: null
 simulation:
   num_envs: 64
@@ -12,14 +12,27 @@ method:
   action:
     level: velocity_yaw
     heading: fixed
-    low: [-4.0, -4.0, -4.0, -3.141592653589793]
-    high: [4.0, 4.0, 4.0, 3.141592653589793]
-    velocity_gain: [3.0, 3.0, 5.0]
-    acceleration_limit: [6.0, 6.0, 6.0]
+    low:
+    - -4.0
+    - -4.0
+    - -4.0
+    - -3.141592653589793
+    high:
+    - 4.0
+    - 4.0
+    - 4.0
+    - 3.141592653589793
+    velocity_gain:
+    - 3.0
+    - 3.0
+    - 5.0
+    acceleration_limit:
+    - 6.0
+    - 6.0
+    - 6.0
     tilt_limit: 0.55
 learning:
   loss: null
-  scenes: null
   options:
     reward_profile: legacy_motion_navigation_v2
     perception_loss: null
@@ -40,3 +53,6 @@ learning:
     initial_log_std: -1.5
     ppo_target_kl: 0.02
     ppo_value_clip: 1.0
+task:
+  options:
+    reward_profile: legacy_motion_navigation_v2

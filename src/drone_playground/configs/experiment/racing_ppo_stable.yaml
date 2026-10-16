@@ -2,7 +2,7 @@
 # New from-scratch Racing PPO candidate; the original recipe is unchanged.
 # Uses gate progress and a bounded actor update, independently validated.
 defaults:
-  - racing
+- racing
 simulation:
   num_envs: 512
 learning:
@@ -16,4 +16,3 @@ learning:
     ppo_target_kl: 0.02
     ppo_value_clip: 10.0
   checkpoint_interval: 50
-  evaluation_interval: 100

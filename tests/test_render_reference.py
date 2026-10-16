@@ -21,7 +21,8 @@ def test_depth_matches_official_renderer(tmp_path, wall_pitch):
     """Pixel-center rays match metric axial depth for front-facing and slanted walls."""
     path = tmp_path / "camera.xml"
     path.write_text(
-        '<mujoco><visual><map znear="0.001" zfar="10"/></visual><worldbody>'
+        '<mujoco><visual><map znear="0.001" zfar="10"/>'
+        '<quality offsamples="0"/></visual><worldbody>'
         f'<geom type="box" pos="5.5 0 0" size=".5 20 20" euler="0 {wall_pitch} 0"/>'
         '<camera name="depth" xyaxes="0 -1 0 0 0 1" fovy="58"/>'
         "</worldbody></mujoco>"
@@ -41,7 +42,7 @@ with mujoco.Renderer(model, width=64, height=48) as renderer:
     np.save(sys.argv[2], renderer.render())
 """
     subprocess.run([sys.executable, "-c", script, str(path), str(output)], check=True, timeout=30)
-    # This reference uses one fovy and the image aspect ratio, as MuJoCo does.
+    # Disable multisampling above so depth represents the same pixel-center ray.
     hfov = float(np.rad2deg(2 * np.arctan(64 / 48 * np.tan(np.deg2rad(58) / 2))))
     config = SensorConfig.d435i(width=64, height=48, horizontal_fov_deg=hfov, max_range=10)
     actual = measure(Scene(path), config, jnp.zeros(3), jnp.array([0.0, 0, 0, 1]), 0.0)

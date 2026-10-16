@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - navigation_lidar_scratch_safe
+- navigation_lidar_scratch_safe
 simulation:
   navigation_goal_observation: true
 learning:

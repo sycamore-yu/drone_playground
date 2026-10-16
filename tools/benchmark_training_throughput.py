@@ -7,7 +7,7 @@ Outputs belong in the Git-ignored results/performance directory.
 Examples:
   python tools/benchmark_training_throughput.py --dry-run
   python tools/benchmark_training_throughput.py --experiment navigation_lidar_scratch \
-      --algorithm apg --worlds 32,64,128,256 --warmup 2 --updates 8
+      --algorithm bptt --worlds 32,64,128,256 --warmup 2 --updates 8
 """
 
 import argparse
@@ -27,7 +27,7 @@ from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.evaluation import create_environment, create_method
+from drone_playground.simulation.factory import create_environment, create_method
 
 
 def training_pids():
@@ -143,7 +143,7 @@ def main():
     """Run a controlled single-GPU experiment only if the formal matrix is idle."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--experiment", default="navigation_lidar_scratch")
-    parser.add_argument("--algorithm", choices=("ppo", "apg", "shac"), default="apg")
+    parser.add_argument("--algorithm", choices=("ppo", "bptt", "shac"), default="bptt")
     parser.add_argument("--worlds", default="32,64,128,256")
     parser.add_argument("--warmup", type=int, default=2)
     parser.add_argument("--updates", type=int, default=8)

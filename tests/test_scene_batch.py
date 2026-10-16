@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from drone_playground.benchmark.reporting import save_evaluation
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation import runner
 from drone_playground.simulation.environment import make_environment
@@ -170,7 +171,7 @@ def test_parallel_episode_records_and_replay_identify_component_scene(tmp_path, 
             seen.append(scene.name)
             return path
 
-        monkeypatch.setattr(runner, "export_replay", export)
+        monkeypatch.setattr("drone_playground.benchmark.reporting.export_replay", export)
         traces = {
             "time": np.array([[0.0, 0], [0.02, 0.02]]),
             "position": np.tile(np.asarray(state.physics.states.pos[:, 0])[None], (2, 1, 1)),
@@ -178,9 +179,7 @@ def test_parallel_episode_records_and_replay_identify_component_scene(tmp_path, 
             "sensor_points": np.zeros((2, 2, 0, 3)),
             "sensor_mask": np.zeros((2, 2, 0), dtype=bool),
         }
-        runner.save_evaluation(
-            tmp_path, env, episodes, traces, report={}, record_trajectories=False
-        )
+        save_evaluation(tmp_path, env, episodes, traces, report={}, record_trajectories=False)
         assert seen == ["S01", "D03"]
     finally:
         env.sim.close()

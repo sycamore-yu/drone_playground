@@ -156,28 +156,6 @@ def test_paper_configs_have_valid_independent_contracts(experiment, kind, sensor
     assert (2 if config.method.action.level == "horizontal_acceleration" else 4) == action_size
 
 
-@pytest.mark.parametrize(
-    "experiment",
-    ["navigation_paper_fan2025_ppo", "navigation_paper_visfly2025_ppo"],
-)
-def test_staged_screening_changes_no_training_parameters(experiment):
-    """Fast two-scene probes alter evaluation scheduling, not the PPO recipe."""
-    with initialize_config_dir(
-        version_base=None,
-        config_dir=str(Path(__file__).parents[1] / "src/drone_playground/configs"),
-    ):
-        baseline = compose(config_name="config", overrides=[f"experiment={experiment}"])
-        staged = compose(config_name="config", overrides=[f"experiment={experiment}_staged"])
-    assert staged.benchmark.fixed_checkpoint_seeds
-    assert staged.screening.probe_between_full is True
-    assert staged.screening.full_every == 3
-    old = OmegaConf.to_container(baseline, resolve=True)
-    new = OmegaConf.to_container(staged, resolve=True)
-    assert old.pop("screening", None) is None
-    assert new.pop("screening") == {"probe_between_full": True, "full_every": 3}
-    assert old == new
-
-
 def test_visfly_position_scaling_is_the_only_training_contract_change():
     """Keep camera, network, reward, task and PPO settings identical."""
     with initialize_config_dir(
@@ -186,11 +164,11 @@ def test_visfly_position_scaling_is_the_only_training_contract_change():
     ):
         original = compose(
             config_name="config",
-            overrides=["experiment=navigation_paper_visfly2025_ppo_staged"],
+            overrides=["experiment=navigation_paper_visfly2025_ppo"],
         )
         scaled = compose(
             config_name="config",
-            overrides=["experiment=navigation_paper_visfly2025_ppo_posscale10_staged"],
+            overrides=["experiment=navigation_paper_visfly2025_ppo_posscale10"],
         )
     a = OmegaConf.to_container(original, resolve=True)
     b = OmegaConf.to_container(scaled, resolve=True)

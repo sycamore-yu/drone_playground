@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - navigation_depth_scratch_ppo_stable
+- navigation_depth_scratch_ppo_stable
 simulation:
   navigation_goal_observation: true
 learning:

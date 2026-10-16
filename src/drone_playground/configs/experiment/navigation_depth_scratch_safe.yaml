@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - navigation_depth_scratch
+- navigation_depth_scratch
 learning:
   options:
     failure_cost: 160.0

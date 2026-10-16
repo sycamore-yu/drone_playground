@@ -153,7 +153,7 @@ def test_real_update_counts_tail_interactions_and_preserves_resumable_live_strea
         assert state.interactions == 6 and state.updates == 1
         np.testing.assert_allclose(state.env_state.time, 0.1, atol=1e-5)
         assert all(np.isfinite(v).all() for v in metrics.values())
-        archive = tmp_path / "state.zip"
+        archive = tmp_path / "model"
         trainer.save_state(archive, state, provenance={})
         restored, _ = trainer.load_state(archive)
         expected, _ = trainer.update(state)

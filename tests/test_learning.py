@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from flax import linen as nn
 
-from drone_playground.learning.apg import rollout_objective
-from drone_playground.learning.checkpoint import load_inference, load_state, save_state
+from drone_playground.learning.bptt import rollout_objective
+from drone_playground.learning.checkpoint import load_model_state
 from drone_playground.learning.ppo import (
     collect_rollout,
     exceeds_kl_limit,
@@ -89,8 +89,8 @@ def test_custom_actor_critic_and_method_share_training_interface(tmp_path):
     updated, metrics = trainer.update(state)
     assert all(np.isfinite(value).all() for value in metrics.values())
     assert updated.updates == 1
-    path = tmp_path / "custom-policy.zip"
-    trainer.save_inference(path, updated, provenance={"test": "custom actor"})
+    path = tmp_path / "custom-policy"
+    trainer.save_state(path, updated, provenance={"test": "custom actor"})
     restored_actor, parameters, _ = load_policy(path, actor=actor)
     assert restored_actor is actor
     assert jax.tree.structure(parameters) == jax.tree.structure(updated.params)
@@ -301,7 +301,7 @@ def test_racing_shac_bootstrap_diagnostic_is_explicit_and_finite():
         assert field in metrics
         assert np.isfinite(np.asarray(metrics[field])).all()
     with pytest.raises(ValueError, match="requires SHAC"):
-        Trainer(env, algorithm="apg", config={"bootstrap_weight": 0.0})
+        Trainer(env, algorithm="bptt", config={"bootstrap_weight": 0.0})
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
@@ -342,7 +342,7 @@ def test_navigation_observation_ppo_updates_and_restores(kind, goal, rotation, w
     assert all(np.isfinite(float(value)) for value in metrics.values())
     assert tree_changed(state.params, updated.params)
     assert tree_changed(state.critic_params, updated.critic_params)
-    path = tmp_path / "goal.training.zip"
+    path = tmp_path / "goal_model"
     trainer.save_state(path, updated, provenance={})
     restored, _ = trainer.load_state(path)
     assert_tree_equal(updated, restored)
@@ -426,14 +426,13 @@ def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
     assert np.isfinite(metrics["critic_loss"])
     assert tree_changed(before.params, after.params)
     assert tree_changed(before.critic_params, after.critic_params)
-    path = tmp_path / "asymmetric.training.zip"
+    path = tmp_path / "asymmetric_training"
     trainer.save_state(path, after, provenance={})
     restored, _ = trainer.load_state(path)
     assert_tree_equal(after, restored)
-    inference = tmp_path / "asymmetric.policy.zip"
-    trainer.save_inference(inference, after, provenance={})
-    saved_actor = load_inference(inference)
-    actor, params = Actor(**saved_actor["actor"]), saved_actor["params"]
+    inference = tmp_path / "asymmetric_policy"
+    trainer.save_state(inference, after, provenance={})
+    actor, params, _ = load_policy(inference)
     measured = env.observe(after.env_state)
     expected = trainer.actor.apply(after.params, measured, after.recurrent_memory)
     actual = actor.apply(params, measured, after.recurrent_memory)
@@ -610,7 +609,7 @@ def test_lidar_rematerialization_preserves_recurrent_outputs_and_gradients():
         np.testing.assert_allclose(left, right, rtol=1e-4, atol=1e-7)
 
 
-@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
+@pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac"])
 def test_real_physics_update_and_exact_checkpoint_continuation(state_env, tmp_path, algorithm):
     """Verify real physics update and exact checkpoint continuation."""
     trainer = Trainer(
@@ -632,7 +631,7 @@ def test_real_physics_update_and_exact_checkpoint_continuation(state_env, tmp_pa
     assert not np.array_equal(initial.rng, state.rng)
     assert np.all(np.asarray(state.env_state.time) > 0)
     assert state.updates == 1 and state.interactions == 4
-    if algorithm != "apg":
+    if algorithm != "bptt":
         assert tree_changed(initial.critic_params, state.critic_params)
     if algorithm == "ppo":
         assert not np.array_equal(initial.log_std, state.log_std)
@@ -654,11 +653,11 @@ def test_real_physics_update_and_exact_checkpoint_continuation(state_env, tmp_pa
     assert_tree_equal(uninterrupted, continued)
     assert_tree_equal(expected_metrics, actual_metrics)
     export = tmp_path / "inference.checkpoint"
-    trainer.save_inference(export, state, provenance={"test": algorithm})
-    frozen = load_inference(export)
+    trainer.save_state(export, state, provenance={"test": algorithm})
+    _, frozen_params, frozen = load_policy(export)
     observation = state_env.observe(state.env_state)
     expected = trainer.actor.apply(state.params, observation, state.recurrent_memory)
-    actual = trainer.actor.apply(frozen["params"], observation, state.recurrent_memory)
+    actual = trainer.actor.apply(frozen_params, observation, state.recurrent_memory)
     assert_tree_equal(expected, actual)
     assert frozen["kind"] == "state"
     # A long run must not wrap its counters at the default JAX int32 boundary.
@@ -716,8 +715,8 @@ def test_shac_terminal_value_state_gradient(event):
 
 def test_temporal_decay_affects_only_incoming_physics_derivative(state_env):
     """Verify temporal decay affects only incoming physics derivative."""
-    normal = Trainer(state_env, algorithm="apg", config={"temporal_gradient_alpha": 0.0})
-    decayed = Trainer(state_env, algorithm="apg", config={"temporal_gradient_alpha": 5.0})
+    normal = Trainer(state_env, algorithm="bptt", config={"temporal_gradient_alpha": 0.0})
+    decayed = Trainer(state_env, algorithm="bptt", config={"temporal_gradient_alpha": 5.0})
     state = state_env.reset(jax.random.PRNGKey(1))
     action = jnp.zeros((2, 4))
     a = normal._step(state, action, differentiable=True)
@@ -744,8 +743,8 @@ def test_checkpoint_validation_and_atomic_failure(state_env, tmp_path, monkeypat
     trainer = Trainer(state_env)
     state = trainer.initialize()
     path = tmp_path / "state.checkpoint"
-    save_state(path, state, config=trainer.resolved_config, provenance={"source": "test"})
-    original = path.read_bytes()
+    trainer.save_state(path, state, provenance={"source": "test"})
+    original = (path / "metadata.json").read_bytes()
     import drone_playground.learning.checkpoint as checkpoint
 
     def fail_replace(*args):
@@ -753,13 +752,12 @@ def test_checkpoint_validation_and_atomic_failure(state_env, tmp_path, monkeypat
 
     monkeypatch.setattr(checkpoint.os, "replace", fail_replace)
     with pytest.raises(OSError, match="interrupted"):
-        save_state(path, state, config=trainer.resolved_config, provenance={"source": "test"})
-    assert path.read_bytes() == original
+        trainer.save_state(path, state, provenance={"source": "test"})
+    assert (path / "metadata.json").read_bytes() == original
     assert list(tmp_path.iterdir()) == [path]
-    with pytest.raises(ValueError, match="shape or dtype"):
-        load_state(path, state.replace(log_std=jnp.zeros(3)))
-    with pytest.raises(ValueError, match="purpose"):
-        load_inference(path)
+    with pytest.raises(ValueError, match="shape"):
+        load_model_state(path, state.replace(log_std=jnp.zeros(3)))
+    load_policy(path)
 
 
 @pytest.mark.parametrize(
@@ -800,7 +798,7 @@ def perception_env(request):
     return request.param, env
 
 
-@pytest.mark.parametrize("algorithm", ["ppo", "apg", "shac"])
+@pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac"])
 def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, algorithm, tmp_path):
     """Verify perception real update and complete sensor checkpoint."""
     kind, env = perception_env
@@ -840,12 +838,12 @@ def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, a
     assert_tree_equal(resumed, continued)
     assert_tree_equal(actual, expected)
     export = tmp_path / "perception-inference.dp"
-    trainer.save_inference(export, state, provenance={"integration": kind})
-    frozen = load_inference(export)
+    trainer.save_state(export, state, provenance={"integration": kind})
+    _, frozen_params, _ = load_policy(export)
     observation = env.observe(state.env_state)
     assert_tree_equal(
         trainer.actor.apply(state.params, observation, state.recurrent_memory),
-        trainer.actor.apply(frozen["params"], observation, state.recurrent_memory),
+        trainer.actor.apply(frozen_params, observation, state.recurrent_memory),
     )
 
 
@@ -858,7 +856,7 @@ def test_common_named_objective_weights_and_history(perception_env):
         env,
         loss=("zhang" if kind == "depth" else "liu"),
         kind=kind,
-        algorithm="apg",
+        algorithm="bptt",
         config={
             "task_weight": 0.3,
             "perception_weight": 1.7,

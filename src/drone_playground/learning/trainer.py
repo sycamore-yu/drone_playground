@@ -1,8 +1,7 @@
-"""One recoverable update interface for batched PPO, APG and SHAC."""
+"""One recoverable update interface for batched PPO, BPTT and SHAC."""
 
 import inspect
 import math
-from pathlib import Path
 from typing import Any
 
 import jax
@@ -31,6 +30,8 @@ class TrainingState:
     updates: int
     interactions: int
     log_std: jax.Array
+    episode_returns: jax.Array
+    episode_lengths: jax.Array
 
 
 _DEFAULTS = {
@@ -76,7 +77,7 @@ class Trainer:
     Args:
         env: Shared Simulation Environment. Batch size and device belong to it.
         kind: Shared actor architecture: state, depth or lidar.
-        algorithm: ppo, apg or shac.
+        algorithm: ppo, bptt or shac.
         seed: Initialization seed, also recorded in the resolved configuration.
         config: Overrides of the options documented in docs/training.md.
     """
@@ -99,8 +100,8 @@ class Trainer:
         objective=None,
     ):
         """Configure the shared actor, critic, optimizers and compiled update."""
-        if algorithm not in ("ppo", "apg", "shac"):
-            raise ValueError("Expected algorithm ppo/apg/shac")
+        if algorithm not in ("ppo", "bptt", "shac"):
+            raise ValueError("Expected algorithm ppo/bptt/shac")
         if actor is None and kind not in ("state", "depth", "lidar", "fan_lidar", "visfly_depth"):
             raise ValueError("Default Actor kind must be state/depth/lidar")
         if actor is not None and actor_config is not None:
@@ -307,9 +308,9 @@ class Trainer:
             optax.clip_by_global_norm(self.config["max_grad_norm"]),
             optax.adam(self.config["critic_lr"]),
         )
-        from drone_playground.learning import apg, ppo, shac
+        from drone_playground.learning import bptt, ppo, shac
 
-        implementation = {"ppo": ppo.update, "apg": apg.update, "shac": shac.update}[algorithm]
+        implementation = {"ppo": ppo.update, "bptt": bptt.update, "shac": shac.update}[algorithm]
         distribution = getattr(env.scene, "distribution", None)
         self.distance_sampling = distribution is not None and distribution.start_sampling in (
             "distance_mixture",
@@ -388,6 +389,8 @@ class Trainer:
             updates=0,
             interactions=0,
             log_std=log_std,
+            episode_returns=jnp.zeros(self.env.num_envs),
+            episode_lengths=jnp.zeros(self.env.num_envs, jnp.int32),
         )
 
     def reset_episodes(self, state: TrainingState) -> TrainingState:
@@ -398,6 +401,8 @@ class Trainer:
             env_state=self.env.reset(reset_key, **self._reset_options),
             recurrent_memory=jnp.zeros_like(state.recurrent_memory),
             objective_state=jax.tree.map(jnp.zeros_like, state.objective_state),
+            episode_returns=jnp.zeros_like(state.episode_returns),
+            episode_lengths=jnp.zeros_like(state.episode_lengths),
         )
 
     def update(
@@ -428,38 +433,26 @@ class Trainer:
         return result, {**metrics, "updates": result.updates, "interactions": result.interactions}
 
     def save_state(self, path, state, *, provenance, config=None):
-        """Atomically save a resumable checkpoint with caller-supplied run provenance."""
-        from drone_playground.learning.checkpoint import save_state
+        """Save a resumable Orbax checkpoint and its independently executable Actor."""
+        from drone_playground.learning.checkpoint import save_model
 
-        save_state(
+        return save_model(
             path,
             state,
             config={**(config or {}), "learning": self.resolved_config},
             provenance=provenance,
+            kind=self.kind,
+            actor_spec=self.actor.specification,
         )
 
     def load_state(self, path):
         """Restore against this trainer's structure and reject a mismatched recipe."""
-        from drone_playground.learning.checkpoint import load_state
+        from drone_playground.learning.checkpoint import load_model_state
 
-        state, metadata = load_state(path, self.initialize())
-        saved_config = metadata["config"]["learning"]
-        if saved_config != self.resolved_config:
+        state, metadata = load_model_state(path, self.initialize())
+        if metadata["config"]["learning"] != self.resolved_config:
             raise ValueError("Checkpoint learning configuration does not match this Trainer")
         return state, metadata
-
-    def save_inference(self, path: str | Path, state: TrainingState, *, provenance, config=None):
-        """Export standalone actor variables without optimizer or environment state."""
-        from drone_playground.learning.checkpoint import save_inference
-
-        save_inference(
-            path,
-            state.params,
-            kind=self.kind,
-            config={**(config or {}), "learning": self.resolved_config},
-            provenance=provenance,
-            actor_spec=self.actor.specification,
-        )
 
     def _step(self, before, action, *, differentiable):
         if differentiable:
@@ -548,6 +541,29 @@ class Trainer:
 
         state, metrics = jax.lax.scan(fit, state, None, length=epochs)
         return state, jax.tree.map(jnp.mean, metrics)
+
+    def episode_statistics(self, state, rewards, done):
+        """Count complete live episodes, carrying unfinished returns across updates."""
+
+        def step(carry, transition):
+            returns, lengths = carry
+            reward, finished = transition
+            returns, lengths = returns + reward, lengths + 1
+            totals = (
+                jnp.where(finished, returns, 0).sum(),
+                jnp.where(finished, lengths, 0).sum(),
+                finished.sum(),
+            )
+            return (jnp.where(finished, 0, returns), jnp.where(finished, 0, lengths)), totals
+
+        (returns, lengths), totals = jax.lax.scan(
+            step, (state.episode_returns, state.episode_lengths), (rewards, done)
+        )
+        return state.replace(episode_returns=returns, episode_lengths=lengths), {
+            "episode_return_sum": totals[0].sum(),
+            "episode_length_sum": totals[1].sum(),
+            "episodes_completed": totals[2].sum(),
+        }
 
     def _finish(self, state, metrics):
         return jax.lax.stop_gradient(state), metrics

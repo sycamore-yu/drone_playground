@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - tracking
+- tracking
 method:
   action:
     level: acceleration

@@ -49,7 +49,7 @@ class _StateMLP(nn.Module):
 
 
 class Actor(nn.Module):
-    """Actor shared by PPO, APG/BPTT and SHAC; only ``kind`` selects architecture.
+    """Actor shared by PPO, BPTT and SHAC; only ``kind`` selects architecture.
 
     Args:
         kind: ``state``: [256,128] LayerNorm/ELU MLP, four raw roll/pitch/yaw/thrust

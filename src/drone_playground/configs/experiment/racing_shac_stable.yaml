@@ -2,7 +2,7 @@
 # Controlled Racing/SHAC recipe. Retains nonzero terminal-value bootstrap.
 # Archived gradient diagnosis: terminal/physical norm ratio 4.69 at full weight.
 defaults:
-  - racing
+- racing
 simulation:
   num_envs: 256
 learning:
@@ -15,4 +15,3 @@ learning:
     bootstrap_weight: 0.2
     report_terminal_critic_grad: false
   checkpoint_interval: 50
-  evaluation_interval: 100

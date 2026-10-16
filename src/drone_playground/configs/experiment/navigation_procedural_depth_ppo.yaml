@@ -1,7 +1,7 @@
 # @package _global_
 # A separately versioned PPO diagnostic recipe; no historical seed is resumed.
 defaults:
-  - navigation_procedural_depth
+- navigation_procedural_depth
 learning:
   options:
     critic_uses_privileged: true

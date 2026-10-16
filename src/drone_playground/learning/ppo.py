@@ -136,6 +136,9 @@ def collect_rollout(trainer, state, *, sampling_progress=None):
         action, pre_tanh, log_prob = trainer.method.sample(action_key, raw, state.log_std)
         after = trainer._step(env_state, action, differentiable=False)
         cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        terms["episode_success"] = ((after.task.event == Event.SUCCESS) & ~env_state.done).astype(
+            jnp.float32
+        )
         if trainer.env.task.name == "navigation":
             before_position = env_state.physics.states.pos[:, 0]
             after_position = after.physics.states.pos[:, 0]
@@ -272,6 +275,7 @@ def update(trainer, state, *, sampling_progress=None):
     """Collect recurrent samples and update actor and critic parameters with PPO."""
     initial_memory = state.recurrent_memory
     state, rollout, terms = collect_rollout(trainer, state, sampling_progress=sampling_progress)
+    state, episode_metrics = trainer.episode_statistics(state, rollout.rewards, rollout.done)
     tail_metrics = {}
     if trainer.config["ppo_monte_carlo_returns"]:
         active = ~rollout.done[-1]
@@ -429,4 +433,6 @@ def update(trainer, state, *, sampling_progress=None):
     if "navigation_success_fraction" in terms:
         metrics.update(completed_navigation_metrics(rollout.done, terms))
     metrics["loss"] = metrics["actor_loss"] + metrics["critic_loss"]
-    return trainer._finish(state, metrics)
+    return trainer._finish(
+        state, {**metrics, **episode_metrics, "episode_successes": terms["episode_success"].sum()}
+    )

@@ -1,4 +1,4 @@
-"""Episode costs shared by PPO, APG and SHAC, independent of the trainer."""
+"""Episode costs shared by PPO, BPTT and SHAC, independent of the trainer."""
 
 import jax
 import jax.numpy as jnp
@@ -22,7 +22,7 @@ class EpisodeObjective:
     """Bind task reward, optional named perception cost and auxiliary targets.
 
     This is a configured objective, not a training algorithm. Both PPO rewards and
-    APG/SHAC differentiable costs call the same function with the same history.
+    BPTT/SHAC differentiable costs call the same function with the same history.
     """
 
     def __init__(self, env, config, *, recipe=None, loss_name=None):

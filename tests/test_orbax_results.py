@@ -1,4 +1,4 @@
-"""Test final JAX results layout without altering legacy training runs."""
+"""Orbax payload integrity, bounded state retention, and checkpoint selection."""
 
 import json
 import struct as binary
@@ -13,13 +13,13 @@ from tensorboardX.proto.event_pb2 import Event
 
 from drone_playground.learning.checkpoint import load_model_state, save_model
 from drone_playground.simulation.networks import Actor
-from drone_playground.simulation.policy import load_policy, read_checkpoint
+from drone_playground.simulation.policy import load_policy, read_checkpoint, resolve_checkpoint
 from drone_playground.simulation.records import RunRecord
 
 
 @struct.dataclass
 class ExampleTrainingState:
-    """Represent an explicitly structured Flax state with a typed RNG key."""
+    """Structured optimizer state with a typed RNG key."""
 
     params: dict
     optimizer_state: dict
@@ -27,72 +27,155 @@ class ExampleTrainingState:
     updates: int
 
 
-def test_orbax_model_directory_restores_training_and_selected_actor(tmp_path):
-    """Save complete optimizer/RNG state while exporting the selected Actor separately."""
+def save_example(path, update=25, retention=3, selection=None):
+    """Write a real small state with a complete experiment identity."""
     actor = Actor(kind="state", action_size=4)
     state = ExampleTrainingState(
         params={"params": {"linear": {"w": jnp.arange(4, dtype=jnp.float32)}}},
         optimizer_state={"actor": {"m": jnp.ones(4)}},
         rng=jax.random.key(82),
-        updates=25,
+        updates=update,
     )
+    config = {
+        "experiment": {
+            "results": {"keep_checkpoints": retention},
+            "task": {"name": "tracking"},
+            "sensor": {"name": "state"},
+            "learning": {"algorithm": "bptt"},
+        }
+    }
+    save_model(
+        path,
+        state,
+        config=config,
+        provenance={"updates": update, **({"selection": selection} if selection else {})},
+        kind="state",
+        actor_spec=actor.specification,
+    )
+    return actor, state
+
+
+def test_orbax_restores_full_training_state_and_actor(tmp_path):
+    """Every saved model can be resumed and played independently."""
     path = tmp_path / "checkpoints/model_000025"
-    cfg = {"experiment": {"seed": 7}, "learning": {"actor": actor.specification}}
-    save_model(
-        path,
-        state,
-        config=cfg,
-        provenance={"updates": 25},
-        kind="state",
-        actor_spec=actor.specification,
-    )
+    actor, state = save_example(path)
     restored, metadata = load_model_state(path, state)
-    assert restored.updates == 25
-    assert metadata["format_version"] == 3
-    np.testing.assert_array_equal(restored.params["params"]["linear"]["w"], jnp.arange(4))
+    assert restored.updates == 25 and metadata["format_version"] == 3
     np.testing.assert_array_equal(jax.random.key_data(restored.rng), jax.random.key_data(state.rng))
-    assert not (path / "actor").exists()
-
-    save_model(
-        path,
-        state,
-        config=cfg,
-        provenance={"updates": 25, "selected": True},
-        kind="state",
-        actor_spec=actor.specification,
-        export_policy=True,
-    )
-    restored_actor, parameters, metadata = load_policy(path, actor=actor)
+    restored_actor, params, _ = load_policy(path, actor=actor)
     assert restored_actor is actor
-    assert metadata["provenance"]["selected"] is True
-    np.testing.assert_array_equal(parameters["params"]["linear"]["w"], jnp.arange(4))
-    _, meta = read_checkpoint(path, "inference")
-    assert meta["kind"] == "state"
+    np.testing.assert_array_equal(params["params"]["linear"]["w"], jnp.arange(4))
+    assert read_checkpoint(path, "inference")["kind"] == "state"
+    with pytest.raises(ValueError, match="specification differs"):
+        load_policy(path, actor=Actor(kind="state", action_size=3))
+    (path / "actor/commit_success.txt").unlink()
+    with pytest.raises(ValueError, match="Incomplete Orbax"):
+        load_policy(path)
 
 
-def test_tensorboard_records_do_not_duplicate_jsonl_metrics(tmp_path):
-    """Use one TensorBoard event stream plus a small machine-readable run index."""
-    config = OmegaConf.create({"seed": 0, "results": {"format": "orbax"}})
-    record = RunRecord(tmp_path / "run", config)
-    record.event("update", update=2, interactions=16, reward=-0.3, actor_grad_norm=0.12)
-    scenes = {"S01": {"episodes": 8, "successes": 3}}
-    record.event(
-        "screening_evaluation",
-        update=2,
-        passed=False,
-        episodes=8,
-        per_scene=scenes,
-        score=0.3,
-        best_score=0.4,
-        stagnant_screens=2,
-    )
-    record.event("checkpoint_evaluation", update=2, passed=False)
+def test_retention_preserves_all_actors_and_evidence(tmp_path):
+    """Only old optimizer/environment payloads leave the rolling retention window."""
+    for update in (25, 50, 75, 100, 125):
+        path = tmp_path / f"model_{update:06d}"
+        _, state = save_example(path, update)
+        (path / "episodes.csv").write_text(f"episode,event\n{update},COLLISION\n")
+    assert sorted(p.parent.name for p in tmp_path.glob("model_*/training")) == [
+        "model_000075",
+        "model_000100",
+        "model_000125",
+    ]
+    for update in (25, 50, 75, 100, 125):
+        path = tmp_path / f"model_{update:06d}"
+        read_checkpoint(path, "inference")
+        assert (path / "episodes.csv").read_text() == f"episode,event\n{update},COLLISION\n"
+    with pytest.raises(ValueError, match="no training payload"):
+        load_model_state(tmp_path / "model_000025", state)
+
+
+def test_selectors_use_newest_compatible_committed_run(tmp_path):
+    """Best transparently falls back to latest without claiming a quality ranking."""
+    for name, started, update in (("older", 100, 50), ("newer", 200, 25), ("unfinished", 300, 75)):
+        root = tmp_path / name
+        save_example(root / "checkpoints" / f"model_{update:06d}", update)
+        (root / "run.json").write_text(json.dumps({"layout_version": 3, "started_unix": started}))
+    (tmp_path / "unfinished/checkpoints/model_000075/actor/commit_success.txt").unlink()
+    args = dict(root=tmp_path, task="tracking", sensor="state", algorithm="bptt")
+    expected = tmp_path / "newer/checkpoints/model_000025"
+    assert resolve_checkpoint("latest", **args) == expected
+    assert resolve_checkpoint("best", **args) == expected
+    assert resolve_checkpoint(str(expected), **args) == expected
+    with pytest.raises(FileNotFoundError, match="No compatible"):
+        resolve_checkpoint("latest", **{**args, "algorithm": "ppo"})
+
+
+def test_selectors_keep_static_and_dynamic_training_runs_independent(tmp_path):
+    """A newer dynamic policy cannot become the default for a static experiment."""
+    for started, motion in enumerate(("static", "dynamic"), 1):
+        root = tmp_path / motion
+        path = root / "checkpoints/model_000025"
+        save_example(path)
+        metadata = json.loads((path / "metadata.json").read_text())
+        metadata["config"]["experiment"]["simulation"] = {"procedural": {"obstacle_motion": motion}}
+        (path / "metadata.json").write_text(json.dumps(metadata))
+        (root / "run.json").write_text(json.dumps({"layout_version": 3, "started_unix": started}))
+    for motion in ("static", "dynamic"):
+        selected = resolve_checkpoint(
+            "latest",
+            root=tmp_path,
+            task="tracking",
+            sensor="state",
+            algorithm="bptt",
+            obstacle_motion=motion,
+        )
+        assert selected == tmp_path / motion / "checkpoints/model_000025"
+
+
+def test_publication_failure_keeps_latest_and_best_committed(tmp_path, monkeypatch):
+    """An unreferenced committed payload cannot silently become the latest model."""
+    from drone_playground.learning import checkpoint
+
+    root = tmp_path / "run"
+    first = root / "checkpoints/model_000001"
+    selection = {"best_checkpoint": str(first), "best_mean_reward": -3.0}
+    save_example(first, 1, retention=1, selection=selection)
+    (root / "run.json").write_text(json.dumps({"layout_version": 3, "started_unix": 1}))
+    second = root / "checkpoints/model_000002"
+    save_example(second, 2, retention=1, selection=selection)
+    assert not (first / "training").exists()
+    assert (root / "best_model").resolve() == first
+    third = root / "checkpoints/model_000003"
+    replacement = {"best_checkpoint": str(third), "best_mean_reward": -1.0}
+    original = checkpoint.os.replace
+
+    def fail_pointer(source, destination):
+        if destination.name == "latest":
+            raise OSError("injected pointer failure")
+        return original(source, destination)
+
+    monkeypatch.setattr(checkpoint.os, "replace", fail_pointer)
+    with pytest.raises(OSError, match="pointer failure"):
+        save_example(third, 3, retention=1, selection=replacement)
+    args = dict(root=tmp_path, task="tracking", sensor="state", algorithm="bptt")
+    assert resolve_checkpoint("latest", **args) == second
+    assert resolve_checkpoint("best", **args) == first
+    assert (root / "best_model").resolve() == first
+    monkeypatch.setattr(checkpoint.os, "replace", original)
+    save_example(third, 3, retention=1, selection=replacement)
+    assert resolve_checkpoint("latest", **args) == third
+    assert resolve_checkpoint("best", **args) == third
+    assert (root / "best_model").resolve() == third
+
+
+def test_tensorboard_and_run_index_record_training(tmp_path):
+    """TensorBoard and the machine-readable event log share the same measurements."""
+    record = RunRecord(tmp_path / "run", OmegaConf.create({"seed": 0}))
+    record.event("update", update=2, interactions=16, reward=-0.3)
     record.finish("interrupted", updates=2)
     assert record.layout_version == 3
-    assert (record.directory / "config.yaml").is_file()
-    assert list(record.directory.glob("events.out.tfevents.*"))
-    assert not (record.directory / "metrics.jsonl").exists()
-    assert OmegaConf.load(record.directory / "config.yaml").seed == 0
+    rows = [
+        json.loads(line) for line in (record.directory / "metrics.jsonl").read_text().splitlines()
+    ]
+    assert rows[-1]["reward"] == -0.3 and rows[-1]["interactions"] == 16
     events = {}
     for path in record.directory.glob("events.out.tfevents.*"):
         with path.open("rb") as stream:
@@ -101,104 +184,24 @@ def test_tensorboard_records_do_not_duplicate_jsonl_metrics(tmp_path):
                 event = Event.FromString(stream.read(length))
                 assert len(stream.read(4)) == 4
                 events.update({value.tag: value for value in event.summary.value})
-    screening = json.loads(events["event/screening_evaluation/text_summary"].tensor.string_val[0])
-    assert screening["per_scene"] == scenes
-    assert screening["stagnant_screens"] == 2
-    np.testing.assert_allclose(events["evaluation/score"].simple_value, 0.3)
-    np.testing.assert_allclose(events["evaluation/best_score"].simple_value, 0.4)
-    assert events["evaluation/stagnant_screens"].simple_value == 2
-    assert (
-        json.loads((record.directory / "run.json").read_text())["last_evaluation"]["event"]
-        == "checkpoint_evaluation"
-    )
+    np.testing.assert_allclose(events["train/reward"].simple_value, -0.3)
+    identity = json.loads((record.directory / "run.json").read_text())
+    assert identity["status"] == "interrupted" and identity["updates"] == 2
 
 
-def test_orbax_retains_last_three_plus_selected_actor(tmp_path):
-    """Bound state growth while retaining selected actors and all episode evidence."""
-    config = {
-        "experiment": {"results": {"keep_checkpoints": 3}},
-        "learning": {},
-    }
-    actor = Actor(kind="state", action_size=4)
-    base = ExampleTrainingState(
-        params={"params": {"layer": {"kernel": jnp.ones((2, 2))}}},
-        optimizer_state={"actor": jnp.zeros(1)},
-        rng=jax.random.key(5),
-        updates=0,
-    )
-    evidence = {}
-    for update in (25, 50, 75, 100, 125):
-        directory = tmp_path / f"model_{update:06d}"
-        save_model(
-            directory,
-            base.replace(updates=update),
-            config=config,
-            provenance={"updates": update},
-            kind="state",
-            actor_spec=actor.specification,
-            export_policy=update == 25,
-        )
-        evidence[directory / "episodes.csv"] = f"episode,event\n{update},COLLISION\n"
-        (directory / "episodes.csv").write_text(evidence[directory / "episodes.csv"])
-    for path, contents in evidence.items():
-        assert path.read_text() == contents
-        assert (path.parent / "metadata.json").exists()
-    assert sorted(path.parent.name for path in tmp_path.glob("model_*/training")) == [
-        "model_000025",
-        "model_000075",
-        "model_000100",
-        "model_000125",
-    ]
-    with pytest.raises(ValueError, match="no training payload"):
-        load_model_state(tmp_path / "model_000050", base)
+def test_legacy_run_cannot_resume_into_current_layout(tmp_path):
+    """Reject legacy archives without changing their records."""
+    path = tmp_path / "run.json"
+    contents = json.dumps({"layout_version": 2})
+    path.write_text(contents)
+    with pytest.raises(ValueError, match="Orbax"):
+        RunRecord(tmp_path, OmegaConf.create({"seed": 0}), resume=True)
+    assert path.read_text() == contents
 
 
-def test_orbax_optionally_retains_best_incomplete_screening_checkpoint(tmp_path):
-    """Preserve measured PPO progress even when no checkpoint passes all scenes."""
-    config = {"experiment": {"results": {"keep_checkpoints": 2, "keep_best_screening": True}}}
-    actor = Actor(kind="state", action_size=4)
-    state = ExampleTrainingState(
-        params={"params": {"weight": jnp.ones(2)}},
-        optimizer_state={"actor": jnp.zeros(1)},
-        rng=jax.random.key(3),
-        updates=0,
-    )
-    for update, successes in ((10, 1), (20, 7), (30, 2), (40, 0), (50, 0)):
-        destination = tmp_path / f"model_{update:06d}"
-        save_model(
-            destination,
-            state.replace(updates=update),
-            config=config,
-            provenance={"updates": update},
-            kind="state",
-            actor_spec=actor.specification,
-        )
-        screening = destination / "screening"
-        screening.mkdir()
-        (screening / "report.json").write_text(
-            json.dumps(
-                {
-                    "complete": True,
-                    "reports": {
-                        "S01": {"task": "navigation", "episodes": 8, "successes": successes}
-                    },
-                }
-            )
-        )
-    assert sorted(path.parent.name for path in tmp_path.glob("model_*/training")) == [
-        "model_000020",
-        "model_000040",
-        "model_000050",
-    ]
-    assert len(list(tmp_path.glob("model_*/screening/report.json"))) == 5
-
-
-def test_legacy_run_keeps_old_log_contract(tmp_path):
-    """Existing archive runs retain their JSONL log format when resumed."""
-    config = OmegaConf.create({"seed": 0, "results": {"format": "legacy"}})
-    record = RunRecord(tmp_path / "legacy", config)
-    record.event("update", update=1, reward=0.5)
-    record.finish("interrupted", updates=1)
-    assert record.layout_version == 2
-    assert (record.directory / "metrics.jsonl").is_file()
-    assert not list(record.directory.glob("events.out.tfevents.*"))
+def test_resumed_checkpoint_can_start_a_new_run_directory(tmp_path):
+    """An external resumed attempt gets a fresh config and run identity."""
+    record = RunRecord(tmp_path / "new-attempt", OmegaConf.create({"seed": 3}), resume=True)
+    record.finish("interrupted")
+    assert OmegaConf.load(record.directory / "config.yaml").seed == 3
+    assert json.loads((record.directory / "run.json").read_text())["layout_version"] == 3

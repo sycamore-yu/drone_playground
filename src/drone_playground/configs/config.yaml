@@ -4,14 +4,14 @@ defaults:
   - sensor: state
   - controller: mellinger
   - method: controller
-  - learning: apg
+  - learning: bptt
   - benchmark: default
   - _self_
   - optional experiment: null
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled
 
-mode: sim
+mode: play
 seed: 0
 output: results/${now:%Y%m%d_%H%M%S}_${mode}_${task.name}_${sensor.name}_${learning.algorithm}_s${seed}
 simulation:
@@ -28,17 +28,18 @@ simulation:
 observation:
   depth: {}
 checkpoint: null
+checkpoint_root: results
 initial_checkpoint: null
 resume: null
 learning:
-  max_interactions: null
+  max_interactions: 4194304
+  best:
+    source: null
+    interval: 262144
+    episodes: 8
+    seed: 1000000
 results:
-  format: orbax
   keep_checkpoints: 3
-early_stopping:
-  min_updates: 800
-  patience: 6
-  min_delta: 0.02
 replay_path: null
 hydra:
   output_subdir: null

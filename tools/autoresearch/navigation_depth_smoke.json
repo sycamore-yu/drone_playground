@@ -2,10 +2,20 @@
   "name": "drone_navigation_depth_ppo_smoke",
   "env_id": "external:drone-playground:navigation-depth",
   "env_kwargs": {
-    "experiment": "navigation_procedural_depth_ppo_validation",
+    "experiment": "navigation_procedural_depth_ppo_collision_free",
     "algorithm": "ppo",
-    "eval_scenes": ["S01", "S02", "S03", "D01", "D02", "D03"],
-    "eval_mode": "checkpoint_eval"
+    "eval_scenes": [
+      "S01",
+      "S02",
+      "S03",
+      "D01",
+      "D02",
+      "D03"
+    ],
+    "overrides": [
+      "learning.options.horizon=32",
+      "simulation.num_envs=16"
+    ]
   },
   "train_episodes": 0,
   "eval_episodes": 12,

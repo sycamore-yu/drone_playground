@@ -1,9 +1,0 @@
-# @package _global_
-# Follow-up evaluation-only variation of the frozen VisFly training recipe.
-# Any probe success triggers a complete six-scene screening.
-defaults:
-  - navigation_paper_visfly2025_ppo
-
-screening:
-  probe_between_full: true
-  full_every: 3

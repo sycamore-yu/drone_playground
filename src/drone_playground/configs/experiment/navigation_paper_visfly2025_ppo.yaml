@@ -2,29 +2,24 @@
 # VisFly cluttered_flight official CNN/MLP, adapted to Crazyflow Navigation.
 # 500 Hz physics / 10 Hz decisions and 80m+ course are project-transfer settings.
 defaults:
-  - navigation_procedural_depth_ppo_validation
-
+- navigation_procedural_depth_ppo_collision_free
 simulation:
   procedural:
     min_start_goal_distance_m: 80.0
-
 sensor:
   config:
     width: 64
     height: 64
-
 observation:
   depth:
     representation: metric
   visfly: true
-
 method:
   action:
     level: body_rate
     heading: fixed
   actor:
     kind: visfly_depth
-
 learning:
   loss: null
   options:
@@ -36,11 +31,8 @@ learning:
     minibatches: 1
     clip_epsilon: 0.2
     initial_log_std: -0.5
-    lr: 0.00005
-    critic_lr: 0.00005
+    lr: 5.0e-05
+    critic_lr: 5.0e-05
     max_grad_norm: 0.5
-    weight_decay: 0.00001
+    weight_decay: 1.0e-05
     entropy_weight: 0.0
-
-results:
-  keep_best_screening: true

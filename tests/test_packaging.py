@@ -27,10 +27,11 @@ assert all(device.platform == 'cpu' for device in jax.devices())
 for module in (
     'simulation.environment', 'simulation.methods', 'simulation.observation',
     'simulation.sensors', 'simulation.tasks', 'simulation.policy',
-    'simulation.runner', 'simulation.replay', 'simulation.evaluation',
+    'simulation.runner', 'simulation.replay', 'simulation.factory',
+    'benchmark.evaluation', 'benchmark.reporting',
     'simulation.ros_planner', 'simulation.ros_planner.client',
     'simulation.ros_planner.planner_pb2', 'simulation.ros_planner.planner_pb2_grpc',
-    'learning.trainer', 'learning.checkpoint', 'learning.ppo', 'learning.apg',
+    'learning.trainer', 'learning.checkpoint', 'learning.ppo', 'learning.bptt',
     'learning.shac', 'cli',
 ):
     imported = importlib.import_module('drone_playground.' + module)
@@ -126,7 +127,7 @@ def test_wheel_hydra_entrypoint(installed_wheel, experiment, task, sensor):
     from omegaconf import OmegaConf
 
     run, prefix, _ = installed_wheel
-    for algorithm in ("ppo", "apg", "shac"):
+    for algorithm in ("ppo", "bptt", "shac"):
         output = run(
             [
                 str(prefix / "bin/drone-playground"),

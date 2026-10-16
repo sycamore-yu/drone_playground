@@ -5,52 +5,16 @@ import json
 
 import numpy as np
 import pytest
-from omegaconf import OmegaConf
 
+from drone_playground.benchmark.metrics import summarize
+from drone_playground.benchmark.reporting import save_evaluation
 from drone_playground.simulation.environment import make_environment
-from drone_playground.simulation.evaluation import _scene_seed
-from drone_playground.simulation.runner import rollout, save_evaluation
-
-
-def test_fixed_checkpoint_cohort_is_stable_and_benchmark_remains_held_out():
-    """Compare policies on identical initial states without changing final testing."""
-    config = OmegaConf.create(
-        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
-    )
-    initial = _scene_seed(config, 1_000_000, 1, 0)
-    assert initial == _scene_seed(config, 1_000_000, 20, 0)
-    assert initial != _scene_seed(config, 1_000_000, 20, 1)
-    assert initial != _scene_seed(config, 1_500_000, 1, 0)
-    config.mode = "benchmark"
-    assert _scene_seed(config, 2_000_000, 1, 0) != _scene_seed(config, 2_000_000, 20, 0)
-    config.mode = "checkpoint_eval"
-    config.benchmark.fixed_checkpoint_seeds = False
-    assert _scene_seed(config, 1_000_000, 1, 0) != _scene_seed(config, 1_000_000, 20, 0)
-    config.benchmark.fixed_checkpoint_seeds = "yes"
-    with pytest.raises(ValueError, match="must be boolean"):
-        _scene_seed(config, 1_000_000, 1, 0)
-
-
-def test_partial_checkpoint_probe_keeps_original_full_screen_initialization_seed():
-    """Selecting two scenes may not change either scene's fixed cohort identity."""
-    config = OmegaConf.create(
-        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
-    )
-    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
-    for index, scene in enumerate(scenes):
-        full_seed = _scene_seed(config, 1_000_000, 15, index, scene)
-        probe_seed = _scene_seed(config, 1_000_000, 1, 0, scene)
-        assert full_seed == probe_seed
-    config.mode = "benchmark"
-    assert _scene_seed(config, 2_000_000, 15, 3, "D01") != _scene_seed(
-        config, 2_000_000, 1, 0, "D01"
-    )
+from drone_playground.simulation.runner import rollout
 
 
 def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
     """Keep every outcome while omitting unused trace computation and storage."""
     from drone_playground.simulation import runner
-    from drone_playground.simulation.records import acceptance
 
     env = make_environment(
         task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06
@@ -73,7 +37,7 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
         env,
         outcomes,
         traces,
-        report=acceptance("navigation", outcomes),
+        report=summarize(outcomes),
         replay_episodes=0,
     )
     assert report["episodes"] == 3
@@ -87,7 +51,6 @@ def test_opt_in_navigation_progress_uses_lightweight_rollout_without_sensor_trac
 ):
     """The new progress measurements must not trigger costly replay sensor sampling."""
     from drone_playground.simulation import runner
-    from drone_playground.simulation.evaluation import navigation_progress_summary
 
     env = make_environment(
         task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06
@@ -110,11 +73,6 @@ def test_opt_in_navigation_progress_uses_lightweight_rollout_without_sensor_trac
         assert row["min_height_metres"] <= row["max_height_metres"]
         assert row["minimum_lower_boundary_margin_metres"] >= -1
         assert row["lower_height_out_of_bounds"] in (0, 1)
-    data = navigation_progress_summary(episodes)
-    assert data["mean_normalized_final_progress"] < 1
-    assert data["mean_normalized_best_progress"] >= 0
-    assert data["mean_path_length_metres"] >= 0
-    assert 0 <= data["lower_height_out_of_bounds"] <= 3
 
 
 def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
