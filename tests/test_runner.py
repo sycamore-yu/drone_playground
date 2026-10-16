@@ -3,7 +3,7 @@
 import numpy as np
 
 from drone_playground.simulation.controllers import MellingerController
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.methods import PlannerController
 from drone_playground.simulation.ros_planner import RosTrajectory
 from drone_playground.simulation.runner import rollout_host
@@ -32,7 +32,7 @@ def test_native_clock_measurements_and_control_between_decisions():
                 len(self.calls),
             )
 
-    env = Environment(task="navigation", scene="S01", sensor="depth", duration=0.42)
+    env = make_environment(task="navigation", scene="S01", sensor="depth", duration=0.42)
     planner = PlannerFixture()
     episodes, traces, plans, decisions = rollout_host(
         env,
@@ -48,4 +48,13 @@ def test_native_clock_measurements_and_control_between_decisions():
     assert len(decisions) == 3
     assert len(plans) == len(traces["time"]) == 22
     assert all(plan is not None for plan in plans[1:])
+    assert all(plan["positions"].shape == (2, 3) for plan in plans[1:])
+    np.testing.assert_allclose(
+        [plans[1]["received_time"], plans[11]["received_time"], plans[21]["received_time"]],
+        [0.0, 0.2, 0.4],
+    )
+    np.testing.assert_allclose(
+        [plans[1]["valid_until"], plans[11]["valid_until"], plans[21]["valid_until"]],
+        [0.5, 0.7, 0.9],
+    )
     assert np.isfinite(traces["position"]).all()

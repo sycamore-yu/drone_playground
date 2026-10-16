@@ -107,9 +107,9 @@ Navigation 基准：目标半径 `0.5 m`、机体碰撞球半径 `0.07 m`、最�
 | **uniform_lidar_paper** | `180×30`、2° 等角度网格                                                  | Liu 论文式对照配置                  |
 
 
-相机内外参、深度定义、有效值、LiDAR 射线方向、扫描相位、量程与误差模型属于 Sensor；降采样、历史堆叠和网络归一化属于 Observation。记录物理时间、传感采集时间、观测可用时间、方法调用周期及动作延迟；非整数频率按实际时间调度。
+相机内外参、深度定义、有效值、LiDAR 射线方向、扫描相位、量程与误差模型属于 Sensor；降采样、历史堆叠和网络归一化属于 Observation。记录物理时间、传感采集时间、观测可用时间、方法调用周期及动作延迟；非整数频率按实际时间调度。Mid-360 的 20k 全帧来自设备公开点率而非 MuJoCo 内置约定；`sensor.ray_sampling=policy` 仅计算全帧中供 1024 点策略使用的确定性选定射线，保留原全帧时序并显式区分训练配方。回放/传感器完整性仍支持 `full` 模式。
 
-D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体模式和模拟误差由配置声明，详见 [设备与框架研究](research/robotics-architecture.md)。
+D435i 预设提供设备标定；训练的 `64×48、30 Hz、20°、10 m` 由 Sensor 配置明确声明。Mid-360 使用 MuJoCo-LiDAR 0.3.5 的角度表，默认每帧连续读取 20,000 条。两种传感器均以同一帧时刻的机器人和动态障碍位姿生成快照，各点时间相同；延迟交付与采集时间分别记录。扫描相位、源文件哈希及快照语义随运行和 checkpoint 保存。详见 [sensor](adr/0012-sensor.md) 与 [render](adr/0013-render.md)。本功能分支的模型变化尚未完成冻结任务验收。
 
 ## 6. Learning：算法与具名方法
 
@@ -146,56 +146,49 @@ D435i 和 Mid-360 采用厂商公开的视场、扫描模式与时序；具体�
 
 网络、辅助损失与梯度规则的论文来源及参考参数见 [学习方法研究](research/learning-methods.md)。Zhang/Liu 原方法采用简化质点；本平台将其网络与训练方法适配至 Crazyflow，并验证物理控制转换与反向规则。
 
-**训练未达标时的调整规则：**先通过训练诊断核查观测和动作量纲、损失、reset、终止处理及梯度传播。若未达到 C1—C5，可参考 DiffAero、VisFly、VisFly-Lab、Zhang 和 Liu 的原始配置，调整 Actor／Critic 层数与宽度、GRU、输入预处理、学习率、batch size、rollout 长度、归一化、奖励／损失权重和梯度衰减等。
+**训练未达标时的调整规则：**先通过训练诊断核查观测和动作量纲、损失、reset、终止处理及梯度传播。若未达到 L3，可参考 DiffAero、VisFly、VisFly-Lab、Zhang 和 Liu 的原始配置，调整 Actor／Critic 层数与宽度、GRU、输入预处理、学习率、batch size、rollout 长度、归一化、奖励／损失权重和梯度衰减等。
 
-每次调整保存独立的实验配置、参数差异、调整原因及训练／评测记录。**进行训练算法的受控比较时，应在相同的新 Actor 配置下重新对照各算法**，并明确记录算法特有的 Critic、优化目标及梯度差异。使用 `checkpoint_eval` 进行调参，`benchmark` 用于最终冻结评测；C1—C6 的种子和质量标准保持不变。
+每次调整保存独立的实验配置、参数差异、调整原因及训练／评测记录。**进行训练算法的受控比较时，应在相同的新 Actor 配置下重新对照各算法**，并明确记录算法特有的 Critic、优化目标及梯度差异。使用轻量筛查和正式 `checkpoint_eval` 选模，以 `benchmark` 做独立冻结验证；每次验收记录其使用的协议版本，详见 [ADR-0015](adr/0015-three-stage-learning-acceptance.md)。
 
-### 6.3 收敛标准 C1—C6
-
-
-| 编号     | 验收标准                                                                        |
-| ------ | --------------------------------------------------------------------------- |
-| **C1** | 每个选定训练配方使用 **3 个独立训练种子**，分别选模和评价                                            |
-| **C2** | Tracking：每种子 **100 回合**、完成率 **≥95%**、成功回合位置 RMSE **≤0.25 m**                |
-| **C3** | Racing：每种子 **100 回合**、合法完赛率 **≥90%**，记录门序与完赛时间                              |
-| **C4** | Navigation：每种子、每个主场景 **25 回合**，每场景 **≥23/25** 安全到达，静态与动态分别判断；扩展场景逐项报告       |
-| **C5** | 连续 **3 次 checkpoint evaluation** 达到任务条件，按预设规则选 checkpoint，再进行独立冻结 benchmark |
-| **C6** | 使用可用 GPU 训练资源，优化吞吐与有效 GPU 利用率；记录交互数、更新数、墙钟时间、显存及到达目标所需计算成本。训练预算不预置硬上限       |
+### 6.3 L3 的收敛测量指标（不再独立编号）
 
 
-选模与最终测试数据分开。训练过程记录失败和未达标状态。所有方法在被选单元中完成实际参数更新、checkpoint 保存和冻结闭环评价。
-
-## 7. Simulation 验收 S1—S8
-
-
-| 编号     | 完成条件                                                               |
-| ------ | ------------------------------------------------------------------ |
-| **S1** | Pixi 锁定 Python 3.12、官方 Crazyflow、JAX/MJX、RScope 等依赖；可安装包与资产在干净环境运行 |
-| **S2** | 同模型、初态、命令和子步下，Simulation 的物理状态与官方 Crazyflow 直接执行一致                 |
-| **S3** | Tracking、Racing、Navigation 有实际闭环和任务事件，Navigation8 的场景与动态运动能够加载、推进  |
-| **S4** | D435i 与 Mid-360 在固定几何、遮挡和运行时间下产生正确测量；规划器的信息权限可验证                   |
-| **S5** | Planner→Controller 与直接 Policy／联合方法均可运行；更换方法保持任务和评价规则               |
-| **S6** | C++ gRPC 与 ROS1 真实 EGO-Planner/SUPER 接入；静态和动态任务有真实决策与控制轨迹          |
-| **S7** | RScope 查看 Tracking、Racing、Navigation 实际轨迹、传感命中和动态场景；显示不改变物理结果      |
-| **S8** | 固定案例、种子、场景、方法身份、延迟、失败分母、耗时与回放可追溯并可重新评测                             |
+| 测量内容 | 正式验收门槛 |
+|---|---|
+| 随机初始化 | 每个训练配方 **3 个独立训练种子**；严禁从旧模型初始化，允许同一 run 的完整训练状态断点恢复 |
+| Tracking | 每种子正式 **100 回合**；完成率 **≥95%**，成功回合位置 RMSE **≤0.25 m** |
+| Racing | 每种子正式 **100 回合**；合法完赛率 **≥90%**，记录过门顺序与完赛时间 |
+| Navigation | 每种子、每个主场景正式 **25 回合**，每场景 **≥23/25** 安全到达；S01/S02/S03 与 D01/D02/D03 分别计数，S06/D06 仅报告 |
+| 三阶段 | 训练中轻量筛查：导航六主场景各 8 回合、状态任务 8 回合；通过后完整 checkpoint validation；固定通过的权重，以独立测试种子执行一次冻结 benchmark |
 
 
-**S6 的具体要求**：EGO 和 SUPER 各执行至少 **10 个静态回合和 10 个动态回合**，覆盖主场景。每种方法在 `S01/S02/S03` **各至少一次安全到达**；动态场景记录完整求解、控制、碰撞和超时结果，**不设置动态安全到达率门槛**。Learning 的动态 Navigation 仍按 C4 判断。
+筛查、完整选模与最终冻结测试使用不重叠的随机种子区间。训练过程记录失败和未达标状态，三个算法均需真实参数更新、保存与冻结闭环。旧 run 保留原始合同及参数，不混改历史结论；新训练使用 [ADR-0015](adr/0015-three-stage-learning-acceptance.md) 与 [ADR-0018](adr/0018-training-patience-and-frozen-selection.md)：首次完整达标立即独立冻结一次；≥800 updates 后连续 6 次轻量筛查无明显改善则以 `early_stopped` 结束配方。上表用于 L3 的研究结论，不构成第三套验收编号。GPU 吞吐、墙钟时间、显存与到达门槛的计算成本归 **L4** 统一记录。
 
-## 8. Learning 验收 L1—L6
-
-
-| 编号     | 完成条件                                                        |
-| ------ | ----------------------------------------------------------- |
-| **L1** | PPO、APG/BPTT、SHAC 的真实采样、梯度与参数更新正确                           |
-| **L2** | Depth 与 LiDAR 各自完成传感器→观测→网络→训练→checkpoint→冻结闭环              |
-| **L3** | State MLP、Zhang CNN/GRU 和 Liu PointNet/GRU 的共享 Actor 主干、损失、导数及控制转换经专项测试 |
-| **L4** | 训练、checkpoint evaluation、正式 benchmark 独立；reset、终止、截断与循环记忆正确 |
-| **L5** | 18 个选定单元按 C1—C5 达到收敛门槛，并保存逐种子结果                             |
-| **L6** | GPU 训练吞吐、训练成本、权重和恢复状态有完整记录                                  |
+## 7. Simulation 验收 S1—S4
 
 
-Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。预训练模型可以用于研究对照、参数初始化或推理实验；其权重与数值结果存放在 [参考实验资产](../research/checkpoints/manifest.json) 中。
+| 编号 | 验收内容 | 证据 |
+|---|---|---|
+| **S1** | **安装与物理正确性**：Pixi 锁定依赖、可安装包/资产、Crazyflow 相同子步下的状态一致性 | 可安装结果与固定种子物理对照 |
+| **S2** | **任务环境与传感器**：Tracking/Racing/Navigation、静态及动态场景、D435i/MID360 观测、传感时钟与规划器信息权限 | 环境/几何/传感器专项验证；完整 20k 与稀疏策略射线模式区分 |
+| **S3** | **方法扩展和原生接入**：Policy、Planner、Controller 组合，EGO-Planner/SUPER 通过 C++ gRPC + ROS 真实执行 | 原生控制轨迹、求解日志与独立 S3 演示 |
+| **S4** | **回放与可复现性**：RS​​cope 场景/姿态/传感命中回放，记录种子、环境身份、延迟、所有失败回合和耗时 | 可复查的 Result 及回放；显示不修改物理 |
+
+
+**S3 中原生 EGO/SUPER 的具体要求保持不变**：每种方法至少 10 个静态回合、10 个动态回合，覆盖主场景；在 `S01/S02/S03` 每场景至少一次安全到达。动态只要求完整记录求解、控制、碰撞和超时，**不设动态成功率门槛**。学习型 Navigation 仍按 L3 独立阈值验收。
+
+## 8. Learning 验收 L1—L4
+
+
+| 编号 | 验收内容 | 证据 |
+|---|---|---|
+| **L1** | **训练算法正确性**：PPO、APG/BPTT、SHAC 的采样、梯度、参数更新、回合 reset、终止/截断、GRU、恢复 | 算法专项小规模测试，不每次训练都重跑全套 |
+| **L2** | **感知学习闭环**：State MLP、Zhang CNN/GRU、Liu PointNet/GRU 的输入、动作、导数、传感器到训练/冻结闭环 | 观测和网络专项验证；冻结 Actor 无特权信息泄露 |
+| **L3** | **从零收敛**：3 算法 × Tracking、Racing、Nav Static/Dynamic × Depth/LiDAR，共 18 单元；每配方 3 种子；遵守 §6.3 和三阶段选模 | 完整 checkpoint validation + 独立冻结 benchmark；逐种子 100/25 回合结果 |
+| **L4** | **计算效率与证据**：真实 JAX/Crazyflow 吞吐、训练耗时、GPU 资源、权重/优化器恢复、收敛所需交互数 | TensorBoard、Orbax、Results 与独占吞吐对照；不要求填满 VRAM |
+
+
+Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。**v0.2 的 18 单元正式验收全部从随机网络参数训练**，不得用旧仓库、参考项目或历史 run 权重初始化。DiffAero、旧仓库和论文只用于参考奖励、网络、观测和超参数。现行矩阵结果由被 Git 忽略的 `results/scratch_v02/matrix.json` 汇总，历史验收数据不能替代。八项验收的合并决策参见 [ADR-0017](adr/0017-eight-acceptance-gates.md)；旧 C1–C6、L1–L6、S1–S8 仅用于解读历史记录。
 
 ## 9. 工具、配置与交付
 
@@ -207,23 +200,31 @@ Simulation 与 Learning 使用同一 Crazyflow 前向和同一 Task 判定。预
 ```text
 results/<run_id>/
   config.yaml
+  events.out.tfevents.*
   run.json
-  metrics.jsonl
   checkpoints/
-    latest.training.zip
-    step-000025/
-      policy.zip
-      report.json
-      episodes.csv
-  eval/001/
-    report.json
-    episodes.csv
-    trajectories.npz    # 按需保存
-    replays/             # 实际生成回放时创建
+    model_000025/
+      training/          # Orbax 训练状态
+      metadata.json
+    model_000050/
+      training/
+      metadata.json
+    model_000075/
+      training/
+      actor/             # 选模成功导出的 Orbax 策略
+      metadata.json
+      screening/         # 可选筛查记录
+      report.json        # 可选完整选模报告
+  episodes.csv           # 正式冻结评测后生成
+  report.json            # 正式冻结评测总表
+  replays/
+    best/                # 开启回放时生成 RScope
 ```
 
-输出真实训练/评测配置、权重、指标、成功和失败案例；回放在需要时记录。训练状态恢复和冻结推理分别保存完整所需参数。
+新训练使用 [ADR-0016](adr/0016-results-layout-orbax-tensorboard.md)；`run.json`
+仅保留训练来源、进度及完成状态，不复制 TensorBoard 指标流，取消 `metrics.jsonl` 与
+`eval/`。回放仅在请求时记录；历史 ZIP 结果不移动或改写。
 
 ## 10. 首发边界
 
-首发覆盖单机四旋翼、三任务、18 个训练验收单元、Depth/LiDAR、EGO/SUPER 原生接口、RScope 和 Pixi。可扩展到多机、传感融合、其它控制方法及具名论文适配。首发的 C1—C6、S1—S8、L1—L6 为统一完成标准。
+首发覆盖单机四旋翼、三任务、18 个训练验收单元、Depth/LiDAR、EGO/SUPER 原生接口、RScope 和 Pixi。可扩展到多机、传感融合、其它控制方法及具名论文适配。首发只使用 **S1–S4、L1–L4 共八项独立验收**；§6.3 的任务质量与种子条件是 L3 内部指标，不再单列完成任务。

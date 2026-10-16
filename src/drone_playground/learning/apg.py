@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import optax
 
 from drone_playground.learning.ppo import Rollout
+from drone_playground.simulation.tasks import Event
 
 
 def rollout_objective(trainer, state, params, *, bootstrap=False):
@@ -20,18 +21,55 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
         rng, reset_key = jax.random.split(rng)
         observation = trainer._observe(env_state)
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
-        action = jnp.tanh(raw)
+        action = trainer.method.deterministic(raw)
         after = trainer._step(env_state, action, differentiable=True)
-        cost, history, terms = trainer._cost(env_state, after, action, history)
-        auxiliary_cost = trainer._auxiliary_cost(auxiliary, observation)
+        cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        terms = {
+            **terms,
+            "gates_advanced": (after.task.gates - env_state.task.gates).astype(jnp.float32),
+            "missed_gate_fraction": (
+                (after.task.event == Event.MISSED_GATE) & ~env_state.done
+            ).astype(jnp.float32),
+            "collision_fraction": ((after.task.event == Event.COLLISION) & ~env_state.done).astype(
+                jnp.float32
+            ),
+            "out_of_bounds_fraction": (
+                (after.task.event == Event.OUT_OF_BOUNDS) & ~env_state.done
+            ).astype(jnp.float32),
+        }
+        auxiliary_cost = trainer.objective.auxiliary_cost(auxiliary, observation)
         boundary = after.done | (index == trainer.config["horizon"] - 1)
         if bootstrap:
             value = trainer.critic.apply(state.target_critic_params, observation)
-            next_value = trainer.critic.apply(state.target_critic_params, trainer._observe(after))
+            next_observation = trainer._observe(after)
+            next_value = trainer.critic.apply(state.target_critic_params, next_observation)
             contribution = discount * (
                 cost
-                - trainer.config["gamma"] * jnp.where(boundary & ~after.terminated, next_value, 0)
+                - trainer.config["bootstrap_weight"]
+                * trainer.config["gamma"]
+                * jnp.where(boundary & ~after.terminated, next_value, 0)
             )
+            if trainer.config["report_terminal_critic_grad"]:
+                if trainer.env.task.name != "racing":
+                    raise ValueError("Terminal Critic gradient trace is Racing-only")
+
+                def grad_value():
+                    def evaluate(obs):
+                        return trainer.critic.apply(
+                            state.target_critic_params,
+                            {**next_observation, "state": obs},
+                        ).sum()
+
+                    return jnp.linalg.norm(jax.grad(evaluate)(next_observation["state"]), axis=-1)
+
+                grad_norm = jax.lax.cond(
+                    jnp.any(boundary & ~after.terminated),
+                    grad_value,
+                    lambda: jnp.zeros_like(cost),
+                )
+                terms["terminal_critic_input_gradient_norm"] = jnp.where(
+                    boundary & ~after.terminated, grad_norm, 0.0
+                )
         else:
             value = next_value = jnp.zeros_like(cost)
             contribution = cost
@@ -75,6 +113,13 @@ def rollout_objective(trainer, state, params, *, bootstrap=False):
         "done_fraction": rollout.done.mean(),
         "auxiliary_loss": auxiliary.mean(),
     }
+    if bootstrap:
+        metrics["bootstrap_terminal_value_abs"] = jnp.abs(rollout.next_values[-1]).mean()
+        metrics["bootstrap_terminal_vs_step_cost"] = (
+            trainer.config["gamma"]
+            * jnp.abs(rollout.next_values[-1]).mean()
+            / jnp.maximum(jnp.abs(rollout.rewards).mean(), 1e-6)
+        )
     return costs.mean(), (state, rollout, metrics)
 
 
@@ -94,6 +139,6 @@ def update(trainer, state):
             **metrics,
             "loss": loss,
             "actor_loss": loss,
-            "actor_grad_norm": optax.global_norm(gradients),
+            "actor_grad_norm": optax.tree.norm(gradients),
         },
     )

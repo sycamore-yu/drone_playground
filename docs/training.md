@@ -2,13 +2,15 @@
 
 `Trainer` performs one real parameter update through the shared Simulation environment.
 The caller controls the training loop, evaluations, stopping decisions and GPU assignment.
-There is no total interaction cap and an update does not indicate convergence.
+The default CLI has no interaction cap. Setting `learning.max_interactions` runs a fixed
+budget and exports the final Actor without convergence selection. See
+[Autoresearch Gym](autoresearch.md) for candidate comparisons.
 
 ```python
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import TrackingEnv, make_environment
 
-env = Environment(num_envs=32, device="gpu")
+env = TrackingEnv(num_envs=32, device="gpu")
 trainer = Trainer(env, kind="state", algorithm="ppo", seed=0,
                   config={"horizon": 32, "lr": 3e-4, "minibatches": 4})
 state = trainer.initialize()
@@ -22,8 +24,168 @@ trainer.save_inference("results/run/checkpoints/step-000001/policy.zip", state,
                        provenance={"git_revision": revision, "run_id": "run"})
 ```
 
+For a Navigation depth recipe, construct the sensor with explicit image settings:
+
+```python
+env = make_environment(
+    task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"},
+    sensor_config={"width": 64, "height": 48, "frequency_hz": 30,
+                   "pitch_deg": 20, "min_range": 0.3, "max_range": 10},
+)
+trainer = Trainer(env, kind="depth", loss="zhang")
+```
+
+LiDAR recipes select `sensor="lidar"`, `kind="lidar"` and `loss="liu"`. Device
+constructors no longer infer a training image mode. Sensor/Experiment YAML holds these
+settings. Both devices produce snapshots; checkpoint identity records acquisition
+semantics, the MID360 resource hash, point budget, preprocessing and latency bounds.
+Full training archives require the current state structure and matching identity.
+
+## 可训练 Method 与 Brax 互通
+
+### Results v3
+
+新的长时间训练按照 [ADR-0018](adr/0018-training-patience-and-frozen-selection.md)
+启用训练诊断早停：`early_stopping.min_updates=800`，
+`patience=6`，`min_delta=0.02`。Patience 从第 800 次更新后的
+轻量筛查累计，最差场景优先。若首次通过完整候选选模，则只进行一次
+冻结 Benchmark；失败后新开随机初始化试验，不重复冻结挑选同一 run
+的其他 checkpoint。旧 v2 已有单次达标候选只允许使用
+`tools/freeze_legacy_candidate.py --run <旧 run 目录>` 独立审查一次。
+
+新 run 按 [ADR-0016](adr/0016-results-layout-orbax-tensorboard.md) 保存：
+`config.yaml`、TensorBoard 事件、`checkpoints/model_NNNNNN/`（Orbax
+`training/` + 选模通过才有的 `actor/`）、正式冻结 `episodes.csv`
+及按需生成的 `replays/best/`。唯一额外索引 `run.json` 保存完成性、来源和
+所选模型路径。每个模型目录的 `metadata.json` 保存其训练状态来源。
+旧 v2 ZIP 训练归档仅保留供历史追溯，不由调度器自动续训；新 v3 推理加载直接指定
+`checkpoint=results/<run_id>/checkpoints/model_NNNNNN`。
+
+## Navigation 程序化训练 / 固定 Benchmark
+
+根据 [ADR-0019](adr/0019-procedural-training-fixed-navigation-benchmark.md)，
+程序化训练使用 `scene=train/procedural`，每个并行世界独立持有
+`EnvState.scene_state`：障碍位置、形状、掩码、动态运动目标、
+速度/相位，以及无人机起终点。每次 reset 使用 JAX PRNG 采样；
+碰撞、Depth、LiDAR、privileged Critic 和训练损失使用同一几何。
+训练地图保留位于 y=-17.5 的可行外侧通路作为构造性可达性证明。
+
+新训练入口是 `navigation_procedural_depth` /
+`navigation_procedural_lidar`（PPO 可使用各自 `_ppo` 后缀）。
+对应 YAML 在 `learning.scenes: null`，不再每 20 个 updates
+轮换 S01–D06；原 S01–D06 冻结 MJCF、种子基段与正式门槛不变。
+S06/D06 只作扩展报告，不作为已见几何的泛化证明。
+
+原 12/18 已通过矩阵继续保存在 `results/scratch_v02/`；
+新协议必须使用独立的 `results/procedural_v01/`：
+
+```bash
+python tools/train_scratch_matrix.py plan --regime procedural \
+  --only depth_ppo,lidar_ppo,racing_ppo,racing_shac \
+  --results-root results/procedural_v01
+python tools/train_scratch_matrix.py run --regime procedural \
+  --only depth_ppo,lidar_ppo,racing_ppo,racing_shac \
+  --results-root results/procedural_v01 --max-parallel 1
+```
+
+训练前须验证 NVIDIA 驱动与用户态库版本一致。
+CPU 端的程序化 Scene/JAX 烟雾测试不能视为 GPU 模型收敛。
+该轮仅包含四个遗留难题，共 6 个待解决的正式单元，
+不重跑已经通过验收的 12 个单元。独立监控器就是本地 Python
+`train_scratch_matrix.py`，每 20 秒更新 `matrix.json`
+中的 `observed_at_utc` 和活跃进程；无需 ChatGPT 定时调用。
+Racing/SHAC 的新配方 `racing_shac_stable` 将非零 bootstrap
+权重降低至 0.2，其他正式实验的物理任务、门数和冻结验收不变。
+
+PPO 诊断候选可选 `learning.options.ppo_target_kl`（默认 0 不启用）
+和 `learning.options.ppo_value_clip`（默认 0 不启用）；
+每次更新记录 explained variance、Clip Fraction、KL、
+Critic target std、动作饱和度与探索方差。
+`racing_shac_bootstrap_ablation` 只用于 SHAC 梯度消融：
+`bootstrap_weight=0` 不能计入正式 SHAC 的 3-seed 验收。
+新 Racing 配方 `racing_shac_stable` 仍保留非零终端价值权重
+（`bootstrap_weight=0.2`），按独立随机种子训练与正式验收；
+`racing_ppo_stable` 另以 KL 限制、价值裁剪和过门进度奖励
+进行受控重训。二者不得覆盖旧 `scratch_v02` 结果。
+
+### PPO 诊断与旧版本控制接口的受控对照
+
+[ADR-0014](adr/0014-rl-environment-and-method-interface.md) 已实现
+`BraxTrainingEnv` 标准交互合同；Brax 原生 PPO/APG 属于 **可选对照**，
+不是当前带 CNN/PointNet+GRU 感知策略的无缝替换。
+[ADR-0020](adr/0020-ppo-diagnostics-before-brax-replacement.md)
+记录旧仓库 Brax PPO、DiffAero、VisFly 与新自研 PPO 的差异和验收。
+
+`navigation_procedural_depth_ppo_velocity` 和
+`navigation_procedural_lidar_ppo_velocity` 是从零训练的独立配方：
+四维世界系速度指令与 Yaw 经速度内环生成 Crazyflow 的
+`attitude_thrust`，`reward_profile=legacy_motion_navigation_v2` 单独计算
+旧版启发的速度跟踪、净空、进度和终端奖励；不复用旧 checkpoint。
+`start_sampling=collision_free` 按 episode 采样不同的起点和起终距离，
+并做实际障碍净空检查，独立可达性验证仍需后续补充。
+
+当当前基线配方第 3 次尝试仍失败时，调度器把第 4 次尝试指向以上
+速度接口对照。已运行的配方绝不热修改优化器或动作定义。
+PPO 训练记录额外提供 `navigation_progress_metres`、
+`navigation_collision_fraction`、`navigation_out_of_bounds_fraction`、
+`advantage_progress_correlation`、`advantage_positive_fraction`、
+`critic_return_rmse_preupdate` 和传感器有效测量比例。
+以上均是训练轨迹诊断指标，不能替代独立冻结成功率。
+
+### Task 奖励与 Learning 损失的归属
+
+根据 [ADR-0001](adr/0001-simulation-learning-boundary.md)、
+[ADR-0014](adr/0014-rl-environment-and-method-interface.md) 与
+[ADR-0021](adr/0021-task-owned-reward-contract.md)，Task 参数归
+Simulation 管理，任务奖励数学在 simulation/task_rewards.py。
+NavigationEnv 通过 cost() 和 task_reward_components() 对所有方法
+暴露相同的 Task 奖励；learning/objective.py 仅负责组合任务成本
+与 Zhang/Liu 等网络专有的感知、预测和 jerk 学习损失。
+
+**新配方**选择 task.options.reward_profile 与可选的
+task.options.reward_shaping；参考
+navigation_procedural_{depth,lidar}_ppo_velocity_task。
+**已有 Trial-4** 的原始速度 PPO YAML 和 checkpoint 必须保持不变，
+其历史 learning.options.reward_profile 仅在构造 Environment 时
+转换为 Task 的奖励类型。原 Learning 训练参数里的进度／失败／高度
+权重暂时保留为历史配置来源，但计算全部在 Simulation 执行。
+
+训练算法与具体网络、Action 和执行 Method 分离。构造阶段由 Hydra 实例化
+`method.actor`，Actor 的输出宽度从选定 Action 取得。可选择独立的 Critic；
+`PolicyMethod` 默认使用连续 tanh-Gaussian PPO 分布，而 PPO 更新调用
+`method.sample / log_probability / entropy`，APG/SHAC 通过
+`method.deterministic / execute` 使用同一个前向 Method。自定义可训练方法应
+在这些操作中定义自身的动作和概率／梯度合同，而不修改 PPO/APG/SHAC 代码。
+
+`Trainer` 管理单次参数更新、优化器及可恢复训练状态。`EpisodeObjective`
+独立计算各算法共用的实际任务代价、具名感知代价、因果历史和训练辅助项。
+基础任务奖励仍来自 `Environment.cost`；后续若采用具体环境子类，再将
+任务专属奖励项移动到相应任务实现，避免为同一种损失保留两份公式。
+
+可选 `learning.brax_adapter.BraxTrainingEnv` 提供 Brax 标准
+`Env.reset / step`、`State.pipeline_state/obs/reward/done/metrics/info`
+和规格属性。其 `pipeline_state` 直接持有现有 EnvState，不复制 Crazyflow
+的动力学、传感、任务和延迟状态。当前只验证了 State／无传感器的 PPO
+兼容路径；Depth/LiDAR、循环网络和原生 Brax APG 仍需分别评估。
+
+当环境已由 `Sim(n_worlds=num_envs)` 批量运行时，Brax PPO 对照使用
+`wrap_env=False`，由适配器执行完成世界的新随机初态重置、回合
+统计与终止前观测保留，禁止再套一层上游 `VmapWrapper`。
+
+可在安装了 Brax 0.14.2 的隔离环境运行短程验证：
+
+```bash
+SCIPY_ARRAY_API=1 JAX_PLATFORMS=cpu PYTHONPATH=src \
+  python tools/smoke_brax.py --algorithm ppo --num-envs 4 --timesteps 64
+```
+
+此入口直接调用上游 `brax.training.agents.ppo.train`，只用于接口验收和后续受控对照，
+不会替换现有 PPO 或创建第二套项目级 Runner/Trainer。此次短程训练完成了
+原生 PPO 更新调用，但没有验证收敛；完整算法对照需分别冻结配方、预算、随机种子和模型。
+也可以选择 `--algorithm apg`，调用 Brax 原生 APG 进行同样的短程接口检查。
+
 For Navigation acceleration recipes, select
-`Environment(task="navigation", scene="S01", sensor="depth", action={"level": "acceleration"})`
+`NavigationEnv(scene="S01", sensor="depth", action={"level": "acceleration"})`
 and `Trainer(env, kind="depth", loss="zhang")`, or select LiDAR and `loss="liu"`.
 The network, physical action interface and loss are independent choices. Environment owns the
 batch, device, action conversion, sensor clock and observed fields. Trainer uses
@@ -148,8 +310,16 @@ state, environment, action, network and learning configuration. No missing optio
 filled from historical defaults. Standalone inference archives must declare the Actor
 specification; old v1 files are historical evidence, not loadable inputs.
 
-For mixed training, C5 evaluation and the final benchmark still evaluate all eight scenes
-separately, using nominal starts, the existing seed partitions and unchanged criteria.
+New mixed training follows [ADR-0015](adr/0015-three-stage-learning-acceptance.md):
+checkpoint screening uses six main scenes and eight episodes per scene (48
+rollouts), with permissive 6/8 per-scene candidate eligibility. A qualified
+checkpoint receives one full validation of 25 episodes in each main scene
+(150 rollouts) using disjoint checkpoint-validation seeds. On the first
+full C4 pass, the selected actor is frozen for an independent benchmark in
+all eight scenes (200 rollouts, S06/D06 reported but not graded).
+State-only Tracking/Racing uses 8/100/100 screening/validation/benchmark
+episodes and retains its original C2/C3 quality thresholds. Old in-flight
+three-consecutive-pass runs retain their recorded selection protocol.
 The CLI's `initial_checkpoint` remains optional (default null): supplying a frozen policy
 initializes validated Actor variables with fresh optimizer/episode state and records source
 checksum/provenance. `resume` instead restores full training state and sampling progress.
@@ -158,7 +328,8 @@ If a saved update was due for evaluation when the process stopped, resuming comp
 that evaluation before another update or scene switch. The evaluation seed index advances
 only after the complete evaluation returns. Existing partial output is retained under
 `checkpoints/step-<update>/incomplete-*`; a `checkpoint_evaluation_retry` event records its
-path. Partial output does not count toward the three consecutive complete evaluations.
+path. Partial output does not count as completed screening or validation;
+for old runs it does not count toward their original three-consecutive rule.
 
 ```bash
 pixi run train experiment=navigation_mixed_depth learning=apg seed=0
@@ -293,5 +464,53 @@ CPU regression tests exercise real official Crazyflow physics for all three upda
 termination/truncation arithmetic, recurrent recomputation/reset, SHAC terminal-value
 state gradients, incoming-physics decay versus action gradients, exact checkpoint
 continuation, inference equality, and interrupted-save preservation. These tests do not
-establish C1–C6 convergence, GPU throughput, or the 18-cell benchmark acceptance matrix;
+establish L3 convergence, L4 GPU throughput, or the 18-cell benchmark acceptance matrix;
 those remain the caller's independent training/evaluation work.
+
+## Procedural PPO: controlled start-distribution comparison
+
+Training uses `train/procedural`: obstacle geometry and movement are independently
+sampled by world and episode. Fixed S01–D03 scenes appear only in checkpoint
+validation and the final benchmark. Historical checkpoint screens varied their
+initialization seed with `evaluation_index`, so scores from different updates were
+measured on different initial-state samples.
+
+The new opt-in `benchmark.fixed_checkpoint_seeds=true` compares every checkpoint
+on the same eight initial states per scene. The screening and full-validation
+seed bases remain separate, and final benchmark seeds retain their independent
+partition. `evaluation_index` continues to identify each report. New runs may
+also set `results.keep_best_screening=true` to retain the best incomplete
+screening checkpoint in addition to the most recent resumable states. Selection
+still requires a passing full validation; a good screening score alone is not
+accepted as a model or frozen benchmark result.
+With Orbax, ordinary periodic checkpoints save resumable state without exporting
+an inference Actor. This lets retention prune unselected checkpoints while
+keeping the best screening checkpoint and any accepted Actor.
+
+The old `start_sampling=collision_free` mixture places 35% of starts near the
+goal and draws the rest uniformly along the course. It covers nominal
+benchmark starts near x=2 m infrequently. The `stratified` preset divides
+worlds into near-start, uniform, and near-goal cohorts and rotates cohort
+assignments each episode. Collision checking, independent obstacle layouts,
+sensor models, dynamics and goal conditions remain unchanged.
+
+Paired, independently initialized configurations:
+
+| Sensor | Existing start distribution | Balanced start distribution |
+| --- | --- | --- |
+| Depth | `navigation_procedural_depth_ppo_validation` | `navigation_procedural_depth_ppo_stratified` |
+| LiDAR | `navigation_procedural_lidar_ppo_validation` | `navigation_procedural_lidar_ppo_stratified` |
+
+Run each pair with the same seed and training budget, in separate output
+directories; compare fixed-checkpoint screening trajectories and then a held-out
+full validation. Training metrics now include completed-episode counts, success
+rate, collision rate and out-of-bounds rate. They are distinct from per-step
+event frequencies and from checkpoint-validation success rates. Prior runs and
+their checkpoints retain the original seed and start-sampling contracts.
+
+The procedural scratch scheduler reserves PPO candidates 9 and 10 for this
+comparison. Candidate 9 copies the best recorded non-velocity trial's explicit
+optimization settings; candidate 10 reuses candidate 9's settings and changes
+only `simulation.procedural.start_sampling`. Both initialize new Actor/Critic
+weights. Historical `best_screen_score` in `run.json` remains usable for this
+choice after rolling checkpoint cleanup.

@@ -1,0 +1,17 @@
+# @package _global_
+# Identical Trial-9 LiDAR training cost, with Task-owned coefficients.
+defaults:
+  - navigation_procedural_lidar_ppo_validation
+screening:
+  probe_between_full: true
+  full_every: 3
+early_stopping:
+  patience: 3
+task:
+  options:
+    reward_shaping:
+      task_weight: ${learning.options.task_weight}
+      progress_reward_scale: ${learning.options.progress_reward_scale}
+      failure_cost: ${learning.options.failure_cost}
+      altitude_weight: ${learning.options.altitude_weight}
+      height_boundary_weight: ${learning.options.height_boundary_weight}

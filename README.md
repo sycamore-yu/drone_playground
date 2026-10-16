@@ -1,5 +1,11 @@
 # Drone Playground
 
+**v0.2 development branch:** This is the next-generation JAX/Crazyflow research platform.
+The frozen v0.1 source is retained on the `v0.1` branch of
+[sycamore-yu/drone_playground](https://github.com/sycamore-yu/drone_playground).
+The public `main` branch remains on v0.1 until the v0.2 training and evaluation
+acceptance criteria are met. v0.2 is not yet a validated release.
+
 基于官方 Crazyflow 的四旋翼研究平台：Tracking、Racing、Navigation8，
 D435i Depth / Mid-360 LiDAR，PPO、APG/BPTT、SHAC，以及原生 EGO-Planner / SUPER。
 目标与验收条件见 [规格](docs/spec.md)，实际执行证据见 [验证记录](docs/validation.md)。
@@ -46,20 +52,24 @@ pixi run benchmark task=navigation scene=S01 sensor=lidar method=super \
 pixi run replay replay_path=/absolute/path/to/episode.mj_unroll
 ```
 
-同一 worker 同时仅供一个客户端使用。原生报告按 S6 判断：覆盖六个主场景，静态和动态
+同一 worker 同时仅供一个客户端使用。原生报告按新 S3（旧 S6）判断：覆盖六个主场景，静态和动态
 各至少 10 回合，S01/S02/S03 各至少一次安全到达；动态不设成功率门槛。
 逐回合 `episodes.csv`、`trajectories.npz`、`decisions.json` 保留实际控制、求解和失败结果。
 原生动态及扩展场景的 `passed: null` 表示诊断报告，没有单场景成功率验收门槛。
-学习策略 Navigation 仍按 C4 的每主场景 25 回合、至少 23 次成功判断。
+学习策略 Navigation 仍按新 L3（旧 C4）每主场景 25 回合、至少 23 次成功判断。
 
-训练连续三次 checkpoint evaluation 达标后，按唯一支持的
-`last_of_first_three_consecutive_passes` 规则选择第三次权重，再运行独立 benchmark。
-Checkpoint metadata 的 provenance 保存连续通过数、评测索引及累计活动耗时；
+新训练使用 `first_full_validation_pass` 三阶段选模：训练中只在六个导航主场景
+各跑 8 回合轻量筛查；通过后按新 L3 的任务门槛做一次完整 checkpoint validation，
+首次完整通过的权重停止训练并进行独立冻结 benchmark。正式冻结导航还记录
+S06/D06，但它们不参与 L3 主场景门槛；不再要求连续三次完整评测。已启动的旧 run
+按各自保存的 `last_of_first_three_consecutive_passes` 协议继续，不能默默改变选模标准。
+见 [ADR-0013](docs/adr/0013-three-stage-learning-acceptance.md)。
+Checkpoint metadata 的 provenance 保存选择协议、评测索引及累计活动耗时；
 恢复后的吞吐率使用本次进程新增交互数除以本次耗时。`training_wall_seconds` 累计各段
 活动时间（含初始化、保存与评测，统计至对应记录时刻），不含停机时间；
 `session_wall_seconds` / `session_interactions` 描述本次调用。v2 训练归档必须包含
 完整训练状态和配置；缺失字段不再推测或补齐。
-已完成 C5 的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
+已通过完整选模的 checkpoint 恢复后直接重跑 benchmark；已有结果保留，新尝试写入
 `eval/<编号>/`，实际目录记录在 `run.json` 的 `benchmark_directory`。
 
 ## 架构与记录
@@ -70,10 +80,12 @@ Simulation 管任务、场景、传感器、方法、控制执行、冻结策略
 详见 [架构决策](docs/adr/0001-simulation-learning-boundary.md)、
 [训练接口](docs/training.md)、[场景资产](assets/scenes/README.md) 和 [回放](docs/replay.md)。
 
-每次运行写入 `results/<run_id>/`：`config.yaml`、`run.json`、`metrics.jsonl`、
-`checkpoints/step-*/` 内的权重和选模成绩，以及 `eval/<编号>/` 内的报告、回合 CSV
-和按需保存的轨迹、回放。各场景共用一张回合表，不预建空回放目录。
-评测保留所有失败分母；checkpoint evaluation 与 benchmark 使用分离的种子区间。
+新训练的 `results/<run_id>/` 使用 `config.yaml`、TensorBoard
+`events.out.tfevents.*`、Orbax `checkpoints/model_*/`、正式 `episodes.csv`
+及按需生成的 `replays/best/`。保留单个 `run.json` 状态索引和
+`report.json` 成绩索引，但不再重复生成 `metrics.jsonl` 或多层 `eval/`。
+旧 ZIP 训练目录仍按原始布局恢复，不移动正在运行的 checkpoint。
+详见 [ADR-0014](docs/adr/0014-results-layout-orbax-tensorboard.md)。
 
 新增控制器、LOTF/PointMass 反向模型、延迟及随机化的命令见
 [控制模型使用说明](docs/control-models.md)。`method=controller controller=so3` 选择
@@ -81,7 +93,25 @@ SO3；两种 MPC 和 `controller=ideal` 使用同一组合入口。Trajectory �
 
 ## 当前证据
 
-下述收敛和原生飞行成绩属于**旧版归档的历史证据**，不是当前 v2 代码重新运行的结果。
+正式交付只以 [ADR-0015](docs/adr/0015-eight-acceptance-gates.md)
+规定的 **S1–S4 / L1–L4 八项验收**汇报。18 单元×3 独立随机种子、
+三阶段冻结评测和全部原成功率门槛属于 L3，不再附加历史 C 系列检查表。
+
+### v0.2 从零训练矩阵
+
+本轮正式训练严格使用 `initial_checkpoint=null`：Actor、Critic、优化器均从各
+独立种子随机初始化，不加载旧版或参考权重。PPO、APG/BPTT、SHAC 覆盖
+Tracking、Racing、Navigation Depth、Navigation LiDAR，共 12 组训练／
+18 个静态与动态验收单元，每组三种子。DiffAero 和旧仓库只提供配置经验。
+
+一个管理入口 `tools/train_scratch_matrix.py` 负责 GPU 调度、真实收敛测量与
+失败后重新随机初始化试验；所有中间训练、日志、报告和重试参数都存放在
+Git 忽略的 `results/scratch_v02/`。`matrix.json` 是唯一的当前训练矩阵汇总，
+运行中的任务不得视为成功。失败尝试保留真实记录但不新增阶段性 Markdown。
+
+### 历史 v0.1 证据（不计入当前收敛）
+
+下述收敛和原生飞行成绩属于**旧版归档的历史证据**，不是当前 v0.2 从零训练的结果。
 旧 v1 训练状态和冻结权重不会由当前代码加载；保留历史报告和冻结权重的原始文件用于审计。
 现行验证与最新实现状态见[验证记录](docs/validation.md)。
 
@@ -96,8 +126,8 @@ Tracking、Racing、Depth/LiDAR Navigation 的三算法、三种子正式运行�
 Racing 和 Navigation 使用共同初始化的配方单独记录预训练来源及成本，
 详见 [实验调整](docs/experiments.md) 和 [吞吐验证](docs/performance.md)。
 Racing 的共同初始化由本项目 APG 从随机权重训练得到；Depth/LiDAR 的上述配方包含历史
-参考权重迁移。另已启动三算法、三种子的 [Depth/LiDAR 从零训练](docs/scratch-training.md)，
-其收敛状态单独报告。
+参考权重迁移。旧版 Depth/LiDAR 随机训练的阶段性记录保留在 Git 历史和
+`results/scratch_v02/archive/`，不再作为本轮训练的现行入口。
 LiDAR 扩展场景 D06 仍仅为 0–15/25；该场景按规格完整报告，不参与主场景门槛判定。
 
 EGO 与 SUPER 各完成 12 个静态、12 个动态回合，并通过 S6；失败完整保留。

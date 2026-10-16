@@ -6,29 +6,104 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from flax import linen as nn
 
 from drone_playground.learning.apg import rollout_objective
 from drone_playground.learning.checkpoint import load_inference, load_state, save_state
 from drone_playground.learning.ppo import (
     collect_rollout,
+    exceeds_kl_limit,
     generalized_advantage_estimate,
     normalize_advantages,
     recurrent_policy,
 )
 from drone_playground.learning.shac import update_target
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import Environment
-from drone_playground.simulation.networks import Actor, Critic
+from drone_playground.simulation.environment import make_environment
+from drone_playground.simulation.methods import PolicyMethod
+from drone_playground.simulation.networks import Actor, Critic, reset_actor_memory
+from drone_playground.simulation.policy import load_policy
 from drone_playground.simulation.tasks import Event
+
+
+class IndependentActor(nn.Module):
+    """A policy with no built-in state/depth/lidar architecture selection."""
+
+    action_size: int
+
+    @property
+    def specification(self):
+        """Identify this configured policy in its checkpoint."""
+        return {"kind": "custom", "action_size": self.action_size, "network": "independent"}
+
+    def initialize_memory(self, batch):
+        """Use no recurrent memory for this alternative Actor."""
+        return jnp.zeros((batch, 0))
+
+    @nn.compact
+    def __call__(self, observation, memory):
+        """Project state features to the configured physical action width."""
+        value = nn.Dense(self.action_size)(observation["state"])
+        return value, memory, jnp.zeros((len(value), 3))
+
+
+class ScaledPolicyMethod(PolicyMethod):
+    """Change execution semantics without changing the trainer or Task."""
+
+    def execute(self, env, state, action, step=None):
+        """Scale the method action before the unchanged physical transition."""
+        return super().execute(env, state, action * 0.5, step=step)
+
+
+def test_recurrent_memory_reset_accepts_pytree():
+    """Actor memory structure is independent of the training algorithm."""
+    memory = {
+        "hidden": jnp.ones((2, 4)),
+        "cell": (jnp.full((2, 2, 3), 7.0), jnp.ones((2, 0))),
+    }
+    result = reset_actor_memory(memory, jnp.array([True, False]))
+    np.testing.assert_array_equal(result["hidden"][0], jnp.zeros(4))
+    np.testing.assert_array_equal(result["hidden"][1], jnp.ones(4))
+    np.testing.assert_array_equal(result["cell"][0][0], jnp.zeros((2, 3)))
+    np.testing.assert_array_equal(result["cell"][0][1], jnp.full((2, 3), 7.0))
+
+
+def test_custom_actor_critic_and_method_share_training_interface(tmp_path):
+    """A custom Actor and Method must train and export without Trainer edits."""
+    env = make_environment(num_envs=2)
+    actor = IndependentActor(action_size=env.action_size)
+    method = ScaledPolicyMethod()
+    trainer = Trainer(
+        env,
+        kind="custom",
+        actor=actor,
+        critic=Critic(kind="state"),
+        method=method,
+        config={"horizon": 1, "ppo_epochs": 1, "critic_epochs": 1},
+    )
+    state = trainer.initialize()
+    action = jnp.full((2, env.action_size), 0.4)
+    actual = trainer._step(state.env_state, action, differentiable=False)
+    expected = env.step(state.env_state, action * 0.5)
+    np.testing.assert_allclose(actual.physics.states.pos, expected.physics.states.pos)
+    updated, metrics = trainer.update(state)
+    assert all(np.isfinite(value).all() for value in metrics.values())
+    assert updated.updates == 1
+    path = tmp_path / "custom-policy.zip"
+    trainer.save_inference(path, updated, provenance={"test": "custom actor"})
+    restored_actor, parameters, _ = load_policy(path, actor=actor)
+    assert restored_actor is actor
+    assert jax.tree.structure(parameters) == jax.tree.structure(updated.params)
 
 
 def test_additional_failure_cost_reaches_public_update_metrics():
     """Apply an extra terminal cost while retaining identical reset behavior."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         duration=0.02,
     )
     base = Trainer(env, loss="zhang", kind="depth", config={"horizon": 1})
@@ -51,10 +126,11 @@ def test_additional_failure_cost_reaches_public_update_metrics():
 
 def test_navigation_progress_reward_matches_goal_distance_change():
     """Reward physical progress once per active transition, without changing physics."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -71,8 +147,10 @@ def test_navigation_progress_reward_matches_goal_distance_change():
         physics=before.physics.replace(states=before.physics.states.replace(pos=moved))
     )
     action = jnp.zeros((1, 3))
-    cost, _, _ = base._cost(before, after, action, initialized.objective_state)
-    shaped_cost, _, terms = shaped._cost(before, after, action, initialized.objective_state)
+    cost, _, _ = base.objective.cost(before, after, action, initialized.objective_state)
+    shaped_cost, _, terms = shaped.objective.cost(
+        before, after, action, initialized.objective_state
+    )
     expected = 0.5 * (
         jnp.linalg.norm(env.task.goal - before.physics.states.pos[0, 0])
         - jnp.linalg.norm(env.task.goal - after.physics.states.pos[0, 0])
@@ -80,16 +158,17 @@ def test_navigation_progress_reward_matches_goal_distance_change():
     np.testing.assert_allclose(cost - shaped_cost, [expected], rtol=1e-5)
     np.testing.assert_allclose(terms["progress_reward"], [expected], rtol=1e-5)
     done = before.replace(task=before.task.replace(event=jnp.array([Event.COLLISION])))
-    _, _, done_terms = shaped._cost(done, after, action, initialized.objective_state)
+    _, _, done_terms = shaped.objective.cost(done, after, action, initialized.objective_state)
     np.testing.assert_array_equal(done_terms["progress_reward"], 0)
 
 
 def test_height_boundary_cost_is_continuous_and_gated_after_done():
     """Penalize proximity to both height limits without changing existing reward terms."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=3,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -104,8 +183,8 @@ def test_height_boundary_cost_is_continuous_and_gated_after_done():
         physics=state.physics.replace(states=state.physics.states.replace(pos=positions))
     )
     action = jnp.zeros((3, 3))
-    cost, _, _ = base._cost(state, state, action, initialized.objective_state)
-    changed, _, terms = penalized._cost(state, state, action, initialized.objective_state)
+    cost, _, _ = base.objective.cost(state, state, action, initialized.objective_state)
+    changed, _, terms = penalized.objective.cost(state, state, action, initialized.objective_state)
     np.testing.assert_allclose(changed - cost, [0.324, 0.0, 0.324], atol=1e-6)
     np.testing.assert_allclose(terms["height_boundary_cost"], [0.324, 0.0, 0.324], atol=1e-6)
 
@@ -114,7 +193,7 @@ def test_height_boundary_cost_is_continuous_and_gated_after_done():
         after = state.replace(
             physics=state.physics.replace(states=state.physics.states.replace(pos=positions))
         )
-        return penalized._cost(state, after, action, initialized.objective_state)[2][
+        return penalized.objective.cost(state, after, action, initialized.objective_state)[2][
             "height_boundary_cost"
         ].sum()
 
@@ -122,7 +201,7 @@ def test_height_boundary_cost_is_continuous_and_gated_after_done():
         jax.grad(boundary_cost)(jnp.array([0.6, 3.0, 5.9])), [-0.72, 0.0, 0.72], atol=1e-6
     )
     done = state.replace(task=state.task.replace(event=jnp.full(3, Event.COLLISION)))
-    _, _, terms = penalized._cost(done, done, action, initialized.objective_state)
+    _, _, terms = penalized.objective.cost(done, done, action, initialized.objective_state)
     np.testing.assert_array_equal(terms["height_boundary_cost"], 0)
 
 
@@ -155,10 +234,11 @@ def test_optional_ppo_critic_consumes_actor_visible_sensor(kind):
 
 def test_sensor_critic_performs_real_depth_ppo_update():
     """Train the independent visual value function through the PPO update path."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         duration=0.02,
         action={"level": "acceleration", "heading": "target"},
@@ -173,22 +253,67 @@ def test_sensor_critic_performs_real_depth_ppo_update():
             "ppo_epochs": 1,
             "minibatches": 1,
             "critic_uses_sensor": True,
+            "ppo_target_kl": 0.02,
+            "ppo_value_clip": 0.2,
         },
     )
     before = trainer.initialize()
     after, metrics = trainer.update(before)
     assert np.isfinite(metrics["critic_loss"])
     assert np.isfinite(metrics["policy_loss"])
+    assert np.isfinite(metrics["critic_explained_variance_preupdate"])
+    assert np.isfinite(metrics["saturated_action_fraction"])
+    assert np.isfinite(metrics["value_target_std"])
+    assert np.isfinite(metrics["kl_actor_update_skipped"])
     assert tree_changed(before.critic_params, after.critic_params)
+
+
+def test_ppo_kl_gate_is_opt_in_and_respects_target():
+    """Reject implausibly large actor updates without stopping Critic fitting."""
+    assert not bool(exceeds_kl_limit(jnp.array(0.8), 0.0))
+    assert not bool(exceeds_kl_limit(jnp.array(0.029), 0.02))
+    assert bool(exceeds_kl_limit(jnp.array(0.031), 0.02))
+    assert bool(jax.jit(exceeds_kl_limit)(jnp.array(0.04), jnp.array(0.02)))
+
+
+def test_racing_shac_bootstrap_diagnostic_is_explicit_and_finite():
+    """Value-gradient ablation reports evidence without changing Racing success."""
+    env = make_environment(task="racing", scene="racing", num_envs=1, device="cpu")
+    trainer = Trainer(
+        env,
+        kind="state",
+        algorithm="shac",
+        config={
+            "horizon": 1,
+            "critic_epochs": 1,
+            "bootstrap_weight": 0.0,
+            "report_terminal_critic_grad": True,
+        },
+    )
+    _, metrics = trainer.update(trainer.initialize())
+    for field in (
+        "terminal_critic_input_gradient_norm",
+        "gates_advanced",
+        "collision_fraction",
+        "bootstrap_terminal_value_abs",
+        "bootstrap_terminal_vs_step_cost",
+    ):
+        assert field in metrics
+        assert np.isfinite(np.asarray(metrics[field])).all()
+    with pytest.raises(ValueError, match="requires SHAC"):
+        Trainer(env, algorithm="apg", config={"bootstrap_weight": 0.0})
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
 def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
     """Train the expanded goal input with immediate velocity and continuous height cost."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor=kind,
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+        if kind == "depth"
+        else {},
         num_envs=2,
         duration=0.02,
         navigation_goal_observation=True,
@@ -221,7 +346,7 @@ def test_goal_observation_ppo_recipe_updates_and_restores(kind, tmp_path):
 
 def test_optional_ppo_critic_rejects_unsupported_actor_or_algorithm():
     """Keep pathwise value gradients and original state-policy contracts unchanged."""
-    env = Environment(num_envs=1)
+    env = make_environment(num_envs=1)
     with pytest.raises(ValueError, match="Sensor-aware critic"):
         Trainer(env, config={"critic_uses_sensor": True})
     with pytest.raises(ValueError, match="Navigation"):
@@ -230,10 +355,11 @@ def test_optional_ppo_critic_rejects_unsupported_actor_or_algorithm():
 
 def test_privileged_critic_changes_value_without_changing_actor():
     """Keep true geometry and physical state out of the deployed actor inputs."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="D03",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
         action={"level": "acceleration", "heading": "target"},
     )
@@ -275,10 +401,11 @@ def test_privileged_critic_changes_value_without_changing_actor():
 
 def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
     """Train and restore the separate value input, including pre-reset bootstrap."""
-    env = Environment(
+    env = make_environment(
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=2,
         duration=0.02,
         action={"level": "acceleration", "heading": "target"},
@@ -316,7 +443,7 @@ def test_asymmetric_ppo_real_update_and_recovery(tmp_path):
 )
 def test_privileged_critic_rejects_ambiguous_or_unsupported_configuration(algorithm, options):
     """Require a boolean choice of one PPO critic observation source."""
-    env = Environment(task="navigation", scene="S01", sensor="depth")
+    env = make_environment(task="navigation", scene="S01", sensor="depth")
     with pytest.raises(ValueError, match=r"[Pp]rivileged|[Cc]ritic"):
         Trainer(
             env,
@@ -329,7 +456,7 @@ def test_privileged_critic_rejects_ambiguous_or_unsupported_configuration(algori
 def test_integer_log_standard_deviation_allows_ppo_update():
     """Accept numerically valid integer options without creating integer parameters."""
     trainer = Trainer(
-        Environment(num_envs=2),
+        make_environment(num_envs=2),
         algorithm="ppo",
         config={"horizon": 1, "ppo_epochs": 1, "initial_log_std": -3},
     )
@@ -360,7 +487,7 @@ def tree_changed(left, right):
 @pytest.fixture(scope="module")
 def state_env():
     """Provide state env for the surrounding execution."""
-    return Environment(num_envs=2)
+    return make_environment(num_envs=2)
 
 
 def test_gae_termination_truncation_and_rollout_boundary():
@@ -385,11 +512,12 @@ def test_gae_termination_truncation_and_rollout_boundary():
 
 def test_navigation_altitude_cost_matches_physical_height_error():
     """Verify navigation altitude cost matches physical height error."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
         sensor="depth",
+        sensor_config={"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10},
         num_envs=1,
     )
     base = Trainer(
@@ -496,7 +624,7 @@ def test_real_physics_update_and_exact_checkpoint_continuation(state_env, tmp_pa
 
 def test_bootstrap_uses_final_observation_and_resets_recurrent_state():
     """Verify bootstrap uses final observation and resets recurrent state."""
-    env = Environment(num_envs=2)
+    env = make_environment(num_envs=2)
     real_step = env.step
 
     def truncate(state, action):
@@ -521,7 +649,7 @@ def test_bootstrap_uses_final_observation_and_resets_recurrent_state():
 @pytest.mark.parametrize("event", [Event.RUNNING, Event.TIMEOUT, Event.COLLISION])
 def test_shac_terminal_value_state_gradient(event):
     """Verify shac terminal value state gradient."""
-    env = Environment(num_envs=1)
+    env = make_environment(num_envs=1)
     real_step = env.step
 
     def event_step(state, action):
@@ -609,8 +737,12 @@ def test_invalid_configuration_is_rejected(state_env, config):
 def perception_env(request):
     # Small LiDAR acquisition keeps this a CPU integration check; camera shape is unchanged.
     """Provide perception env for the surrounding execution."""
-    sensor_config = {"points_per_frame": 32} if request.param == "lidar" else {}
-    env = Environment(
+    sensor_config = (
+        {"points_per_frame": 32}
+        if request.param == "lidar"
+        else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+    )
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="S01",
@@ -646,6 +778,8 @@ def test_perception_real_update_and_complete_sensor_checkpoint(perception_env, a
     assert float(metrics["actor_grad_norm"]) > 0
     assert float(metrics["perception_cost"]) > 0
     assert tree_changed(initial.params, state.params)
+    encoder = "conv_0" if kind == "depth" else "point_0"
+    assert tree_changed(initial.params["params"][encoder], state.params["params"][encoder])
     assert np.linalg.norm(state.recurrent_memory) > 0
     assert state.env_state.observation is not None
     assert np.all(np.asarray(state.objective_state.count) == horizon)
@@ -688,7 +822,7 @@ def test_common_named_objective_weights_and_history(perception_env):
     action = jnp.array([[0.2, -0.1, 0.05]])
     before = initial.env_state
     after = env.step(before, action)
-    cost, history, terms = trainer._cost(before, after, action, initial.objective_state)
+    cost, history, terms = trainer.objective.cost(before, after, action, initial.objective_state)
     velocity = after.physics.states.vel[:, 0]
     delta = env.task.goal - after.physics.states.pos[:, 0]
     distance = jnp.linalg.norm(delta, axis=-1, keepdims=True)
@@ -721,11 +855,11 @@ def test_common_named_objective_weights_and_history(perception_env):
                 "perception_weight": 1.7,
             },
         )
-        other_cost, _, _ = other._cost(before, after, action, initial.objective_state)
+        other_cost, _, _ = other.objective.cost(before, after, action, initial.objective_state)
         np.testing.assert_array_equal(other_cost, cost)
     next_action = action * -0.5
     next_state = env.step(after, next_action)
-    _, next_history, next_terms = trainer._cost(after, next_state, next_action, history)
+    _, next_history, next_terms = trainer.objective.cost(after, next_state, next_action, history)
     acceleration = next_action * 6.0
     expected_acceleration = jnp.sum(acceleration**2, axis=-1)
     np.testing.assert_allclose(next_terms["named_acceleration"], expected_acceleration, rtol=1e-6)
@@ -734,7 +868,9 @@ def test_common_named_objective_weights_and_history(perception_env):
     if kind == "lidar":
         third_action = action * 0.25
         third_state = env.step(next_state, third_action)
-        _, _, third_terms = trainer._cost(next_state, third_state, third_action, next_history)
+        _, _, third_terms = trainer.objective.cost(
+            next_state, third_state, third_action, next_history
+        )
         magnitudes = jnp.stack(
             (
                 jnp.linalg.norm((next_action - action) * 6.0 / env.dt, axis=-1),

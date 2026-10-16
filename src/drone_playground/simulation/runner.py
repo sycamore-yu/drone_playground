@@ -22,7 +22,7 @@ def measurement_points(env, state, count=128):
     if env.sensor is None:
         return jnp.zeros((env.num_envs, 0, 3)), jnp.zeros((env.num_envs, 0), bool)
     observation = state.observation
-    points = observation.points_at_completion.reshape(env.num_envs, -1, 3)
+    points = observation.measurement.points_body.reshape(env.num_envs, -1, 3)
     mask = observation.measurement.mask.reshape(env.num_envs, -1)
     indices = jnp.linspace(0, points.shape[1] - 1, min(count, points.shape[1])).astype(jnp.int32)
     points, mask = points[:, indices], mask[:, indices]
@@ -171,6 +171,7 @@ def save_evaluation(
     name="",
     write_tables=True,
     record_trajectories=True,
+    replay_directory="replays",
 ) -> dict:
     """Persist the selected report, actual trajectories and success/failure examples."""
     directory = Path(directory).resolve()
@@ -221,13 +222,16 @@ def save_evaluation(
         else:
             episode_plans = None
         output = export_replay(
-            directory / "replays" / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
+            directory
+            / replay_directory
+            / f"{name or env.scene.name}-{episodes[index]['episode']:04d}",
             env.scene,
             times[frames],
             traces["position"][frames, index],
             traces["quaternion"][frames, index],
             measurements,
             episode_plans,
+            sensor_times=(traces["sensor_time"][frames, index] if env.sensor is not None else None),
         )
         replays.append(str(output.relative_to(directory)))
     report["replays"] = replays
@@ -267,7 +271,15 @@ def rollout_host(env, method, *, seed: int, method_name=None, record=True):
             break
         if record:
             records.append(jax.device_get(_sample(env, state, state.commands.applied)))
-        plans.append(None if trajectory is None else trajectory.positions)
+        plans.append(
+            None
+            if trajectory is None
+            else {
+                "positions": trajectory.positions,
+                "received_time": memory["last_plan"],
+                "valid_until": trajectory.valid_until,
+            }
+        )
         if bool(state.done[0]):
             break
     if not bool(state.done[0]):

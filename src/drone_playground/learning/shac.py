@@ -32,6 +32,9 @@ def update(trainer, state):
         gamma=trainer.config["gamma"],
         gae_lambda=trainer.config["gae_lambda"],
     )
+    value_explained_variance = 1 - jax.numpy.var(targets - rollout.values) / jax.numpy.maximum(
+        jax.numpy.var(targets), 1e-8
+    )
     state, critic_metrics = trainer._fit_critic(
         state, rollout.observations, targets, trainer.config["critic_epochs"]
     )
@@ -45,8 +48,10 @@ def update(trainer, state):
         {
             **metrics,
             **critic_metrics,
+            "critic_explained_variance_preupdate": value_explained_variance,
+            "value_target_std": targets.std(),
             "loss": loss,
             "actor_loss": loss,
-            "actor_grad_norm": optax.global_norm(gradients),
+            "actor_grad_norm": optax.tree.norm(gradients),
         },
     )

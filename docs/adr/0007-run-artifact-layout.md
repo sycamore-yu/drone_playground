@@ -1,74 +1,65 @@
-# ADR-0007：权重与选模成绩同目录，独立评测统一归档
+# ADR-0007：训练结果布局与后续 Orbax/TensorBoard 迁移
 
-**Status:** Accepted · 2026-10-09
+**Status:** Superseded by [ADR-0016](0016-results-layout-orbax-tensorboard.md) for new runs · 2026-10-10
 
-**Implementation:** 新运行记录、CLI 和验收读取代码已支持本布局。当前程序只处理 v2 产物；历史结果保持只读，不提供兼容性迁移。
+**Implementation:** 本布局只描述 `layout_version=2` 历史产物；新 run 使用 Orbax/TensorBoard v3，原有 ZIP 结果保持只读或由已有进程按原格式续训，不批量迁移。
 
-## Context
+## 历史运行结果：v2
 
-当前运行把同一步的权重和选模成绩分别放在 `checkpoints/`、`checkpoint_eval/`。`events/` 只有一个日志文件，根目录 `rollouts/` 被无条件创建但没有产物。最终评测按场景建立多级目录，使一次运行难以浏览。
+`simulation/records.py`、`learning/checkpoint.py`、`simulation/evaluation.py`
+及 `tools/report_acceptance.py` 旧运行使用 `run.json`、`metrics.jsonl`、
+`checkpoints/latest.training.zip`、`checkpoints/step-*/policy.zip`、
+`eval/<编号>/report.json` 与 `episodes.csv` 为运行合同。
 
-权重、续训状态、选模成绩和独立评测承担不同职责。可以减少目录与重复记录，同时保留这些实验语义。
+该合同在早期验收时记录了 C5 连续选模、C6 实际更新/耗时、独立随机种子、
+失败分母与配置来源。历史运行不重解释、不删除，也不把旧归档自动恢复为新状态。
 
-## Decision
+## 新运行结果：v3
 
-采用以下目标布局。`step-*` 表示训练更新编号；`eval/001` 表示一次独立评测。
+为了减少多级评测目录与重复模型导出，采用 Orbax Checkpoint 保存完整 Flax
+训练 PyTree，用 TensorBoard 事件文件记录指标。每个 run 采用一份小型机器状态索引，
+模型按照实际更新数编号；保留必要的最终评测来源与逐回合数据。
 
 ```text
 results/<run_id>/
   config.yaml
   run.json
-  metrics.jsonl
+  events.out.tfevents.*
   checkpoints/
-    latest.training.zip
-    step-000025/
-      policy.zip
-      report.json
-      episodes.csv
-    step-000050/
-      policy.zip
-      report.json
-      episodes.csv
-    step-000075/
-      policy.zip
-      report.json
-      episodes.csv
-  eval/
-    001/
-      report.json
-      episodes.csv
-      trajectories.npz
-      replays/
-        S01-0000/
-        D03-0004/
+    model_000025/
+      training/
+      metadata.json
+    model_000050/
+      training/
+      actor/                # 只有选中权重需要独立推理导出
+      metadata.json
+      screening/            # 仅在需要时存在
+  episodes.csv
+  report.json
+  replays/
+    best/                   # 按需生成
 ```
 
-`checkpoints/step-*/policy.zip` 与评价该权重的选模结果放在一起，取消独立的 `checkpoint_eval/` 目录。没有发生评测的保存点仅有权重，不创建空报告。
+`run.json` 和最终 `report.json` **仍然需要保留**：前者记录可恢复状态、来源、
+完成情况与选模索引，后者保存逐场景验收、种子和完整失败分母。
+只用 TensorBoard 曲线无法独立复算这些机器判据。
 
-`latest.training.zip` 用于完整续训，保存优化器、环境和随机状态；`policy.zip` 用于独立推理。两者保留不同用途，不合并成一种归档。
+训练状态必须能够恢复 Actor、Critic、优化器、随机键、Environment 与传感器历史。
+仅在选中更新导出冻结 Actor，未选中中间权重按声明的保留策略清理。
+回放只在明确请求时生成。原生 Planner/Controller 运行不创建空的网络 Checkpoint。
 
-取消单文件 `events/` 目录，把追加日志放在根目录 `metrics.jsonl`。保留训练指标、恢复、场景切换和评测事件。
+## 迁移原则与完成门禁
 
-独立评测统一写入 `eval/<编号>/`，包括最终 benchmark、原生方法和鲁棒性评测。报告记录用途、实际配置、种子以及权重或方法身份。重复评测使用新编号，不覆盖旧结果。目录改名不取消最终 benchmark 协议。
+- 新运行使用 v3。旧 v2 训练记录与 ZIP、报告保持原样；不对活动运行改写格式。
+- 同步替换所有真实读取方：训练、恢复、冻结推理、选模、验收、CLI 与脚本。
+- 在主分支核对保存/恢复、冻结推理、筛选和评测测试。
+- 不因为结果目录迁移就声称 PPO/APG/SHAC 已经重新收敛。
+- 详细合同见 Results v3 的 ADR，历史目录按来源保留。
 
-一次评测的八个场景写入同一个 `episodes.csv`，使用 `scene` 列区分；`report.json` 给出逐场景统计。回合身份包含场景、初始化种子和世界索引。不能把不同场景的失败分母或验收门槛合并掉。
+## 源码依据
 
-完整数值轨迹和回放按需保存；`trajectories.npz`、`replays/` 仅在实际产物生成时创建。轨迹必须能映射回逐回合表。选模评测默认保留统计及逐回合记录，完整轨迹和回放由实验配置开启。
-
-根目录不创建空 `rollouts/`。回放归属于产生它的评测。选定权重由 `run.json` 引用原始权重文件，取消重复的 `selection.json`，不另复制 `best.policy.zip`。
-
-## Consequences
-
-训练选模与独立最终评测仍使用分开的种子和选择用途。C5 的连续通过历史、C6 的成本记录、初始化来源及全部失败回合继续保留。
-
-2026-10-09 的收尾决定：旧结果布局不再作为当前代码的输入，也不继续维护
-`migrate_results.py`、`selection.json` 或 `checkpoint_eval/update-*` 的兼容读取。
-历史报告、逐回合数据和冻结归档保留原始字节用于追溯，但本版本不加载 v1 模型。
-恢复与评测必须使用同结构、同动作合同的 v2 归档；不以搬动目录伪造兼容性。
-
-## Evidence
-
-- [当前记录器](../../src/drone_playground/simulation/records.py)：`RunRecord`。
-- [当前训练保存入口](../../src/drone_playground/cli.py)：`train`；[评测入口](../../src/drone_playground/simulation/evaluation.py)：`evaluate`。
-- [验收读取约定](../acceptance.md)。
-- 2026-10-09 检查 `results/acceptance_depth_initialized_apg_s1`：三个选模更新、八个最终评测场景、一个事件日志、空的根目录 `rollouts/`。
+- [当前记录器](../../src/drone_playground/simulation/records.py)
+- [当前保存和恢复](../../src/drone_playground/learning/checkpoint.py)
+- [当前训练入口](../../src/drone_playground/cli.py)
+- [验收读取约定](../acceptance.md)
+- [Orbax Checkpoint](https://orbax.readthedocs.io/en/latest/)

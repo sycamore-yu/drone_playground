@@ -4,13 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "drone-playground"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "Crazyflow quadrotor simulation, learning and reproducible experiments"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "crazyflow", "jax", "flax", "optax", "hydra-core", "numpy", "scipy",
-  "mujoco", "mujoco-mjx", "rscope", "grpcio", "protobuf", "PyYAML",
+  "mujoco", "mujoco-mjx", "mujoco-lidar==0.3.5", "rscope", "grpcio", "protobuf", "PyYAML",
+  "orbax-checkpoint>=0.12,<0.13", "tensorboardX>=2.6.4,<3",
 ]
+
+[project.optional-dependencies]
+brax = ["brax==0.14.2"]
 
 [project.scripts]
 drone-playground = "drone_playground.cli:main"
@@ -36,12 +40,15 @@ crazyflow = { git = "https://github.com/learnsyslab/crazyflow.git", rev = "62a31
 jax = { version = "==0.11.2", extras = ["cuda12"] }
 nvidia-cudnn-cu12 = "==9.26.0.51"
 rscope = "==0.0.8"
+orbax-checkpoint = "==0.12.7"
+tensorboardx = "==2.6.4"
 pytest = "*"
 ruff = "*"
 build = "*"
 grpcio-tools = "*"
 
 [tool.pixi.activation.env]
+SCIPY_ARRAY_API = "1"
 XLA_PYTHON_CLIENT_PREALLOCATE = "false"
 MUJOCO_GL = "egl"
 PYTHONPATH = ""
@@ -51,6 +58,7 @@ JAX_COMPILATION_CACHE_DIR = ".cache/jax"
 test = "pytest -q"
 lint = "ruff check src tests tools && ruff format --check src tests tools"
 setup-acados = "python tools/setup_acados.py"
+autoresearch = "python tools/autoresearch.py"
 sim = "drone-playground mode=sim"
 train = "drone-playground mode=train"
 checkpoint_eval = "drone-playground mode=checkpoint_eval"

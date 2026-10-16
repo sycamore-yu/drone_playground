@@ -10,3 +10,5 @@ results/
 multirun/
 tmp/
 .gitnexus/
+autoresearch-gym/
+autoresearch_runs/

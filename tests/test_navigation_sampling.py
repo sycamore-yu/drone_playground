@@ -14,7 +14,7 @@ from drone_playground import cli
 from drone_playground.learning import checkpoint
 from drone_playground.learning.ppo import collect_rollout
 from drone_playground.learning.trainer import Trainer
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
 from drone_playground.simulation.policy import read_checkpoint
 from drone_playground.simulation.records import RunRecord
 from drone_playground.simulation.tasks import Event
@@ -45,7 +45,7 @@ def recipe(kind="depth", algorithm="shac"):
 @pytest.mark.parametrize("scene", SCENES)
 def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
     """Verify wide starts valid reproducible and benchmark unchanged."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene=scene,
@@ -84,13 +84,17 @@ def test_wide_starts_valid_reproducible_and_benchmark_unchanged(scene):
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
 def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
     """Verify masked random reset preserves inactive world and sensor."""
-    env = Environment(
+    env = make_environment(
         action={"level": "acceleration", "heading": "target"},
         task="navigation",
         scene="D01",
         num_envs=2,
         sensor=kind,
-        sensor_config={"points_per_frame": 32} if kind == "lidar" else {},
+        sensor_config=(
+            {"points_per_frame": 32}
+            if kind == "lidar"
+            else {"width": 64, "height": 48, "pitch_deg": 20, "max_range": 10}
+        ),
         point_count=32,
     )
     state = env.step(env.reset(jax.random.PRNGKey(1)), jnp.zeros((2, 3)))
@@ -134,7 +138,7 @@ def test_masked_random_reset_preserves_inactive_world_and_sensor(kind):
 @pytest.mark.parametrize("task,scene", [("tracking", "empty"), ("racing", "racing")])
 def test_training_sampler_rejects_other_tasks(task, scene):
     """Verify training sampler rejects other tasks."""
-    env = Environment(task=task, scene=scene)
+    env = make_environment(task=task, scene=scene)
     with pytest.raises(ValueError, match=r"Navigation"):
         env.reset(jax.random.PRNGKey(0), randomize_position=True)
     with pytest.raises(ValueError, match=r"Navigation"):
@@ -155,13 +159,35 @@ def test_shared_mixed_recipes(kind, batch, algorithm):
     assert config.simulation.num_envs == batch
     assert config.initial_checkpoint is None
     assert config.benchmark.scenes is None
-    assert config.learning.required_consecutive_passes == 3
+    assert config.learning.required_consecutive_passes == 1
+
+
+@pytest.mark.parametrize(
+    "experiment",
+    ["navigation_lidar_scratch_sparse", "navigation_lidar_scratch_ppo_asymmetric_sparse"],
+)
+def test_sparse_mid360_training_recipe_preserves_hardware_scan_contract(experiment):
+    """Only new experiments opt into selected rays; original configs remain full scans."""
+    with initialize_config_dir(
+        version_base=None, config_dir=str(Path(cli.__file__).parent / "configs")
+    ):
+        config = compose(config_name="config", overrides=[f"experiment={experiment}"])
+    assert config.sensor.ray_sampling == "policy"
+    assert config.sensor.config.points_per_frame == 20_000
+    assert config.sensor.point_count == 1_024
+    assert config.initial_checkpoint is None
+    assert config.learning.selection == "first_full_validation_pass"
 
 
 @pytest.mark.parametrize("kind", ["depth", "lidar"])
 def test_cli_real_scene_switch_and_exact_midblock_boundary_resume(kind, monkeypatch, tmp_path):
     """Verify cli real scene switch and exact midblock boundary resume."""
     config = recipe(kind)
+    config.results.format = "legacy"
+    # Preserve the original reset/sampling semantics independent of the new
+    # three-stage screen/validation implementation.
+    config.learning.selection = "last_of_first_three_consecutive_passes"
+    config.learning.required_consecutive_passes = 3
     config.mode = "train"
     config.simulation.device = "cpu"
     config.simulation.num_envs = 2
@@ -288,7 +314,7 @@ def test_invalid_scene_schedule_fails_before_environment(scenes, block, monkeypa
 @pytest.mark.parametrize("missing_option", ["randomize_navigation_start", "failure_cost"])
 def test_missing_saved_training_option_is_rejected(tmp_path, missing_option):
     """A saved training contract must match exactly; missing options are not guessed."""
-    trainer = Trainer(Environment(), config={"horizon": 1})
+    trainer = Trainer(make_environment(), config={"horizon": 1})
     initial = trainer.initialize()
     old_config = dict(trainer.resolved_config)
     del old_config[missing_option]

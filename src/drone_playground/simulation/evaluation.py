@@ -8,32 +8,56 @@ import numpy as np
 from hydra.utils import get_class, instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import BaseEnv, make_environment
 from drone_playground.simulation.records import acceptance, atomic_json, write_episodes
 from drone_playground.simulation.runner import rollout, rollout_host, save_evaluation
 
 _NAVIGATION_SCENES = ["S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06"]
 
 
-def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> Environment:
+def _scene_seed(
+    config, seed_base: int, evaluation_index: int, scene_index: int, scene_name: str | None = None
+) -> int:
+    """Keep comparable checkpoint cohorts fixed even for partial scene probes."""
+    fixed = config.benchmark.get("fixed_checkpoint_seeds", False)
+    if type(fixed) is not bool:
+        raise ValueError("benchmark.fixed_checkpoint_seeds must be boolean")
+    cohort = 0 if fixed and config.mode == "checkpoint_eval" else evaluation_index
+    if fixed and config.mode == "checkpoint_eval" and scene_name in _NAVIGATION_SCENES:
+        scene_index = _NAVIGATION_SCENES.index(scene_name)
+    return int(seed_base + 10_000 * config.seed + 100 * cohort + scene_index)
+
+
+def create_environment(config: DictConfig, *, num_envs=None, scene=None) -> BaseEnv:
     """Construct the physical input from the chosen method rather than its task name."""
     simulation = OmegaConf.to_container(config.simulation, resolve=True)
     simulation["num_envs"] = config.simulation.num_envs if num_envs is None else num_envs
     implementation = get_class(config.method.implementation._target_)
     action = OmegaConf.to_container(config.method, resolve=True).get("action", {})
+    task_options = OmegaConf.to_container(config.task, resolve=True).get("options", {})
+    # Historical in-flight velocity PPO runs saved the reward choice under
+    # learning.options. Interpret those existing configs as an environment
+    # Task selector without rewriting their on-disk identities/checkpoints.
+    # New experiments must choose task.options.reward_profile directly.
+    historical_profile = config.learning.options.get("reward_profile", "default")
+    if historical_profile != "default":
+        if task_options.get("reward_profile", historical_profile) != historical_profile:
+            raise ValueError("Conflicting historical and task-owned reward profiles")
+        task_options["reward_profile"] = historical_profile
     level = None
     if not implementation.trainable:
         level = get_class(config.controller._target_).output_level
-    return Environment(
+    return make_environment(
         task=config.task.name,
         scene=config.scene.name if scene is None else scene,
         reference=config.task.reference,
         duration=config.task.duration,
         reference_seed=config.task.reference_seed,
-        task_config=OmegaConf.to_container(config.task, resolve=True).get("options", {}),
+        task_config=task_options,
         sensor=config.sensor.name,
         sensor_config=OmegaConf.to_container(config.sensor.config, resolve=True),
         point_count=config.sensor.point_count,
+        ray_sampling=config.sensor.get("ray_sampling", "full"),
         action=action,
         control_level=level,
         observation_config=OmegaConf.to_container(config.observation, resolve=True),
@@ -60,7 +84,14 @@ def next_evaluation_directory(run_directory):
 
 
 def evaluate(
-    config, directory, *, actor=None, parameters=None, evaluation_index=0, environments=None
+    config,
+    directory,
+    *,
+    actor=None,
+    parameters=None,
+    evaluation_index=0,
+    environments=None,
+    checkpoint_config=None,
 ):
     """Save one flat episode table and complete per-scene statistics for an evaluation."""
     directory = Path(directory)
@@ -107,12 +138,19 @@ def evaluate(
         label = f"{label}:{type(method.controller).__name__}"
     try:
         for scene_index, scene in enumerate(scenes):
-            seed = int(seed_base + 10_000 * config.seed + 100 * evaluation_index + scene_index)
+            seed = _scene_seed(config, seed_base, evaluation_index, scene_index, scene)
             batch = count if method.execution == "jax" else 1
             key = (scene, batch)
             if key not in environments:
                 environments[key] = create_environment(config, num_envs=batch, scene=scene)
             env = environments[key]
+            if checkpoint_config is not None and not config.benchmark.allow_environment_change:
+                archived = checkpoint_config["learning"]
+                if "sensor" not in archived:
+                    raise ValueError("Frozen checkpoint does not declare its sensor contract")
+                sensor = None if env.sensor is None else env.sensor.specification
+                if archived["sensor"] != sensor:
+                    raise ValueError("Frozen evaluation changes checkpoint sensor contract")
             scene_rows, replays = [], []
             repetitions = 1 if method.execution == "jax" else count
             for episode_index in range(repetitions):
@@ -160,6 +198,12 @@ def evaluate(
                         replay_episodes=config.benchmark.replay_episodes,
                         write_tables=False,
                         record_trajectories=False,
+                        replay_directory=(
+                            "replays/best"
+                            if config.mode == "benchmark"
+                            and config.get("results", {}).get("format") == "orbax"
+                            else "replays"
+                        ),
                     )
                     replays.extend(saved["replays"])
             outcomes = Counter(row["event"] for row in scene_rows)
@@ -170,7 +214,11 @@ def evaluate(
                     "episodes": len(scene_rows),
                     "successes": outcomes["SUCCESS"],
                     "success_rate": outcomes["SUCCESS"] / len(scene_rows),
-                    "successful_position_rmse": None,
+                    "successful_position_rmse": (
+                        acceptance(task, scene_rows)["successful_position_rmse"]
+                        if task == "tracking"
+                        else None
+                    ),
                     "passed": None,
                 }
             )
@@ -179,6 +227,7 @@ def evaluate(
                 task_contract=env.task.contract,
                 scene=scene,
                 geometry=env.scene.geometry_identity,
+                sensor=None if env.sensor is None else env.sensor.specification,
                 method=label,
                 outcomes=dict(outcomes),
                 replays=replays,

@@ -5,9 +5,46 @@ import json
 
 import numpy as np
 import pytest
+from omegaconf import OmegaConf
 
-from drone_playground.simulation.environment import Environment
+from drone_playground.simulation.environment import make_environment
+from drone_playground.simulation.evaluation import _scene_seed
 from drone_playground.simulation.runner import rollout, save_evaluation
+
+
+def test_fixed_checkpoint_cohort_is_stable_and_benchmark_remains_held_out():
+    """Compare policies on identical initial states without changing final testing."""
+    config = OmegaConf.create(
+        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
+    )
+    initial = _scene_seed(config, 1_000_000, 1, 0)
+    assert initial == _scene_seed(config, 1_000_000, 20, 0)
+    assert initial != _scene_seed(config, 1_000_000, 20, 1)
+    assert initial != _scene_seed(config, 1_500_000, 1, 0)
+    config.mode = "benchmark"
+    assert _scene_seed(config, 2_000_000, 1, 0) != _scene_seed(config, 2_000_000, 20, 0)
+    config.mode = "checkpoint_eval"
+    config.benchmark.fixed_checkpoint_seeds = False
+    assert _scene_seed(config, 1_000_000, 1, 0) != _scene_seed(config, 1_000_000, 20, 0)
+    config.benchmark.fixed_checkpoint_seeds = "yes"
+    with pytest.raises(ValueError, match="must be boolean"):
+        _scene_seed(config, 1_000_000, 1, 0)
+
+
+def test_partial_checkpoint_probe_keeps_original_full_screen_initialization_seed():
+    """Selecting two scenes may not change either scene's fixed cohort identity."""
+    config = OmegaConf.create(
+        {"mode": "checkpoint_eval", "seed": 2, "benchmark": {"fixed_checkpoint_seeds": True}}
+    )
+    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
+    for index, scene in enumerate(scenes):
+        full_seed = _scene_seed(config, 1_000_000, 15, index, scene)
+        probe_seed = _scene_seed(config, 1_000_000, 1, 0, scene)
+        assert full_seed == probe_seed
+    config.mode = "benchmark"
+    assert _scene_seed(config, 2_000_000, 15, 3, "D01") != _scene_seed(
+        config, 2_000_000, 1, 0, "D01"
+    )
 
 
 def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
@@ -15,7 +52,9 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
     from drone_playground.simulation import runner
     from drone_playground.simulation.records import acceptance
 
-    env = Environment(task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06)
+    env = make_environment(
+        task="navigation", scene="S01", sensor="depth", num_envs=3, duration=0.06
+    )
     complete, recorded = rollout(env, seed=11, chunk_steps=2)
     assert recorded["position"].shape[1] == 3
 
@@ -45,7 +84,7 @@ def test_score_only_rollout_preserves_all_episode_facts(tmp_path, monkeypatch):
 
 def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
     """Do not allocate an archive when a completed evaluation has no requested replay."""
-    env = Environment(duration=0.02)
+    env = make_environment(duration=0.02)
     episodes, _ = rollout(env, seed=7)
     save_evaluation(
         tmp_path,
@@ -61,7 +100,7 @@ def test_empty_traces_do_not_create_an_empty_archive(tmp_path):
 @pytest.mark.parametrize("criterion, passed", [("diagnostic", None), ("C4", True)])
 def test_recording_preserves_selected_criterion_and_all_outcomes(tmp_path, criterion, passed):
     """Persist the selected criterion with successes and collisions in the same CSV."""
-    environment = Environment(task="navigation", scene="S01", sensor="state")
+    environment = make_environment(task="navigation", scene="S01", sensor="state")
     episodes = [
         {
             "scene": "S01",

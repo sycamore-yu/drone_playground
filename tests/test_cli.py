@@ -37,6 +37,10 @@ def config(tmp_path):
     result.simulation.device = "cpu"
     result.learning.evaluation_interval = 1
     result.learning.log_interval = 1
+    # Exercise the original, versioned continuation contract here; the
+    # three-stage protocol has separate selection tests below.
+    result.learning.selection = "last_of_first_three_consecutive_passes"
+    result.learning.required_consecutive_passes = 3
     return result
 
 
@@ -156,6 +160,237 @@ def test_resume_preserves_c5_selection_seeds_and_cost(config, training):
     assert training.record.identity["status"] == "accepted"
     _, _, frozen = load_policy(training.record.directory / selection["checkpoint"])
     assert frozen["provenance"]["consecutive_passes"] == 3
+
+
+def test_three_stage_screening_only_promotes_a_complete_candidate(config, training, monkeypatch):
+    """A light diagnostic never counts as formal C2/C3 or final acceptance."""
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    training.stop_at = None
+    calls = []
+
+    def staged(config, directory, *, evaluation_index=0, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        calls.append(
+            (
+                config.mode,
+                config.benchmark.protocol,
+                config.benchmark.episodes,
+                config.benchmark.seed_base,
+                evaluation_index,
+            )
+        )
+        if config.mode == "benchmark":
+            return {"passed": True}
+        if config.benchmark.protocol == "diagnostic":
+            successes = 5 if evaluation_index == 1 else 7
+            return {
+                "complete": True,
+                "reports": {
+                    "empty": {
+                        "episodes": 8,
+                        "successes": successes,
+                        "successful_position_rmse": 0.2,
+                    }
+                },
+            }
+        (directory / "report.json").write_text('{"passed": true, "complete": true}')
+        return {"passed": True}
+
+    monkeypatch.setattr(cli, "evaluate", staged)
+    cli.train(config, training.record)
+    assert calls == [
+        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 1),
+        ("checkpoint_eval", "diagnostic", 8, 1_000_000, 2),
+        ("checkpoint_eval", "learning", None, 1_500_000, 2),
+        ("benchmark", "learning", None, None, 0),
+    ]
+    selected = training.record.identity["selection"]
+    assert selected["rule"] == "first_full_validation_pass"
+    assert selected["consecutive_passes"] == 1
+    assert selected["update"] == 2
+    assert training.record.identity["status"] == "accepted"
+
+
+def test_six_unimproved_screens_stop_a_new_run_only_after_800(config, training, monkeypatch):
+    """Keep an early-stopped checkpoint without touching the frozen test set."""
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.learning.evaluation_interval = 160
+    config.learning.checkpoint_interval = 80
+    training.stop_at = None
+    evaluations = []
+
+    def stagnant_screen(config, directory, *, evaluation_index=0, **kwargs):
+        del kwargs
+        directory.mkdir(parents=True, exist_ok=True)
+        evaluations.append((config.mode, config.benchmark.protocol, evaluation_index))
+        if config.mode != "checkpoint_eval" or config.benchmark.protocol != "diagnostic":
+            raise AssertionError("Stagnant screening must not access full or frozen test data")
+        return {
+            "complete": True,
+            "reports": {
+                "empty": {
+                    "episodes": 8,
+                    "successes": 0,
+                    "successful_position_rmse": None,
+                }
+            },
+        }
+
+    monkeypatch.setattr(cli, "evaluate", stagnant_screen)
+    cli.train(config, training.record)
+    assert training.record.identity["status"] == "early_stopped"
+    assert training.record.identity["updates"] == 1600
+    assert training.record.identity["stagnant_screens"] == 6
+    assert len(evaluations) == 10
+    assert all(row[:2] == ("checkpoint_eval", "diagnostic") for row in evaluations)
+    assert training.path.exists()
+    assert [e["event"] for e in training.record.events].count("early_stopping") == 1
+
+
+def test_three_stage_real_results_layout_writes_orbax_and_events(config, training, monkeypatch):
+    """The new run writes Orbax folders and one event stream, not zip/JSONL duplicates."""
+    from drone_playground.simulation.records import RunRecord
+
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    config.results.format = "orbax"
+    training.stop_at = None
+
+    def evaluate(config, directory, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        if config.mode == "benchmark":
+            (directory / "episodes.csv").write_text("episode,event\n0,SUCCESS\n")
+            (directory / "report.json").write_text('{"mode":"benchmark","passed":true}')
+            return {"passed": True}
+        if config.benchmark.protocol == "diagnostic":
+            return {
+                "complete": True,
+                "reports": {
+                    "empty": {
+                        "episodes": 8,
+                        "successes": 8,
+                        "successful_position_rmse": 0.05,
+                    }
+                },
+            }
+        (directory / "report.json").write_text('{"mode":"checkpoint_eval","passed":true}')
+        return {"passed": True}
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    record = RunRecord(training.record.directory / "orbax", config)
+    cli.train(config, record)
+    assert record.identity["status"] == "accepted"
+    models = sorted((record.directory / "checkpoints").glob("model_*"))
+    assert len(models) == 1
+    assert (models[0] / "training/commit_success.txt").is_file()
+    assert (models[0] / "actor/commit_success.txt").is_file()
+    assert (record.directory / "episodes.csv").is_file()
+    assert list(record.directory.glob("events.out.tfevents.*"))
+    assert not (record.directory / "metrics.jsonl").exists()
+    assert not (record.directory / "eval").exists()
+    assert record.identity["selected_checkpoint"].startswith("checkpoints/model_")
+    assert record.identity["selection"]["full_validation"] == (
+        f"{record.identity['selected_checkpoint']}/report.json"
+    )
+
+
+@pytest.mark.parametrize(
+    "task,successes,rmse,expected",
+    [
+        ("navigation", 6, None, True),
+        ("navigation", 5, None, False),
+        ("racing", 7, None, True),
+        ("racing", 6, None, False),
+        ("tracking", 7, 0.34, True),
+        ("tracking", 7, 0.36, False),
+        ("tracking", 6, 0.2, False),
+    ],
+)
+def test_light_screen_is_not_a_full_acceptance(task, successes, rmse, expected):
+    """Screening is permissive, fixed-sized and distinct from formal benchmarks."""
+    scenes = (
+        ["S01", "S02", "S03", "D01", "D02", "D03"]
+        if task == "navigation"
+        else ["empty" if task == "tracking" else "racing"]
+    )
+    report = {
+        "complete": True,
+        "reports": {
+            scene: {
+                "episodes": 8,
+                "successes": successes,
+                "successful_position_rmse": rmse,
+            }
+            for scene in scenes
+        },
+    }
+    assert cli.screening_passed(report, task, scenes) is expected
+
+
+def test_fast_probes_rotate_scene_pairs_and_cannot_claim_full_acceptance():
+    """Cheap probes cycle every scene without touching the frozen acceptance protocol."""
+    scenes = ["S01", "S02", "S03", "D01", "D02", "D03"]
+    pairs = [cli.diagnostic_probe_scenes(scenes, index, 3) for index in (0, 1, 3, 4, 6, 7)]
+    assert pairs == [
+        ["S01", "D01"],
+        ["S02", "D02"],
+        ["S03", "D03"],
+        ["S01", "D01"],
+        ["S02", "D02"],
+        ["S03", "D03"],
+    ]
+    assert not cli.probe_justifies_full_screen(
+        {"complete": True, "reports": {"S01": {"episodes": 8, "successes": 0}}}
+    )
+    assert cli.probe_justifies_full_screen(
+        {"complete": True, "reports": {"D03": {"episodes": 8, "successes": 1}}}
+    )
+    assert not cli.probe_justifies_full_screen(
+        {"complete": False, "reports": {"D03": {"episodes": 8, "successes": 8}}}
+    )
+    with pytest.raises(ValueError):
+        cli.diagnostic_probe_scenes(scenes[:4], 0, 3)
+
+
+def test_fast_probe_integration_delays_full_screen_without_skipping_final_validation(
+    config, training, monkeypatch
+):
+    """Two failed probes still lead to a mandatory full validation opportunity."""
+    config.task.name = "navigation"
+    OmegaConf.update(config, "benchmark.fixed_checkpoint_seeds", True, force_add=True)
+    config.learning.selection = "first_full_validation_pass"
+    config.learning.required_consecutive_passes = 1
+    OmegaConf.update(
+        config, "screening", {"probe_between_full": True, "full_every": 3}, force_add=True
+    )
+    training.stop_at = None
+    calls = []
+
+    def evaluate(config, directory, *, evaluation_index=0, **kwargs):
+        directory.mkdir(parents=True, exist_ok=True)
+        calls.append((config.mode, tuple(config.benchmark.scenes or ()), directory.name))
+        if config.mode == "benchmark":
+            return {"passed": True}
+        if config.benchmark.protocol == "learning":
+            return {"passed": True}
+        scenes = list(config.benchmark.scenes)
+        successes = 0 if directory.name == "probe" else 7
+        return {
+            "complete": True,
+            "reports": {scene: {"episodes": 8, "successes": successes} for scene in scenes},
+        }
+
+    monkeypatch.setattr(cli, "evaluate", evaluate)
+    cli.train(config, training.record)
+    assert [row[2] for row in calls[:3]] == ["probe", "probe", "screening"]
+    assert [row[0] for row in calls] == ["checkpoint_eval"] * 4 + ["benchmark"]
+    assert calls[0][1] == ("S01", "D01")
+    assert calls[1][1] == ("S02", "D02")
+    assert calls[2][1] == ("S01", "S02", "S03", "D01", "D02", "D03")
+    assert [item["event"] for item in training.record.events].count("checkpoint_probe") == 2
+    assert training.record.identity["status"] == "accepted"
 
 
 def test_checkpoint_evaluations_do_not_repeat_policy_serialization(config, training, monkeypatch):
@@ -283,6 +518,32 @@ def test_resume_selected_checkpoint_does_not_train_again(config, training):
     assert (training.record.directory / "eval/001").is_dir()
 
 
+def test_fixed_interaction_budget_exports_final_actor_without_acceptance(config, training):
+    """Finish a candidate at its budget without entering convergence selection."""
+    OmegaConf.update(config, "learning.max_interactions", 50, force_add=True)
+    config.simulation.num_envs = 1
+    config.learning.options.horizon = 10
+    training.stop_at = None
+    cli.train(config, training.record)
+    result = training.record.identity
+    assert result["status"] == "budget_exhausted"
+    assert result["interactions"] == 50 and result["updates"] == 5
+    assert result["checkpoint_selection"] == "final_budget_checkpoint"
+    assert training.evaluations == []
+    _, _, metadata = load_policy(training.record.directory / result["selected_checkpoint"])
+    assert metadata["provenance"]["interactions"] == 50
+
+
+@pytest.mark.parametrize("budget", [-1, True, 15])
+def test_fixed_budget_rejects_invalid_or_partial_updates(config, training, budget):
+    """A declared budget must contain an integer number of complete updates."""
+    OmegaConf.update(config, "learning.max_interactions", budget, force_add=True)
+    config.simulation.num_envs = 1
+    config.learning.options.horizon = 10
+    with pytest.raises(ValueError, match="max_interactions"):
+        cli.train(config, training.record)
+
+
 def test_unknown_selection_is_rejected_before_training(config, monkeypatch):
     """Verify unknown selection is rejected before training."""
     config.learning.selection = "best_score"
@@ -315,7 +576,8 @@ def test_frozen_execution_rejects_changed_physical_contract(config, monkeypatch,
         config.simulation[field] = "changed" if field in {"drone", "dynamics"} else 123
     record = Record(Path(config.output))
     monkeypatch.setattr(cli, "RunRecord", lambda *args, **kwargs: record)
-    monkeypatch.setattr(cli, "load_policy", lambda path: (object(), {}, metadata))
+    monkeypatch.setattr(cli, "read_checkpoint", lambda path, purpose: (b"", metadata))
+    monkeypatch.setattr(cli, "load_policy", lambda path, *, actor: (actor, {}, metadata))
     monkeypatch.setattr(cli, "evaluate", lambda *args, **kwargs: pytest.fail("evaluated mismatch"))
     with pytest.raises(ValueError, match=field):
         cli.main(config)
@@ -395,6 +657,45 @@ def test_v2_policy_requires_explicit_actor_specification(tmp_path):
         )
 
 
+@pytest.mark.parametrize("archived", [{}, {"sensor": None}, {"sensor": {"acquisition": "rolling"}}])
+def test_frozen_evaluation_rejects_sensor_model_change(config, monkeypatch, tmp_path, archived):
+    """Old scan semantics cannot silently inherit a new frozen benchmark identity."""
+    config.mode = "benchmark"
+    config.benchmark.scenes = ["S01"]
+    config.benchmark.episodes = 1
+    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
+    env = SimpleNamespace(sensor=SimpleNamespace(specification={"acquisition": "snapshot"}))
+    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
+    monkeypatch.setattr(evaluation, "rollout", lambda *args, **kwargs: pytest.fail("ran mismatch"))
+    with pytest.raises(ValueError, match="sensor"):
+        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
+
+
+@pytest.mark.parametrize("allow_change", [False, True])
+def test_frozen_sensor_guard_allows_matched_or_explicit_comparison(
+    config, monkeypatch, tmp_path, allow_change
+):
+    """Matching snapshots and explicitly requested cross-model experiments reach execution."""
+    config.mode = "benchmark"
+    config.benchmark.scenes = ["S01"]
+    config.benchmark.episodes = 1
+    config.benchmark.allow_environment_change = allow_change
+    current = {"acquisition": "snapshot"}
+    archived = {} if allow_change else {"sensor": current}
+    implementation = SimpleNamespace(trainable=True, execution="jax", close=lambda: None)
+    env = SimpleNamespace(sensor=SimpleNamespace(specification=current))
+    monkeypatch.setattr(evaluation, "create_method", lambda config: implementation)
+    monkeypatch.setattr(evaluation, "create_environment", lambda *args, **kwargs: env)
+
+    def reached(*args, **kwargs):
+        raise RuntimeError("reached rollout")
+
+    monkeypatch.setattr(evaluation, "rollout", reached)
+    with pytest.raises(RuntimeError, match="reached rollout"):
+        evaluation.evaluate(config, tmp_path, checkpoint_config={"learning": archived})
+
+
 @pytest.mark.parametrize(
     "count, missing, failed_static, expected",
     [
@@ -424,7 +725,10 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     def create_environment(config, **kwargs):
         scene = SimpleNamespace(name=kwargs["scene"], geometry_identity={"name": kwargs["scene"]})
         return SimpleNamespace(
-            scene=scene, task=SimpleNamespace(contract={}), control_level="attitude_thrust"
+            scene=scene,
+            task=SimpleNamespace(contract={}),
+            control_level="attitude_thrust",
+            sensor=None,
         )
 
     monkeypatch.setattr(evaluation, "create_environment", create_environment)
@@ -447,6 +751,7 @@ def test_native_s6_uses_main_scene_counts_and_static_successes(
     assert report["reports"]["D01"]["outcomes"] == {"COLLISION": count}
     assert report["reports"]["D01"]["passed"] is None
     diagnostic = json.loads((tmp_path / "report.json").read_text())["reports"]["D01"]
+    assert diagnostic["sensor"] is None
     assert diagnostic["criterion"] == "diagnostic" and diagnostic["passed"] is None
     assert (tmp_path / "decisions.json").is_file()
     assert (tmp_path / "episodes.csv").is_file()

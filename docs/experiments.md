@@ -6,6 +6,11 @@
 
 ## 新实验
 
+从零训练 18 单元的正式选模遵循
+[ADR-0015](adr/0015-three-stage-learning-acceptance.md)：轻量筛查→完整候选验证→
+独立冻结 Benchmark。新训练不设置 `initial_checkpoint`；已有 run 续训时
+保持原来保存的协议，不允许将历史权重当作从零训练证据。
+
 ```bash
 pixi install --locked
 pixi run train experiment=tracking learning=apg seed=0 \
@@ -43,7 +48,8 @@ Environment；`checkpoints/step-*/policy.zip` 保存独立推理所需的 Actor 
 
 初始平台的三算法验收、初始化实验及从零训练调查发生在 v1 状态结构下。
 历史指标、来源、失败与成本保存在 `results/acceptance/`、
-[从零训练记录](scratch-training.md) 和 Git 历史。它们不是当前代码已经重新训练通过的证据。
+历史阶段性从零训练记录保留在 Git 历史（原 `docs/scratch-training.md`）
+及本地 `results/scratch_v02/archive/`，不能当作本轮从零收敛的证据。
 
 本版本不接受旧 `.training.zip` 或 `.policy.zip`，也不提供旧权重转换与目录迁移命令。
 旧权重和报告保留为只读研究证据；开始新的实验须重新训练并单独记录成本。

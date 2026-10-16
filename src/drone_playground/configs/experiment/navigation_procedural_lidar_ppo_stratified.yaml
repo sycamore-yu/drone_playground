@@ -1,0 +1,7 @@
+# @package _global_
+# One controlled change against *_ppo_validation: balance start locations.
+defaults:
+  - navigation_procedural_lidar_ppo_validation
+simulation:
+  procedural:
+    start_sampling: stratified

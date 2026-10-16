@@ -8,14 +8,19 @@ its static Simulation metadata remains owned by the resolved environment config.
 import hashlib
 import json
 import os
+import re
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
 
 import jax
+import jax.numpy as jnp
 import numpy as np
+import orbax.checkpoint as ocp
 from flax import serialization
 
+from drone_playground.learning.selection import screening_score
 from drone_playground.simulation.policy import CHECKPOINT_VERSION, read_checkpoint
 
 
@@ -96,8 +101,8 @@ def load_state(path, template):
 
 
 def save_inference(path, params, *, kind, config, provenance, actor_spec=None):
-    """Save shared Actor full variables; inference needs only Simulation's Actor."""
-    if kind not in ("state", "depth", "lidar"):
+    """Save a configured Actor without a trainer or executable checkpoint payload."""
+    if kind not in ("state", "depth", "lidar") and actor_spec is None:
         raise ValueError("Unknown actor kind")
     if not isinstance(actor_spec, dict) or actor_spec.get("kind") != kind:
         raise ValueError("Actor specification must match the frozen inference kind")
@@ -119,3 +124,129 @@ def load_inference(path):
         **metadata,
         "params": jax.tree.map(jax.device_put, serialization.msgpack_restore(payload)),
     }
+
+
+def _screening_score(path: Path) -> float | None:
+    """Read a completed lightweight validation without touching benchmark records."""
+    report_path = path / "screening" / "report.json"
+    if not report_path.is_file():
+        return None
+    report = json.loads(report_path.read_text())
+    if not report.get("complete"):
+        return None
+    scenes = list(report["reports"])
+    task = report["reports"][scenes[0]]["task"]
+    return screening_score(report, task, scenes)
+
+
+def save_model(path, state, *, config, provenance, kind, actor_spec, export_policy=False):
+    """Write a version-three Orbax checkpoint under a model-NNNNNN folder.
+
+    The full training state is saved once per update; the inference actor
+    is exported only when selected. Metadata stays human-readable.
+    """
+    directory = Path(path).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    # State actors deliberately have no recurrent memory (shape [B,0]).
+    # Orbax cannot serialize zero-size arrays; use an internal padded surrogate
+    # only for persistence, never change the Actor or live TrainingState shape.
+    recurrent = getattr(state, "recurrent_memory", None)
+    empty_recurrent = recurrent is not None and recurrent.ndim == 2 and recurrent.shape[1] == 0
+    serialized_state = (
+        state.replace(recurrent_memory=jnp.zeros((recurrent.shape[0], 1), recurrent.dtype))
+        if empty_recurrent
+        else state
+    )
+    state_path = directory / "training"
+    if state_path.exists() and not (state_path / "commit_success.txt").is_file():
+        raise ValueError(f"Incomplete Orbax training checkpoint: {state_path}")
+    if not state_path.exists():
+        with ocp.StandardCheckpointer() as checkpointer:
+            checkpointer.save(state_path, serialized_state)
+            checkpointer.wait_until_finished()
+    if export_policy and not (directory / "actor").exists():
+        with ocp.StandardCheckpointer() as checkpointer:
+            checkpointer.save(directory / "actor", state.params)
+            checkpointer.wait_until_finished()
+    metadata = {
+        "format_version": 3,
+        "purpose": "model",
+        "config": config,
+        "provenance": provenance,
+        "kind": kind,
+        "actor": actor_spec,
+        "has_inference_actor": (directory / "actor").is_dir(),
+        "padded_empty_recurrent_memory": bool(empty_recurrent),
+    }
+    descriptor, temporary = tempfile.mkstemp(prefix=".metadata.", dir=directory)
+    try:
+        with os.fdopen(descriptor, "w") as stream:
+            json.dump(metadata, stream, allow_nan=False, sort_keys=True)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, directory / "metadata.json")
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    # Keep the selected actor and a small rolling window of resumable states.
+    # This avoids accumulating a full copy of the large LiDAR sensor history
+    # at every scheduled checkpoint.
+    settings = config.get("experiment", {}).get("results", {})
+    retention = settings.get("keep_checkpoints", 3)
+    if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
+        raise ValueError("results.keep_checkpoints must be a positive integer")
+    keep_best = settings.get("keep_best_screening", False)
+    if type(keep_best) is not bool:
+        raise ValueError("results.keep_best_screening must be boolean")
+    candidates = sorted(
+        (
+            candidate
+            for candidate in directory.parent.iterdir()
+            if candidate.is_dir()
+            and re.fullmatch(r"model_\d{6,}", candidate.name)
+            and (candidate / "training/commit_success.txt").is_file()
+        ),
+        key=lambda candidate: int(candidate.name.split("_")[1]),
+    )
+    keep = set(candidates[-retention:])
+    keep.update(candidate for candidate in candidates if (candidate / "actor").is_dir())
+    if keep_best:
+        ranked = [
+            (score, candidate)
+            for candidate in candidates
+            if (score := _screening_score(candidate)) is not None
+        ]
+        if ranked:
+            keep.add(max(ranked, key=lambda item: (item[0], item[1].name))[1])
+    for candidate in candidates:
+        if candidate not in keep:
+            shutil.rmtree(candidate)
+    return directory
+
+
+def load_model_state(path, template):
+    """Restore the complete training PyTree into a matching Flax template."""
+    directory = Path(path).resolve()
+    _, metadata = read_checkpoint(directory, "training")
+    empty_recurrent = metadata.get("padded_empty_recurrent_memory", False)
+    if empty_recurrent:
+        recurrent = getattr(template, "recurrent_memory", None)
+        if recurrent is None or recurrent.ndim != 2 or recurrent.shape[1] != 0:
+            raise ValueError("Orbax padded State actor requires an empty-memory template")
+        restored_template = template.replace(
+            recurrent_memory=jnp.zeros((recurrent.shape[0], 1), recurrent.dtype)
+        )
+    else:
+        restored_template = template
+    with ocp.StandardCheckpointer() as checkpointer:
+        restored = checkpointer.restore(directory / "training", restored_template)
+    if empty_recurrent:
+        restored = restored.replace(recurrent_memory=template.recurrent_memory)
+    if jax.tree.structure(restored) != jax.tree.structure(template):
+        raise ValueError("Orbax training checkpoint structure differs from template")
+    for expected, actual in zip(jax.tree.leaves(template), jax.tree.leaves(restored), strict=True):
+        if np.shape(expected) != np.shape(actual) or getattr(expected, "dtype", None) != getattr(
+            actual, "dtype", None
+        ):
+            raise ValueError("Orbax training checkpoint leaf shape or dtype differs")
+    return restored, metadata

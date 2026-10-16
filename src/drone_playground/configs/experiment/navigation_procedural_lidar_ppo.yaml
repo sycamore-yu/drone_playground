@@ -1,0 +1,13 @@
+# @package _global_
+# Actor observes point clouds, Critic alone may use ideal physical geometry.
+defaults:
+  - navigation_procedural_lidar
+learning:
+  options:
+    critic_uses_privileged: true
+    initial_log_std: -2.0
+    lr: 0.0001
+    critic_lr: 0.0003
+    entropy_weight: 0.005
+    ppo_target_kl: 0.025
+    ppo_value_clip: 10.0

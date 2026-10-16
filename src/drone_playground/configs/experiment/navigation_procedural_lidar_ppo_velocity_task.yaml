@@ -1,0 +1,16 @@
+# @package _global_
+# Task owns reward selection and shaping, not the Learning algorithm.
+defaults:
+  - navigation_procedural_lidar_ppo_velocity
+task:
+  options:
+    reward_profile: legacy_motion_navigation_v2
+    reward_shaping:
+      task_weight: 1.0
+      progress_reward_scale: 0.0
+      failure_cost: 0.0
+      altitude_weight: 0.0
+      height_boundary_weight: 0.0
+learning:
+  options:
+    reward_profile: default
