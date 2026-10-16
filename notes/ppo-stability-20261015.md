@@ -1636,3 +1636,27 @@ that sequential source. Keep original4x4updates, all other settings, and full28u
 >=143/150. No earlystop/rollback or finaltest. Existing LR-only correctness tests are
 reused; no new optimizer/regularizer/code needed. Exact command and rejection rule are
 candidate-configs/depth-parallel-postpass-lr01-design.json.
+
+### Parallel Actor LR-only window completed and failed
+
+All28updates917504interactions completed; exit0. Seven scores139/128/150/148/147/125/139.
+Onlyu188/u192pass; finalS03=14/25, otherfive25/25, retained139/150. u200S02=0/25.
+EveryactualActorupdatepositive, noKLskip. First15rawrollout/targetmetrics exactlymatch
+control. Cachednewreport/metrics/sevenCSVsandreportsareparallel-postpass-lr01/; no
+source model rehash or replay. Actualendstateu204 retained; noextension/promotion/finaltest.
+The next larger-physical-batch experiment is registered separately:256worlds,2updates,
+262144interactions comparedto8full-batch64worldupdates. Bothhave32Adamstepsperlearner
+and64worldoptimizerbatches. Morephysicaltrajectories and slowerpolicyrefresh differ;
+not a unique variance attribution. Sourceworlds cloned contiguously with native
+Crazyflowworld_mask for physical leaves and staticcore.n_worlds corrected. A realCPU
+Depthupdate caught the missingstaticfieldbeforelaunch. Nativealgorithmunchanged.
+
+World-expansion verification is now complete:35other scopedchecks passed; expanded
+realDepthtest passed38.69s afterusing Crazyflowworld_mask and correctingstaticn_worlds.
+It checks4->8worlds/twoscenes,64x48sensor, preservedglobalphysics arrays/parameters/Adam/RNG,
+expandedphysical/sensor/GRU/objectivehistory, nonidentical stochasticclonepositions,
+actual24cumulativeinteractions andtwoActor/CriticAdamcounts. Earlier testfixtures
+usedunsupportedDepthsizes and a NumPy typed-key conversion; these were corrected
+before the meaningful physical expansion test. No GPUtraininglaunchedbeforepassing.
+LRwindowcost410.982s updates,966.367s inclchecks/saves excluding113.572ssetup.
+Actor parameterdelta.058846-.098535, noKLskip.

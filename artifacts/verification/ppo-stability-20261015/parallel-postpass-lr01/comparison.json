@@ -1,0 +1,176 @@
+{
+  "status": "completed_failed",
+  "checks": [
+    {
+      "update": 180,
+      "candidate_successes": 139,
+      "control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 14,
+        "D03": 25
+      },
+      "retained_initial_successes": 139,
+      "recovered_control_losses": 0,
+      "new_losses_relative_to_control": 11,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 139,
+        "COLLISION": 11
+      },
+      "passed": false
+    },
+    {
+      "update": 184,
+      "candidate_successes": 128,
+      "control_successes": 124,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 3,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 128,
+      "recovered_control_losses": 26,
+      "new_losses_relative_to_control": 22,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 128,
+        "TIMEOUT": 14,
+        "COLLISION": 8
+      },
+      "passed": false
+    },
+    {
+      "update": 188,
+      "candidate_successes": 150,
+      "control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 150,
+      "recovered_control_losses": 0,
+      "new_losses_relative_to_control": 0,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 150
+      },
+      "passed": true
+    },
+    {
+      "update": 192,
+      "candidate_successes": 148,
+      "control_successes": 150,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 23,
+        "D03": 25
+      },
+      "retained_initial_successes": 148,
+      "recovered_control_losses": 0,
+      "new_losses_relative_to_control": 2,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 148,
+        "COLLISION": 2
+      },
+      "passed": true
+    },
+    {
+      "update": 196,
+      "candidate_successes": 147,
+      "control_successes": 149,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 25,
+        "D01": 25,
+        "D02": 22,
+        "D03": 25
+      },
+      "retained_initial_successes": 147,
+      "recovered_control_losses": 1,
+      "new_losses_relative_to_control": 3,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 147,
+        "COLLISION": 3
+      },
+      "passed": false
+    },
+    {
+      "update": 200,
+      "candidate_successes": 125,
+      "control_successes": 149,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 0,
+        "S03": 25,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 125,
+      "recovered_control_losses": 1,
+      "new_losses_relative_to_control": 25,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 125,
+        "TIMEOUT": 25
+      },
+      "passed": false
+    },
+    {
+      "update": 204,
+      "candidate_successes": 139,
+      "control_successes": 142,
+      "per_scene_successes": {
+        "S01": 25,
+        "S02": 25,
+        "S03": 14,
+        "D01": 25,
+        "D02": 25,
+        "D03": 25
+      },
+      "retained_initial_successes": 139,
+      "recovered_control_losses": 8,
+      "new_losses_relative_to_control": 11,
+      "common_losses": 0,
+      "events": {
+        "SUCCESS": 139,
+        "TIMEOUT": 11
+      },
+      "passed": false
+    }
+  ],
+  "actual_updates": 28,
+  "actual_interactions": 917504,
+  "actor_parameter_delta_norm_range": [
+    0.05884586647152901,
+    0.09853503853082657
+  ],
+  "kl_skip_sum": 0.0,
+  "training_update_seconds": 410.98185270209797,
+  "total_wall_seconds_excluding_setup": 966.3667548689991,
+  "setup_seconds": 113.57212882398744,
+  "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01/model_000204",
+  "runtime_provenance": {
+    "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+    "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+  },
+  "runner_git_commit": "52549604c0396e72eeb3b4dbd175aaf636a15227",
+  "decision": "Five of seven checks fail, including actualfinal139/150 withS03=14/25. Reject thisparallelLR-onlycandidate, no new lower-rate sweep from this failure alone, no finaltests."
+}

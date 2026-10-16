@@ -114,6 +114,55 @@ def continuation_config(config, scale, disable_entropy=False, full_batch=False):
     return result
 
 
+def expanded_config(config, multiplier):
+    """Increase parallel sampling worlds without changing optimizer minibatch count."""
+    if type(multiplier) is not int or multiplier <= 1:
+        raise ValueError("World multiplier must be an integer greater than one")
+    result = copy.deepcopy(config)
+    sampling = result["training_sampling"]
+    count = result["learning"]["num_envs"]
+    if (
+        sampling["scene_sampling"] != "parallel"
+        or result["experiment"]["simulation"]["num_envs"] != count
+        or sampling["worlds_per_scene"] * len(sampling["scenes"]) != count
+    ):
+        raise ValueError("World expansion requires consistent parallel scene groups")
+    result["learning"]["num_envs"] *= multiplier
+    result["experiment"]["simulation"]["num_envs"] *= multiplier
+    sampling["worlds_per_scene"] *= multiplier
+    return result
+
+
+def expand_worlds(state, count, multiplier):
+    """Clone each in-flight world contiguously; preserve shared learner and RNG state."""
+    import jax
+    import jax.numpy as jnp
+    from crazyflow.utils import world_mask
+
+    if type(multiplier) is not int or multiplier <= 1 or state.env_state.done.shape != (count,):
+        raise ValueError("Invalid source world count or multiplier")
+
+    def repeat(value):
+        if getattr(value, "ndim", 0) and value.shape[0] == count:
+            return jnp.repeat(value, multiplier, axis=0)
+        return value
+
+    environment = jax.tree.map(repeat, state.env_state)
+    physics = jax.tree.map(
+        lambda value, batched: jnp.repeat(value, multiplier, axis=0) if batched else value,
+        state.env_state.physics,
+        world_mask(state.env_state.physics),
+    )
+    environment = environment.replace(
+        physics=physics.replace(core=physics.core.replace(n_worlds=count * multiplier))
+    )
+    return state.replace(
+        env_state=environment,
+        recurrent_memory=jax.tree.map(repeat, state.recurrent_memory),
+        objective_state=jax.tree.map(repeat, state.objective_state),
+    )
+
+
 def reuse_baseline(control, source, provenance):
     """Reuse the completed matched control's original case records."""
     if (
@@ -152,12 +201,24 @@ def main():
     parser.add_argument("--actor-lr-scale", type=float, default=1.0)
     parser.add_argument("--disable-entropy-bonus", action="store_true")
     parser.add_argument("--full-batch", action="store_true")
+    parser.add_argument("--worlds-multiplier", type=int, default=1)
     parser.add_argument("--diagnostic-updates", type=int)
     parser.add_argument("--reuse-window", type=Path)
     args = parser.parse_args()
     source, output = args.checkpoint.resolve(), args.output.resolve()
     metadata = json.loads((source / "metadata.json").read_text())
-    diagnostic = args.actor_lr_scale != 1.0 or args.disable_entropy_bonus or args.full_batch
+    if args.worlds_multiplier < 1:
+        raise ValueError("World multiplier must be positive")
+    if args.worlds_multiplier != 1 and (
+        args.actor_lr_scale != 1.0 or args.disable_entropy_bonus or args.full_batch
+    ):
+        raise ValueError("World expansion must be the only intervention")
+    diagnostic = (
+        args.actor_lr_scale != 1.0
+        or args.disable_entropy_bonus
+        or args.full_batch
+        or args.worlds_multiplier != 1
+    )
     if args.diagnostic_updates is not None and not diagnostic:
         raise ValueError("Only a diagnostic may use a shorter pilot window")
     if diagnostic and args.reuse_window is None:
@@ -241,13 +302,22 @@ def main():
     origin_update, origin_interactions = int(state.updates), int(state.interactions)
     assert selection["update"] == metadata["provenance"]["updates"] == origin_update
     assert origin_interactions == metadata["provenance"]["interactions"]
+    source_batch = config.simulation.num_envs * config.learning.options.horizon
+    if args.worlds_multiplier != 1:
+        metadata["config"] = expanded_config(metadata["config"], args.worlds_multiplier)
+        config = OmegaConf.create(metadata["config"]["experiment"])
+        state = expand_worlds(state, trainer.env.num_envs, args.worlds_multiplier)
+        trainers.pop(scene_index).env.sim.close()
+        trainer = trainer_for(scene_index)
+        assert state.env_state.done.shape == (trainer.env.num_envs,)
     batch = config.simulation.num_envs * config.learning.options.horizon
     updates, interval = window_steps(batch, args.diagnostic_updates)
     if control is not None:
-        reference_updates, _ = window_steps(batch)
+        reference_updates, reference_interval = window_steps(source_batch)
         assert reference_updates == control["planned_updates"]
-        assert interval == control["evaluation_interval_updates"]
-        assert reference_updates * batch == control["actual_additional_interactions"]
+        assert reference_interval == control["evaluation_interval_updates"]
+        assert interval * batch == reference_interval * source_batch
+        assert window_steps(batch)[0] * batch == control["actual_additional_interactions"]
     evaluation = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
     evaluation.mode = "checkpoint_eval"
     evaluation.benchmark.protocol = "learning"
@@ -284,6 +354,8 @@ def main():
         "entropy_bonus_disabled": args.disable_entropy_bonus,
         "entropy_weight": config.learning.options.entropy_weight,
         "full_batch": args.full_batch,
+        "worlds_multiplier": args.worlds_multiplier,
+        "rollout_worlds": config.simulation.num_envs,
         "optimizer_steps_per_update": config.learning.options.ppo_epochs
         * config.learning.options.minibatches,
         "diagnostic_updates": args.diagnostic_updates,
@@ -313,6 +385,13 @@ def main():
             "fewer Actor and Critic Adam steps per rollout accompany larger gradient batches. "
             "This is not unchanged-recipe acceptance."
         )
+    elif args.worlds_multiplier != 1:
+        result["scope"] = (
+            "Larger physical rollout batch diagnostic. Each source world and its recurrent "
+            "history are cloned contiguously; stochastic actions diverge after collection "
+            "starts. Shared parameters, Adam state and RNG key are preserved. Larger batches "
+            "also reduce policy-refresh frequency at matched interactions."
+        )
     if args.diagnostic_updates is not None:
         result["scope"] += " Short pilot, not the complete registered stability window."
     assert result["runtime_provenance"]["source_sha256"] == result["source_sha256_reused"]
@@ -334,6 +413,7 @@ def main():
             "continuation_actor_lr_scale": args.actor_lr_scale,
             "continuation_entropy_bonus_disabled": args.disable_entropy_bonus,
             "continuation_full_batch": args.full_batch,
+            "continuation_worlds_multiplier": args.worlds_multiplier,
             "evaluation_index": original_report["evaluation_index"] + len(result["checks"]),
             "training_wall_seconds": metadata["provenance"]["training_wall_seconds"]
             + time.monotonic()

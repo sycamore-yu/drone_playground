@@ -88,6 +88,113 @@ def test_lr_override_preserves_source_and_all_other_settings():
     assert WINDOW.continuation_config(source, 1.0) == source
 
 
+def test_world_expansion_preserves_scene_proportions_and_optimizer_config():
+    """More sampled trajectories do not silently change epochs, rates or geometry."""
+    source = {
+        "experiment": {"simulation": {"num_envs": 64}},
+        "learning": {"num_envs": 64, "minibatches": 4, "ppo_epochs": 4},
+        "training_sampling": {
+            "scene_sampling": "parallel",
+            "worlds_per_scene": 8,
+            "scenes": list(range(8)),
+            "geometry_sha256": {"scene": "unchanged"},
+        },
+    }
+    expanded = WINDOW.expanded_config(source, 4)
+    assert expanded["learning"]["num_envs"] == 256
+    assert expanded["training_sampling"]["worlds_per_scene"] == 32
+    assert source["learning"]["num_envs"] == 64
+    for mapping, key in (
+        (expanded["learning"], "num_envs"),
+        (expanded["experiment"]["simulation"], "num_envs"),
+        (expanded["training_sampling"], "worlds_per_scene"),
+    ):
+        mapping[key] //= 4
+    assert expanded == source
+    assert WINDOW.window_steps(256 * 512, 2) == (2, 1)
+    for multiplier in (0, 1, True, 1.5):
+        with pytest.raises(ValueError, match="integer"):
+            WINDOW.expanded_config(source, multiplier)
+    source["training_sampling"]["scene_sampling"] = "sequential"
+    with pytest.raises(ValueError, match="parallel"):
+        WINDOW.expanded_config(source, 4)
+
+
+def test_expanded_inflight_state_executes_real_ppo_without_resetting_learner():
+    """Clone physical/history leaves, retain Adam, then sample independent new actions."""
+    import jax
+    import numpy as np
+    from crazyflow.utils import world_mask
+
+    from drone_playground.learning.trainer import Trainer
+    from drone_playground.simulation.environment import make_environment
+
+    environment_options = {
+        "task": "navigation",
+        "scene": ["S01", "D01"],
+        "sensor": "depth",
+        "sensor_config": {"width": 64, "height": 48},
+        "point_count": 16,
+    }
+    before_env = make_environment(num_envs=4, **environment_options)
+    after_env = make_environment(num_envs=8, **environment_options)
+    options = {"horizon": 2, "ppo_epochs": 1, "minibatches": 1}
+    try:
+        before = Trainer(before_env, kind="depth", config=options)
+        after = Trainer(after_env, kind="depth", config=options)
+        original, _ = before.update(before.initialize())
+        expanded = WINDOW.expand_worlds(original, 4, 2)
+        assert expanded.params is original.params
+        assert expanded.critic_params is original.critic_params
+        assert expanded.optimizer_state is original.optimizer_state
+        assert expanded.rng is original.rng
+        assert expanded.interactions == original.interactions == 8
+        assert expanded.env_state.physics.core.n_worlds == 8
+        for old, new, batched in zip(
+            jax.tree.leaves(original.env_state.physics),
+            jax.tree.leaves(expanded.env_state.physics),
+            jax.tree.leaves(world_mask(original.env_state.physics)),
+            strict=True,
+        ):
+            if not batched:
+                assert new is old
+        for name in ("env_state", "recurrent_memory", "objective_state"):
+            old_state, new_state = getattr(original, name), getattr(expanded, name)
+            if name == "env_state":
+                old_state, new_state = (
+                    old_state.replace(physics=None),
+                    new_state.replace(physics=None),
+                )
+            for old, new in zip(
+                jax.tree.leaves(old_state),
+                jax.tree.leaves(new_state),
+                strict=True,
+            ):
+                expected = np.repeat(old, 2, axis=0) if old.ndim and old.shape[0] == 4 else old
+                if jax.dtypes.issubdtype(old.dtype, jax.dtypes.prng_key):
+                    np.testing.assert_array_equal(
+                        jax.random.key_data(new), jax.random.key_data(expected)
+                    )
+                else:
+                    np.testing.assert_array_equal(new, expected)
+        result, metrics = after.update(expanded)
+        assert result.interactions == 24 and result.updates == 2
+        assert result.env_state.done.shape == (8,)
+        assert all(np.isfinite(value).all() for value in metrics.values())
+        positions = np.asarray(result.env_state.physics.states.pos)
+        assert not np.array_equal(positions[0], positions[1])
+        for optimizer in ("actor", "critic"):
+            counts = [
+                int(v)
+                for v in jax.tree.leaves(result.optimizer_state[optimizer])
+                if v.shape == () and np.issubdtype(v.dtype, np.integer)
+            ]
+            assert counts == [2]
+    finally:
+        before_env.sim.close()
+        after_env.sim.close()
+
+
 @pytest.mark.parametrize("scale", [0, -1, 2, float("nan"), float("inf")])
 def test_lr_override_rejects_freezing_or_nonfinite_rates(scale):
     """The diagnostic must execute finite, nonzero Actor updates."""

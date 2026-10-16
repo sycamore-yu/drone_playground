@@ -1,5 +1,5 @@
 {
-  "status": "registered",
+  "status": "completed_failed",
   "scope": "Matched post-first-pass Actor learning-rate diagnostic; no new algorithm or teacher",
   "hypothesis": "Smaller Actor steps may retain the lateral avoidance response while continuing PPO on all eight parallel scenes. Full-batch updates reduced optimizer counts but still changed the critical path, so that candidate is not retained.",
   "prior_negative": "Read depth-postpass-lr-design.json and comparison: sequential-sourceu144 0.1xLR failed all seven checks139/126/62/136/144/130/139. This is the first LR-only continuation from parallel-sourceu176, with full-scene coverage every update. No claim that the previous LR failure was a different numerical implementation.",
@@ -34,5 +34,185 @@
   "reference_limit": "Learning-rate annealing is standard in this implementation; a discrete10x drop after a validation pass is our experimental choice, not its exact schedule.",
   "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01",
   "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-postpass-lr01.log",
-  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01 --actor-lr-scale 0.1 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-postpass-lr01.log 2>&1"
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/tools/ppo_stability_window.py --checkpoint /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0/checkpoints/model_000176 --output /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01 --actor-lr-scale 0.1 --reuse-window /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-parallel-stability-report.json > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-parallel-postpass-lr01.log 2>&1",
+  "pid": 2805417,
+  "runner_commit": "5254960",
+  "process_session": 85215,
+  "process_exit_code": 0,
+  "result": {
+    "status": "completed_failed",
+    "checks": [
+      {
+        "update": 180,
+        "candidate_successes": 139,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 14,
+          "D03": 25
+        },
+        "retained_initial_successes": 139,
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 11,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 139,
+          "COLLISION": 11
+        },
+        "passed": false
+      },
+      {
+        "update": 184,
+        "candidate_successes": 128,
+        "control_successes": 124,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 3,
+          "D01": 25,
+          "D02": 25,
+          "D03": 25
+        },
+        "retained_initial_successes": 128,
+        "recovered_control_losses": 26,
+        "new_losses_relative_to_control": 22,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 128,
+          "TIMEOUT": 14,
+          "COLLISION": 8
+        },
+        "passed": false
+      },
+      {
+        "update": 188,
+        "candidate_successes": 150,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 25
+        },
+        "retained_initial_successes": 150,
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 0,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 150
+        },
+        "passed": true
+      },
+      {
+        "update": 192,
+        "candidate_successes": 148,
+        "control_successes": 150,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 23,
+          "D03": 25
+        },
+        "retained_initial_successes": 148,
+        "recovered_control_losses": 0,
+        "new_losses_relative_to_control": 2,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 148,
+          "COLLISION": 2
+        },
+        "passed": true
+      },
+      {
+        "update": 196,
+        "candidate_successes": 147,
+        "control_successes": 149,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 25,
+          "D01": 25,
+          "D02": 22,
+          "D03": 25
+        },
+        "retained_initial_successes": 147,
+        "recovered_control_losses": 1,
+        "new_losses_relative_to_control": 3,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 147,
+          "COLLISION": 3
+        },
+        "passed": false
+      },
+      {
+        "update": 200,
+        "candidate_successes": 125,
+        "control_successes": 149,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 0,
+          "S03": 25,
+          "D01": 25,
+          "D02": 25,
+          "D03": 25
+        },
+        "retained_initial_successes": 125,
+        "recovered_control_losses": 1,
+        "new_losses_relative_to_control": 25,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 125,
+          "TIMEOUT": 25
+        },
+        "passed": false
+      },
+      {
+        "update": 204,
+        "candidate_successes": 139,
+        "control_successes": 142,
+        "per_scene_successes": {
+          "S01": 25,
+          "S02": 25,
+          "S03": 14,
+          "D01": 25,
+          "D02": 25,
+          "D03": 25
+        },
+        "retained_initial_successes": 139,
+        "recovered_control_losses": 8,
+        "new_losses_relative_to_control": 11,
+        "common_losses": 0,
+        "events": {
+          "SUCCESS": 139,
+          "TIMEOUT": 11
+        },
+        "passed": false
+      }
+    ],
+    "actual_updates": 28,
+    "actual_interactions": 917504,
+    "actor_parameter_delta_norm_range": [
+      0.05884586647152901,
+      0.09853503853082657
+    ],
+    "kl_skip_sum": 0.0,
+    "training_update_seconds": 410.98185270209797,
+    "total_wall_seconds_excluding_setup": 966.3667548689991,
+    "setup_seconds": 113.57212882398744,
+    "final_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel/depth_ppo_s0_postpass_lr01/model_000204",
+    "runtime_provenance": {
+      "source_sha256": "d3f2443ac3fe691427123a9c613b82f549b8f7e1fd7f782811cac8a23a84629f",
+      "git_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b"
+    },
+    "runner_git_commit": "52549604c0396e72eeb3b4dbd175aaf636a15227",
+    "decision": "Five of seven checks fail, including actualfinal139/150 withS03=14/25. Reject thisparallelLR-onlycandidate, no new lower-rate sweep from this failure alone, no finaltests."
+  }
 }
