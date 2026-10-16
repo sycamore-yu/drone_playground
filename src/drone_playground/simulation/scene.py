@@ -26,7 +26,21 @@ _GEOMS = {
     int(mujoco.mjtGeom.mjGEOM_CYLINDER): "cylinder",
     int(mujoco.mjtGeom.mjGEOM_BOX): "box",
 }
-_NAVIGATION = ("S01", "S02", "S03", "D01", "D02", "D03", "S06", "D06")
+_NAVIGATION = (
+    "S01",
+    "S02",
+    "S03",
+    "D01",
+    "D02",
+    "D03",
+    "S06",
+    "D06",
+    *(
+        f"{family}_{level}"
+        for family in ("forest", "maze", "dense", "dynamic_dense")
+        for level in ("easy", "medium", "hard")
+    ),
+)
 
 
 def _norm(x: Array) -> Array:

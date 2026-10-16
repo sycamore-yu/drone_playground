@@ -7,6 +7,7 @@ defaults:
   - learning: bptt
   - benchmark: default
   - _self_
+  - randomization: nominal
   - optional experiment: null
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled

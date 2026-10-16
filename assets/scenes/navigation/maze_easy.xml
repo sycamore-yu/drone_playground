@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="maze_easy">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <worldbody>
+    <body name="wall_00_0" pos="15.00000 -6.68385 3.00000">
+      <geom name="wall_00_0_geom" type="box" size="0.45000 13.11615 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+    <body name="wall_00_1" pos="15.00000 15.61615 3.00000">
+      <geom name="wall_00_1_geom" type="box" size="0.45000 4.18385 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+    <body name="wall_01_0" pos="50.00000 -15.79505 3.00000">
+      <geom name="wall_01_0_geom" type="box" size="0.45000 4.00495 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+    <body name="wall_01_1" pos="50.00000 6.50495 3.00000">
+      <geom name="wall_01_1_geom" type="box" size="0.45000 13.29505 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+    <body name="wall_02_0" pos="85.00000 -6.77255 3.00000">
+      <geom name="wall_02_0_geom" type="box" size="0.45000 13.02745 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+    <body name="wall_02_1" pos="85.00000 15.52745 3.00000">
+      <geom name="wall_02_1_geom" type="box" size="0.45000 4.27255 3.00000" rgba="0.42 0.48 0.58 1" />
+    </body>
+  </worldbody>
+  <custom>
+    <text name="benchmark_metadata" data="{&quot;family&quot;:&quot;maze&quot;,&quot;difficulty&quot;:&quot;easy&quot;,&quot;geometries&quot;:6,&quot;generator&quot;:&quot;flight-task-mjcf-v1&quot;,&quot;source&quot;:&quot;FlightBench-inspired geometry and task family; independently generated&quot;,&quot;goal&quot;:[98.0,0.0,3.0],&quot;start&quot;:[2.0,0.0,3.0]}" />
+  </custom>
+</mujoco>

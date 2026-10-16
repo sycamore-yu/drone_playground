@@ -1,0 +1,295 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="dynamic_dense_medium">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <worldbody>
+    <body name="obstacle_000" pos="63.64284 -9.75288 3.05000" mocap="true" user="2.00000 0.47696 -0.34269 0.15094 7.27909 0.62074">
+      <geom name="obstacle_000_geom" type="box" size="0.42595 0.43202 0.36944" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_001" pos="67.69262 -2.45993 3.02752" mocap="true" user="2.00000 0.53568 -0.49646 -0.10078 7.41282 1.19536">
+      <geom name="obstacle_001_geom" type="box" size="0.49333 0.42200 0.41672" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_002" pos="19.25055 -9.61968 2.69480" mocap="true" user="2.00000 0.51502 0.36392 -0.07334 5.97792 0.53643">
+      <geom name="obstacle_002_geom" type="box" size="0.32817 0.40020 0.36014" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_003" pos="77.38366 3.38147 3.58824" mocap="true" user="2.00000 -0.06158 -0.89288 -0.02028 5.11077 1.97809">
+      <geom name="obstacle_003_geom" type="box" size="0.39255 0.42925 0.44201" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_004" pos="36.61210 5.65672 2.55430" mocap="true" user="2.00000 0.15436 -0.53727 0.14609 5.49464 1.88897">
+      <geom name="obstacle_004_geom" type="box" size="0.49649 0.49901 0.42358" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_005" pos="74.59215 8.94899 2.03228" mocap="true" user="2.00000 -0.14347 -0.46761 0.09449 7.26222 1.66073">
+      <geom name="obstacle_005_geom" type="box" size="0.40607 0.39994 0.33620" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_006" pos="87.90172 6.43440 4.08462" mocap="true" user="2.00000 -0.74185 0.33483 -0.05437 6.09257 1.83353">
+      <geom name="obstacle_006_geom" type="box" size="0.35154 0.49113 0.44212" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_007" pos="39.65319 -7.63116 3.54620" mocap="true" user="2.00000 -0.30915 -0.24366 0.12610 4.90868 1.67824">
+      <geom name="obstacle_007_geom" type="box" size="0.31481 0.41145 0.37302" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_008" pos="45.99035 9.07080 2.59679" mocap="true" user="2.00000 0.13557 0.64129 0.14439 5.20502 1.61454">
+      <geom name="obstacle_008_geom" type="box" size="0.46943 0.34177 0.37899" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_009" pos="34.08043 13.00626 3.95607" mocap="true" user="2.00000 0.42340 0.33569 -0.03984 5.57046 1.62630">
+      <geom name="obstacle_009_geom" type="box" size="0.45095 0.38687 0.31670" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_010" pos="84.67063 -7.74574 3.21492" mocap="true" user="2.00000 -0.04167 0.75832 0.16778 6.06422 1.36069">
+      <geom name="obstacle_010_geom" type="box" size="0.33864 0.39696 0.33921" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_011" pos="21.89492 0.02609 3.25436" mocap="true" user="2.00000 -0.15172 0.74390 0.19566 6.21375 0.58915">
+      <geom name="obstacle_011_geom" type="box" size="0.30452 0.34960 0.48291" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_012" pos="24.89037 -9.74001 2.69503" mocap="true" user="2.00000 -0.09677 0.28402 -0.07923 3.92361 1.76184">
+      <geom name="obstacle_012_geom" type="box" size="0.30945 0.42187 0.46122" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_013" pos="29.03847 -8.07360 2.06951" mocap="true" user="2.00000 0.72509 -0.52789 -0.15766 6.58020 0.04259">
+      <geom name="obstacle_013_geom" type="box" size="0.45164 0.42352 0.47104" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_014" pos="24.47519 6.14214 3.92751" mocap="true" user="2.00000 -0.65108 -0.75494 0.06305 4.02251 0.47682">
+      <geom name="obstacle_014_geom" type="box" size="0.37930 0.49461 0.46244" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_015" pos="30.13566 -12.57776 2.98873" mocap="true" user="2.00000 -0.82145 -0.30866 0.19629 3.99545 1.07595">
+      <geom name="obstacle_015_geom" type="box" size="0.39885 0.47454 0.30371" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_016" pos="88.90466 12.51591 2.02063" mocap="true" user="2.00000 0.32064 -0.78712 0.17763 6.53764 0.37873">
+      <geom name="obstacle_016_geom" type="box" size="0.32205 0.39671 0.42971" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_017" pos="23.72185 10.46137 3.44933" mocap="true" user="2.00000 -0.21883 -0.76944 0.06692 4.48578 1.43885">
+      <geom name="obstacle_017_geom" type="box" size="0.42333 0.46116 0.48026" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_018" pos="86.28356 -1.05594 4.12264" mocap="true" user="2.00000 -0.70665 0.35031 0.06981 5.92784 1.29119">
+      <geom name="obstacle_018_geom" type="box" size="0.43827 0.46526 0.38911" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_019" pos="89.07883 -6.14898 3.51703" mocap="true" user="2.00000 0.13607 0.68036 0.01822 6.64860 0.91061">
+      <geom name="obstacle_019_geom" type="box" size="0.45859 0.46601 0.48042" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_020" pos="34.41643 -7.57498 3.19532" mocap="true" user="2.00000 -0.65978 0.07677 -0.17104 5.13018 0.64804">
+      <geom name="obstacle_020_geom" type="box" size="0.45211 0.49841 0.46573" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_021" pos="40.09713 3.24286 2.99064" mocap="true" user="2.00000 0.03288 0.45752 -0.17349 5.31517 1.92994">
+      <geom name="obstacle_021_geom" type="box" size="0.30395 0.35055 0.41002" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_022" pos="26.69873 8.57241 2.95532" mocap="true" user="2.00000 0.47086 0.67003 -0.17084 3.86309 1.78328">
+      <geom name="obstacle_022_geom" type="box" size="0.42587 0.47363 0.32350" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_023" pos="56.77805 -4.68440 1.92351" mocap="true" user="2.00000 0.64063 0.70334 -0.18710 4.04096 0.45189">
+      <geom name="obstacle_023_geom" type="box" size="0.38382 0.48035 0.42718" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_024" pos="68.83709 -9.02603 1.92795" mocap="true" user="2.00000 0.36722 0.10269 -0.14914 5.68108 0.16530">
+      <geom name="obstacle_024_geom" type="box" size="0.32525 0.39841 0.32992" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_025" pos="56.97960 -6.63365 2.31097" mocap="true" user="2.00000 -0.81261 -0.02582 0.05885 4.19423 1.31791">
+      <geom name="obstacle_025_geom" type="box" size="0.37860 0.47821 0.33555" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_026" pos="44.40729 8.83329 2.86788" mocap="true" user="2.00000 0.86837 0.88345 -0.15423 5.01604 0.43622">
+      <geom name="obstacle_026_geom" type="box" size="0.35986 0.34711 0.40471" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_027" pos="55.99892 -0.67723 2.61893" mocap="true" user="2.00000 0.42237 0.89443 0.07221 5.79702 0.91687">
+      <geom name="obstacle_027_geom" type="box" size="0.34215 0.43119 0.37430" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_028" pos="62.39947 -12.01267 3.54020" mocap="true" user="2.00000 -0.17510 -0.72873 -0.12600 5.91288 1.37361">
+      <geom name="obstacle_028_geom" type="box" size="0.44792 0.41855 0.47514" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_029" pos="76.07542 1.11528 3.89344" mocap="true" user="2.00000 -0.89946 0.25562 -0.04305 4.22444 1.15039">
+      <geom name="obstacle_029_geom" type="box" size="0.38791 0.33658 0.33106" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_030" pos="51.67413 -10.52330 2.19655" mocap="true" user="2.00000 0.45072 -0.28821 -0.19932 6.29515 0.95587">
+      <geom name="obstacle_030_geom" type="box" size="0.32246 0.32154 0.48155" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_031" pos="11.08014 3.38754 2.56042" mocap="true" user="2.00000 0.36521 -0.46306 -0.16215 6.00508 1.51772">
+      <geom name="obstacle_031_geom" type="box" size="0.30772 0.37033 0.31267" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_032" pos="89.44646 11.03703 1.97897" mocap="true" user="2.00000 0.01512 0.54390 0.16160 5.23064 1.89102">
+      <geom name="obstacle_032_geom" type="box" size="0.30715 0.38350 0.38448" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_033" pos="28.27334 -9.13569 3.15566" mocap="true" user="2.00000 0.71870 0.49199 -0.18940 6.18187 1.98649">
+      <geom name="obstacle_033_geom" type="box" size="0.32330 0.34270 0.45227" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_034" pos="87.12638 9.76039 3.98500" mocap="true" user="2.00000 -0.19841 -0.79761 0.00072 5.77664 0.90939">
+      <geom name="obstacle_034_geom" type="box" size="0.46103 0.34453 0.41397" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_035" pos="85.97798 2.34705 4.12673" mocap="true" user="2.00000 0.42264 0.30101 0.07353 6.29312 0.40209">
+      <geom name="obstacle_035_geom" type="box" size="0.46016 0.31339 0.38073" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_036" pos="80.47386 5.77196 3.39153" mocap="true" user="2.00000 -0.38441 -0.00810 -0.00968 5.03354 0.64763">
+      <geom name="obstacle_036_geom" type="box" size="0.40314 0.42564 0.42302" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_037" pos="89.28246 7.49564 2.66343" mocap="true" user="2.00000 -0.89133 -0.38537 -0.18834 6.06042 0.27099">
+      <geom name="obstacle_037_geom" type="box" size="0.38419 0.37619 0.38930" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_038" pos="80.01131 8.43266 2.16788" mocap="true" user="2.00000 0.61945 0.11690 0.19363 4.14325 0.70842">
+      <geom name="obstacle_038_geom" type="box" size="0.32605 0.47353 0.41975" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_039" pos="21.01753 -5.73276 4.08357" mocap="true" user="2.00000 0.18861 0.17954 0.03694 4.47939 0.38394">
+      <geom name="obstacle_039_geom" type="box" size="0.34204 0.33051 0.30918" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_040" pos="71.06065 -2.22647 3.82492" mocap="true" user="2.00000 -0.78210 -0.07895 0.18240 5.28413 1.30108">
+      <geom name="obstacle_040_geom" type="box" size="0.38616 0.31211 0.43091" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_041" pos="82.90199 3.05459 2.65567" mocap="true" user="2.00000 -0.49548 -0.43415 -0.11620 7.25976 1.62796">
+      <geom name="obstacle_041_geom" type="box" size="0.43023 0.42711 0.34903" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_042" pos="55.49708 11.89628 3.35118" mocap="true" user="2.00000 -0.11263 0.32757 -0.19641 5.03559 0.16276">
+      <geom name="obstacle_042_geom" type="box" size="0.31113 0.34951 0.37609" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_043" pos="19.35116 -0.87743 1.92905" mocap="true" user="2.00000 -0.52373 -0.23562 0.19920 5.91958 0.89606">
+      <geom name="obstacle_043_geom" type="box" size="0.42326 0.36644 0.35888" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_044" pos="9.98783 7.48187 4.13105" mocap="true" user="2.00000 -0.06710 -0.18290 -0.17856 4.25406 1.44324">
+      <geom name="obstacle_044_geom" type="box" size="0.45313 0.42003 0.45634" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_045" pos="57.28160 -8.61803 3.30658" mocap="true" user="2.00000 0.81598 -0.38141 -0.00543 3.77094 1.87925">
+      <geom name="obstacle_045_geom" type="box" size="0.42424 0.38543 0.30643" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_046" pos="16.95832 12.49934 2.01752" mocap="true" user="2.00000 -0.58179 -0.80375 -0.04458 3.90106 0.94863">
+      <geom name="obstacle_046_geom" type="box" size="0.41102 0.47244 0.45945" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_047" pos="53.07443 10.33971 2.63793" mocap="true" user="2.00000 -0.65053 0.67358 0.13072 3.70613 0.13456">
+      <geom name="obstacle_047_geom" type="box" size="0.41124 0.44604 0.34101" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_048" pos="46.78366 4.93803 2.61509" mocap="true" user="2.00000 -0.05839 -0.51696 0.19508 7.26572 0.46656">
+      <geom name="obstacle_048_geom" type="box" size="0.32631 0.39970 0.37092" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_049" pos="30.16302 -3.30023 3.63966" mocap="true" user="2.00000 -0.11167 -0.67229 -0.08904 5.37107 1.98730">
+      <geom name="obstacle_049_geom" type="box" size="0.36241 0.44956 0.35328" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_050" pos="56.72986 3.12830 3.43767" mocap="true" user="2.00000 0.81361 -0.88226 -0.18894 5.19208 1.25550">
+      <geom name="obstacle_050_geom" type="box" size="0.48791 0.33160 0.46152" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_051" pos="89.12370 -0.62775 4.17408" mocap="true" user="2.00000 0.33379 0.60419 0.15116 6.87595 1.58221">
+      <geom name="obstacle_051_geom" type="box" size="0.38647 0.45667 0.39564" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_052" pos="46.32617 0.17902 1.98436" mocap="true" user="2.00000 0.15312 0.64733 0.03682 4.21733 1.67713">
+      <geom name="obstacle_052_geom" type="box" size="0.48146 0.39281 0.30540" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_053" pos="22.44028 1.23572 2.26272" mocap="true" user="2.00000 0.27426 -0.84105 -0.16779 5.26923 0.42007">
+      <geom name="obstacle_053_geom" type="box" size="0.46487 0.48734 0.33192" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_054" pos="11.30817 -4.22495 2.93270" mocap="true" user="2.00000 0.20939 0.14384 -0.04080 7.26586 0.97787">
+      <geom name="obstacle_054_geom" type="box" size="0.39001 0.35299 0.37544" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_055" pos="53.39731 -12.77048 2.55657" mocap="true" user="2.00000 0.32317 0.31842 -0.16177 4.76168 1.32044">
+      <geom name="obstacle_055_geom" type="box" size="0.48375 0.43092 0.34100" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_056" pos="37.88373 -12.58970 2.46789" mocap="true" user="2.00000 -0.17406 -0.31549 0.06529 4.41089 1.20897">
+      <geom name="obstacle_056_geom" type="box" size="0.34625 0.34426 0.44601" rgba="0.91 0.43 0.24 1" />
+    </body>
+    <body name="obstacle_057" pos="73.49155 -2.91424 3.00000">
+      <geom name="obstacle_057_geom" type="cylinder" size="0.70905 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_058" pos="68.77739 1.89277 3.00000">
+      <geom name="obstacle_058_geom" type="box" size="0.68277 1.10032 1.71344" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_059" pos="49.49633 -6.82953 3.00000">
+      <geom name="obstacle_059_geom" type="box" size="0.33484 1.06668 0.52132" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_060" pos="65.88984 -2.84966 3.00000">
+      <geom name="obstacle_060_geom" type="cylinder" size="0.86951 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_061" pos="24.70932 6.60333 3.00000">
+      <geom name="obstacle_061_geom" type="box" size="0.26158 1.24437 0.81509" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_062" pos="13.14985 -10.12314 3.00000">
+      <geom name="obstacle_062_geom" type="box" size="0.49948 1.22873 0.98473" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_063" pos="28.86575 6.31808 3.00000">
+      <geom name="obstacle_063_geom" type="cylinder" size="0.51364 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_064" pos="27.80345 13.94458 3.00000">
+      <geom name="obstacle_064_geom" type="box" size="0.62068 0.63677 0.98603" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_065" pos="57.62430 -12.98778 3.00000">
+      <geom name="obstacle_065_geom" type="box" size="0.38238 0.82922 0.78138" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_066" pos="44.13260 -7.28725 3.00000">
+      <geom name="obstacle_066_geom" type="cylinder" size="0.44399 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_067" pos="52.79224 -11.09024 3.00000">
+      <geom name="obstacle_067_geom" type="box" size="0.56257 0.71935 1.49316" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_068" pos="21.16826 -12.10248 3.00000">
+      <geom name="obstacle_068_geom" type="box" size="0.36483 1.19540 0.97506" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_069" pos="39.28955 2.22839 3.00000">
+      <geom name="obstacle_069_geom" type="cylinder" size="0.51544 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_070" pos="54.12046 4.86950 3.00000">
+      <geom name="obstacle_070_geom" type="box" size="0.59945 0.81743 1.78995" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_071" pos="14.13344 7.24687 3.00000">
+      <geom name="obstacle_071_geom" type="box" size="0.27824 0.43403 0.80626" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_072" pos="41.69521 6.70542 3.00000">
+      <geom name="obstacle_072_geom" type="cylinder" size="0.47060 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_073" pos="61.06207 12.03369 3.00000">
+      <geom name="obstacle_073_geom" type="box" size="0.65738 0.46713 1.94732" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_074" pos="75.97393 -4.56621 3.00000">
+      <geom name="obstacle_074_geom" type="box" size="0.58202 0.86199 0.82463" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_075" pos="29.67712 -9.14720 3.00000">
+      <geom name="obstacle_075_geom" type="cylinder" size="0.57454 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_076" pos="82.47684 -11.10251 3.00000">
+      <geom name="obstacle_076_geom" type="box" size="0.45563 0.44299 1.70103" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_077" pos="31.82750 -11.78388 3.00000">
+      <geom name="obstacle_077_geom" type="box" size="0.52690 0.36517 1.04713" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_078" pos="90.85668 7.23881 3.00000">
+      <geom name="obstacle_078_geom" type="cylinder" size="0.85345 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_079" pos="28.45719 -11.12342 3.00000">
+      <geom name="obstacle_079_geom" type="box" size="0.68270 0.61732 1.28412" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_080" pos="20.90696 4.51082 3.00000">
+      <geom name="obstacle_080_geom" type="box" size="0.26006 0.37175 0.80912" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_081" pos="42.77057 8.22770 3.00000">
+      <geom name="obstacle_081_geom" type="cylinder" size="0.41506 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_082" pos="30.57961 7.53237 3.00000">
+      <geom name="obstacle_082_geom" type="box" size="0.26222 0.99827 0.85745" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_083" pos="45.32918 1.69852 3.00000">
+      <geom name="obstacle_083_geom" type="box" size="0.30492 0.80941 1.88190" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_084" pos="79.40602 3.82719 3.00000">
+      <geom name="obstacle_084_geom" type="cylinder" size="0.80761 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_085" pos="78.78392 -12.78442 3.00000">
+      <geom name="obstacle_085_geom" type="box" size="0.50479 0.89049 0.91685" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_086" pos="33.63660 0.61202 3.00000">
+      <geom name="obstacle_086_geom" type="box" size="0.62397 0.62628 1.68780" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_087" pos="68.80722 8.06126 3.00000">
+      <geom name="obstacle_087_geom" type="cylinder" size="0.64521 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_088" pos="36.02021 -13.58811 3.00000">
+      <geom name="obstacle_088_geom" type="box" size="0.49865 0.64892 0.69124" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_089" pos="53.25024 -12.91084 3.00000">
+      <geom name="obstacle_089_geom" type="box" size="0.55468 0.45736 1.23433" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_090" pos="60.91368 0.97192 3.00000">
+      <geom name="obstacle_090_geom" type="cylinder" size="0.53849 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_091" pos="43.65024 -12.19064 3.00000">
+      <geom name="obstacle_091_geom" type="box" size="0.39045 0.47485 1.53778" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_092" pos="86.10086 11.51254 3.00000">
+      <geom name="obstacle_092_geom" type="box" size="0.50723 0.84447 0.64785" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_093" pos="52.53217 -12.33333 3.00000">
+      <geom name="obstacle_093_geom" type="cylinder" size="0.69973 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_094" pos="11.16801 -3.76179 3.00000">
+      <geom name="obstacle_094_geom" type="box" size="0.59337 0.90767 0.74065" rgba="0.37 0.5 0.58 1" />
+    </body>
+  </worldbody>
+  <custom>
+    <text name="benchmark_metadata" data="{&quot;family&quot;:&quot;dynamic_dense&quot;,&quot;difficulty&quot;:&quot;medium&quot;,&quot;geometries&quot;:95,&quot;generator&quot;:&quot;flight-task-mjcf-v1&quot;,&quot;source&quot;:&quot;FlightBench-inspired geometry and task family; independently generated&quot;,&quot;goal&quot;:[98.0,0.0,3.0],&quot;start&quot;:[2.0,0.0,3.0]}" />
+  </custom>
+</mujoco>

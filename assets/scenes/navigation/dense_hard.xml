@@ -1,0 +1,550 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="dense_hard">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <worldbody>
+    <body name="obstacle_000" pos="47.12864 5.95959 3.00000">
+      <geom name="obstacle_000_geom" type="cylinder" size="0.62824 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_001" pos="41.63661 -4.06707 3.00000">
+      <geom name="obstacle_001_geom" type="box" size="0.44446 1.05490 1.15218" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_002" pos="68.20866 -10.52664 3.00000">
+      <geom name="obstacle_002_geom" type="box" size="0.45999 1.20830 0.84588" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_003" pos="74.98400 2.32179 3.00000">
+      <geom name="obstacle_003_geom" type="cylinder" size="0.65618 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_004" pos="47.73293 12.70093 3.00000">
+      <geom name="obstacle_004_geom" type="box" size="0.31606 0.95916 0.68478" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_005" pos="77.31128 -10.47330 3.00000">
+      <geom name="obstacle_005_geom" type="box" size="0.41999 0.58731 1.35134" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_006" pos="44.99129 6.87251 3.00000">
+      <geom name="obstacle_006_geom" type="cylinder" size="0.56873 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_007" pos="65.43177 -13.38871 3.00000">
+      <geom name="obstacle_007_geom" type="box" size="0.51855 1.00950 0.93146" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_008" pos="28.30699 -8.08305 3.00000">
+      <geom name="obstacle_008_geom" type="box" size="0.39218 1.22971 0.53325" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_009" pos="84.89362 -10.99285 3.00000">
+      <geom name="obstacle_009_geom" type="cylinder" size="0.73332 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_010" pos="64.51160 -3.89186 3.00000">
+      <geom name="obstacle_010_geom" type="box" size="0.50051 1.19801 1.50599" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_011" pos="65.81635 -8.50825 3.00000">
+      <geom name="obstacle_011_geom" type="box" size="0.56933 0.90313 1.78579" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_012" pos="25.76936 -4.31810 3.00000">
+      <geom name="obstacle_012_geom" type="cylinder" size="0.53210 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_013" pos="87.13530 -2.50393 3.00000">
+      <geom name="obstacle_013_geom" type="box" size="0.39124 0.99582 0.87808" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_014" pos="29.03309 -6.80767 3.00000">
+      <geom name="obstacle_014_geom" type="box" size="0.31556 0.37723 0.77100" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_015" pos="86.39801 -11.66022 3.00000">
+      <geom name="obstacle_015_geom" type="cylinder" size="0.62600 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_016" pos="38.66623 4.01299 3.00000">
+      <geom name="obstacle_016_geom" type="box" size="0.55781 0.41233 0.96694" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_017" pos="87.05105 8.02377 3.00000">
+      <geom name="obstacle_017_geom" type="box" size="0.33296 0.58599 1.37556" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_018" pos="24.49972 -5.86427 3.00000">
+      <geom name="obstacle_018_geom" type="cylinder" size="0.43352 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_019" pos="27.11280 12.64210 3.00000">
+      <geom name="obstacle_019_geom" type="box" size="0.65177 0.74835 0.65346" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_020" pos="54.66366 9.53051 3.00000">
+      <geom name="obstacle_020_geom" type="box" size="0.42660 0.78120 0.71962" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_021" pos="57.70354 -10.50574 3.00000">
+      <geom name="obstacle_021_geom" type="cylinder" size="0.43030 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_022" pos="35.30798 13.53078 3.00000">
+      <geom name="obstacle_022_geom" type="box" size="0.63285 0.50676 1.40567" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_023" pos="24.96176 4.81242 3.00000">
+      <geom name="obstacle_023_geom" type="box" size="0.59982 0.59310 1.09054" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_024" pos="65.57292 4.72569 3.00000">
+      <geom name="obstacle_024_geom" type="cylinder" size="0.45765 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_025" pos="60.78188 6.21268 3.00000">
+      <geom name="obstacle_025_geom" type="box" size="0.48500 1.06854 1.71031" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_026" pos="75.08940 2.17352 3.00000">
+      <geom name="obstacle_026_geom" type="box" size="0.66439 0.41040 1.29550" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_027" pos="90.26136 5.49769 3.00000">
+      <geom name="obstacle_027_geom" type="cylinder" size="0.44006 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_028" pos="41.14922 4.67819 3.00000">
+      <geom name="obstacle_028_geom" type="box" size="0.55705 0.69089 1.88273" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_029" pos="10.80610 8.22977 3.00000">
+      <geom name="obstacle_029_geom" type="box" size="0.36996 0.35524 1.33018" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_030" pos="77.61595 11.87291 3.00000">
+      <geom name="obstacle_030_geom" type="cylinder" size="0.69989 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_031" pos="51.05015 12.83946 3.00000">
+      <geom name="obstacle_031_geom" type="box" size="0.40532 0.69866 0.92598" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_032" pos="13.94601 2.53252 3.00000">
+      <geom name="obstacle_032_geom" type="box" size="0.45619 0.45000 0.92164" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_033" pos="77.48702 -11.11113 3.00000">
+      <geom name="obstacle_033_geom" type="cylinder" size="0.72792 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_034" pos="83.72821 2.58534 3.00000">
+      <geom name="obstacle_034_geom" type="box" size="0.39275 0.61056 0.90518" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_035" pos="37.84861 -10.90316 3.00000">
+      <geom name="obstacle_035_geom" type="box" size="0.41253 1.07356 1.01761" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_036" pos="79.88133 8.57015 3.00000">
+      <geom name="obstacle_036_geom" type="cylinder" size="0.55676 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_037" pos="77.61826 12.84847 3.00000">
+      <geom name="obstacle_037_geom" type="box" size="0.28835 0.79736 0.55950" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_038" pos="72.65852 -12.10556 3.00000">
+      <geom name="obstacle_038_geom" type="box" size="0.25439 1.20582 0.60442" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_039" pos="44.88225 12.55331 3.00000">
+      <geom name="obstacle_039_geom" type="cylinder" size="0.59383 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_040" pos="59.86581 11.69002 3.00000">
+      <geom name="obstacle_040_geom" type="box" size="0.59938 0.46453 1.00354" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_041" pos="14.86033 11.92414 3.00000">
+      <geom name="obstacle_041_geom" type="box" size="0.39358 0.38198 1.04520" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_042" pos="15.25992 7.12371 3.00000">
+      <geom name="obstacle_042_geom" type="cylinder" size="0.76384 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_043" pos="88.35665 -11.66415 3.00000">
+      <geom name="obstacle_043_geom" type="box" size="0.42292 1.03938 1.47274" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_044" pos="40.93386 -12.07715 3.00000">
+      <geom name="obstacle_044_geom" type="box" size="0.58046 0.47859 1.63405" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_045" pos="39.49807 2.87192 3.00000">
+      <geom name="obstacle_045_geom" type="cylinder" size="0.70341 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_046" pos="24.42624 13.81841 3.00000">
+      <geom name="obstacle_046_geom" type="box" size="0.43706 0.62352 1.96923" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_047" pos="40.91532 7.04835 3.00000">
+      <geom name="obstacle_047_geom" type="box" size="0.30502 1.03399 0.89336" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_048" pos="39.96451 8.83895 3.00000">
+      <geom name="obstacle_048_geom" type="cylinder" size="0.71634 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_049" pos="46.61562 -11.31285 3.00000">
+      <geom name="obstacle_049_geom" type="box" size="0.54573 1.12473 1.68520" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_050" pos="56.83760 -4.88200 3.00000">
+      <geom name="obstacle_050_geom" type="box" size="0.39513 0.89945 0.58726" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_051" pos="71.43500 -7.83095 3.00000">
+      <geom name="obstacle_051_geom" type="cylinder" size="0.56112 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_052" pos="90.75648 11.20756 3.00000">
+      <geom name="obstacle_052_geom" type="box" size="0.56066 1.03525 1.59279" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_053" pos="74.80252 -7.31169 3.00000">
+      <geom name="obstacle_053_geom" type="box" size="0.39921 0.91207 0.73502" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_054" pos="24.48047 -9.97592 3.00000">
+      <geom name="obstacle_054_geom" type="cylinder" size="0.49370 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_055" pos="23.22846 -12.49437 3.00000">
+      <geom name="obstacle_055_geom" type="box" size="0.25577 0.65691 1.95963" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_056" pos="18.42908 -8.00688 3.00000">
+      <geom name="obstacle_056_geom" type="box" size="0.57817 1.05685 1.35717" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_057" pos="60.30138 -1.81072 3.00000">
+      <geom name="obstacle_057_geom" type="cylinder" size="0.84929 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_058" pos="46.55362 -4.40497 3.00000">
+      <geom name="obstacle_058_geom" type="box" size="0.51049 0.45788 1.49517" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_059" pos="43.74970 -9.93165 3.00000">
+      <geom name="obstacle_059_geom" type="box" size="0.32121 0.78951 0.59690" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_060" pos="46.36999 -13.58611 3.00000">
+      <geom name="obstacle_060_geom" type="cylinder" size="0.48869 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_061" pos="53.71557 -1.41725 3.00000">
+      <geom name="obstacle_061_geom" type="box" size="0.48279 0.95308 1.47314" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_062" pos="77.72956 0.87097 3.00000">
+      <geom name="obstacle_062_geom" type="box" size="0.52398 0.86309 0.93787" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_063" pos="84.79144 1.82344 3.00000">
+      <geom name="obstacle_063_geom" type="cylinder" size="0.62339 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_064" pos="58.36780 -10.30781 3.00000">
+      <geom name="obstacle_064_geom" type="box" size="0.36924 0.86198 0.95524" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_065" pos="66.68439 8.67314 3.00000">
+      <geom name="obstacle_065_geom" type="box" size="0.37246 0.55052 0.52503" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_066" pos="83.55897 10.02175 3.00000">
+      <geom name="obstacle_066_geom" type="cylinder" size="0.47282 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_067" pos="81.23447 -1.47012 3.00000">
+      <geom name="obstacle_067_geom" type="box" size="0.25307 0.63239 1.13092" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_068" pos="51.88666 0.99419 3.00000">
+      <geom name="obstacle_068_geom" type="box" size="0.33989 0.53053 1.77744" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_069" pos="9.37890 12.40277 3.00000">
+      <geom name="obstacle_069_geom" type="cylinder" size="0.86554 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_070" pos="52.11796 8.57868 3.00000">
+      <geom name="obstacle_070_geom" type="box" size="0.42247 1.19147 1.44999" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_071" pos="20.35082 1.28208 3.00000">
+      <geom name="obstacle_071_geom" type="box" size="0.49933 0.47653 1.29581" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_072" pos="33.75857 1.34809 3.00000">
+      <geom name="obstacle_072_geom" type="cylinder" size="0.46940 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_073" pos="84.00572 -9.38014 3.00000">
+      <geom name="obstacle_073_geom" type="box" size="0.33546 0.54754 0.89427" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_074" pos="78.24696 4.35703 3.00000">
+      <geom name="obstacle_074_geom" type="box" size="0.32792 0.41280 1.32018" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_075" pos="49.29611 -9.40595 3.00000">
+      <geom name="obstacle_075_geom" type="cylinder" size="0.64854 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_076" pos="45.11593 13.09529 3.00000">
+      <geom name="obstacle_076_geom" type="box" size="0.39542 1.17093 1.75783" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_077" pos="72.69025 -3.46240 3.00000">
+      <geom name="obstacle_077_geom" type="box" size="0.65383 0.71255 0.88730" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_078" pos="44.96885 -13.07583 3.00000">
+      <geom name="obstacle_078_geom" type="cylinder" size="0.79066 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_079" pos="10.96776 -9.79087 3.00000">
+      <geom name="obstacle_079_geom" type="box" size="0.28351 1.00256 1.02907" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_080" pos="26.21256 -10.46165 3.00000">
+      <geom name="obstacle_080_geom" type="box" size="0.50436 1.09328 1.28197" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_081" pos="24.39302 5.79929 3.00000">
+      <geom name="obstacle_081_geom" type="cylinder" size="0.47460 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_082" pos="87.74545 11.11891 3.00000">
+      <geom name="obstacle_082_geom" type="box" size="0.50109 0.97359 1.35163" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_083" pos="72.50800 8.18403 3.00000">
+      <geom name="obstacle_083_geom" type="box" size="0.69550 1.20863 1.73603" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_084" pos="16.87374 0.27212 3.00000">
+      <geom name="obstacle_084_geom" type="cylinder" size="0.56506 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_085" pos="71.24617 -8.36024 3.00000">
+      <geom name="obstacle_085_geom" type="box" size="0.63998 1.01890 1.81542" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_086" pos="18.74757 0.59705 3.00000">
+      <geom name="obstacle_086_geom" type="box" size="0.63183 1.24582 1.57283" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_087" pos="15.97613 -1.51519 3.00000">
+      <geom name="obstacle_087_geom" type="cylinder" size="0.57068 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_088" pos="23.31721 -10.17374 3.00000">
+      <geom name="obstacle_088_geom" type="box" size="0.28889 0.63972 0.58448" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_089" pos="56.07402 0.11248 3.00000">
+      <geom name="obstacle_089_geom" type="box" size="0.43743 1.08897 1.72519" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_090" pos="82.91276 -2.55678 3.00000">
+      <geom name="obstacle_090_geom" type="cylinder" size="0.81227 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_091" pos="80.29755 9.71864 3.00000">
+      <geom name="obstacle_091_geom" type="box" size="0.41737 1.17402 1.68598" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_092" pos="21.28817 -0.13843 3.00000">
+      <geom name="obstacle_092_geom" type="box" size="0.56046 0.44801 0.99269" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_093" pos="33.86703 -9.94781 3.00000">
+      <geom name="obstacle_093_geom" type="cylinder" size="0.67419 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_094" pos="87.51188 2.40487 3.00000">
+      <geom name="obstacle_094_geom" type="box" size="0.53757 0.62133 0.68986" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_095" pos="17.65535 2.01093 3.00000">
+      <geom name="obstacle_095_geom" type="box" size="0.34112 0.93118 1.70749" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_096" pos="73.95066 -4.59099 3.00000">
+      <geom name="obstacle_096_geom" type="cylinder" size="0.78939 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_097" pos="79.11935 -8.74973 3.00000">
+      <geom name="obstacle_097_geom" type="box" size="0.65158 0.93534 0.91644" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_098" pos="28.42274 -10.45203 3.00000">
+      <geom name="obstacle_098_geom" type="box" size="0.37536 0.76177 1.89713" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_099" pos="27.57030 -4.68768 3.00000">
+      <geom name="obstacle_099_geom" type="cylinder" size="0.67356 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_100" pos="28.36178 -5.06605 3.00000">
+      <geom name="obstacle_100_geom" type="box" size="0.32777 1.01516 1.23204" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_101" pos="33.71470 8.82283 3.00000">
+      <geom name="obstacle_101_geom" type="box" size="0.67036 0.76803 1.56371" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_102" pos="18.54856 1.36189 3.00000">
+      <geom name="obstacle_102_geom" type="cylinder" size="0.78932 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_103" pos="88.22416 12.69161 3.00000">
+      <geom name="obstacle_103_geom" type="box" size="0.54692 0.52565 1.72792" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_104" pos="13.64542 -12.07506 3.00000">
+      <geom name="obstacle_104_geom" type="box" size="0.68686 0.76203 0.50679" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_105" pos="23.83853 -11.03758 3.00000">
+      <geom name="obstacle_105_geom" type="cylinder" size="0.63562 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_106" pos="86.82758 -7.16145 3.00000">
+      <geom name="obstacle_106_geom" type="box" size="0.37050 1.20627 0.86908" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_107" pos="72.09492 6.18045 3.00000">
+      <geom name="obstacle_107_geom" type="box" size="0.68370 0.98107 1.70398" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_108" pos="90.37778 -1.22575 3.00000">
+      <geom name="obstacle_108_geom" type="cylinder" size="0.51360 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_109" pos="28.58973 9.73212 3.00000">
+      <geom name="obstacle_109_geom" type="box" size="0.44956 1.14479 0.98033" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_110" pos="40.61596 -11.42762 3.00000">
+      <geom name="obstacle_110_geom" type="box" size="0.25077 0.37413 1.22257" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_111" pos="76.17637 -0.15671 3.00000">
+      <geom name="obstacle_111_geom" type="cylinder" size="0.85161 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_112" pos="58.38002 -9.99670 3.00000">
+      <geom name="obstacle_112_geom" type="box" size="0.56080 0.98377 1.54379" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_113" pos="74.24313 6.87403 3.00000">
+      <geom name="obstacle_113_geom" type="box" size="0.40236 0.63868 1.59975" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_114" pos="49.37796 5.38368 3.00000">
+      <geom name="obstacle_114_geom" type="cylinder" size="0.42012 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_115" pos="9.13272 -10.28035 3.00000">
+      <geom name="obstacle_115_geom" type="box" size="0.48003 0.47049 0.57612" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_116" pos="42.01404 -7.19772 3.00000">
+      <geom name="obstacle_116_geom" type="box" size="0.38901 0.44579 1.04604" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_117" pos="75.82463 9.92547 3.00000">
+      <geom name="obstacle_117_geom" type="cylinder" size="0.49821 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_118" pos="12.21582 -8.77202 3.00000">
+      <geom name="obstacle_118_geom" type="box" size="0.50439 0.60453 1.89245" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_119" pos="70.35220 -3.89797 3.00000">
+      <geom name="obstacle_119_geom" type="box" size="0.55244 0.76748 1.51739" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_120" pos="20.30240 10.45219 3.00000">
+      <geom name="obstacle_120_geom" type="cylinder" size="0.63064 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_121" pos="81.20209 13.55015 3.00000">
+      <geom name="obstacle_121_geom" type="box" size="0.45135 0.43871 0.55154" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_122" pos="12.92101 -2.98680 3.00000">
+      <geom name="obstacle_122_geom" type="box" size="0.45603 0.42909 1.34953" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_123" pos="57.71868 -11.76823 3.00000">
+      <geom name="obstacle_123_geom" type="cylinder" size="0.82057 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_124" pos="33.39941 12.06882 3.00000">
+      <geom name="obstacle_124_geom" type="box" size="0.55025 0.68362 1.28888" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_125" pos="57.26392 -0.56575 3.00000">
+      <geom name="obstacle_125_geom" type="box" size="0.51246 0.56571 1.57658" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_126" pos="54.82426 11.96415 3.00000">
+      <geom name="obstacle_126_geom" type="cylinder" size="0.53670 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_127" pos="81.77374 10.63707 3.00000">
+      <geom name="obstacle_127_geom" type="box" size="0.52035 0.99154 0.57945" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_128" pos="12.36815 -2.43712 3.00000">
+      <geom name="obstacle_128_geom" type="box" size="0.53096 0.55329 1.38794" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_129" pos="68.18100 -2.02710 3.00000">
+      <geom name="obstacle_129_geom" type="cylinder" size="0.61001 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_130" pos="74.45282 1.98664 3.00000">
+      <geom name="obstacle_130_geom" type="box" size="0.46064 1.23550 1.01589" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_131" pos="39.02803 -1.84943 3.00000">
+      <geom name="obstacle_131_geom" type="box" size="0.40217 1.22001 1.13054" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_132" pos="34.29096 7.07590 3.00000">
+      <geom name="obstacle_132_geom" type="cylinder" size="0.57492 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_133" pos="56.93862 8.40949 3.00000">
+      <geom name="obstacle_133_geom" type="box" size="0.68965 0.80333 1.22060" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_134" pos="10.04821 -6.16333 3.00000">
+      <geom name="obstacle_134_geom" type="box" size="0.57740 0.73412 1.68349" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_135" pos="13.61869 -2.50102 3.00000">
+      <geom name="obstacle_135_geom" type="cylinder" size="0.46605 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_136" pos="38.71353 -6.51571 3.00000">
+      <geom name="obstacle_136_geom" type="box" size="0.66054 0.55457 0.97265" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_137" pos="43.28061 -9.34022 3.00000">
+      <geom name="obstacle_137_geom" type="box" size="0.62466 0.45130 1.40263" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_138" pos="13.22604 -2.93273 3.00000">
+      <geom name="obstacle_138_geom" type="cylinder" size="0.53022 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_139" pos="31.72147 12.17939 3.00000">
+      <geom name="obstacle_139_geom" type="box" size="0.57677 1.19286 1.94405" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_140" pos="89.07247 -4.87091 3.00000">
+      <geom name="obstacle_140_geom" type="box" size="0.45957 0.61519 0.71676" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_141" pos="34.57008 12.64016 3.00000">
+      <geom name="obstacle_141_geom" type="cylinder" size="0.70456 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_142" pos="84.79655 5.55126 3.00000">
+      <geom name="obstacle_142_geom" type="box" size="0.69589 1.05766 1.40860" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_143" pos="53.53487 -9.37594 3.00000">
+      <geom name="obstacle_143_geom" type="box" size="0.36079 0.95977 1.44809" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_144" pos="41.99652 -3.48146 3.00000">
+      <geom name="obstacle_144_geom" type="cylinder" size="0.83222 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_145" pos="14.63986 11.90467 3.00000">
+      <geom name="obstacle_145_geom" type="box" size="0.27770 0.62064 0.93509" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_146" pos="76.50456 -7.31729 3.00000">
+      <geom name="obstacle_146_geom" type="box" size="0.43154 1.01839 1.49499" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_147" pos="73.69208 -1.00364 3.00000">
+      <geom name="obstacle_147_geom" type="cylinder" size="0.63784 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_148" pos="52.79877 -11.55958 3.00000">
+      <geom name="obstacle_148_geom" type="box" size="0.66492 1.12877 0.63724" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_149" pos="89.67774 -2.39734 3.00000">
+      <geom name="obstacle_149_geom" type="box" size="0.67762 0.67125 0.95824" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_150" pos="26.37700 -4.05838 3.00000">
+      <geom name="obstacle_150_geom" type="cylinder" size="0.44229 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_151" pos="15.55270 -5.23167 3.00000">
+      <geom name="obstacle_151_geom" type="box" size="0.32023 0.88515 0.73275" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_152" pos="74.10593 -1.91550 3.00000">
+      <geom name="obstacle_152_geom" type="box" size="0.50228 0.63626 1.45110" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_153" pos="81.22640 4.52515 3.00000">
+      <geom name="obstacle_153_geom" type="cylinder" size="0.82952 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_154" pos="43.67842 9.86538 3.00000">
+      <geom name="obstacle_154_geom" type="box" size="0.31965 0.78750 1.03257" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_155" pos="14.80862 6.50648 3.00000">
+      <geom name="obstacle_155_geom" type="box" size="0.57797 0.81388 1.26919" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_156" pos="79.87376 12.27090 3.00000">
+      <geom name="obstacle_156_geom" type="cylinder" size="0.52419 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_157" pos="85.78283 -8.10967 3.00000">
+      <geom name="obstacle_157_geom" type="box" size="0.27115 0.83630 1.68962" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_158" pos="82.13589 4.57632 3.00000">
+      <geom name="obstacle_158_geom" type="box" size="0.32693 1.02477 0.84337" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_159" pos="65.66016 -0.98371 3.00000">
+      <geom name="obstacle_159_geom" type="cylinder" size="0.59914 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_160" pos="31.91370 -8.78516 3.00000">
+      <geom name="obstacle_160_geom" type="box" size="0.66740 0.55710 1.77238" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_161" pos="49.92418 -7.69997 3.00000">
+      <geom name="obstacle_161_geom" type="box" size="0.45174 0.61579 0.80417" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_162" pos="62.28503 -0.47737 3.00000">
+      <geom name="obstacle_162_geom" type="cylinder" size="0.76654 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_163" pos="56.17657 1.86367 3.00000">
+      <geom name="obstacle_163_geom" type="box" size="0.32086 0.66656 1.68186" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_164" pos="66.65261 -0.43815 3.00000">
+      <geom name="obstacle_164_geom" type="box" size="0.31069 0.90512 1.08627" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_165" pos="32.54180 -8.61652 3.00000">
+      <geom name="obstacle_165_geom" type="cylinder" size="0.87291 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_166" pos="13.53197 -9.60694 3.00000">
+      <geom name="obstacle_166_geom" type="box" size="0.49708 0.51450 0.75117" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_167" pos="81.44415 -6.85652 3.00000">
+      <geom name="obstacle_167_geom" type="box" size="0.67658 0.60481 1.68810" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_168" pos="14.99852 -3.17320 3.00000">
+      <geom name="obstacle_168_geom" type="cylinder" size="0.54925 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_169" pos="32.91536 0.83582 3.00000">
+      <geom name="obstacle_169_geom" type="box" size="0.32137 1.20157 0.94008" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_170" pos="51.00570 -5.15317 3.00000">
+      <geom name="obstacle_170_geom" type="box" size="0.60062 0.70103 1.70755" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_171" pos="43.14413 -12.77897 3.00000">
+      <geom name="obstacle_171_geom" type="cylinder" size="0.65477 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_172" pos="24.13385 -3.90538 3.00000">
+      <geom name="obstacle_172_geom" type="box" size="0.52488 1.15576 0.69414" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_173" pos="81.17178 12.53024 3.00000">
+      <geom name="obstacle_173_geom" type="box" size="0.39606 0.71265 1.55428" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_174" pos="65.98467 4.57505 3.00000">
+      <geom name="obstacle_174_geom" type="cylinder" size="0.81549 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_175" pos="53.11886 11.00130 3.00000">
+      <geom name="obstacle_175_geom" type="box" size="0.36064 0.43917 1.51560" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_176" pos="46.99602 -1.21274 3.00000">
+      <geom name="obstacle_176_geom" type="box" size="0.28521 0.96409 1.05828" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_177" pos="73.49448 -10.56743 3.00000">
+      <geom name="obstacle_177_geom" type="cylinder" size="0.62602 3.00000" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_178" pos="38.42169 11.30804 3.00000">
+      <geom name="obstacle_178_geom" type="box" size="0.65966 0.45064 0.82783" rgba="0.37 0.5 0.58 1" />
+    </body>
+    <body name="obstacle_179" pos="57.15932 11.90063 3.00000">
+      <geom name="obstacle_179_geom" type="box" size="0.67920 1.24341 1.74851" rgba="0.37 0.5 0.58 1" />
+    </body>
+  </worldbody>
+  <custom>
+    <text name="benchmark_metadata" data="{&quot;family&quot;:&quot;dense&quot;,&quot;difficulty&quot;:&quot;hard&quot;,&quot;geometries&quot;:180,&quot;generator&quot;:&quot;flight-task-mjcf-v1&quot;,&quot;source&quot;:&quot;FlightBench-inspired geometry and task family; independently generated&quot;,&quot;goal&quot;:[98.0,0.0,3.0],&quot;start&quot;:[2.0,0.0,3.0]}" />
+  </custom>
+</mujoco>

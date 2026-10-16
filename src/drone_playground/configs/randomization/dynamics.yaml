@@ -1,0 +1,10 @@
+# @package _global_
+# Per-world parameter scales, resampled when a training episode resets.
+simulation:
+  randomization:
+    mass: [0.90, 1.10]
+    inertia: [0.85, 1.15]
+    motor_strength: [0.90, 1.10]
+    drag: [0.85, 1.15]
+  disturbance: {}
+  action_delay_s: 0.0

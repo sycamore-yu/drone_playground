@@ -31,6 +31,7 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 <div id="plannerField"><label for="planner">Planner</label><select id="planner"><option value="ego">EGO-Planner · depth</option><option value="super">SUPER · LiDAR</option></select></div>
 <div id="controllerField"><label for="controller">Controller</label><select id="controller"><option value="sampling_mpc">Sampling MPC</option><option value="attitude_mpc">Attitude MPC</option></select></div>
 <div id="sceneField"><label for="scene">Scene</label><select id="scene"></select></div>
+<div id="suiteField"><label for="suite">Benchmark scene family</label><select id="suite"></select><small>Core S/D scenes are the original reference set. Other families are native-MJCF extensions.</small></div>
 <div id="checkpointField"><label for="checkpoint">Checkpoint</label><select id="checkpoint"><option value="latest">Latest</option><option value="best">Best</option><option value="path">Explicit directory</option></select><small>Best selects the recorded reward-best policy. If none was recorded, it falls back to latest and reports that choice.</small></div>
 <div id="pathField" class="wide"><label for="path">Orbax model directory</label><input id="path" type="text" spellcheck="false" placeholder="results/run/checkpoints/model_000100"></div>
 <div class="wide"><p id="description" role="status"></p></div>
@@ -42,6 +43,15 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 'use strict';
 const taskLabels = {tracking:'Tracking',racing:'Racing',static_oa:'Static OA',dynamic_oa:'Dynamic OA'};
 const suites = {static_oa:['S01','S02','S03','S06'],dynamic_oa:['D01','D02','D03','D06']};
+const extendedSuites = {
+  forest:['forest_easy','forest_medium','forest_hard'],
+  maze:['maze_easy','maze_medium','maze_hard'],
+  dense:['dense_easy','dense_medium','dense_hard'],
+  dynamic_dense:['dynamic_dense_easy','dynamic_dense_medium','dynamic_dense_hard'],
+};
+function suiteNames(task){return task==='static_oa'?['core','forest','maze','dense']:task==='dynamic_oa'?['core','dynamic_dense']:['core'];}
+function sceneNames(task){return [...suites[task],...suiteNames(task).filter(key=>key!=='core').flatMap(key=>extendedSuites[key])];}
+function selectedSuite(s){return s.suite&&s.suite!=='core'?extendedSuites[s.suite]:suites[s.task];}
 const algorithms = ['bptt','shac','ppo'];
 function experiment(s){return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;}
 function shellQuote(value){return "'"+value.replaceAll("'", "'\\''")+"'";}
@@ -61,8 +71,9 @@ function command(s){
     parts.push('task=tracking','scene=empty','sensor=state','method=controller',`controller=${s.controller}`);
   }else{
     parts.push('task=navigation',`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
-    if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${suites[s.task].join(',')}]`);
+    if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
   }
+  if(s.mode==='benchmark'&&s.method==='policy'&&suites[s.task]&&s.suite&&s.suite!=='core')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
   if(s.mode==='play'&&suites[s.task])parts.push(`scene=${s.scene}`,`benchmark.scenes=[${s.scene}]`,'simulation.num_envs=1');
   if(s.mode==='play'&&s.method==='policy'&&!suites[s.task])parts.push('simulation.num_envs=1');
   return parts.join(' ');
@@ -72,16 +83,16 @@ function combinations(){
   for(const mode of ['train','play','benchmark']){
     for(const task of Object.keys(taskLabels))for(const sensor of suites[task]?['depth','lidar']:['state'])for(const algorithm of algorithms){
       for(const backward of mode==='train'&&algorithm!=='ppo'?['native','lotf','point_mass_lag']:['native']){
-        for(const scene of mode==='play'&&suites[task]?suites[task]:[null])for(const checkpoint of mode==='train'?['latest']:['latest','best']){
-          const s={mode,task,sensor,algorithm,backward,scene,checkpoint,method:'policy'};result.push({...s,command:command(s)});
+        for(const scene of mode==='play'&&suites[task]?sceneNames(task):[null])for(const suite of mode==='benchmark'&&suites[task]?suiteNames(task):['core'])for(const checkpoint of mode==='train'?['latest']:['latest','best']){
+          const s={mode,task,sensor,algorithm,backward,scene,suite,checkpoint,method:'policy'};result.push({...s,command:command(s)});
         }
       }
     }
     if(mode==='train')continue;
     for(const controller of ['sampling_mpc','attitude_mpc']){
       let s={mode,task:'tracking',sensor:'state',method:'mpc',controller};result.push({...s,command:command(s)});
-      for(const task of Object.keys(suites))for(const planner of ['ego','super'])for(const scene of mode==='play'?suites[task]:[null]){
-        s={mode,task,planner,scene,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};result.push({...s,command:command(s)});
+      for(const task of Object.keys(suites))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
+        s={mode,task,planner,scene,suite,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};result.push({...s,command:command(s)});
       }
     }
   }
@@ -91,7 +102,7 @@ function combinations(){
 globalThis.CommandBuilder={command,combinations};
 if(typeof document!=='undefined'){
   const $=id=>document.getElementById(id);
-  const state={mode:'train',method:'policy',task:'tracking',sensor:'state',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',checkpoint:'latest',path:''};
+  const state={mode:'train',method:'policy',task:'tracking',sensor:'state',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',suite:'core',checkpoint:'latest',path:''};
   function options(id,items){const previous=state[id];$(id).replaceChildren(...items.map(([key,label])=>new Option(label,key)));state[id]=items.some(([key])=>key===previous)?previous:items[0][0];$(id).value=state[id];}
   function show(id,visible){$(id).hidden=!visible;}
   function render(){
@@ -104,8 +115,12 @@ if(typeof document!=='undefined'){
     $('sensor').disabled=planner||!suites[state.task];
     show('methodField',!train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
     show('plannerField',planner);show('controllerField',!policy);show('sceneField',!train&&state.mode==='play'&&Boolean(suites[state.task]));
+    show('suiteField',!train&&state.mode==='benchmark'&&Boolean(suites[state.task]));
     show('checkpointField',!train&&policy);show('pathField',!train&&policy&&state.checkpoint==='path');
-    if(suites[state.task])options('scene',suites[state.task].map(key=>[key,key]));
+    if(suites[state.task]){
+      options('scene',sceneNames(state.task).map(key=>[key,key]));
+      options('suite',suiteNames(state.task).map(key=>[key,key==='core'?'Core S/D scenes':key]));
+    }
     $('description').textContent=train?(suites[state.task]?`Train on newly sampled ${state.task==='static_oa'?'static':'moving'} obstacles. Fixed S/D maps are reserved for Benchmark.`:'Train with a fixed interaction budget; save resumable state and a frozen policy.'):(state.mode==='benchmark'?'Evaluate every requested episode on the declared fixed suite. Reports include failed episodes and metric sample counts.':'Execute the selected method and record episode outcomes.');
     const missing=!train&&policy&&state.checkpoint==='path'&&!state.path.trim();
     $('command').textContent=missing?'Enter an Orbax model directory to generate the command.':command(state);$('copy').disabled=missing;

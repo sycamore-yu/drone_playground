@@ -1,0 +1,238 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="forest_medium">
+  <compiler angle="radian" />
+  <include file="boundary.xml" />
+  <worldbody>
+    <body name="tree_000" pos="48.66807 13.49030 3.00000">
+      <geom name="tree_000_geom" type="capsule" size="0.68086 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_001" pos="30.88947 -14.33679 3.00000">
+      <geom name="tree_001_geom" type="cylinder" size="0.55954 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_002" pos="84.53772 -3.24659 3.00000">
+      <geom name="tree_002_geom" type="cylinder" size="0.47848 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_003" pos="67.62239 4.10783 3.00000">
+      <geom name="tree_003_geom" type="cylinder" size="0.65822 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_004" pos="79.54280 13.85248 3.00000">
+      <geom name="tree_004_geom" type="cylinder" size="0.37046 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_005" pos="11.63221 -10.18619 3.00000">
+      <geom name="tree_005_geom" type="capsule" size="0.53769 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_006" pos="57.45460 -1.59733 3.00000">
+      <geom name="tree_006_geom" type="cylinder" size="0.70401 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_007" pos="63.26456 -1.22373 3.00000">
+      <geom name="tree_007_geom" type="cylinder" size="0.67595 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_008" pos="39.79328 -1.54601 3.00000">
+      <geom name="tree_008_geom" type="cylinder" size="0.74623 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_009" pos="47.32963 -9.59973 3.00000">
+      <geom name="tree_009_geom" type="cylinder" size="0.52657 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_010" pos="59.85688 13.90498 3.00000">
+      <geom name="tree_010_geom" type="capsule" size="0.74767 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_011" pos="58.81977 6.52370 3.00000">
+      <geom name="tree_011_geom" type="cylinder" size="0.74005 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_012" pos="75.10402 1.24421 3.00000">
+      <geom name="tree_012_geom" type="cylinder" size="0.70839 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_013" pos="16.41408 9.05811 3.00000">
+      <geom name="tree_013_geom" type="cylinder" size="0.54872 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_014" pos="16.71299 -7.27565 3.00000">
+      <geom name="tree_014_geom" type="cylinder" size="0.59386 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_015" pos="68.64638 -5.67191 3.00000">
+      <geom name="tree_015_geom" type="capsule" size="0.57441 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_016" pos="79.91228 -9.46391 3.00000">
+      <geom name="tree_016_geom" type="cylinder" size="0.55818 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_017" pos="47.60652 -5.67792 3.00000">
+      <geom name="tree_017_geom" type="cylinder" size="0.67342 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_018" pos="26.92891 4.55313 3.00000">
+      <geom name="tree_018_geom" type="cylinder" size="0.54204 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_019" pos="46.92878 13.52262 3.00000">
+      <geom name="tree_019_geom" type="cylinder" size="0.52886 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_020" pos="19.31116 0.78029 3.00000">
+      <geom name="tree_020_geom" type="capsule" size="0.61329 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_021" pos="52.78045 9.17951 3.00000">
+      <geom name="tree_021_geom" type="cylinder" size="0.73580 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_022" pos="34.71304 -4.76930 3.00000">
+      <geom name="tree_022_geom" type="cylinder" size="0.53880 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_023" pos="58.67905 -6.48186 3.00000">
+      <geom name="tree_023_geom" type="cylinder" size="0.60202 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_024" pos="52.29246 -12.86187 3.00000">
+      <geom name="tree_024_geom" type="cylinder" size="0.69609 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_025" pos="10.54410 -2.90294 3.00000">
+      <geom name="tree_025_geom" type="capsule" size="0.40708 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_026" pos="20.13219 -1.90112 3.00000">
+      <geom name="tree_026_geom" type="cylinder" size="0.67479 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_027" pos="42.83276 -13.53945 3.00000">
+      <geom name="tree_027_geom" type="cylinder" size="0.40346 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_028" pos="77.73661 9.55995 3.00000">
+      <geom name="tree_028_geom" type="cylinder" size="0.34327 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_029" pos="66.14135 -12.54194 3.00000">
+      <geom name="tree_029_geom" type="cylinder" size="0.45668 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_030" pos="71.82850 13.82831 3.00000">
+      <geom name="tree_030_geom" type="capsule" size="0.36648 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_031" pos="80.09135 -5.05262 3.00000">
+      <geom name="tree_031_geom" type="cylinder" size="0.47729 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_032" pos="16.27020 12.20382 3.00000">
+      <geom name="tree_032_geom" type="cylinder" size="0.55937 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_033" pos="30.00911 10.32590 3.00000">
+      <geom name="tree_033_geom" type="cylinder" size="0.71101 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_034" pos="76.87647 4.99331 3.00000">
+      <geom name="tree_034_geom" type="cylinder" size="0.48884 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_035" pos="52.57536 10.75980 3.00000">
+      <geom name="tree_035_geom" type="capsule" size="0.37733 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_036" pos="32.99554 -0.62143 3.00000">
+      <geom name="tree_036_geom" type="cylinder" size="0.65449 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_037" pos="62.03542 8.89933 3.00000">
+      <geom name="tree_037_geom" type="cylinder" size="0.56654 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_038" pos="29.60997 -9.10460 3.00000">
+      <geom name="tree_038_geom" type="cylinder" size="0.41691 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_039" pos="63.05155 -0.37074 3.00000">
+      <geom name="tree_039_geom" type="cylinder" size="0.67625 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_040" pos="24.73895 -13.48390 3.00000">
+      <geom name="tree_040_geom" type="capsule" size="0.65084 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_041" pos="75.69267 12.73765 3.00000">
+      <geom name="tree_041_geom" type="cylinder" size="0.32982 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_042" pos="73.90603 0.12395 3.00000">
+      <geom name="tree_042_geom" type="cylinder" size="0.50907 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_043" pos="36.69626 5.28793 3.00000">
+      <geom name="tree_043_geom" type="cylinder" size="0.38210 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_044" pos="13.76824 2.39685 3.00000">
+      <geom name="tree_044_geom" type="cylinder" size="0.56861 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_045" pos="41.45848 -1.76960 3.00000">
+      <geom name="tree_045_geom" type="capsule" size="0.43011 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_046" pos="74.43597 -0.79647 3.00000">
+      <geom name="tree_046_geom" type="cylinder" size="0.55507 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_047" pos="9.95524 0.72632 3.00000">
+      <geom name="tree_047_geom" type="cylinder" size="0.42106 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_048" pos="60.07389 -8.61331 3.00000">
+      <geom name="tree_048_geom" type="cylinder" size="0.71474 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_049" pos="17.20028 -4.89361 3.00000">
+      <geom name="tree_049_geom" type="cylinder" size="0.50020 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_050" pos="18.66612 -10.53557 3.00000">
+      <geom name="tree_050_geom" type="capsule" size="0.59166 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_051" pos="41.88884 11.07235 3.00000">
+      <geom name="tree_051_geom" type="cylinder" size="0.67836 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_052" pos="80.87374 0.77133 3.00000">
+      <geom name="tree_052_geom" type="cylinder" size="0.33771 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_053" pos="82.54692 9.54511 3.00000">
+      <geom name="tree_053_geom" type="cylinder" size="0.65409 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_054" pos="13.54943 -0.51679 3.00000">
+      <geom name="tree_054_geom" type="cylinder" size="0.46549 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_055" pos="9.55625 0.81371 3.00000">
+      <geom name="tree_055_geom" type="capsule" size="0.58907 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_056" pos="85.31731 1.56456 3.00000">
+      <geom name="tree_056_geom" type="cylinder" size="0.49666 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_057" pos="57.26994 -14.65237 3.00000">
+      <geom name="tree_057_geom" type="cylinder" size="0.68633 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_058" pos="41.75332 1.19797 3.00000">
+      <geom name="tree_058_geom" type="cylinder" size="0.41355 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_059" pos="90.27491 13.45475 3.00000">
+      <geom name="tree_059_geom" type="cylinder" size="0.45530 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_060" pos="26.04802 5.26480 3.00000">
+      <geom name="tree_060_geom" type="capsule" size="0.36405 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_061" pos="21.40054 -5.99789 3.00000">
+      <geom name="tree_061_geom" type="cylinder" size="0.52156 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_062" pos="76.24805 11.67953 3.00000">
+      <geom name="tree_062_geom" type="cylinder" size="0.40180 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_063" pos="53.65171 -7.85609 3.00000">
+      <geom name="tree_063_geom" type="cylinder" size="0.55818 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_064" pos="59.41548 -0.91021 3.00000">
+      <geom name="tree_064_geom" type="cylinder" size="0.55253 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_065" pos="79.66334 -6.52772 3.00000">
+      <geom name="tree_065_geom" type="capsule" size="0.38705 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_066" pos="66.70008 -12.06016 3.00000">
+      <geom name="tree_066_geom" type="cylinder" size="0.56276 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_067" pos="76.89794 5.08459 3.00000">
+      <geom name="tree_067_geom" type="cylinder" size="0.40488 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_068" pos="39.55233 -14.15714 3.00000">
+      <geom name="tree_068_geom" type="cylinder" size="0.64742 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_069" pos="29.14908 -8.10443 3.00000">
+      <geom name="tree_069_geom" type="cylinder" size="0.56942 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_070" pos="48.53132 9.24566 3.00000">
+      <geom name="tree_070_geom" type="capsule" size="0.64919 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_071" pos="18.57384 11.17822 3.00000">
+      <geom name="tree_071_geom" type="cylinder" size="0.58538 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_072" pos="22.50452 -5.77430 3.00000">
+      <geom name="tree_072_geom" type="cylinder" size="0.50903 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_073" pos="16.91509 10.61495 3.00000">
+      <geom name="tree_073_geom" type="cylinder" size="0.71876 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_074" pos="28.44296 -6.01880 3.00000">
+      <geom name="tree_074_geom" type="cylinder" size="0.59390 3.00000" rgba="0.35 0.34 0.26 1" />
+    </body>
+    <body name="tree_075" pos="63.41208 8.77159 3.00000">
+      <geom name="tree_075_geom" type="capsule" size="0.39429 2.65000" rgba="0.35 0.34 0.26 1" />
+    </body>
+  </worldbody>
+  <custom>
+    <text name="benchmark_metadata" data="{&quot;family&quot;:&quot;forest&quot;,&quot;difficulty&quot;:&quot;medium&quot;,&quot;geometries&quot;:76,&quot;generator&quot;:&quot;flight-task-mjcf-v1&quot;,&quot;source&quot;:&quot;FlightBench-inspired geometry and task family; independently generated&quot;,&quot;goal&quot;:[98.0,0.0,3.0],&quot;start&quot;:[2.0,0.0,3.0]}" />
+  </custom>
+</mujoco>

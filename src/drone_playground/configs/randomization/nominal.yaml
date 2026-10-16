@@ -1,0 +1,5 @@
+# @package _global_
+simulation:
+  randomization: {}
+  disturbance: {}
+  action_delay_s: 0.0
