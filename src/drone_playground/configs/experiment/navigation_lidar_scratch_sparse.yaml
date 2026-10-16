@@ -3,5 +3,3 @@
 # The native 20k profile, 10Hz frame clock, scan phase and per-ray times are unchanged.
 defaults:
 - navigation_lidar_scratch_safe
-sensor:
-  ray_sampling: policy

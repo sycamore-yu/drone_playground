@@ -11,8 +11,6 @@ simulation:
     max_obstacles: 208
     corridor_y: -17.5
     training_seed: ${seed}
-sensor:
-  ray_sampling: policy
 learning:
   options:
     randomize_navigation_start: false

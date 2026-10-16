@@ -46,6 +46,7 @@ class DronePlaygroundBackend:
                 raise ValueError(f"Forbidden candidate override: {key}")
         request = {
             **settings,
+            "record_replay": bool(settings.get("record_replay", False)),
             "train_env_steps": steps,
             "eval_episodes": bundle.eval_episodes,
             "max_steps": bundle.max_steps,
@@ -93,7 +94,7 @@ class DronePlaygroundBackend:
             f"benchmark.scenes={json.dumps(request['eval_scenes'])}",
             f"benchmark.episodes={request['eval_episodes'] // len(request['eval_scenes'])}",
             f"benchmark.seed_base={request['eval_seed_start']}",
-            "benchmark.record_replay=false",
+            f"benchmark.record_replay={str(request['record_replay']).lower()}",
             "benchmark.record_trajectories=false",
         ]
 
@@ -113,7 +114,6 @@ class DronePlaygroundBackend:
             env={
                 "PYTHONPATH": str(ROOT / "src"),
                 "SCIPY_ARRAY_API": "1",
-                "JAX_PLATFORMS": "cuda",
                 "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
                 "MUJOCO_GL": "egl",
                 "JAX_COMPILATION_CACHE_DIR": str(ROOT / ".cache/jax"),
@@ -142,10 +142,17 @@ class DronePlaygroundBackend:
         request = json.loads((artifacts.root / "request.json").read_text())
         directory = artifacts.root / "train"
         result = json.loads((directory / "run.json").read_text())
-        if (
-            result["status"] != "budget_exhausted"
-            or result["interactions"] != request["train_env_steps"]
-        ):
+        actual, limit = result["interactions"], request["train_env_steps"]
+        reason = result.get("stop_reason")
+        completed = result["status"] == "budget_exhausted" and actual == limit
+        early = (
+            result["status"] == "early_stopped"
+            and type(actual) is int
+            and 0 <= actual < limit
+            and isinstance(reason, dict)
+            and reason.get("reason") in ("target_reached", "no_improvement", "requested_stop")
+        )
+        if not (completed or early):
             raise ValueError(f"Incomplete training budget: {result['status']}")
         return {
             **native_training_view(directory),
@@ -328,6 +335,15 @@ def native_training_view(directory):
     published = directory / "checkpoints/latest"
     checkpoint = checkpoint_summary(published) if published.is_symlink() else {}
     selected = checkpoint.get("best_checkpoint") or checkpoint.get("latest_checkpoint")
+    reason = run.get("stop_reason")
+    target_stop = (
+        run.get("status") == "early_stopped"
+        and isinstance(reason, dict)
+        and reason.get("reason") == "target_reached"
+        and reason["metric"] != "mean_reward"
+    )
+    if target_stop:
+        selected = checkpoint.get("latest_checkpoint")
     return {
         "total_steps": int(latest.get("interactions", 0)),
         "env_steps": int(latest.get("interactions", 0)),
@@ -342,7 +358,12 @@ def native_training_view(directory):
             key: value for key, value in latest.items() if isinstance(value, (int, float))
         },
         "checkpoint_path": selected,
-        "checkpoint_selection": "best" if checkpoint.get("best_checkpoint") else "latest",
+        "checkpoint_selection": "best"
+        if checkpoint.get("best_checkpoint") and not target_stop
+        else "latest",
+        "selection_reason": "early_stopping_target" if target_stop else None,
+        "training_status": run.get("status"),
+        "stop_reason": run.get("stop_reason"),
         "best_source": checkpoint.get("best_source"),
         "best_mean_reward": checkpoint.get("best_mean_reward"),
         "episode_records": records,

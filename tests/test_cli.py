@@ -1,5 +1,6 @@
 """Bounded training and playback contracts with real Orbax persistence."""
 
+import json
 import signal
 import sys
 from contextlib import contextmanager, nullcontext
@@ -153,6 +154,99 @@ def test_nonfinite_update_preserves_last_good_state(config, training):
     )
     assert state.params["params"].item() == 1
     assert training.record.identity["status"] == "failed"
+
+
+def test_target_stops_entire_loop_and_exports_that_update(config, training, monkeypatch):
+    """A reached target cannot execute another training update."""
+    config.learning.best.source = "training"
+    config.learning.early_stopping.target = 2.0
+
+    def measure(self, state, *, final=False):
+        return {
+            "source": "training",
+            "mean_reward": float(state.updates),
+            "episodes": 1,
+            "episode_records": [],
+            "improved": True,
+        }
+
+    monkeypatch.setattr(runner.RewardSelection, "measure", measure)
+    runner.train(config, training.record)
+    result = training.record.identity
+    assert result["status"] == "early_stopped" and result["updates"] == 2
+    assert result["interactions"] == 16 and result["requested_interactions"] == 32
+    state, metadata = load_model_state(
+        training.record.directory / result["latest_checkpoint"], SmallState()
+    )
+    assert state.updates == 2 and state.params["params"].item() == 2
+    assert metadata["provenance"]["stop_reason"]["reason"] == "target_reached"
+    config.resume = str(training.record.directory / result["latest_checkpoint"])
+    runner.train(config, training.record)
+    assert training.record.identity["updates"] == 2
+    assert [event["update"] for event in training.record.events if event["event"] == "update"] == [
+        1,
+        2,
+    ]
+
+
+def test_runtime_stop_finishes_before_another_update(config, training, monkeypatch):
+    """A control file written during an update stops at its following boundary."""
+    original = runner.Trainer.update
+
+    def update(self, state):
+        result = original(self, state)
+        (training.record.directory / "training-control.json").write_text(json.dumps({"stop": True}))
+        return result
+
+    monkeypatch.setattr(runner.Trainer, "update", update)
+    runner.train(config, training.record)
+    assert training.record.identity["updates"] == 1
+    assert training.record.identity["status"] == "early_stopped"
+    assert training.record.identity["stop_reason"]["reason"] == "requested_stop"
+
+
+def test_live_target_rechecks_current_policy_instead_of_stale_score(config, training, monkeypatch):
+    """Enabling a target re-evaluates a policy that changed since the last probe."""
+    config.learning.max_interactions = 64
+    config.learning.best.source = "training"
+    original = runner.Trainer.update
+    probes = []
+
+    def update(self, state):
+        result = original(self, state)
+        if result[0].updates == 3:
+            (training.record.directory / "training-control.json").write_text(
+                json.dumps({"early_stopping": {"target": 5.0}})
+            )
+        return result
+
+    def measure(self, state, *, final=False):
+        if not final and state.updates % 2:
+            return None
+        probes.append(state.updates)
+        return {
+            "source": "training",
+            "mean_reward": 10.0 if state.updates == 2 else 0.0,
+            "episodes": 1,
+            "episode_records": [],
+            "improved": False,
+        }
+
+    monkeypatch.setattr(runner.Trainer, "update", update)
+    monkeypatch.setattr(runner.RewardSelection, "measure", measure)
+    runner.train(config, training.record)
+    assert probes[:2] == [2, 3]
+    assert training.record.identity["status"] == "budget_exhausted"
+    assert training.record.identity["updates"] == 8
+
+
+@pytest.mark.parametrize("control", [[], {"stop": "yes"}, {"unknown": True}])
+def test_invalid_runtime_controls_are_rejected(tmp_path, control):
+    """A typo cannot be interpreted as a stop request."""
+    path = tmp_path / "training-control.json"
+    path.write_text(json.dumps(control))
+    with pytest.raises(ValueError, match="Training control"):
+        runner.training_control(path)
 
 
 @pytest.mark.parametrize("budget", [None, True, 0, 7])

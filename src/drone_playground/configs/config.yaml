@@ -28,6 +28,8 @@ simulation:
   disturbance: {}
 observation:
   depth: {}
+  lidar:
+    point_count: 1024
 checkpoint: null
 checkpoint_root: results
 initial_checkpoint: null
@@ -39,6 +41,11 @@ learning:
     interval: 262144
     episodes: 8
     seed: 1000000
+  early_stopping:
+    metric: mean_reward
+    target: null
+    patience: 0
+    min_delta: 0.0
 results:
   keep_checkpoints: 3
 replay_path: null

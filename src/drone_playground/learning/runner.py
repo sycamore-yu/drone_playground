@@ -10,12 +10,25 @@ from hydra.utils import get_class, instantiate
 from omegaconf import OmegaConf
 
 from drone_playground.learning.checkpoint import load_model_state, save_model
-from drone_playground.learning.selection import RewardSelection
+from drone_playground.learning.selection import EarlyStopping, RewardSelection
 from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.factory import create_environment, create_method
 from drone_playground.simulation.policy import checkpoint_summary, load_policy
 from drone_playground.simulation.records import atomic_json, gpu_usage
 from drone_playground.simulation.training_visuals import TrainingPreview
+
+
+def training_control(path):
+    """Read atomic per-run controls at a completed-update boundary."""
+    try:
+        control = json.loads(path.read_text())
+    except FileNotFoundError:
+        return {}
+    if not isinstance(control, dict) or control.keys() - {"stop", "early_stopping"}:
+        raise ValueError("Training control accepts only stop and early_stopping")
+    if "stop" in control and type(control["stop"]) is not bool:
+        raise ValueError("Training control stop must be boolean")
+    return control
 
 
 def train(config, record):
@@ -52,6 +65,7 @@ def train(config, record):
     identity = {"experiment": resolved, "learning": trainer.resolved_config}
     previous_seconds = 0.0
     saved_selection = None
+    saved_stopping = None
     if config.resume:
         state, metadata = load_model_state(config.resume, state)
         previous = metadata["config"]["experiment"]
@@ -72,6 +86,7 @@ def train(config, record):
             identity["initialization"] = metadata["config"]["initialization"]
         previous_seconds = metadata["provenance"]["training_wall_seconds"]
         saved_selection = metadata["provenance"].get("selection")
+        saved_stopping = metadata["provenance"].get("early_stopping")
         record.event("resumed", checkpoint=str(config.resume), update=int(state.updates))
     elif config.initial_checkpoint:
         _, parameters, metadata = load_policy(config.initial_checkpoint, actor=trainer.actor)
@@ -93,6 +108,9 @@ def train(config, record):
         }
         record.event("initialized", **identity["initialization"])
     selection = RewardSelection(config, trainer, saved_selection)
+    stopping = EarlyStopping(
+        config.learning.early_stopping, config.learning.best.source, saved_stopping
+    )
     record.identity.update(
         num_envs=trainer.env.num_envs,
         rollout_horizon=trainer.config["horizon"],
@@ -106,6 +124,7 @@ def train(config, record):
     preview = TrainingPreview()
     initial_interactions = int(state.interactions)
     stop_requested = False
+    stop_reason = None
     checkpoint_path = None
 
     def request_stop(signum, frame):
@@ -136,6 +155,8 @@ def train(config, record):
                 "updates": int(state.updates),
                 "interactions": int(state.interactions),
                 "selection": selection.state,
+                "early_stopping": stopping.state,
+                "stop_reason": stop_reason,
                 **cost(),
             },
             kind=trainer.kind,
@@ -148,6 +169,7 @@ def train(config, record):
         measured = selection.measure(state, final=final)
         if measured is None:
             return
+        stopping.observe(measured)
         if measured["improved"]:
             path = record.directory / "checkpoints" / f"model_{int(state.updates):06d}"
             selection.state.update(
@@ -168,10 +190,28 @@ def train(config, record):
             ),
             flush=True,
         )
+        return stopping.reason()
 
     metrics = {}
     try:
         while not stop_requested and int(state.interactions) < budget:
+            control = training_control(record.directory / "training-control.json")
+            if control.get("stop", False):
+                stop_reason = {"reason": "requested_stop"}
+                break
+            if stopping.configure(control.get("early_stopping", {})):
+                rules = stopping.state["options"]
+                record.event("early_stopping_configured", **rules)
+                if rules["target"] is not None or rules["patience"]:
+                    stop_reason = select(final=True) or stopping.reason()
+                    if stop_reason:
+                        break
+            stop_reason = stopping.reason()
+            if stop_reason:
+                if selection.state["last_interactions"] != int(state.interactions):
+                    stop_reason = select(final=True)
+                if stop_reason:
+                    break
             update_started = time.monotonic()
             candidate, metrics = trainer.update(
                 state,
@@ -220,9 +260,18 @@ def train(config, record):
                 }
                 record.event("update", **measured)
                 print(json.dumps(measured), flush=True)
-            select(final=int(state.interactions) >= budget)
+            stop_reason = select(final=int(state.interactions) >= budget)
             if update % config.learning.checkpoint_interval == 0:
                 checkpoint()
+            if stop_reason:
+                break
+        if stop_reason:
+            record.event(
+                "early_stopped",
+                update=int(state.updates),
+                interactions=int(state.interactions),
+                **stop_reason,
+            )
         checkpoint()
         if preview.session is not None:
             preview.capture(
@@ -233,13 +282,19 @@ def train(config, record):
                 final=True,
             )
         record.finish(
-            "budget_exhausted" if int(state.interactions) >= budget else "interrupted",
+            "budget_exhausted"
+            if int(state.interactions) >= budget
+            else "early_stopped"
+            if stop_reason
+            else "interrupted",
             updates=int(state.updates),
             interactions=int(state.interactions),
             requested_interactions=budget,
             latest_checkpoint=str(checkpoint_path.relative_to(record.directory)),
             last_metrics=metrics,
             selection=selection.state,
+            early_stopping=stopping.state,
+            stop_reason=stop_reason,
             **cost(),
         )
     except BaseException as error:

@@ -13,6 +13,51 @@ from drone_playground.simulation.scene import Scene
 from drone_playground.simulation.sensors import SensorConfig, measure, sensor_rays
 
 
+@pytest.mark.parametrize("count", [None, True, 0, -1, 1.5, 20001])
+def test_lidar_observation_rejects_invalid_point_count(count):
+    """LiDAR capture requires one explicit, bounded observation count."""
+    with pytest.raises(ValueError, match=r"observation\.lidar\.point_count"):
+        SensorObservation(
+            Scene("empty"),
+            SensorConfig.mid360(),
+            physics_hz=500,
+            observation_config={"lidar": {"point_count": count}},
+        )
+
+
+def test_factory_uses_only_the_observation_point_count():
+    """The resolved count reaches acquisition without a second sensor parameter."""
+    from pathlib import Path
+
+    from hydra import compose, initialize_config_dir
+
+    from drone_playground import cli
+    from drone_playground.simulation.factory import create_environment
+
+    with initialize_config_dir(
+        version_base=None, config_dir=str(Path(cli.__file__).parent / "configs")
+    ):
+        config = compose(
+            config_name="config",
+            overrides=[
+                "experiment=oa_static_lidar",
+                "simulation.device=cpu",
+                "simulation.num_envs=1",
+                "observation.lidar.point_count=512",
+            ],
+        )
+        depth = compose(config_name="config", overrides=["experiment=oa_static_depth"])
+    assert depth.sensor.config.frequency_hz == 10
+    assert set(config.sensor) == {"name", "config"}
+    env = create_environment(config)
+    try:
+        assert env.sensor.point_count == 512
+        initial = env.reset(jax.random.key(7))
+        assert initial.observation.measurement.points_body.shape == (1, 512, 3)
+    finally:
+        env.sim.close()
+
+
 def test_measurement_keeps_only_data_needed_after_capture():
     """Per-ray directions and identical snapshot times are reconstructible, not state."""
     assert tuple(
@@ -33,9 +78,9 @@ def test_snapshot_measurement_has_one_acquisition_time():
     result = jax.jit(
         lambda t: measure(Scene("empty"), config, jnp.zeros((2, 3)), jnp.array([0.0, 0, 0, 1.0]), t)
     )(times)
-    encoded = SensorObservation(Scene("empty"), config, physics_hz=500, point_count=32).encode(
-        SimpleNamespace(measurement=result)
-    )
+    encoded = SensorObservation(
+        Scene("empty"), config, physics_hz=500, observation_config={"lidar": {"point_count": 32}}
+    ).encode(SimpleNamespace(measurement=result))
     np.testing.assert_array_equal(
         encoded["point_times"], np.broadcast_to(np.asarray(times)[:, None], (2, 32))
     )
@@ -73,8 +118,10 @@ def test_fan_history_consumes_snapshots_only_for_active_worlds(raw_frames):
         Scene("S01"),
         SensorConfig.mid360(points_per_frame=32),
         physics_hz=500,
-        point_count=32,
-        paper_fan={"raw_history_frames": raw_frames},
+        observation_config={
+            "lidar": {"point_count": 32},
+            "fan_lidar": {"raw_history_frames": raw_frames},
+        },
     )
 
     def physics(tick):
@@ -126,7 +173,7 @@ def test_trainer_records_sensor_semantics_and_source_hash():
         task="navigation",
         scene="S01",
         sensor="lidar",
-        point_count=32,
+        observation_config={"lidar": {"point_count": 32}},
         sensor_config={"points_per_frame": 32},
         action={"level": "acceleration"},
     )

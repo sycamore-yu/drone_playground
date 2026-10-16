@@ -40,21 +40,6 @@ def preprocess_depth(
     return jnp.where(valid, pooled, 0), valid
 
 
-def reduce_points(measurement: Measurement, count: int) -> Measurement:
-    """Subsample a scan at fixed indices, preserving values, masks and frame time."""
-    size = measurement.values.shape[-1]
-    if not isinstance(count, int) or not 0 < count <= size:
-        raise ValueError("Point count must be a positive integer no larger than the scan")
-    indices = jnp.linspace(0, size - 1, count).astype(jnp.int32)
-    return Measurement(
-        jnp.take(measurement.values, indices, axis=-1),
-        jnp.take(measurement.mask, indices, axis=-1),
-        jnp.take(measurement.points_body, indices, axis=-2),
-        measurement.acquisition_time,
-        measurement.available_time,
-    )
-
-
 @struct.dataclass
 class ObservationState:
     """Latest snapshot and instance-owned state for sampling and delivery."""
@@ -79,11 +64,8 @@ class SensorObservation:
         scene,
         config: SensorConfig,
         physics_hz: int,
-        point_count: int = 1024,
         latency_bounds=None,
-        encoding=None,
-        ray_sampling: str = "full",
-        paper_fan: dict | None = None,
+        observation_config: dict | None = None,
     ):
         """Initialize SensorObservation state for the declared contract."""
         if config.frequency_hz > physics_hz:
@@ -92,32 +74,35 @@ class SensorObservation:
             config.latency if latency_bounds is None else latency_bounds
         )
         self.capacity = math.ceil(self.latency_bounds[1] * config.frequency_hz) + 2
-        self.encoding = dict(encoding or {})
+        observation_config = observation_config or {}
+        self.encoding = dict(observation_config.get("depth", {}))
         self.scene, self.config = scene, config
-        self.point_count = point_count
-        if ray_sampling not in ("full", "policy"):
-            raise ValueError("LiDAR ray_sampling must be 'full' or 'policy'")
-        if ray_sampling == "policy" and (
-            config.profile != "mid360" or not 0 < point_count <= config.points_per_frame
-        ):
-            raise ValueError("Policy ray sampling requires Mid-360 and a valid point count")
-        self.ray_sampling = ray_sampling
+        self.point_count = None
+        if config.profile != "d435i":
+            self.point_count = observation_config.get("lidar", {}).get("point_count")
+            if (
+                type(self.point_count) is not int
+                or not 0 < self.point_count <= config.points_per_frame
+            ):
+                raise ValueError(
+                    "observation.lidar.point_count must be a positive integer "
+                    "no larger than the scan"
+                )
+        paper_fan = observation_config.get("fan_lidar")
         if paper_fan is not None and (config.profile != "mid360" or self.latency_bounds[1] > 0):
             raise ValueError("Fan LiDAR requires MID360 with zero measurement latency")
         self.paper_fan = None if paper_fan is None else FanLidarConfig(**paper_fan)
-        self.captured_points = point_count if ray_sampling == "policy" else config.points_per_frame
 
     @property
     def specification(self) -> dict:
         """Identify measurement and preprocessing semantics for runs and checkpoints."""
         result = {
             "config": self.config.specification,
-            "point_count": self.point_count,
             "encoding": self.encoding,
             "latency_bounds": list(self.latency_bounds),
         }
-        if self.ray_sampling == "policy":
-            result["ray_sampling"] = "policy"
+        if self.point_count is not None:
+            result["point_count"] = self.point_count
         return result
 
     @staticmethod
@@ -193,7 +178,7 @@ class SensorObservation:
         if self.config.profile == "d435i":
             measurement = self._reset_depth_measurement(p, q, mask, scene_state)
         else:
-            shape = (batch, self.captured_points)
+            shape = (batch, self.point_count)
             measurement = Measurement(
                 jnp.zeros(shape),
                 jnp.zeros(shape, bool),
@@ -215,7 +200,7 @@ class SensorObservation:
             )
         )
         if self.paper_fan is not None and self.paper_fan.raw_history_frames > 1:
-            shape = (batch, self.paper_fan.raw_history_frames, self.captured_points)
+            shape = (batch, self.paper_fan.raw_history_frames, self.point_count)
             fan_history = {
                 "ranges": fan_history,
                 "points_world": jnp.zeros((*shape, 3)),
@@ -283,7 +268,7 @@ class SensorObservation:
                 quaternions,
                 capture_time,
                 frame_index=state.frame,
-                selected_count=self.point_count if self.ray_sampling == "policy" else None,
+                selected_count=self.point_count,
                 scene_state=scene_state,
             )
             measurement = measurement._replace(
@@ -419,8 +404,6 @@ class SensorObservation:
                 "acquisition_time": state.measurement.acquisition_time,
             }
         measurement = state.measurement
-        if self.ray_sampling != "policy":
-            measurement = reduce_points(measurement, self.point_count)
         if self.paper_fan is not None:
             ranges = (
                 state.paper_fan_history["ranges"]

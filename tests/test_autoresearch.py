@@ -99,6 +99,66 @@ def test_eval_translation_keeps_failures_and_missing_return(tmp_path):
         DronePlaygroundBackend().normalize_eval(SimpleNamespace(root=tmp_path))
 
 
+def test_early_stop_is_valid_completion_without_fabricated_budget(tmp_path, monkeypatch):
+    """Intentional stopping retains the actual counters and declared upper limit."""
+    from tools import autoresearch
+
+    (tmp_path / "request.json").write_text(json.dumps({"train_env_steps": 64}))
+    directory = tmp_path / "train"
+    directory.mkdir()
+    result = {
+        "status": "early_stopped",
+        "interactions": 16,
+        "stop_reason": {"reason": "target_reached", "metric": "mean_reward"},
+    }
+    (directory / "run.json").write_text(json.dumps(result))
+    monkeypatch.setattr(autoresearch, "native_training_view", lambda _: {"env_steps": 16})
+    value = autoresearch.DronePlaygroundBackend().normalize_train(SimpleNamespace(root=tmp_path))
+    assert value["env_steps"] == 16 and value["train_env_steps"] == 64
+    for status, interactions, reason in (
+        ("interrupted", 16, result["stop_reason"]),
+        ("early_stopped", 16, None),
+        ("early_stopped", 65, result["stop_reason"]),
+    ):
+        (directory / "run.json").write_text(
+            json.dumps({"status": status, "interactions": interactions, "stop_reason": reason})
+        )
+        with pytest.raises(ValueError, match="Incomplete"):
+            autoresearch.DronePlaygroundBackend().normalize_train(SimpleNamespace(root=tmp_path))
+
+
+def test_quality_target_benchmarks_the_policy_that_reached_it(tmp_path, monkeypatch):
+    """Reward Best stays recorded while a different target-reaching Latest is tested."""
+    from drone_playground.simulation import policy
+    from tools.autoresearch import native_training_view
+
+    (tmp_path / "run.json").write_text(
+        json.dumps(
+            {
+                "status": "early_stopped",
+                "stop_reason": {"reason": "target_reached", "metric": "success_rate"},
+            }
+        )
+    )
+    (tmp_path / "checkpoints").mkdir()
+    (tmp_path / "checkpoints/latest").symlink_to("snapshot", target_is_directory=True)
+    monkeypatch.setattr(
+        policy,
+        "checkpoint_summary",
+        lambda _: {
+            "latest_checkpoint": "/target-reaching",
+            "best_checkpoint": "/reward-best",
+            "best_mean_reward": 2.0,
+            "best_source": "evaluation",
+        },
+    )
+    view = native_training_view(tmp_path)
+    assert view["checkpoint_path"] == "/target-reaching"
+    assert view["checkpoint_selection"] == "latest"
+    assert view["selection_reason"] == "early_stopping_target"
+    assert view["best_mean_reward"] == 2.0
+
+
 @pytest.mark.parametrize("algorithm", ["ppo", "bptt", "shac"])
 def test_public_training_recipe_prepares_an_external_candidate(tmp_path, monkeypatch, algorithm):
     """Every local algorithm uses the same external orchestration and explicit budget."""
