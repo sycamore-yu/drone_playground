@@ -1,8 +1,6 @@
 # ADR-0033: Controller applicability follows the reference contract
 
-**Status:** Proposed for release; implemented and tested as a local `main`
-candidate. The user's approval covers RPS98 Full-State NMPC integration;
-the exact final release catalog remains reviewable before publication.
+**Status:** Accepted; implemented and verified on `main`.
 **Scope:** Public Train/Play/Benchmark combinations and general tracking NMPC.
 
 ## Context

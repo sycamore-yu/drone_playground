@@ -138,14 +138,12 @@ and Maze walls obstruct the direct nominal route. The `nominal`, `dynamics`,
 and `sim2real` Hydra groups construct usable Crazyflow environments with the
 documented model perturbations, delays, and gust parameters.
 
-The optional MJCF scene extensions originally yielded 486 unique commands
-(42 Train, 334 Play, 110 Benchmark). The mainline Racing control integration
-adds both MPCC and JAX perception-aware MPC to Play and Benchmark, bringing
-the builder to **490 unique commands** (42 Train, 336 Play, 112 Benchmark).
-All 490 configurations compose through Hydra. The original
-230-command core suite retains its prior runtime evidence. Expanded commands
-require additional real method execution before claiming the same coverage;
-configuration composition alone is not runtime validation.
+The current capability-based Builder contains **550 unique commands**
+(42 Train, 380 Play, 128 Benchmark). All 550 configurations compose through
+Hydra. The original 230-command core suite retains its historical runtime
+evidence. The native Controller and Planner subset has a separate end-to-end
+smoke acceptance recorded below; policy execution and training use their own
+protocols.
 
 The final training-media update retains a browser-playable animation of the
 actual last one-world rollout fragment even when the Dashboard was Off. It
@@ -173,7 +171,7 @@ convergence or cross-track performance is inferred from these tests.
 
 After selection into a clean `main` worktree, the native MPCC, perception
 objective and Builder suite passed **8 focused tests**, including a real acados
-short Crazyflow flight. The 490-configuration Builder Hydra test passed.
+short Crazyflow flight. The 550-configuration Builder Hydra test passed.
 Replay, Autoresearch projection, training media, paired benchmark and Play
 tests passed **18 focused tests**. The MuJoCo WASM viewer built successfully
 with `npm ci` and Vite. Its mainline build was tested independently in headless
@@ -183,10 +181,10 @@ meshes, and eight Mocap bodies loaded. Browser Play advanced from frame 100 to
 completed at its 0.16-second test deadline without a method exception. A running
 Dashboard from an older worktree is not automatically replaced by a Git commit.
 
-The earlier 490-command candidate and complete CPU test suite were not run
-end-to-end after that selective integration. The current 550-command revision
-also requires a full runtime sweep before release acceptance. These remain
-separate from configuration composition and representative method checks.
+The 550-command catalog is not intended to run every policy and training
+configuration as one runtime sweep. Native method compatibility is checked
+separately from Learning experiments; the current 172 Controller/Planner
+Play/Benchmark commands are covered by the native smoke acceptance below.
 
 ## Full-State NMPC and controller compatibility (2026-10-16)
 
@@ -201,17 +199,47 @@ tracking flight and consumption of a native position/velocity/acceleration
 on the tested CPU. A 0.4-second Racing Play also executed with no solver
 exception, but naturally did not complete the course during that short window.
 These checks demonstrate interface feasibility, not tracking convergence or
-multi-scene navigation capability. EGO/SUPER ROS worker execution with the new
-NMPC has not yet been rerun.
+multi-scene navigation capability. The subsequent native command smoke includes
+EGO/SUPER Planner + Full-State NMPC execution across the declared OA scene set.
 
 The revised Command Builder categorizes methods by required reference, rather
-than by an unrestricted task × solver Cartesian product. It now generates
-**550 distinct compatible commands** (42 Train, 380 Play, 128 Benchmark); all
-550 passed Hydra composition, including Full-State NMPC with EGO and SUPER
-planner configurations, Racing's timed spline, and Tracking. The corresponding
-full runtime command sweep has not been completed. The reference-compatibility
-release proposal and RPG Quadrotor Control adaptation limitations are recorded
-in [ADR-0033](adr/0033-controller-compatibility-and-reference-tracking.md).
+than by an unrestricted task × solver Cartesian product. It generates **550
+distinct compatible commands** (42 Train, 380 Play, 128 Benchmark), and all 550
+pass Hydra composition, including Full-State NMPC with EGO and SUPER planner
+configurations, Racing's timed spline, and Tracking. Native Controller and
+Planner execution is covered separately below. The reference-compatibility
+decision and RPG Quadrotor Control adaptation status are recorded in
+[ADR-0033](adr/0033-controller-compatibility-and-reference-tracking.md).
+
+## Native Controller and Planner command execution (2026-10-16)
+
+The Command Builder contains **172** non-policy Play/Benchmark entries:
+8 Play Controllers, 120 Play Planner + Controllers, 8 Benchmark Controllers and
+36 Benchmark Planner + Controllers. The source command catalog and per-case
+results are stored locally in ignored `results/command-builder-native-20261016/`.
+Its `live.html` lists each command with the terminal event, report, log, native
+RScope record and MuJoCo WASM browser replay where actual frames are available.
+
+The smoke runner passes the exact generated Hydra arguments to the installed
+`python -m drone_playground.cli` rather than reinstalling the worktree's CUDA
+environment through the equivalent `pixi run` entry. It overrides only the
+flight budget/capture conditions: 0.14-second Task duration, one episode per
+scene, CPU device, one environment, replay enabled and one replay per scene.
+Benchmark scene suites are retained intact. Independent ROS Worker ports
+50051/50052 (Play) and 50151/50152 (Benchmark) avoid concurrent planner
+sessions. The machine-readable manifests keep command, source revision,
+execution status, task outcomes, wall time and replay references.
+
+All **172/172** native Controller and Planner commands completed their bounded
+CLI run and produced a replay. The two initial Tracking + Attitude MPC failures
+were caused by the original full SQP configuration; the controller now uses
+SQP-RTI, and both commands were rerun successfully with a real Crazyflow flight.
+The successful smoke cases include **256** browser replay records across the
+scene suites. Most OA episodes terminate at the deliberately short smoke
+timeout; this is an execution result, not a navigation score. The protocol
+checks command compatibility, physical execution and replay export. It does
+not replace the full Benchmark protocol for obstacle-avoidance success, policy
+convergence, complete Racing completion or real-time control claims.
 
 ## Convergence
 

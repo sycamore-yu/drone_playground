@@ -10,6 +10,21 @@ and Benchmark commands. [Release evidence](docs/validation.md) separates actual
 execution checks from policy convergence. This development version has not
 completed release acceptance.
 
+The Command Builder is a standalone interactive HTML page; GitHub README cannot
+run its JavaScript inline. From a local checkout, open `docs/command-builder.html`
+in a browser, or serve the repository over SSH:
+
+```bash
+python3 -m http.server 4176 --bind 127.0.0.1
+# On Windows: ssh -N -L 4176:127.0.0.1:4176 USER@SERVER
+```
+
+Then open `http://127.0.0.1:4176/docs/command-builder.html`. Native Play and
+Benchmark methods save optional RScope and browser replay files with the Hydra
+override `benchmark.record_replay=true`; automatic replay export is off by
+default. The local native-command smoke matrix and its replay index, when run,
+are stored in `results/command-builder-native-20261016/` (ignored by Git).
+
 ## Start
 
 Install [Pixi](https://pixi.sh), then run from this checkout:
@@ -78,7 +93,7 @@ static path excess and Traversability. See the [measurement protocol](docs/bench
 | Task | Policy observation | Algorithms | Native methods |
 |---|---|---|---|
 | Tracking | State | BPTT, SHAC, PPO | Sampling MPC, Attitude MPC, Full-State NMPC |
-| Racing | State | BPTT, SHAC, PPO | Three general trackers, Racing MPCC, Perception-Aware MPC (experimental) |
+| Racing | State | BPTT, SHAC, PPO | Sampling MPC, Attitude MPC, Full-State NMPC, Racing MPCC, Perception-Aware MPC (experimental) |
 | Static OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO/SUPER + generic trajectory tracker |
 | Dynamic OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO/SUPER + generic trajectory tracker |
 

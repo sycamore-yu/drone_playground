@@ -9,7 +9,7 @@ solvers execute on the host. Both use the same task and physical outcomes.
 | `controller=mellinger` | Crazyflow position-control conversion | JAX |
 | `controller=so3` | EGO SO3Control outer-loop equations | JAX |
 | `controller=sampling_mpc` | Sampling prediction and elite-mean update | Host with JAX prediction |
-| `controller=attitude_mpc` | LSY nonlinear OCP with acados | Host |
+| `controller=attitude_mpc` | LSY nonlinear OCP with acados SQP-RTI | Host |
 | `controller=full_state_nmpc` | RPS98-inspired 10-state quaternion NMPC, body-rate/thrust output | Host, acados |
 | `controller=racing_mpcc` | Arc-length contouring/lag/progress optimization for ordered gates | Host, acados |
 | `controller=perception_mpc` | Known-gate image-visibility and trajectory costs (experimental) | Host with JAX prediction |
