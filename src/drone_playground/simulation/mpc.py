@@ -214,7 +214,10 @@ class LSYAttitudeMPC:
         ocp.constraints.idxbu, ocp.constraints.x0 = np.arange(4), np.zeros(12)
         options = ocp.solver_options
         options.qp_solver, options.hessian_approx = "FULL_CONDENSING_HPIPM", "GAUSS_NEWTON"
-        options.integrator_type, options.nlp_solver_type = "ERK", "SQP"
+        # This controller runs at the physical control rate. SQP-RTI performs one
+        # real-time iteration per control update and matches the NMPC/MPCC
+        # controllers used elsewhere in the native execution path.
+        options.integrator_type, options.nlp_solver_type = "ERK", "SQP_RTI"
         options.tol, options.qp_solver_cond_N, options.qp_solver_warm_start = 1e-6, horizon, 1
         options.qp_solver_iter_max, options.nlp_solver_max_iter = 20, 50
         options.tf = horizon / frequency

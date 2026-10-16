@@ -3,6 +3,7 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 from drone_playground.simulation.controllers import IdealTracking, SO3Controller, so3_control
 from drone_playground.simulation.environment import make_environment
@@ -62,3 +63,31 @@ def test_sampling_mpc_executes_real_prediction():
     after = env.step_setpoint(state, command)
     assert float(after.time[0]) > 0
     controller.close()
+
+
+def test_attitude_mpc_runs_short_real_tracking_when_acados_is_installed(tmp_path):
+    """The acados tracker must solve the first physical Tracking update."""
+    import os
+    from pathlib import Path
+
+    source = os.getenv("ACADOS_SOURCE_DIR")
+    if not source or not Path(source, "lib/libacados.so").is_file():
+        pytest.skip("Install acados to run the native Attitude MPC flight test")
+    from drone_playground.simulation.mpc import LSYAttitudeMPC
+
+    controller = LSYAttitudeMPC(
+        horizon=5,
+        workdir=tmp_path / "acados",
+        acados_source=source,
+        python_path=os.getenv("ACADOS_PYTHON_PATH", ".cache/acados-python"),
+    )
+    env = make_environment(task="tracking", duration=0.12, control_level=controller.output_level)
+    try:
+        from drone_playground.simulation.runner import rollout_host
+
+        episodes, traces, _, _ = rollout_host(env, PlannerController(controller), seed=17)
+        assert episodes[0]["method_failure"] == ""
+        assert controller.last_status == 0
+        assert len(traces["time"]) > 2
+    finally:
+        controller.close()
