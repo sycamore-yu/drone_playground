@@ -1,0 +1,15 @@
+_target_: drone_playground.simulation.full_state_nmpc.FullStateNMPC
+drone: ${simulation.drone}
+frequency: ${simulation.method_hz}
+horizon: 10
+prediction_seconds: 0.3
+position_weight: 70.0
+velocity_weight: 12.0
+attitude_weight: 5.0
+rate_weight: 0.4
+thrust_weight: 3.0
+rate_limit: 5.0
+yaw: 0.0
+workdir: ${output}/acados-full-state-nmpc
+acados_source: ${oc.env:ACADOS_SOURCE_DIR,null}
+python_path: ${oc.env:ACADOS_PYTHON_PATH,.cache/acados-python}
