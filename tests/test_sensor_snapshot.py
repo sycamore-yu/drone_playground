@@ -47,7 +47,11 @@ def test_factory_uses_only_the_observation_point_count():
             ],
         )
         depth = compose(config_name="config", overrides=["experiment=oa_static_depth"])
-    assert depth.sensor.config.frequency_hz == 10
+        fast_depth = compose(
+            config_name="config", overrides=["experiment=oa_static_depth_10hz"]
+        )
+    assert depth.sensor.config.frequency_hz == 30
+    assert fast_depth.sensor.config.frequency_hz == 10
     assert set(config.sensor) == {"name", "config"}
     env = create_environment(config)
     try:

@@ -1,17 +1,34 @@
 # @package _global_
-# Controlled Racing/SHAC recipe. Retains nonzero terminal-value bootstrap.
-# Archived gradient diagnosis: terminal/physical norm ratio 4.69 at full weight.
+# Racing SHAC parameters verified by three archived training seeds and
+# independent native/LOTF runs in the 2026-10-16 validation study.
 defaults:
 - racing
 simulation:
   num_envs: 256
 learning:
   options:
-    horizon: 32
-    lr: 0.0001
-    critic_lr: 0.001
-    progress_reward_scale: 1.0
-    failure_cost: 50.0
+    horizon: 128
+    lr: 0.00008125
+    critic_lr: 0.0003
+    critic_epochs: 2
+    target_alpha: 0.95
+    progress_reward_scale: 2.0
+    failure_cost: 40.0
     bootstrap_weight: 0.2
     report_terminal_critic_grad: false
+  max_interactions: 42598400
   checkpoint_interval: 50
+  best:
+    source: evaluation
+    interval: 1638400
+    episodes: 100
+    seed: 1000000
+  early_stopping:
+    metric: success_rate
+    target: 1.0
+    patience: 0
+    min_delta: 0.0
+benchmark:
+  episodes: 100
+  seed_base: 2000000
+  record_replay: true
