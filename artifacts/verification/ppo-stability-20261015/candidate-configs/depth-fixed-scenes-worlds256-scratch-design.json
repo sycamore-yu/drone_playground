@@ -1,0 +1,32 @@
+{
+  "status": "registered",
+  "problem": "Switching a successful64worldpolicy to256worldsampling gave a148/149shortpilot but failedfullrepeat149/125/144/150/150/150/150. The finalfourpassescannotreplace thefailedwindow.",
+  "hypothesis": "Using256worldsfromrandominitialization mayavoid the midtrainingbatch-size/optimizer-history transition while retaining the later samplingbenefit. Thisisuntested, andfeweroptimizersteps atequalinteractions mayhurtinitialacquisition.",
+  "intervention": "Onlynum_envs64->256; evaluation/checkpointinterval16->4 preserves524288interactioncadence. ExistingnativePPOimplementation/objective unchanged.",
+  "initialization": "Seed0randomparameters; nocheckpoint,resume,teacher,replayeddata or transfer fromthefailedwindows.",
+  "runtime_commit": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "budget": {
+    "updates": 64,
+    "interactions": 8388608,
+    "rollout_worlds": 256,
+    "worlds_per_scene": 32,
+    "horizon": 512,
+    "screen_every_updates": 4,
+    "screen_every_interactions": 524288,
+    "quality_early_stop": "Onlyexistingfirst_full_validation_passselection; no qualityfailurepruningorpeakfallback. Budgetexhaustionreportedusingactualfinal."
+  },
+  "comparison": "Original64worldparallel scratchseed0 atmatchedinteractionsusingcachedscreening/caseaudits. Sameinitialseed/configexceptdeclaredbatch/cadence/outputchanges; donotclaimbitidenticalrandomstreamsorweightinitializationwithout evidence.",
+  "selection_and_stability": "Existinguseroption2screening->onefull150casevalidation. Ifselected,rununchanged256world7update917504stabilitywindowwithallsevenchecks sixscenes>=23/25 andoriginal-successretention>=95%; useactualfinal. Automaticnative2mbenchmarkisdevelopmentonly. Independent3mcohortreserveduntilfullrecipe/three-seedconditionsmet.",
+  "remaining_seeds": "Thisisaboundeddevelopmentseed0candidate. No three-seedconvergenceclaim. Onlypositiveacquisitionandfullretentionevidence justifyreplicatingtheselectedrecipeforotherindependentscratchseeds.",
+  "correctness": "ResolvedOmegaConfassertonlyfourfieldsdiffer,num_envsdivides8scenesand4minibatches,exactbudget/cadence,noinitialcheckpoint/resume. Reuseexistingnative256worldupdatesandsave/evaluationchecks; no newtrainingcode.",
+  "deferred_alternative": "Complete-successful-historypolicycloningcorpus isregisteredbutnotimplemented/collected. Prefer thisexistingbatchparameter before addingan auxiliaryloss.",
+  "config": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs/depth_fixed_scenes_parallel_worlds256_s0.yaml",
+  "output": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0",
+  "log": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-worlds256-scratch.log",
+  "command": "pixi run --frozen --manifest-path /home/tong/tongworkspace/simulation_dev/new_drone_playground/pyproject.toml env -u XLA_FLAGS PYTHONPATH=/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-parallel-window-reference/src SCIPY_ARRAY_API=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=4 XLA_PYTHON_CLIENT_PREALLOCATE=false JAX_COMPILATION_CACHE_DIR=/home/tong/tongworkspace/simulation_dev/new_drone_playground/tmp/jax-compilation-cache python -m drone_playground.cli --config-path /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/candidate-configs --config-name depth_fixed_scenes_parallel_worlds256_s0 > /home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/artifacts/verification/ppo-stability-20261015/depth-fixed-scenes-worlds256-scratch.log 2>&1",
+  "preflight": {
+    "native_hydra_composition": "ExactmatchafterexcludingtwooptionalWarpimportnoticesprintedto stdout; no configvalueschanged",
+    "config_diff": "Onlyworldcount,evaluation/checkpointcadence,output",
+    "new_training_code": false
+  }
+}

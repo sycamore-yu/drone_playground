@@ -1685,3 +1685,33 @@ the firsttwo checkpoints to test reproducibility with knownnativeGPUnumerics; it
 not a newindependenttrainingseed. No resume abstraction/code needed. Every one of
 seven checks must passallscene/retention gates; complete throughactualu183. Shortpilot
 cost isadditional, notpartof the917504budget. Stilldevelopment,notformalacceptance.
+
+Nextcollection-only preregistration is depth-parallel-success-episodes-design.json.
+Oldrehearsalnegative explicitlyreread:proceduralu30021/48,47/64stochsuccesses,188sparse
+64-stepwindowswith32burnin,0.1KL,final4/48ret3/21. Newproposedcorpus isoriginalparallel
+u176self-policy,64newtraininginitialstates,deterministicdemonstrationactions,complete
+successfulobservationhistories fromzeromemory; noevalstate. Require>=4successesineachsix
+primaryscene andteachermeanrecompute<1e-4beforeanylearningcandidate. SourceGaussian
+log_stdcomesfromfullstate. No BCweightselectedorcodeimplementedyet. CLEARsection3
+primarypaperread(policyKLterm,notfullV-trace/valueclonealgorithm). Thisis a prerequisite
+forapotentialPPO+self-policy-cloning diagnostic,notprooforformalrecipe.
+
+### Full256worldwindow terminal; nextbounded from-scratch check
+
+Completedexit0,917504interactions,7updates:149/125/144/150/150/150/150.
+D02=0then19causestwofailures. Final150andlastfour150do noterasefailures.
+Native source/caseidentitychecks remain valid; all7Actorupdatespositive.352301-.387329,
+noKLskip.112Adamstepsperlearner,246.986supdate,total720.247sincluding118.671setup.
+Initial15rawmetrics exactlymatchpilot; firstActorparamdelta.3788757vspilot.3788374.
+Firsttwochecks differfrompilotby3and24successoutcomes. Cachednewrecordsareworlds256-window/.
+Actualfinal183kept. Noextension/reanchoring/finaltest ofthisfailedpostpasscandidate.
+
+Finalfourpassingchecks motivate the smaller nextimplementation choice:existing256world
+configfromscratchseed0,notnewpolicy-cloningcode. The collection-only fallback isnow
+explicitlydeferred/notimplemented. Presetonlychanges64->256worlds,evaluation/checkpoint
+16->4(to retain524288interactioncadence) andoutput. Same8.388608m totalbudget64updates,
+noinitialcheckpoint/resume,otherfields identicalbyassertion. NativeHydracomposition
+exactlymatchesafterexcludingtwooptionalWarpimportnoticesfromstdout. Sourcepinned811.
+Newdesign/configdepth-fixed-scenes-worlds256-scratch-design.json and
+depth_fixed_scenes_parallel_worlds256_s0.yaml; nothree-seedclaim. Firstfullpass mustbe
+followedbyunchanged256worldfullstability; auto2mbenchmarkremainsdevelopment.

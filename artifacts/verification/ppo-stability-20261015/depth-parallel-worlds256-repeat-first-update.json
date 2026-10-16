@@ -1,0 +1,84 @@
+{
+  "scope": "Repeated initial native rollout summary check, no model hash or acceptance claim",
+  "all_15_raw_metrics_exact": true,
+  "comparison": {
+    "reward": {
+      "pilot": 0.004572821781039238,
+      "full_window": 0.004572821781039238,
+      "absolute_difference": 0.0
+    },
+    "progress_reward": {
+      "pilot": 0.003667389275506139,
+      "full_window": 0.003667389275506139,
+      "absolute_difference": 0.0
+    },
+    "arrival_reward": {
+      "pilot": 0.00135040283203125,
+      "full_window": 0.00135040283203125,
+      "absolute_difference": 0.0
+    },
+    "failure_reward": {
+      "pilot": -0.00035858154296875,
+      "full_window": -0.00035858154296875,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_episodes": {
+      "pilot": 224.0,
+      "full_window": 224.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_completed_successes": {
+      "pilot": 177.0,
+      "full_window": 177.0,
+      "absolute_difference": 0.0
+    },
+    "navigation_progress_metres": {
+      "pilot": 0.0733477920293808,
+      "full_window": 0.0733477920293808,
+      "absolute_difference": 0.0
+    },
+    "done_fraction": {
+      "pilot": 0.001708984375,
+      "full_window": 0.001708984375,
+      "absolute_difference": 0.0
+    },
+    "advantage_std": {
+      "pilot": 0.6990554928779602,
+      "full_window": 0.6990554928779602,
+      "absolute_difference": 0.0
+    },
+    "advantage_mean_pre_normalization": {
+      "pilot": 0.0271467175334692,
+      "full_window": 0.0271467175334692,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_mean": {
+      "pilot": 2.027667999267578,
+      "full_window": 2.027667999267578,
+      "absolute_difference": 0.0
+    },
+    "value_prediction_std": {
+      "pilot": 0.8972273468971252,
+      "full_window": 0.8972273468971252,
+      "absolute_difference": 0.0
+    },
+    "value_target_mean": {
+      "pilot": 2.0548148155212402,
+      "full_window": 2.0548148155212402,
+      "absolute_difference": 0.0
+    },
+    "value_target_std": {
+      "pilot": 1.211241602897644,
+      "full_window": 1.211241602897644,
+      "absolute_difference": 0.0
+    },
+    "critic_return_rmse_preupdate": {
+      "pilot": 0.6995823979377747,
+      "full_window": 0.6995823979377747,
+      "absolute_difference": 0.0
+    }
+  },
+  "pilot_actor_parameter_delta_norm": 0.3788374066352844,
+  "full_window_actor_parameter_delta_norm": 0.3788757026195526,
+  "interpretation": "Identical raw sampled summaries do not imply identical GPU optimizer output; the known native numerical variability remains. Both complete episode checks and all remaining full-window checks are required."
+}
