@@ -1,5 +1,5 @@
 {
-  "status": "registered",
+  "status": "running",
   "problem": "Switching a successful64worldpolicy to256worldsampling gave a148/149shortpilot but failedfullrepeat149/125/144/150/150/150/150. The finalfourpassescannotreplace thefailedwindow.",
   "hypothesis": "Using256worldsfromrandominitialization mayavoid the midtrainingbatch-size/optimizer-history transition while retaining the later samplingbenefit. Thisisuntested, andfeweroptimizersteps atequalinteractions mayhurtinitialacquisition.",
   "intervention": "Onlynum_envs64->256; evaluation/checkpointinterval16->4 preserves524288interactioncadence. ExistingnativePPOimplementation/objective unchanged.",
@@ -28,5 +28,18 @@
     "native_hydra_composition": "ExactmatchafterexcludingtwooptionalWarpimportnoticesprintedto stdout; no configvalueschanged",
     "config_diff": "Onlyworldcount,evaluation/checkpointcadence,output",
     "new_training_code": false
+  },
+  "pid": 2855827,
+  "runner_commit": "8db5dfb",
+  "runtime_source_verified": "811eabe0ede0981ebab5ef6c1794abf0725cbf2b",
+  "first_update_verified": {
+    "update": 1,
+    "interactions": 131072,
+    "finite_metrics": true,
+    "actor_grad_norm": 0.5780990123748779,
+    "depth_valid_fraction": 0.3859049081802368,
+    "kl_actor_update_skipped": 0,
+    "completed_training_episodes": 221.0,
+    "completed_training_successes": 0.0
   }
 }

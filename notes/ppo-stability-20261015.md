@@ -1715,3 +1715,11 @@ exactlymatchesafterexcludingtwooptionalWarpimportnoticesfromstdout. Sourcepinned
 Newdesign/configdepth-fixed-scenes-worlds256-scratch-design.json and
 depth_fixed_scenes_parallel_worlds256_s0.yaml; nothree-seedclaim. Firstfullpass mustbe
 followedbyunchanged256worldfullstability; auto2mbenchmarkremainsdevelopment.
+
+Scratch256Depthrun islive PID2855827/execsession50540, launchedfrom8db5dfb; native
+run.jsonconfirms811eabe/d3f2443source. Firstactualupdate1has131072interactions,finite
+metrics,Actorgrad.578099,depthvalidfraction.385905,noKLskip. Completedtrainingepisodes
+0/221success atinitialrandompolicy, notscreening orconvergence. Firstupdate74.101s,
+native sessionwall237.467sincludinginitialization. Firstscreenpendingatupdate4/524288.
+Nootherownedtrainingjobslive. Do notrelauch/resetthisprocess. Exactcommand/config/design
+aredepth-fixed-scenes-worlds256-scratch-design.json; outputresults/fixed_scenes_parallel_worlds256/depth_ppo_s0.
