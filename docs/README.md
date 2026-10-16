@@ -15,7 +15,9 @@ Benchmark commands. Start with [installation](installation.md), then use
 `Accepted` records user approval; implementation and verification are separate.
 ADR-0026 defines training and evaluation ownership, ADR-0027 defines optional
 reward selection and checkpoint publication, and ADR-0028 defines paired
-Benchmark cases. Earlier protocols retain historical context.
+Benchmark cases. ADR-0029 specifies the new MJCF suites and randomization
+presets; ADR-0030 covers Racing optimization and persistent training playback.
+Earlier protocols retain historical context.
 ADR-0022 remains experimental and is not an approved replacement architecture.
 
 | ADR | Decision |
@@ -47,6 +49,8 @@ ADR-0022 remains experimental and is not an approved replacement architecture.
 | [0026](adr/0026-training-benchmark-release-separation.md) | Separate training, simulation, and benchmarking |
 | [0027](adr/0027-reward-selection-and-checkpoint-publication.md) | Reward selection and checkpoint publication |
 | [0028](adr/0028-paired-benchmark-cases.md) | Paired initial flight cases for policy and planner comparisons |
+| [0029](adr/0029-navigation-suites-and-randomization-presets.md) | Native navigation suites and domain randomization |
+| [0030](adr/0030-racing-mpc-and-browser-replay.md) | Racing MPC baselines and persistent browser playback |
 
 Local research notes, transient diagnostics, and historical run archives remain
 outside the public source surface. They preserve their original source identity

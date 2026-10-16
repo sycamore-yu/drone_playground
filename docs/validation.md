@@ -128,6 +128,28 @@ HTTP server. Session `tracking_ppo_native_s219831_6st85j6x` retains that example
 All three learning algorithms passed focused preview and checkpoint-continuation
 checks. This short run is an integration check, not convergence evidence.
 
+## Extended scene and preset integration (2026-10-16)
+
+The optional MJCF suites add twelve independently generated Forest, Maze,
+Dense, and Dynamic Dense maps, with Easy/Medium/Hard variants. All twelve
+compile with MuJoCo, have collision-free task endpoints, and regenerate
+identically from their tracked generator. Dynamic geometry changes with time,
+and Maze walls obstruct the direct nominal route. The `nominal`, `dynamics`,
+and `sim2real` Hydra groups construct usable Crazyflow environments with the
+documented model perturbations, delays, and gust parameters.
+
+The extended Command Builder generates 486 unique commands (42 Train,
+334 Play, 110 Benchmark), all of which compose through Hydra. The original
+230-command core suite retains its prior runtime evidence. Expanded commands
+require additional real method execution before claiming the same coverage;
+configuration composition alone is not runtime validation.
+
+The final training-media update retains a browser-playable animation of the
+actual last one-world rollout fragment even when the Dashboard was Off. It
+does not recover older unrecorded rollouts or substitute a new evaluation
+trajectory. The updated scene, preset, preview, TrainingState continuation, and
+Command Builder checks passed 23 focused tests; this is not a convergence run.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.

@@ -22,6 +22,24 @@ use the identical initial states serially. Each episode records a `case_id`.
 `benchmark.seed_base` defaults to 2,000,000;
 Autoresearch search evaluation defaults to a distinct 1,600,000 cohort.
 
+### Additional native-MJCF task families
+
+The optional `forest_*`, `maze_*`, `dense_*`, and `dynamic_dense_*` scenes each
+provide Easy/Medium/Hard difficulty. They use the same task bounds, physical
+collision conditions, Depth/LiDAR geometry, and pairwise benchmark case IDs
+as the core maps. Select them via `scene=` for Play or `benchmark.scenes=` for
+quantitative comparison:
+
+```bash
+pixi run play task=navigation sensor=state method=controller \
+  scene=forest_easy 'benchmark.scenes=[forest_easy]' simulation.num_envs=1
+pixi run benchmark experiment=oa_static_depth learning=ppo checkpoint=best \
+  'benchmark.scenes=[forest_easy,forest_medium,forest_hard]'
+```
+
+These assets reproduce task *types*, not the original FlightBench maps or their
+reported results. The default S/D suite remains unchanged.
+
 ## Metrics
 
 Success rate includes all episodes. The other flight metrics average successful

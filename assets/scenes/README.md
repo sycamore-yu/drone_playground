@@ -9,6 +9,17 @@ time. Fixed OA maps are reserved for Benchmark; training samples procedural maps
 | Racing | `racing/lsy_level0.xml`, `lsy_native.yaml` | Level0 gate order 1, 2, 3, 4, 2 |
 | Static OA | S01, S02, S03, S06 | Fixed static benchmark geometry |
 | Dynamic OA | D01, D02, D03, D06 | Fixed moving-obstacle benchmark geometry |
+| Forest | `forest_{easy,medium,hard}.xml` | Deterministic tree-trunk layouts |
+| Maze | `maze_{easy,medium,hard}.xml` | Alternating narrow passages with forced detours |
+| Dense | `dense_{easy,medium,hard}.xml` | Mixed Box, Cylinder, and Capsule obstacles |
+| Dynamic dense | `dynamic_dense_{easy,medium,hard}.xml` | Dense geometry with prescribed moving objects |
+
+The twelve additional cases are new MJCF interpretations of FlightBench-style
+navigation task families. They are **not the original FlightBench assets** or
+exact reconstructions of its published maps. Their geometry is fixed in Git;
+`python tools/build_navigation_scenes.py` regenerates identical files. Hydra
+provides corresponding `scene` names, and the Command Builder lists these as
+optional Play and Benchmark scene families.
 
 Navigation bounds are `[0,-20,0.5]` to `[100,20,6]` m, with nominal start
 `(2,0,3)` and goal `(98,0,3)`. `navigation/catalog.xml` records origin and geometry
@@ -36,7 +47,8 @@ position = origin + (ax,ay,az)*triangle
 ```
 
 D01/D02/D03 use trefoil motion; D06 includes linear bounce. Collision, depth,
-LiDAR, and replay use the same geometry pose at each timestamp.
+LiDAR, and replay use the same geometry pose at each timestamp. The new
+`dynamic_dense_*` files use the existing linear-bounce motion convention.
 
 ## Attribution
 

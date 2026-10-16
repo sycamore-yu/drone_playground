@@ -23,7 +23,9 @@ than privileged map geometry.
 
 OA training uses independent procedural layouts for each world and episode.
 Static OA and Dynamic OA have separate policies and training distributions.
-The unchanged S01/S02/S03/S06 and D01/D02/D03/D06 maps are fixed benchmark suites.
+The unchanged S01/S02/S03/S06 and D01/D02/D03/D06 maps are fixed core suites.
+Twelve native-MJCF Forest/Maze/Dense extensions are optional, fixed benchmark
+cases with their own source/geometry identities and release checks.
 
 ## Runtime release checks
 

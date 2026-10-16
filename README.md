@@ -26,7 +26,9 @@ Training runs through Autoresearch Gym and writes its run directory to the final
 summary. Navigation training samples independent obstacle layouts; fixed S/D
 maps are used only for evaluation.
 The [Autoresearch Dashboard](docs/autoresearch.md#training-visuals) can display
-optional live MuJoCo frames and sampled trajectories from the training rollout.
+optional live MuJoCo frames and sampled trajectories. New Autoresearch runs also
+save an animated WebP of the final training Rollout fragment, even if visualization
+was Off during training.
 
 ```bash
 pixi run train experiment=oa_static_depth learning=ppo seed=0
@@ -82,8 +84,16 @@ static path excess and Traversability. See the [measurement protocol](docs/bench
 
 BPTT and SHAC can use native Crazyflow derivatives, LOTF, or point-mass-lag
 backward dynamics. The forward plant remains Crazyflow. The builder selects
-compatible action and loss settings. New physics backends, learning libraries,
-and scene families are outside this release.
+compatible action and loss settings. The core suite retains 230 tested historical
+commands; the optional Forest/Maze/Dense MJCF suite expands the builder to 486
+configurations. See [validation](docs/validation.md) for the separate runtime
+and configuration evidence. New physics backends and learning libraries remain
+outside this release.
+
+Use `randomization=nominal`, `randomization=dynamics`, or
+`randomization=sim2real` with training commands. The optional presets use
+Crazyflow physical parameter randomization, actuation delay, sensor latency,
+and gust forces; pixel and LiDAR-ray noise are not currently implemented.
 
 ## Development
 

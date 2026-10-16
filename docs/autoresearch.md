@@ -93,11 +93,17 @@ sampled procedural obstacle state during navigation training.
 
 Frames are 640 × 360 JPEG images; a manifest describes sampled trajectory frames.
 The Dashboard serves them from the active session's `live/` directory. Renderer
-errors appear in `live/preview-render.log`. Camera images and LiDAR points are
+errors appear in `live/preview-render.log`. On budget completion, the last
+recorded one-world training Rollout fragment is saved regardless of the visual
+mode as `live/last_training_rollout.webp`, alongside a persistent manifest. The
+Dashboard shows a **Saved final rollout** link after it detects the artifact.
+The animation retains the last update's recorded poses, not an independently
+resampled episode. Camera images and LiDAR points are
 not part of this world-camera preview; use a sensor-recording Benchmark or RScope
 replay when sensor visualization is required. Runs launched before this feature
-cannot acquire training visuals retroactively. The default mode is Off so that
-headless throughput is unchanged until a user requests a preview.
+cannot acquire their original training frames retroactively. The default mode is
+Off; only the final short recording is generated automatically. Browser-native
+MJCF playback using MuJoCo WebAssembly remains a separate optional extension.
 
 The Episode Return chart uses environment steps on the horizontal axis for
 native training. Its blue series is the mean sum of per-step rewards over
