@@ -1,14 +1,47 @@
+diff --git a/autoresearch_gym/cli.py b/autoresearch_gym/cli.py
+index 3493d1f..d3c5d65 100644
+--- a/autoresearch_gym/cli.py
++++ b/autoresearch_gym/cli.py
+@@ -287,6 +287,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
+ 
+     def do_GET(self) -> None:
+         parsed = urlparse(self.path)
++        if parsed.path == "/" and (self.dashboard_root / "dashboard/index.html").is_file():
++            self.send_response(302)
++            self.send_header("Location", "/dashboard/" + (f"?{parsed.query}" if parsed.query else ""))
++            self.end_headers()
++            return
+         if parsed.path == "/_autoresearch/identity":
+             self._send_json(
+                 200,
 diff --git a/autoresearch_gym/external/runner.py b/autoresearch_gym/external/runner.py
-index 55373f3..6621dd0 100644
+index 55373f3..2f536c1 100644
 --- a/autoresearch_gym/external/runner.py
 +++ b/autoresearch_gym/external/runner.py
-@@ -192,9 +192,12 @@ def run_external_experiment(
+@@ -86,11 +86,12 @@ def _write_external_live_status(
+             "run_id": run_id,
+             "tag": tag,
+             "status": status,
+-            "started_at": time.time(),
++            "started_at": train_summary.get("started_at", time.time()),
+             "updated_at": time.time(),
+             "train_episodes": summary.get("benchmark", {}).get("train_episodes"),
+             "train_seconds": summary.get("benchmark", {}).get("train_seconds"),
+             "budget_mode": summary.get("benchmark", {}).get("budget_mode"),
++            "train_env_steps": summary.get("benchmark", {}).get("train_env_steps"),
+             "eval_episodes": summary.get("benchmark", {}).get("eval_episodes"),
+             "max_steps": summary.get("benchmark", {}).get("max_steps"),
+             "render_mode": summary.get("benchmark", {}).get("render_mode", "rgb_array"),
+@@ -192,9 +193,15 @@ def run_external_experiment(
      artifacts = target.fetch_artifacts(bundle)
      train_summary = backend.normalize_train(artifacts)
      validate_train_curve_contract(train_summary)
 -    normalize_train_summary_curve(train_summary)
 +    if train_summary.get("curve_status") != "unsupported":
-+        normalize_train_summary_curve(train_summary)
++        # Backend-measured aggregates take precedence over estimates from sampled curves.
++        derived = dict(train_summary)
++        normalize_train_summary_curve(derived)
++        train_summary = {**derived, **train_summary}
  
 -    checkpoint_path = artifacts.root / "agent_checkpoint.pt"
 +    checkpoint_path = Path(train_summary.get("checkpoint_path", "agent_checkpoint.pt"))
@@ -17,7 +50,7 @@ index 55373f3..6621dd0 100644
      if not checkpoint_path.exists():
          raise FileNotFoundError(f"external backend did not produce checkpoint: {checkpoint_path}")
  
-@@ -253,7 +256,8 @@ def run_external_experiment(
+@@ -253,7 +260,8 @@ def run_external_experiment(
              "env_kwargs": benchmark.env_kwargs,
              "train_episodes": benchmark.train_episodes,
              "train_seconds": benchmark.train_seconds,
@@ -27,3 +60,166 @@ index 55373f3..6621dd0 100644
              "eval_episodes": benchmark.eval_episodes,
              "max_steps": benchmark.max_steps,
              "render_mode": benchmark.render_mode,
+diff --git a/dashboard/index.html b/dashboard/index.html
+index 7d5f723..2db958e 100644
+--- a/dashboard/index.html
++++ b/dashboard/index.html
+@@ -874,12 +874,12 @@
+ 
+             <div class="chart-card">
+               <div class="chart-head">
+-                <h2>Current Candidate</h2>
+-                <span id="episodesSeen">0 rollout batches</span>
++                <h2>Episode Return</h2>
++                <span id="episodesSeen">0 collection windows</span>
+               </div>
+               <div class="chart-legend" aria-label="Current run return legend">
+-                <span class="legend-item"><span class="legend-swatch" style="--swatch-color: #54d2ff"></span>Collection</span>
+-                <span class="legend-item"><span class="legend-swatch point" style="--swatch-color: #8cff98"></span>Policy probe</span>
++                <span class="legend-item"><span class="legend-swatch" style="--swatch-color: #54d2ff"></span>Training episodes (window mean)</span>
++                <span class="legend-item"><span class="legend-swatch point" style="--swatch-color: #8cff98"></span>Fixed policy evaluation</span>
+                 <span class="legend-item"><span class="legend-swatch dashed" style="--swatch-color: #ffb454"></span>Previous best</span>
+               </div>
+               <canvas id="returnChart" width="520" height="300"></canvas>
+@@ -907,15 +907,15 @@
+               <div class="card-detail"><span id="parallelEnvsValue">-</span> parallel envs</div>
+             </div>
+             <div class="card">
+-              <div class="label">Completed Rollouts</div>
++              <div class="label">Completed Episodes</div>
+               <div class="value" id="completedEpisodesValue">-</div>
+             </div>
+             <div class="card">
+-              <div class="label">Gradient Updates</div>
++              <div class="label">Policy Updates</div>
+               <div class="value" id="gradientUpdatesValue">-</div>
+             </div>
+             <div class="card">
+-              <div class="label">Average Return</div>
++              <div class="label">Training Mean Episode Return</div>
+               <div class="value" id="avgReturnValue">-</div>
+             </div>
+             <div class="card">
+@@ -935,8 +935,9 @@
+                 <strong id="iterationCount">-</strong>
+               </div>
+               <div class="mini-card">
+-                <div class="label">Best Score</div>
++                <div class="label">Best Candidate Score</div>
+                 <strong id="bestScore">-</strong>
++                <small>Benchmark objective, not training Episode Return.</small>
+               </div>
+               <div class="mini-card">
+                 <div class="label">Best Candidate</div>
+@@ -961,7 +962,7 @@
+                     <th>cycle</th>
+                     <th>tag</th>
+                     <th>score</th>
+-                    <th>eval return</th>
++                    <th>evaluation return (if recorded)</th>
+                     <th>decision</th>
+                     <th>candidate description</th>
+                   </tr>
+@@ -1152,8 +1153,8 @@
+ 
+       function sessionSummaryLine(item) {
+         const parts = [item.status];
+-        if (Number.isFinite(Number(item.episodes))) parts.push(`${item.episodes} completed rollouts`);
+-        if (Number.isFinite(Number(item.avg_return))) parts.push(`avg ${formatNumber(item.avg_return, 1)}`);
++        if (item.episodes != null && Number.isFinite(Number(item.episodes))) parts.push(`${item.episodes} completed episodes`);
++        if (item.avg_return != null && Number.isFinite(Number(item.avg_return))) parts.push(`avg ${formatNumber(item.avg_return, 1)}`);
+         return parts.filter(Boolean).join(" · ");
+       }
+ 
+@@ -1226,12 +1227,15 @@
+       }
+ 
+       function formatNumber(value, digits = 3) {
++        if (value === null || value === undefined || value === "") return "-";
+         const numeric = Number(value);
+         if (!Number.isFinite(numeric)) return "-";
+         return numeric.toFixed(digits);
+       }
+ 
+       function formatPct(value) {
++        if (value === null || value === undefined || value === "") return "-";
++        if (!Number.isFinite(Number(value))) return "-";
+         return `${(100 * Number(value || 0)).toFixed(1)}%`;
+       }
+ 
+@@ -1529,6 +1533,12 @@
+       }
+ 
+       function returnChartXValues(episodes) {
++        if (budgetModeFor(latestRun) === "env_steps") {
++          return episodes.map((entry, index) => {
++            const steps = Number(entry?.step);
++            return entry?.step != null && Number.isFinite(steps) ? steps : index;
++          });
++        }
+         if (budgetModeFor(latestRun) === "time") {
+           return episodes.map((entry, index) => {
+             const elapsed = Number(entry?.elapsed_seconds);
+@@ -2314,6 +2324,7 @@
+ 
+       function budgetModeFor(run) {
+         const explicit = String(run?.budget_mode || "").toLowerCase();
++        if (explicit === "env_steps") return "env_steps";
+         if (explicit === "episodes" || explicit === "time") return explicit;
+         const totalEpisodes = Number(run?.train_episodes || 0);
+         const trainSeconds = Number(run?.train_seconds || 0);
+@@ -2322,6 +2333,16 @@
+       }
+ 
+       function renderActiveCycle() {
++        const envSteps = Number(latestRun.train_env_steps);
++        if (budgetModeFor(latestRun) === "env_steps" && envSteps > 0) {
++          const current = Number(latestRun.current?.env_steps ?? latestRun.current?.step ?? 0);
++          const complete = Number.isFinite(current) ? Math.max(0, current) : 0;
++          const pct = Math.min(100, Math.round(100 * complete / envSteps));
++          updateText("activeCandidate", latestRun.tag || "-");
++          updateText("activeProgressText", `${pct}% · ${complete}/${envSteps} environment steps`);
++          document.getElementById("activeProgress").style.width = `${pct}%`;
++          return;
++        }
+         const trainSeconds = Number(latestRun.train_seconds || 0);
+         const total = Number(latestRun.train_episodes || 0);
+         const complete = Number(latestRun.episodes_complete || latestRun.current?.completed_episodes || latestRun.current?.episodes_complete || 0);
+@@ -2504,6 +2525,8 @@
+       }
+ 
+       function gradientUpdateCount(run, losses = {}) {
++        const policyUpdates = Number(run?.current?.policy_updates ?? run?.current?.info_metrics?.update);
++        if (Number.isFinite(policyUpdates)) return policyUpdates;
+         const direct = Number(losses.gradient_updates);
+         if (Number.isFinite(direct)) return direct;
+         const metrics = run?.train?.last_metrics || run?.last_metrics || {};
+@@ -2514,6 +2537,8 @@
+       }
+ 
+       function parallelEnvCount(run, losses = {}) {
++        const declared = Number(run?.num_envs);
++        if (Number.isFinite(declared) && declared > 0) return declared;
+         const direct = Number(losses.num_envs ?? losses.mjlab_num_envs);
+         if (Number.isFinite(direct) && direct > 0) return direct;
+         const metrics = run?.train?.last_metrics || run?.last_metrics || run?.current?.info_metrics || {};
+@@ -2595,8 +2620,8 @@
+           const ghostLabel = bestGhostEpisodes.length ? ` · ghost ${shortText(bestGhostLabel, 28)}` : "";
+           const counts = episodeRecordCounts(latestEpisodes);
+           const recordLabel = counts.probeCount
+-            ? `${counts.collectionCount} collection / ${counts.probeCount} probe`
+-            : `${counts.collectionCount} rollout batches`;
++            ? `${counts.collectionCount} windows / ${counts.probeCount} probes`
++            : `${counts.collectionCount} collection windows`;
+           updateText("episodesSeen", `${recordLabel}${ghostLabel}`);
+           updateText("tag", run.tag ?? "-");
+           updateText("previousBestTag", bestGhostLabel || "-");
+@@ -2619,7 +2644,7 @@
+             drawXAxisCaption(
+               returnCtx,
+               returnChart,
+-              budgetMode === "episodes" ? "Completed rollouts" : "Training time",
++              budgetMode === "env_steps" ? "Environment steps" : budgetMode === "episodes" ? "Completed episodes" : "Training time",
+             );
+           }
+           drawMetadataDiagnostics(latestEpisodes, data.latest_losses, data);
