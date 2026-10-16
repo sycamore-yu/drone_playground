@@ -102,6 +102,18 @@ optimization.
 into lower-level control requests. Its computation can include optimization or
 learning.
 
+**Trajectory-Tracking Controller**: A controller that follows an externally
+specified, time-indexed trajectory. It does not, by that ability alone,
+compute a collision-free path or determine gate-passing order.
+
+**Task-Specific Controller**: A controller whose optimization problem depends
+on task-specific state, constraints or reference semantics; its applicability
+cannot be inferred from its shared physical output interface alone.
+
+**Controller Compatibility**: A match between the task's available reference,
+the controller's required information and the physical output contract.
+Compatibility does not establish convergence, safety or real-time performance.
+
 **Policy**: A mapping from permitted observations and optional internal memory
 to decisions.
 

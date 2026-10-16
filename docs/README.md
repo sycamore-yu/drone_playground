@@ -14,6 +14,8 @@ RScope record format and its browser export.
 
 [Racing MPC](racing-optimization.md) documents the two integrated controllers,
 their source references, and the separate performance acceptance status.
+[Controller compatibility](adr/0033-controller-compatibility-and-reference-tracking.md)
+defines which tasks provide the reference data required by each method.
 
 ## Architecture decisions
 
@@ -22,6 +24,7 @@ ADR-0026 defines training and evaluation ownership, ADR-0027 defines optional
 reward selection and checkpoint publication, and ADR-0028 defines paired
 Benchmark cases. ADR-0029 specifies the new MJCF suites and randomization
 presets; ADR-0030 covers Racing optimization and persistent training playback.
+ADR-0033 records the compatible command catalog and general Full-State NMPC.
 Earlier protocols retain historical context.
 ADR-0022 remains experimental and is not an approved replacement architecture.
 
@@ -56,6 +59,7 @@ ADR-0022 remains experimental and is not an approved replacement architecture.
 | [0028](adr/0028-paired-benchmark-cases.md) | Paired initial flight cases for policy and planner comparisons |
 | [0029](adr/0029-navigation-suites-and-randomization-presets.md) | Native navigation suites and domain randomization |
 | [0030](adr/0030-racing-mpc-and-browser-replay.md) | Racing MPC baselines and persistent browser playback |
+| [0033](adr/0033-controller-compatibility-and-reference-tracking.md) | Controller reference capabilities and Full-State NMPC |
 
 Local research notes, transient diagnostics, and historical run archives remain
 outside the public source surface. They preserve their original source identity

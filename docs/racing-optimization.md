@@ -63,10 +63,17 @@ are documented there, not exposed as runnable mainline controller presets.
 ## Future controller comparisons
 
 The current classical tracking controllers are Sampling MPC and acados LSY
-Attitude MPC, both independent of Racing's new contouring formulation. Planner
+Attitude MPC, plus the added RPS98-inspired Full-State NMPC, independent of
+Racing's task-specific contouring formulation. Planner
 baselines should supply a common time-stamped position/velocity/acceleration
 reference, then be paired with the *same* Tracking Controller to distinguish
 planning performance from tracking quality.
+
+The Full-State NMPC uses 10 nominal rigid-body states
+`[position, quaternion, velocity]` and four input variables
+`[collective thrust, body rates]`. It produces Crazyflow's physical
+`body_rate` input after solving acados; all three generic trajectory trackers
+can follow Racing's timed spline or time-valid EGO/SUPER navigation plans.
 
 Potential next methods, not yet installed or benchmarked:
 

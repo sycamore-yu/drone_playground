@@ -183,9 +183,35 @@ meshes, and eight Mocap bodies loaded. Browser Play advanced from frame 100 to
 completed at its 0.16-second test deadline without a method exception. A running
 Dashboard from an older worktree is not automatically replaced by a Git commit.
 
-The expanded 490-command runtime matrix and complete CPU test suite have not
-been run end-to-end after this selective integration. They remain separate
-from the tested configuration-composition and representative method behavior.
+The earlier 490-command candidate and complete CPU test suite were not run
+end-to-end after that selective integration. The current 550-command revision
+also requires a full runtime sweep before release acceptance. These remain
+separate from configuration composition and representative method checks.
+
+## Full-State NMPC and controller compatibility (2026-10-16)
+
+The new RPS98-inspired, locally authored 10-state acados Full-State NMPC uses
+Crazyflow's native BodyRate physical input. It accepts timestamped reference
+position, velocity and acceleration. Its pure reference-orientation calculation
+and Task configuration are tested separately from acados/physical execution.
+The six-case NMPC test suite passed, including a compiled acados/Crazyflow
+tracking flight and consumption of a native position/velocity/acceleration
+`Trajectory` within Navigation. A real short Tracking Benchmark finished with
+20 synchronized decision-time probes: **7.97 ms mean** and **8.92 ms P95**
+on the tested CPU. A 0.4-second Racing Play also executed with no solver
+exception, but naturally did not complete the course during that short window.
+These checks demonstrate interface feasibility, not tracking convergence or
+multi-scene navigation capability. EGO/SUPER ROS worker execution with the new
+NMPC has not yet been rerun.
+
+The revised Command Builder categorizes methods by required reference, rather
+than by an unrestricted task × solver Cartesian product. It now generates
+**550 distinct compatible commands** (42 Train, 380 Play, 128 Benchmark); all
+550 passed Hydra composition, including Full-State NMPC with EGO and SUPER
+planner configurations, Racing's timed spline, and Tracking. The corresponding
+full runtime command sweep has not been completed. The reference-compatibility
+release proposal and RPG Quadrotor Control adaptation limitations are recorded
+in [ADR-0033](adr/0033-controller-compatibility-and-reference-tracking.md).
 
 ## Convergence
 

@@ -77,16 +77,17 @@ static path excess and Traversability. See the [measurement protocol](docs/bench
 
 | Task | Policy observation | Algorithms | Native methods |
 |---|---|---|---|
-| Tracking | State | BPTT, SHAC, PPO | Sampling MPC, Attitude MPC |
-| Racing | State | BPTT, SHAC, PPO | Racing MPCC (acados), Perception-Aware Sampling MPC (JAX, experimental) |
-| Static OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO + MPC, SUPER + MPC |
-| Dynamic OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO + MPC, SUPER + MPC |
+| Tracking | State | BPTT, SHAC, PPO | Sampling MPC, Attitude MPC, Full-State NMPC |
+| Racing | State | BPTT, SHAC, PPO | Three general trackers, Racing MPCC, Perception-Aware MPC (experimental) |
+| Static OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO/SUPER + generic trajectory tracker |
+| Dynamic OA | Depth or LiDAR | BPTT, SHAC, PPO | EGO/SUPER + generic trajectory tracker |
 
 BPTT and SHAC can use native Crazyflow derivatives, LOTF, or point-mass-lag
 backward dynamics. The forward plant remains Crazyflow. The builder selects
 compatible action and loss settings. The core suite retains 230 tested historical
-commands; the Forest/Maze/Dense MJCF suite and two Racing MPC methods expand the builder to 490
-configurations. See [validation](docs/validation.md) for the separate runtime
+commands; the optional Forest/Maze/Dense MJCF suite and capability-compatible
+controllers extend the builder to **550 configurations** (42 Train, 380 Play,
+128 Benchmark). See [validation](docs/validation.md) for the separate runtime
 and configuration evidence. New physics backends and learning libraries remain
 outside this release.
 
@@ -94,6 +95,10 @@ The [Racing MPC guide](docs/racing-optimization.md) documents the acados MPCC
 and JAX perception-cost controller. The original RPG Time-Optimal adapter and
 ROS1/ACADO PAMPC are deliberately excluded from `main`: the former has not
 passed Crazyflow closed-loop acceptance, and the latter is not integrated.
+The [controller compatibility decision](docs/adr/0033-controller-compatibility-and-reference-tracking.md)
+distinguishes task-specific Racing controllers from reusable trajectory
+trackers; the new RPS98-inspired Full-State NMPC tracks planned paths with
+Crazyflow's physical BodyRate input.
 The [visualization guide](docs/visualization.md) keeps Autoresearch as the
 training dashboard, adds native-MJCF browser replay, and retains RScope for
 sensor and planner overlays.
