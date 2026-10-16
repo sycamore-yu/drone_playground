@@ -1734,3 +1734,21 @@ true goal-progress fields, which remain explicitly unavailable. The new artifact
 `summarize_worlds256_scratch.py` checks complete48case identity/scene/event consistency,
 reads each new screen once, and reuses both earlier current and original control caches.
 The registered8,388,608 budget continues unchanged. No convergence claim or new loss.
+
+### Constant256 scratch first full pass and unchanged stability registration
+
+New complete screens u12/u16/u20/u24 are40/16/39/48. The40->16 loss is retained as
+acquisition-stage regression. Actual first full validation u24 at3145728 interactions
+is149/150, six scenes25/25/25/25/25/24. This is earlier than original64world seed0
+first full pass at5767168, but remains single-seed evidence. Native automatic2m
+benchmark has identical primary counts; auxiliaryS06=0/25,D06=25/25. It is development
+only and does not consume the3m final cohort. Native process exited0; total wall
+1685.970s, native session wall1684.968s, sum24 updates804.822s. These wall measures
+already include setup/evaluation; do not add them again. Full reports/CSVs, run record
+and24 metrics cached once underworlds256-scratch. Complete model stays native.
+
+Registered unchanged sourceu24 continuation7 updates917504interactions, everyupdate
+150case validation at the original1.5m seedbase. Source149 successes require142
+retained, plus every scene>=23/25. Keepfullsource physics/history/RNG/Adam,256worlds
+and originalPPO settings. No diagnostic flags/world expansion. Execute entirewindow
+evenifanycheckfails. This is the stability prerequisite, not final3seed acceptance.

@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed_first_full_pass_stability_pending",
   "problem": "Switching a successful64worldpolicy to256worldsampling gave a148/149shortpilot but failedfullrepeat149/125/144/150/150/150/150. The finalfourpassescannotreplace thefailedwindow.",
   "hypothesis": "Using256worldsfromrandominitialization mayavoid the midtrainingbatch-size/optimizer-history transition while retaining the later samplingbenefit. Thisisuntested, andfeweroptimizersteps atequalinteractions mayhurtinitialacquisition.",
   "intervention": "Onlynum_envs64->256; evaluation/checkpointinterval16->4 preserves524288interactioncadence. ExistingnativePPOimplementation/objective unchanged.",
@@ -41,5 +41,42 @@
     "kl_actor_update_skipped": 0,
     "completed_training_episodes": 221.0,
     "completed_training_successes": 0.0
+  },
+  "results": {
+    "status": "first_full_validation_pass_stability_pending",
+    "update": 24,
+    "interactions": 3145728,
+    "full_validation_successes": 149,
+    "full_validation_per_scene": {
+      "S01": 25,
+      "S02": 25,
+      "S03": 25,
+      "D01": 25,
+      "D02": 25,
+      "D03": 24
+    },
+    "baseline_successes": 149,
+    "minimum_retained_successes": 142,
+    "automatic_development_benchmark": {
+      "S01": 25,
+      "S02": 25,
+      "S03": 25,
+      "D01": 25,
+      "D02": 25,
+      "D03": 24,
+      "S06": 0,
+      "D06": 25
+    },
+    "automatic_benchmark_seed_base": 2000000,
+    "training_update_seconds": 804.8223137919267,
+    "native_total_wall_seconds": 1685.9700058869785,
+    "native_session_wall_seconds": 1684.9681014340022,
+    "source_checkpoint": "/home/tong/tongworkspace/simulation_dev/.worktrees/new_drone_playground/ppo-stability-acceptance/results/fixed_scenes_parallel_worlds256/depth_ppo_s0/checkpoints/model_000024",
+    "limits": [
+      "One seed only; acquisition includes 40->16->39->48 screening regression before first full pass",
+      "Native accepted status is selection, not stability or final acceptance",
+      "Automatic benchmark is development only; S06 auxiliary 0/25",
+      "Independent 3000000 final cohort remains unused"
+    ]
   }
 }
