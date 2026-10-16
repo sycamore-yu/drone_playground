@@ -15,6 +15,7 @@ from drone_playground.learning.trainer import Trainer
 from drone_playground.simulation.factory import create_environment, create_method
 from drone_playground.simulation.policy import checkpoint_summary, load_policy
 from drone_playground.simulation.records import atomic_json, gpu_usage
+from drone_playground.simulation.training_visuals import TrainingPreview
 
 
 def train(config, record):
@@ -102,6 +103,7 @@ def train(config, record):
         best_source=config.learning.best.source,
     )
     started = time.monotonic()
+    preview = TrainingPreview()
     initial_interactions = int(state.interactions)
     stop_requested = False
     checkpoint_path = None
@@ -185,6 +187,13 @@ def train(config, record):
             state = candidate
             selection.observe(metrics)
             update = int(state.updates)
+            if preview.session is not None:
+                preview.capture(
+                    state.env_state,
+                    trainer.env.scene,
+                    getattr(trainer, "last_preview", {}),
+                    update=update,
+                )
             if (
                 update == 1
                 or update % config.learning.log_interval == 0

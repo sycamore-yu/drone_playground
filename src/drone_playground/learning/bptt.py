@@ -24,6 +24,9 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
         action = trainer.method.deterministic(raw)
         after = trainer._step(env_state, action, differentiable=True)
         cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        terms["_preview_position"] = jax.lax.stop_gradient(after.physics.states.pos[0, 0])
+        terms["_preview_quaternion"] = jax.lax.stop_gradient(after.physics.states.quat[0, 0])
+        terms["_preview_time"] = jax.lax.stop_gradient(after.time[0])
         terms = {
             **terms,
             "episode_success": ((after.task.event == Event.SUCCESS) & ~env_state.done).astype(
@@ -121,8 +124,12 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
         env_state=env_state, recurrent_memory=memory, objective_state=history, rng=rng
     )
     state, episode_metrics = trainer.episode_statistics(state, rollout.rewards, rollout.done)
+    preview = {
+        key: terms.pop(key) for key in ("_preview_position", "_preview_quaternion", "_preview_time")
+    }
     metrics = {
         **episode_metrics,
+        **preview,
         **jax.tree.map(jnp.mean, terms),
         "episode_successes": terms["episode_success"].sum(),
         "reward": rollout.rewards.mean(),

@@ -625,6 +625,9 @@ def test_real_physics_update_and_exact_checkpoint_continuation(state_env, tmp_pa
     initial = trainer.initialize()
     state, metrics = trainer.update(initial)
     assert all(np.isfinite(value).all() for value in metrics.values())
+    assert trainer.last_preview["_preview_position"].shape == (2, 3)
+    assert trainer.last_preview["_preview_quaternion"].shape == (2, 4)
+    assert trainer.last_preview["_preview_time"].shape == (2,)
     assert float(metrics["actor_grad_norm"]) > 0
     assert tree_changed(initial.params, state.params)
     assert tree_changed(initial.optimizer_state["actor"], state.optimizer_state["actor"])

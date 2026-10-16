@@ -136,6 +136,11 @@ def collect_rollout(trainer, state, *, sampling_progress=None):
         action, pre_tanh, log_prob = trainer.method.sample(action_key, raw, state.log_std)
         after = trainer._step(env_state, action, differentiable=False)
         cost, history, terms = trainer.objective.cost(env_state, after, action, history)
+        # A single sampled world is enough for an opt-in Dashboard preview.
+        # These values are observational, never part of the loss or checkpoint.
+        terms["_preview_position"] = after.physics.states.pos[0, 0]
+        terms["_preview_quaternion"] = after.physics.states.quat[0, 0]
+        terms["_preview_time"] = after.time[0]
         terms["episode_success"] = ((after.task.event == Event.SUCCESS) & ~env_state.done).astype(
             jnp.float32
         )
@@ -402,6 +407,9 @@ def update(trainer, state, *, sampling_progress=None):
     )
     metrics = jax.tree.map(jnp.mean, metrics)
     metrics.update(tail_metrics)
+    preview = {
+        key: terms.pop(key) for key in ("_preview_position", "_preview_quaternion", "_preview_time")
+    }
     metrics.update(jax.tree.map(jnp.mean, terms))
     if trainer.distance_sampling:
         for metres in (20, 50, 80):
@@ -434,5 +442,11 @@ def update(trainer, state, *, sampling_progress=None):
         metrics.update(completed_navigation_metrics(rollout.done, terms))
     metrics["loss"] = metrics["actor_loss"] + metrics["critic_loss"]
     return trainer._finish(
-        state, {**metrics, **episode_metrics, "episode_successes": terms["episode_success"].sum()}
+        state,
+        {
+            **metrics,
+            **preview,
+            **episode_metrics,
+            "episode_successes": terms["episode_success"].sum(),
+        },
     )

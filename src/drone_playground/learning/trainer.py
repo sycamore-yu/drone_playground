@@ -430,6 +430,11 @@ class Trainer:
             updates=state.updates + 1,
             interactions=state.interactions + interactions,
         )
+        self.last_preview = {
+            key: metrics.pop(key)
+            for key in ("_preview_position", "_preview_quaternion", "_preview_time")
+            if key in metrics
+        }
         return result, {**metrics, "updates": result.updates, "interactions": result.interactions}
 
     def save_state(self, path, state, *, provenance, config=None):
