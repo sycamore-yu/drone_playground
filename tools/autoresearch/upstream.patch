@@ -80,10 +80,18 @@ index 55373f3..3edc313 100644
              "max_steps": benchmark.max_steps,
              "render_mode": benchmark.render_mode,
 diff --git a/dashboard/index.html b/dashboard/index.html
-index 7d5f723..03b21f5 100644
+index 7d5f723..26184ac 100644
 --- a/dashboard/index.html
 +++ b/dashboard/index.html
-@@ -874,12 +874,12 @@
+@@ -859,6 +859,7 @@
+                     <button class="visual-mode" data-visual-mode="live_frame" type="button">Live Frame</button>
+                     <button class="visual-mode" data-visual-mode="sampled_trajectory" type="button">Sampled Rollout</button>
+                   </div>
++                  <a id="finalRolloutLink" target="_blank" rel="noopener" hidden>Saved final rollout</a>
+                   <span id="frameStatus">Waiting for frame</span>
+                 </div>
+               </div>
+@@ -874,12 +875,12 @@
  
              <div class="chart-card">
                <div class="chart-head">
@@ -100,7 +108,7 @@ index 7d5f723..03b21f5 100644
                  <span class="legend-item"><span class="legend-swatch dashed" style="--swatch-color: #ffb454"></span>Previous best</span>
                </div>
                <canvas id="returnChart" width="520" height="300"></canvas>
-@@ -907,15 +907,15 @@
+@@ -907,15 +908,15 @@
                <div class="card-detail"><span id="parallelEnvsValue">-</span> parallel envs</div>
              </div>
              <div class="card">
@@ -119,7 +127,7 @@ index 7d5f723..03b21f5 100644
                <div class="value" id="avgReturnValue">-</div>
              </div>
              <div class="card">
-@@ -935,8 +935,9 @@
+@@ -935,8 +936,9 @@
                  <strong id="iterationCount">-</strong>
                </div>
                <div class="mini-card">
@@ -130,7 +138,7 @@ index 7d5f723..03b21f5 100644
                </div>
                <div class="mini-card">
                  <div class="label">Best Candidate</div>
-@@ -961,7 +962,7 @@
+@@ -961,7 +963,7 @@
                      <th>cycle</th>
                      <th>tag</th>
                      <th>score</th>
@@ -139,7 +147,7 @@ index 7d5f723..03b21f5 100644
                      <th>decision</th>
                      <th>candidate description</th>
                    </tr>
-@@ -1026,7 +1027,7 @@
+@@ -1026,7 +1028,7 @@
        const simPlaceholder = document.getElementById("simPlaceholder");
        let frameRefreshActive = false;
        let frameRefreshTimer = null;
@@ -148,7 +156,7 @@ index 7d5f723..03b21f5 100644
        let visualModeOverride = null;
        let displayedFrameKind = "sampled_trajectory";
        let trajectoryManifestPath = "";
-@@ -1152,8 +1153,8 @@
+@@ -1152,8 +1154,8 @@
  
        function sessionSummaryLine(item) {
          const parts = [item.status];
@@ -159,7 +167,7 @@ index 7d5f723..03b21f5 100644
          return parts.filter(Boolean).join(" · ");
        }
  
-@@ -1226,12 +1227,15 @@
+@@ -1226,12 +1228,15 @@
        }
  
        function formatNumber(value, digits = 3) {
@@ -175,7 +183,7 @@ index 7d5f723..03b21f5 100644
          return `${(100 * Number(value || 0)).toFixed(1)}%`;
        }
  
-@@ -1264,7 +1268,7 @@
+@@ -1264,7 +1269,7 @@
            latestRun.visual_control?.visual_mode ||
            latestRun.visual?.mode ||
            selectedVisualMode ||
@@ -184,7 +192,7 @@ index 7d5f723..03b21f5 100644
          );
        }
  
-@@ -1529,6 +1533,12 @@
+@@ -1529,6 +1534,12 @@
        }
  
        function returnChartXValues(episodes) {
@@ -197,7 +205,7 @@ index 7d5f723..03b21f5 100644
          if (budgetModeFor(latestRun) === "time") {
            return episodes.map((entry, index) => {
              const elapsed = Number(entry?.elapsed_seconds);
-@@ -2314,6 +2324,7 @@
+@@ -2314,6 +2325,7 @@
  
        function budgetModeFor(run) {
          const explicit = String(run?.budget_mode || "").toLowerCase();
@@ -205,7 +213,7 @@ index 7d5f723..03b21f5 100644
          if (explicit === "episodes" || explicit === "time") return explicit;
          const totalEpisodes = Number(run?.train_episodes || 0);
          const trainSeconds = Number(run?.train_seconds || 0);
-@@ -2322,6 +2333,16 @@
+@@ -2322,6 +2334,16 @@
        }
  
        function renderActiveCycle() {
@@ -222,7 +230,7 @@ index 7d5f723..03b21f5 100644
          const trainSeconds = Number(latestRun.train_seconds || 0);
          const total = Number(latestRun.train_episodes || 0);
          const complete = Number(latestRun.episodes_complete || latestRun.current?.completed_episodes || latestRun.current?.episodes_complete || 0);
-@@ -2504,6 +2525,8 @@
+@@ -2504,6 +2526,8 @@
        }
  
        function gradientUpdateCount(run, losses = {}) {
@@ -231,7 +239,7 @@ index 7d5f723..03b21f5 100644
          const direct = Number(losses.gradient_updates);
          if (Number.isFinite(direct)) return direct;
          const metrics = run?.train?.last_metrics || run?.last_metrics || {};
-@@ -2514,6 +2537,8 @@
+@@ -2514,6 +2538,8 @@
        }
  
        function parallelEnvCount(run, losses = {}) {
@@ -240,7 +248,7 @@ index 7d5f723..03b21f5 100644
          const direct = Number(losses.num_envs ?? losses.mjlab_num_envs);
          if (Number.isFinite(direct) && direct > 0) return direct;
          const metrics = run?.train?.last_metrics || run?.last_metrics || run?.current?.info_metrics || {};
-@@ -2595,8 +2620,8 @@
+@@ -2595,8 +2621,8 @@
            const ghostLabel = bestGhostEpisodes.length ? ` · ghost ${shortText(bestGhostLabel, 28)}` : "";
            const counts = episodeRecordCounts(latestEpisodes);
            const recordLabel = counts.probeCount
@@ -251,7 +259,7 @@ index 7d5f723..03b21f5 100644
            updateText("episodesSeen", `${recordLabel}${ghostLabel}`);
            updateText("tag", run.tag ?? "-");
            updateText("previousBestTag", bestGhostLabel || "-");
-@@ -2619,7 +2644,7 @@
+@@ -2619,7 +2645,7 @@
              drawXAxisCaption(
                returnCtx,
                returnChart,
@@ -260,7 +268,7 @@ index 7d5f723..03b21f5 100644
              );
            }
            drawMetadataDiagnostics(latestEpisodes, data.latest_losses, data);
-@@ -2756,7 +2781,7 @@
+@@ -2756,10 +2782,27 @@
          }
        }
  
@@ -269,12 +277,8 @@ index 7d5f723..03b21f5 100644
          frameRefreshTimer = null;
          const mode = activeVisualMode();
          updateVisualControls(mode);
-@@ -2768,6 +2793,19 @@
-           scheduleFrameRefresh(1000);
-           return;
-         }
 +        // External training backends publish rendering independently from
-+        // metric updates; this lightweight sidecar also works after training.
++        // metric updates; this lightweight sidecar also survives training exit.
 +        if (session) {
 +          try {
 +            const response = await fetch(cacheBustedUrl(artifactUrl(`${session}/live/visual.json`)), {cache: "no-store"});
@@ -283,9 +287,13 @@ index 7d5f723..03b21f5 100644
 +              latestRun.visual = {...(latestRun.visual || {}), ...published};
 +            }
 +          } catch (_) {
-+            // Not every backend has a visual producer.
++            // Not every backend produces media.
 +          }
 +        }
-         if (mode === "sampled_trajectory") {
-           refreshSampledTrajectoryFrame();
-           return;
++        const savedRollout = latestRun.visual?.final_rollout_path;
++        const savedLink = document.getElementById("finalRolloutLink");
++        savedLink.hidden = !savedRollout;
++        if (savedRollout) savedLink.href = artifactUrl(savedRollout);
+         if (mode === "off") {
+           frameRefreshActive = false;
+           displayedFrameKind = "off";

@@ -52,3 +52,33 @@ def test_sampled_rollout_renders_native_procedural_scene(monkeypatch, tmp_path):
     assert len(manifest["frames"]) == 2
     assert all(Path(frame).stat().st_size > 1_000 for frame in manifest["frames"])
     assert not list(live.glob("preview_input_*.npz"))
+
+
+def test_finished_training_preserves_a_browser_playable_clip_without_live_mode(
+    monkeypatch, tmp_path
+):
+    """Last rollout media must survive the end of training without UI opt-in."""
+    from PIL import Image
+
+    monkeypatch.setenv("DRONE_PLAYGROUND_DASHBOARD_SESSION", str(tmp_path))
+    state = SimpleNamespace(time=jnp.array([0.0]), scene_state=None)
+    state.physics = SimpleNamespace(
+        states=SimpleNamespace(
+            pos=jnp.array([[[1.0, 0.0, 1.5]]]),
+            quat=jnp.array([[[0.0, 0.0, 0.0, 1.0]]]),
+        )
+    )
+    samples = {
+        "_preview_position": jnp.array([[0.0, 0.0, 1.5], [0.5, 0.1, 1.5]]),
+        "_preview_quaternion": jnp.array([[0, 0, 0, 1], [0, 0, 0, 1]]),
+        "_preview_time": jnp.array([0.02, 0.04]),
+    }
+    preview = TrainingPreview()
+    preview.capture(state, SimpleNamespace(name="empty"), samples, update=8, final=True)
+    visual = json.loads((tmp_path / "live/visual.json").read_text())
+    saved = Path(visual["final_rollout_path"])
+    assert saved.is_file()
+    with Image.open(saved) as clip:
+        assert clip.n_frames == 2
+    manifest = Path(visual["trajectory_manifest_path"])
+    assert len(json.loads(manifest.read_text())["frames"]) == 2

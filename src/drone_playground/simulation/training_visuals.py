@@ -26,22 +26,30 @@ class TrainingPreview:
         self.process = None
         self.last_capture = 0.0
 
-    def capture(self, env_state, scene, samples, *, update: int):
-        """Copy one JAX world's pose and its active geometry, never a training state."""
-        if self.session is None or len(samples) != 3:
+    def capture(self, env_state, scene, samples, *, update: int, final: bool = False):
+        """Render a requested preview or retain the final actual training rollout."""
+        if self.session is None or not all(
+            name in samples
+            for name in ("_preview_position", "_preview_quaternion", "_preview_time")
+        ):
             return
         control = self.session / "live/control.json"
-        if not control.is_file():
+        if not final and not control.is_file():
             return
-        try:
-            mode = json.loads(control.read_text()).get("visual_mode", "off")
-        except (OSError, ValueError):
-            return
+        if final:
+            mode = "sampled_trajectory"
+        else:
+            try:
+                mode = json.loads(control.read_text()).get("visual_mode", "off")
+            except (OSError, ValueError):
+                return
         if mode not in {"live_frame", "sampled_trajectory"}:
             return
         if self.process is not None and self.process.poll() is None:
-            return
-        if time.monotonic() - self.last_capture < 8:
+            if not final:
+                return
+            self.process.wait(timeout=45)
+        if not final and time.monotonic() - self.last_capture < 8:
             return
 
         positions = np.asarray(samples["_preview_position"])
@@ -50,16 +58,23 @@ class TrainingPreview:
         current_time = float(np.asarray(env_state.time[0]))
         # The learner can reset a world at the end of a rollout. In that case
         # the new scene cannot be used to depict the previous episode.
-        if current_time + 1e-5 < float(times[-1]):
+        if (
+            current_time + 1e-5 < float(times[-1])
+            and samples.get("_preview_scene") is None
+            and env_state.scene_state is not None
+        ):
             positions = np.asarray(env_state.physics.states.pos[0, 0])[None]
             quaternions = np.asarray(env_state.physics.states.quat[0, 0])[None]
             times = np.asarray([current_time])
 
-        scene_state = env_state.scene_state
+        scene_state = samples.get("_preview_scene")
+        if scene_state is None:
+            scene_state = env_state.scene_state
         payload = {
             "scene_name": np.asarray(scene.name),
             "update": np.asarray(update),
             "mode": np.asarray(mode),
+            "final": np.asarray(final),
             "positions": positions,
             "quaternions": quaternions,
             "times": times,
@@ -78,7 +93,7 @@ class TrainingPreview:
                 payload[key] = np.asarray(getattr(scene_state, key)[0])
         visual_root = self.session / "live"
         visual_root.mkdir(parents=True, exist_ok=True)
-        input_file = visual_root / f"preview_input_{update:06d}.npz"
+        input_file = visual_root / f"preview_{'final' if final else 'input'}_{update:06d}.npz"
         np.savez_compressed(input_file, **payload)
         log = (visual_root / "preview-render.log").open("a")
         try:
@@ -97,6 +112,8 @@ class TrainingPreview:
         finally:
             log.close()
         self.last_capture = time.monotonic()
+        if final:
+            self.process.wait(timeout=60)
 
 
 def _visual_model(sample):
@@ -236,10 +253,16 @@ def _render(sample, session):
     camera.azimuth = 135
     camera.elevation = -28
     root = session / "live"
-    sequence = root / "trajectories" / f"sample_{int(sample['update']):06d}"
+    final = bool(sample["final"]) if "final" in sample else False
+    sequence = (
+        root
+        / "trajectories"
+        / ("last_training_rollout" if final else f"sample_{int(sample['update']):06d}")
+    )
     if str(sample["mode"].item()) == "sampled_trajectory":
         sequence.mkdir(parents=True, exist_ok=True)
     images = []
+    rendered = []
     with mujoco.Renderer(model, width=640, height=360) as renderer:
         for index, row in enumerate(indices):
             data.time = float(times[row])
@@ -290,6 +313,7 @@ def _render(sample, session):
                 geom.rgba[:] = [0.1, 0.75, 1.0, 0.9]
                 renderer.scene.ngeom += 1
             image = Image.fromarray(renderer.render())
+            rendered.append(image)
             if len(indices) > 1:
                 path = sequence / f"frame_{index:04d}.jpg"
                 image.save(path, "JPEG", quality=75)
@@ -303,12 +327,29 @@ def _render(sample, session):
         root = Path.cwd().resolve()
         return str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
 
+    final_video = None
+    if final and rendered:
+        video_path = root / "last_training_rollout.webp"
+        temporary = root / ".last_training_rollout.webp"
+        rendered[0].save(
+            temporary,
+            format="WEBP",
+            save_all=True,
+            append_images=rendered[1:],
+            duration=125,
+            loop=0,
+            quality=78,
+        )
+        os.replace(temporary, video_path)
+        final_video = relative(video_path)
+
     status = {
         "mode": str(sample["mode"].item()),
         "sampled_status": "completed" if images else "waiting",
         "update": int(sample["update"]),
         "live_frame_path": relative(root / "current_run_frame.jpg"),
         "trajectory_manifest_path": None,
+        "final_rollout_path": final_video,
     }
     if images:
         manifest = {

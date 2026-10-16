@@ -224,6 +224,14 @@ def train(config, record):
             if update % config.learning.checkpoint_interval == 0:
                 checkpoint()
         checkpoint()
+        if preview.session is not None:
+            preview.capture(
+                state.env_state,
+                trainer.env.scene,
+                getattr(trainer, "last_preview", {}),
+                update=int(state.updates),
+                final=True,
+            )
         record.finish(
             "budget_exhausted" if int(state.interactions) >= budget else "interrupted",
             updates=int(state.updates),

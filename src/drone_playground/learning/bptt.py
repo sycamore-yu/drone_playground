@@ -17,7 +17,7 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
     """
 
     def step(carry, index):
-        env_state, memory, history, rng, discount = carry
+        env_state, memory, history, rng, discount, _ = carry
         rng, reset_key = jax.random.split(rng)
         observation = trainer._observe(env_state)
         raw, memory, auxiliary = trainer.actor.apply(params, observation, memory)
@@ -101,7 +101,7 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
                     after.done & (jnp.abs(distance - metres) < 0.01)
                 ).astype(jnp.float32)
         discount = jnp.where(after.done, 1.0, discount * trainer.config["gamma"])
-        return (env_state, memory, history, rng, discount), (
+        return (env_state, memory, history, rng, discount, after.scene_state), (
             contribution + auxiliary_cost,
             data,
             terms,
@@ -116,10 +116,11 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
             state.objective_state,
             state.rng,
             jnp.ones(trainer.env.num_envs),
+            state.env_state.scene_state,
         ),
         jnp.arange(trainer.config["horizon"]),
     )
-    env_state, memory, history, rng, _ = carry
+    env_state, memory, history, rng, _, last_scene = carry
     state = state.replace(
         env_state=env_state, recurrent_memory=memory, objective_state=history, rng=rng
     )
@@ -127,6 +128,7 @@ def rollout_objective(trainer, state, params, *, bootstrap=False, sampling_progr
     preview = {
         key: terms.pop(key) for key in ("_preview_position", "_preview_quaternion", "_preview_time")
     }
+    preview["_preview_scene"] = jax.lax.stop_gradient(last_scene)
     metrics = {
         **episode_metrics,
         **preview,

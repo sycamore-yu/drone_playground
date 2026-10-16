@@ -129,7 +129,7 @@ def collect_rollout(trainer, state, *, sampling_progress=None):
     """Collect stochastic transitions and retain pre-reset critic observations."""
 
     def step(carry, _):
-        env_state, memory, history, rng = carry
+        env_state, memory, history, rng, _ = carry
         rng, action_key, reset_key = jax.random.split(rng, 3)
         observation = trainer._observe(env_state)
         raw, memory, _ = trainer.actor.apply(state.params, observation, memory)
@@ -197,19 +197,29 @@ def collect_rollout(trainer, state, *, sampling_progress=None):
                 terms[f"reset_distance_{metres}m_count"] = (
                     after.done & (jnp.abs(distance - metres) < 0.01)
                 ).astype(jnp.float32)
-        return (env_state, memory, history, rng), (data, terms)
+        return (env_state, memory, history, rng, after.scene_state), (data, terms)
 
     carry, (rollout, terms) = jax.lax.scan(
         step,
-        (state.env_state, state.recurrent_memory, state.objective_state, state.rng),
+        (
+            state.env_state,
+            state.recurrent_memory,
+            state.objective_state,
+            state.rng,
+            state.env_state.scene_state,
+        ),
         None,
         length=trainer.config["horizon"],
     )
-    env_state, memory, history, rng = carry
+    env_state, memory, history, rng, last_scene = carry
     state = state.replace(
         env_state=env_state, recurrent_memory=memory, objective_state=history, rng=rng
     )
-    return jax.lax.stop_gradient(state), jax.lax.stop_gradient(rollout), terms
+    return (
+        jax.lax.stop_gradient(state),
+        jax.lax.stop_gradient(rollout),
+        {**terms, "_preview_scene": jax.lax.stop_gradient(last_scene)},
+    )
 
 
 def recurrent_policy(trainer, params, observations, initial_memory, done):
@@ -408,7 +418,8 @@ def update(trainer, state, *, sampling_progress=None):
     metrics = jax.tree.map(jnp.mean, metrics)
     metrics.update(tail_metrics)
     preview = {
-        key: terms.pop(key) for key in ("_preview_position", "_preview_quaternion", "_preview_time")
+        key: terms.pop(key)
+        for key in ("_preview_position", "_preview_quaternion", "_preview_time", "_preview_scene")
     }
     metrics.update(jax.tree.map(jnp.mean, terms))
     if trainer.distance_sampling:

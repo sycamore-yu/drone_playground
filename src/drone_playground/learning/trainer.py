@@ -432,7 +432,12 @@ class Trainer:
         )
         self.last_preview = {
             key: metrics.pop(key)
-            for key in ("_preview_position", "_preview_quaternion", "_preview_time")
+            for key in (
+                "_preview_position",
+                "_preview_quaternion",
+                "_preview_time",
+                "_preview_scene",
+            )
             if key in metrics
         }
         return result, {**metrics, "updates": result.updates, "interactions": result.interactions}
