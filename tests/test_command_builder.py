@@ -26,10 +26,10 @@ def test_every_builder_command_composes_with_independent_oa_training():
     )
     cases = json.loads(result.stdout)
     assert len(cases) == len({case["command"] for case in cases})
-    assert len(cases) == 486
+    assert len(cases) == 490
     assert {
         mode: sum(case["mode"] == mode for case in cases) for mode in ("train", "play", "benchmark")
-    } == {"train": 42, "play": 334, "benchmark": 110}
+    } == {"train": 42, "play": 336, "benchmark": 112}
     training = set()
     with initialize_config_dir(
         version_base=None, config_dir=str(root / "src/drone_playground/configs")

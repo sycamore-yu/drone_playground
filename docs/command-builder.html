@@ -37,7 +37,7 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 <div class="wide"><p id="description" role="status"></p></div>
 </form>
 <h2>Command</h2><pre><code id="command"></code></pre><button id="copy" type="button">Copy command</button><p id="status" role="status"></p>
-<footer>This page generates commands. Planner execution requires the corresponding ROS worker; Attitude MPC requires acados. See <a href="installation.md">installation</a> and <a href="benchmark.md">Benchmark measurement</a>.</footer>
+<footer>This page generates commands. Native planners require their ROS workers; Attitude MPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and not yet real-time at 50 Hz on CPU. See <a href="installation.md">installation</a> and <a href="benchmark.md">Benchmark measurement</a>.</footer>
 </main>
 <script>
 'use strict';
@@ -68,7 +68,7 @@ function command(s){
       parts.push(checkpoint==='latest'||checkpoint==='best'?`checkpoint=${checkpoint}`:shellQuote(`checkpoint=${JSON.stringify(checkpoint)}`));
     }
   }else if(s.method==='mpc'){
-    parts.push('task=tracking','scene=empty','sensor=state','method=controller',`controller=${s.controller}`);
+    parts.push(`task=${s.task}`,`scene=${s.task==='racing'?'racing':'empty'}`,'sensor=state','method=controller',`controller=${s.controller}`);
   }else{
     parts.push('task=navigation',`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
     if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
@@ -89,6 +89,10 @@ function combinations(){
       }
     }
     if(mode==='train')continue;
+    for(const controller of ['racing_mpcc','perception_mpc']){
+      const s={mode,task:'racing',sensor:'state',method:'mpc',controller};
+      result.push({...s,command:command(s)});
+    }
     for(const controller of ['sampling_mpc','attitude_mpc']){
       let s={mode,task:'tracking',sensor:'state',method:'mpc',controller};result.push({...s,command:command(s)});
       for(const task of Object.keys(suites))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
@@ -108,13 +112,14 @@ if(typeof document!=='undefined'){
   function render(){
     const train=state.mode==='train';if(train)state.method='policy';
     const policy=state.method==='policy',planner=state.method==='planner';
-    const tasks=policy?Object.keys(taskLabels):planner?Object.keys(suites):['tracking'];
+    const tasks=policy?Object.keys(taskLabels):planner?Object.keys(suites):['tracking','racing'];
     options('task',tasks.map(key=>[key,taskLabels[key]]));
     options('sensor',(suites[state.task]?['depth','lidar']:['state']).map(key=>[key,key==='depth'?'D435i depth':key==='lidar'?'MID360 LiDAR':'State']));
     if(planner){state.sensor=state.planner==='ego'?'depth':'lidar';$('sensor').value=state.sensor;}
     $('sensor').disabled=planner||!suites[state.task];
     show('methodField',!train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
     show('plannerField',planner);show('controllerField',!policy);show('sceneField',!train&&state.mode==='play'&&Boolean(suites[state.task]));
+    if(!policy)options('controller',(state.method==='mpc'&&state.task==='racing'?['racing_mpcc','perception_mpc']:['sampling_mpc','attitude_mpc']).map(key=>[key,key==='racing_mpcc'?'Racing MPCC (acados)':key==='perception_mpc'?'Perception-Aware Sampling MPC (experimental)':key]));
     show('suiteField',!train&&state.mode==='benchmark'&&Boolean(suites[state.task]));
     show('checkpointField',!train&&policy);show('pathField',!train&&policy&&state.checkpoint==='path');
     if(suites[state.task]){
