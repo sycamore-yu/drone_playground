@@ -1,5 +1,5 @@
 # @package _global_
-# Settings of a completed 100/100 state-task training run; starts from random weights.
+# Recipe and checkpoint selection from the recorded passing state-task run.
 defaults:
 - tracking
 - override /learning: bptt
@@ -47,3 +47,13 @@ learning:
   max_interactions: 32768000
   checkpoint_interval: 100
   log_interval: 10
+  best:
+    source: evaluation
+    interval: 3276800
+    episodes: 8
+    seed: 1000000
+  early_stopping:
+    metric: mean_reward
+    target: null
+    patience: 5
+    min_delta: 0.0

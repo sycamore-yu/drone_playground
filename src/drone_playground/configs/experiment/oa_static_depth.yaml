@@ -12,3 +12,7 @@ benchmark:
   - S02
   - S03
   - S06
+learning:
+  max_interactions: 4096000
+  best:
+    interval: 409600
