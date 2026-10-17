@@ -5,64 +5,33 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,">
 <title>Drone Playground — Command Builder</title>
-<style>
- :root{font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:#17253b;background:#f6f8fb}
-*{box-sizing:border-box}body{margin:0;padding:1.8rem 1.25rem}main{max-width:1500px;margin:auto}
-h1{font-size:2rem;line-height:1.2;margin:.5rem 0}p{max-width:76ch;color:#536177}
-a{color:#2258bb}form{display:grid;grid-template-columns:1fr 1fr;gap:1.05rem;background:transparent;border:0;border-radius:12px;padding:0;margin:1.2rem 0}
-label{display:block;font-weight:600;margin-bottom:.35rem}select,input,button{font:inherit;min-height:44px;border:1px solid #a5b2c5;border-radius:6px;padding:.55rem .7rem}select,input{width:100%;background:white;color:inherit}
-select:disabled{background:#edf0f5;color:#687489}button{cursor:pointer;background:#2258bb;color:white;border:0}button:hover{background:#17448e}
-:focus-visible{outline:3px solid #7da7f4;outline-offset:3px}.wide{grid-column:1/-1}[hidden]{display:none!important}
-small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#13233a;color:#e5eeff;border-radius:8px;padding:1.3rem;margin:1rem 0}
-#status{min-height:1.5rem}footer{margin-top:2rem;font-size:.9rem;border-top:1px solid #dce2ec;padding-top:1rem}
-.eyebrow{font-weight:700;letter-spacing:.11em;color:#5d7092;text-transform:uppercase;font-size:12px}
-.section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.section-heading h2,.configuration-panel h2,.preview-panel h2{font-size:1.25rem;margin:0}
-.task-section{margin:1.5rem 0 2rem}.task-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:1rem}
-.task-card{display:flex;flex-direction:column;align-items:flex-start;min-height:100px;text-align:left;gap:6px;background:#fff;color:#17253b;border:1px solid #d6dfec;border-radius:10px;padding:14px 16px}
-.task-card:hover{background:#f0f5ff;border-color:#6b90c9}.task-card[aria-pressed=true]{border-color:#2258bb;box-shadow:inset 0 0 0 1px #2258bb;background:#edf4ff}
-.task-card strong{font-size:16px}.task-card span{font-size:12px;color:#536177}
-.workspace{display:grid;grid-template-columns:minmax(400px,.95fr) minmax(490px,1.14fr);gap:1.3rem;align-items:start}
-.configuration-panel,.preview-panel,.gallery-panel{background:#fff;border:1px solid #dce2ec;border-radius:12px;padding:1.35rem;min-width:0}
-.preview-panel{position:sticky;top:1rem}.preview-intro{font-size:.91rem;margin:.35rem 0 1rem}
-.preview-surface{position:relative;overflow:hidden;background:linear-gradient(135deg,#111e31,#263c5d);border:1px solid #273a5a;border-radius:10px;aspect-ratio:16/10;min-height:270px}
-.preview-surface iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#111e31}
-.preview-placeholder{position:absolute;inset:0;display:grid;place-items:center;padding:2rem;text-align:center;color:#d8e4f6}
-.preview-placeholder p{color:#bccbe3;margin:.6rem auto}.preview-status{font-size:.87rem;color:#61718a;margin:1rem 0 .5rem;min-height:2.5em}
-.preview-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:1rem 0}
-.preview-meta div{border-bottom:1px solid #e1e7f0;padding-bottom:7px;min-width:0}.preview-meta dt{font-size:.73rem;color:#5d7092;text-transform:uppercase;font-weight:700;letter-spacing:.035em}
-.preview-meta dd{font-size:.91rem;font-weight:600;margin:3px 0;overflow-wrap:anywhere}
-.preview-links{display:flex;flex-wrap:wrap;gap:14px;margin:.9rem 0}.preview-links a{font-size:.91rem}
-.preview-note{font-size:.82rem;background:#f1f5fc;padding:10px 12px;border-radius:7px;max-width:none;margin:.6rem 0}
-.preview-note[data-kind=failure]{background:#fff3ed;color:#813a21}.preview-note[data-kind=success]{background:#f0f7f3;color:#266046}
-.preview-mode{font-size:.75rem;font-weight:700;letter-spacing:.03em;color:#506fa0}
-.gallery-panel{margin-top:1.5rem}.gallery-filters{display:flex;flex-wrap:wrap;gap:10px;margin:1rem 0}.gallery-filters input{flex:1 1 210px}.gallery-filters select{flex:0 1 185px}
-.gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.recording-card{background:#fbfcff;color:#17253b;text-align:left;border:1px solid #dce2ec;border-radius:9px;padding:12px 14px;min-height:110px;display:flex;flex-direction:column;gap:5px}
-.recording-card:hover{border-color:#557fbd;background:#eff5ff}.recording-card strong{font-size:.95rem}.recording-card span{font-size:.8rem;color:#596a83}
-.recording-card .result{font-weight:700;color:#2e5e4b}.recording-card .result.fail{color:#9a4c33}.more-row{text-align:center;margin-top:1rem}
-.more-row button{background:#eaf0fa;color:#214775}.more-row button:hover{background:#dce8fb}
-.muted{color:#697b90;font-size:.85rem}
-@media(max-width:1120px){.workspace{grid-template-columns:1fr}.preview-panel{position:static}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:680px){body{padding:1rem .7rem}form{grid-template-columns:1fr}.task-cards,.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-meta{grid-template-columns:1fr}.preview-surface{aspect-ratio:4/3}h1{font-size:1.6rem}.configuration-panel,.preview-panel,.gallery-panel{padding:1rem}}
-@media(max-width:420px){.task-cards,.gallery-grid{grid-template-columns:1fr}.preview-surface{min-height:270px}}
-</style>
+<link rel="stylesheet" href="environments.css">
 </head>
 <body><main>
-<a href="README.md">Documentation</a>
-<h1>Drone Playground · Environments</h1>
-<p>Choose a task, assemble a supported method, and inspect authentic recorded flights. Like the <a href="https://isaac-sim.github.io/IsaacLab/v3.0.0-EA/source/setup/environments.html">Isaac Lab environment browser</a>, the task preview follows your selection—but here the preview is an interactive MuJoCo WASM replay of an actual Crazyflow Episode.</p>
+<header class="site-header">
+  <a class="brand" href="../README.md" aria-label="Drone Playground project home"><span class="brand-icon" aria-hidden="true">DP<span class="brand-cross">+</span></span><span><strong>DRONE PLAYGROUND</strong><small>ROBOTICS RESEARCH PLATFORM</small></span></a>
+  <nav class="top-links" aria-label="Project navigation"><a href="README.md">Documentation <span aria-hidden="true">↗</span></a><a href="../results/command-builder-native-full-20261017/index.html">Evaluation archive <span aria-hidden="true">↗</span></a><span class="top-status"><span class="online-dot" aria-hidden="true"></span> REPLAY MODE</span></nav>
+</header>
+<div class="hero">
+  <div class="hero-content"><span class="hero-kicker"><span class="kicker-line"></span> FLIGHT SYSTEMS / EXPLORER</span>
+    <h1>Explore the <em>flight envelope.</em></h1>
+    <p>Build experiments and inspect exactly what flew. Select a task and watch authentic Crazyflow episodes in MuJoCo WebAssembly—without rerunning the simulation.</p>
+    <div class="hero-utility"><span><strong>04</strong> Tasks</span><span><strong id="hero-native-count">—</strong> Native combinations</span><span><strong id="hero-episode-count">—</strong> Recorded episodes</span><span class="hero-source">Based on completed local evaluation runs</span></div>
+  </div>
+  <div class="hero-graphic" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="route-label label-a">N 45.23°</span><span class="route-label label-b">ALT 03.4</span><span class="route-point p1"></span><span class="route-point p2"></span><span class="route-point p3"></span><span class="route-segment s1"></span><span class="route-segment s2"></span><span class="target-mark">+</span></div>
+</div>
 <section class="task-section" aria-label="Available tasks">
-  <div class="section-heading"><h2>Available Tasks</h2><span class="eyebrow">4 flight tasks</span></div>
+  <div class="section-heading"><div><span class="section-index">01 / TASKS</span><h2>Choose your mission</h2></div><span class="section-aside">FROM TRAJECTORY TRACKING TO DYNAMIC OBSTACLE AVOIDANCE</span></div>
   <div id="task-cards" class="task-cards">
-    <button type="button" class="task-card" data-task="tracking" aria-pressed="true"><strong>Tracking</strong><span>Follow time-stamped trajectories</span></button>
-    <button type="button" class="task-card" data-task="racing" aria-pressed="false"><strong>Racing</strong><span>Ordered gates and high-speed control</span></button>
-    <button type="button" class="task-card" data-task="static_oa" aria-pressed="false"><strong>Static OA</strong><span>Depth/LiDAR · fixed obstacle maps</span></button>
-    <button type="button" class="task-card" data-task="dynamic_oa" aria-pressed="false"><strong>Dynamic OA</strong><span>Moving obstacles · flight planning</span></button>
+    <button type="button" class="task-card" data-task="tracking" aria-pressed="true"><span class="task-number">01 <span>↗</span></span><strong>Tracking</strong><span>Reference trajectory following</span></button>
+    <button type="button" class="task-card" data-task="racing" aria-pressed="false"><span class="task-number">02 <span>↗</span></span><strong>Racing</strong><span>Ordered gates · full-course flight</span></button>
+    <button type="button" class="task-card" data-task="static_oa" aria-pressed="false"><span class="task-number">03 <span>↗</span></span><strong>Static OA</strong><span>Depth / LiDAR obstacle fields</span></button>
+    <button type="button" class="task-card" data-task="dynamic_oa" aria-pressed="false"><span class="task-number">04 <span>↗</span></span><strong>Dynamic OA</strong><span>Moving geometry and replanning</span></button>
   </div>
 </section>
 <div class="workspace">
 <section class="configuration-panel" aria-label="Command Builder">
-<h2>Command Builder</h2>
+<div class="panel-heading"><div><span class="section-index">02 / CONFIGURATION</span><h2>Command Builder</h2></div><span class="panel-meta">HYDRA CLI</span></div>
 <form id="builder" aria-label="Experiment configuration">
 <div><label for="mode">Mode</label><select id="mode"><option value="train">Train</option><option value="play">Play</option><option value="benchmark">Benchmark</option></select></div>
 <div id="methodField"><label for="method">Method</label><select id="method"><option value="policy">Policy</option><option value="controller">Controller</option><option value="planner">Planner + Controller</option></select></div>
@@ -78,14 +47,25 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 <div id="pathField" class="wide"><label for="path">Orbax model directory</label><input id="path" type="text" spellcheck="false" placeholder="results/run/checkpoints/model_000100"></div>
 <div class="wide"><p id="description" role="status"></p></div>
 </form>
-<h3>Generated command</h3><pre><code id="command"></code></pre><button id="copy" type="button">Copy command</button><p id="status" role="status"></p>
+<div class="command-heading"><h3>Generated command</h3><span>READY TO COPY</span></div><pre><code id="command"></code></pre><div class="command-actions"><button id="copy" type="button">Copy command <span aria-hidden="true">↗</span></button><p id="status" role="status"></p></div>
 </section>
 <aside class="preview-panel" aria-labelledby="preview-heading">
-  <div class="section-heading"><h2 id="preview-heading">Task Preview</h2><span class="preview-mode" id="preview-match">Recorded Episode</span></div>
-  <p class="preview-intro">An actual flight, including its true end event. Change task, controller or scene to inspect the corresponding run. Use the viewer's Course / Overhead camera when obstacles obscure the drone.</p>
+  <div class="panel-heading"><div><span class="section-index">03 / VISUALIZATION</span><h2 id="preview-heading">Task Preview</h2></div><span class="preview-mode" id="preview-match">Recorded Episode</span></div>
+  <p class="preview-intro">Real recorded states, original Crazyflie geometry. The view follows your configuration; physical failures remain visible.</p>
   <div class="preview-surface" id="preview-surface">
     <iframe id="preview-frame" title="Interactive MuJoCo WASM task preview" allow="autoplay" hidden></iframe>
     <div class="preview-placeholder" id="preview-placeholder" role="status"><div><strong>Loading recorded tasks</strong><p>Available when this checkout serves its saved results.</p></div></div>
+    <div class="preview-loading" id="preview-loading" role="status" aria-live="polite" hidden>
+      <div class="loading-content">
+        <span class="loading-symbol" aria-hidden="true"></span>
+        <span class="loading-label">PREPARING FLIGHT SCENE</span>
+        <strong id="preview-loading-title">Loading recorded flight…</strong>
+        <p id="preview-loading-detail">Reading native MuJoCo scene assets.</p>
+        <div class="loading-track"><span id="preview-loading-progress"></span></div>
+        <span id="preview-loading-hint">Dense obstacle scenes may take several seconds to compile.</span>
+        <button id="preview-retry" type="button" hidden>Retry loading</button>
+      </div>
+    </div>
   </div>
   <p id="preview-status" class="preview-status" role="status">Preparing recording catalog…</p>
   <div id="preview-scene-field"><label for="preview-scene">Recorded scene / Episode</label><select id="preview-scene"></select></div>
@@ -100,7 +80,7 @@ small{display:block;color:#58667b;margin-top:.4rem}pre{white-space:pre-wrap;over
 </aside>
 </div>
 <section class="gallery-panel" aria-labelledby="gallery-heading">
- <div class="section-heading"><h2 id="gallery-heading">Available Recorded Combinations</h2><span id="gallery-count" class="muted">Loading catalog…</span></div>
+ <div class="section-heading"><div><span class="section-index">04 / ARCHIVE</span><h2 id="gallery-heading">Recorded method library</h2></div><span id="gallery-count" class="muted">Loading catalog…</span></div>
  <p>Search verified command combinations and select one to load its recorded flight. A compatible combination may still fail its task; cards report the actual physical outcomes.</p>
  <div class="gallery-filters"><input id="gallery-search" type="search" aria-label="Search recorded tasks, scenes, planners and controllers" placeholder="Search tasks, scenes, planners, controllers…"/><select id="gallery-task" aria-label="Filter task"><option value="">All tasks</option><option value="tracking">Tracking</option><option value="racing">Racing</option><option value="static_oa">Static OA</option><option value="dynamic_oa">Dynamic OA</option></select><select id="gallery-outcome" aria-label="Filter outcome"><option value="">All outcomes</option><option value="SUCCESS">Contains success</option><option value="METHOD_FAILURE">Contains method failure</option><option value="OUT_OF_BOUNDS">Contains out of bounds</option><option value="COLLISION">Contains collision</option></select></div>
  <div id="gallery-list" class="gallery-grid" aria-live="polite"></div>

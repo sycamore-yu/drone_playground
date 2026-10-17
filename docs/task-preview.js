@@ -102,7 +102,48 @@
   let scheduledLoad=null;
   let viewerReady=false;
   let nextViewerMessage=null;
+  let expectedRecord='';
   let pageLimit=12;
+
+  const loadStages={
+    fetch:['Reading flight recording','Fetching recorded poses, timestamps and sensor state',12],
+    wasm:['Starting MuJoCo','Initializing the shared native WebAssembly runtime',30],
+    assets:['Loading scene assets','Fetching original MJCF, airframe meshes and scene geometry',46],
+    scene:['Compiling 3D environment','Preparing native obstacle geometry; dense scenes take longer',66],
+    geometry:['Building flight view','Preparing model geometry and trajectory overlays',86],
+  };
+
+  function loading(stage,record,detail=''){
+    const overlay=$('preview-loading');
+    const ready=stage==='ready';
+    if(stage==='cleared'||ready){overlay.hidden=true;return;}
+    overlay.hidden=false;
+    $('preview-retry').hidden=stage!=='error';
+    const steps=loadStages[stage]||['Loading recorded flight','Waiting for MuJoCo to prepare the selected environment',8];
+    $('preview-loading-title').textContent=stage==='error'?'Unable to load this recording':steps[0];
+    $('preview-loading-detail').textContent=stage==='error'?detail:steps[1];
+    $('preview-loading-progress').style.width=(stage==='error'?100:steps[2])+'%';
+    $('preview-loading-hint').textContent=stage==='error'
+      ?'The native record is unchanged. You can retry or open it in the full viewer.'
+      :'Task data remains unchanged while the browser prepares the visualization.';
+    overlay.dataset.stage=stage;
+    $('preview-status').textContent=stage==='error'
+      ?'Viewer error: '+detail
+      :`Loading ${record?.split('/').at(-2)||'flight'} · ${steps[0]}`;
+  }
+
+  function previewMessage(){
+    const record=expectedRecord;
+    if(!record)return null;
+    const item=catalog?.cases.find(c=>c.id===chosenCase);
+    const flight=item?.recordings[chosenRecording];
+    if(!flight||flight.browser_record!==record)return null;
+    return {
+      type:'dp-wasm-load',record,
+      autoplay:true,outcome:flight.event,reason:flight.failure_detail||'',
+      loop:flight.event==='SUCCESS',
+    };
+  }
 
   function sendViewerMessage(){
     if(viewerReady&&nextViewerMessage&&frame.contentWindow){
@@ -115,6 +156,14 @@
     if(event.data?.type==='dp-wasm-ready'){
       viewerReady=true;
       sendViewerMessage();
+    }else if(event.data?.type==='dp-wasm-progress'){
+      if(event.data.record!==expectedRecord)return;
+      if(event.data.stage==='ready'){
+        loading('ready',expectedRecord);
+        const item=catalog?.cases.find(c=>c.id===chosenCase);
+        const flight=item?.recordings[chosenRecording];
+        if(flight) $('preview-status').textContent=`Ready · ${flight.scene} · ${event.data.frames} recorded frames · ${Number(event.data.elapsed_ms/1000).toFixed(1)} s load`;
+      }else loading(event.data.stage,event.data.record,event.data.message||'');
     }
   });
   // Do not navigate this iframe for each Task selection. The 10 MB official
@@ -131,7 +180,8 @@
   function resetPreview(note){
     if(scheduledLoad!==null)clearTimeout(scheduledLoad);
     scheduledLoad=null;
-    frame.hidden=true;lastEmbeddedRecord='';
+    frame.hidden=true;lastEmbeddedRecord='';expectedRecord='';
+    $('preview-loading').hidden=true;
     nextViewerMessage={type:'dp-wasm-clear'};
     sendViewerMessage();
     $('preview-placeholder').hidden=false;
@@ -139,6 +189,7 @@
     $('preview-placeholder').querySelector('p').textContent='Choose a recorded native method or a task example.';
     $('preview-scene-field').hidden=true;
     $('preview-method').textContent='—';$('preview-event').textContent='—';
+    $('preview-event').removeAttribute('data-event');
     $('preview-duration').textContent='—';$('preview-scene-name').textContent='—';
     $('preview-match').textContent='No recording';
     for(const id of ['preview-open','preview-rscope','preview-report'])showLink(id,null);
@@ -177,6 +228,7 @@
     const url=viewerUrl(record);
     $('preview-method').textContent=`${labels[item.task]} · ${item.planner?item.planner.toUpperCase()+' + ':''}${item.controller}`;
     $('preview-event').textContent=outcomes[record.event]||record.event;
+    $('preview-event').dataset.event=record.event;
     $('preview-duration').textContent=`${record.elapsed_seconds.toFixed(2)} s / ${record.task_limit_seconds.toFixed(0)} s limit`;
     $('preview-scene-name').textContent=record.scene;
     $('preview-match').textContent=exact?'Exact selected method':'Task example · different method';
@@ -191,14 +243,12 @@
     showLink('preview-report',record.report);
     $('preview-placeholder').hidden=true;frame.hidden=false;
     if(lastEmbeddedRecord!==url){
+      expectedRecord=record.browser_record;
+      loading('pending',expectedRecord);
       lastEmbeddedRecord=url;
       if(scheduledLoad!==null)clearTimeout(scheduledLoad);
       scheduledLoad=setTimeout(()=>{
-        nextViewerMessage={
-          type:'dp-wasm-load',record:record.browser_record,autoplay:true,
-          outcome:record.event,reason:record.failure_detail||'',
-          loop:record.event==='SUCCESS',
-        };
+        nextViewerMessage=previewMessage();
         sendViewerMessage();
         scheduledLoad=null;
       },90);
@@ -246,6 +296,8 @@
     for(const item of matches.slice(0,pageLimit)){
       const button=document.createElement('button');button.type='button';button.className='recording-card';
       button.setAttribute('aria-label',`Preview ${item.task}, ${item.planner||''} ${item.controller}, ${item.scene||item.suite||''}`);
+      const id=document.createElement('span');id.className='recording-id';
+      id.textContent=`#${String(item.id).padStart(3,'0')}  /  ${item.mode.toUpperCase()}`;
       const title=document.createElement('strong');
       title.textContent=`${item.planner?item.planner.toUpperCase()+' + ':''}${item.controller}`;
       const line=document.createElement('span');
@@ -253,7 +305,7 @@
       const summary=document.createElement('span');summary.className='result';
       summary.textContent=resultLabel(item);
       if(item.recordings.some(row=>row.event!=='SUCCESS'))summary.classList.add('fail');
-      button.append(title,line,summary);
+      button.append(id,title,line,summary);
       button.addEventListener('click',()=>{
         chosenCase=-1;chosenRecording=-1;
         const update={mode:item.mode,method:item.method,task:item.task,controller:item.controller};
@@ -289,6 +341,13 @@
   for(const id of ['gallery-search','gallery-task','gallery-outcome'])
     $(id).addEventListener(id==='gallery-search'?'input':'change',()=>{pageLimit=12;renderGallery();});
   $('gallery-more').addEventListener('click',()=>{pageLimit+=12;renderGallery();});
+  $('preview-retry').addEventListener('click',()=>{
+    const message=previewMessage();
+    if(!message)return;
+    loading('pending',expectedRecord);
+    nextViewerMessage=message;
+    sendViewerMessage();
+  });
 
   const incoming=new URL(location.href).searchParams;
   const restored={};
@@ -319,6 +378,8 @@
       if(loaded.format!=='drone-playground-task-preview-v1'||!Array.isArray(loaded.cases))
         throw new Error('Unsupported recording catalog format');
       catalog=loaded;
+      $('hero-native-count').textContent=String(catalog.summary.native_methods);
+      $('hero-episode-count').textContent=String(catalog.summary.recorded_episodes);
       syncPreview();renderGallery();
     }catch(error){
       resetPreview('Preview recordings unavailable');

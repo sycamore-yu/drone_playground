@@ -40,6 +40,15 @@ let viewMode = 'aircraft';
 let wallThen = performance.now();
 let playheadTime = 0;
 let pendingRecord=null, loaderBusy=false;
+let lastRender=0;
+
+function report(stage,request,details={}){
+  if(embedded&&parent!==window){
+    parent.postMessage({
+      type:'dp-wasm-progress',record:request?.record||'',stage,...details,
+    },location.origin);
+  }
+}
 
 function status(message){ $('status').textContent = message; }
 function disposeRecord(){
@@ -197,12 +206,14 @@ function frameCamera(){
   controls.update();
 }
 
-async function load(){
+async function load(request){
   const address=$('record').value.trim();
   if(!address)return status('Specify a browser_replay.json URL');
   $('load').disabled=true;
   disposeRecord();
   status('Loading recorded poses and MJCF...');
+  const started=performance.now();
+  report('fetch',request);
   try{
     const url=new URL(address,location.href);
     if(url.origin!==location.origin)throw new Error('Record must be served by the same SSH-forwarded HTTP server');
@@ -213,10 +224,12 @@ async function load(){
       throw new Error('Incompatible recorded MuJoCo episode');
     if(!engine){
       status('Initializing MuJoCo WebAssembly...');
+      report('wasm',request);
       engine=await loadMujoco({locateFile:path=>path.endsWith('.wasm')?wasmUrl:path});
       engine.FS.mkdir('/working');
       engine.FS.mount(engine.MEMFS,{root:'.'},'/working');
     }
+    report('assets',request);
     for(const file of [parsed.model,...parsed.assets]){
       if(!/^[A-Za-z0-9_.-]+$/.test(file))throw new Error(`Unsupported model filename: ${file}`);
       const assetResponse=await fetch(new URL(file,url));
@@ -224,8 +237,14 @@ async function load(){
       const bytes=new Uint8Array(await assetResponse.arrayBuffer());
       engine.FS.writeFile(`/working/${file}`,bytes);
     }
+    status('Preparing native 3D scene...');
+    report('scene',request);
+    // Allow the parent loading veil to be painted before synchronous MuJoCo
+    // model compilation, which can take several seconds for dense OA scenes.
+    await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
     model=engine.MjModel.mj_loadXML(`/working/${parsed.model}`);
     data=new engine.MjData(model);
+    report('geometry',request);
     frames=parsed.frames;
     for(const frame of frames){
       if(frame.qpos.length!==model.nq||frame.mocap_pos.length!==model.nmocap)
@@ -241,8 +260,13 @@ async function load(){
     status(`${frames.length} frames · ${airframeMeshes} Crazyflie mesh geoms · ${model.nmocap} mocap bodies`);
     const updated=new URL(location.href);updated.searchParams.set('record',address);history.replaceState(null,'',updated);
     if(autoplay){playing=true;$('play').textContent='Pause';wallThen=performance.now();}
+    report('ready',request,{frames:frames.length,duration:frames.at(-1).time,
+      elapsed_ms:Math.round(performance.now()-started)});
+    return true;
   }catch(error){
     status(`Cannot load recording: ${error.message}`);console.error(error);disposeRecord();
+    report('error',request,{message:error.message});
+    return false;
   }finally{$('load').disabled=false;}
 }
 
@@ -263,8 +287,8 @@ function queueRecord(request){
         terminalOutcome=String(next.outcome||'');
         terminalReason=String(next.reason||'');
         loop=next.loop===true&&terminalOutcome==='SUCCESS';
-        if(next.record)await load();
-        else{disposeRecord();status('Ready');}
+        if(next.record)await load(next);
+        else{disposeRecord();status('Ready');report('cleared',next);}
       }
     }finally{loaderBusy=false;}
   })();
@@ -311,6 +335,14 @@ window.addEventListener('resize',resize);
 function resize(){const {width,height}=viewport.getBoundingClientRect();camera.aspect=width/Math.max(height,1);camera.updateProjectionMatrix();renderer.setSize(width,height);}
 new ResizeObserver(resize).observe(viewport);
 function animate(now){
+  // Native OA records are sampled at about 10Hz. Repeatedly calling
+  // mj_forward with unchanged qpos/mocap at 60Hz spends most frames recomputing
+  // hundreds of unmoved geoms, and can make the whole embedded page lag.
+  if(embedded&&now-lastRender<1000/30){
+    requestAnimationFrame(animate);
+    return;
+  }
+  lastRender=now;
   if(playing&&frames.length){
     const dt=Math.min(.3,Math.max(0,(now-wallThen)/1000))*Number($('speed').value);
     // Advance in continuous recorded time. Nearest-frame rounding must not
@@ -320,12 +352,16 @@ function animate(now){
       if(loop){
         const duration=frames.at(-1).time-frames[0].time;
         playheadTime=duration>0?frames[0].time+(playheadTime-frames[0].time)%duration:frames[0].time;
-        displayFrame(nearestFrame(playheadTime));
+        const next=nearestFrame(playheadTime);
+        if(next!==frameIndex)displayFrame(next);
       }else{
         playheadTime=frames.at(-1).time;
         displayFrame(frames.length-1);playing=false;$('play').textContent='Play';
       }
-    }else displayFrame(nearestFrame(playheadTime));
+    }else{
+      const next=nearestFrame(playheadTime);
+      if(next!==frameIndex)displayFrame(next);
+    }
   }
   wallThen=now;
   controls.update();renderer.render(scene,camera);
