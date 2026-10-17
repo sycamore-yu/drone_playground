@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Drone Playground | Complete flight verification</title><style>
+body{font:14px/1.5 system-ui,sans-serif;background:#f5f7fa;color:#18283d;margin:1.4rem}
+h1{font-size:1.55rem}p{max-width:96ch}a{color:#145baf;margin-right:9px}
+table{border-collapse:collapse;background:#fff;width:100%}td,th{text-align:left;padding:8px;border-bottom:1px solid #dce4ed;vertical-align:top}
+thead{position:sticky;top:0;background:#e9f0f7}code{font:11px/1.45 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.table{overflow:auto;max-height:75dvh}.stats{display:flex;gap:12px;flex-wrap:wrap;margin:1rem 0}
+.stat{background:#fff;padding:10px 15px;border:1px solid #dce4ed;border-radius:8px;min-width:130px}
+.stat strong{display:block;font-size:21px}.filter{padding:7px;font:inherit;margin:8px 5px 8px 0}
+.error{color:#a23422}small{color:#5d7086}
+</style></head><body><h1>Complete native flight episodes</h1>
+<p>Actual task horizons: Tracking 20 s, Racing 60 s, OA 300 s. Each case executes one full episode per scene, with genuine SUCCESS/COLLISION/METHOD_FAILURE/OUT_OF_BOUNDS/TIMEOUT outcomes. A task TIMEOUT must occur at the full configured horizon. CLI errors and infrastructure wall-time limits are separately labeled; no 0.14 s truncation is applied.</p>
+<p>These runs check complete physical episodes, not 100-episode statistical Benchmark convergence.</p>
+<p><a href="../../docs/command-builder.html">Command Builder</a><a href="catalog.json">Generated commands</a><a href="manifest.json">Execution manifest</a><a href="../../docs/viewer/dist/index.html">MuJoCo WASM</a></p>
+<div id="summary" class="stats"></div>
+<input id="query" class="filter" placeholder="Filter scene, controller, task"/>
+<select id="group" class="filter"><option value="">All groups</option><option>play:controller</option><option>play:planner</option><option>benchmark:controller</option><option>benchmark:planner</option></select>
+<select id="status" class="filter"><option value="">All results</option><option>pending</option><option>running</option><option>completed</option><option>method_failure</option><option>missing_replay</option><option>process_timeout</option><option>error</option></select>
+<small id="updated">Loading</small>
+<div class="table"><table><thead><tr><th>ID</th><th>Type</th><th>Task</th><th>Scene</th><th>Controller</th><th>Execution</th><th>Task events</th><th>Flight time</th><th>Results / Replay</th><th>Original command</th></tr></thead><tbody id="rows"></tbody></table></div>
+<script>
+const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+let catalog=null;let records={};
+async function read(path){const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error(`${path}: HTTP ${r.status}`);return r.json()}
+async function refresh(){
+ try{
+   if(!catalog)catalog=(await read('catalog.json')).cases;
+   records=(await read('manifest.json')).cases;
+   let values=Object.values(records),done=values.filter(v=>v.status==='completed').length;
+   let saved=values.reduce((n,v)=>n+(v.browser_replays||[]).length,0);
+   let events={};for(const v of values)for(const [e,c] of Object.entries(v.events||{}))events[e]=(events[e]||0)+c;
+   document.querySelector('#summary').innerHTML=[['Completed',`${done} / ${catalog.length}`],['Records',saved],['Task success',events.SUCCESS||0],['Genuine task timeout',events.TIMEOUT||0],['Method failure',events.METHOD_FAILURE||0],['Pending',catalog.length-values.length]].map(([k,v])=>`<div class="stat"><small>${k}</small><strong>${v}</strong></div>`).join('');
+   const query=document.querySelector('#query').value.toLowerCase(),group=document.querySelector('#group').value,status=document.querySelector('#status').value;
+   document.querySelector('#rows').innerHTML=catalog.map((c,i)=>{
+     const id=String(i).padStart(3,'0'),category=c.mode+':'+c.method;
+     const item=Object.entries(records).find(([key])=>key.startsWith(id+'_'))?.[1];const state=item?.status||'pending';
+     const text=[category,c.task,c.scene,c.suite,c.planner,c.controller,state].join(' ').toLowerCase();
+     if((query&&!text.includes(query))||(group&&category!==group)||(status&&state!==status))return '';
+     let links='-';if(item){const folder=item.run_relative;links=`<a href="${esc(folder)}/console.log">Log</a>${item.has_report?`<a href="${esc(folder)}/report.json">Report</a>`:''}${(item.browser_replays||[]).map((r,j)=>{
+       const record=new URL(folder+'/'+r, location.href).pathname;
+       const viewer='/docs/viewer/dist/index.html?record='+encodeURIComponent(record);
+       return `<a href="${esc(viewer)}" target="_blank">WASM ${j+1}</a><a href="${esc(folder+'/'+r.replace('browser_replay.json','episode.mj_unroll'))}">RScope ${j+1}</a>`}).join('')}`;}
+     const events=item?Object.entries(item.events||{}).map(([e,n])=>e+':'+n).join(', '):'';
+     return `<tr><td>${i}</td><td>${esc(category)}</td><td>${esc(c.task)}</td><td>${esc(c.scene||c.suite||'core')}</td><td>${esc([c.planner,c.controller].filter(Boolean).join(' + '))}</td><td class="${state==='error'?'error':''}">${esc(state)}</td><td>${esc(events)}</td><td>${esc((item?.simulated_flight_seconds||[]).map(n=>n.toFixed(2)+' s').join(', '))}</td><td>${links}</td><td><code>${esc(c.command)}</code></td></tr>`;
+   }).join('');
+   document.querySelector('#updated').textContent='Refreshed '+new Date().toLocaleTimeString()+' (every 15 s)';
+ }catch(error){document.querySelector('#updated').textContent=error.message;}
+}
+for(const id of ['query','group','status'])document.getElementById(id).addEventListener(id==='query'?'input':'change',refresh);
+refresh();setInterval(refresh,15000);
+</script></body></html>
