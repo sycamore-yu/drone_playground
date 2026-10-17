@@ -13,11 +13,13 @@ frame. The original three-axis `Action(level=acceleration)` assumed the Actor
 outputs world-frame net acceleration. Two states with the same egocentric
 observation but different world headings can require different policy outputs.
 Adding nine body-to-world rotation matrix values to the Actor input makes the
-world-frame output inferable, but destroys the intended heading-invariant
-representation and increases network state size. Both the original and the
-rotation-augmented native SHAC baselines produced 0/100 on the newer matched
-procedural training suite. This is an observed failure, not evidence that the
-representation change alone will converge.
+world-frame output inferable, but introduces global-heading dependence and
+increases network state size. On the newer matched procedural training suite,
+the original body-observation/world-action SHAC baseline achieved 0/100, while
+the rotation-augmented SHAC baseline achieved **50/100** (S01/S02 each 25/25;
+S03/S06 each 0/25), with worst-scene success rate 0. The latter is a
+demonstrated partial improvement, not evidence that either representation
+fully solves the task. The body-action change must be measured separately.
 
 ## Contract
 
