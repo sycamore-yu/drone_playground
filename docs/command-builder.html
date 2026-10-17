@@ -69,7 +69,7 @@ function eligibleControllers(task,planner){
 }
 function experiment(s){
   if(s.mode!=='train')return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;
-  if(suites[s.task])return `oa_${s.task.split('_')[0]}_${s.sensor}`+(s.algorithm==='ppo'?'_ppo':s.sensor==='depth'?'_10hz':'');
+  if(suites[s.task])return `oa_${s.task.split('_')[0]}_${s.sensor}_${s.algorithm}`;
   if(s.task==='racing'&&s.algorithm!=='bptt')return `racing_${s.algorithm}_stable`;
   return `${s.task}_${s.algorithm}`+(s.algorithm==='ppo'?'':`_${s.backward||'native'}`);
 }

@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+- oa_static_lidar
+- oa_lidar_shac_history
+- override /learning: shac

@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+- oa_static_depth_10hz
+- oa_depth_shac_history
+- override /learning: shac
