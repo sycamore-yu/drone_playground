@@ -1,5 +1,7 @@
 # ADR-0021: Task-owned rewards and Learning-owned auxiliary losses
 
+**2026-10-17 supersession:** The Navigation velocity/yaw experimental action and its legacy reward were removed; Tracking/Racing Train actions are now collective thrust plus body rates. The corresponding historical sections below describe earlier decisions, not current public interfaces. See [ADR-0038](0038-tracking-racing-body-rate-unification.md).
+
 **Status:** Accepted.
 **Approval:** Originally recorded as 2026-10-10; the exact approval time was not retained.
 **Implementation:** Task owns physical reward equations and explicit reward profiles. Learning composes task costs with auxiliary losses. The former configuration translation is removed under ADR-0026.

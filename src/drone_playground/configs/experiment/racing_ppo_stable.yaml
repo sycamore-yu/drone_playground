@@ -29,8 +29,8 @@ learning:
   best:
     source: evaluation
     metric: success_rate
-    episodes: 100
-    confirmation_episodes: 0
+    episodes: 24
+    confirmation_episodes: 96
     interval: 1638400
     seed: 1000000
   early_stopping:

@@ -21,7 +21,7 @@ learning:
   best:
     source: evaluation
     interval: 1638400
-    episodes: 100
+    episodes: 24
     seed: 1000000
   early_stopping:
     metric: success_rate

@@ -227,3 +227,29 @@ body-frame models. The default changes are a new research recipe, not an
 independent 100-case accepted checkpoint for every combination. See
 [ADR-0037](adr/0037-oa-consistent-action-and-time-alignment.md) for the limits
 and independent confirmation protocol.
+
+
+## Tracking and Racing: collective thrust and body rates
+
+All seven Train methods for each reference task use the same four-component
+physical action: `[total thrust in N, body wx, body wy, body wz in rad/s]`.
+The native control backend consumes a different order, handled once by Action.
+The selected backward model does not change the policy action layer.
+
+```bash
+pixi run train experiment=tracking_bptt_native learning=bptt seed=0
+pixi run train experiment=tracking_bptt_point_mass_lag learning=bptt seed=0
+pixi run train experiment=racing_ppo_stable learning=ppo seed=0
+pixi run train experiment=racing_shac_stable learning=shac seed=0
+```
+
+The common world-reference state includes attitude and already-body-frame
+angular velocity. `attitude_thrust` still exists as a physical controller
+setpoint used by OA acceleration and planners, but is no longer the learned
+Tracking/Racing default. The unused Navigation `velocity_yaw` learned action,
+its velocity PID, legacy reward and four old experimental recipes were retired.
+Frozen historical source remains the way to reproduce old models.
+
+New CTBR runs require random initialization and new development/release
+confirmation; past attitude/acceleration-model scores do not establish acceptance
+of the new action contract. See [ADR-0038](adr/0038-tracking-racing-body-rate-unification.md).

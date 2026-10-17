@@ -154,9 +154,6 @@ class Action:
         frame=None,
         heading="fixed",
         frequency=50.0,
-        velocity_gain=(3.0, 3.0, 5.0),
-        acceleration_limit=(6.0, 6.0, 6.0),
-        tilt_limit=0.55,
         thrust_to_weight_bounds=(0.4, 1.6),
         body_rate_limit=6.0,
     ):
@@ -178,7 +175,6 @@ class Action:
         defaults = {
             "acceleration": ([-6.0] * 3, [6.0] * 3),
             "horizontal_acceleration": ([-6.0] * 2, [6.0] * 2),
-            "velocity_yaw": ([-4.0, -4.0, -4.0, -np.pi], [4.0, 4.0, 4.0, np.pi]),
             "attitude_thrust": (
                 [-0.6, -0.6, -np.pi, 0.4 * self.hover],
                 [0.6, 0.6, np.pi, 1.6 * self.hover],
@@ -208,42 +204,18 @@ class Action:
             raise ValueError("Each lower action limit must be smaller than its upper limit")
         expected_frame = (
             "world"
-            if level
-            in {"acceleration", "horizontal_acceleration", "attitude_thrust", "velocity_yaw"}
+            if level in {"acceleration", "horizontal_acceleration", "attitude_thrust"}
             else "body"
         )
         self.frame = expected_frame if frame is None else frame
         if (
-            self.frame != expected_frame
-            and not (level in {"acceleration", "velocity_yaw"} and self.frame == "body")
+            self.frame != expected_frame and not (level == "acceleration" and self.frame == "body")
         ) or heading not in {"fixed", "target"}:
             raise ValueError("Unsupported action frame or heading convention")
         self.low, self.high, self.size = jnp.asarray(lower), jnp.asarray(upper), size
         self.output_level = (
-            "attitude_thrust"
-            if level in {"acceleration", "horizontal_acceleration", "velocity_yaw"}
-            else level
+            "attitude_thrust" if level in {"acceleration", "horizontal_acceleration"} else level
         )
-        if level != "velocity_yaw" and (
-            tuple(velocity_gain) != (3.0, 3.0, 5.0)
-            or tuple(acceleration_limit) != (6.0, 6.0, 6.0)
-            or tilt_limit != 0.55
-        ):
-            raise ValueError("Velocity tracking gains require velocity_yaw")
-        gains = np.asarray(velocity_gain, np.float32)
-        limits = np.asarray(acceleration_limit, np.float32)
-        if (
-            gains.shape != (3,)
-            or limits.shape != (3,)
-            or not np.isfinite([*gains, *limits, tilt_limit]).all()
-            or np.any(gains <= 0)
-            or np.any(limits <= 0)
-            or not 0 < tilt_limit < np.pi / 2
-        ):
-            raise ValueError("Velocity tracking gains/limits/tilt must be finite and positive")
-        self.velocity_gain = jnp.asarray(gains)
-        self.acceleration_limit = jnp.asarray(limits)
-        self.tilt_limit = float(tilt_limit)
         self._acceleration = None
         if level in {"acceleration", "horizontal_acceleration"}:
             from drone_playground.simulation.controllers import MellingerController
@@ -262,17 +234,6 @@ class Action:
         }
         if self.level == "horizontal_acceleration":
             result["altitude_hold"] = {"kp": 2.0, "kd": 1.5, "z_acceleration_limit": 3.0}
-        if self.level == "velocity_yaw":
-            result.update(
-                velocity_gain=np.asarray(self.velocity_gain).tolist(),
-                acceleration_limit=np.asarray(self.acceleration_limit).tolist(),
-                tilt_limit=self.tilt_limit,
-            )
-            if self.frame == "body":
-                # Changes the Action identity: old body-velocity checkpoints
-                # with an absolute-world yaw head must not be loaded as a
-                # relative-heading controller without new policy training.
-                result["yaw_reference"] = "current_heading_offset"
         return result
 
     def decode(self, action):
@@ -298,50 +259,6 @@ class Action:
 
     def setpoint(self, physics, physical, target=None):
         """Convert a physical request to the selected native control input."""
-        if self.level == "velocity_yaw":
-            # Explicitly selected four-dimensional high-level policy, adapted
-            # from the old project's velocity inner loop. Same Crazyflow rigid
-            # body model and native attitude/thrust executor as other actions.
-            requested = physical[..., :3]
-            if self.frame == "body":
-                # The velocity is body-frame. The fourth input is a yaw *offset*
-                # from the current heading, not an unobservable world heading.
-                requested = Rotation.from_quat(physics.states.quat[:, 0]).apply(requested)
-            velocity = physics.states.vel[:, 0]
-            acceleration = jnp.clip(
-                (requested - velocity) * self.velocity_gain,
-                -self.acceleration_limit,
-                self.acceleration_limit,
-            )
-            force = self.mass * (acceleration + jnp.array([0.0, 0.0, 9.81]))
-            magnitude = jnp.maximum(jnp.linalg.norm(force, axis=-1), 1e-6)
-            yaw = physical[..., 3]
-            if self.frame == "body":
-                # A body-local policy sees only relative heading information.
-                # Compute its world yaw setpoint at command issue time, not at
-                # the (possibly delayed) inner-loop actuation time. The legacy
-                # frame=world contract retains absolute yaw for old checkpoints.
-                q = physics.states.quat[:, 0]
-                current_yaw = jnp.arctan2(
-                    2.0 * (q[:, 3] * q[:, 2] + q[:, 0] * q[:, 1]),
-                    1.0 - 2.0 * (q[:, 1] ** 2 + q[:, 2] ** 2),
-                )
-                world_yaw = current_yaw + yaw
-                yaw = jnp.arctan2(jnp.sin(world_yaw), jnp.cos(world_yaw))
-            forward = jnp.cos(yaw) * force[..., 0] + jnp.sin(yaw) * force[..., 1]
-            sideways = -jnp.sin(yaw) * force[..., 0] + jnp.cos(yaw) * force[..., 1]
-            roll = -jnp.arcsin(jnp.clip(sideways / magnitude, -0.999, 0.999))
-            pitch = jnp.arctan2(forward, force[..., 2])
-            value = jnp.stack(
-                [
-                    jnp.clip(roll, -self.tilt_limit, self.tilt_limit),
-                    jnp.clip(pitch, -self.tilt_limit, self.tilt_limit),
-                    yaw,
-                    jnp.clip(magnitude, 0.4 * self.hover, 1.6 * self.hover),
-                ],
-                -1,
-            )
-            return Setpoint(value, level="attitude_thrust", frame="world")
         if self.level == "body_rate":
             # Policy/model input is [thrust, wx, wy, wz]; Crazyflow stages rates first.
             return Setpoint(physical[..., jnp.array([1, 2, 3, 0])], level="body_rate", frame="body")

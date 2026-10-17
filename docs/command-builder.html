@@ -149,7 +149,7 @@ function command(s){
     parts.push(`experiment=${experiment(s)}`,`learning=${s.algorithm}`);
     if(s.mode==='train'){
       parts.push('seed=0');
-      if(s.algorithm!=='ppo'&&s.backward!=='native')parts.push(`learning.backward_model=${s.backward}`,`method.action.level=${s.backward==='lotf'?'body_rate':'acceleration'}`);
+      if(s.algorithm!=='ppo'&&s.backward!=='native')parts.push(`learning.backward_model=${s.backward}`,`method.action.level=${!suites[s.task]||s.backward==='lotf'?'body_rate':'acceleration'}`);
       if(s.algorithm!=='ppo'&&s.backward==='lotf'&&suites[s.task])parts.push('learning.loss=null','learning.options.perception_loss=null');
     }else{
       const checkpoint=s.checkpoint==='path'?s.path:s.checkpoint;
@@ -212,7 +212,7 @@ if(typeof document!=='undefined'){
       options('scene',sceneNames(state.task).map(key=>[key,key]));
       options('suite',suiteNames(state.task).map(key=>[key,key==='core'?'Core S/D scenes':key]));
     }
-    $('description').textContent=train?(suites[state.task]?`Train on newly sampled ${state.task==='static_oa'?'static':'moving'} obstacles. Fixed S/D maps are reserved for Benchmark.`:'Train with a fixed interaction budget; save resumable state and a frozen policy.'):(state.mode==='benchmark'?'Evaluate every requested episode on the declared fixed suite. Reports include failed episodes and metric sample counts.':'Execute the selected method and record episode outcomes.');
+    $('description').textContent=train?(suites[state.task]?`Train on newly sampled ${state.task==='static_oa'?'static':'moving'} obstacles. Fixed S/D maps are reserved for Benchmark.`:'Train with a fixed iteration budget; save the declared action contract and a frozen policy.'):(state.mode==='benchmark'?'Evaluate every requested episode on the declared fixed suite. Reports include failed episodes and metric sample counts.':'Execute the selected method and record episode outcomes.');
     const missing=!train&&policy&&state.checkpoint==='path'&&!state.path.trim();
     $('command').textContent=missing?'Enter an Orbax model directory to generate the command.':command(state);$('copy').disabled=missing;
     document.dispatchEvent(new CustomEvent('drone-playground:selection', {detail:{...state}}));

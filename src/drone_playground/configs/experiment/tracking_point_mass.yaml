@@ -3,7 +3,7 @@ defaults:
 - tracking
 method:
   action:
-    level: acceleration
+    level: body_rate
 learning:
   backward_model: point_mass_lag
   backward_options:

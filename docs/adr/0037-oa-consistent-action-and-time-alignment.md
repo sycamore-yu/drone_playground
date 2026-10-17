@@ -1,5 +1,7 @@
 # ADR-0037: Egocentric OA defaults and temporally aligned sensor snapshots
 
+**2026-10-17 supersession:** The Navigation velocity/yaw experimental action and its legacy reward were removed; Tracking/Racing Train actions are now collective thrust plus body rates. The corresponding historical sections below describe earlier decisions, not current public interfaces. See [ADR-0038](0038-tracking-racing-body-rate-unification.md).
+
 **Status:** Implemented in public training configurations, **not yet independently
 accepted for all OA combinations**. Changes to the OA task distribution and
 sensor preprocessing are training-contract changes; old checkpoints are never

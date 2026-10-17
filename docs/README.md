@@ -65,6 +65,7 @@ ADR-0022 remains experimental and is not an approved replacement architecture.
 | [0035](adr/0035-historical-oa-training-recipes.md) | Prioritize verified OA learner coefficients in release Train presets |
 | [0036](adr/0036-navigation-body-frame-action.md) | Egocentric acceleration policy contract and coordinate-system audit |
 | [0037](adr/0037-oa-consistent-action-and-time-alignment.md) | Default OA body-frame controls, crossbeam training and sensor timestamp/pose alignment |
+| [0038](adr/0038-tracking-racing-body-rate-unification.md) | Unified Tracking/Racing thrust/body-rate policies and retirement of velocity experiments |
 
 Local research notes, transient diagnostics, and historical run archives remain
 outside the public source surface. They preserve their original source identity

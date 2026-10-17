@@ -1,5 +1,7 @@
 # ADR-0036: Consistent egocentric Navigation acceleration commands
 
+**2026-10-17 supersession:** The Navigation velocity/yaw experimental action and its legacy reward were removed; Tracking/Racing Train actions are now collective thrust plus body rates. The corresponding historical sections below describe earlier decisions, not current public interfaces. See [ADR-0038](0038-tracking-racing-body-rate-unification.md).
+
 **Status:** The body-frame Action conversion is implemented. All new OA Train
 defaults select it, while their independent release acceptance is pending.
 **Scope:** Navigation policies using three-axis `acceleration`; Tracking/Racing,

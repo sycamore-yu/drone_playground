@@ -24,7 +24,7 @@ from drone_playground.simulation.procedural_scene import ProceduralScene, SceneS
 from drone_playground.simulation.randomization import install_randomization
 from drone_playground.simulation.scene import Scene, SceneBatch
 from drone_playground.simulation.sensors import SensorConfig
-from drone_playground.simulation.task_rewards import motion_navigation_reward, shaped_task_cost
+from drone_playground.simulation.task_rewards import shaped_task_cost
 from drone_playground.simulation.tasks import Event, Task, TaskState, first_event
 
 
@@ -142,16 +142,13 @@ class BaseEnv:
         self.num_envs, self.method_hz = num_envs, method_hz
         self.substeps = physics_hz // method_hz
         self.dt = 1 / method_hz
+        if action is None and task in {"tracking", "racing"}:
+            action = {"level": "body_rate", "frame": "body"}
         self.action = (
             action
             if isinstance(action, Action)
             else Action(drone=drone, frequency=method_hz, **(action or {}))
         )
-        if (
-            self.task.reward_profile == "legacy_motion_navigation_v2"
-            and self.action.level != "velocity_yaw"
-        ):
-            raise ValueError("Motion-aware-v2 task reward requires velocity_yaw action contract")
         self.control_level = control_level or self.action.output_level
         self.delay_bounds = delay_range(action_delay_s)
         self.ideal_samples = math.ceil(self.delay_bounds[1] * physics_hz) + self.substeps
@@ -855,9 +852,6 @@ class NavigationEnv(BaseEnv):
             from drone_playground.simulation.task_rewards import paper_navigation_reward
 
             reward, terms = paper_navigation_reward(self, before, after, action)
-            return -reward, terms
-        if self.task.reward_profile == "legacy_motion_navigation_v2":
-            reward, terms = motion_navigation_reward(self, before, after, action)
             return -reward, terms
         position = after.physics.states.pos[:, 0]
         velocity = after.physics.states.vel[:, 0]
