@@ -77,12 +77,9 @@ class SceneDistribution:
             type(self.horizontal_beam_probability) not in (int, float)
             or not math.isfinite(self.horizontal_beam_probability)
             or not 0 <= self.horizontal_beam_probability <= 1
-            or (
-                self.horizontal_beam_probability > 0
-                and (self.layout != "matched" or self.obstacle_motion != "static")
-            )
+            or (self.horizontal_beam_probability > 0 and self.layout != "matched")
         ):
-            raise ValueError("Horizontal beam probability requires matched static scenes in [0, 1]")
+            raise ValueError("Horizontal beam probability requires matched scenes in [0, 1]")
         if not -19.0 < self.corridor_y < -16.0:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
@@ -530,8 +527,8 @@ class ProceduralScene:
                 moving = moving.at[:4].set(jnp.where(use_walls, False, moving[:4]))
                 motion = motion.at[:4].set(jnp.where(use_walls, 0, motion[:4]))
             if self.distribution.horizontal_beam_probability > 0:
-                # Random crossbeams exercise vertical bypasses absent from the
-                # standard matched distribution. Their x/z/extent vary by world
+                # Static crossbeams exercise vertical bypasses absent from the
+                # standard matched static/dynamic distributions. Their x/z/extent vary by world
                 # and reset, so this does not sample the held-out S06 geometry.
                 # The existing 2-D route is free of other static obstacles;
                 # ascending to z=4.3 before a beam gives a 3-D escape route.

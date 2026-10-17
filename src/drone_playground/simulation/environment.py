@@ -528,7 +528,7 @@ class BaseEnv:
             state.physics.states.vel[:, 0], inverse=True
         )
         if self.sensor is not None:
-            observation.update(self.sensor.encode(state.observation))
+            observation.update(self.sensor.encode(state.observation, physics=state.physics))
         if self.observation_config.get("fan_lidar") is not None:
             physics = state.physics.states
             observation["fan_state"] = jnp.concatenate(

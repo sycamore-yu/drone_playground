@@ -9,7 +9,7 @@ simulation:
   navigation_goal_observation: true
 observation:
   navigation_relative_goal: true
-  navigation_world_rotation: true
+  navigation_world_rotation: false
 method:
   action:
     level: acceleration

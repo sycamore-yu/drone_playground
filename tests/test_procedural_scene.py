@@ -115,10 +115,13 @@ def test_horizontal_beam_probability_requires_numeric_supported_static_layout(in
         SceneDistribution(
             layout="legacy", obstacle_motion="static", horizontal_beam_probability=0.7
         )
-    with pytest.raises(ValueError, match="Horizontal beam probability"):
+    # Static crossbeams can coexist with dynamic obstacles in a matched scene.
+    assert (
         SceneDistribution(
             layout="matched", obstacle_motion="dynamic", horizontal_beam_probability=0.7
-        )
+        ).horizontal_beam_probability
+        == 0.7
+    )
 
 
 def test_zero_beam_probability_preserves_matched_procedural_source_identity():

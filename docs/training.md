@@ -200,33 +200,30 @@ identical historical OA acceptance evidence. An OA default is promoted only
 after its own frozen independent Benchmark result passes.
 
 
-## Navigation policy action coordinates
+## Navigation policy action coordinates and timestamps
 
-For a new body-coordinate OA acceleration comparison, retain the historical
-learning objective/optimizer and configure the **action frame** explicitly:
+All OA BPTT/SHAC/PPO Train defaults now use **body-frame net acceleration**;
+LOTF uses the pre-existing body-rate/collective-thrust interface. The controller
+rotates commands to world net acceleration at issuance, without changing the
+physical simulator. OA PPO does not need the old world-rotation-matrix feature.
+Tracking and Racing keep their validated world-reference contracts.
 
 ```bash
-pixi run train experiment=oa_static_depth_shac learning=shac seed=0 \
-  +method.action.frame=body ++observation.navigation_world_rotation=false
+pixi run train experiment=oa_static_depth_shac learning=shac seed=0
+pixi run train experiment=oa_dynamic_lidar_ppo learning=ppo seed=0
 ```
 
-`acceleration` in this contract means *net acceleration in body coordinates*,
-not thrust-specific-force. Simulation transforms it to the world acceleration
-expected by the unchanged Mellinger controller and delayed PointMassLag
-surrogate. No rotation matrix is appended to the policy observation. Published
-historical Tracking/Racing and previous OA world-frame checkpoints remain
-unchanged and are not interchangeable with body-frame Actors. See [ADR-0036](adr/0036-navigation-body-frame-action.md).
+The shared OA training distribution includes variable static crossbeams with
+`horizontal_beam_probability=0.7`, also when other obstacles are dynamic. This
+teaches the *possibility* of height bypasses without training on S06's fixed XML.
+Depth and LiDAR OA snapshots use acquisition-to-current-body pose compensation;
+Depth reprojects captured depth returns with an explicit invalid/occlusion mask.
+Low-frequency and delayed captures retain their original acquisition timestamps
+and expose `sensor_age_s`; compensation does not predict moving obstacles or
+handle per-ray rolling scan timing.
 
-Until independent 100-case release acceptance, this opt-in configuration is a
-**research candidate**, not a verified default. Body-rate LOTF stays in the
-existing body frame and has a distinct control level; it is not reinterpreted
-as acceleration.
-
-Static matched procedural training can additionally sample broad, low-height
-crossbeams with `+simulation.procedural.horizontal_beam_probability=0.7`. This
-training-only option adds randomized vertical-passage obstacles while keeping
-the fixed S01/S02/S03/S06 evaluation maps unchanged. Default probability zero
-preserves the original procedural sampler and its geometry identity. Changing
-this distribution requires a fresh-from-scratch training session with a new
-source/configuration identity; it cannot be compared as a same-session optimizer
-parameter change.
+Older world-frame checkpoint/config identities must not be loaded into new
+body-frame models. The default changes are a new research recipe, not an
+independent 100-case accepted checkpoint for every combination. See
+[ADR-0037](adr/0037-oa-consistent-action-and-time-alignment.md) for the limits
+and independent confirmation protocol.

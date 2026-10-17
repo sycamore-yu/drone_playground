@@ -214,7 +214,8 @@ class Action:
         )
         self.frame = expected_frame if frame is None else frame
         if (
-            self.frame != expected_frame and not (level == "acceleration" and self.frame == "body")
+            self.frame != expected_frame
+            and not (level in {"acceleration", "velocity_yaw"} and self.frame == "body")
         ) or heading not in {"fixed", "target"}:
             raise ValueError("Unsupported action frame or heading convention")
         self.low, self.high, self.size = jnp.asarray(lower), jnp.asarray(upper), size
@@ -297,6 +298,10 @@ class Action:
             # from the old project's velocity inner loop. Same Crazyflow rigid
             # body model and native attitude/thrust executor as other actions.
             requested = physical[..., :3]
+            if self.frame == "body":
+                # Velocity follows the same egocentric convention as the policy
+                # observation. The fourth output is still an absolute world yaw.
+                requested = Rotation.from_quat(physics.states.quat[:, 0]).apply(requested)
             velocity = physics.states.vel[:, 0]
             acceleration = jnp.clip(
                 (requested - velocity) * self.velocity_gain,

@@ -1,9 +1,10 @@
 # ADR-0036: Consistent egocentric Navigation acceleration commands
 
-**Status:** Implemented as an opt-in, release-pending trainable policy contract.
-**Scope:** Navigation policies using three-axis `acceleration`; tracking/racing,
-`velocity_yaw`, `body_rate`, planners and previously accepted checkpoints keep
-exactly their previous action contracts.
+**Status:** The body-frame Action conversion is implemented. All new OA Train
+defaults select it, while their independent release acceptance is pending.
+**Scope:** Navigation policies using three-axis `acceleration`; Tracking/Racing,
+planners and previously accepted checkpoints retain their own documented frames.
+Navigation `velocity_yaw` uses body-frame velocity in new recipes (see ADR-0037).
 
 ## Evidence and problem
 
@@ -39,10 +40,11 @@ command frame. The physical observation `up_body` remains available for tilt,
 and the Actor need not receive a body-to-world rotation matrix.
 
 The `Action` contract declares `frame` and persists it with the checkpoint.
-`frame=world` remains the default to preserve the current 14 accepted
-Tracking/Racing recipes and old checkpoints. Only `level=acceleration` opts into
-`frame=body`. Other frame/level combinations continue to validate or reject as
-before. LOTF already uses `body_rate` in body coordinates, not acceleration.
+The legacy Action class fallback `frame=world` is retained for existing
+Tracking/Racing recipes and old checkpoints; all published OA Train YAMLs now
+explicitly select `frame=body`. The `velocity_yaw` interface also permits
+body-frame *velocity* in new Navigation recipes while retaining its explicit
+world-yaw command. LOTF already uses `body_rate` in body coordinates.
 
 This is **not** a blanket claim that all UAV policies should output full-body
 acceleration. A yaw-stabilized heading frame (horizontal axes rotated by yaw,
@@ -67,8 +69,8 @@ velocity/goal and mounted sensors already express.
 
 ## Identified adjacent issues (with evidence status)
 
-1. **Verified, fixed for candidate:** `Action.setpoint` expected world
-   acceleration while Navigation Actor saw body velocity/goal. The new opt-in
+1. **Verified, fixed for OA defaults:** `Action.setpoint` expected world
+   acceleration while Navigation Actor saw body velocity/goal. The new declared
    conversion uses `Rotation.from_quat` and a reference-controller equivalence
    check under nonzero yaw, pitch and roll. Neither policy frame nor physics
    sign is left implicit.
@@ -84,22 +86,22 @@ velocity/goal and mounted sensors already express.
    now supplied explicitly. The paper Fan acceleration path has an analogous
    conversion; previous-action smoothing remains a declared command-local
    difference (not a claim of exact physical jerk for changing attitudes).
-4. **Verified, not part of the 42 supported OA acceleration baseline:** The
-   `velocity_yaw` Navigation policy takes the same body-relative state but its
-   `Action.setpoint` compares the output velocity directly to world velocity.
-   This is another potentially under-observed world-frame policy. It requires
-   its **own** observation/action redesign and tests, rather than silently
-   changing the existing historic velocity policy and its evidence.
-5. **Verified train-vs-test distribution mismatch:** Matched procedural scenes
-   do not cover the horizontal beam requiring a vertical passage in fixed S06;
-   original SHAC S06 collided there. The coordinate correction cannot teach
-   flight through unobserved geometry by itself. A new distribution/source
-   experiment is required if the updated body-action baseline still fails.
-6. **Conditional timing mismatch:** With nonzero sensor latency, the delivered
-   `points_body` are in the **acquisition-time** body frame, while current
-   kinematic state features use the present body frame. The default studied
-   latency is zero, so this cannot explain the existing failure; a future
-   latency study needs motion compensation or an explicit relative pose/time.
+4. **Verified and fixed for new Navigation velocity recipes:** The previous
+   `velocity_yaw` Navigation policy used body-relative observations yet sent
+   a world-relative velocity request. It now explicitly sets `frame=body` and
+   rotates the requested velocity at issuance into the world PID. Legacy world
+   checkpoints remain distinguishable by their action contract.
+5. **Verified train-vs-test distribution mismatch, addressed by a new training
+   generator:** Matched procedural scenes originally omitted S06's horizontal
+   beam/vertical passage. New versioned OA defaults sample randomized beams,
+   including stationary beams among dynamic obstacles. This does not modify
+   fixed benchmark geometry or imply complete independent validation.
+6. **Conditional timing mismatch, ego-motion now compensated:** Delayed LiDAR
+   `points_body` refer to the acquisition body frame, whereas policy kinematic
+   inputs use the current body frame. New OA defaults transform acquired points
+   into current body coordinates and reproject Depth snapshots, retaining
+   timestamps and masks. This does not deskew a rolling LiDAR or predict
+   obstacles that have moved since capture. See ADR-0037.
 7. **No-op setting, not a fix:** `initial_log_std` controls PPO Gaussian action
    sampling, not the deterministic BPTT/SHAC path. Procedural initial positions
    come from the scene generator, not the old random-navigation-start flag.
@@ -107,7 +109,7 @@ velocity/goal and mounted sensors already express.
 ## Independent checks and promotion rule
 
 - Unit: distinguish frames and retain 3-D normalized bounds; reject unsupported
-  body horizontal/velocity action contracts; arbitrary-rotation setpoint equality
+  body horizontal actions; arbitrary-rotation setpoint equality
   against the old world policy; analytic JAX acceleration Jacobian.
 - Dynamics: forward-equivalent PointMassLag and native steps with world-frame
   delayed input; finite nonzero model gradients; named physical-cost consistency.
@@ -115,13 +117,15 @@ velocity/goal and mounted sensors already express.
   original control models, historical OA recipe resolution and sensor paths.
 - Real training: a small, from-scratch CPU BPTT/SHAC rollout smoke validates
   finite updates without claiming convergence.
-- Results: create a distinct source-pinned Autoresearch session with new
-  `+method.action.frame=body` and `++observation.navigation_world_rotation=false`.
-  Preserve the historical loss/reward/optimizer, training distribution, seeds,
+- Results: create a distinct source-pinned Autoresearch session using the new
+  body-action, variable-beam and time-aligned observation defaults.
+  Preserve the historical loss/reward/optimizer, declared training distribution, seeds,
   N/horizon/iterations and fixed 24/96 model selection. Compare the four fixed
   scenes by `eval_worst_scene_success_rate` and publish only after a separate
   untouched 100-case independent confirmation.
 
-Do not change the public OA release recipe in place while it has no accepted
-body-action checkpoint. Continue iterative diagnosis with the already authorized
-single GPU queue; once proved, promote the successful recipe only in its cell.
+Public OA Train recipes now request body actions and the new training/observation
+semantics, but **checkpoint-level convergence acceptance remains per cell**.
+Continue through the authorized single GPU queue; freeze and promote a trained
+model only after separate held-out release confirmation. Historical world-frame
+records remain reproducible with explicitly pinned configurations.

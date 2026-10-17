@@ -13,6 +13,7 @@ simulation:
 method:
   action:
     level: velocity_yaw
+    frame: body
     heading: fixed
     low:
     - -4.0

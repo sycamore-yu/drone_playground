@@ -77,6 +77,13 @@ class SensorObservation:
         observation_config = observation_config or {}
         self.encoding = dict(observation_config.get("depth", {}))
         self.scene, self.config = scene, config
+        modality_options = observation_config.get(
+            "depth" if config.profile == "d435i" else "lidar", {}
+        )
+        self.motion_compensate = modality_options.get("motion_compensate", False)
+        if type(self.motion_compensate) is not bool:
+            raise ValueError("Sensor motion_compensate must be boolean")
+        self.encoding.pop("motion_compensate", None)
         self.point_count = None
         if config.profile != "d435i":
             self.point_count = observation_config.get("lidar", {}).get("point_count")
@@ -103,7 +110,71 @@ class SensorObservation:
         }
         if self.point_count is not None:
             result["point_count"] = self.point_count
+        if self.motion_compensate:
+            result["motion_compensate"] = "snapshot-to-current-body-pose"
         return result
+
+    @staticmethod
+    def _points_in_current_body(state, position, quaternion):
+        """Rigidly align acquisition-frame hits to the current body frame.
+
+        This compensates *snapshot latency* using the two recorded poses; it
+        cannot deskew a rolling sensor without per-point acquisition times.
+        """
+        capture = state.acquisition_pose
+        points = state.measurement.points_body
+        capture_p, capture_q = capture[:, :3], capture[:, 3:]
+        extra = points.ndim - 2
+        capture_p = capture_p.reshape((len(capture),) + (1,) * extra + (3,))
+        position = position.reshape((len(position),) + (1,) * extra + (3,))
+        capture_rotation = Rotation.from_quat(capture_q).as_matrix()
+        current_rotation = Rotation.from_quat(quaternion).as_matrix()
+        world = jnp.einsum("bij,b...j->b...i", capture_rotation, points) + capture_p
+        rotated = jnp.einsum("bji,b...j->b...i", current_rotation, world - position)
+        return jnp.where(state.measurement.mask[..., None], rotated, 0.0)
+
+    def _reproject_depth_to_current(self, measurement, points_body):
+        """Forward-project acquired 3-D depth returns with a nearest-depth z-buffer.
+
+        Missing or newly disoccluded pixels remain invalid, never hallucinated.
+        The raw acquisition-time measurement remains unchanged in the state.
+        """
+        h, w = self.config.height, self.config.width
+        b = len(points_body)
+        mount = Rotation.from_euler(
+            "xyz",
+            jnp.deg2rad(
+                jnp.array([self.config.roll_deg, -self.config.pitch_deg, self.config.yaw_deg])
+            ),
+        ).as_matrix()
+        camera = jnp.einsum(
+            "ji,bhwj->bhwi", mount, points_body - jnp.asarray(self.config.translation)
+        )
+        axial = camera[..., 0]
+        safe = jnp.maximum(axial, 1e-6)
+        htan = jnp.tan(jnp.deg2rad(self.config.horizontal_fov_deg) / 2)
+        vtan = jnp.tan(jnp.deg2rad(self.config.vertical_fov_deg) / 2)
+        column = jnp.floor((1 - camera[..., 1] / (safe * htan)) * (w / 2)).astype(jnp.int32)
+        row = jnp.floor((1 - camera[..., 2] / (safe * vtan)) * (h / 2)).astype(jnp.int32)
+        valid = (
+            measurement.mask
+            & (axial >= self.config.min_range)
+            & (axial < self.config.max_range)
+            & (row >= 0)
+            & (row < h)
+            & (column >= 0)
+            & (column < w)
+        )
+        n = h * w
+        indices = jnp.arange(b)[:, None, None] * n + row * w + column
+        # Reserve the final slot for all invalid points. A minimum-depth
+        # reduction enforces occlusion without out-of-range scatter indices.
+        index = jnp.where(valid, indices, b * n).ravel()
+        zbuffer = jnp.full((b * n + 1,), jnp.inf, dtype=axial.dtype)
+        zbuffer = zbuffer.at[index].min(jnp.where(valid, axial, jnp.inf).ravel())
+        values = zbuffer[: b * n].reshape(b, h, w)
+        mask = jnp.isfinite(values)
+        return measurement._replace(values=jnp.where(mask, values, 0.0), mask=mask)
 
     @staticmethod
     def _pose_at(previous, current, time):
@@ -387,23 +458,54 @@ class SensorObservation:
         # Image/point acquisition is not part of the pathwise dynamics derivative.
         return jax.tree.map(jax.lax.stop_gradient, result)
 
-    def encode(self, state: ObservationState) -> dict[str, jax.Array]:
+    def encode(self, state: ObservationState, *, physics=None) -> dict[str, jax.Array]:
         """Keep device calibration separate from the named policy preprocessing."""
+        measurement = state.measurement
+        points_body = measurement.points_body
+        timing = {}
+        if self.motion_compensate:
+            if physics is None:
+                raise ValueError("Motion compensation needs the current physics pose")
+            position = jax.lax.stop_gradient(physics.states.pos[:, 0])
+            quaternion = jax.lax.stop_gradient(physics.states.quat[:, 0])
+            # Most zero-latency D435i OA policies execute at a snapshot instant.
+            # Avoid a scatter/z-buffer pass when the poses are already aligned.
+            same_pose = jnp.all(jnp.abs(state.acquisition_pose[:, :3] - position) < 1e-5) & jnp.all(
+                jnp.abs(jnp.abs(jnp.sum(state.acquisition_pose[:, 3:] * quaternion, axis=-1)) - 1.0)
+                < 1e-5
+            )
+            points_body = jax.lax.stop_gradient(
+                jax.lax.cond(
+                    same_pose,
+                    lambda: measurement.points_body,
+                    lambda: self._points_in_current_body(state, position, quaternion),
+                )
+            )
+            if self.config.profile == "d435i":
+                measurement = jax.lax.cond(
+                    same_pose,
+                    lambda: measurement,
+                    lambda: self._reproject_depth_to_current(measurement, points_body),
+                )
+            timing["sensor_age_s"] = jnp.maximum(
+                physics.core.steps[:, 0] / physics.core.freq - measurement.acquisition_time,
+                0.0,
+            )
         if self.config.profile == "d435i":
             if self.encoding.get("representation") == "metric":
-                measurement = state.measurement
                 return {
                     "depth": jnp.where(measurement.mask, measurement.values, 0.0)[..., None],
                     "depth_mask": measurement.mask,
                     "acquisition_time": measurement.acquisition_time,
+                    **timing,
                 }
-            depth, mask = preprocess_depth(state.measurement, **self.encoding)
+            depth, mask = preprocess_depth(measurement, **self.encoding)
             return {
                 "depth": depth[..., None],
                 "depth_mask": mask,
                 "acquisition_time": state.measurement.acquisition_time,
+                **timing,
             }
-        measurement = state.measurement
         if self.paper_fan is not None:
             ranges = (
                 state.paper_fan_history["ranges"]
@@ -413,12 +515,14 @@ class SensorObservation:
             return {
                 "fan_map": ranges[..., None],
                 "acquisition_time": measurement.acquisition_time,
+                **timing,
             }
         return {
-            "points": measurement.points_body,
+            "points": points_body,
             "mask": measurement.mask,
             "point_times": jnp.broadcast_to(
                 measurement.acquisition_time[..., None], measurement.values.shape
             ),
             "acquisition_time": measurement.acquisition_time,
+            **timing,
         }
