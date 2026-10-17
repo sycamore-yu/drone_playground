@@ -53,6 +53,23 @@ stops at the exact recorded terminal frame and identifies the physical event.
 Task switching reuses the same instantiated MuJoCo WASM engine: new recordings
 are passed through an origin-checked message channel, rather than recreating
 the 10 MB runtime and cancelling outstanding fetches on each UI selection.
+Dense Dynamic OA recordings such as EGO + Sampling MPC / D01 include several
+hundred moving/recording bodies, a multi-megabyte pose file, and native scene
+compilation that takes several seconds. The Command Builder now keeps the
+previous flight obscured by an explicit loading veil until the **new** WASM
+scene has finished compiling and rendered its first frame. The player reports
+record fetch, WebAssembly initialization, native assets, scene compilation,
+mesh preparation, completion or a retryable error across the same-origin
+message channel. Status acknowledgments are matched to the selected recording
+so older concurrent loads cannot be misidentified as the new task. Redundant
+`mj_forward` calls for the same sampled frame are skipped and the embedded
+rendering loop is capped at 30 fps to reduce resource contention.
+
+The Environments screen uses its own lightweight stylesheet
+`docs/environments.css`: a compact flight-operations console with consistent
+type hierarchy, accessible controls, an always-visible physical outcome and
+responsive Task Preview. The full-size WASM viewer retains its original
+separate visual controls and native 3D geometry.
 An embedded preview shows opaque Crazyflie meshes against **translucent scene
 obstacles** by default, to keep the aircraft visible in dense environments;
 the optional toggle restores fully solid scene obstacles. Only 3D material

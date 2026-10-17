@@ -391,6 +391,31 @@ scene motion and original saved RScope state remain unchanged.
 All assets remain local to the same SSH-forwarded HTTP origin. Recorded
 flight previews never execute the physics solver or mutate source experiments.
 
+### Dynamic OA D01 repeated preview selection (2026-10-17)
+
+Repeated selection of EGO + Sampling MPC / D01 exposed a **perceived freeze**
+despite the native replay being valid and continuously advancing. Its recorded
+flight is a `SUCCESS` at **32.454 s** with 350 saved frames, 390 scene Mocap
+bodies, and approximately 6.6 MB of browser replay JSON. Native MJCF model
+compilation and geometry preparation take several seconds on this checkout.
+Previously, the selected task name changed immediately while the canvas still
+showed the old recording, without visible loading feedback.
+
+Task Preview now masks stale canvas content with an explicit loading state,
+reports phases from the embedded WASM viewer, and reveals only the matching
+record after the new scene has actually loaded. Viewer status events are bound
+to the expected record and real errors offer a retry action. A reduced 30 fps
+embedded render rate avoids redundant physics-forward evaluation when adjacent
+animation frames map to the same recorded sample. Static and dynamic scenario
+switches still retain the existing 550 Hydra commands and one shared
+WebAssembly runtime.
+
+The browser regression tests opening D01 from the provided deep link,
+switching to S06 and back, rapidly changing D02/D03/D01, and verifying the
+correct final recorded flight, uninterrupted playhead progression and a single
+WASM request. Desktop and mobile layouts are inspected separately; responsive
+controls and the embedded player must not cause horizontal overflow.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.

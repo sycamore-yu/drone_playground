@@ -23,7 +23,10 @@ python3 -m http.server 4176 --bind 127.0.0.1
 Then open `http://127.0.0.1:4176/docs/command-builder.html`. The page places
 the task selector, Command Builder and an auto-playing **MuJoCo WASM Task
 Preview** together, followed by a searchable catalog of saved native methods.
-It reads existing local Episode recordings; it does not rerun simulation.
+It has a dedicated, responsive flight-console layout and displays native
+recording and scene compilation progress, so larger Dynamic OA scenes can
+take several seconds to load without leaving stale images on screen. It
+reads existing Episode recordings; it does not rerun simulation.
 For this checkout's verified full-episode results, publish the preview index:
 
 ```bash
