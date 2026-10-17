@@ -91,7 +91,7 @@ def test_legacy_velocity_navigation_recipe_converts_body_velocity_in_policy(sens
 
 
 def test_body_velocity_yaw_is_converted_once_at_issuing_pose():
-    """Body x velocity at yaw 90° must request world y velocity from the PID."""
+    """Body x and a zero local yaw offset become world y and current world yaw."""
     from drone_playground.simulation.environment import make_environment
 
     env = make_environment(num_envs=1)
@@ -106,7 +106,7 @@ def test_body_velocity_yaw_is_converted_once_at_issuing_pose():
     body = Action(level="velocity_yaw", frame="body")
     world = Action(level="velocity_yaw", frame="world")
     reference = jnp.array([[2.0, 0.0, 0.0, 0.0]])
-    rotated = jnp.array([[0.0, 2.0, 0.0, 0.0]])
+    rotated = jnp.array([[0.0, 2.0, 0.0, jnp.pi / 2]])
     np.testing.assert_allclose(
         body.setpoint(physics, reference).value,
         world.setpoint(physics, rotated).value,

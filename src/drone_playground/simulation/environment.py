@@ -223,6 +223,19 @@ class BaseEnv:
             )
         elif sensor != "state":
             raise ValueError(f"Unknown observation profile: {sensor}")
+        # A transport-delayed or slower-than-policy sensor can produce a stale
+        # *current-frame-compensated* observation. Give the Actor the normalized
+        # sample age so identical compensated geometry is not treated as equally
+        # certain at t=0 and t=0.09. For synchronous zero-delay OA keep the old
+        # state width, preserving the accepted model's input identity.
+        self.sensor_age_in_state = bool(
+            self.sensor is not None
+            and self.sensor.motion_compensate
+            and (
+                self.sensor.config.frequency_hz < self.method_hz
+                or self.sensor.latency_bounds[1] > 0
+            )
+        )
         self.reset = jax.jit(self._reset, static_argnames=("randomize_position",))
         self.step = jax.jit(self._step)
         self.step_setpoint = jax.jit(self._step_setpoint)
@@ -529,6 +542,13 @@ class BaseEnv:
         )
         if self.sensor is not None:
             observation.update(self.sensor.encode(state.observation, physics=state.physics))
+            if self.sensor_age_in_state:
+                age_in_sensor_periods = jnp.clip(
+                    observation["sensor_age_s"] * self.sensor.config.frequency_hz, 0.0, 10.0
+                )
+                observation["state"] = jnp.concatenate(
+                    [observation["state"], age_in_sensor_periods[:, None]], axis=-1
+                )
         if self.observation_config.get("fan_lidar") is not None:
             physics = state.physics.states
             observation["fan_state"] = jnp.concatenate(

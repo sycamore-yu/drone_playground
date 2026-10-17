@@ -67,6 +67,26 @@ times describe separate effects.
 **Sensor Measurement**: A physical observation acquired at a specified time in
 a defined coordinate system.
 
+**World Frame (W)**: The simulation's inertial coordinate frame. Navigation
+positions, planned trajectories and the state estimator use world coordinates.
+
+**Body Frame (B)**: The rigid-body FLU frame (x forward, y left, z up). The
+xyzw attitude quaternion represents body-to-world orientation.
+
+**Frame Transport**: Converting a vector or point between frames with a
+specified attitude and, for points, a position at a specified timestamp.
+Scalar collective thrust is frame-independent; angular body rates are body
+vectors; world-reference Euler angles are an orientation, not a world vector.
+
+**Sensor Age**: Policy decision time minus the last available measurement's
+acquisition time. Nonzero age can arise from a lower sensor sampling frequency
+even when communication latency is zero. Motion compensation changes the
+coordinate representation of stale data, not the time when it was measured.
+
+**Local Yaw Offset**: A policy's heading command relative to the vehicle's
+current world yaw at command issuance; unlike an absolute world yaw angle,
+zero offset requests keeping the current heading.
+
 **Snapshot Acquisition**: Acquiring all measurements in a frame at the same
 sensor and scene pose. Acquisition and delivery can occur at different times.
 

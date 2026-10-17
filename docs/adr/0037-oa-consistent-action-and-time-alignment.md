@@ -27,11 +27,16 @@ silently relabeled or counted as validation for the new configuration.
   compared its velocity output directly to the *world* velocity. Its public
   Navigation recipe now declares `frame=body`. The execution layer rotates the
   requested velocity at issuance to world before the unchanged velocity PID.
-  The fourth command stays a **world absolute yaw angle**, explicitly named by
-  the existing `velocity_yaw` interface. Legacy world-frame trained checkpoints
-  retain `frame=world` in their checkpoint contract and require an explicit old
-  configuration for valid replay; do not transfer those weights to new body
-  recipes as if identical.
+  Under `frame=body`, the fourth command is a **yaw offset relative to the
+  current vehicle heading**. `Action.setpoint` computes
+  `world_yaw_desired = wrap(world_yaw_at_issue + local_yaw_offset)` while rotating
+  the velocity vector into the world PID frame. Its checkpoint identity includes
+  `yaw_reference=current_heading_offset`. This resolves the earlier ambiguity
+  where an egocentric Actor was required to output an unobservable absolute
+  heading. Under legacy `frame=world`, yaw remains an absolute world angle and
+  historical checkpoint identity is unchanged. Previously trained body-velocity
+  checkpoints with absolute world yaw have a different contract and cannot be
+  silently loaded as the repaired relative-yaw policy.
 
 ## Training distribution: overhead crossbeams
 
@@ -77,9 +82,14 @@ using declared intrinsics and extrinsics and a nearest-depth z-buffer. Occluded
 pixels and newly visible surfaces are **invalid**, never invented by silently
 rerendering the present world. When capture and current poses already agree,
 conversion is bypassed to avoid overhead for synchronous 10 Hz OA Depth.
-Output includes `sensor_age_s` alongside the original acquisition time, so
-future policies/diagnostics can reason about stale geometry. It does not grant
-access to undelivered measurements.
+Output includes `sensor_age_s` alongside the original acquisition time. When a
+motion-compensated sensor is **slower than the policy** or has nonzero transport
+latency, the environment now also appends one scalar to the Actor's state:
+`clip(sensor_age_s * sensor_frequency_hz, 0, 10)` (age in sensor periods).
+Thus the Actor can distinguish recent and stale perceptual returns. At a fully
+synchronous, zero-latency capture/control boundary, no state dimension is added
+and accepted input dimensions remain stable. This does not grant access to
+undelivered measurements or infer the current location of a moving obstacle.
 
 **Limits:** This compensates ego-motion of a single ideal timestamped *snapshot*;
 it is not rolling-shutter correction, not per-ray LiDAR de-skewing, and not

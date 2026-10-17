@@ -3,6 +3,8 @@
 ## Documents and decisions
 
 `GLOSSARY.md` is the domain context document and contains domain definitions.
+For action coordinates, body/world conversions, delayed sensors or training
+versus policy sampling rates, read ADR-0036/0037 and run `pixi run frame-contracts`.
 Do not create a duplicate `CONTEXT.md`. Architecture decisions belong in
 `docs/adr/`; `docs/README.md` is the documentation entry point.
 
