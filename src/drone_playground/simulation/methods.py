@@ -72,12 +72,25 @@ def sample_planner_horizon(trajectory: Trajectory, times: np.ndarray):
     if times.ndim != 1 or not len(times) or not np.isfinite(times).all():
         raise ValueError("Controller reference times must be a finite vector")
     valid_from, valid_until = float(trajectory.times[0]), float(trajectory.times[-1])
-    if times[0] < valid_from or times[0] > valid_until:
+    # The physics clock uses integer ticks, while a ROS plan's first sample
+    # may be based on float32 scene/sensor time. For example, the same 1.2 s
+    # physics instant can be represented as 1.2000000476837158 in the native
+    # trajectory. Attitude / full-state NMPC include t=now as stage zero,
+    # unlike sampling MPC which starts at t=now+dt. Align representation only,
+    # never make a genuinely future or expired plan valid.
+    clock_ulp = float(np.spacing(np.float32(max(abs(times[0]), abs(valid_from)))))
+    tolerance = max(1e-9, 2 * clock_ulp)
+    if times[0] < valid_from - tolerance or times[0] > valid_until + tolerance:
         raise RuntimeError("Planner trajectory does not cover the current controller step")
     samples = []
     for time in times:
-        if time <= valid_until:
+        if time < valid_from and valid_from - time <= tolerance:
+            # Clamp only the sub-ULP mismatch to the original first sample.
+            values = trajectory.sample(valid_from)
+        elif time <= valid_until:
             values = trajectory.sample(float(time))
+        elif time - valid_until <= tolerance:
+            values = trajectory.sample(valid_until)
         else:
             # Hold the last planned point rather than extrapolating an unknown
             # collision-free path or pretending the original plan stays valid.
