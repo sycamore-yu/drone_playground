@@ -35,6 +35,11 @@ class DronePlaygroundBackend:
         iterations = settings["train_iterations"]
         if type(iterations) is not int or iterations < 1:
             raise ValueError("train_iterations must be a positive integer")
+        for key in ("num_envs", "horizon"):
+            if type(settings[key]) is not int or settings[key] < 1:
+                raise ValueError(f"{key} must be a positive integer")
+        if steps != iterations * settings["num_envs"] * settings["horizon"]:
+            raise ValueError("train_env_steps must equal iterations * num_envs * horizon")
         scenes = settings["eval_scenes"]
         if not scenes or len(set(scenes)) != len(scenes):
             raise ValueError("eval_scenes must contain unique scenes")
@@ -42,14 +47,14 @@ class DronePlaygroundBackend:
             raise ValueError("eval_episodes must be a positive multiple of the scene count")
         recipe = bundle.candidate_metadata["recipe"]
         for key in recipe:
-            if not (
-                key.startswith(("learning.options.", "method.actor."))
-                or key == "simulation.num_envs"
+            if key == "learning.options.horizon" or not key.startswith(
+                ("learning.options.", "method.actor.")
             ):
                 raise ValueError(f"Forbidden candidate override: {key}")
         request = {
             **settings,
             "record_replay": bool(settings.get("record_replay", False)),
+            "record_trajectories": bool(settings.get("record_trajectories", False)),
             "train_env_steps": steps,
             "train_iterations": iterations,
             "eval_episodes": bundle.eval_episodes,
@@ -76,6 +81,8 @@ class DronePlaygroundBackend:
             f"learning={request['algorithm']}",
             *request.get("overrides", []),
             *[f"++{key}={json.dumps(value)}" for key, value in request["recipe"].items()],
+            f"simulation.num_envs={request['num_envs']}",
+            f"learning.options.horizon={request['horizon']}",
             "initial_checkpoint=null",
             f"output={output}",
         ]
@@ -99,7 +106,7 @@ class DronePlaygroundBackend:
             f"benchmark.episodes={request['eval_episodes'] // len(request['eval_scenes'])}",
             f"benchmark.seed_base={request['eval_seed_start']}",
             f"benchmark.record_replay={str(request['record_replay']).lower()}",
-            "benchmark.record_trajectories=false",
+            f"benchmark.record_trajectories={str(request['record_trajectories']).lower()}",
         ]
 
     def _command(self, bundle, phase, checkpoint=None):
@@ -522,8 +529,12 @@ def prepare_training(overrides):
             "experiment": experiment,
             "algorithm": config.learning.algorithm,
             "train_iterations": iterations,
+            "num_envs": config.simulation.num_envs,
+            "horizon": config.learning.options.horizon,
             "overrides": list(overrides),
             "eval_scenes": scenes,
+            "record_replay": bool(config.benchmark.record_replay),
+            "record_trajectories": bool(config.benchmark.record_trajectories),
             "resume": str(Path(config.resume).resolve()) if config.resume else None,
         },
         "train_episodes": 0,
@@ -548,14 +559,11 @@ def prepare_training(overrides):
             "supports_sampled_trajectory": True,
         },
     }
-    root = ROOT / "results/autoresearch/tasks"
+    root = ROOT / "results/autoresearch/sessions"
     root.mkdir(parents=True, exist_ok=True)
-    path = (
-        Path(tempfile.mkdtemp(prefix=f"{task['name']}_s{config.seed}_", dir=root))
-        / "benchmark.json"
-    )
+    session = Path(tempfile.mkdtemp(prefix=f"{task['name']}_s{config.seed}_", dir=root)).resolve()
+    path = session / "benchmark.json"
     path.write_text(json.dumps(task, indent=2) + "\n")
-    session = ROOT / "results/autoresearch/sessions" / path.parent.name
     candidates = session / "candidates"
     candidates.mkdir(parents=True)
     candidate = candidates / "pass01_baseline.py"

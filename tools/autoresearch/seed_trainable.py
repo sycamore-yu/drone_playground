@@ -4,7 +4,7 @@
 def get_candidate():
     """Start with the task's declared training recipe."""
     return {
-        "description": "Declared baseline, trained from scratch for the fixed interaction budget.",
+        "description": "Declared baseline, trained from scratch for the fixed iteration budget.",
         "recipe": {},
     }
 

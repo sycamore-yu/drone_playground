@@ -28,11 +28,12 @@ budget accounting and resumption.
 
 ## Candidate search
 
-Task JSON fixes the experiment, algorithm, budget, scene cohort, and evaluation
-seed base. Candidate `recipe` fields can change `learning.options.*`,
-`method.actor.*`, and `simulation.num_envs`. The total interaction budget must
-remain divisible by the rollout batch. Candidate search starts from random
-weights and cannot override initialization, recovery, or evaluation conditions.
+Task JSON fixes the experiment, algorithm, training iterations, environment
+count, rollout length, scene cohort, and evaluation seed base. Candidate `recipe`
+fields can change `learning.options.*` except `horizon`, and `method.actor.*`.
+The backend checks `train_env_steps = train_iterations * num_envs * horizon`
+before training starts. Candidate search starts from random weights and cannot
+override initialization, recovery, or evaluation conditions.
 
 ```bash
 pixi run autoresearch run \
@@ -40,24 +41,49 @@ pixi run autoresearch run \
   --tag depth-smoke --no-dashboard
 ```
 
-This short task completes 16 PPO updates and 8,192 interactions, then evaluates
-two episodes in each of six fixed scenes. It checks execution, not convergence.
-The ordinary `navigation_depth.json` task uses 409,600 interactions and eight
-episodes per scene. Keep the budget and cohort fixed within a search session.
+This short task uses 16 environments and 16 training iterations, with a rollout
+length of 32 (8,192 total interactions). It evaluates two episodes in each of six
+fixed scenes. The other packaged task, `navigation_depth.json`, uses 16
+environments and 800 iterations with the same rollout length (409,600 total
+interactions), and eight episodes per scene. These are execution examples.
+Release convergence sessions use the current historical-priority experiment
+preset and a declared independent evaluation cohort.
 
 ```bash
-experiment_session=results/autoresearch/sessions/depth-ppo
-mkdir -p "$experiment_session/candidates"
-cp tools/autoresearch/seed_trainable.py "$experiment_session/candidates/baseline.py"
-pixi run autoresearch run --session-dir "$experiment_session" \
-  --candidate "$experiment_session/candidates/baseline.py" \
-  --tag baseline --no-dashboard
+pixi run autoresearch run \
+  --benchmark "$session_dir/benchmark.json" \
+  --session-dir "$session_dir" \
+  --candidate "$session_dir/candidates/pass01_baseline.py" \
+  --tag pass01-baseline --no-dashboard
 ```
 
 The default public search seed base is 1,600,000. Final Benchmark defaults to
 2,000,000. Scene-specific offsets are stable and independent of the training
 seed. Repeated candidate comparisons cannot also serve as an untouched final
 test. Upstream search instructions live in `../autoresearch-gym/AUTORESEARCH.md`.
+
+`prepare_training()` creates `benchmark.json` and the `recipe={}` baseline in
+one session directory. Replay and trajectory settings from the public recipe
+carry through to the external evaluator. For OA release sessions, declare
+`eval_worst_scene_success_rate` as the task's primary metric before the first
+candidate runs. The existing upstream scorer reads this metric from native
+per-scene results.
+
+Run one baseline, inspect its completed development evaluation, then propose at
+most two evidence-based candidates in the first round. Keep the source version,
+training distribution, seeds, budget, and checkpoint selection rule fixed. Cite
+older runs as **Imported Prior** in `outer_loop_log.md`, with their source and
+condition differences. Only identical conditions permit a comparable baseline.
+Record each candidate's observation, one change, expected effect, and rejection
+rule before running it. Preserve per-case regressions as well as gains.
+
+The training runner performs the declared 24-episode check and 96-episode
+confirmation. Its predeclared Best/early-stop rule selects the checkpoint; the
+external development evaluation compares candidates. After development passes,
+freeze the recipe and run the independent 100-episode release confirmation on
+unused evaluation seeds. Record crashes and requested stops with their actual
+status and counters. A changed environment or training implementation starts a
+new source version and baseline. These runs use the existing GPU queue.
 
 ## Dashboard through SSH
 

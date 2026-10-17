@@ -43,6 +43,8 @@ def test_candidate_cannot_change_fixed_evaluation_or_resume(tmp_path):
                 "experiment": "navigation_procedural_depth_ppo_collision_free",
                 "algorithm": "ppo",
                 "train_iterations": 256,
+                "num_envs": 4,
+                "horizon": 8,
                 "eval_scenes": ["S01", "D01"],
             },
             train_seed=7,
@@ -62,10 +64,56 @@ def test_candidate_cannot_change_fixed_evaluation_or_resume(tmp_path):
     assert "seed=0" in evaluate and "benchmark.seed_base=1600000" in evaluate
     assert "benchmark.episodes=1" in evaluate
     assert 'benchmark.scenes=["S01", "D01"]' in evaluate
-    for key in ("benchmark.scenes", "seed", "resume", "task.duration"):
+    assert "simulation.num_envs=4" in train
+    assert "learning.options.horizon=8" in train
+    for key in (
+        "benchmark.scenes",
+        "seed",
+        "resume",
+        "task.duration",
+        "simulation.num_envs",
+        "learning.options.horizon",
+    ):
         bundle.candidate_metadata["recipe"] = {key: 1}
         with pytest.raises(ValueError, match="candidate"):
             backend.build_bundle(bundle)
+    bundle.candidate_metadata["recipe"] = {}
+    bundle.execution_backend["train_env_steps"] = 8193
+    with pytest.raises(ValueError, match=r"iterations.*num_envs.*horizon"):
+        backend.build_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("filename", "iterations"),
+    [("navigation_depth.json", 800), ("navigation_depth_smoke.json", 16)],
+)
+def test_shipped_tasks_load_with_exact_iteration_budget(tmp_path, filename, iterations):
+    """Shipped task files reach the real backend with a consistent finite budget."""
+    from tools.autoresearch import TASKS, DronePlaygroundBackend
+
+    task = json.loads((TASKS / filename).read_text())
+    bundle = SimpleNamespace(
+        target_name="local",
+        train_seconds=None,
+        train_episodes=task["train_episodes"],
+        eval_episodes=task["eval_episodes"],
+        max_steps=task["max_steps"],
+        execution_backend=task["execution_backend"],
+        benchmark=SimpleNamespace(
+            env_kwargs=task["env_kwargs"],
+            train_seed=task["train_seed"],
+            eval_seed_start=task["eval_seed_start"],
+        ),
+        candidate_metadata={"recipe": {}},
+        external_dir=tmp_path,
+    )
+    backend = DronePlaygroundBackend()
+    backend.build_bundle(bundle)
+    request = json.loads((tmp_path / "request.json").read_text())
+    assert request["train_iterations"] == iterations
+    assert request["num_envs"] == 16 and request["horizon"] == 32
+    assert request["train_env_steps"] == iterations * 16 * 32
+    assert f"learning.max_iterations={iterations}" in backend.overrides(bundle, "train")
 
 
 def test_eval_translation_keeps_failures_and_missing_return(tmp_path):
@@ -177,17 +225,24 @@ def test_public_training_recipe_prepares_an_external_candidate(tmp_path, monkeyp
             "learning.options.horizon=8",
             "learning.max_iterations=2",
             "benchmark.episodes=2",
+            "benchmark.record_replay=true",
+            "benchmark.record_trajectories=true",
         ]
     )
     task = json.loads(Path(arguments[arguments.index("--benchmark") + 1]).read_text())
     assert task["execution_backend"]["train_env_steps"] == 64
     assert task["env_kwargs"]["train_iterations"] == 2
+    assert task["env_kwargs"]["num_envs"] == 4
+    assert task["env_kwargs"]["horizon"] == 8
+    assert task["env_kwargs"]["record_replay"] is True
+    assert task["env_kwargs"]["record_trajectories"] is True
     assert task["execution_backend"]["supports_live_frame"] is True
     assert task["execution_backend"]["supports_sampled_trajectory"] is True
     assert task["env_kwargs"]["algorithm"] == algorithm
     assert task["env_kwargs"]["eval_scenes"] == ["empty"]
     assert task["eval_episodes"] == 2
     session = Path(arguments[arguments.index("--session-dir") + 1])
+    assert Path(arguments[arguments.index("--benchmark") + 1]) == session / "benchmark.json"
     assert (project / "autoresearch_runs/sessions" / session.name).resolve() == session
     assert Path(arguments[arguments.index("--candidate") + 1]).is_file()
 

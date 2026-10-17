@@ -4,6 +4,9 @@
   "env_kwargs": {
     "experiment": "navigation_procedural_depth_ppo_collision_free",
     "algorithm": "ppo",
+    "train_iterations": 16,
+    "num_envs": 16,
+    "horizon": 32,
     "eval_scenes": [
       "S01",
       "S02",
