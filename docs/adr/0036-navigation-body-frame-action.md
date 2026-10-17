@@ -43,8 +43,10 @@ The `Action` contract declares `frame` and persists it with the checkpoint.
 The legacy Action class fallback `frame=world` is retained for existing
 Tracking/Racing recipes and old checkpoints; all published OA Train YAMLs now
 explicitly select `frame=body`. The `velocity_yaw` interface also permits
-body-frame *velocity* in new Navigation recipes while retaining its explicit
-world-yaw command. LOTF already uses `body_rate` in body coordinates.
+body-frame *velocity* in new Navigation recipes, with a body-relative yaw-angle
+offset converted to a world yaw setpoint at issuance. Older `frame=world`
+velocity-yaw checkpoints retain absolute world yaw. LOTF already uses
+`body_rate` in body coordinates.
 
 This is **not** a blanket claim that all UAV policies should output full-body
 acceleration. A yaw-stabilized heading frame (horizontal axes rotated by yaw,

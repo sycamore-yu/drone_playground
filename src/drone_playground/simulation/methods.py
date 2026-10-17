@@ -268,6 +268,11 @@ class Action:
                 acceleration_limit=np.asarray(self.acceleration_limit).tolist(),
                 tilt_limit=self.tilt_limit,
             )
+            if self.frame == "body":
+                # Changes the Action identity: old body-velocity checkpoints
+                # with an absolute-world yaw head must not be loaded as a
+                # relative-heading controller without new policy training.
+                result["yaw_reference"] = "current_heading_offset"
         return result
 
     def decode(self, action):
@@ -299,8 +304,8 @@ class Action:
             # body model and native attitude/thrust executor as other actions.
             requested = physical[..., :3]
             if self.frame == "body":
-                # Velocity follows the same egocentric convention as the policy
-                # observation. The fourth output is still an absolute world yaw.
+                # The velocity is body-frame. The fourth input is a yaw *offset*
+                # from the current heading, not an unobservable world heading.
                 requested = Rotation.from_quat(physics.states.quat[:, 0]).apply(requested)
             velocity = physics.states.vel[:, 0]
             acceleration = jnp.clip(
@@ -311,6 +316,18 @@ class Action:
             force = self.mass * (acceleration + jnp.array([0.0, 0.0, 9.81]))
             magnitude = jnp.maximum(jnp.linalg.norm(force, axis=-1), 1e-6)
             yaw = physical[..., 3]
+            if self.frame == "body":
+                # A body-local policy sees only relative heading information.
+                # Compute its world yaw setpoint at command issue time, not at
+                # the (possibly delayed) inner-loop actuation time. The legacy
+                # frame=world contract retains absolute yaw for old checkpoints.
+                q = physics.states.quat[:, 0]
+                current_yaw = jnp.arctan2(
+                    2.0 * (q[:, 3] * q[:, 2] + q[:, 0] * q[:, 1]),
+                    1.0 - 2.0 * (q[:, 1] ** 2 + q[:, 2] ** 2),
+                )
+                world_yaw = current_yaw + yaw
+                yaw = jnp.arctan2(jnp.sin(world_yaw), jnp.cos(world_yaw))
             forward = jnp.cos(yaw) * force[..., 0] + jnp.sin(yaw) * force[..., 1]
             sideways = -jnp.sin(yaw) * force[..., 0] + jnp.cos(yaw) * force[..., 1]
             roll = -jnp.arcsin(jnp.clip(sideways / magnitude, -0.999, 0.999))
