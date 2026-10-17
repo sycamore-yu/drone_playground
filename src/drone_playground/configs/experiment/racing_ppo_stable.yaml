@@ -26,3 +26,15 @@ learning:
     ppo_value_clip: 0.0
   max_interactions: 67108864
   checkpoint_interval: 50
+  best:
+    source: evaluation
+    metric: success_rate
+    episodes: 100
+    confirmation_episodes: 0
+    interval: 1638400
+    seed: 1000000
+  early_stopping:
+    metric: success_rate
+    target: 1.0
+    patience: 0
+    min_delta: 0.0

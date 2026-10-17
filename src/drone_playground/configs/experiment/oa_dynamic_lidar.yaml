@@ -12,3 +12,7 @@ benchmark:
   - D02
   - D03
   - D06
+learning:
+  max_interactions: 2048000
+  best:
+    interval: 204800

@@ -17,6 +17,8 @@ method:
 learning:
   loss: null
   max_interactions: 8388608
+  best:
+    interval: 1048576
   options:
     horizon: 512
     gamma: 1.0
