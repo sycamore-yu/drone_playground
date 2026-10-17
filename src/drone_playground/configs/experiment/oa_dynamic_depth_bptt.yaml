@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+- oa_dynamic_depth_10hz
+- oa_depth_bptt_history
+- override /learning: bptt

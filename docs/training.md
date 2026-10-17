@@ -175,3 +175,26 @@ A 24-case success triggers the larger check. A configured success target applies
 only to its confirmed result. Set `learning.best.source=null` and disable the
 early-stopping target to use the ordinary budget-only training loop. The final
 Benchmark is still a separate command. See [ADR-0034](adr/0034-release-trainable-defaults.md).
+
+
+## OA training preset provenance
+
+The Command Builder selects algorithm-specific OA experiment YAML files for
+BPTT, SHAC, and PPO, retaining the same procedural geometry and separate final
+Benchmark. These share the learning objective and optimizer coefficients with
+historical successful from-scratch runs (see [ADR-0035](adr/0035-historical-oa-training-recipes.md)).
+
+For example:
+
+```bash
+pixi run train experiment=oa_static_depth_bptt learning=bptt seed=0
+pixi run train experiment=oa_dynamic_lidar_shac learning=shac seed=0
+pixi run train experiment=oa_static_depth_ppo learning=ppo seed=0
+```
+
+The historical OA training environments rotated fixed S/D maps, while current OA
+training uses procedural maps. Historical learning coefficients are a verified
+starting point, not a convergence claim for that different distribution. LOTF
+and PointMassLag share compatible native task/optimizer settings but have no
+identical historical OA acceptance evidence. An OA default is promoted only
+after its own frozen independent Benchmark result passes.

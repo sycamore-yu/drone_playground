@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+- oa_dynamic_lidar
+- oa_lidar_bptt_history
+- override /learning: bptt

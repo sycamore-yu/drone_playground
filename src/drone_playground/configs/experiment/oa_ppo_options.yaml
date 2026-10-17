@@ -1,5 +1,5 @@
 # @package _global_
-# Optimizer/action/return recipe from the recorded successful Depth PPO runs.
+# From-scratch goal-reaching PPO recipe proven on six historical primary scenes.
 # Geometry comes from the current procedural task, not those historical maps.
 task:
   options:
@@ -30,7 +30,7 @@ learning:
     critic_uses_sensor: false
     clip_epsilon: 0.15
     initial_log_std: -2.5
-    entropy_weight: 0.0
+    entropy_weight: 0.005
     minibatches: 4
     ppo_epochs: 4
     ppo_target_kl: 0.025
@@ -42,3 +42,8 @@ learning:
     height_boundary_weight: 0.0
     failure_cost: 0.0
     progress_reward_scale: 0.0
+    max_grad_norm: 1.0
+    target_alpha: 0.995
+    temporal_gradient_alpha: 0.916290731874155
+    weight_decay: 0.0
+    velocity_aux_weight: 0.0
