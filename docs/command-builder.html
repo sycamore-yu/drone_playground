@@ -14,19 +14,19 @@
 </header>
 <div class="hero">
   <div class="hero-content"><span class="hero-kicker"><span class="kicker-line"></span> FLIGHT SYSTEMS / EXPLORER</span>
-    <h1>Explore the <em>flight envelope.</em></h1>
-    <p>Build experiments and inspect exactly what flew. Select a task and watch authentic Crazyflow episodes in MuJoCo WebAssembly—without rerunning the simulation.</p>
+    <h1>Configure tasks. <em>Inspect real flights.</em></h1>
+    <p>Generate Train, Play, and Benchmark commands. Explore recorded native-method episodes in MuJoCo WebAssembly without rerunning the simulation.</p>
     <div class="hero-utility"><span><strong>04</strong> Tasks</span><span><strong id="hero-native-count">—</strong> Native combinations</span><span><strong id="hero-episode-count">—</strong> Recorded episodes</span><span class="hero-source">Based on completed local evaluation runs</span></div>
   </div>
-  <div class="hero-graphic" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="route-label label-a">N 45.23°</span><span class="route-label label-b">ALT 03.4</span><span class="route-point p1"></span><span class="route-point p2"></span><span class="route-point p3"></span><span class="route-segment s1"></span><span class="route-segment s2"></span><span class="target-mark">+</span></div>
+  <div class="hero-graphic" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="route-point p1"></span><span class="route-point p2"></span><span class="route-point p3"></span><span class="route-segment s1"></span><span class="route-segment s2"></span><span class="target-mark">+</span></div>
 </div>
 <section class="task-section" aria-label="Available tasks">
   <div class="section-heading"><div><span class="section-index">01 / TASKS</span><h2>Choose your mission</h2></div><span class="section-aside">FROM TRAJECTORY TRACKING TO DYNAMIC OBSTACLE AVOIDANCE</span></div>
   <div id="task-cards" class="task-cards">
-    <button type="button" class="task-card" data-task="tracking" aria-pressed="true"><span class="task-number">01 <span>↗</span></span><strong>Tracking</strong><span>Reference trajectory following</span></button>
-    <button type="button" class="task-card" data-task="racing" aria-pressed="false"><span class="task-number">02 <span>↗</span></span><strong>Racing</strong><span>Ordered gates · full-course flight</span></button>
-    <button type="button" class="task-card" data-task="static_oa" aria-pressed="false"><span class="task-number">03 <span>↗</span></span><strong>Static OA</strong><span>Depth / LiDAR obstacle fields</span></button>
-    <button type="button" class="task-card" data-task="dynamic_oa" aria-pressed="false"><span class="task-number">04 <span>↗</span></span><strong>Dynamic OA</strong><span>Moving geometry and replanning</span></button>
+    <button type="button" class="task-card" data-task="tracking" aria-pressed="true"><span class="task-number">01 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Tracking</strong><span>Reference trajectory following</span></button>
+    <button type="button" class="task-card" data-task="racing" aria-pressed="false"><span class="task-number">02 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Racing</strong><span>Ordered gates · full-course flight</span></button>
+    <button type="button" class="task-card" data-task="static_oa" aria-pressed="false"><span class="task-number">03 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Static OA</strong><span>Depth / LiDAR obstacle fields</span></button>
+    <button type="button" class="task-card" data-task="dynamic_oa" aria-pressed="false"><span class="task-number">04 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Dynamic OA</strong><span>Moving geometry and replanning</span></button>
   </div>
 </section>
 <div class="workspace">
@@ -47,7 +47,7 @@
 <div id="pathField" class="wide"><label for="path">Orbax model directory</label><input id="path" type="text" spellcheck="false" placeholder="results/run/checkpoints/model_000100"></div>
 <div class="wide"><p id="description" role="status"></p></div>
 </form>
-<div class="command-heading"><h3>Generated command</h3><span>READY TO COPY</span></div><pre><code id="command"></code></pre><div class="command-actions"><button id="copy" type="button">Copy command <span aria-hidden="true">↗</span></button><p id="status" role="status"></p></div>
+<div class="command-heading"><h3>Generated command</h3><span>READY TO COPY</span></div><pre><code id="command"></code></pre><div class="command-actions"><button id="copy" type="button">Copy command</button><a class="jump-to-preview" href="#preview-heading">View task preview <span aria-hidden="true">↓</span></a><p id="status" role="status"></p></div>
 </section>
 <aside class="preview-panel" aria-labelledby="preview-heading">
   <div class="panel-heading"><div><span class="section-index">03 / VISUALIZATION</span><h2 id="preview-heading">Task Preview</h2></div><span class="preview-mode" id="preview-match">Recorded Episode</span></div>
@@ -76,7 +76,7 @@
     <div><dt>Scene</dt><dd id="preview-scene-name">—</dd></div>
   </dl>
   <p id="preview-note" class="preview-note" data-kind="neutral">Choose a recording to view its actual flight. SUCCESS, planner failure, collision and out-of-bounds are never interchangeable.</p>
-  <nav class="preview-links" aria-label="Preview artifacts"><a id="preview-open" href="#" target="_blank" rel="noopener" hidden>Open full 3D viewer ↗</a><a id="preview-rscope" href="#" hidden>RScope record</a><a id="preview-report" href="#" target="_blank" rel="noopener" hidden>Evaluation report</a></nav>
+  <nav class="preview-links" aria-label="Preview artifacts"><a id="preview-open" href="#" target="_blank" rel="noopener" hidden>Open full 3D viewer</a><a id="preview-rscope" href="#" hidden>RScope record</a><a id="preview-report" href="#" target="_blank" rel="noopener" hidden>Evaluation report</a></nav>
 </aside>
 </div>
 <section class="gallery-panel" aria-labelledby="gallery-heading">

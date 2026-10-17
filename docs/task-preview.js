@@ -17,6 +17,11 @@
   const nativeCatalogUrl='../results/command-builder-native-full-20261017/preview-catalog.json';
   const $=id=>document.getElementById(id);
 
+  function methodLabel(item){
+    const controller=builder.controllerCapabilities[item.controller]?.label||item.controller;
+    return item.planner?`${item.planner.toUpperCase()} + ${controller}`:controller;
+  }
+
   function exactlySelected(state,cases){
     if(state.method==='policy'||state.mode==='train')return null;
     return cases.find(item=>
@@ -210,7 +215,7 @@
 
   function playbackNote(item,record,exact){
     if(!exact){
-      return `Task illustration only: this is ${item.planner?item.planner.toUpperCase()+' + ':''}${item.controller} in ${record.scene}. It is NOT a recording of the selected PPO/BPTT/SHAC policy or checkpoint.`;
+      return `Task illustration only: this is ${methodLabel(item)} in ${record.scene}. It is NOT a recording of the selected PPO/BPTT/SHAC policy or checkpoint.`;
     }
     if(record.event==='SUCCESS'){
       return `Completed this actual recorded task at ${record.elapsed_seconds.toFixed(2)} s. The embedded viewer loops this successful flight.`;
@@ -226,7 +231,7 @@
     const record=item.recordings[index];
     if(!record){resetPreview('No recorded episode');return;}
     const url=viewerUrl(record);
-    $('preview-method').textContent=`${labels[item.task]} · ${item.planner?item.planner.toUpperCase()+' + ':''}${item.controller}`;
+    $('preview-method').textContent=`${labels[item.task]} · ${methodLabel(item)}`;
     $('preview-event').textContent=outcomes[record.event]||record.event;
     $('preview-event').dataset.event=record.event;
     $('preview-duration').textContent=`${record.elapsed_seconds.toFixed(2)} s / ${record.task_limit_seconds.toFixed(0)} s limit`;
@@ -288,18 +293,18 @@
     const matches=catalog.cases.filter(item=>{
       if(task&&item.task!==task)return false;
       if(outcome&&!item.recordings.some(record=>record.event===outcome))return false;
-      const terms=[item.mode,item.method,item.task,item.planner,item.controller,item.scene,item.suite,
+      const terms=[item.mode,item.method,item.task,item.planner,item.controller,methodLabel(item),item.scene,item.suite,
         ...item.recordings.flatMap(r=>[r.scene,r.event,r.failure_detail])];
       return !text||terms.join(' ').toLowerCase().includes(text);
     });
     $('gallery-count').textContent=`${matches.length} combinations · ${catalog.summary.recorded_episodes} recorded episodes`;
     for(const item of matches.slice(0,pageLimit)){
       const button=document.createElement('button');button.type='button';button.className='recording-card';
-      button.setAttribute('aria-label',`Preview ${item.task}, ${item.planner||''} ${item.controller}, ${item.scene||item.suite||''}`);
+      button.setAttribute('aria-label',`Preview ${labels[item.task]}, ${methodLabel(item)}, ${item.scene||item.suite||''}`);
       const id=document.createElement('span');id.className='recording-id';
       id.textContent=`#${String(item.id).padStart(3,'0')}  /  ${item.mode.toUpperCase()}`;
       const title=document.createElement('strong');
-      title.textContent=`${item.planner?item.planner.toUpperCase()+' + ':''}${item.controller}`;
+      title.textContent=methodLabel(item);
       const line=document.createElement('span');
       line.textContent=`${labels[item.task]} · ${item.scene||item.suite||'single course'} · ${item.mode}`;
       const summary=document.createElement('span');summary.className='result';

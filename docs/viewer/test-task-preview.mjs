@@ -27,6 +27,12 @@ try{
   const summary=await page.locator('#gallery-count').textContent();
   const size=await page.evaluate(()=>CommandBuilder.combinations().length);
   if(size!==550)throw Error(`Builder catalog changed: ${size}`);
+  const firstTitle=await page.locator('#gallery-list .recording-card strong').first().textContent();
+  if(firstTitle!=='Sampling MPC')throw Error(`Gallery displays a raw controller key: ${firstTitle}`);
+  await page.locator('#gallery-search').fill('Full-State NMPC');
+  if(!await page.locator('#gallery-list .recording-card').count())
+    throw Error('Readable controller labels are not searchable');
+  await page.locator('#gallery-search').fill('');
 
   // Initial Train/Policy selection deliberately displays a labelled task
   // example, not a misattributed policy checkpoint.
@@ -93,6 +99,11 @@ try{
   if(afterFrame!==persistentFrame)throw Error('Preview unnecessarily reloaded the WebAssembly iframe');
   const exact=await page.locator('#preview-match').textContent();
   if(!exact.includes('Exact'))throw Error('Native MPCC preview did not match exact method');
+  const methodLabel=await page.locator('#preview-method').textContent();
+  if(!methodLabel.includes('Racing MPCC')||methodLabel.includes('racing_mpcc'))
+    throw Error(`Preview shows raw controller key: ${methodLabel}`);
+  if((await page.locator('#preview-open').textContent()).includes('↗'))
+    throw Error('Viewer link duplicates its decorative external-link arrow');
   if(wasmRequests.length!==1)
     throw Error(`Expected a single persistent WASM request across selections; received ${wasmRequests.length}`);
   const shared=new URL(page.url());

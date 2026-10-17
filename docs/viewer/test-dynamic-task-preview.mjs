@@ -89,9 +89,25 @@ try{
   await page.waitForTimeout(450);
   const sizes=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,window:innerWidth,header:document.querySelector('.site-header')?.getBoundingClientRect().width}));
   if(sizes.scroll>sizes.window+3)throw Error(`Mobile horizontal overflow: ${JSON.stringify(sizes)}`);
+  const toolbar=await iframe.locator('.playback-toolbar').evaluate(element=>({
+    height:element.getBoundingClientRect().height,
+    optionsScroll:element.querySelector('.view-actions').scrollWidth>element.querySelector('.view-actions').clientWidth,
+    viewportWidth:document.documentElement.clientWidth,
+    pageWidth:document.documentElement.scrollWidth,
+    timeRight:document.querySelector('#time').getBoundingClientRect().right,
+  }));
+  if(toolbar.height>98)throw Error(`Embedded mobile playback controls take too much flight-preview height: ${JSON.stringify(toolbar)}`);
+  if(toolbar.pageWidth>toolbar.viewportWidth+2||toolbar.timeRight>toolbar.viewportWidth+2||!toolbar.optionsScroll)
+    throw Error(`Mobile time readout clipped or view options cannot scroll: ${JSON.stringify(toolbar)}`);
   await page.screenshot({path:'../../tmp/task-preview-d01-final-mobile.png',fullPage:true});
+  await iframe.locator('#view').click();
+  if(!String(await iframe.locator('#view').textContent()).includes('Course'))
+    throw Error('Mobile camera control is not reachable');
+  if(!await page.locator('.jump-to-preview').isVisible())throw Error('Mobile preview shortcut is missing');
+  await page.locator('.jump-to-preview').click();
+  if(new URL(page.url()).hash!=='#preview-heading')throw Error('Preview shortcut did not navigate to the active preview');
   if(errors.length)throw Error(errors.join('\n'));
-  console.log(JSON.stringify({startingLabel,pendingLabel,firstLoadMs,returnLoadMs,frames:350,autoplay:[before,after],afterSwitch:[timeOne,timeTwo],wasmRequests:wasmRequests.length,mobile:sizes,errors}));
+  console.log(JSON.stringify({startingLabel,pendingLabel,firstLoadMs,returnLoadMs,frames:350,autoplay:[before,after],afterSwitch:[timeOne,timeTwo],wasmRequests:wasmRequests.length,mobile:sizes,toolbar,errors}));
 }finally{
   await browser.close();
 }
