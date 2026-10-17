@@ -68,6 +68,70 @@ def test_density_families_match_navigation_benchmark_scale_not_geometry():
     assert not np.array_equal(state.centers[0], state.centers[1])
 
 
+def test_matched_crossbeam_training_samples_new_vertical_passages():
+    """New static beams vary by reset without changing unaffected scene obstacles."""
+    key = jax.random.key(601)
+    options = {"max_obstacles": 36, "obstacle_motion": "static", "layout": "matched"}
+    baseline = ProceduralScene(options)
+    varied = ProceduralScene({**options, "horizontal_beam_probability": 0.7})
+    before = baseline.sample(key, 48)
+    after = varied.sample(key, 48)
+    assert baseline.geometry_hash != varied.geometry_hash
+    for field in ("start", "goal", "route"):
+        np.testing.assert_array_equal(getattr(before, field), getattr(after, field))
+    for field in ("centers", "sizes", "active", "cylinder", "moving", "motion"):
+        np.testing.assert_array_equal(getattr(before, field)[:, 2:], getattr(after, field)[:, 2:])
+    beams = np.asarray(np.any(before.sizes[:, :2] != after.sizes[:, :2], axis=-1))
+    assert 35 <= int(beams.sum()) < 96
+    centers, sizes = np.asarray(after.centers), np.asarray(after.sizes)
+    for world, slot in np.argwhere(beams):
+        center, half_extent = centers[world, slot], sizes[world, slot]
+        assert 12 <= center[0] <= 88 and center[1] == 0
+        assert 2.35 <= center[2] <= 3.05
+        assert 0.25 <= half_extent[0] <= 0.55
+        assert 15.5 <= half_extent[1] <= 17.0
+        assert 0.45 <= half_extent[2] <= 0.75
+        assert center[2] + half_extent[2] < 4.3
+        assert abs(after.start[world, 0] - center[0]) > half_extent[0] + 4
+        assert not bool(after.cylinder[world, slot])
+        assert not bool(after.moving[world, slot])
+        assert bool(after.active[world, slot])
+    assert np.min(np.asarray(varied.clearance(after.start, scene_state=after))) > 0.45
+    assert np.min(np.asarray(varied.clearance(after.goal, scene_state=after))) > 0.45
+    np.testing.assert_allclose(
+        after.centers, jax.jit(lambda: varied.sample(key, 48))().centers, atol=1e-5, rtol=1e-6
+    )
+    assert Scene("S06").geometry_hash == _FROZEN_GEOMETRY["S06"]
+
+
+@pytest.mark.parametrize("invalid", [-0.1, 1.01, "0.5", True, float("nan")])
+def test_horizontal_beam_probability_requires_numeric_supported_static_layout(invalid):
+    """Reject invalid beam sampling contracts at construction time."""
+    with pytest.raises(ValueError, match="Horizontal beam probability"):
+        SceneDistribution(
+            layout="matched", obstacle_motion="static", horizontal_beam_probability=invalid
+        )
+    with pytest.raises(ValueError, match="Horizontal beam probability"):
+        SceneDistribution(
+            layout="legacy", obstacle_motion="static", horizontal_beam_probability=0.7
+        )
+    with pytest.raises(ValueError, match="Horizontal beam probability"):
+        SceneDistribution(
+            layout="matched", obstacle_motion="dynamic", horizontal_beam_probability=0.7
+        )
+
+
+def test_zero_beam_probability_preserves_matched_procedural_source_identity():
+    """Old frozen matched source and generated arrays remain identical by default."""
+    options = {"max_obstacles": 36, "layout": "matched", "obstacle_motion": "static"}
+    old = ProceduralScene(options)
+    new = ProceduralScene({**options, "horizontal_beam_probability": 0.0})
+    assert old.geometry_hash == new.geometry_hash
+    first, second = (scene.sample(jax.random.key(13), 6) for scene in (old, new))
+    for x, y in zip(jax.tree.leaves(first), jax.tree.leaves(second), strict=True):
+        np.testing.assert_array_equal(x, y)
+
+
 def test_collision_free_start_sampler_provides_goal_distance_curriculum():
     """Shorter episodes vary distance without changing frozen evaluation geometry."""
     scene = ProceduralScene({"max_obstacles": 36, "start_sampling": "collision_free"})
