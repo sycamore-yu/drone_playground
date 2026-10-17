@@ -312,10 +312,15 @@ class RosPlanner:
             position, rotation = pose[:3], Rotation.from_quat(pose[3:])
             acquisition = float(measurement.acquisition_time[0])
             available = float(measurement.available_time[0])
-            # Float32 sensor clocks can round past the exact integer-tick host clock.
-            roundoff = max(
+            # Sensor sample time is computed from a float32 frame/frequency,
+            # while the host planner clock uses exact integer physics steps.
+            # A non-binary frame period (e.g. 12/30 = 0.4 s) can accumulate
+            # two float32 rounding steps. Reconcile only that representation
+            # error; genuinely future sensor data must remain invalid.
+            roundoff = 2 * max(
                 abs(float(np.spacing(np.asarray(measurement.acquisition_time[0])))),
                 abs(float(np.spacing(np.asarray(measurement.available_time[0])))),
+                abs(float(np.spacing(np.float32(time)))),
             )
             if 0 < available - time <= roundoff:
                 available = time

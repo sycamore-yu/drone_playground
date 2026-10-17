@@ -188,7 +188,7 @@ def test_sensor_generator_nearest_hits():
     assert np.any(np.linalg.norm(clear - blocked, axis=1) > 1)
 
 
-@pytest.mark.parametrize("time", [0.1, 0.2, 1.8, 300.2])
+@pytest.mark.parametrize("time", [0.1, 0.2, 0.4, 1.8, 300.2])
 def test_float32_sensor_clock_roundoff_preserves_wire_order(wire, time):
     """Roundoff is reconciled; an actually future sensor measurement is still rejected."""
     fixture, address = wire
@@ -212,3 +212,40 @@ def test_float32_sensor_clock_roundoff_preserves_wire_order(wire, time):
         sample.acquisition_time[:] = sample.available_time[:] = time + 0.01
         with pytest.raises(RosPlannerError, match="STALE_INPUT"):
             planner(observed, time, force_replan=True)
+
+
+def test_nonbinary_sensor_period_does_not_reject_exact_physics_tick(wire):
+    """A 30 Hz float32 D435i sample at 0.4 s must not be a future 50 Hz input."""
+    fixture, address = wire
+    sample_time = float(np.float32(0.40000003576278687))
+    measurement = SimpleNamespace(
+        acquisition_time=np.array([sample_time], dtype=np.float32),
+        available_time=np.array([sample_time], dtype=np.float32),
+        values=np.ones((1, 48, 64), dtype=np.float32),
+    )
+    observed = {
+        **observation(),
+        "measurement": measurement,
+        "sensor_config": SimpleNamespace(
+            profile="d435i",
+            roll_deg=0.0,
+            pitch_deg=20.0,
+            yaw_deg=0.0,
+            width=64,
+            height=48,
+            horizontal_fov_deg=69.0,
+            vertical_fov_deg=42.0,
+            translation=np.zeros(3),
+        ),
+        "sensor_pose": np.array([0, 0, 2, 0, 0, 0, 1]),
+    }
+    with RosPlanner("ego", address) as planner:
+        planner(observed, 0.4, force_replan=True)
+        assert fixture.request.state.timestamp_ns == 400_000_000
+        assert fixture.request.measurement.timestamp_ns == 400_000_000
+        assert fixture.request.measurement.available_ns == 400_000_000
+        assert fixture.request.measurement.WhichOneof("data") == "depth"
+        # A real (not float-representation-sized) future acquisition is rejected.
+        measurement.acquisition_time[:] = measurement.available_time[:] = 0.4001
+        with pytest.raises(RosPlannerError, match="STALE_INPUT"):
+            planner(observed, 0.4, force_replan=True)

@@ -58,6 +58,38 @@ class Trajectory:
         )
 
 
+def sample_planner_horizon(trajectory: Trajectory, times: np.ndarray):
+    """Pad only the *future* MPC horizon with a stationary terminal reference.
+
+    EGO/SUPER may return a valid plan shorter than the controller's fixed OCP
+    horizon. Keep all upstream samples inside their declared validity interval;
+    fill only the prediction tail with an explicit stationary endpoint target.
+    A plan that has expired at the current control step still fails normally.
+    This is a reference boundary condition, not an obstacle-avoidance fallback
+    or permission to reuse a stale plan after its valid_until.
+    """
+    times = np.asarray(times, dtype=float)
+    if times.ndim != 1 or not len(times) or not np.isfinite(times).all():
+        raise ValueError("Controller reference times must be a finite vector")
+    valid_from, valid_until = float(trajectory.times[0]), float(trajectory.times[-1])
+    if times[0] < valid_from or times[0] > valid_until:
+        raise RuntimeError("Planner trajectory does not cover the current controller step")
+    samples = []
+    for time in times:
+        if time <= valid_until:
+            values = trajectory.sample(float(time))
+        else:
+            # Hold the last planned point rather than extrapolating an unknown
+            # collision-free path or pretending the original plan stays valid.
+            values = (trajectory.positions[-1], np.zeros(3), np.zeros(3))
+        if any(item is None for item in values):
+            raise ValueError("Planner must provide position, velocity, and acceleration")
+        samples.append(values)
+    reference = tuple(jnp.asarray(np.stack([row[i] for row in samples]))[None] for i in range(3))
+    extension = max(0.0, float(times[-1] - valid_until))
+    return reference, extension
+
+
 @struct.dataclass
 class Setpoint:
     """Physical control with an explicit frame and control layer."""
@@ -415,10 +447,12 @@ class PlannerController:
         times = time + np.asarray(self.controller.reference_offsets)
         trajectory = memory["trajectory"]
         if trajectory is not None:
-            samples = [trajectory.sample(float(t)) for t in times]
-            reference = tuple(
-                jnp.asarray(np.stack([s[i] for s in samples]))[None] for i in range(3)
-            )
+            reference, terminal_hold = sample_planner_horizon(trajectory, times)
+            if terminal_hold > 1e-9:
+                if decision is None:
+                    decision = {"time": time, "status": "TERMINAL_REFERENCE_HOLD"}
+                decision["terminal_hold_seconds"] = terminal_hold
+                decision["valid_until"] = trajectory.valid_until
         elif self.planner is None:
             reference = env.task.target(jnp.asarray(times)[None])
         else:
