@@ -79,7 +79,13 @@ def audit(root: Path) -> dict:
     manifest = json.loads((root / "manifest.json").read_text())
     catalog = json.loads((root / "catalog.json").read_text())["cases"]
     rows = []
+    in_progress = []
     for name, item in manifest["cases"].items():
+        # Episode CSV can be written before the full RScope/MuJoCo export.
+        # A running case is pending, not evidence of a truncated recording.
+        if item.get("status") == "running":
+            in_progress.append(name)
+            continue
         index = int(name.split("_", 1)[0])
         original = catalog[index]
         run = root / item["run_relative"]
@@ -169,6 +175,7 @@ def audit(root: Path) -> dict:
         "catalog_cases": len(catalog),
         "attempted_cases": len(manifest["cases"]),
         "cases_with_episodes": len({row["index"] for row in rows}),
+        "in_progress_cases": in_progress,
         "event_counts": dict(Counter(row["task_event"] for row in rows)),
         "failure_details": dict(
             Counter(row["failure_detail"] for row in rows if row["failure_detail"])

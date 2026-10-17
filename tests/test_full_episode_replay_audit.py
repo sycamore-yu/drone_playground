@@ -98,3 +98,33 @@ def test_replay_audit_preserves_planner_error_and_short_episode(tmp_path):
     assert row["task_limit_seconds"] == 300
     assert row["physical_flight_seconds"] == 1.2
     assert row["failure_detail"].startswith("Planner trajectory")
+
+
+def test_running_episode_is_not_counted_as_missing_replay(tmp_path):
+    """Ignore an in-flight Episode while the native replay serializer runs."""
+    (tmp_path / "catalog.json").write_text(
+        json.dumps({"cases": [{"mode": "play", "method": "planner", "task": "static_oa"}]})
+    )
+    directory = tmp_path / "runs/000_inflight"
+    directory.mkdir(parents=True)
+    (tmp_path / "manifest.json").write_text(
+        json.dumps(
+            {
+                "cases": {
+                    "000_inflight": {
+                        "status": "running",
+                        "run_relative": "runs/000_inflight",
+                        "browser_replays": [],
+                    }
+                }
+            }
+        )
+    )
+    (directory / "episodes.csv").write_text(
+        "episode,scene,event,flight_seconds\n0,S06,SUCCESS,32.0\n"
+    )
+    result = audit(tmp_path)
+    assert result["in_progress_cases"] == ["000_inflight"]
+    assert result["event_counts"] == {}
+    assert result["replay_integrity"] == {}
+    assert result["rows"] == []

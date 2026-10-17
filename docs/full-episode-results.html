@@ -18,15 +18,30 @@ thead{position:sticky;top:0;background:#e9f0f7}code{font:11px/1.45 ui-monospace,
 <select id="group" class="filter"><option value="">All groups</option><option>play:controller</option><option>play:planner</option><option>benchmark:controller</option><option>benchmark:planner</option></select>
 <select id="status" class="filter"><option value="">All results</option><option>pending</option><option>running</option><option>completed</option><option>method_failure</option><option>missing_replay</option><option>process_timeout</option><option>error</option></select>
 <small id="updated">Loading</small>
-<div class="table"><table><thead><tr><th>ID</th><th>Type</th><th>Task</th><th>Scene</th><th>Controller</th><th>Execution</th><th>Task events</th><th>Flight time</th><th>Results / Replay</th><th>Original command</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p><strong>Interpretation:</strong> A complete recording spans the actual physical episode, including early termination. A successful control/recording pipeline is not the same as a successful flight. <code>NO_SOLUTION</code> is a native planner failure; <code>stage-zero clock error</code> is a fixable interface defect; <code>OUT_OF_BOUNDS</code> is a real flight safety failure. The previous attempt remains available after a case is retried.</p>
+<div class="table"><table><thead><tr><th>ID</th><th>Type</th><th>Task</th><th>Scene</th><th>Controller</th><th>Execution</th><th>Task events</th><th>Failure category</th><th>Flight time</th><th>Results / Replay</th><th>Original command</th></tr></thead><tbody id="rows"></tbody></table></div>
 <script>
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 let catalog=null;let records={};
 async function read(path){const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error(`${path}: HTTP ${r.status}`);return r.json()}
+function failureCategory(item){
+ const detail=item?.failure_detail||'',event=Object.keys(item?.events||{})[0]||'';
+ if(detail.includes('NO_SOLUTION'))return 'PLANNER_NO_SOLUTION';
+ if(detail.includes('Planner trajectory does not cover'))return 'FIXABLE_STAGE_ZERO_CLOCK';
+ if(detail.includes('RESOURCE_EXHAUSTED'))return 'ROS_SESSION_EXHAUSTED';
+ if(event==='OUT_OF_BOUNDS')return 'PHYSICAL_OUT_OF_BOUNDS';
+ if(event==='COLLISION')return 'PHYSICAL_COLLISION';
+ if(event==='METHOD_FAILURE')return 'METHOD_FAILURE (inspect decisions)';
+ if(event==='SUCCESS')return 'SUCCESS';
+ if(event==='TIMEOUT')return 'FULL_TASK_TIMEOUT';
+ return item?.process_error||'';
+}
 async function refresh(){
  try{
    if(!catalog)catalog=(await read('catalog.json')).cases;
    records=(await read('manifest.json')).cases;
+   const audit=await read('replay-audit.json').catch(()=>({rows:[]}));
+   const failureByPath=new Map((audit.rows||[]).map(x=>[x.run_relative,x.failure_detail]));
    let values=Object.values(records),done=values.filter(v=>v.status==='completed').length;
    let saved=values.reduce((n,v)=>n+(v.browser_replays||[]).length,0);
    let events={};for(const v of values)for(const [e,c] of Object.entries(v.events||{}))events[e]=(events[e]||0)+c;
@@ -35,7 +50,9 @@ async function refresh(){
    document.querySelector('#rows').innerHTML=catalog.map((c,i)=>{
      const id=String(i).padStart(3,'0'),category=c.mode+':'+c.method;
      const item=Object.entries(records).find(([key])=>key.startsWith(id+'_'))?.[1];const state=item?.status||'pending';
-     const text=[category,c.task,c.scene,c.suite,c.planner,c.controller,state].join(' ').toLowerCase();
+     if(item&&!item.failure_detail)item.failure_detail=failureByPath.get(item.run_relative)||'';
+     const cause=failureCategory(item);
+     const text=[category,c.task,c.scene,c.suite,c.planner,c.controller,state,cause].join(' ').toLowerCase();
      if((query&&!text.includes(query))||(group&&category!==group)||(status&&state!==status))return '';
      let links='-';if(item){const folder=item.run_relative;links=`<a href="${esc(folder)}/console.log">Log</a>${item.has_report?`<a href="${esc(folder)}/report.json">Report</a>`:''}${item.previous_run_relative?`<a href="${esc(item.previous_run_relative)}/decisions.json">Previous failure</a>`:''}${(item.browser_replays||[]).map((r,j)=>{
        const record=new URL(folder+'/'+r, location.href).pathname;
@@ -44,7 +61,7 @@ async function refresh(){
        const note=seconds===undefined?'':` (${Number(seconds).toFixed(2)}s until ${esc(event)})`;
        return `<a href="${esc(viewer)}" target="_blank">WASM ${j+1}${note}</a><a href="${esc(folder+'/'+r.replace('browser_replay.json','episode.mj_unroll'))}">RScope ${j+1}</a>`}).join('')}`;}
      const events=item?Object.entries(item.events||{}).map(([e,n])=>e+':'+n).join(', '):'';
-     return `<tr><td>${i}</td><td>${esc(category)}</td><td>${esc(c.task)}</td><td>${esc(c.scene||c.suite||'core')}</td><td>${esc([c.planner,c.controller].filter(Boolean).join(' + '))}</td><td class="${state==='error'?'error':''}">${esc(state)}</td><td>${esc(events)}</td><td>${esc((item?.simulated_flight_seconds||[]).map(n=>n.toFixed(2)+' s').join(', '))}</td><td>${links}</td><td><code>${esc(c.command)}</code></td></tr>`;
+     return `<tr><td>${i}</td><td>${esc(category)}</td><td>${esc(c.task)}</td><td>${esc(c.scene||c.suite||'core')}</td><td>${esc([c.planner,c.controller].filter(Boolean).join(' + '))}</td><td class="${state==='error'?'error':''}">${esc(state)}</td><td>${esc(events)}</td><td>${esc(cause)}</td><td>${esc((item?.simulated_flight_seconds||[]).map(n=>n.toFixed(2)+' s').join(', '))}</td><td>${links}</td><td><code>${esc(c.command)}</code></td></tr>`;
    }).join('');
    document.querySelector('#updated').textContent='Refreshed '+new Date().toLocaleTimeString()+' (every 15 s)';
  }catch(error){document.querySelector('#updated').textContent=error.message;}
