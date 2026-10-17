@@ -7,7 +7,8 @@
     "build": "vite build --base=./",
     "dev": "vite --host 127.0.0.1",
     "check": "node --check viewer.js",
-    "test:e2e": "node test-playback.mjs"
+    "test:e2e": "node test-playback.mjs",
+    "test:task-preview": "node test-task-preview.mjs"
   },
   "dependencies": {
     "@mujoco/mujoco": "3.12.0",

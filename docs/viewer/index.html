@@ -17,9 +17,14 @@
     button{cursor:pointer}button:hover{border-color:#91c5f7}
     #scene{width:100%;height:100%;min-height:100px;overflow:hidden;flex:1;position:relative}
     #scene canvas{display:block;width:100%;height:100%}
+    #end-banner{position:absolute;bottom:14px;left:14px;right:14px;width:max-content;max-width:calc(100% - 28px);padding:10px 13px;border:1px solid #dfac86;background:rgba(45,27,22,.92);color:#fff0e4;border-radius:8px;font-size:13px;line-height:1.4;pointer-events:none;overflow-wrap:anywhere;z-index:2}
+    #end-banner[hidden]{display:none}
     #status{font-variant-numeric:tabular-nums;font-size:13px}
     .disabled{opacity:.45}footer{padding:9px 18px;background:#18243a;color:#adc1dc;display:flex;gap:16px;justify-content:space-between}
     a{color:#a3d5fa}
+    body.embedded header{padding:8px 12px;gap:5px}body.embedded header h1,body.embedded header .controls:first-of-type,body.embedded footer{display:none}
+    body.embedded .controls{gap:7px}body.embedded .controls button,body.embedded .controls select{padding:5px 7px;font-size:12px}
+    body.embedded #time{font-size:12px}body.embedded #scene{min-height:100px}
   </style>
 </head>
 <body>
@@ -39,9 +44,11 @@
       <button id="follow" type="button">Follow drone: On</button>
       <button id="view" type="button">Camera: Aircraft</button>
       <button id="trail" type="button">Flight path: On</button>
+      <button id="hits" type="button">Sensor hits: On</button>
+      <button id="obstacles" type="button" title="Show native obstacles transparently for inspection; recorded geometry and collisions are unchanged">Obstacles: Solid</button>
     </div>
   </header>
-  <main id="scene" aria-label="3D MuJoCo recorded flight"></main>
+  <main id="scene" aria-label="3D MuJoCo recorded flight"><div id="end-banner" hidden role="status"></div></main>
   <footer><span>Rotate: drag · Pan: right-drag · Zoom: wheel</span><span>Recorded qpos + mocap · No physics resimulation</span><a href="https://github.com/google-deepmind/mujoco/tree/main/wasm">MuJoCo WASM</a></footer>
   <script type="module" src="./viewer.js"></script>
 </body>

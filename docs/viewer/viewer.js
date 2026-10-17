@@ -6,6 +6,13 @@ import loadMujoco from '@mujoco/mujoco';
 import wasmUrl from '@mujoco/mujoco/mujoco.wasm?url';
 
 const $ = id => document.getElementById(id);
+const urlOptions=new URL(location.href).searchParams;
+const embedded=urlOptions.get('embed')==='1';
+let autoplay=urlOptions.get('autoplay')==='1';
+let loop=urlOptions.get('loop')==='1' && urlOptions.get('outcome')==='SUCCESS';
+let terminalOutcome=urlOptions.get('outcome')||'';
+let terminalReason=urlOptions.get('reason')||'';
+if(embedded)document.body.classList.add('embedded');
 const viewport = $('scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x121f2b);
@@ -27,16 +34,20 @@ scene.add(keyLight);
 
 let engine = null, model = null, data = null, frames = [];
 let meshes = [], pathLine = null, frameIndex = 0, playing = false, follow = true;
-let closeCamera = true;
+let sensorHitMeshes = [], obstacleMeshes = [], showSensorHits = !embedded;
+let xrayObstacles = embedded;
+let viewMode = 'aircraft';
 let wallThen = performance.now();
 let playheadTime = 0;
+let pendingRecord=null, loaderBusy=false;
 
 function status(message){ $('status').textContent = message; }
 function disposeRecord(){
   playing=false; $('play').textContent='Play';
   playheadTime=0;
+  $('end-banner').hidden=true;
   for(const mesh of meshes){scene.remove(mesh);mesh.geometry?.dispose();mesh.material?.dispose();}
-  meshes=[];
+  meshes=[];sensorHitMeshes=[];obstacleMeshes=[];
   if(pathLine){scene.remove(pathLine);pathLine.geometry.dispose();pathLine.material.dispose();pathLine=null;}
   data?.delete(); model?.delete(); model=null; data=null; frames=[];
 }
@@ -78,6 +89,17 @@ function materialFor(i){
   });
 }
 
+function updateObstacleOpacity(){
+  for(const mesh of obstacleMeshes){
+    const mat=mesh.material;
+    mat.transparent=xrayObstacles||mesh.userData.originalTransparent;
+    mat.opacity=xrayObstacles?Math.min(.25,mesh.userData.originalOpacity):mesh.userData.originalOpacity;
+    mat.depthWrite=!xrayObstacles;
+    mat.needsUpdate=true;
+  }
+  $('obstacles').textContent=`Obstacles: ${xrayObstacles?'Translucent':'Solid'}`;
+}
+
 function buildScene(){
   let crazyflieMeshCount = 0;
   const names = model.names;
@@ -86,17 +108,28 @@ function buildScene(){
   for(let i=0;i<model.ngeom;i++){
     if(model.geom_rgba[i*4+3]<.015)continue;
     if(model.geom_group[i]>=4)continue;
+    let geomName='';
     if(names && nameAddresses){
       const start=nameAddresses[i];
       let end=start;
       while(end<names.length && names[end]!==0)end++;
+      geomName=decoder.decode(names.subarray(start,end));
       // RScope writes a capsule for every recorded path segment. Our single
       // toggleable Line shows the same trajectory without a forest of tubes.
-      if(decoder.decode(names.subarray(start,end)).startsWith('replay_actual_'))continue;
+      if(geomName.startsWith('replay_actual_'))continue;
     }
     const size=Array.from(model.geom_size.subarray(i*3,i*3+3));
     const mesh=new THREE.Mesh(shape(model.geom_type[i],size,i),materialFor(i));
     mesh.userData.geomId=i;
+    if(geomName.startsWith('replay_hit_')){
+      mesh.visible=showSensorHits;
+      sensorHitMeshes.push(mesh);
+    }
+    if(model.geom_group[i]<2 && !geomName.startsWith('replay_')){
+      mesh.userData.originalOpacity=mesh.material.opacity;
+      mesh.userData.originalTransparent=mesh.material.transparent;
+      obstacleMeshes.push(mesh);
+    }
     if(model.geom_group[i]===2 && model.geom_type[i]===engine.mjtGeom.mjGEOM_MESH.value)
       crazyflieMeshCount++;
     scene.add(mesh);meshes.push(mesh);
@@ -105,6 +138,7 @@ function buildScene(){
   const geometry=new THREE.BufferGeometry().setFromPoints(positions.map(p=>new THREE.Vector3(...p)));
   pathLine=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x49cdf5,opacity:.85,transparent:true}));
   scene.add(pathLine);
+  updateObstacleOpacity();
   return crazyflieMeshCount;
 }
 
@@ -138,6 +172,13 @@ function displayFrame(index){
   }
   $('timeline').value=String(frameIndex);
   $('time').textContent=`${frame.time.toFixed(3)} / ${frames.at(-1).time.toFixed(3)} s`;
+  const banner=$('end-banner');
+  if(frameIndex===frames.length-1 && terminalOutcome && !loop){
+    banner.textContent=terminalOutcome==='METHOD_FAILURE'
+      ?`Flight stopped at ${frame.time.toFixed(2)} s: ${terminalReason||'METHOD_FAILURE'}. Recording ends at the true failure time.`
+      :`Flight ended at ${frame.time.toFixed(2)} s: ${terminalOutcome}. This is the recorded physical outcome.`;
+    banner.hidden=false;
+  }else banner.hidden=true;
 }
 
 function frameCamera(){
@@ -147,7 +188,11 @@ function frameCamera(){
   // The STL Crazyflie is about 8 cm across. A multi-metre orbit makes even
   // the genuine mesh look like a dot; keep 1:1 physical geometry and move the
   // camera instead of exaggerating the mesh's scale.
-  const offset=closeCamera?[.40,-.55,.32]:[3.2,-3.2,2.1];
+  // Perception replay scenes can contain hundreds of sensor markers. Avoid
+  // positioning the preview camera inside a nearby native obstacle or marker.
+  const near=embedded && model.nmocap>100?[.85,-1.12,.62]:[.40,-.55,.32];
+  const offset=viewMode==='aircraft'?near:
+    viewMode==='course'?[3.2,-3.2,2.1]:[1.6,-2.1,8.0];
   camera.position.set(center[0]+offset[0],center[1]+offset[1],center[2]+offset[2]);
   controls.update();
 }
@@ -187,6 +232,7 @@ async function load(){
         throw new Error('Recorded MuJoCo dimensions differ from loaded MJCF');
     }
     const airframeMeshes=buildScene();
+    $('hits').textContent=`Sensor hits: ${showSensorHits?'On':'Off'}`;
     displayFrame(0);
     frameCamera();
     playheadTime=frames[0].time;
@@ -194,13 +240,40 @@ async function load(){
     $('timeline').disabled=false;$('play').disabled=false;
     status(`${frames.length} frames · ${airframeMeshes} Crazyflie mesh geoms · ${model.nmocap} mocap bodies`);
     const updated=new URL(location.href);updated.searchParams.set('record',address);history.replaceState(null,'',updated);
+    if(autoplay){playing=true;$('play').textContent='Pause';wallThen=performance.now();}
   }catch(error){
     status(`Cannot load recording: ${error.message}`);console.error(error);disposeRecord();
   }finally{$('load').disabled=false;}
 }
 
-$('load').addEventListener('click',load);
-$('record').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
+function queueRecord(request){
+  // In Task Preview the same WebAssembly instance stays resident across
+  // selections. Serializing record loads prevents one unfinished model or
+  // asset fetch from racing a newer selected scene or method.
+  pendingRecord=request;
+  if(loaderBusy)return;
+  loaderBusy=true;
+  void (async()=>{
+    try{
+      while(pendingRecord){
+        const next=pendingRecord;
+        pendingRecord=null;
+        $('record').value=String(next.record||'');
+        autoplay=next.autoplay===true;
+        terminalOutcome=String(next.outcome||'');
+        terminalReason=String(next.reason||'');
+        loop=next.loop===true&&terminalOutcome==='SUCCESS';
+        if(next.record)await load();
+        else{disposeRecord();status('Ready');}
+      }
+    }finally{loaderBusy=false;}
+  })();
+}
+
+$('load').addEventListener('click',()=>queueRecord({record:$('record').value.trim()}));
+$('record').addEventListener('keydown',event=>{
+  if(event.key==='Enter')queueRecord({record:$('record').value.trim()});
+});
 $('play').addEventListener('click',()=>{
   if(!frames.length)return;
   if(!playing && frameIndex===frames.length-1){
@@ -215,14 +288,24 @@ $('timeline').addEventListener('input',event=>{
 });
 $('follow').addEventListener('click',()=>{follow=!follow;$('follow').textContent=`Follow drone: ${follow?'On':'Off'}`;});
 $('view').addEventListener('click',()=>{
-  closeCamera=!closeCamera;
-  $('view').textContent=`Camera: ${closeCamera?'Aircraft':'Course'}`;
+  const modes=['aircraft','course','overhead'];
+  viewMode=modes[(modes.indexOf(viewMode)+1)%modes.length];
+  $('view').textContent=`Camera: ${viewMode[0].toUpperCase()+viewMode.slice(1)}`;
   frameCamera();
 });
 $('trail').addEventListener('click',()=>{
   if(!pathLine)return;
   pathLine.visible=!pathLine.visible;
   $('trail').textContent=`Flight path: ${pathLine.visible?'On':'Off'}`;
+});
+$('hits').addEventListener('click',()=>{
+  showSensorHits=!showSensorHits;
+  for(const mesh of sensorHitMeshes)mesh.visible=showSensorHits;
+  $('hits').textContent=`Sensor hits: ${showSensorHits?'On':'Off'}`;
+});
+$('obstacles').addEventListener('click',()=>{
+  xrayObstacles=!xrayObstacles;
+  updateObstacleOpacity();
 });
 window.addEventListener('resize',resize);
 function resize(){const {width,height}=viewport.getBoundingClientRect();camera.aspect=width/Math.max(height,1);camera.updateProjectionMatrix();renderer.setSize(width,height);}
@@ -234,8 +317,14 @@ function animate(now){
     // discard sub-frame time or playback stalls at every sampled frame.
     playheadTime+=dt;
     if(playheadTime>=frames.at(-1).time){
-      playheadTime=frames.at(-1).time;
-      displayFrame(frames.length-1);playing=false;$('play').textContent='Play';
+      if(loop){
+        const duration=frames.at(-1).time-frames[0].time;
+        playheadTime=duration>0?frames[0].time+(playheadTime-frames[0].time)%duration:frames[0].time;
+        displayFrame(nearestFrame(playheadTime));
+      }else{
+        playheadTime=frames.at(-1).time;
+        displayFrame(frames.length-1);playing=false;$('play').textContent='Play';
+      }
     }else displayFrame(nearestFrame(playheadTime));
   }
   wallThen=now;
@@ -244,4 +333,23 @@ function animate(now){
 }
 resize();requestAnimationFrame(animate);
 const initial=new URL(location.href).searchParams.get('record');
-if(initial){$('record').value=initial;load();}
+if(initial)queueRecord({
+  record:initial,autoplay,outcome:terminalOutcome,reason:terminalReason,loop,
+});
+if(embedded&&parent!==window){
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin||event.source!==window.parent)return;
+    if(event.data?.type==='dp-wasm-load'){
+      queueRecord({
+        record:event.data.record,
+        autoplay:event.data.autoplay,
+        outcome:event.data.outcome,
+        reason:event.data.reason,
+        loop:event.data.loop,
+      });
+    }else if(event.data?.type==='dp-wasm-clear'){
+      queueRecord({record:''});
+    }
+  });
+  parent.postMessage({type:'dp-wasm-ready'},location.origin);
+}
