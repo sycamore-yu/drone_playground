@@ -91,6 +91,7 @@ class EarlyStopping:
             bad_evaluations=0 if improved else self.state["bad_evaluations"] + 1,
             evaluations=self.state["evaluations"] + 1,
             all_successful=all(row.get("success", False) for row in rows) if rows else False,
+            confirmed=measurement.get("confirmed", True),
         )
 
     def reason(self):
@@ -103,6 +104,7 @@ class EarlyStopping:
         target = rules["target"]
         if (
             target is not None
+            and self.state.get("confirmed", True)
             and direction * (score - target) >= 0
             and (rules["metric"] != "position_rmse" or self.state["all_successful"])
         ):
@@ -128,6 +130,23 @@ class RewardSelection:
     def __init__(self, config, trainer, saved=None):
         """Bind the selection recipe and restore its exact measurement history."""
         self.config = config.learning.best
+        self.metric = self.config.get("metric", "mean_reward")
+        self.confirmation_episodes = self.config.get("confirmation_episodes", 0)
+        if self.metric not in {"mean_reward", "success_rate"}:
+            raise ValueError("learning.best.metric must be mean_reward or success_rate")
+        if type(self.confirmation_episodes) is not int or self.confirmation_episodes < 0:
+            raise ValueError("learning.best.confirmation_episodes must be a nonnegative integer")
+        if (
+            self.metric == "success_rate" or self.confirmation_episodes
+        ) and self.config.source == "training":
+            raise ValueError("Success selection and confirmation require evaluation measurements")
+        if self.confirmation_episodes and self.confirmation_episodes < self.config.episodes:
+            raise ValueError(
+                "Confirmation must contain at least as many episodes as the quick check"
+            )
+        self._trainer = trainer
+        self._full_config = config
+        self.confirm = None
         if self.config.source not in (None, "training", "evaluation"):
             raise ValueError("learning.best.source must be null, training, or evaluation")
         for name in ("interval", "episodes"):
@@ -171,6 +190,19 @@ class RewardSelection:
             return None
         if self.evaluate is not None:
             rows = self.evaluate(state.params)
+            quick_episodes = len(rows)
+            quick_successes = sum(row.get("success", False) for row in rows)
+            confirmed = not self.confirmation_episodes
+            if self.confirmation_episodes and quick_successes == quick_episodes:
+                if self.confirm is None:
+                    config = OmegaConf.create(
+                        OmegaConf.to_container(self._full_config, resolve=True)
+                    )
+                    config.learning.best.episodes = self.confirmation_episodes
+                    config.learning.best.seed = (config.learning.best.seed + 7919) % 2**32
+                    self.confirm = fixed_evaluator(config, self._trainer)
+                rows = self.confirm(state.params)
+                confirmed = True
             mean = float(np.mean([row["return"] for row in rows]))
             count = len(rows)
         else:
@@ -179,18 +211,31 @@ class RewardSelection:
                 return None
             rows = []
             mean = self.state["window_return"] / count
+            confirmed, quick_episodes, quick_successes = True, count, None
         if not math.isfinite(mean):
             raise FloatingPointError("Checkpoint selection produced a nonfinite episode return")
         self.state.update(
             last_interactions=int(state.interactions), window_episodes=0, window_return=0.0
         )
         previous = self.state["best_mean_reward"]
+        if self.metric == "success_rate":
+            rate = sum(row["success"] for row in rows) / len(rows)
+            score = [int(confirmed), rate, mean]
+            previous_score = self.state.get("best_score")
+            improved = previous_score is None or tuple(score) > tuple(previous_score)
+        else:
+            score = [mean]
+            improved = previous is None or mean > previous
         return {
             "source": self.config.source,
             "mean_reward": mean,
             "episodes": count,
             "episode_records": rows,
-            "improved": previous is None or mean > previous,
+            "improved": improved,
+            "selection_score": score,
+            "confirmed": confirmed,
+            "quick_episodes": quick_episodes,
+            "quick_successes": quick_successes,
         }
 
 
@@ -200,6 +245,8 @@ def fixed_evaluator(config, trainer):
     settings.simulation.num_envs = config.learning.best.episodes
     if "procedural" in settings.simulation:
         settings.simulation.procedural.training_seed = config.learning.best.seed
+        if settings.simulation.procedural.get("layout") == "matched":
+            settings.simulation.procedural.start_sampling = "distance_stratified"
     env = create_environment(settings)
     objective = EpisodeObjective(
         env, trainer.config, recipe=trainer.objective.recipe, loss_name=trainer.loss_name
@@ -208,6 +255,13 @@ def fixed_evaluator(config, trainer):
         jax.random.PRNGKey(config.learning.best.seed),
         **trainer._reset_options,
         **({"sampling_progress": 1.0} if trainer.distance_curriculum else {}),
+    )
+    distance = (
+        np.asarray(
+            jnp.linalg.norm(env.goal_for(initial) - initial.physics.states.pos[:, 0], axis=-1)
+        )
+        if env.task.name == "navigation"
+        else None
     )
     limit = math.ceil(env.task.duration / env.dt) + 1
 
@@ -254,6 +308,18 @@ def fixed_evaluator(config, trainer):
                 "event": Event(int(after.task.event[i])).name,
                 "success": int(after.task.event[i]) == Event.SUCCESS,
                 "flight_seconds": float(after.time[i]),
+                **(
+                    {
+                        "start_goal_distance_m": float(distance[i]),
+                        "distance_group": "short"
+                        if distance[i] < 30
+                        else "medium"
+                        if distance[i] < 80
+                        else "long",
+                    }
+                    if distance is not None
+                    else {}
+                ),
                 **(
                     {
                         "position_rmse": float(

@@ -190,13 +190,7 @@ def collect_rollout(trainer, state, *, sampling_progress=None):
             reset_key, after, memory, history, sampling_progress=sampling_progress
         )
         if trainer.distance_sampling:
-            distance = jnp.linalg.norm(
-                env_state.scene_state.start - env_state.scene_state.goal, axis=-1
-            )
-            for metres in (20, 50, 80):
-                terms[f"reset_distance_{metres}m_count"] = (
-                    after.done & (jnp.abs(distance - metres) < 0.01)
-                ).astype(jnp.float32)
+            terms.update(trainer.reset_distance_counts(env_state, after.done))
         return (env_state, memory, history, rng, after.scene_state), (data, terms)
 
     carry, (rollout, terms) = jax.lax.scan(
@@ -423,8 +417,8 @@ def update(trainer, state, *, sampling_progress=None):
     }
     metrics.update(jax.tree.map(jnp.mean, terms))
     if trainer.distance_sampling:
-        for metres in (20, 50, 80):
-            name = f"reset_distance_{metres}m_count"
+        for label in trainer.distance_group_labels:
+            name = f"reset_distance_{label}_count"
             metrics[name] = jnp.sum(terms[name])
         metrics["distance_curriculum_phase"] = (
             jnp.minimum(jnp.floor(sampling_progress * 3), 2)

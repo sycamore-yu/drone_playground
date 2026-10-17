@@ -1,8 +1,8 @@
 """Per-world procedural Navigation geometry with shared collision and ray queries.
 
 All arrays use immutable static JAX shapes. No benchmark MJCF is loaded during
-training. The generator deliberately reserves a certified navigable outside
-corridor; start/goal are placed outside the occupied x-range.
+training. The matched preset covers long flights, variable interior routes,
+forest/narrow-passage geometry and both benchmark motion families.
 """
 
 import hashlib
@@ -40,6 +40,8 @@ class SceneState:
     start: jax.Array  # [B,3] safe start location
     goal: jax.Array  # [B,3] safe terminal sphere center
     episode: jax.Array  # [B] monotone count for deterministic reset streams
+    motion: jax.Array | None = None  # [B,N,6] prescribed motion, matched layouts
+    route: jax.Array | None = None  # [B,5,3] static-clear construction route
 
 
 @dataclass(frozen=True)
@@ -54,11 +56,14 @@ class SceneDistribution:
     min_start_goal_distance_m: float = 0.0
     start_goal_distance_range_m: tuple[float, float] | None = None
     static_obstacle_scale: float = 1.0
+    layout: str = "legacy"
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
         if self.obstacle_motion not in {"static", "dynamic", "mixed"}:
             raise ValueError("obstacle_motion must be static, dynamic, or mixed")
+        if self.layout not in {"legacy", "matched"}:
+            raise ValueError("layout must be legacy or matched")
         if type(self.max_obstacles) is not int or self.max_obstacles < 3:
             raise ValueError("max_obstacles must be at least 3")
         if (
@@ -77,6 +82,7 @@ class SceneDistribution:
             "stratified",
             "distance_mixture",
             "distance_curriculum",
+            "distance_stratified",
         ):
             raise ValueError("Unsupported procedural start_sampling")
         if not 0 <= self.min_start_goal_distance_m <= 80.0 or (
@@ -116,7 +122,9 @@ class ProceduralScene:
             config if isinstance(config, SceneDistribution) else SceneDistribution(**(config or {}))
         )
         generator = (
-            "procedural-navigation-v4-distance-schedule"
+            "procedural-navigation-v5-matched"
+            if self.distribution.layout == "matched"
+            else "procedural-navigation-v4-distance-schedule"
             if self.distribution.start_sampling in ("distance_mixture", "distance_curriculum")
             else "procedural-navigation-v3-distance-range"
             if self.distribution.start_goal_distance_range_m is not None
@@ -126,6 +134,8 @@ class ProceduralScene:
         )
         # Keep v1's byte-for-byte identity compatible with historical checkpoints.
         distribution_identity = vars(self.distribution).copy()
+        if self.distribution.layout == "legacy":
+            distribution_identity.pop("layout")
         if self.distribution.obstacle_motion == "mixed":
             distribution_identity.pop("obstacle_motion")
         if self.distribution.static_obstacle_scale == 1:
@@ -166,6 +176,8 @@ class ProceduralScene:
         keys = jax.vmap(
             lambda index, episode: jax.random.fold_in(jax.random.fold_in(master, index), episode)
         )(indices, episodes)
+        if self.distribution.layout == "matched":
+            return self._sample_matched(keys, indices, episodes, sampling_progress)
         capacity = self.distribution.max_obstacles
         slot = jnp.arange(capacity)
 
@@ -325,12 +337,225 @@ class ProceduralScene:
             )
         return scenario
 
+    def _sample_matched(self, keys, indices, episodes, progress):
+        """Generate routes and obstacles from parameters, never from benchmark layouts.
+
+        Static geometry leaves a different bent interior route in each world.
+        Dynamic obstacles may cross it, so motion timing still requires avoidance.
+        Only the start and goal are excluded from swept dynamic envelopes.
+        """
+        capacity = self.distribution.max_obstacles
+        count_candidates = 2 * capacity
+        slots = jnp.arange(capacity)
+        stratified = self.distribution.start_sampling == "distance_stratified"
+
+        def world(key, index, episode):
+            shape_key, route_key, distance_key, location_key, size_key, move_key, phase_key = (
+                jax.random.split(key, 7)
+            )
+            family = (index // 3) % 4 if stratified else jax.random.randint(shape_key, (), 0, 4)
+            dynamic = (
+                jax.random.bernoulli(jax.random.fold_in(shape_key, 1))
+                if self.distribution.obstacle_motion == "mixed"
+                else jnp.asarray(self.distribution.obstacle_motion == "dynamic")
+            )
+            nominal = jnp.where(
+                dynamic,
+                jnp.array([50, 100, 200, 150])[family],
+                jnp.array([41, 81, 162, 150])[family],
+            )
+            count = jnp.minimum(capacity, nominal)
+            count = jnp.where(
+                dynamic,
+                count,
+                jnp.maximum(1, (count * self.distribution.static_obstacle_scale).astype(jnp.int32)),
+            )
+            # Vary the interior topology; no permanently clear y=-17.5 lane.
+            bends = jax.random.uniform(route_key, (3,), minval=-12.0, maxval=12.0)
+            route = jnp.stack(
+                [
+                    jnp.array([2.0, 25.0, 50.0, 75.0, 98.0]),
+                    jnp.concatenate([jnp.zeros(1), bends, jnp.zeros(1)]),
+                    jnp.full(5, 3.0),
+                ],
+                -1,
+            )
+            goal = route[-1]
+            progress_value = jnp.asarray(1.0 if progress is None else progress)
+            alpha = jnp.clip(progress_value, 0, 1)
+            weights = (1 - alpha) * jnp.array([0.4, 0.3, 0.3]) + alpha * jnp.array([0.1, 0.2, 0.7])
+            distance_group = (
+                index % 3
+                if stratified
+                else jax.random.categorical(jax.random.fold_in(distance_key, 1), jnp.log(weights))
+            )
+            distance_range = jnp.array([[10.0, 30.0], [30.0, 70.0], [80.0, 98.0]])[distance_group]
+            radius = jax.random.uniform(
+                distance_key, (), minval=distance_range[0], maxval=distance_range[1]
+            )
+            radius = jnp.minimum(radius, 96.0)
+            if stratified:
+                # Half of the long-distance check cases use the full nominal flight.
+                radius = jnp.where((distance_group == 2) & ((index // 3) % 2 == 0), 96.0, radius)
+            if self.distribution.start_sampling == "endpoints":
+                radius = jnp.asarray(96.0)
+            a = route[:-1] - goal
+            segment = route[1:] - route[:-1]
+            aa = jnp.sum(segment * segment, axis=-1)
+            bb = 2 * jnp.sum(a * segment, axis=-1)
+            cc = jnp.sum(a * a, axis=-1) - radius**2
+            discriminant = bb**2 - 4 * aa * cc
+            fraction = (-bb - jnp.sqrt(jnp.maximum(discriminant, 0))) / (2 * aa)
+            valid_segment = (discriminant >= 0) & (fraction >= -1e-5) & (fraction <= 1 + 1e-5)
+            selected_segment = jnp.argmax(valid_segment)
+            start = (
+                route[selected_segment]
+                + jnp.clip(fraction[selected_segment], 0, 1) * segment[selected_segment]
+            )
+
+            candidate_slot = jnp.arange(count_candidates)
+            units = jax.random.uniform(size_key, (count_candidates, 3))
+            locations = jax.random.uniform(location_key, (count_candidates, 3))
+            centers = locations * jnp.array([84.0, 36.0, 0.0]) + jnp.array([8.0, -18.0, 3.0])
+            moving = dynamic & (candidate_slot % 20 < 13)
+            cylinder = ~moving & ((family != 3) | (candidate_slot % 3 != 0))
+            sizes_cylinder = jnp.stack(
+                [
+                    jnp.where(family == 3, 0.7 + units[:, 0] * 0.45, 1.0 + units[:, 0] * 0.5),
+                    jnp.where(
+                        family == 3,
+                        jnp.full(count_candidates, 2.75),
+                        jnp.full(count_candidates, 3.0),
+                    ),
+                    jnp.zeros(count_candidates),
+                ],
+                -1,
+            )
+            sizes_box = 0.2 + units * 0.2
+            tall = candidate_slot % 3 == 0
+            wide = candidate_slot % 3 == 1
+            sizes_box = sizes_box.at[:, 2].set(
+                jnp.where(tall, 1.8 + 0.2 * units[:, 2], sizes_box[:, 2])
+            )
+            sizes_box = sizes_box.at[:, 1].set(
+                jnp.where(wide, 1.7 + 0.3 * units[:, 1], sizes_box[:, 1])
+            )
+            sizes = jnp.where(cylinder[:, None], sizes_cylinder, sizes_box)
+            # Draw the same two motion equations as Scene.positions, with new parameters.
+            motion_units = jax.random.uniform(move_key, (count_candidates, 4))
+            phase = jax.random.uniform(phase_key, (count_candidates,), minval=0, maxval=1)
+            kind = jnp.where(moving, jnp.where(candidate_slot % 3 == 0, 2, 1), 0)
+            scales = 2 + 2 * motion_units[:, :3]
+            scales = scales.at[:, 2].set(jnp.minimum(scales[:, 2], 2 * (2.45 - sizes[:, 2])))
+            direction_x = candidate_slot % 2 == 0
+            bounce = jnp.stack(
+                [
+                    jnp.where(direction_x, 4 + 3 * motion_units[:, 0], 0),
+                    jnp.where(direction_x, 0, 4 + 3 * motion_units[:, 1]),
+                    0.7 * motion_units[:, 2],
+                ],
+                -1,
+            )
+            amplitudes = jnp.where((kind == 2)[:, None], bounce, scales)
+            motion = jnp.concatenate(
+                [
+                    kind[:, None],
+                    amplitudes,
+                    jnp.where(kind == 1, phase * 3, 8 + 4 * motion_units[:, 3])[:, None],
+                    jnp.where(kind == 1, 31.5 + 16 * motion_units[:, 3], phase)[:, None],
+                ],
+                -1,
+            )
+            envelope = jnp.where(
+                (kind == 2)[:, None], jnp.abs(bounce), scales * jnp.array([0.5, 0.6, 0.5])
+            )
+            envelope = jnp.where(moving[:, None], envelope, 0)
+            half_extent = jnp.where(
+                cylinder[:, None], jnp.stack([sizes[:, 0], sizes[:, 0], sizes[:, 1]], -1), sizes
+            )
+            centers = jnp.clip(
+                centers,
+                jnp.array([0.3, -19.7, 0.5]) + half_extent + envelope,
+                jnp.array([99.7, 19.7, 6.0]) - half_extent - envelope,
+            )
+            centers = centers.at[:, 2].set(3.0)
+            # Conservative 2-D distances keep tall shapes off the static route.
+            delta = centers[:, None, :2] - route[None, :-1, :2]
+            vector = segment[:, :2]
+            t = jnp.clip(jnp.sum(delta * vector[None], -1) / jnp.sum(vector * vector, -1), 0, 1)
+            closest = route[None, :-1, :2] + t[..., None] * vector[None]
+            separation = jnp.min(jnp.linalg.norm(centers[:, None, :2] - closest, axis=-1), axis=-1)
+            shape_radius = jnp.where(cylinder, sizes[:, 0], jnp.linalg.norm(sizes[:, :2], axis=-1))
+            route_clear = moving | (separation > shape_radius + 0.65)
+            swept_radius = shape_radius + jnp.linalg.norm(envelope[:, :2], axis=-1)
+            ends_clear = (
+                jnp.linalg.norm(centers[:, :2] - start[:2], axis=-1) > swept_radius + 1.1
+            ) & (jnp.linalg.norm(centers[:, :2] - goal[:2], axis=-1) > swept_radius + 1.1)
+            valid = route_clear & ends_clear
+            take = jnp.nonzero(valid, size=capacity, fill_value=0)[0]
+            enabled = (slots < count) & (slots < jnp.count_nonzero(valid))
+            centers, sizes, cylinder, moving, motion = (
+                array[take] for array in (centers, sizes, cylinder, moving, motion)
+            )
+            # Structured cases include two different interior openings, not a side bypass.
+            if capacity >= 4:
+                gap = 1.4 + 0.8 * jax.random.uniform(jax.random.fold_in(route_key, 8), (2,))
+                opening = bends[jnp.array([0, 2])]
+                wall_x = jnp.repeat(jnp.array([25.0, 75.0]), 2)
+                lower = jnp.stack([jnp.full(2, -20.0), opening + gap], -1).reshape(-1)
+                upper = jnp.stack([opening - gap, jnp.full(2, 20.0)], -1).reshape(-1)
+                walls = jnp.stack([wall_x, (lower + upper) / 2, jnp.full(4, 3.0)], -1)
+                wall_sizes = jnp.stack(
+                    [jnp.full(4, 0.35), (upper - lower) / 2, jnp.full(4, 2.75)], -1
+                )
+                use_walls = family == 3
+                centers = centers.at[:4].set(jnp.where(use_walls, walls, centers[:4]))
+                sizes = sizes.at[:4].set(jnp.where(use_walls, wall_sizes, sizes[:4]))
+                cylinder = cylinder.at[:4].set(jnp.where(use_walls, False, cylinder[:4]))
+                moving = moving.at[:4].set(jnp.where(use_walls, False, moving[:4]))
+                motion = motion.at[:4].set(jnp.where(use_walls, 0, motion[:4]))
+            return SceneState(
+                centers,
+                sizes,
+                centers,
+                jnp.zeros(capacity),
+                jnp.zeros(capacity),
+                enabled,
+                cylinder,
+                moving,
+                start,
+                goal,
+                episode,
+                motion,
+                route,
+            )
+
+        return jax.vmap(world)(keys, indices, episodes)
+
     @staticmethod
     def _centers_at(state: SceneState, times: jax.Array):
         """Return per-world obstacle centers at batched/ray acquisition times."""
         extra = (None,) * (times.ndim - 1)
         index = (slice(None), *extra, slice(None))
         anchor = state.centers[index]
+        if state.motion is not None:
+            kind, sx, sy, sz, fourth, fifth = (state.motion[index][..., i] for i in range(6))
+            t = times[..., None]
+            u = 2 * t / jnp.where(kind == 1, fifth, 1) + fourth
+            trefoil = jnp.stack(
+                (
+                    sx / 6 * (jnp.sin(u) + 2 * jnp.sin(2 * u)),
+                    sy / 5 * (jnp.cos(u) - 2 * jnp.cos(2 * u)),
+                    -sz / 2 * jnp.sin(3 * u),
+                ),
+                -1,
+            )
+            phase = t / jnp.where(kind == 2, fourth, 1) + fifth
+            triangle = 2 * jnp.abs(2 * (phase - jnp.floor(phase + 0.5))) - 1
+            bounce = triangle[..., None] * jnp.stack((sx, sy, sz), -1)
+            return anchor + jnp.where(
+                (kind == 1)[..., None], trefoil, jnp.where((kind == 2)[..., None], bounce, 0)
+            )
         target = state.target[index]
         speed = state.speed[index]
         phase = state.phase[index]

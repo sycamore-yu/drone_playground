@@ -1,7 +1,9 @@
 # @package _global_
 defaults:
 - navigation_procedural_depth
+- oa_training
 simulation:
+  num_envs: 128
   procedural:
     obstacle_motion: static
 benchmark:

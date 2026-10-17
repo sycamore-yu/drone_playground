@@ -1,0 +1,24 @@
+# @package _global_
+# Shared release training sampler and optional within-learning convergence check.
+initial_checkpoint: null
+resume: null
+simulation:
+  procedural:
+    layout: matched
+    start_sampling: distance_curriculum
+learning:
+  best:
+    source: evaluation
+    metric: success_rate
+    episodes: 24
+    confirmation_episodes: 96
+    interval: 1048576
+    seed: 1000000
+  early_stopping:
+    metric: success_rate
+    target: 1.0
+    patience: 0
+    min_delta: 0.0
+benchmark:
+  record_replay: true
+  replay_episodes: 2
