@@ -125,6 +125,15 @@ can wait for the timed-out solve to finish. There is no retry with old output.
 Replan scheduling reuses a trajectory only within the configured interval and its
 validity. A changed goal or `force_replan=True` requests a new native decision.
 
+Some native plans end before a tracker's fixed MPC prediction horizon. The host
+controller uses all native samples inside their declared validity interval,
+then fills only the *future prediction tail* with a stationary terminal
+position/zero-velocity reference. This is an MPC boundary condition, not an
+extension of the native plan or permission to reuse it after expiration at the
+current control time. The decision report records `TERMINAL_REFERENCE_HOLD`
+and its duration. Expired current references and failed native decisions still
+fail normally; no collision-free trajectory is invented.
+
 For lower-level callers, `decide(state, goal, measurement)` accepts the generated
 `planner_pb2.State`, `.Goal`, `.Measurement` and always performs an RPC.
 The generated stub also exposes all four RPCs directly.

@@ -22,8 +22,24 @@ python3 -m http.server 4176 --bind 127.0.0.1
 Then open `http://127.0.0.1:4176/docs/command-builder.html`. Native Play and
 Benchmark methods save optional RScope and browser replay files with the Hydra
 override `benchmark.record_replay=true`; automatic replay export is off by
-default. The local native-command smoke matrix and its replay index, when run,
-are stored in `results/command-builder-native-20261016/` (ignored by Git).
+default.
+
+For **complete physical flights**, use `tools/validate_full_episodes.py` after
+installing the optional acados package and starting the EGO/SUPER ROS workers:
+
+```bash
+pixi run python tools/validate_full_episodes.py --group all
+```
+
+This resumable, one-episode-per-scene check never overrides `task.duration`:
+Tracking uses 20 s, Racing 60 s, and Navigation 300 s, unless success or a
+physical failure terminates earlier. Every recorded flight gets a native RScope
+and sampled MuJoCo WASM replay. Open
+`http://127.0.0.1:4176/results/command-builder-native-full-20261017/index.html`
+through SSH forwarding. The original 0.14-second interface checks are retained
+separately under `results/command-builder-native-20261016/` as **historical
+smoke tests**, not full-task evidence. Both result directories are ignored by
+Git; they are local verification artifacts, not release data.
 
 ## Start
 

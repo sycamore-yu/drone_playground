@@ -241,6 +241,45 @@ checks command compatibility, physical execution and replay export. It does
 not replace the full Benchmark protocol for obstacle-avoidance success, policy
 convergence, complete Racing completion or real-time control claims.
 
+## Complete physical tasks (2026-10-17)
+
+The 172 native-method commands require a separate **full-episode run** to
+validate flight behavior. The previous 0.14-second tests are never reused as
+full-flight outcomes. `tools/validate_full_episodes.py` derives each horizon
+from the actual Task YAML: 20 s Tracking, 60 s Racing and 300 s Navigation.
+The same supported Hydra command is used with one independent Episode per
+scene, CPU execution, native RScope recording and sampled MuJoCo WASM playback.
+The complete Benchmark suite retains every scene; statistical 25/100-episode
+cohorts remain a separate, more expensive publication protocol.
+
+The first full Tracking + Sampling MPC flight completed 20.0 s (10,000 physics
+ticks) with `SUCCESS`, position RMSE **0.0318 m**, and a recording spanning the
+whole episode. The first full Racing + MPCC flight completed all ordered gates
+at **14.722 s**, also with a complete native/browser replay.
+
+A full EGO/S01 navigation run exposed a previously invisible clock-interface
+bug: at 0.4 s the 30 Hz Depth frame clock was represented as 0.40000003576 s,
+slightly ahead of the exact 50 Hz control timestamp. The ROS Worker correctly
+rejected that request as `STALE_INPUT`. The Python adapter now reconciles up
+to two float32 representational ULPs without accepting real future sensor
+timestamps. Its regression tests and a real EGO session with successive
+planning solves at 0, 0.4, 0.8 and 1.2 s passed. The original failing trace
+is preserved. The next full run reached 32.0 s, then identified a second issue:
+a valid native trajectory ended before Sampling MPC's one-second fixed future
+window, causing `STALE_OUTPUT`. The host tracker now pads only this prediction
+tail with a stationary endpoint reference. An expired trajectory at the current
+control time still fails. Both failure records are preserved for comparison
+with the subsequent full-episode rerun.
+
+The active full-flight catalog, resumable process status, terminal task events,
+report links and replay URLs are in the locally ignored directory
+`results/command-builder-native-full-20261017/` (`index.html`, `catalog.json`,
+`manifest.json`, `runs/`). Every genuine `TIMEOUT` is checked against its full
+Task horizon; wall-clock watchdog expiry is labeled `process_timeout` rather
+than presented as a simulated task outcome. Until all commands have physically
+terminated, the manifest—rather than the prior 172/172 short-smoke result—is
+the source of truth for full-mission coverage.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.
