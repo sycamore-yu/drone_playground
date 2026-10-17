@@ -13,6 +13,7 @@ from tools.validate_full_episodes import (
     build_command,
     builder_catalog,
     case_slug,
+    clock_failure_streak,
     physical_duration,
 )
 
@@ -72,3 +73,17 @@ def test_short_tracking_budget_changes_reference_dynamics_not_just_episode_lengt
     _, short_velocity, _ = truncated.target(np.asarray([0.0]))
     assert np.isclose(np.asarray(full_velocity)[0, 0], 2 * np.pi / 20.0)
     assert np.isclose(np.asarray(short_velocity)[0, 0] / np.asarray(full_velocity)[0, 0], 20 / 0.14)
+
+
+def test_batch_pauses_after_repeated_stage_zero_failures():
+    """Two identical physical interface failures must not waste dozens of runs."""
+    error = {
+        "status": "method_failure",
+        "failure_detail": "Planner trajectory does not cover the current controller step",
+    }
+    assert clock_failure_streak(0, error) == 1
+    assert clock_failure_streak(1, error) == 2
+    assert clock_failure_streak(2, {"status": "completed"}) == 0
+    assert (
+        clock_failure_streak(2, {"status": "method_failure", "failure_detail": "NO_SOLUTION"}) == 0
+    )

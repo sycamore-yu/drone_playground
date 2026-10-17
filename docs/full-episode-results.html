@@ -10,9 +10,9 @@ thead{position:sticky;top:0;background:#e9f0f7}code{font:11px/1.45 ui-monospace,
 .stat strong{display:block;font-size:21px}.filter{padding:7px;font:inherit;margin:8px 5px 8px 0}
 .error{color:#a23422}small{color:#5d7086}
 </style></head><body><h1>Complete native flight episodes</h1>
-<p>Actual task horizons: Tracking 20 s, Racing 60 s, OA 300 s. Each case executes one full episode per scene, with genuine SUCCESS/COLLISION/METHOD_FAILURE/OUT_OF_BOUNDS/TIMEOUT outcomes. A task TIMEOUT must occur at the full configured horizon. CLI errors and infrastructure wall-time limits are separately labeled; no 0.14 s truncation is applied.</p>
+<p>Actual task horizons: Tracking 20 s, Racing 60 s, OA 300 s. Episodes terminate on SUCCESS, COLLISION, OUT_OF_BOUNDS, METHOD_FAILURE or a genuine full-horizon TIMEOUT. A 1.2-second WASM video labeled METHOD_FAILURE is a <strong>faithful partial flight until the real failure</strong>, not a missing 298.8 seconds of footage. Such cases must be repaired and rerun; the viewer never fabricates a continuation. CLI errors and OS watchdog limits are separate from task outcomes.</p>
 <p>These runs check complete physical episodes, not 100-episode statistical Benchmark convergence.</p>
-<p><a href="../../docs/command-builder.html">Command Builder</a><a href="catalog.json">Generated commands</a><a href="manifest.json">Execution manifest</a><a href="../../docs/viewer/dist/index.html">MuJoCo WASM</a></p>
+<p><a href="../../docs/command-builder.html">Command Builder</a><a href="catalog.json">Generated commands</a><a href="manifest.json">Execution manifest</a><a href="replay-audit.json">Replay-duration and failure audit</a><a href="../../docs/viewer/dist/index.html">MuJoCo WASM</a></p>
 <div id="summary" class="stats"></div>
 <input id="query" class="filter" placeholder="Filter scene, controller, task"/>
 <select id="group" class="filter"><option value="">All groups</option><option>play:controller</option><option>play:planner</option><option>benchmark:controller</option><option>benchmark:planner</option></select>
@@ -37,10 +37,12 @@ async function refresh(){
      const item=Object.entries(records).find(([key])=>key.startsWith(id+'_'))?.[1];const state=item?.status||'pending';
      const text=[category,c.task,c.scene,c.suite,c.planner,c.controller,state].join(' ').toLowerCase();
      if((query&&!text.includes(query))||(group&&category!==group)||(status&&state!==status))return '';
-     let links='-';if(item){const folder=item.run_relative;links=`<a href="${esc(folder)}/console.log">Log</a>${item.has_report?`<a href="${esc(folder)}/report.json">Report</a>`:''}${(item.browser_replays||[]).map((r,j)=>{
+     let links='-';if(item){const folder=item.run_relative;links=`<a href="${esc(folder)}/console.log">Log</a>${item.has_report?`<a href="${esc(folder)}/report.json">Report</a>`:''}${item.previous_run_relative?`<a href="${esc(item.previous_run_relative)}/decisions.json">Previous failure</a>`:''}${(item.browser_replays||[]).map((r,j)=>{
        const record=new URL(folder+'/'+r, location.href).pathname;
        const viewer='/docs/viewer/dist/index.html?record='+encodeURIComponent(record);
-       return `<a href="${esc(viewer)}" target="_blank">WASM ${j+1}</a><a href="${esc(folder+'/'+r.replace('browser_replay.json','episode.mj_unroll'))}">RScope ${j+1}</a>`}).join('')}`;}
+       const event=Object.keys(item.events||{})[0]||'NO_EVENT';const seconds=item.simulated_flight_seconds?.[j];
+       const note=seconds===undefined?'':` (${Number(seconds).toFixed(2)}s until ${esc(event)})`;
+       return `<a href="${esc(viewer)}" target="_blank">WASM ${j+1}${note}</a><a href="${esc(folder+'/'+r.replace('browser_replay.json','episode.mj_unroll'))}">RScope ${j+1}</a>`}).join('')}`;}
      const events=item?Object.entries(item.events||{}).map(([e,n])=>e+':'+n).join(', '):'';
      return `<tr><td>${i}</td><td>${esc(category)}</td><td>${esc(c.task)}</td><td>${esc(c.scene||c.suite||'core')}</td><td>${esc([c.planner,c.controller].filter(Boolean).join(' + '))}</td><td class="${state==='error'?'error':''}">${esc(state)}</td><td>${esc(events)}</td><td>${esc((item?.simulated_flight_seconds||[]).map(n=>n.toFixed(2)+' s').join(', '))}</td><td>${links}</td><td><code>${esc(c.command)}</code></td></tr>`;
    }).join('');

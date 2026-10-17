@@ -139,6 +139,36 @@ def load_episodes(directory: Path) -> list[dict]:
         return list(csv.DictReader(stream))
 
 
+def failure_detail(directory: Path) -> str | None:
+    """Retain real planner and controller failures in the case ledger."""
+    file = directory / "decisions.json"
+    if file.is_file():
+        try:
+            content = json.loads(file.read_text())
+            decisions = content.get("decisions", []) if isinstance(content, dict) else content
+            for decision in reversed(decisions):
+                if decision.get("detail"):
+                    return str(decision["detail"])
+        except (OSError, ValueError, TypeError):
+            pass
+    console = directory / "console.log"
+    if console.is_file():
+        content = console.read_text(errors="replace")
+        if "RESOURCE_EXHAUSTED" in content:
+            return "RESOURCE_EXHAUSTED: ROS worker already holds an active session"
+    return None
+
+
+def clock_failure_streak(previous: int, result: dict) -> int:
+    """Detect repeated deterministic interface failures before another batch."""
+    if result.get("status") == "method_failure" and (
+        "Planner trajectory does not cover the current controller step"
+        in str(result.get("failure_detail") or "")
+    ):
+        return previous + 1
+    return 0
+
+
 def perform(case: dict, index: int, output: Path, args: argparse.Namespace, attempt: int) -> dict:
     """Execute one untruncated case, preserving its complete logs and report."""
     slug = case_slug(index, case)
@@ -213,6 +243,7 @@ def perform(case: dict, index: int, output: Path, args: argparse.Namespace, atte
         "task_duration_seconds": duration,
         "simulated_flight_seconds": [float(row["flight_seconds"]) for row in episodes],
         "events": dict(Counter(row["event"] for row in episodes)),
+        "failure_detail": failure_detail(directory),
         "episodes": len(episodes),
         "browser_replays": replays,
         "has_report": bool(report),
@@ -252,6 +283,12 @@ def main() -> None:
     )
     parser.add_argument("--ego-port", type=int, default=50151)
     parser.add_argument("--super-port", type=int, default=50152)
+    parser.add_argument(
+        "--max-repeated-clock-failures",
+        type=int,
+        default=2,
+        help="Pause the batch after this many consecutive stage-zero clock failures",
+    )
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -284,8 +321,10 @@ def main() -> None:
         }
     )
     write_index(output)
+    manifest.pop("halt_reason", None)
     atomic_json(manifest_path, manifest)
     completed = 0
+    clock_streak = 0
     for index, case in enumerate(cases):
         if args.case and index not in args.case:
             continue
@@ -315,6 +354,10 @@ def main() -> None:
         result = perform(case, index, output, args, attempt)
         if previous is not None:
             result["previous_run_relative"] = previous.get("run_relative")
+            result["run_history"] = [
+                *previous.get("run_history", []),
+                *([previous["run_relative"]] if previous.get("run_relative") else []),
+            ]
         manifest["cases"][slug] = result
         atomic_json(manifest_path, manifest)
         print(
@@ -324,6 +367,23 @@ def main() -> None:
             flush=True,
         )
         completed += 1
+        clock_streak = clock_failure_streak(clock_streak, result)
+        reason = None
+        if (
+            args.max_repeated_clock_failures > 0
+            and clock_streak >= args.max_repeated_clock_failures
+        ):
+            reason = (
+                f"Stopped after {clock_streak} consecutive deterministic "
+                "planner/controller stage-zero clock failures; inspect the logs before resuming"
+            )
+        if "RESOURCE_EXHAUSTED" in str(result.get("failure_detail") or ""):
+            reason = "Dedicated ROS Worker has an orphaned active session; fix before resuming"
+        if reason:
+            manifest["halt_reason"] = reason
+            atomic_json(manifest_path, manifest)
+            print("HALT", reason, flush=True)
+            break
     print("SUMMARY", dict(Counter(v["status"] for v in manifest["cases"].values())), flush=True)
 
 
