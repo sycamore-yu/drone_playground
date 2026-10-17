@@ -57,7 +57,7 @@ def test_body_acceleration_rotation_gradient_is_physical_world_rotation():
 
 @pytest.mark.parametrize(
     "level,frame",
-    [("horizontal_acceleration", "body"), ("velocity_yaw", "body"), ("body_rate", "world")],
+    [("horizontal_acceleration", "body"), ("attitude_thrust", "body"), ("body_rate", "world")],
 )
 def test_unimplemented_frame_combinations_are_rejected(level, frame):
     """Do not silently reinterpret other action levels in a different frame."""
@@ -100,7 +100,7 @@ def test_body_policy_delivers_world_acceleration_to_point_mass_backward_model():
 @pytest.mark.parametrize("sensor", ["depth", "lidar"])
 @pytest.mark.parametrize("algo", ["ppo", "bptt", "shac"])
 def test_oa_body_frame_candidate_has_matching_observation_action(region, sensor, algo):
-    """All OA native learners can opt into the consistent body-acceleration interface."""
+    """All OA native learners now use the same public body-action default."""
     root = Path(__file__).resolve().parents[1] / "src/drone_playground/configs"
     with initialize_config_dir(version_base=None, config_dir=str(root)):
         cfg = compose(
@@ -108,8 +108,8 @@ def test_oa_body_frame_candidate_has_matching_observation_action(region, sensor,
             overrides=[
                 f"experiment=oa_{region}_{sensor}_{algo}",
                 f"learning={algo}",
-                "+method.action.frame=body",
-                "++observation.navigation_world_rotation=false",
+                "method.action.frame=body",
+                "observation.navigation_world_rotation=false",
             ],
         )
     assert cfg.method.action.level == "acceleration"
@@ -128,7 +128,7 @@ def test_lotf_action_frame_is_body_and_retains_native_rate_interface():
                 "learning=shac",
                 "learning.backward_model=lotf",
                 "method.action.level=body_rate",
-                "+method.action.frame=body",
+                "method.action.frame=body",
             ],
         )
     assert cfg.method.action.frame == "body"

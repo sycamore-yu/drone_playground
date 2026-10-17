@@ -57,6 +57,7 @@ class SceneDistribution:
     start_goal_distance_range_m: tuple[float, float] | None = None
     static_obstacle_scale: float = 1.0
     layout: str = "legacy"
+    horizontal_beam_probability: float = 0.0
 
     def __post_init__(self):
         """Validate the analytically reserved start/goal and outside corridor."""
@@ -72,6 +73,13 @@ class SceneDistribution:
             or not 0 < self.static_obstacle_scale <= 1
         ):
             raise ValueError("static_obstacle_scale must be finite and in (0, 1]")
+        if (
+            type(self.horizontal_beam_probability) not in (int, float)
+            or not math.isfinite(self.horizontal_beam_probability)
+            or not 0 <= self.horizontal_beam_probability <= 1
+            or (self.horizontal_beam_probability > 0 and self.layout != "matched")
+        ):
+            raise ValueError("Horizontal beam probability requires matched scenes in [0, 1]")
         if not -19.0 < self.corridor_y < -16.0:
             raise ValueError("corridor_y must lie in the clear outside lane")
         if type(self.training_seed) is not int or self.training_seed < 0:
@@ -122,7 +130,9 @@ class ProceduralScene:
             config if isinstance(config, SceneDistribution) else SceneDistribution(**(config or {}))
         )
         generator = (
-            "procedural-navigation-v5-matched"
+            "procedural-navigation-v6-matched-horizontal-beams"
+            if self.distribution.horizontal_beam_probability > 0
+            else "procedural-navigation-v5-matched"
             if self.distribution.layout == "matched"
             else "procedural-navigation-v4-distance-schedule"
             if self.distribution.start_sampling in ("distance_mixture", "distance_curriculum")
@@ -140,6 +150,8 @@ class ProceduralScene:
             distribution_identity.pop("obstacle_motion")
         if self.distribution.static_obstacle_scale == 1:
             distribution_identity.pop("static_obstacle_scale")
+        if self.distribution.horizontal_beam_probability == 0:
+            distribution_identity.pop("horizontal_beam_probability")
         if self.distribution.start_goal_distance_range_m is None:
             distribution_identity.pop("start_goal_distance_range_m")
         if self.distribution.min_start_goal_distance_m == 0:
@@ -514,6 +526,45 @@ class ProceduralScene:
                 cylinder = cylinder.at[:4].set(jnp.where(use_walls, False, cylinder[:4]))
                 moving = moving.at[:4].set(jnp.where(use_walls, False, moving[:4]))
                 motion = motion.at[:4].set(jnp.where(use_walls, 0, motion[:4]))
+            if self.distribution.horizontal_beam_probability > 0:
+                # Static crossbeams exercise vertical bypasses absent from the
+                # standard matched static/dynamic distributions. Their x/z/extent vary by world
+                # and reset, so this does not sample the held-out S06 geometry.
+                # The existing 2-D route is free of other static obstacles;
+                # ascending to z=4.3 before a beam gives a 3-D escape route.
+                beam_key = jax.random.fold_in(key, 841)
+                shape_key, presence_key = jax.random.split(beam_key)
+                units = jax.random.uniform(shape_key, (2, 4))
+                beam_centers = jnp.stack(
+                    [
+                        jnp.array([12.0, 62.0]) + 26.0 * units[:, 0],
+                        jnp.zeros((2,)),
+                        2.35 + 0.7 * units[:, 1],
+                    ],
+                    -1,
+                )
+                beam_sizes = jnp.stack(
+                    [
+                        0.25 + 0.3 * units[:, 2],
+                        15.5 + 1.5 * units[:, 3],
+                        0.45 + 0.3 * units[:, 2],
+                    ],
+                    -1,
+                )
+                beam_enabled = jax.random.bernoulli(
+                    presence_key, self.distribution.horizontal_beam_probability, (2,)
+                )
+                # Distance-based starts may fall near the second beam. Leave
+                # four metres for depth acquisition and an altitude change.
+                starts_clear = jnp.abs(start[0] - beam_centers[:, 0]) > beam_sizes[:, 0] + 4.0
+                beam_enabled &= starts_clear
+                mask = beam_enabled[:, None]
+                centers = centers.at[:2].set(jnp.where(mask, beam_centers, centers[:2]))
+                sizes = sizes.at[:2].set(jnp.where(mask, beam_sizes, sizes[:2]))
+                cylinder = cylinder.at[:2].set(jnp.where(beam_enabled, False, cylinder[:2]))
+                moving = moving.at[:2].set(jnp.where(beam_enabled, False, moving[:2]))
+                motion = motion.at[:2].set(jnp.where(mask, 0, motion[:2]))
+                enabled = enabled.at[:2].set(enabled[:2] | beam_enabled)
             return SceneState(
                 centers,
                 sizes,

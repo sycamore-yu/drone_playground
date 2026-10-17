@@ -6,6 +6,16 @@ simulation:
   procedural:
     layout: matched
     start_sampling: distance_curriculum
+    horizontal_beam_probability: 0.7
+method:
+  action:
+    frame: body
+observation:
+  navigation_world_rotation: false
+  lidar:
+    motion_compensate: true
+  depth:
+    motion_compensate: true
 learning:
   best:
     source: evaluation
