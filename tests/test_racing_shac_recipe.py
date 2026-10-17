@@ -28,7 +28,7 @@ def test_racing_shac_stable_restores_trial11_defaults():
     }
     for key, value in expected.items():
         assert cfg.learning.options[key] == value
-    assert cfg.learning.max_interactions == 256 * 128 * 1300
+    assert cfg.learning.max_iterations == 1300
     assert cfg.learning.best.source == "evaluation"
     assert cfg.learning.early_stopping.metric == "success_rate"
     assert cfg.learning.early_stopping.target == 1.0

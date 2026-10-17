@@ -29,7 +29,7 @@ def config(tmp_path):
     result.simulation.device = "cpu"
     result.simulation.num_envs = 4
     result.learning.options.horizon = 2
-    result.learning.max_interactions = 32
+    result.learning.max_iterations = 4
     result.learning.checkpoint_interval = 2
     result.learning.log_interval = 1
     return result
@@ -174,7 +174,7 @@ def test_target_stops_entire_loop_and_exports_that_update(config, training, monk
     runner.train(config, training.record)
     result = training.record.identity
     assert result["status"] == "early_stopped" and result["updates"] == 2
-    assert result["interactions"] == 16 and result["requested_interactions"] == 32
+    assert result["interactions"] == 16 and result["requested_iterations"] == 4
     state, metadata = load_model_state(
         training.record.directory / result["latest_checkpoint"], SmallState()
     )
@@ -207,7 +207,7 @@ def test_runtime_stop_finishes_before_another_update(config, training, monkeypat
 
 def test_live_target_rechecks_current_policy_instead_of_stale_score(config, training, monkeypatch):
     """Enabling a target re-evaluates a policy that changed since the last probe."""
-    config.learning.max_interactions = 64
+    config.learning.max_iterations = 8
     config.learning.best.source = "training"
     original = runner.Trainer.update
     probes = []
@@ -249,11 +249,11 @@ def test_invalid_runtime_controls_are_rejected(tmp_path, control):
         runner.training_control(path)
 
 
-@pytest.mark.parametrize("budget", [None, True, 0, 7])
-def test_budget_must_describe_whole_updates(config, training, budget):
-    """Reject incomplete or unbounded budgets before training."""
-    config.learning.max_interactions = budget
-    with pytest.raises(ValueError, match="positive multiple"):
+@pytest.mark.parametrize("budget", [None, True, 0, -1, 1.5])
+def test_budget_must_be_positive_integer_iterations(config, training, budget):
+    """Reject invalid update budgets without checking batch divisibility."""
+    config.learning.max_iterations = budget
+    with pytest.raises(ValueError, match="positive integer"):
         runner.train(config, training.record)
 
 
@@ -406,3 +406,15 @@ def test_replay_overlay_lock_and_viewer_thread_cleanup(monkeypatch, tmp_path):
     cli.replay(path)
     assert events == ["launched", "overlay", "closed", "joined"]
     assert mujoco.viewer.launch_passive is launch
+
+
+@pytest.mark.parametrize("rollout_length", [2, 7, 16])
+def test_iteration_budget_does_not_change_when_rollout_length_changes(
+    config, training, rollout_length
+):
+    """The budget is an iteration count, not a derived batch-transition total."""
+    config.learning.max_iterations = 3
+    config.learning.options.horizon = rollout_length
+    runner.train(config, training.record)
+    assert training.record.identity["updates"] == 3
+    assert training.record.identity["requested_iterations"] == 3

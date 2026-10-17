@@ -24,7 +24,7 @@ learning:
     failure_cost: 0.0
     ppo_target_kl: 0.0
     ppo_value_clip: 0.0
-  max_interactions: 67108864
+  max_iterations: 4096
   checkpoint_interval: 50
   best:
     source: evaluation

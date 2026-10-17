@@ -32,6 +32,9 @@ class DronePlaygroundBackend:
         if type(steps) is not int or steps < 1:
             raise ValueError("train_env_steps must be a positive integer")
         settings = bundle.benchmark.env_kwargs
+        iterations = settings["train_iterations"]
+        if type(iterations) is not int or iterations < 1:
+            raise ValueError("train_iterations must be a positive integer")
         scenes = settings["eval_scenes"]
         if not scenes or len(set(scenes)) != len(scenes):
             raise ValueError("eval_scenes must contain unique scenes")
@@ -48,6 +51,7 @@ class DronePlaygroundBackend:
             **settings,
             "record_replay": bool(settings.get("record_replay", False)),
             "train_env_steps": steps,
+            "train_iterations": iterations,
             "eval_episodes": bundle.eval_episodes,
             "max_steps": bundle.max_steps,
             "train_seed": bundle.benchmark.train_seed,
@@ -82,7 +86,7 @@ class DronePlaygroundBackend:
                 f"resume={request.get('resume') or 'null'}",
                 "checkpoint=null",
                 f"seed={request['train_seed']}",
-                f"learning.max_interactions={request['train_env_steps']}",
+                f"learning.max_iterations={request['train_iterations']}",
             ]
         return [
             *args,
@@ -486,10 +490,12 @@ def prepare_training(overrides):
         config = compose(config_name="config", overrides=list(overrides))
     if config.task.name == "navigation" and config.scene.name != "train/procedural":
         raise ValueError("OA training uses procedural geometry; fixed maps belong to Benchmark")
-    steps = config.learning.max_interactions
-    batch = config.simulation.num_envs * config.learning.options.horizon
-    if type(steps) is not int or steps < 1 or steps % batch:
-        raise ValueError("learning.max_interactions must be a positive multiple of worlds*horizon")
+    iterations = config.learning.max_iterations
+    if type(iterations) is not int or iterations < 1:
+        raise ValueError("learning.max_iterations must be a positive integer")
+    # Autoresearch Gym's provider contract requires a sample count. The native
+    # user-facing training budget remains iterations, independent of batch size.
+    steps = iterations * config.simulation.num_envs * config.learning.options.horizon
     scenes = list(
         config.benchmark.scenes
         or (
@@ -515,6 +521,7 @@ def prepare_training(overrides):
         "env_kwargs": {
             "experiment": experiment,
             "algorithm": config.learning.algorithm,
+            "train_iterations": iterations,
             "overrides": list(overrides),
             "eval_scenes": scenes,
             "resume": str(Path(config.resume).resolve()) if config.resume else None,

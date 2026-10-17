@@ -92,6 +92,21 @@ Those historical scores used their recorded map and device settings. The new
 sampling preset must earn its own convergence result; selecting known useful
 coefficients does not by itself prove the new run has passed.
 
+## Training iteration budget (2026-10-17)
+
+Use the same budget terminology as Isaac Lab / RSL-RL. The public Learning
+configuration exposes `learning.max_iterations` as the number of optimizer
+iterations, separate from the per-environment rollout horizon and number of
+parallel worlds. Sample-interaction totals remain recorded as measurements and
+can be derived for external orchestration; they do not set the native budget.
+No separate `max_interactions` setting is retained. Frozen pre-migration runs
+keep their original source and result metadata, and cannot be resumed under a
+changed training-configuration contract without an explicit migration.
+The release OA PPO iteration cap is raised from the former 64 (Depth) or 256
+(LiDAR) updates to 1,000, consistent with the other OA algorithms. This is a
+search budget for convergence, not evidence that the PPO policy converges. The
+optional success-rate confirmation can stop a run earlier.
+
 ## Earlier decisions affected
 
 This updates the convergence scope in ADR-0026 from a representative subset to

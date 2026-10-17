@@ -42,6 +42,7 @@ def test_candidate_cannot_change_fixed_evaluation_or_resume(tmp_path):
             env_kwargs={
                 "experiment": "navigation_procedural_depth_ppo_collision_free",
                 "algorithm": "ppo",
+                "train_iterations": 256,
                 "eval_scenes": ["S01", "D01"],
             },
             train_seed=7,
@@ -54,7 +55,7 @@ def test_candidate_cannot_change_fixed_evaluation_or_resume(tmp_path):
     backend.build_bundle(bundle)
     train = backend.overrides(bundle, "train")
     evaluate = backend.overrides(bundle, "eval", tmp_path / "model")
-    assert "learning.max_interactions=8192" in train
+    assert "learning.max_iterations=256" in train
     assert "++learning.budget_only=true" not in train
     assert "mode=benchmark" in evaluate
     assert "seed=7" in train and "initial_checkpoint=null" in train
@@ -174,12 +175,13 @@ def test_public_training_recipe_prepares_an_external_candidate(tmp_path, monkeyp
             f"learning={algorithm}",
             "simulation.num_envs=4",
             "learning.options.horizon=8",
-            "learning.max_interactions=64",
+            "learning.max_iterations=2",
             "benchmark.episodes=2",
         ]
     )
     task = json.loads(Path(arguments[arguments.index("--benchmark") + 1]).read_text())
     assert task["execution_backend"]["train_env_steps"] == 64
+    assert task["env_kwargs"]["train_iterations"] == 2
     assert task["execution_backend"]["supports_live_frame"] is True
     assert task["execution_backend"]["supports_sampled_trajectory"] is True
     assert task["env_kwargs"]["algorithm"] == algorithm

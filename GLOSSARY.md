@@ -123,6 +123,26 @@ planner, controller, and policy.
 **Training Algorithm**: An update rule that adjusts learnable parameters using
 samples, losses, or demonstrations.
 
+**Physics Step**: One numerical integration step of the physical dynamics. A
+policy/environment step can contain several physics steps.
+
+**Environment Step**: One decision-and-transition cycle of an environment. It
+can include multiple physics steps and does not necessarily end an episode.
+
+**Rollout Length**: The number of environment steps collected per parallel
+environment in one training iteration. A rollout may cross episode boundaries.
+
+**Training Iteration (Update)**: One collection of rollouts followed by the
+declared algorithm's parameter update. Repeated policy/critic optimization
+epochs over that batch belong to the same iteration.
+
+**Iteration Budget**: The maximum number of training iterations in a run,
+independent of the number of environments or the rollout length.
+
+**Environment Samples**: The observed count of environment transitions in a
+run. It depends on the environment count, rollout length, iteration count, and
+any explicitly declared auxiliary sampling.
+
 **Backpropagation Through Time (BPTT)**: Differentiating an unrolled sequence of
 state transitions to update policy parameters from its trajectory objective.
 

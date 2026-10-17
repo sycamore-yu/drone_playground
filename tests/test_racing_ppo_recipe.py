@@ -28,7 +28,7 @@ def test_racing_ppo_defaults_match_reference_options():
     for key, value in expected.items():
         assert cfg.learning.options[key] == value, key
     assert cfg.simulation.num_envs == 512
-    assert cfg.learning.max_interactions == 67108864
+    assert cfg.learning.max_iterations == 4096
     assert cfg.task.options.reward_shaping.progress_reward_scale == 1.0
     assert cfg.initial_checkpoint is None
     assert cfg.resume is None

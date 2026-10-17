@@ -35,7 +35,7 @@ checkpoint_root: results
 initial_checkpoint: null
 resume: null
 learning:
-  max_interactions: 4194304
+  max_iterations: 1000
   best:
     source: null
     interval: 262144

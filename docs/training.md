@@ -13,31 +13,34 @@ pixi run train experiment=oa_static_depth learning=ppo seed=2
 pixi run train experiment=oa_dynamic_lidar learning=bptt seed=0
 ```
 
-## Budget
+## Training budget and rollout
 
-One rollout/update collects:
+Follow the Isaac Lab / RSL-RL terminology:
 
-```text
-interactions per update = simulation.num_envs × learning.options.horizon
-total interactions = interactions per update × number of updates
-```
-
-These correspond to Isaac Lab's environment count, steps per environment, and
-training iterations. A step is one policy/environment interaction; internal
-physics steps and repeated optimizer epochs do not add interactions.
-`learning.max_interactions` sets the total and must be a positive multiple of
-the rollout batch. The resolved configuration records all factors. A completed
-budget reports `budget_exhausted`; policy quality is measured separately.
+- `simulation.num_envs` is the number of parallel environments.
+- `learning.options.horizon` is the number of **environment steps per environment**
+  collected in one rollout/update (`num_steps_per_env` in RSL-RL).
+- `learning.max_iterations` is the **training iteration budget**, independent of
+  rollout length and environment count (`max_iterations` in Isaac Lab).
 
 ```bash
 pixi run train experiment=tracking learning=ppo \
   simulation.num_envs=256 learning.options.horizon=64 \
-  learning.max_interactions=4194304
+  learning.max_iterations=1000
 ```
 
-This example performs 256 updates. Its budget illustrates accounting, not a
-convergence guarantee. OA defaults use 16 environments and a 32-step rollout;
-Tracking/Racing use 256 environments, with 64 steps for BPTT/PPO and 32 for SHAC.
+The example requests 1,000 learning iterations; it does **not** set the budget
+using environment interactions. For comparison and performance telemetry, each
+iteration still collects `num_envs * horizon` environment transitions. The
+physics integrator uses `physics_hz / method_hz` internal steps per environment
+transition. PPO training epochs and minibatches replay the collected rollout;
+they do not add new environment steps. A completed iteration budget reports
+`budget_exhausted`; convergence must be established separately.
+
+The Autoresearch Gym execution backend still expects `train_env_steps`. Its
+adapter derives this from the iteration budget and the resolved environment
+and rollout configuration. This provider-specific field does not control the
+native Learning loop.
 
 ## State and recovery
 

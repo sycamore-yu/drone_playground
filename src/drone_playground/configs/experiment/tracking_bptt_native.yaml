@@ -44,7 +44,7 @@ learning:
     perception_weight: 1.0
     velocity_aux_weight: 0.0
     perception_loss: {}
-  max_interactions: 65536000
+  max_iterations: 1000
   checkpoint_interval: 100
   log_interval: 10
   best:
