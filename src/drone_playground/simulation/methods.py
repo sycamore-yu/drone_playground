@@ -8,6 +8,7 @@ import numpy as np
 from crazyflow.dynamics import load_params
 from flax import struct
 from jax import Array
+from jax.scipy.spatial.transform import Rotation
 
 
 @dataclass(frozen=True)
@@ -212,7 +213,9 @@ class Action:
             else "body"
         )
         self.frame = expected_frame if frame is None else frame
-        if self.frame != expected_frame or heading not in {"fixed", "target"}:
+        if (
+            self.frame != expected_frame and not (level == "acceleration" and self.frame == "body")
+        ) or heading not in {"fixed", "target"}:
             raise ValueError("Unsupported action frame or heading convention")
         self.low, self.high, self.size = jnp.asarray(lower), jnp.asarray(upper), size
         self.output_level = (
@@ -273,6 +276,20 @@ class Action:
         scale = (self.high - self.low) / 2
         return jnp.clip(action, -1.0, 1.0) * scale + (self.high + self.low) / 2
 
+    def world_acceleration(self, physics, physical):
+        """Map commanded *net* acceleration to the world frame, before gravity compensation.
+
+        Body acceleration is expressed in the current body basis; it is not a
+        thrust-specific-force command. Rotate once when issuing the setpoint,
+        not once per inner-loop physics tick. This preserves the existing native
+        Mellinger/PointMass world-acceleration contract and delay semantics.
+        """
+        if self.level != "acceleration":
+            raise ValueError("World acceleration conversion requires acceleration action level")
+        if self.frame == "body":
+            return Rotation.from_quat(physics.states.quat[:, 0]).apply(physical)
+        return physical
+
     def setpoint(self, physics, physical, target=None):
         """Convert a physical request to the selected native control input."""
         if self.level == "velocity_yaw":
@@ -324,6 +341,8 @@ class Action:
                 raise ValueError("Target heading requires an explicit reference position")
             delta = target - physics.states.pos[:, 0]
             yaw = jnp.arctan2(delta[:, 1], delta[:, 0])
+        if self.level == "acceleration":
+            physical = self.world_acceleration(physics, physical)
         return self._acceleration.acceleration(physics, physical, yaw)
 
 

@@ -198,3 +198,26 @@ starting point, not a convergence claim for that different distribution. LOTF
 and PointMassLag share compatible native task/optimizer settings but have no
 identical historical OA acceptance evidence. An OA default is promoted only
 after its own frozen independent Benchmark result passes.
+
+
+## Navigation policy action coordinates
+
+For a new body-coordinate OA acceleration comparison, retain the historical
+learning objective/optimizer and configure the **action frame** explicitly:
+
+```bash
+pixi run train experiment=oa_static_depth_shac learning=shac seed=0 \
+  +method.action.frame=body ++observation.navigation_world_rotation=false
+```
+
+`acceleration` in this contract means *net acceleration in body coordinates*,
+not thrust-specific-force. Simulation transforms it to the world acceleration
+expected by the unchanged Mellinger controller and delayed PointMassLag
+surrogate. No rotation matrix is appended to the policy observation. Published
+historical Tracking/Racing and previous OA world-frame checkpoints remain
+unchanged and are not interchangeable with body-frame Actors. See [ADR-0036](adr/0036-navigation-body-frame-action.md).
+
+Until independent 100-case release acceptance, this opt-in configuration is a
+**research candidate**, not a verified default. Body-rate LOTF stays in the
+existing body frame and has a distinct control level; it is not reinterpreted
+as acceleration.

@@ -180,14 +180,24 @@ def paper_navigation_reward(env, before, after, action):
     position, velocity = physics.pos[:, 0], physics.vel[:, 0]
     target = jnp.broadcast_to(env.goal_for(after), position.shape)
     if env.task.reward_profile in {"fan2025", "fan2025_arrival"}:
+        physical_acceleration = env.action.decode(action)
+        physical_previous = env.action.decode(before.previous_action)
+        if env.action.level == "acceleration":
+            # Fan's acceleration and jerk terms are physical world-frame
+            # quantities. An egocentric policy command must be converted at the
+            # issuing pose; decode() by itself returns the declared policy frame.
+            physical_acceleration = env.action.world_acceleration(
+                before.physics, physical_acceleration
+            )
+            physical_previous = env.action.world_acceleration(before.physics, physical_previous)
         centers, velocities, distances, moving, active = obstacle_reward_geometry(env, after)
         options = env.task.reward_options
         reward, terms = fan_reward_terms(
             previous_distance=_norm(target[:, :2] - before.physics.states.pos[:, 0, :2]),
             distance=_norm(target[:, :2] - position[:, :2]),
             velocity=velocity[:, :2],
-            acceleration=env.action.decode(action),
-            previous_acceleration=env.action.decode(before.previous_action),
+            acceleration=physical_acceleration,
+            previous_acceleration=physical_previous,
             static_clearance=jnp.min(
                 jnp.where(active & ~moving, distances, jnp.inf), -1, initial=jnp.inf
             ),

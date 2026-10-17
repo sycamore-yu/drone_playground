@@ -70,7 +70,12 @@ class EpisodeObjective:
         velocities = jnp.concatenate((history.velocity[:, 1:], velocity[:, None]), axis=1)
         count = history.count + 1
         smoothed = velocities.sum(axis=1) / jnp.minimum(count, self.window)[:, None]
-        acceleration = self.env.action.decode(action)
+        physical = self.env.action.decode(action)
+        acceleration = (
+            self.env.action.world_acceleration(before.physics, physical)
+            if self.env.action.level == "acceleration"
+            else physical
+        )
         previous = jnp.where((history.count > 0)[:, None], history.acceleration, acceleration)
         clearance = (
             self.env.scene_clearance(position, after.time, after.scene_state) - self.env.task.radius
