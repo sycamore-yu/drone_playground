@@ -66,7 +66,6 @@ _DEFAULTS = {
     "velocity_aux_weight": 0.0,
     "perception_loss": {},
     "randomize_navigation_start": False,
-    "reward_profile": "default",
     "shared_visual_encoder": False,
 }
 
@@ -137,19 +136,6 @@ class Trainer:
             self.config["gamma"] != 1.0 or loss is not None
         ):
             raise ValueError("Goal-reaching reward requires gamma=1 and no auxiliary task loss")
-        if self.config["reward_profile"] not in ("default", "legacy_motion_navigation_v2"):
-            raise ValueError("Unknown reward profile")
-        if self.config["reward_profile"] != "default" and (
-            env.task.reward_profile != self.config["reward_profile"]
-            or algorithm != "ppo"
-            or env.task.name != "navigation"
-            or env.action.level != "velocity_yaw"
-            or loss is not None
-        ):
-            raise ValueError(
-                "legacy_motion_navigation_v2 requires Navigation PPO, "
-                "velocity_yaw action and loss=null"
-            )
         self.backward_model, self.backward_options = backward_model, dict(backward_options or {})
         if not isinstance(self.config["randomize_navigation_start"], bool):
             raise ValueError("randomize_navigation_start must be boolean")
@@ -178,7 +164,7 @@ class Trainer:
         if env.num_envs % self.config["minibatches"]:
             raise ValueError("minibatches must divide env.num_envs (whole recurrent sequences)")
         for key, value in self.config.items():
-            if key not in ("perception_loss", "reward_profile") and not math.isfinite(value):
+            if key != "perception_loss" and not math.isfinite(value):
                 raise ValueError(f"{key} must be finite")
         for key in ("lr", "critic_lr", "max_grad_norm", "clip_epsilon"):
             if self.config[key] <= 0:

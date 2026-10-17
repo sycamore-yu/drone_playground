@@ -216,3 +216,10 @@ by another run or source. Its provenance includes the source training cost.
 - A trajectory adds timing to a motion reference; a path describes its geometry.
 - A candidate identifies a training proposal; a checkpoint identifies saved
   state within one training run.
+
+
+**Collective Thrust and Body Rates (CTBR)**: A control command containing scalar
+collective thrust and three desired angular velocities about the vehicle body
+axes. This project expresses thrust in newtons and rates in rad/s; the Actor
+order is `[T, wx, wy, wz]`. A desired attitude angle is a different control
+quantity and requires an attitude controller before the rate controller.

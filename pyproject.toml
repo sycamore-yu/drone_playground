@@ -58,7 +58,7 @@ JAX_COMPILATION_CACHE_DIR = ".cache/jax"
 [tool.pixi.tasks]
 test = "pytest -q"
 lint = "ruff check src tests tools && ruff format --check src tests tools"
-frame-contracts = "JAX_PLATFORMS=cpu pytest -q tests/test_yaw_frame_contract.py tests/test_sensor_age_observation.py tests/test_reference_frame_contract.py tests/test_oa_body_frame.py tests/test_oa_frame_latency_defaults.py tests/test_navigation_world_rotation.py tests/test_control_models.py"
+frame-contracts = "JAX_PLATFORMS=cpu pytest -q tests/test_tracking_racing_ctbr.py tests/test_sensor_age_observation.py tests/test_reference_frame_contract.py tests/test_oa_body_frame.py tests/test_oa_frame_latency_defaults.py tests/test_navigation_world_rotation.py tests/test_control_models.py"
 setup-acados = "python tools/setup_acados.py"
 autoresearch = "python tools/autoresearch.py"
 play = "drone-playground mode=play"

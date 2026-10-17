@@ -3,7 +3,7 @@ protocol: learning
 implementation:
   _target_: drone_playground.simulation.methods.PolicyMethod
 action:
-  level: attitude_thrust
+  level: body_rate
   heading: fixed
 actor:
   _target_: drone_playground.simulation.networks.Actor

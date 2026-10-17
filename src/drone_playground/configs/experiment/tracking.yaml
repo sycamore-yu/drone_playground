@@ -5,5 +5,19 @@ defaults:
 - override /sensor: state
 - override /method: policy
 simulation:
+  device: gpu
   method_hz: 50
   num_envs: 256
+
+method:
+  action:
+    level: body_rate
+    frame: body
+
+learning:
+  best:
+    episodes: 24
+    confirmation_episodes: 96
+benchmark:
+  episodes: 100
+  record_replay: true

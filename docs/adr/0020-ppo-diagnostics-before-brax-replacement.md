@@ -1,5 +1,7 @@
 # ADR-0020: Diagnose perceptual PPO before replacing the learner
 
+**2026-10-17 supersession:** The Navigation velocity/yaw experimental action and its legacy reward were removed; Tracking/Racing Train actions are now collective thrust plus body rates. The corresponding historical sections below describe earlier decisions, not current public interfaces. See [ADR-0038](0038-tracking-racing-body-rate-unification.md).
+
 **Current workflow:** [ADR-0026](0026-training-benchmark-release-separation.md) supersedes historical checkpoint validation, screening, patience, and aggregate pass thresholds described below. Original experiment results retain their recorded protocol. Last reviewed 2026-10-16T06:24:13Z against `main@7d59162` and the working tree.
 
 **Status:** Accepted for an isolated experiment.

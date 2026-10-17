@@ -1,5 +1,5 @@
 # @package _global_
-# Recipe and checkpoint selection from the recorded passing state-task run.
+# Historical optimizer settings; CTBR action requires fresh training and acceptance.
 defaults:
 - tracking
 - override /learning: shac
@@ -19,6 +19,7 @@ simulation:
 method:
   action:
     level: body_rate
+    frame: body
     heading: fixed
 learning:
   loss: null
@@ -50,7 +51,7 @@ learning:
   best:
     source: evaluation
     interval: 1638400
-    episodes: 8
+    episodes: 24
     seed: 1000000
   early_stopping:
     metric: mean_reward

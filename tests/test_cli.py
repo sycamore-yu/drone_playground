@@ -159,6 +159,7 @@ def test_nonfinite_update_preserves_last_good_state(config, training):
 def test_target_stops_entire_loop_and_exports_that_update(config, training, monkeypatch):
     """A reached target cannot execute another training update."""
     config.learning.best.source = "training"
+    config.learning.best.confirmation_episodes = 0
     config.learning.early_stopping.target = 2.0
 
     def measure(self, state, *, final=False):
@@ -209,6 +210,7 @@ def test_live_target_rechecks_current_policy_instead_of_stale_score(config, trai
     """Enabling a target re-evaluates a policy that changed since the last probe."""
     config.learning.max_iterations = 8
     config.learning.best.source = "training"
+    config.learning.best.confirmation_episodes = 0
     original = runner.Trainer.update
     probes = []
 

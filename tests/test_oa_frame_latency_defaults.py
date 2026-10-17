@@ -66,57 +66,17 @@ def test_oa_backward_variants_keep_consistent_action_frames(
 
 
 @pytest.mark.parametrize("task", ("tracking", "racing"))
-def test_accepted_reference_tasks_retain_their_world_action_contract(task):
-    """A shared default migration must not silently reinterpret accepted models."""
+def test_reference_tasks_use_the_new_ctbr_action_contract(task):
+    """Public reference policies declare CTBR; old models require frozen source."""
     cfg = resolved(f"{task}_bptt_native")
-    assert cfg.method.action.get("frame", "world") == "world"
+    assert cfg.method.action.frame == "body"
+    assert cfg.method.action.level == "body_rate"
     assert cfg.observation.get("navigation_world_rotation", False) is False
     assert (
         cfg.simulation.procedural.get("horizontal_beam_probability", 0) == 0
         if "procedural" in cfg.simulation
         else True
     )
-
-
-@pytest.mark.parametrize("sensor", ("depth", "lidar"))
-def test_legacy_velocity_navigation_recipe_converts_body_velocity_in_policy(sensor):
-    """Velocity-yaw navigation is not allowed to silently use world velocity."""
-    cfg = resolved(f"navigation_procedural_{sensor}_ppo_velocity")
-    assert cfg.method.action.level == "velocity_yaw"
-    assert cfg.method.action.frame == "body"
-    legacy = Action(level="velocity_yaw", frame="world")
-    corrected = Action(level="velocity_yaw", frame="body")
-    assert corrected.contract["frame"] == "body"
-    assert legacy.contract["frame"] == "world"
-
-
-def test_body_velocity_yaw_is_converted_once_at_issuing_pose():
-    """Body x and a zero local yaw offset become world y and current world yaw."""
-    from drone_playground.simulation.environment import make_environment
-
-    env = make_environment(num_envs=1)
-    initial = env.reset(jax.random.key(51))
-    attitude = Rotation.from_euler("z", jnp.array([[90.0]]), degrees=True)
-    physics = initial.physics.replace(
-        states=initial.physics.states.replace(
-            quat=attitude.as_quat()[:, None],
-            vel=jnp.zeros_like(initial.physics.states.vel),
-        )
-    )
-    body = Action(level="velocity_yaw", frame="body")
-    world = Action(level="velocity_yaw", frame="world")
-    reference = jnp.array([[2.0, 0.0, 0.0, 0.0]])
-    rotated = jnp.array([[0.0, 2.0, 0.0, jnp.pi / 2]])
-    np.testing.assert_allclose(
-        body.setpoint(physics, reference).value,
-        world.setpoint(physics, rotated).value,
-        atol=1e-5,
-        rtol=1e-5,
-    )
-    assert not np.allclose(
-        body.setpoint(physics, reference).value, world.setpoint(physics, reference).value
-    )
-    env.sim.close()
 
 
 def fake_physics(position, quaternion):
