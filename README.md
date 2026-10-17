@@ -36,10 +36,12 @@ Tracking uses 20 s, Racing 60 s, and Navigation 300 s, unless success or a
 physical failure terminates earlier. Every recorded flight gets a native RScope
 and sampled MuJoCo WASM replay. Open
 `http://127.0.0.1:4176/results/command-builder-native-full-20261017/index.html`
-through SSH forwarding. The original 0.14-second interface checks are retained
-separately under `results/command-builder-native-20261016/` as **historical
-smoke tests**, not full-task evidence. Both result directories are ignored by
-Git; they are local verification artifacts, not release data.
+through SSH forwarding. The adjacent `replay-audit.json` verifies browser
+duration against actual Episode terminal time and preserves reasons for
+premature failures. The original 0.14-second interface checks remain under
+`results/command-builder-native-20261016/` as **historical smoke tests**, not
+full-flight evidence. Both results directories are ignored by Git; they are
+local verification artifacts, not publication benchmark scores.
 
 ## Start
 

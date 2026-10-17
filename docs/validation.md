@@ -295,6 +295,44 @@ than presented as a simulated task outcome. Until all commands have physically
 terminated, the manifest—rather than the prior 172/172 short-smoke result—is
 the source of truth for full-mission coverage.
 
+### Repeated early failures and browser replay coverage audit
+
+The first full-flight run reached case 66 with a large cluster of early
+`METHOD_FAILURE` outcomes: EGO + Attitude MPC and Full-State NMPC stopped at
+1.2 s; SUPER + Attitude MPC stopped at 0.3 s. Their planners previously
+returned `SOLVED` trajectories. The common cause was strict comparison of
+the exact host `t=now` controller stage against a float32-quantized ROS
+trajectory first timestamp. Sampling MPC does not exhibit the same stage-zero
+problem because its prediction samples begin at `t+dt`. The host now reconciles
+only float32 clock representation error; real future or expired trajectories
+still fail the validity check. Targeted regression cases cover 0.3, 1.2 and
+32.0 s and reject a genuinely future plan.
+
+`tools/audit_full_episode_replays.py` independently compares each physical
+Episode's actual termination time with the first/last saved WASM frames. In the
+original batch **66/66** recorded cases had a faithful browser recording of
+their actual physical Episode. A 1.2 s recording ending in `METHOD_FAILURE`
+is therefore **an early flight termination, not lost video footage**. The
+audit distinguished **32 shared stage-zero boundary failures** and **six
+separate native `NO_SOLUTION` responses**; the latter are real planner-level
+failures, not resolved by timestamp alignment. Failed and superseded records
+are retained, with historical attempts listed in the audit JSON.
+
+After fixing the common interface, representative full-flight rechecks:
+
+- EGO + Full-State NMPC / S06 (case 63): stage-zero `METHOD_FAILURE` at
+  1.2 s disappeared, but the vehicle actually crossed the task boundary at
+  **10.804 s** (`OUT_OF_BOUNDS`, not success).
+- SUPER + Attitude MPC / S01 (case 47): completed the actual task at
+  **33.804 s**, `SUCCESS`, versus the original 0.3 s failure.
+- EGO + Attitude MPC / S01 (case 34): continued until **34.400 s**, when the
+  native EGO planner returned `NO_SOLUTION`; no stage-zero exception remained.
+
+Both the original failure and corrected replay remain available. The batch
+was intentionally paused after repeated deterministic failures, rather than
+continuing to burn CPU on the same defect. A resumable, fail-fast retry pass
+will validate the remaining affected commands against their full Task horizons.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.

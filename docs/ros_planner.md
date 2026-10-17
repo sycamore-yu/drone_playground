@@ -134,6 +134,16 @@ current control time. The decision report records `TERMINAL_REFERENCE_HOLD`
 and its duration. Expired current references and failed native decisions still
 fail normally; no collision-free trajectory is invented.
 
+At a replan instant, ROS trajectory timestamps may be quantized to float32
+while the controller's stage-zero time comes from exact integer physics ticks.
+For example, the same 1.2 s instant can appear as 1.2000000476837158 s in
+the returned trajectory. Attitude and Full-State NMPC include `t=now` in their
+prediction horizon; the host aligns only up to two float32 representation ULPs
+to the original first/last native sample. A genuinely future start or an
+expired current trajectory is still rejected. This repairs deterministic
+early `METHOD_FAILURE` outcomes without extending plan validity or changing
+the physical task duration.
+
 For lower-level callers, `decide(state, goal, measurement)` accepts the generated
 `planner_pb2.State`, `.Goal`, `.Measurement` and always performs an RPC.
 The generated stub also exposes all four RPCs directly.
