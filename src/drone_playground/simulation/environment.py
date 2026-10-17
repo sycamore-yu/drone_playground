@@ -297,6 +297,10 @@ class BaseEnv:
             scene_state.goal if scene_state is not None else self.task.target(jnp.zeros(batch))[0]
         )
         neutral = self.action.setpoint(initial, inputs, initial_target).value
+        if self.action.level == "acceleration":
+            # PointMassLag's differentiable physical input is always world-frame,
+            # including the command queued on the first physics tick.
+            inputs = self.action.world_acceleration(initial, inputs)
         if self.control_level == "ideal":
             neutral = jnp.concatenate([pos, vel, jnp.zeros_like(pos), yaw[:, None]], -1)
             neutral = jnp.broadcast_to(neutral[:, None], (batch, self.ideal_samples, 10)).reshape(
@@ -394,7 +398,15 @@ class BaseEnv:
             else self.task.target(state.time)[0]
         )
         setpoint = self.action.setpoint(state.physics, physical, target)
-        result = self._step_setpoint(state, setpoint, physical, physics_step=physics_step)
+        # The Actor's declared frame may be body, but the delayed PointMassLag
+        # surrogate consumes world-frame net acceleration. Rotate at issuance,
+        # so subsequent ticks do not silently reinterpret an old queued command.
+        model_input = (
+            self.action.world_acceleration(state.physics, physical)
+            if self.action.level == "acceleration"
+            else physical
+        )
+        result = self._step_setpoint(state, setpoint, model_input, physics_step=physics_step)
         return result.replace(
             previous_action=jnp.where(state.done[:, None], state.previous_action, action)
         )

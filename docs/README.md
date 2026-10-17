@@ -62,6 +62,7 @@ ADR-0022 remains experimental and is not an approved replacement architecture.
 | [0033](adr/0033-controller-compatibility-and-reference-tracking.md) | Controller reference capabilities and Full-State NMPC |
 | [0034](adr/0034-release-trainable-defaults.md) | Trainable defaults, task-matched sampling, and optional confirmation |
 | [0035](adr/0035-historical-oa-training-recipes.md) | Prioritize verified OA learner coefficients in release Train presets |
+| [0036](adr/0036-navigation-body-frame-action.md) | Egocentric acceleration policy contract and coordinate-system audit |
 
 Local research notes, transient diagnostics, and historical run archives remain
 outside the public source surface. They preserve their original source identity
