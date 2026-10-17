@@ -13,6 +13,6 @@ benchmark:
   - S03
   - S06
 learning:
-  max_interactions: 4096000
+  max_iterations: 1000
   best:
     interval: 409600

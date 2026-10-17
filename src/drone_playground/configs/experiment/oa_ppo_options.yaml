@@ -16,7 +16,7 @@ method:
     heading: target
 learning:
   loss: null
-  max_interactions: 8388608
+  max_iterations: 1000
   best:
     interval: 1048576
   options:

@@ -16,7 +16,7 @@ learning:
     failure_cost: 40.0
     bootstrap_weight: 0.2
     report_terminal_critic_grad: false
-  max_interactions: 42598400
+  max_iterations: 1300
   checkpoint_interval: 50
   best:
     source: evaluation

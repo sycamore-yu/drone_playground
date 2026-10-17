@@ -59,7 +59,7 @@ def recipe(tmp_path):
                 "task.duration=0.04",
                 "learning.options.horizon=2",
                 "learning.options.minibatches=1",
-                "learning.max_interactions=12",
+                "learning.max_iterations=3",
                 "learning.best.source=evaluation",
                 "learning.best.interval=4",
                 "learning.best.episodes=2",

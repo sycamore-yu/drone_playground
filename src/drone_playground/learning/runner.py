@@ -32,17 +32,16 @@ def training_control(path):
 
 
 def train(config, record):
-    """Run a fixed transition budget with optional episode-return selection."""
+    """Run a fixed number of training iterations with optional episode selection."""
     if not get_class(config.method.implementation._target_).trainable:
         raise ValueError("Training requires a trainable policy")
     if config.task.name == "navigation" and config.scene.name != "train/procedural":
         raise ValueError(
             "OA training requires randomized obstacles; fixed maps belong to Benchmark"
         )
-    budget = config.learning.max_interactions
-    batch = config.simulation.num_envs * config.learning.options.horizon
-    if type(budget) is not int or budget < 1 or budget % batch:
-        raise ValueError("learning.max_interactions must be a positive multiple of worlds*horizon")
+    budget = config.learning.max_iterations
+    if type(budget) is not int or budget < 1:
+        raise ValueError("learning.max_iterations must be a positive integer")
     for field in ("checkpoint_interval", "log_interval"):
         if type(config.learning[field]) is not int or config.learning[field] < 1:
             raise ValueError(f"learning.{field} must be a positive integer")
@@ -196,7 +195,7 @@ def train(config, record):
 
     metrics = {}
     try:
-        while not stop_requested and int(state.interactions) < budget:
+        while not stop_requested and int(state.updates) < budget:
             control = training_control(record.directory / "training-control.json")
             if control.get("stop", False):
                 stop_reason = {"reason": "requested_stop"}
@@ -218,7 +217,7 @@ def train(config, record):
             candidate, metrics = trainer.update(
                 state,
                 **(
-                    {"sampling_progress": int(state.interactions) / budget}
+                    {"sampling_progress": int(state.updates) / budget}
                     if trainer.distance_curriculum
                     else {}
                 ),
@@ -239,7 +238,7 @@ def train(config, record):
             if (
                 update == 1
                 or update % config.learning.log_interval == 0
-                or int(state.interactions) >= budget
+                or int(state.updates) >= budget
                 or stop_requested
             ):
                 measured = {
@@ -262,7 +261,7 @@ def train(config, record):
                 }
                 record.event("update", **measured)
                 print(json.dumps(measured), flush=True)
-            stop_reason = select(final=int(state.interactions) >= budget)
+            stop_reason = select(final=int(state.updates) >= budget)
             if update % config.learning.checkpoint_interval == 0:
                 checkpoint()
             if stop_reason:
@@ -285,13 +284,13 @@ def train(config, record):
             )
         record.finish(
             "budget_exhausted"
-            if int(state.interactions) >= budget
+            if int(state.updates) >= budget
             else "early_stopped"
             if stop_reason
             else "interrupted",
             updates=int(state.updates),
             interactions=int(state.interactions),
-            requested_interactions=budget,
+            requested_iterations=budget,
             latest_checkpoint=str(checkpoint_path.relative_to(record.directory)),
             last_metrics=metrics,
             selection=selection.state,
