@@ -91,6 +91,8 @@ class TrainingPreview:
                 "moving",
             ):
                 payload[key] = np.asarray(getattr(scene_state, key)[0])
+            if scene_state.motion is not None:
+                payload["motion"] = np.asarray(scene_state.motion[0])
         visual_root = self.session / "live"
         visual_root.mkdir(parents=True, exist_ok=True)
         input_file = visual_root / f"preview_{'final' if final else 'input'}_{update:06d}.npz"
@@ -171,8 +173,13 @@ def _visual_model(sample):
         )
     movable = []
     if procedural:
+        if "motion" in sample:
+            ET.SubElement(root, "size", nuser_body="6")
         for index in np.flatnonzero(sample["active"]):
             body = ET.SubElement(world, "body", name=f"obstacle_{index}", mocap="true")
+            if "motion" in sample:
+                body.set("pos", " ".join(map(str, sample["centers"][index])))
+                body.set("user", " ".join(map(str, sample["motion"][index])))
             cylinder = bool(sample["cylinder"][index])
             size = sample["sizes"][index, :2] if cylinder else sample["sizes"][index]
             ET.SubElement(
@@ -261,7 +268,7 @@ def _render(sample, session):
             data.time = float(times[row])
             data.qpos[:3] = positions[row]
             data.qpos[3:7] = quaternions[row, [3, 0, 1, 2]]
-            if obstacle_indices:
+            if obstacle_indices and "motion" not in sample:
                 centers = sample["centers"][obstacle_indices]
                 targets = sample["target"][obstacle_indices]
                 speed = sample["speed"][obstacle_indices]

@@ -67,7 +67,12 @@ function eligibleControllers(task,planner){
     return entry.tasks.includes(task)&&(!planner||entry.reference==='trajectory');
   });
 }
-function experiment(s){return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;}
+function experiment(s){
+  if(s.mode!=='train')return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;
+  if(suites[s.task])return `oa_${s.task.split('_')[0]}_${s.sensor}`+(s.algorithm==='ppo'?'_ppo':s.sensor==='depth'?'_10hz':'');
+  if(s.task==='racing'&&s.algorithm!=='bptt')return `racing_${s.algorithm}_stable`;
+  return `${s.task}_${s.algorithm}`+(s.algorithm==='ppo'?'':`_${s.backward||'native'}`);
+}
 function shellQuote(value){return "'"+value.replaceAll("'", "'\\''")+"'";}
 function command(s){
   const parts = [`pixi run ${s.mode}`];

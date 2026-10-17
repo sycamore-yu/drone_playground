@@ -319,6 +319,11 @@ class Trainer:
         self.distance_curriculum = (
             self.distance_sampling and distribution.start_sampling == "distance_curriculum"
         )
+        self.distance_group_labels = (
+            ("short", "medium", "long")
+            if distribution is not None and distribution.layout == "matched"
+            else ("20m", "50m", "80m")
+        )
         self._update = (
             jax.jit(lambda state, progress: implementation(self, state, sampling_progress=progress))
             if self.distance_curriculum
@@ -473,6 +478,20 @@ class Trainer:
             )
         step = self._differentiable_step if differentiable else self.env.step
         return self.method.execute(self.env, before, action, step=step)
+
+    def reset_distance_counts(self, env_state, done):
+        """Count actual reset distances using the active sampler's declared groups."""
+        distance = jnp.linalg.norm(
+            env_state.scene_state.start - env_state.scene_state.goal, axis=-1
+        )
+        if self.distance_group_labels[0] == "short":
+            masks = (distance < 30, (distance >= 30) & (distance < 80), distance >= 80)
+        else:
+            masks = tuple(jnp.abs(distance - metres) < 0.01 for metres in (20, 50, 80))
+        return {
+            f"reset_distance_{label}_count": (done & mask).astype(jnp.float32)
+            for label, mask in zip(self.distance_group_labels, masks, strict=True)
+        }
 
     def _reset(self, key, after, memory, history, *, sampling_progress=None):
         from drone_playground.simulation.networks import reset_actor_memory

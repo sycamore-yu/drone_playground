@@ -60,6 +60,7 @@ ADR-0022 remains experimental and is not an approved replacement architecture.
 | [0029](adr/0029-navigation-suites-and-randomization-presets.md) | Native navigation suites and domain randomization |
 | [0030](adr/0030-racing-mpc-and-browser-replay.md) | Racing MPC baselines and persistent browser playback |
 | [0033](adr/0033-controller-compatibility-and-reference-tracking.md) | Controller reference capabilities and Full-State NMPC |
+| [0034](adr/0034-release-trainable-defaults.md) | Trainable defaults, task-matched sampling, and optional confirmation |
 
 Local research notes, transient diagnostics, and historical run archives remain
 outside the public source surface. They preserve their original source identity

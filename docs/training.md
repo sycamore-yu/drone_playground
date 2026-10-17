@@ -141,3 +141,34 @@ Trial schedules, queue scripts, and convergence-study matrices belong in ignored
 `tmp/` and `results/` directories, outside the public source tree. Preserve source
 and configuration fingerprints, every attempt, and paired outcomes for previously
 successful episodes. Budget completion and rising reward do not prove convergence.
+
+
+## Release training defaults
+
+The Command Builder selects the task's default training recipe. Passing state
+recipes retain their recorded settings. Racing PPO uses the `reference_options`
+optimizer settings and starts from random weights. OA PPO uses finite-horizon
+`goal_reaching` returns with a 512-step rollout. Parameter choices and current
+convergence evidence are separate; a candidate is not labelled passed merely
+because its configuration composes.
+
+The OA defaults use `simulation.procedural.layout=matched` and the existing
+`distance_curriculum` sampler. The optional check stays inside Learning:
+
+```yaml
+learning:
+  best:
+    source: evaluation
+    metric: success_rate
+    episodes: 24
+    confirmation_episodes: 96
+  early_stopping:
+    metric: success_rate
+    target: 1.0
+    patience: 0
+```
+
+A 24-case success triggers the larger check. A configured success target applies
+only to its confirmed result. Set `learning.best.source=null` and disable the
+early-stopping target to use the ordinary budget-only training loop. The final
+Benchmark is still a separate command. See [ADR-0034](adr/0034-release-trainable-defaults.md).

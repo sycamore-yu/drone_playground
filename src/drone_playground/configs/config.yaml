@@ -40,6 +40,8 @@ learning:
     source: null
     interval: 262144
     episodes: 8
+    confirmation_episodes: 0
+    metric: mean_reward
     seed: 1000000
   early_stopping:
     metric: mean_reward

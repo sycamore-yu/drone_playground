@@ -1,7 +1,9 @@
 # @package _global_
 defaults:
 - navigation_procedural_lidar
+- oa_training
 simulation:
+  num_envs: 64
   procedural:
     obstacle_motion: static
 benchmark:

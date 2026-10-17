@@ -173,7 +173,9 @@ def train(config, record):
         if measured["improved"]:
             path = record.directory / "checkpoints" / f"model_{int(state.updates):06d}"
             selection.state.update(
-                best_mean_reward=measured["mean_reward"], best_checkpoint=str(path.resolve())
+                best_mean_reward=measured["mean_reward"],
+                best_checkpoint=str(path.resolve()),
+                best_score=measured.get("selection_score"),
             )
             checkpoint()
         record.event(
