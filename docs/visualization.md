@@ -17,6 +17,53 @@ No additional physics simulator, training recorder, or checkpoint manager is
 introduced by the WASM viewer. All renderers read the same recorded states;
 changing the camera or scrubbing playback never mutates training or Benchmark.
 
+## Environments and Task Preview
+
+The [Environments / Command Builder](command-builder.html) follows the
+Isaac Lab 3.0 pattern: choose a Task, method, controller and scene, then use
+the adjacent **Task Preview**. Here it embeds our already exported MuJoCo WASM
+viewer, not a rendered still image or a new physics simulator. A searchable
+recorded-combination catalog beneath it opens the same selection in the
+Command Builder. The generated CLI and supported 550-case configuration
+catalog remain unchanged.
+
+The preview index is generated exclusively from recorded full-Episode results:
+
+```bash
+pixi run viewer-build
+pixi run python tools/build_task_preview_catalog.py \
+  results/command-builder-native-full-20261017
+python3 -m http.server 4176 --bind 127.0.0.1
+```
+
+After SSH forwarding, open
+`http://127.0.0.1:4176/docs/command-builder.html`. The local example catalog
+indexes **172 native-method combinations and 256 actual Episode recordings**.
+An exact native method/scene loads its own recording; changing the Benchmark
+scene switches to that scene's true Episode outcome. A policy or Train setting
+may display an explicitly labeled **task illustration from a different native
+method**, never a fabricated recording of its checkpoint. Missing data appears
+as unavailable, and private absolute filesystem paths are never published in
+the preview index. The generated catalog lives under ignored `results/` and
+is not checked into source control.
+
+By default the embedded WASM player auto-plays and loops only an actual
+`SUCCESS` Episode. A `METHOD_FAILURE`, collision, or out-of-bounds recording
+stops at the exact recorded terminal frame and identifies the physical event.
+Task switching reuses the same instantiated MuJoCo WASM engine: new recordings
+are passed through an origin-checked message channel, rather than recreating
+the 10 MB runtime and cancelling outstanding fetches on each UI selection.
+An embedded preview shows opaque Crazyflie meshes against **translucent scene
+obstacles** by default, to keep the aircraft visible in dense environments;
+the optional toggle restores fully solid scene obstacles. Only 3D material
+opacity is changed, not source MJCF geometry, collision or saved states.
+For instance, EGO + Sampling MPC on S06 stops after **6.4 seconds** because
+the native planner returned `NO_SOLUTION` at the next replan. Its 321 frames
+fully cover the physical flight before method failure; no collision or missing
+video interval is implied. The viewer offers Aircraft, Course and Overhead
+cameras, optional sensor hits, the flight path, timeline seeking and a link to
+the full-size viewer and RScope file.
+
 ## From training to the browser
 
 `pixi run train` creates one Autoresearch session. The Dashboard presents
@@ -87,8 +134,8 @@ The sample record above is present in the Racing feature worktree, not in a
 fresh mainline checkout's ignored `results/` directory. For a mainline run,
 use a locally produced `browser_replay.json` path instead.
 The viewer auto-loads the record from the URL. Play starts playback at recorded
-speed (select 0.25×/1×/2×); Pause, Timeline, Follow Drone, Camera Aircraft/Course,
-and Flight Path visibility are interactive. **Camera: Aircraft** keeps the actual
+speed (select 0.25×/1×/2×); Pause, Timeline, Follow Drone, Camera
+Aircraft/Course/Overhead, Sensor Hits and Flight Path visibility are interactive. **Camera: Aircraft** keeps the actual
 8-cm-scale Crazyflie mesh in view rather than increasing its geometric size.
 The page ships precompiled WASM via the official `@mujoco/mujoco` package.
 

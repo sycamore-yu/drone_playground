@@ -1,7 +1,8 @@
 # Documentation
 
-[Command Builder](command-builder.html) generates supported Train, Play, and
-Benchmark commands. Start with [installation](installation.md), then use
+[Environments / Task Preview / Command Builder](command-builder.html) generates
+supported Train, Play and Benchmark commands and displays actual recorded
+MuJoCo WASM flights beside the selected method. Start with [installation](installation.md), then use
 [training](training.md), [Autoresearch](autoresearch.md), [Benchmark](benchmark.md),
 [controllers](control-models.md), [native planners](ros_planner.md), or
 [visualization](visualization.md). [Replay](replay.md) describes the native

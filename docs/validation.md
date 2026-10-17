@@ -355,6 +355,42 @@ contains each terminal pose and sampled planning-reference point. No privileged
 global obstacle map, endpoint clipping or synthetic continuation was introduced
 to improve the baseline score.
 
+## Recorded Task Preview in the Environments browser (2026-10-17)
+
+The [Command Builder](command-builder.html) now includes Isaac Lab-style task
+selection, a selectable Task Preview backed by our native MuJoCo WASM player,
+and a searchable list of already recorded combinations. The generated 550
+commands remain the same; visualization does not create new simulation or
+Benchmark results. `tools/build_task_preview_catalog.py` maps the original
+full-episode Command Builder catalog, manifest and Episode CSV to a separate
+ignored static JSON index. The currently captured example contains **172
+native-method combinations and 256 recorded Episodes**: 119 `SUCCESS`, 66
+`METHOD_FAILURE`, 67 `OUT_OF_BOUNDS`, and four `COLLISION`. These are counts
+of existing individual Episode results, not confidence intervals or a
+multi-seed algorithm ranking.
+
+Each preview is attributed to the exact selected Planner/Controller/task and
+recorded scene, with truthful terminal time and event. Benchmark suites expose
+their own scene selector and mixed outcomes. Train/Policy selections that lack
+a native policy recording display an explicit **task illustration**, never
+misattributed checkpoint footage. A recording with early method failure ends
+on the original physical terminal frame instead of looping or extrapolating.
+EGO + Sampling MPC / S06 is an illustrative case: its record runs from 0 to
+6.400 s (321 original browser frames), with the final ROS planner decision
+`NO_SOLUTION`. It is neither `COLLISION` nor truncated video footage.
+
+The browser regression opens a real recorded Tracking flight in autoplay,
+selects the matching native S06 case and verifies the terminal `NO_SOLUTION`
+label, switches Benchmark episodes, and selects Racing MPCC from the recorded
+gallery while confirming the generated CLI method changes with the preview.
+The updated viewer maintains one WebAssembly instance throughout selections,
+loads each recorded MJCF/pose dataset by a same-origin message channel, and
+supports optional translucent obstacle rendering in the embedded preview for
+unobstructed aircraft inspection. Native geometry, terminal task outcome,
+scene motion and original saved RScope state remain unchanged.
+All assets remain local to the same SSH-forwarded HTTP origin. Recorded
+flight previews never execute the physics solver or mutate source experiments.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.
