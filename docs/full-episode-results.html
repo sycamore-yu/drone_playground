@@ -12,7 +12,7 @@ thead{position:sticky;top:0;background:#e9f0f7}code{font:11px/1.45 ui-monospace,
 </style></head><body><h1>Complete native flight episodes</h1>
 <p>Actual task horizons: Tracking 20 s, Racing 60 s, OA 300 s. Episodes terminate on SUCCESS, COLLISION, OUT_OF_BOUNDS, METHOD_FAILURE or a genuine full-horizon TIMEOUT. A 1.2-second WASM video labeled METHOD_FAILURE is a <strong>faithful partial flight until the real failure</strong>, not a missing 298.8 seconds of footage. Such cases must be repaired and rerun; the viewer never fabricates a continuation. CLI errors and OS watchdog limits are separate from task outcomes.</p>
 <p>These runs check complete physical episodes, not 100-episode statistical Benchmark convergence.</p>
-<p><a href="../../docs/command-builder.html">Command Builder</a><a href="catalog.json">Generated commands</a><a href="manifest.json">Execution manifest</a><a href="replay-audit.json">Replay-duration and failure audit</a><a href="../../docs/viewer/dist/index.html">MuJoCo WASM</a></p>
+<p><a href="../../docs/command-builder.html">Command Builder</a><a href="catalog.json">Generated commands</a><a href="manifest.json">Execution manifest</a><a href="replay-audit.json">Replay-duration and failure audit</a><a href="boundary-diagnostics.json">Physical boundary diagnostics</a><a href="../../docs/viewer/dist/index.html">MuJoCo WASM</a></p>
 <div id="summary" class="stats"></div>
 <input id="query" class="filter" placeholder="Filter scene, controller, task"/>
 <select id="group" class="filter"><option value="">All groups</option><option>play:controller</option><option>play:planner</option><option>benchmark:controller</option><option>benchmark:planner</option></select>

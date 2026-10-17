@@ -333,6 +333,28 @@ was intentionally paused after repeated deterministic failures, rather than
 continuing to burn CPU on the same defect. A resumable, fail-fast retry pass
 will validate the remaining affected commands against their full Task horizons.
 
+The full-episode acceptance was resumed on a fixed snapshot with the corrected
+stage-zero comparison. Its local `live-audit-refresh.sh` updates the inspection
+index and replay audit without interrupting the flight process. The new
+`failure_detail` ledger and browser viewer distinguish native `NO_SOLUTION`,
+stage-zero representation bugs, ROS session errors and physical termination.
+Auditing explicitly skips actively running episodes while the replay serializer
+has not yet published the final JSON: an in-progress recording is not a missing
+or truncated replay.
+
+Independent physical boundary inspection of the first **12 OUT_OF_BOUNDS**
+episodes found nine reaching the Navigation height floor (0.5 m) and three
+reaching the ceiling (6.0 m). The displayed first native plan point at each
+recorded frame remained inside the nominal flight bounds, but sometimes came
+close to them while the actual aircraft crossed the boundary. This does **not**
+certify the entire upstream trajectory as collision-free or within the task
+volume. These are true planner/tracker safety outcomes, not bugs in the RScope
+serializer or a reason to relax Task bounds. The local
+`results/command-builder-native-full-20261017/boundary-diagnostics.json`
+contains each terminal pose and sampled planning-reference point. No privileged
+global obstacle map, endpoint clipping or synthetic continuation was introduced
+to improve the baseline score.
+
 ## Convergence
 
 Formal experiments retain their declared protocol and measured outcomes locally.
