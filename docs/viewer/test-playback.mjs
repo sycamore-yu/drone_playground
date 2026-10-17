@@ -40,6 +40,12 @@ try{
   await page.locator('#view').click();
   if(await page.locator('#view').textContent()!=='Camera: Course')
     throw new Error('Camera view did not switch to course');
+  await page.locator('#view').click();
+  if(await page.locator('#view').textContent()!=='Camera: Overhead')
+    throw new Error('Overhead camera is not available');
+  await page.locator('#obstacles').click();
+  if(await page.locator('#obstacles').textContent()!=='Obstacles: Translucent')
+    throw new Error('Physical scene visualization cannot toggle transparency');
   console.log(JSON.stringify({before,afterSeek:time,beforePlay,afterPlay,errors,viewer:page.url()}));
   if(errors.length)throw new Error(errors.join('\n'));
 }finally{await browser.close();}
