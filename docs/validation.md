@@ -231,9 +231,11 @@ sessions. The machine-readable manifests keep command, source revision,
 execution status, task outcomes, wall time and replay references.
 
 All **172/172** native Controller and Planner commands completed their bounded
-CLI run and produced a replay. The two initial Tracking + Attitude MPC failures
-were caused by the original full SQP configuration; the controller now uses
-SQP-RTI, and both commands were rerun successfully with a real Crazyflow flight.
+CLI run and produced a replay. The two initial Tracking + Attitude MPC cases
+failed with the old full-SQP solver under the artificial 0.14 s Task setting.
+This setting also increased the Figure-8 reference angular frequency from
+0.314 to 44.88 rad/s, so the failure cannot be attributed to SQP alone.
+They were rerun using SQP-RTI and produced actual short Crazyflow recordings.
 The successful smoke cases include **256** browser replay records across the
 scene suites. Most OA episodes terminate at the deliberately short smoke
 timeout; this is an execution result, not a navigation score. The protocol
@@ -257,6 +259,14 @@ ticks) with `SUCCESS`, position RMSE **0.0318 m**, and a recording spanning the
 whole episode. The first full Racing + MPCC flight completed all ordered gates
 at **14.722 s**, also with a complete native/browser replay.
 
+A separate check of the unchanged original LSY full-SQP controller on the
+untruncated 20 s Figure-8 reference also completed successfully, with position
+RMSE **0.0510 m**; the current SQP-RTI variant completed the same 20 s test
+with RMSE **0.0596 m**. Consequently, the short-smoke solver failure was
+confounded by the 0.14 s reference rescaling. It is not evidence that the
+published full-SQP formulation was intrinsically invalid. The live full-flight
+acceptance uses the frozen SQP-RTI revision for repeatability.
+
 A full EGO/S01 navigation run exposed a previously invisible clock-interface
 bug: at 0.4 s the 30 Hz Depth frame clock was represented as 0.40000003576 s,
 slightly ahead of the exact 50 Hz control timestamp. The ROS Worker correctly
@@ -270,6 +280,11 @@ window, causing `STALE_OUTPUT`. The host tracker now pads only this prediction
 tail with a stationary endpoint reference. An expired trajectory at the current
 control time still fails. Both failure records are preserved for comparison
 with the subsequent full-episode rerun.
+
+The corrected EGO/S01 full-flight run reached the actual navigation goal at
+**32.424 s**, with `SUCCESS` and native/browser replays covering the whole
+flight. Other scenes and controllers are being evaluated under the same
+complete-episode protocol without reducing the 300 s task limit.
 
 The active full-flight catalog, resumable process status, terminal task events,
 report links and replay URLs are in the locally ignored directory

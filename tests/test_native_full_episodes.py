@@ -4,6 +4,10 @@ import argparse
 import shlex
 from collections import Counter
 
+import numpy as np
+
+from drone_playground.simulation.scene import Scene
+from drone_playground.simulation.tasks import Task
 from tools.validate_full_episodes import (
     TASK_DURATION,
     build_command,
@@ -57,3 +61,14 @@ def test_non_native_commands_are_not_accidentally_in_full_runner():
         assert case["method"] in {"controller", "planner"}
         assert case["mode"] in {"play", "benchmark"}
         assert "checkpoint_eval" not in case["command"]
+
+
+def test_short_tracking_budget_changes_reference_dynamics_not_just_episode_length():
+    """The historical 0.14-second test must never be used as tracking-quality evidence."""
+    scene = Scene("empty")
+    full = Task("tracking", scene, reference="figure_eight", duration=20.0)
+    truncated = Task("tracking", scene, reference="figure_eight", duration=0.14)
+    _, full_velocity, _ = full.target(np.asarray([0.0]))
+    _, short_velocity, _ = truncated.target(np.asarray([0.0]))
+    assert np.isclose(np.asarray(full_velocity)[0, 0], 2 * np.pi / 20.0)
+    assert np.isclose(np.asarray(short_velocity)[0, 0] / np.asarray(full_velocity)[0, 0], 20 / 0.14)
