@@ -221,3 +221,12 @@ Until independent 100-case release acceptance, this opt-in configuration is a
 **research candidate**, not a verified default. Body-rate LOTF stays in the
 existing body frame and has a distinct control level; it is not reinterpreted
 as acceleration.
+
+Static matched procedural training can additionally sample broad, low-height
+crossbeams with `+simulation.procedural.horizontal_beam_probability=0.7`. This
+training-only option adds randomized vertical-passage obstacles while keeping
+the fixed S01/S02/S03/S06 evaluation maps unchanged. Default probability zero
+preserves the original procedural sampler and its geometry identity. Changing
+this distribution requires a fresh-from-scratch training session with a new
+source/configuration identity; it cannot be compared as a same-session optimizer
+parameter change.
