@@ -27,6 +27,19 @@ try{
   const summary=await page.locator('#gallery-count').textContent();
   const size=await page.evaluate(()=>CommandBuilder.combinations().length);
   if(size!==550)throw Error(`Builder catalog changed: ${size}`);
+  const palette=await page.evaluate(()=>{
+    const root=getComputedStyle(document.documentElement);
+    const button=getComputedStyle(document.querySelector('#copy'));
+    return {
+      accent:root.getPropertyValue('--accent').trim(),
+      page:root.getPropertyValue('--paper').trim(),
+      buttonBackground:button.backgroundColor,
+      buttonText:button.color,
+    };
+  });
+  if(palette.accent!=='#d94b20'||palette.page!=='#ffffff'||
+    palette.buttonBackground!=='rgb(169, 52, 20)'||palette.buttonText!=='rgb(255, 255, 255)')
+    throw Error(`RAPID-inspired palette or readable primary action regressed: ${JSON.stringify(palette)}`);
   const firstTitle=await page.locator('#gallery-list .recording-card strong').first().textContent();
   if(firstTitle!=='Sampling MPC')throw Error(`Gallery displays a raw controller key: ${firstTitle}`);
   await page.locator('#gallery-search').fill('Full-State NMPC');
