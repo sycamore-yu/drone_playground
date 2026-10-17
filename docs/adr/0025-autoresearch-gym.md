@@ -5,7 +5,7 @@
 **Implementation:** Integrated from `feat/autoresearch-gym` into `main`. [ADR-0026](0026-training-benchmark-release-separation.md) makes this the public training entry and removes the former optional-budget lifecycle.
 
 **Refinement approved:** 2026-10-17T05:54:56Z, the user's instruction to confirm 42 default training recipes through the existing candidate loop.
-**Last reviewed:** 2026-10-17T06:20:00Z against `main@727cc62` and the `fix/autoresearch-release-42` worktree. The refinement is implemented on that branch and awaits integration.
+**Last reviewed:** 2026-10-17T06:35:00Z against `main@dac3fd4`. The fixed-budget task contract and replay propagation are integrated. Release candidates execute from their separately pinned source worktree through the existing GPU queue.
 
 ## Decision
 
