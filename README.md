@@ -2,6 +2,8 @@
 
 **A modular quadrotor testbed for algorithm integration and differentiable policy learning.**
 
+**[Interactive Demo](https://sycamore-yu.github.io/drone_playground/)**: Select flight tasks and methods, generate Train/Play/Benchmark commands, and inspect recorded MuJoCo flights.
+
 Drone Playground brings learned policies, motion planners, and controllers into a shared task and evaluation workflow. Methods can use different sensors and control pipelines through explicit interfaces. SUPER and EGO-Planner are already integrated through ROS adapters.
 
 Drone Playground builds on Crazyflow's differentiable simulation to support gradient-based training of quadrotor policies.
