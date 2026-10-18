@@ -9,7 +9,8 @@
     "check": "node --check viewer.js",
     "test:e2e": "node test-playback.mjs",
     "test:task-preview": "node test-task-preview.mjs",
-    "test:dynamic-preview": "node test-dynamic-task-preview.mjs"
+    "test:dynamic-preview": "node test-dynamic-task-preview.mjs",
+    "test:pages": "node test-pages-deployment.mjs"
   },
   "dependencies": {
     "@mujoco/mujoco": "3.12.0",

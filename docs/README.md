@@ -8,6 +8,9 @@ MuJoCo WASM flights beside the selected method. Start with [installation](instal
 [visualization](visualization.md). [Replay](replay.md) describes the native
 RScope record format and its browser export.
 
+[Public GitHub Pages deployment](pages-deployment.md) explains the standalone
+static export of selected, original native flights and its publication checks.
+
 [Scope and acceptance](spec.md) defines the release contract.
 [Validation](validation.md) records execution evidence and open checks.
 [Experiments](experiments.md) describes reproducible comparisons.
