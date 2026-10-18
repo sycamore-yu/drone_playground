@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Drone Playground — Command Builder</title>
+<link rel="stylesheet" href="environments.css">
+</head>
+<body><main>
+<header class="site-header">
+  <a class="brand" href="../index.html" aria-label="Drone Playground project home"><span class="brand-icon" aria-hidden="true">DP<span class="brand-cross">+</span></span><span><strong>DRONE PLAYGROUND</strong><small>ROBOTICS RESEARCH PLATFORM</small></span></a>
+  <nav class="top-links" aria-label="Project navigation"><a href="https://github.com/sycamore-yu/drone_playground">Documentation <span aria-hidden="true">↗</span></a><a href="../results/command-builder-native-full-20261017/index.html">Evaluation archive <span aria-hidden="true">↗</span></a><span class="top-status"><span class="online-dot" aria-hidden="true"></span> REPLAY MODE</span></nav>
+</header>
+<div class="hero">
+  <div class="hero-content"><span class="hero-kicker"><span class="kicker-line"></span> FLIGHT SYSTEMS / EXPLORER</span>
+    <h1>Configure tasks. <em>Inspect real flights.</em></h1>
+    <p>Generate Train, Play, and Benchmark commands. Explore recorded native-method episodes in MuJoCo WebAssembly without rerunning the simulation.</p>
+    <div class="hero-utility"><span><strong>04</strong> Tasks</span><span><strong id="hero-native-count">—</strong> Public cases</span><span><strong id="hero-episode-count">—</strong> Recorded episodes</span><span class="hero-source">Curated recordings from 172 historical native-method cases</span></div>
+  </div>
+  <div class="hero-graphic" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="route-point p1"></span><span class="route-point p2"></span><span class="route-point p3"></span><span class="route-segment s1"></span><span class="route-segment s2"></span><span class="target-mark">+</span></div>
+</div>
+<section class="task-section" aria-label="Available tasks">
+  <div class="section-heading"><div><span class="section-index">01 / TASKS</span><h2>Choose your mission</h2></div><span class="section-aside">FROM TRAJECTORY TRACKING TO DYNAMIC OBSTACLE AVOIDANCE</span></div>
+  <div id="task-cards" class="task-cards">
+    <button type="button" class="task-card" data-task="tracking" aria-pressed="true"><span class="task-number">01 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Tracking</strong><span>Reference trajectory following</span></button>
+    <button type="button" class="task-card" data-task="racing" aria-pressed="false"><span class="task-number">02 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Racing</strong><span>Ordered gates · full-course flight</span></button>
+    <button type="button" class="task-card" data-task="static_oa" aria-pressed="false"><span class="task-number">03 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Static OA</strong><span>Depth / LiDAR obstacle fields</span></button>
+    <button type="button" class="task-card" data-task="dynamic_oa" aria-pressed="false"><span class="task-number">04 <span class="task-indicator" aria-hidden="true">✓</span></span><strong>Dynamic OA</strong><span>Moving geometry and replanning</span></button>
+  </div>
+</section>
+<div class="workspace">
+<section class="configuration-panel" aria-label="Command Builder">
+<div class="panel-heading"><div><span class="section-index">02 / CONFIGURATION</span><h2>Command Builder</h2></div><span class="panel-meta">HYDRA CLI</span></div>
+<form id="builder" aria-label="Experiment configuration">
+<div><label for="mode">Mode</label><select id="mode"><option value="train">Train</option><option value="play">Play</option><option value="benchmark">Benchmark</option></select></div>
+<div id="methodField"><label for="method">Method</label><select id="method"><option value="policy">Policy</option><option value="controller">Controller</option><option value="planner">Planner + Controller</option></select></div>
+<div><label for="task">Task</label><select id="task"></select></div>
+<div><label for="sensor">Sensor</label><select id="sensor"></select></div>
+<div id="algorithmField"><label for="algorithm">Algorithm</label><select id="algorithm"><option value="bptt">BPTT</option><option value="shac">SHAC</option><option value="ppo">PPO</option></select></div>
+<div id="backwardField"><label for="backward">Backward dynamics</label><select id="backward"><option value="native">Crazyflow native</option><option value="lotf">LOTF</option><option value="point_mass_lag">Point-mass lag</option></select><small>The forward simulation uses Crazyflow.</small></div>
+<div id="plannerField"><label for="planner">Planner</label><select id="planner"><option value="ego">EGO-Planner · depth</option><option value="super">SUPER · LiDAR</option></select></div>
+<div id="controllerField"><label for="controller">Controller</label><select id="controller"><option value="sampling_mpc">Sampling MPC</option><option value="attitude_mpc">Attitude MPC</option></select></div>
+<div id="sceneField"><label for="scene">Scene</label><select id="scene"></select></div>
+<div id="suiteField"><label for="suite">Benchmark scene family</label><select id="suite"></select><small>Core S/D scenes are the original reference set. Other families are native-MJCF extensions.</small></div>
+<div id="checkpointField"><label for="checkpoint">Checkpoint</label><select id="checkpoint"><option value="latest">Latest</option><option value="best">Best</option><option value="path">Explicit directory</option></select><small>Best selects the recorded reward-best policy. If none was recorded, it falls back to latest and reports that choice.</small></div>
+<div id="pathField" class="wide"><label for="path">Orbax model directory</label><input id="path" type="text" spellcheck="false" placeholder="results/run/checkpoints/model_000100"></div>
+<div class="wide"><p id="description" role="status"></p></div>
+</form>
+<div class="command-heading"><h3>Generated command</h3><span>READY TO COPY</span></div><pre><code id="command"></code></pre><div class="command-actions"><button id="copy" type="button">Copy command</button><a class="jump-to-preview" href="#preview-heading">View task preview <span aria-hidden="true">↓</span></a><p id="status" role="status"></p></div>
+</section>
+<aside class="preview-panel" aria-labelledby="preview-heading">
+  <div class="panel-heading"><div><span class="section-index">03 / VISUALIZATION</span><h2 id="preview-heading">Task Preview</h2></div><span class="preview-mode" id="preview-match">Recorded Episode</span></div>
+  <p class="preview-intro">Real recorded states, original Crazyflie geometry. The view follows your configuration; physical failures remain visible.</p>
+  <div class="preview-surface" id="preview-surface">
+    <iframe id="preview-frame" title="Interactive MuJoCo WASM task preview" allow="autoplay" hidden></iframe>
+    <div class="preview-placeholder" id="preview-placeholder" role="status"><div><strong>Loading recorded tasks</strong><p>Available when this checkout serves its saved results.</p></div></div>
+    <div class="preview-loading" id="preview-loading" role="status" aria-live="polite" hidden>
+      <div class="loading-content">
+        <span class="loading-symbol" aria-hidden="true"></span>
+        <span class="loading-label">PREPARING FLIGHT SCENE</span>
+        <strong id="preview-loading-title">Loading recorded flight…</strong>
+        <p id="preview-loading-detail">Reading native MuJoCo scene assets.</p>
+        <div class="loading-track"><span id="preview-loading-progress"></span></div>
+        <span id="preview-loading-hint">Dense obstacle scenes may take several seconds to compile.</span>
+        <button id="preview-retry" type="button" hidden>Retry loading</button>
+      </div>
+    </div>
+  </div>
+  <p id="preview-status" class="preview-status" role="status">Preparing recording catalog…</p>
+  <div id="preview-scene-field"><label for="preview-scene">Recorded scene / Episode</label><select id="preview-scene"></select></div>
+  <dl class="preview-meta">
+    <div><dt>Task / method</dt><dd id="preview-method">—</dd></div>
+    <div><dt>Actual outcome</dt><dd id="preview-event">—</dd></div>
+    <div><dt>Recorded duration</dt><dd id="preview-duration">—</dd></div>
+    <div><dt>Scene</dt><dd id="preview-scene-name">—</dd></div>
+  </dl>
+  <p id="preview-note" class="preview-note" data-kind="neutral">Choose a recording to view its actual flight. SUCCESS, planner failure, collision and out-of-bounds are never interchangeable.</p>
+  <nav class="preview-links" aria-label="Preview artifacts"><a id="preview-open" href="#" target="_blank" rel="noopener" hidden>Open full 3D viewer</a><a id="preview-rscope" href="#" hidden>RScope record</a><a id="preview-report" href="#" target="_blank" rel="noopener" hidden>Evaluation report</a></nav>
+</aside>
+</div>
+<section class="gallery-panel" aria-labelledby="gallery-heading">
+ <div class="section-heading"><div><span class="section-index">04 / ARCHIVE</span><h2 id="gallery-heading">Public flight library</h2></div><span id="gallery-count" class="muted">Loading catalog…</span></div>
+ <p>Browse the selected published recordings and load their actual flights. A compatible combination may still fail its task; cards report the actual physical outcomes.</p>
+ <div class="gallery-filters"><input id="gallery-search" type="search" aria-label="Search recorded tasks, scenes, planners and controllers" placeholder="Search tasks, scenes, planners, controllers…"/><select id="gallery-task" aria-label="Filter task"><option value="">All tasks</option><option value="tracking">Tracking</option><option value="racing">Racing</option><option value="static_oa">Static OA</option><option value="dynamic_oa">Dynamic OA</option></select><select id="gallery-outcome" aria-label="Filter outcome"><option value="">All outcomes</option><option value="SUCCESS">Contains success</option><option value="METHOD_FAILURE">Contains method failure</option><option value="OUT_OF_BOUNDS">Contains out of bounds</option><option value="COLLISION">Contains collision</option></select></div>
+ <div id="gallery-list" class="gallery-grid" aria-live="polite"></div>
+ <div class="more-row"><button id="gallery-more" type="button" hidden>Show more recordings</button></div>
+</section>
+<footer>This page generates compatible commands. Native planners require their ROS workers; Attitude MPC, Full-State NMPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and is not yet real-time at 50 Hz on CPU. See <a href="https://github.com/sycamore-yu/drone_playground/blob/main/docs/installation.md">installation</a> and <a href="https://github.com/sycamore-yu/drone_playground/blob/main/docs/benchmark.md">Benchmark measurement</a>.</footer>
+</main>
+<script>
+'use strict';
+const taskLabels = {tracking:'Tracking',racing:'Racing',static_oa:'Static OA',dynamic_oa:'Dynamic OA'};
+const suites = {static_oa:['S01','S02','S03','S06'],dynamic_oa:['D01','D02','D03','D06']};
+const extendedSuites = {
+  forest:['forest_easy','forest_medium','forest_hard'],
+  maze:['maze_easy','maze_medium','maze_hard'],
+  dense:['dense_easy','dense_medium','dense_hard'],
+  dynamic_dense:['dynamic_dense_easy','dynamic_dense_medium','dynamic_dense_hard'],
+};
+function suiteNames(task){return task==='static_oa'?['core','forest','maze','dense']:task==='dynamic_oa'?['core','dynamic_dense']:['core'];}
+function sceneNames(task){return [...suites[task],...suiteNames(task).filter(key=>key!=='core').flatMap(key=>extendedSuites[key])];}
+function selectedSuite(s){return s.suite&&s.suite!=='core'?extendedSuites[s.suite]:suites[s.task];}
+const algorithms = ['bptt','shac','ppo'];
+// The reference contract and task define applicability, not the word "MPC".
+const controllerCapabilities = {
+  sampling_mpc:{label:'Sampling MPC',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  attitude_mpc:{label:'Attitude MPC (acados)',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  full_state_nmpc:{label:'Full-State NMPC (acados)',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
+  racing_mpcc:{label:'Racing MPCC (acados)',reference:'gate_course',tasks:['racing']},
+  perception_mpc:{label:'Perception-Aware MPC (experimental)',reference:'trajectory_landmarks',tasks:['racing']},
+};
+function eligibleControllers(task,planner){
+  return Object.keys(controllerCapabilities).filter(key=>{
+    const entry=controllerCapabilities[key];
+    return entry.tasks.includes(task)&&(!planner||entry.reference==='trajectory');
+  });
+}
+function experiment(s){
+  if(s.mode!=='train')return suites[s.task] ? `oa_${s.task.split('_')[0]}_${s.sensor}` : s.task;
+  if(suites[s.task])return `oa_${s.task.split('_')[0]}_${s.sensor}_${s.algorithm}`;
+  if(s.task==='racing'&&s.algorithm!=='bptt')return `racing_${s.algorithm}_stable`;
+  return `${s.task}_${s.algorithm}`+(s.algorithm==='ppo'?'':`_${s.backward||'native'}`);
+}
+function shellQuote(value){return "'"+value.replaceAll("'", "'\\''")+"'";}
+function command(s){
+  const parts = [`pixi run ${s.mode}`];
+  if(s.mode==='train'||s.method==='policy'){
+    parts.push(`experiment=${experiment(s)}`,`learning=${s.algorithm}`);
+    if(s.mode==='train'){
+      parts.push('seed=0');
+      if(s.algorithm!=='ppo'&&s.backward!=='native')parts.push(`learning.backward_model=${s.backward}`,`method.action.level=${!suites[s.task]||s.backward==='lotf'?'body_rate':'acceleration'}`);
+      if(s.algorithm!=='ppo'&&s.backward==='lotf'&&suites[s.task])parts.push('learning.loss=null','learning.options.perception_loss=null');
+    }else{
+      const checkpoint=s.checkpoint==='path'?s.path:s.checkpoint;
+      parts.push(checkpoint==='latest'||checkpoint==='best'?`checkpoint=${checkpoint}`:shellQuote(`checkpoint=${JSON.stringify(checkpoint)}`));
+    }
+  }else if(s.method==='controller'){
+    parts.push(`task=${s.task}`,`scene=${s.task==='racing'?'racing':'empty'}`,'sensor=state','method=controller',`controller=${s.controller}`);
+  }else{
+    parts.push('task=navigation',`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
+    if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
+  }
+  if(s.mode==='benchmark'&&s.method==='policy'&&suites[s.task]&&s.suite&&s.suite!=='core')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
+  if(s.mode==='play'&&suites[s.task])parts.push(`scene=${s.scene}`,`benchmark.scenes=[${s.scene}]`,'simulation.num_envs=1');
+  if(s.mode==='play'&&s.method==='policy'&&!suites[s.task])parts.push('simulation.num_envs=1');
+  return parts.join(' ');
+}
+function combinations(){
+  const result=[];
+  for(const mode of ['train','play','benchmark']){
+    for(const task of Object.keys(taskLabels))for(const sensor of suites[task]?['depth','lidar']:['state'])for(const algorithm of algorithms){
+      for(const backward of mode==='train'&&algorithm!=='ppo'?['native','lotf','point_mass_lag']:['native']){
+        for(const scene of mode==='play'&&suites[task]?sceneNames(task):[null])for(const suite of mode==='benchmark'&&suites[task]?suiteNames(task):['core'])for(const checkpoint of mode==='train'?['latest']:['latest','best']){
+          const s={mode,task,sensor,algorithm,backward,scene,suite,checkpoint,method:'policy'};result.push({...s,command:command(s)});
+        }
+      }
+    }
+    if(mode==='train')continue;
+    for(const task of ['tracking','racing'])for(const controller of eligibleControllers(task,false)){
+      const s={mode,task,sensor:'state',method:'controller',controller};
+      result.push({...s,command:command(s)});
+    }
+    for(const task of Object.keys(suites))for(const controller of eligibleControllers(task,true))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
+      const s={mode,task,planner,scene,suite,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};
+      result.push({...s,command:command(s)});
+    }
+  }
+  return result;
+}
+// The same finite command set drives the UI and release execution checks.
+globalThis.CommandBuilder={command,combinations,controllerCapabilities,eligibleControllers};
+if(typeof document!=='undefined'){
+  const $=id=>document.getElementById(id);
+  const state={mode:'train',method:'policy',task:'tracking',sensor:'state',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',suite:'core',checkpoint:'latest',path:''};
+  function options(id,items){const previous=state[id];$(id).replaceChildren(...items.map(([key,label])=>new Option(label,key)));state[id]=items.some(([key])=>key===previous)?previous:items[0][0];$(id).value=state[id];}
+  function show(id,visible){$(id).hidden=!visible;}
+  function render(){
+    const train=state.mode==='train';if(train)state.method='policy';
+    const policy=state.method==='policy',planner=state.method==='planner';
+    const tasks=policy?Object.keys(taskLabels):planner?Object.keys(suites):['tracking','racing'];
+    options('task',tasks.map(key=>[key,taskLabels[key]]));
+    options('sensor',(suites[state.task]?['depth','lidar']:['state']).map(key=>[key,key==='depth'?'D435i depth':key==='lidar'?'MID360 LiDAR':'State']));
+    if(planner){state.sensor=state.planner==='ego'?'depth':'lidar';$('sensor').value=state.sensor;}
+    $('sensor').disabled=planner||!suites[state.task];
+    show('methodField',!train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
+    show('plannerField',planner);show('controllerField',!policy);show('sceneField',!train&&state.mode==='play'&&Boolean(suites[state.task]));
+    if(!policy)options('controller',eligibleControllers(state.task,planner).map(key=>[key,controllerCapabilities[key].label]));
+    show('suiteField',!train&&state.mode==='benchmark'&&Boolean(suites[state.task]));
+    show('checkpointField',!train&&policy);show('pathField',!train&&policy&&state.checkpoint==='path');
+    if(suites[state.task]){
+      options('scene',sceneNames(state.task).map(key=>[key,key]));
+      options('suite',suiteNames(state.task).map(key=>[key,key==='core'?'Core S/D scenes':key]));
+    }
+    $('description').textContent=train?(suites[state.task]?`Train on newly sampled ${state.task==='static_oa'?'static':'moving'} obstacles. Fixed S/D maps are reserved for Benchmark.`:'Train with a fixed iteration budget; save the declared action contract and a frozen policy.'):(state.mode==='benchmark'?'Evaluate every requested episode on the declared fixed suite. Reports include failed episodes and metric sample counts.':'Execute the selected method and record episode outcomes.');
+    const missing=!train&&policy&&state.checkpoint==='path'&&!state.path.trim();
+    $('command').textContent=missing?'Enter an Orbax model directory to generate the command.':command(state);$('copy').disabled=missing;
+    document.dispatchEvent(new CustomEvent('drone-playground:selection', {detail:{...state}}));
+  }
+  CommandBuilder.getSelection=()=>({...state});
+  CommandBuilder.applySelection=partial=>{
+    Object.assign(state,partial);
+    if(state.mode==='train')state.method='policy';
+    if(state.method==='controller'&&suites[state.task])state.method='planner';
+    if(state.method==='planner'&&!suites[state.task])state.method='controller';
+    for(const id of ['mode','method','algorithm','backward','planner','checkpoint','path'])
+      $(id).value=state[id];
+    render();
+  };
+  for(const id of Object.keys(state))$(id).addEventListener(id==='path'?'input':'change',event=>{state[id]=event.target.value;render();});
+  $('builder').addEventListener('submit',event=>event.preventDefault());
+  $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(command(state));$('status').textContent='Copied.';}catch{$('status').textContent='Clipboard unavailable. Select and copy the command above.';}});
+  render();
+}
+</script>
+<script src="task-preview.js" defer></script>
+</body></html>

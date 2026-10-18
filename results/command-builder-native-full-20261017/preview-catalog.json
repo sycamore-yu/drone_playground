@@ -1,0 +1,734 @@
+{
+  "format": "drone-playground-task-preview-v1",
+  "source": {
+    "command_catalog": "/results/command-builder-native-full-20261017/catalog.json",
+    "execution_manifest": "/results/command-builder-native-full-20261017/manifest.json"
+  },
+  "summary": {
+    "native_methods": 24,
+    "recorded_methods": 24,
+    "recorded_episodes": 30,
+    "terminal_events": {
+      "SUCCESS": 19,
+      "COLLISION": 2,
+      "OUT_OF_BOUNDS": 3,
+      "METHOD_FAILURE": 6
+    }
+  },
+  "cases": [
+    {
+      "id": 0,
+      "mode": "play",
+      "task": "tracking",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "sampling_mpc",
+      "command": "pixi run play task=tracking scene=empty sensor=state method=controller controller=sampling_mpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "empty",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 20.0,
+          "task_limit_seconds": 20.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/000_play_controller_tracking_sampling_mpc/replays/empty-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "d7c21a8",
+      "run_relative": "runs/000_play_controller_tracking_sampling_mpc"
+    },
+    {
+      "id": 1,
+      "mode": "play",
+      "task": "tracking",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "attitude_mpc",
+      "command": "pixi run play task=tracking scene=empty sensor=state method=controller controller=attitude_mpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "empty",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 20.0,
+          "task_limit_seconds": 20.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/001_play_controller_tracking_attitude_mpc/replays/empty-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/001_play_controller_tracking_attitude_mpc"
+    },
+    {
+      "id": 2,
+      "mode": "play",
+      "task": "tracking",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "full_state_nmpc",
+      "command": "pixi run play task=tracking scene=empty sensor=state method=controller controller=full_state_nmpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "empty",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 20.0,
+          "task_limit_seconds": 20.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/002_play_controller_tracking_full_state_nmpc/replays/empty-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/002_play_controller_tracking_full_state_nmpc"
+    },
+    {
+      "id": 3,
+      "mode": "play",
+      "task": "racing",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "sampling_mpc",
+      "command": "pixi run play task=racing scene=racing sensor=state method=controller controller=sampling_mpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 22.079999923706055,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/003_play_controller_racing_sampling_mpc/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/003_play_controller_racing_sampling_mpc"
+    },
+    {
+      "id": 4,
+      "mode": "play",
+      "task": "racing",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "attitude_mpc",
+      "command": "pixi run play task=racing scene=racing sensor=state method=controller controller=attitude_mpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "COLLISION",
+          "elapsed_seconds": 16.65999984741211,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/004_play_controller_racing_attitude_mpc/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/004_play_controller_racing_attitude_mpc"
+    },
+    {
+      "id": 5,
+      "mode": "play",
+      "task": "racing",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "full_state_nmpc",
+      "command": "pixi run play task=racing scene=racing sensor=state method=controller controller=full_state_nmpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 22.148000717163086,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/005_play_controller_racing_full_state_nmpc/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/005_play_controller_racing_full_state_nmpc"
+    },
+    {
+      "id": 6,
+      "mode": "play",
+      "task": "racing",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "racing_mpcc",
+      "command": "pixi run play task=racing scene=racing sensor=state method=controller controller=racing_mpcc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 14.722000122070312,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/006_play_controller_racing_racing_mpcc/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": null,
+      "run_relative": "runs/006_play_controller_racing_racing_mpcc"
+    },
+    {
+      "id": 7,
+      "mode": "play",
+      "task": "racing",
+      "sensor": "state",
+      "method": "controller",
+      "controller": "perception_mpc",
+      "command": "pixi run play task=racing scene=racing sensor=state method=controller controller=perception_mpc",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "COLLISION",
+          "elapsed_seconds": 4.372000217437744,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/007_play_controller_racing_perception_mpc/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/007_play_controller_racing_perception_mpc"
+    },
+    {
+      "id": 8,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.42399978637695,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/008_play_planner_static_oa_ego_sampling_mpc_S01_core_retry_2/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/008_play_planner_static_oa_ego_sampling_mpc_S01_core_retry_2"
+    },
+    {
+      "id": 9,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": "S02",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=S02 benchmark.scenes=[S02] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S02",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.560001373291016,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/009_play_planner_static_oa_ego_sampling_mpc_S02_core/replays/S02-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/009_play_planner_static_oa_ego_sampling_mpc_S02_core"
+    },
+    {
+      "id": 10,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": "S03",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=S03 benchmark.scenes=[S03] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S03",
+          "episode": 0,
+          "event": "OUT_OF_BOUNDS",
+          "elapsed_seconds": 10.673999786376953,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/010_play_planner_static_oa_ego_sampling_mpc_S03_core/replays/S03-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/010_play_planner_static_oa_ego_sampling_mpc_S03_core"
+    },
+    {
+      "id": 11,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": "S06",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=S06 benchmark.scenes=[S06] simulation.num_envs=1",
+      "status": "method_failure",
+      "recordings": [
+        {
+          "scene": "S06",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 6.400000095367432,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/011_play_planner_static_oa_ego_sampling_mpc_S06_core/replays/S06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/011_play_planner_static_oa_ego_sampling_mpc_S06_core"
+    },
+    {
+      "id": 21,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "super",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=sampling_mpc scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 33.529998779296875,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/021_play_planner_static_oa_super_sampling_mpc_S01_core/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/021_play_planner_static_oa_super_sampling_mpc_S01_core"
+    },
+    {
+      "id": 24,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "super",
+      "scene": "S06",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=sampling_mpc scene=S06 benchmark.scenes=[S06] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S06",
+          "episode": 0,
+          "event": "OUT_OF_BOUNDS",
+          "elapsed_seconds": 6.631999969482422,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/024_play_planner_static_oa_super_sampling_mpc_S06_core/replays/S06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "e9522af54587014a532966cbb2d0fa98f110766c",
+      "run_relative": "runs/024_play_planner_static_oa_super_sampling_mpc_S06_core"
+    },
+    {
+      "id": 37,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": "S06",
+      "suite": "core",
+      "controller": "attitude_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=attitude_mpc scene=S06 benchmark.scenes=[S06] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S06",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 39.13199996948242,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/037_play_planner_static_oa_ego_attitude_mpc_S06_core_retry_1/replays/S06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/037_play_planner_static_oa_ego_attitude_mpc_S06_core_retry_1"
+    },
+    {
+      "id": 73,
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "super",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "full_state_nmpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=full_state_nmpc scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 33.52799987792969,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/073_play_planner_static_oa_super_full_state_nmpc_S01_core/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/073_play_planner_static_oa_super_full_state_nmpc_S01_core"
+    },
+    {
+      "id": 86,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "ego",
+      "scene": "D01",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=D01 benchmark.scenes=[D01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "D01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.45399856567383,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/086_play_planner_dynamic_oa_ego_sampling_mpc_D01_core/replays/D01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/086_play_planner_dynamic_oa_ego_sampling_mpc_D01_core"
+    },
+    {
+      "id": 89,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "ego",
+      "scene": "D06",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=sampling_mpc scene=D06 benchmark.scenes=[D06] simulation.num_envs=1",
+      "status": "method_failure",
+      "recordings": [
+        {
+          "scene": "D06",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 16.0,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/089_play_planner_dynamic_oa_ego_sampling_mpc_D06_core/replays/D06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/089_play_planner_dynamic_oa_ego_sampling_mpc_D06_core"
+    },
+    {
+      "id": 93,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "super",
+      "scene": "D01",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=sampling_mpc scene=D01 benchmark.scenes=[D01] simulation.num_envs=1",
+      "status": "method_failure",
+      "recordings": [
+        {
+          "scene": "D01",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 31.5,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/093_play_planner_dynamic_oa_super_sampling_mpc_D01_core/replays/D01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/093_play_planner_dynamic_oa_super_sampling_mpc_D01_core"
+    },
+    {
+      "id": 94,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "super",
+      "scene": "D02",
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=sampling_mpc scene=D02 benchmark.scenes=[D02] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "D02",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 33.582000732421875,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/094_play_planner_dynamic_oa_super_sampling_mpc_D02_core/replays/D02-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/094_play_planner_dynamic_oa_super_sampling_mpc_D02_core"
+    },
+    {
+      "id": 100,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "ego",
+      "scene": "D01",
+      "suite": "core",
+      "controller": "attitude_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego controller=attitude_mpc scene=D01 benchmark.scenes=[D01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "D01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 38.25,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/100_play_planner_dynamic_oa_ego_attitude_mpc_D01_core/replays/D01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/100_play_planner_dynamic_oa_ego_attitude_mpc_D01_core"
+    },
+    {
+      "id": 121,
+      "mode": "play",
+      "task": "dynamic_oa",
+      "planner": "super",
+      "scene": "D01",
+      "suite": "core",
+      "controller": "full_state_nmpc",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super controller=full_state_nmpc scene=D01 benchmark.scenes=[D01] simulation.num_envs=1",
+      "status": "completed",
+      "recordings": [
+        {
+          "scene": "D01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 33.847999572753906,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/121_play_planner_dynamic_oa_super_full_state_nmpc_D01_core/replays/D01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/121_play_planner_dynamic_oa_super_full_state_nmpc_D01_core"
+    },
+    {
+      "id": 136,
+      "mode": "benchmark",
+      "task": "static_oa",
+      "planner": "ego",
+      "scene": null,
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run benchmark task=navigation sensor=depth method=ego controller=sampling_mpc benchmark.scenes=[S01,S02,S03,S06]",
+      "status": "method_failure",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 32.400001525878906,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/136_benchmark_planner_static_oa_ego_sampling_mpc_core/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "S02",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.560001373291016,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/136_benchmark_planner_static_oa_ego_sampling_mpc_core/replays/S02-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "S03",
+          "episode": 0,
+          "event": "OUT_OF_BOUNDS",
+          "elapsed_seconds": 10.673999786376953,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/136_benchmark_planner_static_oa_ego_sampling_mpc_core/replays/S03-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "S06",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 6.400000095367432,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/136_benchmark_planner_static_oa_ego_sampling_mpc_core/replays/S06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/136_benchmark_planner_static_oa_ego_sampling_mpc_core"
+    },
+    {
+      "id": 160,
+      "mode": "benchmark",
+      "task": "dynamic_oa",
+      "planner": "ego",
+      "scene": null,
+      "suite": "core",
+      "controller": "sampling_mpc",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run benchmark task=navigation sensor=depth method=ego controller=sampling_mpc benchmark.scenes=[D01,D02,D03,D06]",
+      "status": "method_failure",
+      "recordings": [
+        {
+          "scene": "D01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.45399856567383,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core/replays/D01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "D02",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.78799819946289,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core/replays/D02-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "D03",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 32.608001708984375,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core/replays/D03-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        },
+        {
+          "scene": "D06",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 16.0,
+          "task_limit_seconds": 300.0,
+          "failure_detail": "NO_SOLUTION: upstream planner did not produce a valid trajectory",
+          "browser_record": "/drone_playground/results/command-builder-native-full-20261017/runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core/replays/D06-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ],
+      "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
+      "run_relative": "runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core"
+    }
+  ]
+}

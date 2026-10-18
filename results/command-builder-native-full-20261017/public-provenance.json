@@ -1,0 +1,48 @@
+{
+  "type": "curated-browser-preview",
+  "source_revision": {
+    "command_catalog": "/results/command-builder-native-full-20261017/catalog.json",
+    "execution_manifest": "/results/command-builder-native-full-20261017/manifest.json"
+  },
+  "native_acceptance_cases": 172,
+  "native_acceptance_terminal_events": {
+    "SUCCESS": 119,
+    "COLLISION": 4,
+    "OUT_OF_BOUNDS": 67,
+    "METHOD_FAILURE": 66
+  },
+  "published_case_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    21,
+    24,
+    37,
+    73,
+    86,
+    89,
+    93,
+    94,
+    100,
+    121,
+    136,
+    160
+  ],
+  "published_episodes": 30,
+  "published_terminal_events": {
+    "SUCCESS": 19,
+    "COLLISION": 2,
+    "OUT_OF_BOUNDS": 3,
+    "METHOD_FAILURE": 6
+  },
+  "base_path": "/drone_playground/"
+}
