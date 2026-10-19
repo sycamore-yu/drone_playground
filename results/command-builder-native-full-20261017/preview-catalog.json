@@ -5,14 +5,14 @@
     "execution_manifest": "/results/command-builder-native-full-20261017/manifest.json"
   },
   "summary": {
-    "native_methods": 24,
-    "recorded_methods": 24,
-    "recorded_episodes": 30,
+    "native_methods": 28,
+    "recorded_methods": 28,
+    "recorded_episodes": 34,
     "terminal_events": {
-      "SUCCESS": 19,
+      "SUCCESS": 22,
       "COLLISION": 2,
       "OUT_OF_BOUNDS": 3,
-      "METHOD_FAILURE": 6
+      "METHOD_FAILURE": 7
     }
   },
   "cases": [
@@ -729,6 +729,126 @@
       ],
       "source_revision": "c5ebceec877ebaf0471067db84a7397fa4b6e6c2",
       "run_relative": "runs/160_benchmark_planner_dynamic_oa_ego_sampling_mpc_core"
+    },
+    {
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "ego_native",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "so3",
+      "method": "planner",
+      "sensor": "depth",
+      "command": "pixi run play task=navigation sensor=depth method=ego_native controller=so3 scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "id": 172,
+      "status": "completed",
+      "source_revision": "a15df35b2e30a8879a802c65192e12e31c026438",
+      "source_sha256": "1ebfa38e826f9112b8f929e5860b9232e2db9314861f79c319006fe40c1a1de8",
+      "source_result": "results/native-planner-full-episodes-20261018/ego_native",
+      "capture_mode": "benchmark",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 69.96600341796875,
+          "task_limit_seconds": 90.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/native-planner-full-episodes-20261018/ego_native/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ]
+    },
+    {
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "super_native",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "so3",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=super_native controller=so3 scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "id": 173,
+      "status": "completed",
+      "source_revision": "a15df35b2e30a8879a802c65192e12e31c026438",
+      "source_sha256": "1ebfa38e826f9112b8f929e5860b9232e2db9314861f79c319006fe40c1a1de8",
+      "source_result": "results/native-planner-full-episodes-20261018/super_native",
+      "capture_mode": "benchmark",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 36.99800109863281,
+          "task_limit_seconds": 90.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/native-planner-full-episodes-20261018/super_native/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ]
+    },
+    {
+      "mode": "play",
+      "task": "static_oa",
+      "planner": "mighty_native",
+      "scene": "S01",
+      "suite": "core",
+      "controller": "so3",
+      "method": "planner",
+      "sensor": "lidar",
+      "command": "pixi run play task=navigation sensor=lidar method=mighty_native controller=so3 scene=S01 benchmark.scenes=[S01] simulation.num_envs=1",
+      "id": 174,
+      "status": "completed",
+      "source_revision": "29f9b9533ff9804cf26a6bda463da870685b8cfa",
+      "source_sha256": "5ac397243f59116c65ad86f408f9b9450e374e0a77a7bf68c182d2b3665ff1f6",
+      "source_result": "results/native-planner-full-episodes-20261018/mighty_fixed",
+      "capture_mode": "benchmark",
+      "recordings": [
+        {
+          "scene": "S01",
+          "episode": 0,
+          "event": "SUCCESS",
+          "elapsed_seconds": 44.571998596191406,
+          "task_limit_seconds": 90.0,
+          "failure_detail": "",
+          "browser_record": "/drone_playground/results/native-planner-full-episodes-20261018/mighty_fixed/replays/S01-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ]
+    },
+    {
+      "mode": "play",
+      "task": "racing",
+      "planner": "gcopter",
+      "scene": "racing",
+      "suite": "core",
+      "controller": "so3",
+      "method": "planner",
+      "sensor": "state",
+      "command": "pixi run play task=racing scene=racing sensor=state method=gcopter controller=so3",
+      "id": 175,
+      "status": "completed",
+      "source_revision": "7c5c7304e70aba32812822fc2c040ce513c259e5",
+      "source_sha256": "f1f90d815f68be82ad1d2e6017e2a7818c9d4db47953bf98ae5a1f8982ad815b",
+      "source_result": "results/native-gcopter-racing-publish-20261019",
+      "capture_mode": "benchmark",
+      "recordings": [
+        {
+          "scene": "racing",
+          "episode": 0,
+          "event": "METHOD_FAILURE",
+          "elapsed_seconds": 6.0,
+          "task_limit_seconds": 60.0,
+          "failure_detail": "Native GCOPTER result violates the configured speed limit",
+          "browser_record": "/drone_playground/results/native-gcopter-racing-publish-20261019/replays/racing-0000/browser_replay.json",
+          "rscope_record": null,
+          "report": null
+        }
+      ]
     }
   ]
 }

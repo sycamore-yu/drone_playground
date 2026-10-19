@@ -37,9 +37,10 @@
 <div id="methodField"><label for="method">Method</label><select id="method"><option value="policy">Policy</option><option value="controller">Controller</option><option value="planner">Planner + Controller</option></select></div>
 <div><label for="task">Task</label><select id="task"></select></div>
 <div><label for="sensor">Sensor</label><select id="sensor"></select></div>
+<div id="actionField"><label for="action">Policy action</label><select id="action"><option value="body_rate">CTBR · thrust + body rates</option><option value="acceleration">Acceleration · 3D</option></select><small>62 training combinations: CTBR42 plus 20 OA acceleration variants.</small></div>
 <div id="algorithmField"><label for="algorithm">Algorithm</label><select id="algorithm"><option value="bptt">BPTT</option><option value="shac">SHAC</option><option value="ppo">PPO</option></select></div>
-<div id="backwardField"><label for="backward">Backward dynamics</label><select id="backward"><option value="native">Crazyflow native</option><option value="lotf">LOTF</option><option value="point_mass_lag">Point-mass lag</option></select><small>The forward simulation uses Crazyflow.</small></div>
-<div id="plannerField"><label for="planner">Planner</label><select id="planner"><option value="ego">EGO-Planner · depth</option><option value="super">SUPER · LiDAR</option></select></div>
+<div id="backwardField"><label for="backward">Backward dynamics</label><select id="backward"><option value="native">Crazyflow native</option><option value="lotf">LOTF</option><option value="point_mass">Point-Mass</option></select><small>Point-Mass includes a first-order response lag. Crazyflow remains the forward simulator.</small></div>
+<div id="plannerField"><label for="planner">Planner</label><select id="planner"><option value="ego">EGO-Planner · ROS / depth</option><option value="super">SUPER · ROS / LiDAR</option><option value="ego_native">EGO Native · depth</option><option value="super_native">SUPER Native · LiDAR</option><option value="mighty_native">MIGHTY Native · LiDAR</option><option value="gcopter">GCOPTER · Racing</option></select></div>
 <div id="controllerField"><label for="controller">Controller</label><select id="controller"><option value="sampling_mpc">Sampling MPC</option><option value="attitude_mpc">Attitude MPC</option></select></div>
 <div id="sceneField"><label for="scene">Scene</label><select id="scene"></select></div>
 <div id="suiteField"><label for="suite">Benchmark scene family</label><select id="suite"></select><small>Core S/D scenes are the original reference set. Other families are native-MJCF extensions.</small></div>
@@ -86,7 +87,7 @@
  <div id="gallery-list" class="gallery-grid" aria-live="polite"></div>
  <div class="more-row"><button id="gallery-more" type="button" hidden>Show more recordings</button></div>
 </section>
-<footer>This page generates compatible commands. Native planners require their ROS workers; Attitude MPC, Full-State NMPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and is not yet real-time at 50 Hz on CPU. See <a href="https://github.com/sycamore-yu/drone_playground/blob/main/docs/installation.md">installation</a> and <a href="https://github.com/sycamore-yu/drone_playground/blob/main/docs/benchmark.md">Benchmark measurement</a>.</footer>
+<footer>This page generates compatible commands. The original EGO and SUPER adapters require ROS workers. The ROS-free GCOPTER, EGO Native, SUPER Native and MIGHTY Native methods require compiled C++ Python extensions and run with the SO(3) trajectory tracker. Attitude MPC, Full-State NMPC and Racing MPCC require acados. Perception-Aware Sampling MPC is experimental and is not yet real-time at 50 Hz on CPU. See <a href="installation.md">installation</a>, <a href="native-cpp-planners.md">native planner setup</a> and <a href="benchmark.md">Benchmark measurement</a>.</footer>
 </main>
 <script>
 'use strict';
@@ -102,6 +103,15 @@ function suiteNames(task){return task==='static_oa'?['core','forest','maze','den
 function sceneNames(task){return [...suites[task],...suiteNames(task).filter(key=>key!=='core').flatMap(key=>extendedSuites[key])];}
 function selectedSuite(s){return s.suite&&s.suite!=='core'?extendedSuites[s.suite]:suites[s.task];}
 const algorithms = ['bptt','shac','ppo'];
+const plannerCapabilities = {
+  ego:{label:'EGO-Planner · ROS',tasks:['static_oa','dynamic_oa'],sensor:'depth'},
+  super:{label:'SUPER · ROS',tasks:['static_oa','dynamic_oa'],sensor:'lidar'},
+  ego_native:{label:'EGO Native · pybind11',tasks:['static_oa','dynamic_oa'],sensor:'depth',controllers:['so3']},
+  super_native:{label:'SUPER Native · pybind11',tasks:['static_oa','dynamic_oa'],sensor:'lidar',controllers:['so3']},
+  mighty_native:{label:'MIGHTY Native · pybind11',tasks:['static_oa','dynamic_oa'],sensor:'lidar',controllers:['so3']},
+  gcopter:{label:'GCOPTER · MINCO',tasks:['racing'],sensor:'state',controllers:['so3']},
+};
+function eligiblePlanners(task){return Object.keys(plannerCapabilities).filter(key=>plannerCapabilities[key].tasks.includes(task));}
 // The reference contract and task define applicability, not the word "MPC".
 const controllerCapabilities = {
   sampling_mpc:{label:'Sampling MPC',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
@@ -109,8 +119,10 @@ const controllerCapabilities = {
   full_state_nmpc:{label:'Full-State NMPC (acados)',reference:'trajectory',tasks:['tracking','racing','static_oa','dynamic_oa']},
   racing_mpcc:{label:'Racing MPCC (acados)',reference:'gate_course',tasks:['racing']},
   perception_mpc:{label:'Perception-Aware MPC (experimental)',reference:'trajectory_landmarks',tasks:['racing']},
+  so3:{label:'SO(3) Trajectory Tracker',reference:'trajectory',tasks:[]},
 };
 function eligibleControllers(task,planner){
+  if(typeof planner==='string'&&plannerCapabilities[planner]?.controllers)return plannerCapabilities[planner].controllers;
   return Object.keys(controllerCapabilities).filter(key=>{
     const entry=controllerCapabilities[key];
     return entry.tasks.includes(task)&&(!planner||entry.reference==='trajectory');
@@ -129,8 +141,11 @@ function command(s){
     parts.push(`experiment=${experiment(s)}`,`learning=${s.algorithm}`);
     if(s.mode==='train'){
       parts.push('seed=0');
-      if(s.algorithm!=='ppo'&&s.backward!=='native')parts.push(`learning.backward_model=${s.backward}`,`method.action.level=${!suites[s.task]||s.backward==='lotf'?'body_rate':'acceleration'}`);
-      if(s.algorithm!=='ppo'&&s.backward==='lotf'&&suites[s.task])parts.push('learning.loss=null','learning.options.perception_loss=null');
+      if((s.action||'body_rate')==='acceleration'){
+        if(s.algorithm!=='ppo'&&s.backward==='lotf')throw new Error('LOTF requires CTBR actions.');
+        parts.push('method.action.level=acceleration','method.action.frame=body');
+      }
+      if(s.algorithm!=='ppo'&&s.backward!=='native')parts.push(`learning.backward_model=${s.backward}`);
     }else{
       const checkpoint=s.checkpoint==='path'?s.path:s.checkpoint;
       parts.push(checkpoint==='latest'||checkpoint==='best'?`checkpoint=${checkpoint}`:shellQuote(`checkpoint=${JSON.stringify(checkpoint)}`));
@@ -138,8 +153,11 @@ function command(s){
   }else if(s.method==='controller'){
     parts.push(`task=${s.task}`,`scene=${s.task==='racing'?'racing':'empty'}`,'sensor=state','method=controller',`controller=${s.controller}`);
   }else{
-    parts.push('task=navigation',`sensor=${s.sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
-    if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
+    const racing=s.planner==='gcopter';
+    parts.push(`task=${racing?'racing':'navigation'}`);
+    if(racing)parts.push('scene=racing');
+    parts.push(`sensor=${plannerCapabilities[s.planner].sensor}`,`method=${s.planner}`,`controller=${s.controller}`);
+    if(s.mode==='benchmark')parts.push(`benchmark.scenes=[${racing?'racing':selectedSuite(s).join(',')}]`);
   }
   if(s.mode==='benchmark'&&s.method==='policy'&&suites[s.task]&&s.suite&&s.suite!=='core')parts.push(`benchmark.scenes=[${selectedSuite(s).join(',')}]`);
   if(s.mode==='play'&&suites[s.task])parts.push(`scene=${s.scene}`,`benchmark.scenes=[${s.scene}]`,'simulation.num_envs=1');
@@ -150,10 +168,12 @@ function combinations(){
   const result=[];
   for(const mode of ['train','play','benchmark']){
     for(const task of Object.keys(taskLabels))for(const sensor of suites[task]?['depth','lidar']:['state'])for(const algorithm of algorithms){
-      for(const backward of mode==='train'&&algorithm!=='ppo'?['native','lotf','point_mass_lag']:['native']){
+      for(const action of mode==='train'&&suites[task]?['body_rate','acceleration']:['body_rate']){
+      for(const backward of mode==='train'&&algorithm!=='ppo'?(action==='acceleration'?['native','point_mass']:['native','lotf','point_mass']):['native']){
         for(const scene of mode==='play'&&suites[task]?sceneNames(task):[null])for(const suite of mode==='benchmark'&&suites[task]?suiteNames(task):['core'])for(const checkpoint of mode==='train'?['latest']:['latest','best']){
-          const s={mode,task,sensor,algorithm,backward,scene,suite,checkpoint,method:'policy'};result.push({...s,command:command(s)});
+          const s={mode,task,sensor,action,algorithm,backward,scene,suite,checkpoint,method:'policy'};result.push({...s,command:command(s)});
         }
+      }
       }
     }
     if(mode==='train')continue;
@@ -161,31 +181,35 @@ function combinations(){
       const s={mode,task,sensor:'state',method:'controller',controller};
       result.push({...s,command:command(s)});
     }
-    for(const task of Object.keys(suites))for(const controller of eligibleControllers(task,true))for(const planner of ['ego','super'])for(const scene of mode==='play'?sceneNames(task):[null])for(const suite of mode==='benchmark'?suiteNames(task):['core']){
-      const s={mode,task,planner,scene,suite,controller,method:'planner',sensor:planner==='ego'?'depth':'lidar'};
+    for(const task of ['racing',...Object.keys(suites)])for(const planner of eligiblePlanners(task))for(const controller of eligibleControllers(task,planner))for(const scene of mode==='play'&&suites[task]?sceneNames(task):[null])for(const suite of mode==='benchmark'&&suites[task]?suiteNames(task):['core']){
+      const s={mode,task,planner,scene:task==='racing'?'racing':scene,suite,controller,method:'planner',sensor:plannerCapabilities[planner].sensor};
       result.push({...s,command:command(s)});
     }
   }
   return result;
 }
-// The same finite command set drives the UI and release execution checks.
-globalThis.CommandBuilder={command,combinations,controllerCapabilities,eligibleControllers};
+// The same finite command set drives the UI and the complete 62-cell study.
+globalThis.CommandBuilder={command,combinations,controllerCapabilities,plannerCapabilities,eligiblePlanners,eligibleControllers};
 if(typeof document!=='undefined'){
   const $=id=>document.getElementById(id);
-  const state={mode:'train',method:'policy',task:'tracking',sensor:'state',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',suite:'core',checkpoint:'latest',path:''};
+  const state={mode:'train',method:'policy',task:'tracking',sensor:'state',action:'body_rate',algorithm:'bptt',backward:'native',planner:'ego',controller:'sampling_mpc',scene:'S01',suite:'core',checkpoint:'latest',path:''};
   function options(id,items){const previous=state[id];$(id).replaceChildren(...items.map(([key,label])=>new Option(label,key)));state[id]=items.some(([key])=>key===previous)?previous:items[0][0];$(id).value=state[id];}
   function show(id,visible){$(id).hidden=!visible;}
   function render(){
     const train=state.mode==='train';if(train)state.method='policy';
     const policy=state.method==='policy',planner=state.method==='planner';
-    const tasks=policy?Object.keys(taskLabels):planner?Object.keys(suites):['tracking','racing'];
+    const tasks=policy?Object.keys(taskLabels):planner?['racing',...Object.keys(suites)]:['tracking','racing'];
     options('task',tasks.map(key=>[key,taskLabels[key]]));
     options('sensor',(suites[state.task]?['depth','lidar']:['state']).map(key=>[key,key==='depth'?'D435i depth':key==='lidar'?'MID360 LiDAR':'State']));
-    if(planner){state.sensor=state.planner==='ego'?'depth':'lidar';$('sensor').value=state.sensor;}
+    if(planner){
+      options('planner',eligiblePlanners(state.task).map(key=>[key,plannerCapabilities[key].label]));
+      state.sensor=plannerCapabilities[state.planner].sensor;$('sensor').value=state.sensor;
+    }
     $('sensor').disabled=planner||!suites[state.task];
-    show('methodField',!train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
+    if(train)options('backward',(state.action==='acceleration'?['native','point_mass']:['native','lotf','point_mass']).map(key=>[key,key==='native'?'Crazyflow native':key==='lotf'?'LOTF':'Point-Mass']));
+    show('methodField',!train);show('actionField',train);show('algorithmField',policy);show('backwardField',train&&state.algorithm!=='ppo');
     show('plannerField',planner);show('controllerField',!policy);show('sceneField',!train&&state.mode==='play'&&Boolean(suites[state.task]));
-    if(!policy)options('controller',eligibleControllers(state.task,planner).map(key=>[key,controllerCapabilities[key].label]));
+    if(!policy)options('controller',eligibleControllers(state.task,planner?state.planner:false).map(key=>[key,controllerCapabilities[key].label]));
     show('suiteField',!train&&state.mode==='benchmark'&&Boolean(suites[state.task]));
     show('checkpointField',!train&&policy);show('pathField',!train&&policy&&state.checkpoint==='path');
     if(suites[state.task]){
@@ -202,8 +226,8 @@ if(typeof document!=='undefined'){
     Object.assign(state,partial);
     if(state.mode==='train')state.method='policy';
     if(state.method==='controller'&&suites[state.task])state.method='planner';
-    if(state.method==='planner'&&!suites[state.task])state.method='controller';
-    for(const id of ['mode','method','algorithm','backward','planner','checkpoint','path'])
+    if(state.method==='planner'&&!suites[state.task]&&state.task!=='racing')state.method='controller';
+    for(const id of ['mode','method','action','algorithm','backward','planner','checkpoint','path'])
       $(id).value=state[id];
     render();
   };

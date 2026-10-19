@@ -19,7 +19,8 @@
 
   function methodLabel(item){
     const controller=builder.controllerCapabilities[item.controller]?.label||item.controller;
-    return item.planner?`${item.planner.toUpperCase()} + ${controller}`:controller;
+    const planner=builder.plannerCapabilities[item.planner]?.label||item.planner;
+    return item.planner?`${planner} + ${controller}`:controller;
   }
 
   function exactlySelected(state,cases){
@@ -74,7 +75,7 @@
 
   const builder=globalThis.CommandBuilder;
   if(!builder||typeof builder.getSelection!=='function')return;
-  const shareableKeys=['mode','method','task','sensor','algorithm','backward','checkpoint','planner','controller','scene','suite'];
+  const shareableKeys=['mode','method','task','sensor','action','algorithm','backward','checkpoint','planner','controller','scene','suite'];
   function shareSelection(state){
     const url=new URL(location.href);
     // Keep the supported workflow shareable without putting local checkpoint
@@ -84,7 +85,7 @@
     if(state.mode!=='train')relevant.add('method');
     if(state.method==='policy'||state.mode==='train'){
       relevant.add('sensor');relevant.add('algorithm');
-      if(state.mode==='train')relevant.add('backward');
+      if(state.mode==='train'){relevant.add('action');relevant.add('backward');}
       if(state.mode!=='train'&&state.checkpoint!=='path')relevant.add('checkpoint');
     }else{
       relevant.add('controller');
@@ -335,7 +336,8 @@
     const task=card.dataset.task;
     const partial={task};
     if(selection.mode!=='train'&&selection.method!=='policy')
-      partial.method=['static_oa','dynamic_oa'].includes(task)?'planner':'controller';
+      partial.method=['static_oa','dynamic_oa'].includes(task)||
+        (task==='racing'&&selection.method==='planner')?'planner':'controller';
     builder.applySelection(partial);
   });
   $('preview-scene').addEventListener('change',event=>{
@@ -361,10 +363,11 @@
     method:['policy','controller','planner'],
     task:Object.keys(labels),
     sensor:['state','depth','lidar'],
+    action:['body_rate','acceleration'],
     algorithm:['bptt','shac','ppo'],
-    backward:['native','lotf','point_mass_lag'],
+    backward:['native','lotf','point_mass'],
     checkpoint:['latest','best'],
-    planner:['ego','super'],
+    planner:Object.keys(builder.plannerCapabilities),
     controller:Object.keys(builder.controllerCapabilities),
   };
   for(const key of shareableKeys){

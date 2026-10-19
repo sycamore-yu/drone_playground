@@ -37,12 +37,46 @@
     136,
     160
   ],
-  "published_episodes": 30,
+  "additional_native_cases": [
+    {
+      "id": 172,
+      "planner": "ego_native",
+      "source_result": "results/native-planner-full-episodes-20261018/ego_native",
+      "source_revision": "a15df35b2e30a8879a802c65192e12e31c026438",
+      "source_sha256": "1ebfa38e826f9112b8f929e5860b9232e2db9314861f79c319006fe40c1a1de8",
+      "event": "SUCCESS"
+    },
+    {
+      "id": 173,
+      "planner": "super_native",
+      "source_result": "results/native-planner-full-episodes-20261018/super_native",
+      "source_revision": "a15df35b2e30a8879a802c65192e12e31c026438",
+      "source_sha256": "1ebfa38e826f9112b8f929e5860b9232e2db9314861f79c319006fe40c1a1de8",
+      "event": "SUCCESS"
+    },
+    {
+      "id": 174,
+      "planner": "mighty_native",
+      "source_result": "results/native-planner-full-episodes-20261018/mighty_fixed",
+      "source_revision": "29f9b9533ff9804cf26a6bda463da870685b8cfa",
+      "source_sha256": "5ac397243f59116c65ad86f408f9b9450e374e0a77a7bf68c182d2b3665ff1f6",
+      "event": "SUCCESS"
+    },
+    {
+      "id": 175,
+      "planner": "gcopter",
+      "source_result": "results/native-gcopter-racing-publish-20261019",
+      "source_revision": "7c5c7304e70aba32812822fc2c040ce513c259e5",
+      "source_sha256": "f1f90d815f68be82ad1d2e6017e2a7818c9d4db47953bf98ae5a1f8982ad815b",
+      "event": "METHOD_FAILURE"
+    }
+  ],
+  "published_episodes": 34,
   "published_terminal_events": {
-    "SUCCESS": 19,
+    "SUCCESS": 22,
     "COLLISION": 2,
     "OUT_OF_BOUNDS": 3,
-    "METHOD_FAILURE": 6
+    "METHOD_FAILURE": 7
   },
   "base_path": "/drone_playground/"
 }

@@ -36,7 +36,7 @@
     body.embedded .view-actions>*{flex:0 0 auto;white-space:nowrap}
     @media(max-width:440px){body.embedded header{padding:7px 9px}body.embedded .playback-main{gap:5px}body.embedded #time{font-size:11px}}
   </style>
-  <script type="module" crossorigin src="./assets/index-DSH7bs2g.js"></script>
+  <script type="module" crossorigin src="./assets/index-BWAxjlCI.js"></script>
 </head>
 <body>
   <header>
@@ -59,11 +59,13 @@
         <button id="follow" type="button">Follow drone: On</button>
         <button id="trail" type="button">Flight path: On</button>
         <button id="hits" type="button">Sensor hits: On</button>
+        <button id="map" type="button" title="Show the native planner's sampled occupied voxels, not ground truth">MAP: On</button>
+        <button id="sfc" type="button" title="Show the recorded safe flight corridor edges">SFC: On</button>
         <button id="obstacles" type="button" title="Show native obstacles transparently for inspection; recorded geometry and collisions are unchanged">Obstacles: Solid</button>
       </div>
     </div>
   </header>
   <main id="scene" aria-label="3D MuJoCo recorded flight"><div id="end-banner" hidden role="status"></div></main>
-  <footer><span>Rotate: drag · Pan: right-drag · Zoom: wheel</span><span>Recorded qpos + mocap · No physics resimulation</span><a href="https://github.com/google-deepmind/mujoco/tree/main/wasm">MuJoCo WASM</a></footer>
+  <footer><span>Rotate: drag · Pan: right-drag · Zoom: wheel · Green: sensor · Violet: occupied MAP · Amber: SFC</span><span>Recorded qpos + mocap · No physics resimulation</span><a href="https://github.com/google-deepmind/mujoco/tree/main/wasm">MuJoCo WASM</a></footer>
 </body>
 </html>
